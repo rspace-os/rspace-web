@@ -438,9 +438,7 @@ function loadOneDriveScript() {
 		return $.Deferred().resolve().promise();
 	}
 
-	if (!initTinyMCE_cachedOneDriveScriptRequest) {
-		initTinyMCE_cachedOneDriveScriptRequest = $.getScript("//js.live.net/v7.2/OneDrive.js");
-		initTinyMCE_cachedOneDriveScriptRequest.fail(function () {
+		initTinyMCE_cachedOneDriveScriptRequest = $.getScript("https://js.live.net/v7.2/OneDrive.js");
 			initTinyMCE_cachedOneDriveScriptRequest = null;
 		});
 	} else {
