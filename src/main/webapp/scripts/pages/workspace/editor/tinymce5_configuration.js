@@ -405,6 +405,7 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
 var initTinyMCE_cachedBoxSelectRequest;
+var initTinyMCE_cachedOneDriveScriptRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
 var defaultTinymceVitePluginBundles = {
@@ -430,6 +431,23 @@ function loadBoxSelectScript() {
 	}
 
 	return initTinyMCE_cachedBoxSelectRequest;
+}
+
+function loadOneDriveScript() {
+	if (typeof OneDrive === 'function') {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedOneDriveScriptRequest) {
+		initTinyMCE_cachedOneDriveScriptRequest = $.getScript("//js.live.net/v7.2/OneDrive.js");
+		initTinyMCE_cachedOneDriveScriptRequest.fail(function () {
+			initTinyMCE_cachedOneDriveScriptRequest = null;
+		});
+	} else {
+		console.log('using cached onedrive script request');
+	}
+
+	return initTinyMCE_cachedOneDriveScriptRequest;
 }
 
 function loadOwnCloudClientScript() {
@@ -648,6 +666,8 @@ function initTinyMCE(selector) {
 		}
 		if (oneDriveEnabled) {
 			localTinymcesetup.external_plugins["onedrive"] = "/scripts/externalTinymcePlugins/onedrive/plugin.min.js";
+			localTinymcesetup.onedrive_client_id = properties['onedrive.client.id'];
+			localTinymcesetup.onedrive_redirect = properties['onedrive.redirect'];
 			enabledFileRepositories += " onedrive";
 			fileRepositoriesMenu += " optOneDrive";
 		}
@@ -717,6 +737,9 @@ function initTinyMCE(selector) {
 		var dependencyRequests = [];
 		if (boxEnabled && hasValidBoxClientId) {
 			dependencyRequests.push(loadBoxSelectScript());
+		}
+		if (oneDriveEnabled) {
+			dependencyRequests.push(loadOneDriveScript());
 		}
 		if (ownCloudEnabled) {
 			dependencyRequests.push(loadOwnCloudClientScript());
