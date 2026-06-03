@@ -9,7 +9,14 @@
 <%-- Dialogs for the ownCloud / NextCloud TinyMCE import plugins. Both plugins
      share the same dialog ids, so render once when either integration is
      configured for this deployment. --%>
-<c:if test="${not empty applicationScope['RS_DEPLOY_PROPS']['owncloud.url'] or not empty applicationScope['RS_DEPLOY_PROPS']['nextcloud.url']}">
+<c:set var="netCloudConfigured" value="false" />
+<rst:hasDeploymentProperty name="ownCloudUrl" testNonBlankOnly="true" value="ignored">
+    <c:set var="netCloudConfigured" value="true" />
+</rst:hasDeploymentProperty>
+<rst:hasDeploymentProperty name="nextCloudUrl" testNonBlankOnly="true" value="ignored">
+    <c:set var="netCloudConfigured" value="true" />
+</rst:hasDeploymentProperty>
+<c:if test="${netCloudConfigured}">
     <div id="owncloudDialog" title="Import From ownCloud / NextCloud"></div>
 
     <div id="owncloudLoginDialog" title="Log in to ownCloud" style="display: none">
