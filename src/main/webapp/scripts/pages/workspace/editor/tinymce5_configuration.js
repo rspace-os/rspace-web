@@ -592,7 +592,7 @@ function initTinyMCE(selector) {
 		var gitHubEnabled      = integrations.GITHUB.enabled && integrations.GITHUB.available;
 		var chemistryEnabled   = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
 		var protocolsIOEnabled = integrations.PROTOCOLS_IO.enabled && integrations.PROTOCOLS_IO.available;
-		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["ownCloud.url"] !== '';
+		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["owncloud.url"] !== '';
 		var nextCloudEnabled   = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
 		let pyratEnabled       = integrations.PYRAT.enabled && integrations.PYRAT.available && properties["pyrat.server.config"] !== "";
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
