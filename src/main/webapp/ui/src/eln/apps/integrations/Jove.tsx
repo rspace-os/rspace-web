@@ -10,12 +10,12 @@ function Jove(): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
-        name="Jove"
+        name="JoVE"
         integrationState={{
           mode: "EXTERNAL",
           credentials: null,
         }}
-        explanatoryText="and other video players eg YouTube, TIB AV-Portal"
+        explanatoryText="Embed JoVE other video players (eg YouTube, TIB AV-Portal)"
         image={JoveIcon}
         color={LOGO_COLOR}
         update={() => {}}
