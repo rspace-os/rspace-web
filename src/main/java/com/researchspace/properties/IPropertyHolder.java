@@ -277,10 +277,6 @@ public interface IPropertyHolder extends Versionable {
 
   String getFieldmarkBaseUrl();
 
-  String getOwnCloudUrl();
-
-  String getNextCloudUrl();
-
   boolean isAsposeEnabled();
 
   String getChemistryProvider();

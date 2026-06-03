@@ -108,28 +108,18 @@
   <jsp:include page="include/messagingDialogs.jsp" />
 
   <%-- Dialogs for the ownCloud / NextCloud TinyMCE import plugins. Both plugins
-       share the same dialog ids, so render once when either integration is
-       configured for this deployment. --%>
-  <c:set var="netCloudConfigured" value="false" />
-  <rst:hasDeploymentProperty name="ownCloudUrl" testNonBlankOnly="true" value="ignored">
-      <c:set var="netCloudConfigured" value="true" />
-  </rst:hasDeploymentProperty>
-  <rst:hasDeploymentProperty name="nextCloudUrl" testNonBlankOnly="true" value="ignored">
-      <c:set var="netCloudConfigured" value="true" />
-  </rst:hasDeploymentProperty>
-  <c:if test="${netCloudConfigured}">
-      <div id="owncloudDialog" title="Import From ownCloud / NextCloud"></div>
+       share the same dialog ids. --%>
+  <div id="owncloudDialog" title="Import From ownCloud / NextCloud"></div>
 
-      <div id="owncloudLoginDialog" title="Log in to ownCloud" style="display: none">
-         <div class="container">
-            <label for="owncloudUsernameField"><b>Username</b></label>
-            <input class="owncloudLoginField" id="owncloudUsernameField" type="text" placeholder="Enter Username" name="owncloudUsernameField" required>
+  <div id="owncloudLoginDialog" title="Log in to ownCloud" style="display: none">
+     <div class="container">
+        <label for="owncloudUsernameField"><b>Username</b></label>
+        <input class="owncloudLoginField" id="owncloudUsernameField" type="text" placeholder="Enter Username" name="owncloudUsernameField" required>
 
-            <label for="owncloudPasswordField"><b>Password</b></label>
-            <input class="owncloudLoginField" id="owncloudPasswordField" type="password" placeholder="Enter Password" name="owncloudPasswordField" required>
-          </div>
+        <label for="owncloudPasswordField"><b>Password</b></label>
+        <input class="owncloudLoginField" id="owncloudPasswordField" type="password" placeholder="Enter Password" name="owncloudPasswordField" required>
       </div>
-  </c:if>
+  </div>
 
   <div id="tempData" style="display: none"></div>
 

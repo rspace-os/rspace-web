@@ -224,16 +224,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Setter
   private String fieldmarkBaseUrl;
 
-  @Value("${owncloud.url}")
-  @Getter
-  @Setter
-  private String ownCloudUrl;
-
-  @Value("${nextcloud.url}")
-  @Getter
-  @Setter
-  private String nextCloudUrl;
-
   @Value("${aspose.enabled:true}")
   private String asposeEnabled;
 
