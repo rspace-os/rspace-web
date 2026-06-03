@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
@@ -302,6 +303,61 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     latestSubSample = subSampleManager.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", latestSubSample.getQuantity().toQuantityInfo().toPlainString());
+  }
+
+  @Test
+  public void instrumentCanBeAddedAndFetchedFromLom() throws BindException {
+
+    StructuredDocument basicDoc = createBasicDocumentInRootFolderWithText(testUser, "test");
+    Long basicDocFieldId = basicDoc.getFields().get(0).getId();
+
+    ApiInstrument instrument = createBasicInstrumentForUser(testUser);
+    GlobalIdentifier instrumentOid = new GlobalIdentifier(instrument.getGlobalId());
+
+    // no LoM yet
+    List<ApiListOfMaterials> foundLoms =
+        lomManager.getListOfMaterialsForInvRecGlobalId(instrumentOid, testUser);
+    assertEquals(0, foundLoms.size());
+
+    // create LoM with instrument (no quantity)
+    ApiListOfMaterials newLom = new ApiListOfMaterials();
+    newLom.setName("instrument LoM");
+    newLom.setElnFieldId(basicDocFieldId);
+    newLom.addMaterialUsage(instrument, null, false);
+    ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, testUser);
+    assertNotNull(createdLom.getId());
+    assertEquals(1, createdLom.getMaterials().size());
+    Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsCreationEvent.class));
+
+    // fetch by id: instrument record info must be enriched (name, permittedActions)
+    ApiListOfMaterials fetchedLom = lomManager.getListOfMaterialsById(createdLom.getId(), testUser);
+    ApiMaterialUsage instrumentUsage = fetchedLom.getMaterials().get(0);
+    ApiInventoryRecordInfo instrumentRecord = instrumentUsage.getRecord();
+    assertEquals("myInstrument", instrumentRecord.getName());
+    assertEquals(instrument.getGlobalId(), instrumentRecord.getGlobalId());
+    assertFalse(instrumentRecord.getPermittedActions().isEmpty());
+    assertNull(instrumentUsage.getUsedQuantity()); // instruments have no quantity
+
+    // findLomsByInvRecGlobalId runs a native SQL query, so pending inserts must be flushed for it
+    // to be visible within this single transaction (see SpringTransactionalTest#flushDatabaseState)
+    flushDatabaseState();
+    // find LoM via instrument globalId
+    foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(instrumentOid, testUser);
+    assertEquals(1, foundLoms.size());
+    assertNotNull(foundLoms.get(0).getElnDocument());
+
+    // remove instrument from LoM: an explicit empty materials list clears all materials,
+    // whereas a null materials list would mean "leave materials unchanged"
+    ApiListOfMaterials lomUpdate = new ApiListOfMaterials();
+    lomUpdate.setId(createdLom.getId());
+    lomUpdate.setMaterials(List.of());
+    lomManager.updateListOfMaterials(lomUpdate, testUser);
+    Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsEditingEvent.class));
+
+    // flush the material removal so the native-query search reflects it within this transaction
+    flushDatabaseState();
+    foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(instrumentOid, testUser);
+    assertEquals(0, foundLoms.size());
   }
 
   @Test
