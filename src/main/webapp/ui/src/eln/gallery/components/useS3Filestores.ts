@@ -100,10 +100,17 @@ export type S3TransferSource = {
 
 /**
  * An S3 filestore configured by the user in the Gallery's filestore section.
+ *
+ * canRead/canWrite reflect the per-user ACL for the underlying filesystem; a stale
+ * filestore (one the user has lost access to) is still returned by the listing
+ * endpoint with canRead=false, so the UI can render it as inaccessible rather than
+ * silently dropping it.
  */
 export type S3Filestore = {
   id: number;
   name: string;
+  canRead: boolean;
+  canWrite: boolean;
   copy: (recordIds: ReadonlyArray<number>) => Promise<void>;
   move: (recordIds: ReadonlyArray<number>) => Promise<void>;
   transfer: (
@@ -128,7 +135,12 @@ export default function useS3Filestores(): FetchingData.Fetched<
     Result<ReadonlyArray<S3Filestore>>
   >(Result.Ok([]));
 
-  function mkS3Filestore(id: number, name: string): S3Filestore {
+  function mkS3Filestore(
+    id: number,
+    name: string,
+    canRead: boolean,
+    canWrite: boolean,
+  ): S3Filestore {
     async function callEndpoint(
       operation: "move" | "copy",
       recordIds: ReadonlyArray<number>,
@@ -220,6 +232,8 @@ export default function useS3Filestores(): FetchingData.Fetched<
     return {
       id,
       name,
+      canRead,
+      canWrite,
       copy: (recordIds) => callEndpoint("copy", recordIds),
       move: (recordIds) => callEndpoint("move", recordIds),
       transfer: (sources, deleteSource) =>
@@ -257,16 +271,33 @@ export default function useS3Filestores(): FetchingData.Fetched<
             ...s3Only.map((item) =>
               Parsers.isObject(item)
                 .flatMap(Parsers.isNotNull)
-                .flatMap((obj) =>
-                  Result.lift2(mkS3Filestore)(
+                .flatMap((obj) => {
+                  // userPermissions may be absent (older backend, or non-NONE auth)
+                  // — default canRead/canWrite to true so the UI is permissive
+                  // when the backend didn't supply a permissions snapshot.
+                  const perms = Parsers.getValueWithKey("userPermissions")(obj)
+                    .flatMap(Parsers.isObject)
+                    .flatMap(Parsers.isNotNull);
+                  const canRead = perms
+                    .flatMap(Parsers.getValueWithKey("canRead"))
+                    .flatMap(Parsers.isBoolean)
+                    .orElse(true);
+                  const canWrite = perms
+                    .flatMap(Parsers.getValueWithKey("canWrite"))
+                    .flatMap(Parsers.isBoolean)
+                    .orElse(true);
+                  return Result.lift2(
+                    (id: number, name: string): S3Filestore =>
+                      mkS3Filestore(id, name, canRead, canWrite),
+                  )(
                     Parsers.getValueWithKey("id")(obj).flatMap(
                       Parsers.isNumber,
                     ),
                     Parsers.getValueWithKey("name")(obj).flatMap(
                       Parsers.isString,
                     ),
-                  ),
-                ),
+                  );
+                }),
             ),
           );
         }),

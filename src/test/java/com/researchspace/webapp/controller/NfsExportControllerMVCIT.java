@@ -33,6 +33,8 @@ public class NfsExportControllerMVCIT extends MVCTestBase {
 
   @Autowired private NfsExportController controller;
 
+  @Autowired private com.researchspace.service.MessageSourceUtils messageSource;
+
   @Before
   public void setup() throws Exception {
     super.setUp();
@@ -132,7 +134,7 @@ public class NfsExportControllerMVCIT extends MVCTestBase {
             .getCheckedNfsLinkMessages()
             .size()); // from skipped subfolder
     assertEquals(
-        NfsExportManagerImpl.SUBFOLDER_NOT_INCLUDED_MSG,
+        messageSource.getMessage(NfsExportManagerImpl.SUBFOLDER_NOT_INCLUDED_MSG_KEY),
         fullPlan.getCheckedNfsLinkMessages().values().iterator().next());
 
     // let's re-generate full export plan and ensure the results are the same
