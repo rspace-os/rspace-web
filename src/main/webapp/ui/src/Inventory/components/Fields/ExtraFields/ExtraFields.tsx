@@ -77,11 +77,17 @@ function ExtraFields({
                     onPeek={() => undefined}
                     onOpen={() => {
                       const link = (ef as typeof ef & {
-                        link: { targetGlobalId: string };
+                        link: {
+                          targetGlobalId: string;
+                          versionPin: number | null;
+                        };
                       }).link;
                       if (link?.targetGlobalId) {
+                        // open the pinned revision when one is set (e.g. SD audit view)
+                        const versionSuffix =
+                          link.versionPin != null ? `v${link.versionPin}` : "";
                         window.open(
-                          `/globalId/${link.targetGlobalId}`,
+                          `/globalId/${link.targetGlobalId}${versionSuffix}`,
                           "_blank"
                         );
                       }

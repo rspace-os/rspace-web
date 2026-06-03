@@ -2,8 +2,10 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.InventoryLinkDao;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 
@@ -26,17 +28,20 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
   }
 
   @Override
-  public List<ExtraLinkField> findReferencingLinkFields(String targetGlobalId) {
+  public List<ExtraLinkField> findReferencingLinkFields(
+      GlobalIdPrefix targetPrefix, Long targetDbId) {
     List<InventoryLink> links =
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from InventoryLink where targetGlobalId=:gid and deleted=false",
+                "from InventoryLink where targetPrefix=:prefix and targetDbId=:dbId and"
+                    + " deleted=false",
                 InventoryLink.class)
-            .setParameter("gid", targetGlobalId)
+            .setParameter("prefix", targetPrefix)
+            .setParameter("dbId", targetDbId)
             .list();
     if (links.isEmpty()) {
-      return java.util.Collections.emptyList();
+      return Collections.emptyList();
     }
     return sessionFactory
         .getCurrentSession()

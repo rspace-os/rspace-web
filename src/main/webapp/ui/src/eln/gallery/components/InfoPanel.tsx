@@ -32,6 +32,7 @@ import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
 import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
+import { ReferencingInventoryItemsPanel } from "./ReferencingInventoryItemsPanel";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import Link from "@mui/material/Link";
 import Chip from "@mui/material/Chip";
@@ -624,6 +625,7 @@ const InfoPanelContent = observer(
           />
         </Box>
         {file.linkedDocuments}
+        <ReferencingInventoryItemsPanel file={file} />
       </Stack>
     );
   },

@@ -22,10 +22,20 @@ import {
   isValidDataCiteRelationType,
 } from "../Link/dataciteRelationTypes";
 import LinkTargetBrowser from "../Link/LinkTargetBrowser";
+import ElnRecordPicker from "../Link/ElnRecordPicker";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
-import { iconForInventoryGlobalId } from "../Link/iconForGlobalId";
+import { iconForGlobalId } from "../Link/iconForGlobalId";
 
-const INVENTORY_TARGET_PREFIXES = new Set(["SA", "SS", "IC", "IN"]);
+// Inventory items (SA/SS/IC/IN) plus ELN documents (SD), notebooks (NB) and gallery files (GL).
+const ALLOWED_TARGET_PREFIXES = new Set([
+  "SA",
+  "SS",
+  "IC",
+  "IN",
+  "SD",
+  "NB",
+  "GL",
+]);
 const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v(\d+))?$/;
 
 type UpdateFieldArgs = {
@@ -80,8 +90,12 @@ function validateLink(
     return { ok: false, reason: "Pick a DataCite relation type" };
   const match = GLOBAL_ID_PATTERN.exec(link.targetGlobalId);
   if (!match) return { ok: false, reason: "Target Global ID is required" };
-  if (!INVENTORY_TARGET_PREFIXES.has(match[1]))
-    return { ok: false, reason: "Target must be an Inventory record" };
+  if (!ALLOWED_TARGET_PREFIXES.has(match[1]))
+    return {
+      ok: false,
+      reason:
+        "Target must be an Inventory item or an ELN document, notebook or gallery file",
+    };
   if (isSelfLink(sourceGlobalId, link.targetGlobalId))
     return { ok: false, reason: "An item cannot link to itself" };
   return { ok: true, reason: "" };
@@ -99,6 +113,7 @@ export default function UpdateField({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [linkState, setLinkState] = useState<LinkState>(emptyLinkState());
   const [browserOpen, setBrowserOpen] = useState(false);
+  const [elnBrowserOpen, setElnBrowserOpen] = useState(false);
 
   useEffect(() => {
     if (extraField) {
@@ -184,6 +199,19 @@ export default function UpdateField({
       targetName: target.name,
     });
     setBrowserOpen(false);
+  };
+
+  const handleElnPick = (target: {
+    globalId: string;
+    name: string;
+    type: string;
+  }) => {
+    setLinkState({
+      ...linkState,
+      targetGlobalId: target.globalId,
+      targetName: target.name,
+    });
+    setElnBrowserOpen(false);
   };
 
   const update = () => {
@@ -294,12 +322,15 @@ export default function UpdateField({
           </Grid>
           <Grid item xs={12}>
             <Box>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ mb: 1, flexWrap: "wrap" }}
+              >
                 {linkState.targetGlobalId ? (
                   (() => {
-                    const iconData = iconForInventoryGlobalId(
-                      linkState.targetGlobalId,
-                    );
+                    const iconData = iconForGlobalId(linkState.targetGlobalId);
                     return (
                       <Chip
                         icon={
@@ -328,13 +359,17 @@ export default function UpdateField({
                   size="small"
                   variant="outlined"
                   onClick={() => setBrowserOpen(true)}
-                  aria-label={
-                    linkState.targetGlobalId
-                      ? "Change target"
-                      : "Browse Inventory"
-                  }
+                  aria-label="Browse Inventory"
                 >
-                  {linkState.targetGlobalId ? "Change" : "Browse Inventory"}
+                  Browse Inventory
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setElnBrowserOpen(true)}
+                  aria-label="Browse ELN"
+                >
+                  Browse ELN
                 </Button>
               </Stack>
               <TextField
@@ -394,6 +429,12 @@ export default function UpdateField({
         open={browserOpen}
         onCancel={() => setBrowserOpen(false)}
         onPick={handleBrowserPick}
+      />
+
+      <ElnRecordPicker
+        open={elnBrowserOpen}
+        onCancel={() => setElnBrowserOpen(false)}
+        onPick={handleElnPick}
       />
     </Grid>
   );

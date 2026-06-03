@@ -12,6 +12,13 @@ vi.mock("../InventoryInfoDialog", () => ({
     ) : null,
 }));
 
+vi.mock("../EnElnRecordInfoDialog", () => ({
+  default: ({ open, globalId }: { open: boolean; globalId: string }) =>
+    open ? (
+      <div data-testid="eln-info-dialog" data-globalid={globalId} />
+    ) : null,
+}));
+
 vi.mock("../VersionLockDialog", () => ({
   default: ({
     open,
@@ -78,9 +85,9 @@ describe("LinkField", () => {
 
   it("renders relation type, target global id, and name", () => {
     renderField();
-    expect(screen.getByText(/calibration cert/i)).toBeTruthy();
-    expect(screen.getByText(/iscalibratedby/i)).toBeTruthy();
-    expect(screen.getByText(/sa42/i)).toBeTruthy();
+    expect(screen.getByText(/calibration cert/i)).toBeInTheDocument();
+    expect(screen.getByText(/iscalibratedby/i)).toBeInTheDocument();
+    expect(screen.getByText(/sa42/i)).toBeInTheDocument();
   });
 
   it("calls onPeek when the card body is clicked", async () => {
@@ -103,13 +110,13 @@ describe("LinkField", () => {
 
   it("renders pinned version label when versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: 4 } });
-    expect(screen.getByText(/v4|pinned to v4/i)).toBeTruthy();
+    expect(screen.getByText(/v4|pinned to v4/i)).toBeInTheDocument();
   });
 
   it("shows 'Target deleted' badge and hides 'Open in Inventory' when the target is deleted", () => {
     renderField({ targetDeleted: true });
-    expect(screen.getByText(/target deleted/i)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /open in inventory/i })).toBeNull();
+    expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /open in inventory/i })).not.toBeInTheDocument();
   });
 
   it("opens the VersionLockDialog when the clock icon is clicked", async () => {
@@ -183,6 +190,7 @@ describe("LinkField", () => {
     // tooltip is rendered into MUI's portal on hover; presence of the title
     // text in the document is sufficient to confirm wiring
     const user = userEvent.setup();
+    // eslint-disable-next-line testing-library/no-node-access -- a disabled button does not fire hover; hover its wrapping span instead
     await user.hover(openButton.parentElement!);
     expect(
       await screen.findByText(/version-specific view is not yet supported/i),
@@ -193,7 +201,7 @@ describe("LinkField", () => {
     renderField({ link: { ...baseLink, versionPin: null } });
     expect(
       screen.getByRole("button", { name: /open in inventory/i }),
-    ).not.toBeDisabled();
+    ).toBeEnabled();
   });
 
   it("shows a clock icon for version-pinning only when editable", () => {
@@ -232,6 +240,75 @@ describe("LinkField", () => {
     const dialog = screen.getByTestId("inventory-info-dialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute("data-globalid", "SA42");
+  });
+
+  it("hides the version-pin clock for notebook (NB) targets even when editable", () => {
+    renderField({
+      editable: true,
+      link: { ...baseLink, targetGlobalId: "NB5" },
+    });
+    expect(
+      screen.queryByRole("button", { name: /pin version for/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the version-pin clock for gallery (GL) targets even when editable", () => {
+    renderField({
+      editable: true,
+      link: { ...baseLink, targetGlobalId: "GL9" },
+    });
+    expect(
+      screen.queryByRole("button", { name: /pin version for/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the version-pin clock for document (SD) targets when editable", () => {
+    renderField({
+      editable: true,
+      link: { ...baseLink, targetGlobalId: "SD3" },
+    });
+    expect(
+      screen.getByRole("button", { name: /pin version for sd3/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("labels the open action 'Open' (not 'Open in Inventory') for ELN targets", () => {
+    renderField({ link: { ...baseLink, targetGlobalId: "SD3" } });
+    expect(screen.getByRole("button", { name: /^open$/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /open in inventory/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps Open enabled for a version-pinned document (SD) target", () => {
+    renderField({ link: { ...baseLink, targetGlobalId: "SD3", versionPin: 2 } });
+    expect(
+      screen.getByRole("button", { name: /^open$/i }),
+    ).toBeEnabled();
+  });
+
+  it("shows the info button for ELN targets and opens the ELN record-info dialog (not the inventory dialog)", async () => {
+    const user = userEvent.setup();
+    renderField({ link: { ...baseLink, targetGlobalId: "SD3" } });
+
+    const infoButton = screen.getByRole("button", {
+      name: /show info for sd3/i,
+    });
+    await user.click(infoButton);
+
+    const dialog = screen.getByTestId("eln-info-dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute("data-globalid", "SD3");
+    expect(
+      screen.queryByTestId("inventory-info-dialog"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("still shows the info button for inventory targets", () => {
+    renderField({ link: { ...baseLink, targetGlobalId: "SA42" } });
+    expect(
+      screen.getByRole("button", { name: /show info for sa42/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders a type icon inside the target chip for each Inventory prefix", () => {

@@ -11,13 +11,21 @@ import org.springframework.validation.Errors;
 /**
  * Validates an incoming {@link ApiInventoryLink} payload independent of database state. Checks
  * relationType against the DataCite vocabulary, syntactic GlobalID parse, that the target prefix is
- * inventory-only for step 1, and forbids self-links. Existence and read-permission checks live in
- * the manager layer.
+ * a supported link target (Inventory items or ELN documents, notebooks and gallery files), and
+ * forbids self-links. Existence and read-permission checks live in the manager layer, where the
+ * acting user is available.
  */
 public class InventoryLinkValidator {
 
-  private static final Set<GlobalIdPrefix> ALLOWED_INVENTORY_PREFIXES =
-      EnumSet.of(GlobalIdPrefix.SA, GlobalIdPrefix.SS, GlobalIdPrefix.IC, GlobalIdPrefix.IN);
+  private static final Set<GlobalIdPrefix> ALLOWED_TARGET_PREFIXES =
+      EnumSet.of(
+          GlobalIdPrefix.SA,
+          GlobalIdPrefix.SS,
+          GlobalIdPrefix.IC,
+          GlobalIdPrefix.IN,
+          GlobalIdPrefix.SD,
+          GlobalIdPrefix.NB,
+          GlobalIdPrefix.GL);
 
   /**
    * Validates the supplied link. Errors are recorded under {@code link.*} sub-paths of the passed
@@ -63,12 +71,12 @@ public class InventoryLinkValidator {
           "targetGlobalId is not a valid GlobalID");
       return;
     }
-    if (!ALLOWED_INVENTORY_PREFIXES.contains(parsed.getPrefix())) {
+    if (!ALLOWED_TARGET_PREFIXES.contains(parsed.getPrefix())) {
       errors.rejectValue(
           "targetGlobalId",
           "errors.inventory.field.link.targetKindUnsupported",
           new Object[] {parsed.getPrefix().name()},
-          "target kind not supported in step 1");
+          "target kind not supported");
       return;
     }
     if (isSelfLink(parsed, sourceGlobalId)) {

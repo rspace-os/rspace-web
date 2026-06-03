@@ -10,6 +10,11 @@ vi.mock("../../Link/LinkTargetBrowser", () => ({
     open ? <div data-testid="link-target-browser" /> : null,
 }));
 
+vi.mock("../../Link/ElnRecordPicker", () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="eln-record-picker" /> : null,
+}));
+
 import UpdateField from "../UpdateField";
 import { type ExtraField } from "../../../../../stores/definitions/ExtraField";
 import { type InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
@@ -151,6 +156,63 @@ describe("UpdateField — Field Type select includes Link", () => {
         link: {
           relationType: "References",
           targetGlobalId: "SA99",
+          versionPin: null,
+        },
+      },
+    ]);
+  });
+
+  it("opens the ELN picker from the Browse ELN button", async () => {
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await selectFieldType("Link");
+    await user.click(screen.getByRole("button", { name: /browse eln/i }));
+    expect(screen.getByTestId("eln-record-picker")).toBeInTheDocument();
+  });
+
+  it("accepts an ELN document target (SD) in the link payload on Apply", async () => {
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /field name/i }),
+      "Linked doc",
+    );
+    await selectFieldType("Link");
+    await user.type(
+      screen.getByRole("combobox", { name: /relation type/i }),
+      "References",
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "SD42",
+    );
+
+    await user.click(screen.getByRole("button", { name: /update field/i }));
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const updateExtraField = record.updateExtraField;
+    expect(vi.mocked(updateExtraField).mock.calls.at(-1)).toEqual([
+      "",
+      {
+        name: "Linked doc",
+        type: "Link",
+        link: {
+          relationType: "References",
+          targetGlobalId: "SD42",
           versionPin: null,
         },
       },

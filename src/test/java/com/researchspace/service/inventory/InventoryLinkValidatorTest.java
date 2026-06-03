@@ -26,8 +26,8 @@ class InventoryLinkValidatorTest {
   }
 
   @Test
-  void rejectsTargetWithNonInventoryPrefix() {
-    ApiInventoryLink link = buildLink("References", "SD1");
+  void rejectsTargetWithUnsupportedPrefix() {
+    ApiInventoryLink link = buildLink("References", "GF1");
     Errors errors = errorsFor(link);
     validator.validate(link, "SA42", errors);
 
@@ -86,6 +86,16 @@ class InventoryLinkValidatorTest {
       Errors errors = errorsFor(link);
       validator.validate(link, "SA42", errors);
       assertFalse(errors.hasErrors(), "expected " + prefix + " prefix to be accepted");
+    }
+  }
+
+  @Test
+  void acceptsElnTargetPrefixes() {
+    for (String prefix : new String[] {"SD", "NB", "GL"}) {
+      ApiInventoryLink link = buildLink("References", prefix + "1");
+      Errors errors = errorsFor(link);
+      validator.validate(link, "SA42", errors);
+      assertFalse(errors.hasErrors(), "expected " + prefix + " (ELN) prefix to be accepted");
     }
   }
 

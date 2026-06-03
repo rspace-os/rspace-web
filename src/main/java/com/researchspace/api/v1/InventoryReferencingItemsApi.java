@@ -24,4 +24,14 @@ public interface InventoryReferencingItemsApi {
 
   @GetMapping("/instruments/{id}/referencingItems")
   ApiInventoryReferencingItems getReferencingItemsForInstrument(@PathVariable Long id, User user);
+
+  /**
+   * Generic, target-agnostic back-reference lookup. Returns the Inventory items whose Link
+   * extra-field points at the supplied target GlobalID, which may be an Inventory item or an ELN
+   * item (document, notebook, gallery file). Permission-filtered to sources the user can read. Used
+   * by the ELN-side "Related inventory items" panels.
+   */
+  @GetMapping("/referencingItems/{globalId}")
+  ApiInventoryReferencingItems getReferencingItemsForGlobalId(
+      @PathVariable String globalId, User user);
 }

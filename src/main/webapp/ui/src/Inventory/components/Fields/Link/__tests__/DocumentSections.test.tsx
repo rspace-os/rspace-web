@@ -1,0 +1,249 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import React from "react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ThemeProvider } from "@mui/material/styles";
+import materialTheme from "../../../../../theme";
+import { type WorkspaceRecordInformation } from "@/modules/workspace/schema";
+
+const getLinkedByRecords = vi.fn();
+const getPublicLink = vi.fn();
+const getStructuredDocumentPreviewHtml = vi.fn();
+const useReferencingInventoryItems = vi.fn();
+
+vi.mock("@/modules/workspace/linkedRecords", () => ({
+  getLinkedByRecords: (...args: Array<unknown>) =>
+    getLinkedByRecords(...args) as unknown,
+}));
+vi.mock("@/modules/workspace/publicLink", () => ({
+  getPublicLink: (...args: Array<unknown>) => getPublicLink(...args) as unknown,
+}));
+vi.mock("@/modules/workspace/documentPreview", () => ({
+  getStructuredDocumentPreviewHtml: (...args: Array<unknown>) =>
+    getStructuredDocumentPreviewHtml(...args) as unknown,
+}));
+vi.mock("@/eln/gallery/useReferencingInventoryItems", () => ({
+  default: (...args: Array<unknown>) =>
+    useReferencingInventoryItems(...args) as unknown,
+}));
+
+import DocumentSections from "../DocumentSections";
+
+const baseInfo: WorkspaceRecordInformation = {
+  id: 123,
+  oid: { idString: "SD123" },
+  name: "My experiment",
+  type: "Structured Document",
+  ownerFullName: "Ada Lovelace",
+  creationDateWithClientTimezoneOffset: "2026-05-01 10:00 +0000",
+  modificationDateWithClientTimezoneOffset: "2026-05-02 10:00 +0000",
+  version: 4,
+  status: "VIEW_MODE",
+  signatureStatus: "UNSIGNED",
+  tags: "alpha,beta",
+  path: "/Workspace/Project",
+  templateFormName: "Basic Document",
+  templateFormId: { idString: "FM7" },
+  templateName: "My template",
+  templateOid: "SD200",
+  linkedByCount: 2,
+  shared: false,
+  implicitlyShared: false,
+};
+
+beforeEach(() => {
+  getLinkedByRecords.mockReset();
+  getPublicLink.mockReset();
+  getStructuredDocumentPreviewHtml.mockReset();
+  useReferencingInventoryItems.mockReset();
+  // Sensible defaults; individual tests override.
+  getLinkedByRecords.mockResolvedValue({ readable: [], privateByOwner: [] });
+  getPublicLink.mockResolvedValue(null);
+  getStructuredDocumentPreviewHtml.mockResolvedValue("<p>preview body</p>");
+  useReferencingInventoryItems.mockReturnValue({
+    items: [],
+    loading: false,
+    errorMessage: null,
+  });
+});
+
+afterEach(cleanup);
+
+function renderDoc(
+  props: Partial<React.ComponentProps<typeof DocumentSections>> = {},
+) {
+  return render(
+    <ThemeProvider theme={materialTheme}>
+      <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+    </ThemeProvider>,
+  );
+}
+
+describe("DocumentSections (structured document)", () => {
+  it("renders the core metadata table rows", () => {
+    renderDoc();
+    expect(screen.getByText("My experiment")).toBeInTheDocument();
+    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
+    expect(screen.getByText("/Workspace/Project")).toBeInTheDocument();
+    // version
+    expect(screen.getByText("4")).toBeInTheDocument();
+    // status maps to a friendly label
+    expect(screen.getByText(/viewable & editable/i)).toBeInTheDocument();
+    // signature status maps to a friendly label
+    expect(screen.getByText(/^unsigned$/i)).toBeInTheDocument();
+    // tags are comma-spaced
+    expect(screen.getByText(/alpha, beta/i)).toBeInTheDocument();
+  });
+
+  it("renders the self link to /globalId/SD123", () => {
+    renderDoc();
+    const selfLink = screen.getByRole("link", { name: /SD123/ });
+    expect(selfLink).toHaveAttribute("href", "/globalId/SD123");
+  });
+
+  it("renders form id and template links", () => {
+    renderDoc();
+    const formLink = screen.getByRole("link", { name: /FM7/ });
+    expect(formLink).toHaveAttribute("href", "/globalId/FM7");
+    const templateLink = screen.getByRole("link", { name: /my template/i });
+    expect(templateLink).toHaveAttribute("href", "/globalId/SD200");
+  });
+
+  it("lazily loads the linked-by docs when 'Show linked docs' is clicked", async () => {
+    getLinkedByRecords.mockResolvedValue({
+      readable: [
+        { globalId: "SD11", name: "Doc one", ownerFullName: "Ada" },
+      ],
+      privateByOwner: [{ ownerFullName: "Grace Hopper", count: 2 }],
+    });
+    const user = userEvent.setup();
+    renderDoc();
+
+    expect(screen.getByText(/linked by 2 docs/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+
+    expect(getLinkedByRecords).toHaveBeenCalledWith(123);
+    expect(await screen.findByRole("link", { name: /SD11/ })).toHaveAttribute(
+      "href",
+      "/globalId/SD11",
+    );
+    expect(
+      screen.getByText(/2 private docs belonging to grace hopper/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders related inventory items from the referencing-items hook", () => {
+    useReferencingInventoryItems.mockReturnValue({
+      items: [
+        {
+          globalId: "SA1",
+          name: "Buffer",
+          type: "SAMPLE",
+          relationType: "IsPartOf",
+          permalinkHref: "/globalId/SA1",
+          linkableRecord: {},
+        },
+      ],
+      loading: false,
+      errorMessage: null,
+    });
+    renderDoc();
+    expect(useReferencingInventoryItems).toHaveBeenCalledWith("SD123");
+    const invLink = screen.getByRole("link", { name: /SA1/ });
+    expect(invLink).toHaveAttribute("href", "/globalId/SA1");
+    expect(screen.getByText(/buffer/i)).toBeInTheDocument();
+  });
+
+  it("shows sharing status when the document is shared", () => {
+    renderDoc({
+      info: {
+        ...baseInfo,
+        shared: true,
+        sharedGroupsAndAccess: { "Lab Group": "READ" },
+      },
+    });
+    expect(screen.getByText(/lab group/i)).toBeInTheDocument();
+  });
+
+  it("shows the public link when the document is published", async () => {
+    getPublicLink.mockResolvedValue("abc-123");
+    renderDoc();
+    expect(getPublicLink).toHaveBeenCalledWith("SD123");
+    const publicLink = await screen.findByRole("link", { name: /public link/i });
+    expect(publicLink).toHaveAttribute(
+      "href",
+      expect.stringContaining("/public/publishedView/document/abc-123"),
+    );
+  });
+
+  it("routes an unpublished entry in a published notebook to the notebook public view", async () => {
+    // The publiclink endpoint returns <parentLink>?initialRecordToDisplay=<docId>
+    // when the document itself is unpublished but its parent notebook is published;
+    // the ELN routes these to /notebook/, not /document/ (recordInfoPanel.js).
+    getPublicLink.mockResolvedValue("parent-link?initialRecordToDisplay=123");
+    renderDoc();
+    expect(
+      await screen.findByText(/in a published notebook/i),
+    ).toBeInTheDocument();
+    const publicLink = screen.getByRole("link", { name: /public link/i });
+    expect(publicLink).toHaveAttribute(
+      "href",
+      expect.stringContaining(
+        "/public/publishedView/notebook/parent-link?initialRecordToDisplay=123",
+      ),
+    );
+  });
+
+  it("renders a sandboxed same-origin preview iframe scaled to 0.25 for SD targets", async () => {
+    renderDoc();
+    const iframe = await screen.findByTitle(/preview/i);
+    expect(iframe).toBeInTheDocument();
+    expect(iframe.tagName).toBe("IFRAME");
+    // sandboxed WITHOUT allow-scripts but WITH allow-same-origin
+    const sandbox = iframe.getAttribute("sandbox") ?? "";
+    expect(sandbox).toContain("allow-same-origin");
+    expect(sandbox).not.toContain("allow-scripts");
+    expect(getStructuredDocumentPreviewHtml).toHaveBeenCalledWith(123);
+  });
+});
+
+describe("DocumentSections (notebook)", () => {
+  const notebookInfo: WorkspaceRecordInformation = {
+    ...baseInfo,
+    oid: { idString: "NB55" },
+    id: 55,
+    name: "Lab notebook",
+    type: "Notebook",
+    templateFormId: null,
+    templateName: null,
+    templateOid: null,
+  };
+
+  function renderNotebook() {
+    return render(
+      <ThemeProvider theme={materialTheme}>
+        <DocumentSections info={notebookInfo} isNotebook={true} />
+      </ThemeProvider>,
+    );
+  }
+
+  it("does not render the form/template rows for notebooks", () => {
+    renderNotebook();
+    expect(screen.queryByRole("link", { name: /FM7/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/form id/i)).not.toBeInTheDocument();
+  });
+
+  it("does not render an SD preview iframe for notebooks", () => {
+    renderNotebook();
+    expect(screen.queryByTitle(/preview/i)).not.toBeInTheDocument();
+    expect(getStructuredDocumentPreviewHtml).not.toHaveBeenCalled();
+  });
+
+  it("uses notebook wording in the sharing/publication section", async () => {
+    getPublicLink.mockResolvedValue(null);
+    renderNotebook();
+    expect(
+      await screen.findByText(/this notebook is not published/i),
+    ).toBeInTheDocument();
+  });
+});

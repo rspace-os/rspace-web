@@ -15,8 +15,13 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import { type ExtraInventoryLink } from "../../../../stores/definitions/ExtraField";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
-import { iconForInventoryGlobalId } from "./iconForGlobalId";
+import {
+  iconForGlobalId,
+  isInventoryGlobalId,
+  supportsVersionPin,
+} from "./iconForGlobalId";
 import InventoryInfoDialog from "./InventoryInfoDialog";
+import EnElnRecordInfoDialog from "./EnElnRecordInfoDialog";
 import VersionLockDialog from "./VersionLockDialog";
 
 export interface LinkFieldProps {
@@ -37,7 +42,12 @@ export interface LinkFieldProps {
 export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const versionLabel =
     props.link.versionPin != null ? `Pinned to v${props.link.versionPin}` : "Latest";
-  const iconData = iconForInventoryGlobalId(props.link.targetGlobalId);
+  const iconData = iconForGlobalId(props.link.targetGlobalId);
+  const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
+  // The inventory revision viewer is still deferred, so opening a version-pinned
+  // inventory target is disabled. ELN targets (SD audit view, NB, GL) can always open.
+  const openDisabled = props.link.versionPin != null && targetIsInventory;
+  const openLabel = targetIsInventory ? "Open in Inventory" : "Open";
   const [infoOpen, setInfoOpen] = useState(false);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   return (
@@ -73,7 +83,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             >
               <InfoOutlinedIcon fontSize="small" />
             </IconButton>
-            {props.editable && (
+            {props.editable && supportsVersionPin(props.link.targetGlobalId) && (
               <IconButton
                 size="small"
                 aria-label={`Pin version for ${props.link.targetGlobalId}`}
@@ -106,7 +116,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
         {!props.targetDeleted && (
           <Tooltip
             title={
-              props.link.versionPin != null
+              openDisabled
                 ? "Version-specific view is not yet supported in Inventory; opening would show the latest version. Tracked in RSDEV-1131 follow-up."
                 : ""
             }
@@ -116,10 +126,10 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
                 size="small"
                 startIcon={<OpenInNewIcon />}
                 onClick={props.onOpen}
-                disabled={props.link.versionPin != null}
-                aria-label="Open in Inventory"
+                disabled={openDisabled}
+                aria-label={openLabel}
               >
-                Open in Inventory
+                {openLabel}
               </Button>
             </span>
           </Tooltip>
@@ -135,11 +145,19 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           </Button>
         )}
       </CardActions>
-      <InventoryInfoDialog
-        open={infoOpen}
-        globalId={props.link.targetGlobalId}
-        onClose={() => setInfoOpen(false)}
-      />
+      {targetIsInventory ? (
+        <InventoryInfoDialog
+          open={infoOpen}
+          globalId={props.link.targetGlobalId}
+          onClose={() => setInfoOpen(false)}
+        />
+      ) : (
+        <EnElnRecordInfoDialog
+          open={infoOpen}
+          globalId={props.link.targetGlobalId}
+          onClose={() => setInfoOpen(false)}
+        />
+      )}
       <VersionLockDialog
         open={versionDialogOpen}
         globalId={props.link.targetGlobalId}

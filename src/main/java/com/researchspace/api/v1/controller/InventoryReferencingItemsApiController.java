@@ -39,6 +39,14 @@ public class InventoryReferencingItemsApiController implements InventoryReferenc
     return forItem(GlobalIdPrefix.IN, id, user);
   }
 
+  @Override
+  public ApiInventoryReferencingItems getReferencingItemsForGlobalId(
+      @PathVariable String globalId, @RequestAttribute(name = "user") User user) {
+    ApiInventoryReferencingItems result = new ApiInventoryReferencingItems();
+    result.setReferencingItems(inventoryLinkManager.findReferencingItems(globalId, user));
+    return result;
+  }
+
   private ApiInventoryReferencingItems forItem(GlobalIdPrefix prefix, Long id, User user) {
     String globalId = new GlobalIdentifier(prefix, id).getIdString();
     ApiInventoryReferencingItems result = new ApiInventoryReferencingItems();
