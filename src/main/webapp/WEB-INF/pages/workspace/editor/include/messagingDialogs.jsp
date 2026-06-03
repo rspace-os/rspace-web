@@ -6,6 +6,23 @@
     <div id="createRequestDlgContent"></div>
 </div>
 
+<%-- Dialogs for the ownCloud / NextCloud TinyMCE import plugins. Both plugins
+     share the same dialog ids, so render once when either integration is
+     configured for this deployment. --%>
+<c:if test="${not empty applicationScope['RS_DEPLOY_PROPS']['owncloud.url'] or not empty applicationScope['RS_DEPLOY_PROPS']['nextcloud.url']}">
+    <div id="owncloudDialog" title="Import From ownCloud / NextCloud"></div>
+
+    <div id="owncloudLoginDialog" title="Log in to ownCloud" style="display: none">
+       <div class="container">
+          <label for="owncloudUsernameField"><b>Username</b></label>
+          <input class="owncloudLoginField" id="owncloudUsernameField" type="text" placeholder="Enter Username" name="owncloudUsernameField" required>
+
+          <label for="owncloudPasswordField"><b>Password</b></label>
+          <input class="owncloudLoginField" id="owncloudPasswordField" type="password" placeholder="Enter Password" name="owncloudPasswordField" required>
+        </div>
+    </div>
+</c:if>
+
 <style>
     .extMessageRequestDlgContent {
         padding: 5px;
