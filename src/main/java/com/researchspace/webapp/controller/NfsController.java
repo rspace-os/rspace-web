@@ -271,6 +271,9 @@ public class NfsController extends BaseController {
       throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
+    if (fileStore.getFileSystem().isDisabled()) {
+      return getText("net.filestores.error.disabled");
+    }
 
     Long fileSystemId = fileStore.getFileSystem().getId();
     if (!nfsManager.checkIfUserLoggedIn(fileSystemId, nfsClients, user)) {

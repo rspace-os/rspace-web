@@ -243,6 +243,17 @@ public class NfsControllerTest extends SpringTransactionalTest {
     assertEquals(TEST_FILE_SYSTEM_URL, fileStoreInfo.getFileSystem().getUrl());
   }
 
+  @Test
+  public void prepareNfsFileForDownload_fileSystemDisabled_returnsDisabledMessage() {
+    // a disabled file system must surface a clear message rather than need.log.in
+    testNfsFileSystem.setDisabled(true);
+    String filePath = TEST_FILE_STORE_ID + ":someFile";
+
+    String result = controller.prepareNfsFileForDownload(filePath, null, request, principalStub);
+
+    assertEquals(getMsgFromResourceBundler("net.filestores.error.disabled"), result);
+  }
+
   private void loginTestUserToTestFileSystem() {
     // mock session and manager as if user logged in
     Map<Long, NfsClient> nfsClients = new HashMap<>();

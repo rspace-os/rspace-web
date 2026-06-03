@@ -2259,7 +2259,15 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
     if (fileSystemId != null) {
       fileSystem = getFileSystemById(fileSystemId);
     } else if (fileStoreId != null) {
-      fileSystem = getFileStoreById(fileStoreId).fileSystem;
+      var fileStore = getFileStoreById(fileStoreId);
+      fileSystem = fileStore && fileStore.fileSystem;
+    }
+
+    // A disabled/removed file system isn't in the client's list, so the lookup
+    // returns nothing; show a message rather than crashing on fileSystem.authType.
+    if (!fileSystem) {
+      apprise('This file system is no longer available; it may have been disabled or removed. Please contact your System Admin.');
+      return;
     }
 
     if (fileSystem.authType === "PASSWORD") {
