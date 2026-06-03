@@ -15,7 +15,7 @@ function Jove(): React.ReactNode {
           mode: "EXTERNAL",
           credentials: null,
         }}
-        explanatoryText="Embed JoVE and other video players (eg YouTube, TIB AV-Portal)"
+        explanatoryText="Embed JoVE and other video players (e.g., YouTube, TIB AV-Portal)."
         image={JoveIcon}
         color={LOGO_COLOR}
         update={() => {}}
