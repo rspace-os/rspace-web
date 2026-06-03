@@ -435,12 +435,10 @@ function refreshAllowlistRows() {
 function setAllowlistFields(suffix, value) {
     var isEveryone = value === '*';
     var hasNames = typeof value === 'string' && value !== '' && !isEveryone;
+    var isNobody = value === '' || value === null;
     $('#fileSystemLimit' + suffix + 'No').prop('checked', isEveryone);
     $('#fileSystemLimit' + suffix + 'Yes').prop('checked', hasNames);
-    if (suffix === 'Write') {
-        var isNobody = value === '' || value === null;
-        $('#fileSystemLimitWriteNobody').prop('checked', isNobody);
-    }
+    $('#fileSystemLimit' + suffix + 'Nobody').prop('checked', isNobody);
     $('#fileSystem' + suffix + 'Allowlist').val(hasNames ? value : '');
 }
 
