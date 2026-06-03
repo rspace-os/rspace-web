@@ -663,11 +663,22 @@ function initTinyMCE(selector) {
 			fileRepositoriesMenu += " optBox";
 		}
 		if (oneDriveEnabled) {
-			localTinymcesetup.external_plugins["onedrive"] = "/scripts/externalTinymcePlugins/onedrive/plugin.min.js";
-			localTinymcesetup.onedrive_client_id = properties['onedrive.client.id'];
-			localTinymcesetup.onedrive_redirect = properties['onedrive.redirect'];
-			enabledFileRepositories += " onedrive";
-			fileRepositoriesMenu += " optOneDrive";
+			const oneDriveClientId = properties['onedrive.client.id'];
+			const oneDriveRedirect = properties['onedrive.redirect'];
+			const hasValidOneDriveConfig =
+				typeof oneDriveClientId === "string" && oneDriveClientId.trim() !== "" &&
+				typeof oneDriveRedirect === "string" && oneDriveRedirect.trim() !== "";
+
+			if (!hasValidOneDriveConfig) {
+				apprise('OneDrive integration has not been set up ("clientId" or "redirectUri" missing). Contact your system administrator.');
+				oneDriveEnabled = false;
+			} else {
+				localTinymcesetup.external_plugins["onedrive"] = "/scripts/externalTinymcePlugins/onedrive/plugin.min.js";
+				localTinymcesetup.onedrive_client_id = oneDriveClientId;
+				localTinymcesetup.onedrive_redirect = oneDriveRedirect;
+				enabledFileRepositories += " onedrive";
+				fileRepositoriesMenu += " optOneDrive";
+			}
 		}
 		if (googleDriveEnabled) {
 			localTinymcesetup.external_plugins["googledrive"] = "/scripts/externalTinymcePlugins/googledrive/plugin.min.js";
