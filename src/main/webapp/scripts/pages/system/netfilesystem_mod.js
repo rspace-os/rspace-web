@@ -303,7 +303,14 @@ function saveFileSystem() {
         loadNetFileSystemsList();
     });
     jqxhr.fail(function () {
-         RS.ajaxFailed("Couldn't save File System", false, jqxhr);
+        // Show the server's error message rather than letting RS.ajaxFailed dump the
+        // raw JSON body (toastmessage renders HTML, so escape it).
+        var errorMsg = RS.extractAjaxErrorMessage(jqxhr);
+        if (errorMsg) {
+            showStickyError(RS.escapeHtml(errorMsg.trim()).replace(/\n/g, '<br/>'));
+        } else {
+            RS.ajaxFailed("Couldn't save File System", false, jqxhr);
+        }
     });
     jqxhr.always(function () {
          RS.unblockPage();
@@ -472,6 +479,10 @@ function showAllowlistWarnings(result) {
 
 function showStickyWarning(text) {
     $().toastmessage('showToast', { text: text, type: 'warning', sticky: true });
+}
+
+function showStickyError(text) {
+    $().toastmessage('showToast', { text: text, type: 'error', sticky: true });
 }
 
 $(document).ready(function() {	
