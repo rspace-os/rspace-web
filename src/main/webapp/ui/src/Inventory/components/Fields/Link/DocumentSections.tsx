@@ -24,6 +24,12 @@ export interface DocumentSectionsProps {
   info: WorkspaceRecordInformation;
   /** True for notebook (NB) targets; false for structured documents (SD). */
   isNotebook: boolean;
+  /**
+   * When the link is pinned to a specific SD version, the version number. When set, the
+   * dialog is a "version view": a warning header is shown and the preview is hidden,
+   * mirroring the ELN record-info panel.
+   */
+  pinnedVersion?: number | null;
 }
 
 // ELN status/signature labels (mirrors recordInfoPanel.js).
@@ -403,20 +409,48 @@ function DocumentPreview({
 export default function DocumentSections({
   info,
   isNotebook,
+  pinnedVersion,
 }: DocumentSectionsProps): React.ReactElement {
   const recordTypeName = isNotebook ? "notebook" : "document";
   const isStructuredDocument = !isNotebook;
+  const isVersionView = pinnedVersion != null;
+  // The version-stripped global id, used for the "latest" link in the version header.
+  const unversionedGlobalId = info.oid.idString.replace(/v\d+$/, "");
   const tags = formatTags(info.tags);
 
   return (
     <Box>
+      {isVersionView ? (
+        <Box
+          role="note"
+          sx={{
+            border: "1px solid",
+            borderColor: "warning.main",
+            borderRadius: 1,
+            p: 1,
+            mb: 1,
+          }}
+        >
+          <Typography variant="body2">
+            The information below describes{" "}
+            <strong>version {pinnedVersion}</strong> of a document{" "}
+            {unversionedGlobalId}, which may not be the latest version.
+          </Typography>
+        </Box>
+      ) : null}
       <Typography variant="h6" component="div" sx={{ mb: 1 }}>
         {info.name}
       </Typography>
       <Table size="small">
         <TableBody>
           <MetaRow label="Unique Id">
-            <GlobalIdLink globalId={info.oid.idString} />
+            <GlobalIdLink
+              globalId={
+                isVersionView
+                  ? `${unversionedGlobalId}v${pinnedVersion}`
+                  : info.oid.idString
+              }
+            />
           </MetaRow>
           <MetaRow label="Type">{info.type}</MetaRow>
           {info.path ? <MetaRow label="Path">{info.path}</MetaRow> : null}
@@ -470,7 +504,9 @@ export default function DocumentSections({
 
       <SharingAndPublication info={info} isNotebook={isNotebook} />
 
-      {isStructuredDocument && <DocumentPreview documentId={info.id} />}
+      {isStructuredDocument && !isVersionView && (
+        <DocumentPreview documentId={info.id} />
+      )}
     </Box>
   );
 }

@@ -8,8 +8,18 @@ import materialTheme from "../../../../../theme";
 // the shell fetches record information, branches by global-id prefix, and renders
 // the correct per-type body. Stub both so the shell test stays focused.
 vi.mock("../DocumentSections", () => ({
-  default: ({ info }: { info: { oid: { idString: string } } }) => (
-    <div data-testid="document-sections" data-globalid={info.oid.idString} />
+  default: ({
+    info,
+    pinnedVersion,
+  }: {
+    info: { oid: { idString: string } };
+    pinnedVersion?: number | null;
+  }) => (
+    <div
+      data-testid="document-sections"
+      data-globalid={info.oid.idString}
+      data-pinned-version={pinnedVersion ?? ""}
+    />
   ),
 }));
 
@@ -75,6 +85,31 @@ describe("EnElnRecordInfoDialog", () => {
     expect(url).toContain("/workspace/getRecordInformation?recordId=123");
   });
 
+  it("fetches the pinned version when versionPin is set", async () => {
+    fetchMock.mockResponse(recordInfoResponse({ version: 4 }));
+
+    renderDialog({ globalId: "SD123", versionPin: 4 });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("recordId=123");
+    expect(url).toContain("version=4");
+  });
+
+  it("does not send a version param when the link is not pinned", async () => {
+    fetchMock.mockResponse(recordInfoResponse());
+
+    renderDialog({ globalId: "SD123" });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).not.toContain("version=");
+  });
+
   it("renders the DocumentSections body for an SD target", async () => {
     fetchMock.mockResponse(recordInfoResponse());
 
@@ -84,6 +119,32 @@ describe("EnElnRecordInfoDialog", () => {
     expect(body).toBeInTheDocument();
     expect(body).toHaveAttribute("data-globalid", "SD123");
     expect(screen.queryByTestId("gallery-sections")).not.toBeInTheDocument();
+  });
+
+  it("forwards the pinned version into the document body", async () => {
+    fetchMock.mockResponse(recordInfoResponse({ version: 4 }));
+
+    renderDialog({ globalId: "SD123", versionPin: 4 });
+
+    const body = await screen.findByTestId("document-sections");
+    expect(body).toHaveAttribute("data-pinned-version", "4");
+  });
+
+  it("ignores a versionPin on a non-SD (NB) target", async () => {
+    // NB/GL are not versionable; a stray pin must not send version= nor show version view.
+    fetchMock.mockResponse(
+      recordInfoResponse({ oid: { idString: "NB55" }, type: "Notebook" }),
+    );
+
+    renderDialog({ globalId: "NB55", versionPin: 9 });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).not.toContain("version=");
+    const body = await screen.findByTestId("document-sections");
+    expect(body).toHaveAttribute("data-pinned-version", "");
   });
 
   it("renders the DocumentSections body for a notebook (NB) target", async () => {
@@ -126,6 +187,25 @@ describe("EnElnRecordInfoDialog", () => {
     expect(
       await screen.findByText(/not available.*permission|could not.*load|not found/i),
     ).toBeInTheDocument();
+  });
+
+  it("shows a version-specific error with a latest link when the pinned version cannot be loaded", async () => {
+    fetchMock.mockResponse(
+      JSON.stringify({
+        data: null,
+        error: { errorMessages: ["Version not found"] },
+        success: false,
+      }),
+      { status: 404, statusText: "Not Found" },
+    );
+
+    renderDialog({ globalId: "SD599", versionPin: 4 });
+
+    expect(
+      await screen.findByText(/version 4 of SD599 is no longer available/i),
+    ).toBeInTheDocument();
+    const latestLink = screen.getByRole("link", { name: /latest version/i });
+    expect(latestLink).toHaveAttribute("href", "/globalId/SD599");
   });
 
   it("links the Open button to /globalId/<globalId> in a new tab", async () => {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
@@ -204,6 +204,43 @@ describe("DocumentSections (structured document)", () => {
     expect(sandbox).toContain("allow-same-origin");
     expect(sandbox).not.toContain("allow-scripts");
     expect(getStructuredDocumentPreviewHtml).toHaveBeenCalledWith(123);
+  });
+});
+
+describe("DocumentSections (version-pinned SD)", () => {
+  function renderPinned(
+    props: Partial<React.ComponentProps<typeof DocumentSections>> = {},
+  ) {
+    // getRecordInformation?version=N returns a VERSIONED oid (getOidWithVersion()),
+    // so the fixture mirrors production; the component strips the suffix for the
+    // "latest" link and reconstructs the versioned id for the Unique Id row.
+    return renderDoc({
+      info: { ...baseInfo, oid: { idString: "SD599v3" }, version: 3 },
+      pinnedVersion: 3,
+      ...props,
+    });
+  }
+
+  it("shows the 'may not be the latest version' header with the doc id as plain text (no link) when pinned", () => {
+    renderPinned();
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent(
+      /describes version 3 of a document SD599, which may not be the latest version/i,
+    );
+    // The document id in the warning is plain text, not a link to the latest version.
+    expect(within(note).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("hides the preview in version view (mirrors the ELN)", () => {
+    renderPinned();
+    expect(screen.queryByText(/^preview$/i)).not.toBeInTheDocument();
+    expect(getStructuredDocumentPreviewHtml).not.toHaveBeenCalled();
+  });
+
+  it("shows the versioned global id in the Unique Id row when pinned", () => {
+    renderPinned();
+    const uniqueIdLink = screen.getByRole("link", { name: "SD599v3" });
+    expect(uniqueIdLink).toHaveAttribute("href", "/globalId/SD599v3");
   });
 });
 

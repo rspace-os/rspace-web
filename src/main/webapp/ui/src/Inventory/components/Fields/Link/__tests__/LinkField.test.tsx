@@ -13,9 +13,21 @@ vi.mock("../InventoryInfoDialog", () => ({
 }));
 
 vi.mock("../EnElnRecordInfoDialog", () => ({
-  default: ({ open, globalId }: { open: boolean; globalId: string }) =>
+  default: ({
+    open,
+    globalId,
+    versionPin,
+  }: {
+    open: boolean;
+    globalId: string;
+    versionPin?: number | null;
+  }) =>
     open ? (
-      <div data-testid="eln-info-dialog" data-globalid={globalId} />
+      <div
+        data-testid="eln-info-dialog"
+        data-globalid={globalId}
+        data-version-pin={versionPin == null ? "" : String(versionPin)}
+      />
     ) : null,
 }));
 
@@ -285,6 +297,17 @@ describe("LinkField", () => {
     expect(
       screen.getByRole("button", { name: /^open$/i }),
     ).toBeEnabled();
+  });
+
+  it("passes the link's versionPin to the ELN record-info dialog", async () => {
+    const user = userEvent.setup();
+    renderField({ link: { ...baseLink, targetGlobalId: "SD3", versionPin: 2 } });
+    const infoButton = screen.getByRole("button", {
+      name: /show info for sd3/i,
+    });
+    await user.click(infoButton);
+    const dialog = screen.getByTestId("eln-info-dialog");
+    expect(dialog).toHaveAttribute("data-version-pin", "2");
   });
 
   it("shows the info button for ELN targets and opens the ELN record-info dialog (not the inventory dialog)", async () => {

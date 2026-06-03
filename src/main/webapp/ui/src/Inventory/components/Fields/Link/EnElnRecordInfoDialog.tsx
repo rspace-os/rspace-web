@@ -7,6 +7,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Skeleton from "@mui/material/Skeleton";
 import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RecordTypeIcon from "@/components/RecordTypeIcon";
@@ -18,6 +19,11 @@ import GallerySections from "./GallerySections";
 export interface EnElnRecordInfoDialogProps {
   open: boolean;
   globalId: string;
+  /**
+   * When the link is pinned to a specific version of an SD target, the version number
+   * (the `vN` in `SDxxxvN`). null/undefined means the link points at the latest version.
+   */
+  versionPin?: number | null;
   onClose: () => void;
 }
 
@@ -40,10 +46,18 @@ function numericIdOf(globalId: string): number | null {
  * fresh boundary is mounted each time the dialog is opened, clearing any prior error.
  */
 class DialogErrorBoundary extends React.Component<
-  { children: React.ReactNode },
+  {
+    children: React.ReactNode;
+    globalId: string;
+    versionPin?: number | null;
+  },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode }) {
+  constructor(props: {
+    children: React.ReactNode;
+    globalId: string;
+    versionPin?: number | null;
+  }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -54,6 +68,24 @@ class DialogErrorBoundary extends React.Component<
 
   render(): React.ReactNode {
     if (this.state.hasError) {
+      // A pinned link that can no longer resolve its version gets a specific message
+      // plus a link to the latest, rather than the generic not-available text.
+      if (this.props.versionPin != null) {
+        return (
+          <Alert severity="error">
+            Version {this.props.versionPin} of {this.props.globalId} is no longer
+            available.{" "}
+            <Link
+              href={`/globalId/${this.props.globalId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View the latest version
+            </Link>
+            .
+          </Alert>
+        );
+      }
       return <Alert severity="error">{UNAVAILABLE_MESSAGE}</Alert>;
     }
     return this.props.children;
@@ -68,12 +100,15 @@ class DialogErrorBoundary extends React.Component<
 function DialogBody({
   globalId,
   recordId,
+  versionPin,
 }: {
   globalId: string;
   recordId: number;
+  versionPin?: number | null;
 }): React.ReactElement {
   const { data: info, refetch } = useGetWorkspaceRecordInformationAjaxQuery({
     recordId,
+    version: versionPin ?? undefined,
   });
   const prefix = prefixOf(globalId);
   if (prefix === "GL") {
@@ -86,7 +121,13 @@ function DialogBody({
       />
     );
   }
-  return <DocumentSections info={info} isNotebook={prefix === "NB"} />;
+  return (
+    <DocumentSections
+      info={info}
+      isNotebook={prefix === "NB"}
+      pinnedVersion={versionPin}
+    />
+  );
 }
 
 /**
@@ -122,6 +163,9 @@ export default function EnElnRecordInfoDialog(
 
   const iconData = iconForGlobalId(props.globalId);
   const recordId = numericIdOf(props.globalId);
+  // Only SD documents are versionable; ignore a pin on any other target (NB/GL).
+  const effectiveVersionPin =
+    prefixOf(props.globalId) === "SD" ? props.versionPin ?? null : null;
 
   return (
     <Dialog
@@ -142,13 +186,21 @@ export default function EnElnRecordInfoDialog(
           <Alert severity="error">{UNAVAILABLE_MESSAGE}</Alert>
         ) : (
           <QueryClientProvider client={queryClient}>
-            <DialogErrorBoundary key={`${props.globalId}-${openCount}`}>
+            <DialogErrorBoundary
+              key={`${props.globalId}-${effectiveVersionPin ?? "latest"}-${openCount}`}
+              globalId={props.globalId}
+              versionPin={effectiveVersionPin}
+            >
               <Suspense
                 fallback={
                   <Skeleton variant="rectangular" width="100%" height={240} />
                 }
               >
-                <DialogBody globalId={props.globalId} recordId={recordId} />
+                <DialogBody
+                  globalId={props.globalId}
+                  recordId={recordId}
+                  versionPin={effectiveVersionPin}
+                />
               </Suspense>
             </DialogErrorBoundary>
           </QueryClientProvider>

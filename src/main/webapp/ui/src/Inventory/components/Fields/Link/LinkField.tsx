@@ -155,6 +155,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
         <EnElnRecordInfoDialog
           open={infoOpen}
           globalId={props.link.targetGlobalId}
+          versionPin={props.link.versionPin}
           onClose={() => setInfoOpen(false)}
         />
       )}
