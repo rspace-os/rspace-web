@@ -10,26 +10,26 @@ function Jove(): React.ReactNode {
   return (
     <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
       <IntegrationCard
-        name="JoVE"
+        name="Jove"
         integrationState={{
           mode: "EXTERNAL",
           credentials: null,
         }}
-        explanatoryText="Watch, reference, and teach research methods and technologies through detailed process videos."
+        explanatoryText="and other video players eg YouTube, TIB AV-Portal"
         image={JoveIcon}
         color={LOGO_COLOR}
         update={() => {}}
         usageText="Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
-        helpLinkText="JoVE integration docs"
+        helpLinkText="video integration docs"
         website="jove.com"
-        docLink="jove"
+        docLink="videoIntegration"
         setupSection={
           <Stack direction="column" gap={2}>
             <ol>
               <li>
-                Open a document in the Documents Editor and click the <strong>Video</strong>
-                button in the editor toolbar, the insert menu, or the slash
-                menu.
+                Open a document in the Documents Editor and click the{" "}
+                <strong>Video</strong> button in the editor toolbar, the insert
+                menu, or the slash menu.
               </li>
               <li>
                 Paste a full JoVE URL from a supported <code>jove.com</code>{" "}
