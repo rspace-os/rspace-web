@@ -270,6 +270,12 @@ describe("TinyMCE video embed plugin", () => {
         '<div class="embedIframeDiv mceNonEditable"><iframe src="https://www.youtube-nocookie.com/embed/bhRExXIGxek" width="560" height="315" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><p>&nbsp;</p>',
     },
     {
+      url: "https://www.youtube-nocookie.com/watch?v=bhRExXIGxek&t=5s",
+      feedback: "YouTube Privacy-Enhanced Mode video detected.",
+      expected:
+        '<div class="embedIframeDiv mceNonEditable"><iframe src="https://www.youtube-nocookie.com/embed/bhRExXIGxek" width="560" height="315" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><p>&nbsp;</p>',
+    },
+    {
       url: "https://app.jove.com/v/60908/using-an-automated-hirschberg-test-app",
       feedback: "JoVE video detected.",
       expected:
