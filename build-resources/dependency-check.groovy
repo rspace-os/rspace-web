@@ -34,6 +34,15 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'dbd7e93e-36f3-4ca0-8f01-2b142585abcc', variable: 'NVD_API_KEY')]) {
 
+                    /* Fail fast if a scan input is missing. dependency-check completes
+                       successfully with an empty report when --scan matches nothing, and the
+                       publisher's failedNew* thresholds are baseline-relative, so an empty scan
+                       passes green and coverage silently disappears. Guard the inputs explicitly. */
+                    sh '''
+                        ls ./target/*.war
+                        test -f ./src/main/webapp/ui/package-lock.json
+                    '''
+
                     /* Scan the specific dependency sources, not the whole tree (which double-counts):
                        - './target/*.war' is what ships to production. It carries the runtime Java
                          deps (WEB-INF/lib) and the vendored/legacy JS bundled as static resources,
