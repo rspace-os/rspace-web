@@ -1,0 +1,15 @@
+# MariaDB tuning for local RSpace development.
+#
+# Mounted read-only at /etc/mysql/conf.d/rspace.cnf. Mirrors the relevant
+# settings from production rspace-docker (utf8mb4 + strict sql-mode) so local
+# behaviour matches deployments, with dev-appropriate limits.
+[mariadbd]
+character-set-client-handshake = FALSE
+character-set-server           = utf8mb4
+collation-server               = utf8mb4_unicode_ci
+sql-mode = STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+max_allowed_packet             = 1G
+max_connections                = 1000
+# Containers talk over a Docker network; skip reverse-DNS for faster, simpler
+# host matching (the dev user is granted on '%').
+skip-name-resolve

@@ -192,6 +192,35 @@ This just runs plain Junit tests and is much faster to run:
 
 ## Running RSpace server
 
+### (Experimental) Run the whole stack in Docker
+
+> **Experimental.** This is a newer, convenience-focused workflow and is not yet
+> the officially supported way to run RSpace from source. If you hit problems,
+> fall back to the manual Maven/Jetty workflow described below. Feedback welcome.
+
+If you want a complete, running RSpace (database + backend + frontend) without
+installing Java, Maven, Node, or MariaDB locally, use the Dockerized dev stack
+in [`docker/dev/`](/docker/dev/README.md). From inside your checkout (or any git
+worktree):
+
+```bash
+./docker/dev/rspace-dev up      # build images, start db + backend + frontend
+./docker/dev/rspace-dev logs app   # watch backend startup (first boot is slow)
+```
+
+It boots the same workflow described below, just containerized: the worktree
+source is bind-mounted in (frontend changes hot-reload; Java changes apply via
+`./docker/dev/rspace-dev reload`), and each git worktree gets its own isolated
+instance with its own database and auto-assigned host ports, so several can run
+at once. The launcher prints the URL to open and the test logins. See
+[docker/dev/README.md](/docker/dev/README.md) for the full command set and
+caveats.
+
+Prerequisites: Docker Engine + Docker Compose v2 (Docker Desktop works). Only
+needed for this option; the manual workflow below does not use Docker.
+
+The rest of this section describes the manual (non-Docker) workflow.
+
 ### Launch RSpace with Maven and Jetty
 
 When starting RSpace for the first time use the following command: 

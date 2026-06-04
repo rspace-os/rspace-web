@@ -1,0 +1,23 @@
+# Frontend dev image: Node 24 + pnpm (via corepack).
+#
+# Like the app image, this holds no source — the worktree is bind-mounted at
+# /rspace at runtime. The entrypoint installs dependencies into a named volume
+# and starts the Vite dev server with HMR.
+ARG NODE_IMAGE=node:24-bookworm-slim
+FROM ${NODE_IMAGE}
+
+# Enable corepack so the repo's pinned pnpm (packageManager in package.json) is
+# used. git is occasionally needed by package install scripts. Disabling the
+# corepack download prompt keeps the first non-interactive pnpm run from hanging.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/* \
+    && corepack enable
+
+COPY entrypoint-frontend.sh /usr/local/bin/entrypoint-frontend.sh
+RUN chmod +x /usr/local/bin/entrypoint-frontend.sh
+
+WORKDIR /rspace
+EXPOSE 5173
+ENTRYPOINT ["/usr/local/bin/entrypoint-frontend.sh"]
