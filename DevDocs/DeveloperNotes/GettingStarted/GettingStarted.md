@@ -90,8 +90,7 @@ mvn clean package -DgenerateReactDist -DskipTests=true \
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
 which installs Node/npm locally, runs `npm ci`, and runs the Vite production build,
 bundling the resulting `dist/` files into the WAR. Without this flag the frontend is
-not built, so any command that produces a deployable WAR must pass it (the Jenkins
-packaging stages do).
+not built.
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
@@ -266,14 +265,6 @@ to cache.
 
 Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`
 i.e. pass a `-Dspring.profiles.active=prod` parameter.
-
-**NOTE:** when you want Jetty to serve a freshly built production frontend bundle
-(i.e. running without `-DreactDevMode=true`), add `-DgenerateReactDist` to the
-command, e.g. `mvn jetty:run -DgenerateReactDist -Dspring.profiles.active=prod`.
-The frontend build lives in the opt-in `generateReactDistFiles` profile and is not
-run by default, so without the flag Jetty would serve a stale or missing bundle. The
-everyday dev loop that passes `-DreactDevMode=true` does not need this, because that
-flag makes Jetty proxy frontend requests to the local Vite dev server instead.
 
 Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
 That means deployment properties that are not explicitly set in your `deployment.properties` file may have unexpected values. 
