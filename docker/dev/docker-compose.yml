@@ -142,8 +142,13 @@ volumes:
   filestore:
   node-modules:
   # Shared across all worktrees (fixed names) to avoid re-downloading Maven
-  # artifacts and npm packages for every worktree.
+  # artifacts and npm packages for every worktree. Declared `external` so that
+  # `rspace-dev nuke` (docker compose down -v) NEVER removes them — tearing down
+  # one worktree must not wipe the cache the others rely on. The launcher creates
+  # them on `up`.
   m2-repo:
+    external: true
     name: rspace-dev-m2-repo
   pnpm-store:
+    external: true
     name: rspace-dev-pnpm-store

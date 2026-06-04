@@ -81,6 +81,49 @@ Subsequent `up`s reuse the existing database and are much faster.
 `rspace-dev compose <args>` passes anything straight through to
 `docker compose` for this stack if you need an escape hatch.
 
+## Destroying a worktree's instance
+
+Two levels, both scoped to the worktree you run them from (they never touch
+another worktree's instance):
+
+```bash
+# Stop it (reversible): remove the containers, KEEP this worktree's database,
+# node_modules, build output, and the shared caches. `up` later resumes fast.
+./docker/dev/rspace-dev down
+
+# Destroy it: remove the containers AND this worktree's volumes — database (all
+# local data), node_modules, build output, search indices, and filestore. The
+# next `up` re-initialises the database from scratch.
+./docker/dev/rspace-dev nuke
+```
+
+`nuke` is `docker compose down --volumes` under the hood. It removes only the
+per-worktree volumes (named `rspace-<worktree>_*`). The **shared** Maven (`.m2`)
+and pnpm caches (`rspace-dev-m2-repo`, `rspace-dev-pnpm-store`) are declared
+`external`, so `nuke` never deletes them and other worktrees are unaffected.
+
+Verify it is gone:
+
+```bash
+./docker/dev/rspace-dev compose ps          # should list no containers
+docker volume ls | grep "$(basename "$(git rev-parse --show-toplevel)")"   # none after nuke
+```
+
+Going further (rarely needed):
+
+```bash
+# Remove the locally-built dev images too (next up rebuilds them):
+docker image rm rspace-dev-app:local rspace-dev-frontend:local
+
+# Remove the SHARED caches — affects EVERY worktree (they will re-download
+# Maven/npm deps on next up). Only do this to reclaim disk or force a clean cache:
+docker volume rm rspace-dev-m2-repo rspace-dev-pnpm-store
+```
+
+> After `nuke`, the generated `docker/dev/.env` (ports for this worktree) is
+> left in place so the instance keeps the same ports if you `up` again. Delete
+> it if you also want the ports re-allocated.
+
 ## How source sync works
 
 The whole worktree is bind-mounted at `/rspace` in the `app` and `frontend`

@@ -146,8 +146,17 @@ print_urls() {
 EOF
 }
 
+# The Maven (.m2) and pnpm caches are shared across worktrees and declared
+# `external` in the compose file (so `nuke` can't delete them). external volumes
+# are not auto-created, so create them here (idempotent).
+ensure_shared_volumes() {
+  docker volume create rspace-dev-m2-repo >/dev/null
+  docker volume create rspace-dev-pnpm-store >/dev/null
+}
+
 cmd_up() {
   ensure_env
+  ensure_shared_volumes
   local fresh="false"
   [ "${1:-}" = "--fresh" ] && fresh="true"
 
