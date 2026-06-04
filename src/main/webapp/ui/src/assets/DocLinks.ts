@@ -55,7 +55,7 @@ const docLinks: Record<string, URL> = {
   github: mkDocLink("y2080yw30x"),
   galaxy: mkDocLink("zzsl46jo5y"),
   cloudstorage: mkDocLink("j2z5f5r90q"),
-  jove: mkDocLink("mopbqzzdf5"),
+  videoIntegration: mkDocLink("cdzdub1ykw"),
   jupyter: mkDocLink("gg0ao0rqpt"),
   chemistry: mkDocLink("wfxm4xwtio"),
   pubchem: mkDocLink(

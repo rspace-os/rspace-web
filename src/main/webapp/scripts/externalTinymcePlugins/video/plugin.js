@@ -12,6 +12,16 @@ tinymce.PluginManager.add("videoembed", function (editor) {
     return /^https?:$/i.test(parsedUrl.protocol);
   }
 
+  function getWatchOrEmbedVideoId(parsedUrl) {
+    const watchId = parsedUrl.searchParams.get("v");
+    if (watchId && /^[\w-]+$/.test(watchId)) {
+      return watchId;
+    }
+
+    const pathMatch = parsedUrl.pathname.match(/^\/(?:embed|shorts)\/([\w-]+)\/?$/);
+    return pathMatch ? pathMatch[1] : null;
+  }
+
   function getYouTubeVideoId(parsedUrl) {
     if (isHost(parsedUrl.hostname, "youtu.be")) {
       const pathMatch = parsedUrl.pathname.match(/^\/([\w-]+)\/?$/);
@@ -22,13 +32,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
       return null;
     }
 
-    const watchId = parsedUrl.searchParams.get("v");
-    if (watchId && /^[\w-]+$/.test(watchId)) {
-      return watchId;
-    }
-
-    const pathMatch = parsedUrl.pathname.match(/^\/(?:embed|shorts)\/([\w-]+)\/?$/);
-    return pathMatch ? pathMatch[1] : null;
+    return getWatchOrEmbedVideoId(parsedUrl);
   }
 
   function parseYouTube(parsedUrl) {
@@ -58,8 +62,8 @@ tinymce.PluginManager.add("videoembed", function (editor) {
       return null;
     }
 
-    const pathMatch = parsedUrl.pathname.match(/^\/embed\/([\w-]+)\/?$/);
-    if (!pathMatch) {
+    const videoId = getWatchOrEmbedVideoId(parsedUrl);
+    if (!videoId) {
       return null;
     }
 
@@ -67,7 +71,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
       valid: true,
       provider: "YouTube Privacy-Enhanced Mode",
       iframe: {
-        src: "https://www.youtube-nocookie.com/embed/" + pathMatch[1],
+        src: "https://www.youtube-nocookie.com/embed/" + videoId,
         width: "560",
         height: "315",
         title: "YouTube video player",
