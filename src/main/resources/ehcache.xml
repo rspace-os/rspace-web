@@ -39,6 +39,25 @@
     </resources>
   </cache>
 
+  <!--
+    Hibernate 6 requires @Cache to be declared on the root entity of an inheritance
+    hierarchy, so it was moved from User onto AbstractUserOrGroupImpl (the
+    TABLE_PER_CLASS root of User and Group). The whole hierarchy is therefore cached
+    in a single region named after the root entity. Sizing matches the legacy User
+    region; the heap is bumped from 1000 to 1500 because Group entities now share this
+    region with User (both draw ids from the same uog_gen sequence, so keys never
+    collide). The com.researchspace.model.User region above is now unused for the
+    entity itself but its collection regions (.roles / .fullName) remain in use.
+  -->
+  <cache alias="com.researchspace.model.AbstractUserOrGroupImpl">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1500</heap>
+    </resources>
+  </cache>
+
   <cache alias="pubchemResults">
     <expiry>
       <ttl unit="seconds">3600</ttl>
@@ -66,7 +85,7 @@
     </resources>
   </cache>
 
-  <cache alias="com.researchspace.model.archive.ArchivalCheckSum">
+  <cache alias="com.researchspace.model.ArchivalCheckSum">
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
@@ -75,9 +94,12 @@
     </resources>
   </cache>
 
+  <!--
+    No key-type/value-type: Hibernate 6 L2 entity keys are BasicCacheKeyImplementation
+    (not java.lang.Long), so a typed region throws ClassCastException at runtime. See
+    RSDEV-444 review B4; EhcacheL2RuntimeTest guards that these regions accept composite keys.
+  -->
   <cache alias="com.researchspace.model.ImageBlob">
-    <key-type>java.lang.Long</key-type>
-    <value-type>com.researchspace.model.ImageBlob</value-type>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
@@ -239,7 +261,15 @@
     </resources>
   </cache>
 
-  <cache alias="com.researchspace.model.record.RSForm">
+  <!--
+    Hibernate 6 requires @Cache on the root entity of an inheritance hierarchy, so it
+    was moved from RSForm onto AbstractForm (the SINGLE_TABLE root of the form
+    hierarchy). The whole hierarchy is cached in a single region named after the root
+    entity, so this region is renamed from com.researchspace.model.record.RSForm to
+    com.researchspace.model.record.AbstractForm. Sizing is unchanged from the legacy
+    RSForm region. (Same pattern as the User -> AbstractUserOrGroupImpl move above.)
+  -->
+  <cache alias="com.researchspace.model.record.AbstractForm">
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
@@ -257,9 +287,8 @@
     </resources>
   </cache>
 
+  <!-- No key-type/value-type: Hibernate 6 L2 keys are BasicCacheKeyImplementation. See review B4. -->
   <cache alias="com.researchspace.model.FileProperty">
-    <key-type>java.lang.Long</key-type>
-    <value-type>com.researchspace.model.FileProperty</value-type>
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
@@ -341,6 +370,48 @@
   </cache>
 
   <cache alias="com.researchspace.model.oauth.UserConnection">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <!--
+    Entity regions for @Cache-annotated entities that previously had no explicit region.
+    Under Hibernate 6 create-warn these were silently given untuned default regions, losing
+    the legacy defaultCache template behaviour. Added with conservative sizing. See RSDEV-444
+    review M15; EhcacheRegionConfigTest guards that every @Cache entity has a region here.
+  -->
+  <cache alias="com.researchspace.model.UserApiKey">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <cache alias="com.researchspace.model.externalWorkflows.ExternalWorkFlow">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <cache alias="com.researchspace.model.oauth.OAuthApp">
+    <expiry>
+      <ttl unit="seconds">3600</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <cache alias="com.researchspace.model.oauth.OAuthToken">
     <expiry>
       <ttl unit="seconds">3600</ttl>
     </expiry>
