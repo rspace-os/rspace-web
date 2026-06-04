@@ -7,7 +7,9 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
+import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -64,6 +66,9 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(Long.valueOf(1L), sampleV1.getVersion());
     assertNotNull(sampleV1.getRevisionId());
     assertEquals("SA" + createdSample.getId() + "v1", sampleV1.getGlobalId());
+    // permitted actions are evaluated against the live record: the owner gets a full view,
+    // not the cleared public one
+    assertTrue(sampleV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
 
     // the current version resolves to the live record, not flagged historical
     result =
@@ -123,6 +128,21 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(subSampleV1.isHistoricalVersion());
     assertEquals(Long.valueOf(1L), subSampleV1.getVersion());
     assertEquals("SS" + subSampleId + "v1", subSampleV1.getGlobalId());
+    assertTrue(subSampleV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+
+    // the current version resolves to the live record; the subsample sits in the user's
+    // workbench, so this exercises lazy parent-container relations across the
+    // controller-to-manager transaction boundary (RSDEV-1141)
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId + "/versions/2", anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSubSample subSampleV2 = getFromJsonResponseBody(result, ApiSubSample.class);
+    assertEquals("subsample renamed", subSampleV2.getName());
+    assertEquals(false, subSampleV2.isHistoricalVersion());
 
     this.mockMvc
         .perform(
@@ -139,14 +159,16 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
 
     ApiContainer container = createBasicContainerForUser(anyUser, "version one container");
 
-    // edit the container, bumping it to version 2
+    // edit the container, bumping it to version 2; the locations image makes the audit
+    // snapshot carry a lazy FileProperty that link building must survive (RSDEV-1141)
     this.mockMvc
         .perform(
             createBuilderForPutWithJSONBody(
                 apiKey,
                 "/containers/" + container.getId(),
                 anyUser,
-                "{ \"name\": \"version two container\" }"))
+                "{ \"name\": \"version two container\","
+                    + " \"newBase64LocationsImage\":\"data:image/jpeg;base64,dummy123\" }"))
         .andExpect(status().isOk())
         .andReturn();
 
@@ -165,6 +187,11 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
     assertEquals(2, history.getRevisions().size());
 
+    // the version-2 snapshot has a locations image, exposed as a link
+    assertTrue(
+        history.getRevisions().get(1).getRecord().getLinks().stream()
+            .anyMatch(link -> ApiLinkItem.LOCATIONS_IMAGE_REL.equals(link.getRel())));
+
     // single revision retrieval, without content
     Long firstRevisionId = history.getRevisions().get(0).getRevisionId();
     result =
@@ -182,6 +209,24 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     // locations are not audited, so historical containers are returned without content
     assertNull(containerRev.getLocations());
 
+    // the image-bearing revision also resolves individually, with its locations image link
+    Long secondRevisionId = history.getRevisions().get(1).getRevisionId();
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/containers/" + container.getId() + "/revisions/" + secondRevisionId,
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiContainer imageBearingRev = getFromJsonResponseBody(result, ApiContainer.class);
+    assertEquals("version two container", imageBearingRev.getName());
+    assertTrue(
+        imageBearingRev.getLinks().stream()
+            .anyMatch(link -> ApiLinkItem.LOCATIONS_IMAGE_REL.equals(link.getRel())));
+
     // version lookup resolves the historical snapshot
     result =
         this.mockMvc
@@ -198,6 +243,23 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(containerV1.isHistoricalVersion());
     assertEquals("IC" + container.getId() + "v1", containerV1.getGlobalId());
     assertNull(containerV1.getLocations());
+    assertTrue(containerV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+
+    // the current version resolves to the live record, content included
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/containers/" + container.getId() + "/versions/2",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiContainer containerV2 = getFromJsonResponseBody(result, ApiContainer.class);
+    assertEquals("version two container", containerV2.getName());
+    assertEquals(false, containerV2.isHistoricalVersion());
+    assertNotNull(containerV2.getLocations());
 
     // a missing revision is a clean 404, not a 200 null body
     this.mockMvc
@@ -212,22 +274,27 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
-  public void versionEndpointsRequireReadPermissionOnLiveRecord() throws Exception {
+  public void versionEndpointsDowngradeViewWithoutReadPermission() throws Exception {
     User owner = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
 
     User otherUser = createInitAndLoginAnyUser();
     String otherApiKey = createNewApiKeyForUser(otherUser);
 
-    // same outcome as trying to read the live record without permission
-    this.mockMvc
-        .perform(
-            createBuilderForGet(
-                API_VERSION.ONE,
-                otherApiKey,
-                "/samples/" + sample.getId() + "/versions/1",
-                otherUser))
-        .andExpect(status().is4xxClientError())
-        .andReturn();
+    // same outcome as reading the live record without permission: a cleared public view,
+    // with no permitted actions and sensitive properties stripped
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    otherApiKey,
+                    "/samples/" + sample.getId() + "/versions/1",
+                    otherUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSample publicViewV1 = getFromJsonResponseBody(result, ApiSample.class);
+    assertTrue(publicViewV1.getPermittedActions().isEmpty());
+    assertNull(publicViewV1.getFields());
   }
 }

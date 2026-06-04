@@ -253,8 +253,7 @@ public class ContainersApiController extends BaseApiInventoryController implemen
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
 
-    Container dbContainer = containerApiMgr.assertUserCanReadContainer(id, user);
-    ApiContainer container = inventoryAuditMgr.getApiContainerVersion(dbContainer, version);
+    ApiContainer container = containerApiMgr.getApiContainerVersion(id, version, user);
     if (container == null) {
       throw new NotFoundException(createNotFoundMessage("Container version", version));
     }

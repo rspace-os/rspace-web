@@ -275,8 +275,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       @RequestAttribute(name = "user") User user) {
     assertIsInventoryInstrumentEnabled();
 
-    Instrument dbInstrument = instrumentApiMgr.assertUserCanReadInstrument(id, user);
-    ApiInstrument instrument = inventoryAuditMgr.getApiInstrumentVersion(dbInstrument, version);
+    ApiInstrument instrument = instrumentApiMgr.getApiInstrumentVersion(id, version, user);
     if (instrument == null) {
       throw new NotFoundException(createNotFoundMessage("Instrument version", version));
     }

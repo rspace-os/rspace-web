@@ -28,6 +28,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
   public static final String CONTAINER_DEFAULT_NAME = "Generic Container";
 
   @Autowired private InventoryMoveHelper moveHelper;
+  @Autowired private InventoryAuditApiManager inventoryAuditMgr;
 
   @Override
   public ISearchResults<ApiContainerInfo> getTopContainersForUser(
@@ -153,6 +155,27 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
   private boolean isWorkbenchOfCurrentUser(Container container, User currentUser) {
     return container.isWorkbench()
         && container.getOwner().getUsername().equals(currentUser.getUsername());
+  }
+
+  @Override
+  public ApiContainer getApiContainerVersion(Long containerId, Long version, User user) {
+    Container currentContainer = getIfExists(containerId);
+    if (currentContainer.getVersion().equals(version)) {
+      // as doGetContainer, but workbenches are versioned containers too, so no assertion
+      if (!isWorkbenchOfCurrentUser(currentContainer, user)) {
+        publisher.publishEvent(new InventoryAccessEvent(currentContainer, user));
+      }
+      return getPopulatedApiContainer(currentContainer, true, user);
+    }
+    ApiContainer apiContainerVersion =
+        inventoryAuditMgr.getApiContainerVersion(currentContainer, version);
+    if (apiContainerVersion != null) {
+      // permissions are evaluated against the live container; historical views have no
+      // content, so there are no locations to populate
+      setOtherFieldsForOutgoingApiInventoryRecord(apiContainerVersion, currentContainer, user);
+      populateSharingPermissions(apiContainerVersion.getSharedWith(), currentContainer);
+    }
+    return apiContainerVersion;
   }
 
   private ApiContainer getPopulatedApiContainer(

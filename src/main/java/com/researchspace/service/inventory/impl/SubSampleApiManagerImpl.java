@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -43,6 +44,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
   private @Autowired SubSampleDao subSampleDao;
   private @Autowired InventoryMoveHelper moveHelper;
+  private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   private @Autowired @Lazy SampleApiManager sampleApiMgr;
 
@@ -109,6 +111,21 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     ApiSubSample result = new ApiSubSample(subSample);
     setOtherFieldsForOutgoingApiInventoryRecord(result, subSample, user);
     return result;
+  }
+
+  @Override
+  public ApiSubSample getApiSubSampleVersion(Long subSampleId, Long version, User user) {
+    SubSample currentSubSample = getIfExists(subSampleId);
+    if (currentSubSample.getVersion().equals(version)) {
+      return getApiSubSampleById(subSampleId, user);
+    }
+    ApiSubSample apiSubSampleVersion =
+        inventoryAuditMgr.getApiSubSampleVersion(currentSubSample, version);
+    if (apiSubSampleVersion != null) {
+      // permissions are evaluated against the live subsample, as for a regular retrieval
+      setOtherFieldsForOutgoingApiInventoryRecord(apiSubSampleVersion, currentSubSample, user);
+    }
+    return apiSubSampleVersion;
   }
 
   @Override

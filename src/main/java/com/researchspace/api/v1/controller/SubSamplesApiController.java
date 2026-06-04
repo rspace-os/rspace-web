@@ -251,8 +251,7 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
 
-    SubSample dbSubSample = subSampleApiMgr.assertUserCanReadSubSample(id, user);
-    ApiSubSample subSample = inventoryAuditMgr.getApiSubSampleVersion(dbSubSample, version);
+    ApiSubSample subSample = subSampleApiMgr.getApiSubSampleVersion(id, version, user);
     if (subSample == null) {
       throw new NotFoundException(createNotFoundMessage("SubSample version", version));
     }

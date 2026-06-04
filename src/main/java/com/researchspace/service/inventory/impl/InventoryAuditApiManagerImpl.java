@@ -276,6 +276,9 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
   private void initialiseInventoryRecordRelationships(InventoryRecord record) {
     Hibernate.initialize(record.getImageFileProperty());
     Hibernate.initialize(record.getThumbnailFileProperty());
+    if (record instanceof Container) {
+      Hibernate.initialize(((Container) record).getLocationsImageFileProperty());
+    }
     if (record.isSubSample()) {
       Sample connectedSample = ((SubSample) record).getSample();
       if (connectedSample != null) {

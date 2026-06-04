@@ -74,6 +74,14 @@ public interface ContainerApiManager extends InventoryApiManager<Container> {
   ApiContainer getApiContainerById(Long id, User user);
 
   /**
+   * Returns the container as it was at the given user-facing version, with outgoing fields
+   * (permitted actions etc.) populated against the live container. The current version is served as
+   * a regular live retrieval; older versions resolve to a read-only historical snapshot without
+   * content (locations are not audited). Returns null if the version does not exist.
+   */
+  ApiContainer getApiContainerVersion(Long containerId, Long version, User user);
+
+  /**
    * Retrieves fully populated non-workbench container for API GET call, with or without the content
    * depending on 'includeContent' parameter. Causes side-effects like READ entry in audit trail.
    *

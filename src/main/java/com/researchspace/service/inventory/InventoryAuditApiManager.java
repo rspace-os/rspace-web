@@ -36,6 +36,10 @@ public interface InventoryAuditApiManager {
    * Returns the sample as it was at the given user-facing version. The current version is served
    * from the live entity; older versions resolve to the newest audit revision carrying that
    * version, flagged as historical. Returns null if the version does not exist.
+   *
+   * <p>Must be called with an entity attached to the current transaction (i.e. from within another
+   * manager's transaction, as {@link #getApiTemplateVersion(Sample, Long)} is). The caller is
+   * responsible for populating outgoing fields, such as permitted actions, on the result.
    */
   ApiSample getApiSampleVersion(Sample currentSample, Long version);
 

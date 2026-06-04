@@ -213,6 +213,19 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   @Override
+  public ApiInstrument getApiInstrumentVersion(Long instrumentId, Long version, User user) {
+    Instrument currentInstrument = (Instrument) getIfExists(instrumentId);
+    if (currentInstrument.getVersion().equals(version)) {
+      return getApiInstrumentById(instrumentId, user);
+    }
+    ApiInstrument apiInstrumentVersion =
+        inventoryAuditMgr.getApiInstrumentVersion(currentInstrument, version);
+    // permissions are evaluated against the live instrument, as for a regular retrieval
+    populateOutgoingApiInstrumentEntity(apiInstrumentVersion, currentInstrument, user);
+    return apiInstrumentVersion;
+  }
+
+  @Override
   public ApiInstrumentTemplate getApiInstrumentTemplateById(Long id, User user) {
     return getInstrumentTemplateById(id, user);
   }

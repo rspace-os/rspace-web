@@ -8,13 +8,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -35,7 +32,7 @@ public class InventoryVersionEndpointsNotFoundTest {
   private final SampleApiManager sampleMgr = mock(SampleApiManager.class);
   private final SubSampleApiManager subSampleMgr = mock(SubSampleApiManager.class);
   private final ContainerApiManager containerMgr = mock(ContainerApiManager.class);
-  private final InstrumentApiManager instrumentMgr = mock(InstrumentApiManager.class);
+  private final InstrumentEntityApiManager instrumentMgr = mock(InstrumentEntityApiManager.class);
   private final MessageSourceUtils messages = mock(MessageSourceUtils.class);
 
   private final User user = TestFactory.createAnyUser("notFoundUser");
@@ -67,9 +64,7 @@ public class InventoryVersionEndpointsNotFoundTest {
   @Test
   public void sampleVersionEndpointThrows404ForMissingVersion() {
     SamplesApiController controller = wire(new SamplesApiController());
-    Sample sample = TestFactory.createBasicSampleOutsideContainer(user);
-    when(sampleMgr.assertUserCanReadSample(1L, user)).thenReturn(sample);
-    when(auditMgr.getApiSampleVersion(sample, 9L)).thenReturn(null);
+    when(sampleMgr.getApiSampleVersion(1L, 9L, user)).thenReturn(null);
 
     assertThrows(NotFoundException.class, () -> controller.getSampleVersion(1L, 9L, user));
   }
@@ -87,10 +82,7 @@ public class InventoryVersionEndpointsNotFoundTest {
   @Test
   public void subSampleVersionEndpointThrows404ForMissingVersion() {
     SubSamplesApiController controller = wire(new SubSamplesApiController());
-    SubSample subSample =
-        TestFactory.createBasicSampleOutsideContainer(user).getSubSamples().get(0);
-    when(subSampleMgr.assertUserCanReadSubSample(1L, user)).thenReturn(subSample);
-    when(auditMgr.getApiSubSampleVersion(subSample, 9L)).thenReturn(null);
+    when(subSampleMgr.getApiSubSampleVersion(1L, 9L, user)).thenReturn(null);
 
     assertThrows(NotFoundException.class, () -> controller.getSubSampleVersion(1L, 9L, user));
   }
@@ -108,9 +100,7 @@ public class InventoryVersionEndpointsNotFoundTest {
   @Test
   public void containerVersionEndpointThrows404ForMissingVersion() throws Exception {
     ContainersApiController controller = wire(new ContainersApiController());
-    Container container = TestFactory.createListContainer(user);
-    when(containerMgr.assertUserCanReadContainer(1L, user)).thenReturn(container);
-    when(auditMgr.getApiContainerVersion(container, 9L)).thenReturn(null);
+    when(containerMgr.getApiContainerVersion(1L, 9L, user)).thenReturn(null);
 
     assertThrows(NotFoundException.class, () -> controller.getContainerVersion(1L, 9L, user));
   }
@@ -128,11 +118,7 @@ public class InventoryVersionEndpointsNotFoundTest {
   @Test
   public void instrumentVersionEndpointThrows404ForMissingVersion() {
     InstrumentsApiController controller = wiredInstrumentsController();
-    Instrument instrument = new Instrument();
-    instrument.setName("test instrument");
-    instrument.setOwner(user);
-    when(instrumentMgr.assertUserCanReadInstrument(1L, user)).thenReturn(instrument);
-    when(auditMgr.getApiInstrumentVersion(instrument, 9L)).thenReturn(null);
+    when(instrumentMgr.getApiInstrumentVersion(1L, 9L, user)).thenReturn(null);
 
     assertThrows(NotFoundException.class, () -> controller.getInstrumentVersion(1L, 9L, user));
   }

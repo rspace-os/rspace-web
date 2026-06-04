@@ -720,6 +720,36 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   @Override
+  public ApiSample getApiSampleVersion(Long sampleId, Long version, User user) {
+    Sample currentSample = getIfExists(sampleId);
+    if (currentSample.getVersion().equals(version)) {
+      return getApiSampleById(sampleId, user);
+    }
+    ApiSample apiSampleVersion = inventoryAuditMgr.getApiSampleVersion(currentSample, version);
+    populateOutgoingHistoricalApiSample(apiSampleVersion, currentSample, user);
+    return apiSampleVersion;
+  }
+
+  /**
+   * As populateOutgoingApiSample, but for a historical snapshot: permissions are evaluated against
+   * the live sample, and the snapshot's subsample listing (which may differ from the live one)
+   * inherits the sample's permissions.
+   */
+  private void populateOutgoingHistoricalApiSample(
+      ApiSample apiSample, Sample currentSample, User user) {
+    if (apiSample == null) {
+      return;
+    }
+    setOtherFieldsForOutgoingApiInventoryRecord(apiSample, currentSample, user);
+    populateSharingPermissions(apiSample.getSharedWith(), currentSample);
+    if (apiSample.getSubSamples() != null) {
+      for (ApiSubSampleInfo apiSubSample : apiSample.getSubSamples()) {
+        setOtherFieldsForOutgoingApiInventoryRecord(apiSubSample, currentSample, user);
+      }
+    }
+  }
+
+  @Override
   public ApiSampleTemplate createSampleTemplate(ApiSampleTemplatePost apiSample, User user) {
     Sample sampleTemplate = recordFactory.createSample(apiSample.getName(), user);
     sampleTemplate.setTemplate(true);

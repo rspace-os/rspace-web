@@ -381,8 +381,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
 
-    Sample dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
-    ApiSample sample = inventoryAuditMgr.getApiSampleVersion(dbSample, version);
+    ApiSample sample = sampleApiMgr.getApiSampleVersion(id, version, user);
     if (sample == null) {
       throw new NotFoundException(createNotFoundMessage("Sample version", version));
     }

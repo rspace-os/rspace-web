@@ -42,9 +42,11 @@ export type GlobalIdPrefix =
  * of record supported by the frontend code.
  */
 export const globalIdPatterns: Record<string, RegExp> = {
-  sample: /^sa\d+$/i,
-  subsample: /^ss\d+$/i,
-  container: /^ic\d+$/i,
+  // samples, subsamples, containers, and templates support an optional
+  // version suffix (e.g. SS4v1), identifying a historical version
+  sample: /^sa\d+(v\d+)?$/i,
+  subsample: /^ss\d+(v\d+)?$/i,
+  container: /^ic\d+(v\d+)?$/i,
   sampleTemplate: /^it\d+(v\d+)?$/i,
   bench: /^be\d+$/i,
   basket: /^ba\d+$/i,
