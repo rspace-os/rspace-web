@@ -195,4 +195,74 @@ END
         </update>
     </changeSet>
 
+    <changeSet id="hibernate6-batch5-schema-migration" author="spring6-migration" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="BATCH_* tables absent or already on the Spring Batch 5 layout; nothing to migrate"
+                       onErrorMessage="Not MySQL/MariaDB or BATCH_* tables absent; nothing to migrate">
+            <and>
+                <dbms type="mysql,mariadb"/>
+                <tableExists tableName="BATCH_JOB_EXECUTION"/>
+                <!-- TYPE_CD exists only in the Spring Batch 3/4 BATCH_JOB_EXECUTION_PARAMS layout;
+                     Batch 5 replaced it with PARAMETER_NAME/PARAMETER_TYPE/PARAMETER_VALUE. Its presence
+                     means this is an existing deployment still on the pre-upgrade schema. -->
+                <columnExists tableName="BATCH_JOB_EXECUTION_PARAMS" columnName="TYPE_CD"/>
+            </and>
+        </preConditions>
+        <comment>
+            RSDEV-444 (B2): migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5 on
+            existing deployments.
+
+            The fresh-install changeset (changeLog-1.47.xml::17-09-10z) only creates these tables when
+            BATCH_JOB_EXECUTION is ABSENT, so an upgraded database keeps the Batch 3 schema and the async
+            export JobRepository fails at runtime against the changed columns (most notably the redesigned
+            BATCH_JOB_EXECUTION_PARAMS). This changeset drops and recreates the BATCH_* tables using the
+            Batch 5 jar's own scripts, so the layout always matches the Batch version on the classpath.
+
+            Guarded to fire ONLY on an un-migrated existing DB (BATCH_JOB_EXECUTION present AND the old
+            TYPE_CD column present): a no-op on fresh installs (17-09-10z already built the Batch 5 schema,
+            so TYPE_CD is absent) and idempotent once migrated (TYPE_CD gone).
+
+            TRADE-OFF: drop+recreate discards historical Spring Batch job-execution rows. These back ONLY the
+            REST API v1 export (status polled via /api/v1/jobs/{id}); the interactive UI export uses a
+            separate mechanism and the archive files themselves are downloaded by filename off the filestore,
+            independent of these tables. So no archive becomes undownloadable; only the jobId-to-result lookup
+            for an API job whose result a client had not yet fetched is lost (remedy: re-export). There is no
+            FK into BATCH_*, so the drop is structurally safe. Chosen over a fragile hand-written ALTER across
+            the large 3-to-5 version jump.
+
+            ID CONTINUITY: Spring Batch allocates ids from the BATCH_*_SEQ incrementer tables (next id =
+            stored ID + 1). A plain recreate would reset them to 0 and eventually re-issue pre-upgrade jobIds.
+            To avoid that, the current MAX ids are captured into a temporary holding table BEFORE the drop,
+            then the recreated BATCH_*_SEQ rows are seeded to those maxima so new ids continue monotonically.
+
+            REQUIRES: the Liquibase user must be able to DROP/CREATE these tables (the app schema user has
+            ALL privileges in the standard deployment).
+        </comment>
+        <!-- 1) Capture current max ids before dropping (holding table survives the BATCH_* drop). -->
+        <sql splitStatements="true" stripComments="false">
+            DROP TABLE IF EXISTS rsdev444_batch_seq_backup;
+            CREATE TABLE rsdev444_batch_seq_backup (seq_name VARCHAR(64) NOT NULL PRIMARY KEY, max_id BIGINT NOT NULL);
+            INSERT INTO rsdev444_batch_seq_backup (seq_name, max_id) VALUES
+                ('BATCH_JOB_EXECUTION_SEQ',  COALESCE((SELECT MAX(JOB_EXECUTION_ID)  FROM BATCH_JOB_EXECUTION), 0)),
+                ('BATCH_JOB_SEQ',            COALESCE((SELECT MAX(JOB_INSTANCE_ID)   FROM BATCH_JOB_INSTANCE),  0)),
+                ('BATCH_STEP_EXECUTION_SEQ', COALESCE((SELECT MAX(STEP_EXECUTION_ID) FROM BATCH_STEP_EXECUTION), 0));
+        </sql>
+        <!-- 2) Drop + recreate to the Batch 5 layout from the jar's own scripts (recreates BATCH_*_SEQ at 0). -->
+        <sqlFile path="/org/springframework/batch/core/schema-drop-mysql.sql"/>
+        <sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>
+        <!-- 3) Continue the id sequences from the captured maxima (next allocated id = stored ID + 1). -->
+        <sql splitStatements="true" stripComments="false">
+            UPDATE BATCH_JOB_EXECUTION_SEQ  SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_JOB_EXECUTION_SEQ');
+            UPDATE BATCH_JOB_SEQ            SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_JOB_SEQ');
+            UPDATE BATCH_STEP_EXECUTION_SEQ SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_STEP_EXECUTION_SEQ');
+            DROP TABLE rsdev444_batch_seq_backup;
+        </sql>
+        <rollback>
+            <!-- Best-effort rollback restores the Batch 5 schema shape (history is not recoverable). -->
+            <sql splitStatements="true" stripComments="false">DROP TABLE IF EXISTS rsdev444_batch_seq_backup;</sql>
+            <sqlFile path="/org/springframework/batch/core/schema-drop-mysql.sql"/>
+            <sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>
