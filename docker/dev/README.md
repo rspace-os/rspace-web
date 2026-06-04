@@ -174,8 +174,9 @@ mixing, these paths are masked with named volumes instead of the bind mount:
 | You change…                | What to do                                              |
 | -------------------------- | ------------------------------------------------------- |
 | Frontend (`.ts/.tsx/.css`) | Nothing — Vite HMR updates the browser automatically.   |
-| Java (`.java`)             | `rspace-dev reload` (recompile + hot redeploy), or `restart` for a clean JVM. |
-| JSP / templates / config   | `rspace-dev reload` (or `restart`).                     |
+| Java (`.java`)             | Per-class: your IDE's hot code replace (live, via JBR). Otherwise `rspace-dev reload`; `restart` for a clean JVM. See [Hot reloading Java](#hot-reloading-java-jbr--hotswapagent). |
+| JSP                        | Nothing — Jetty recompiles changed JSPs on the next request. |
+| Spring XML / web.xml       | `rspace-dev reload` (or `restart`).                     |
 | Liquibase / DB schema      | `rspace-dev reset-db`, or `up --fresh`.                 |
 | `package.json` deps        | `rspace-dev restart` the `frontend` (re-runs install).  |
 
@@ -188,6 +189,173 @@ mixing, these paths are masked with named volumes instead of the bind mount:
 `reload` works because the backend runs `mvn jetty:run` with Jetty's manual
 redeploy mode; the entrypoint feeds Jetty's stdin from a FIFO, and `reload`
 writes to it to trigger a webapp redeploy after recompiling.
+
+## Debugging
+
+### Backend (Java remote debug)
+
+The backend JVM exposes a standard JDWP remote-debug port, **on by default**
+(`server=y,suspend=n`, so it never blocks startup). Find this worktree's debug
+port with `rspace-dev ps` (also printed by `up`):
+
+```
+Debug      127.0.0.1:5005  (JDWP — attach IntelliJ "Remote JVM Debug")
+```
+
+Each worktree gets its own auto-allocated debug port, so you can debug several
+instances at the same time. In both IDEs below, **open this worktree's directory
+as the project** — the container runs the very same files via the bind mount, so
+breakpoints and stepping line up with no path mapping needed. Substitute your
+worktree's port for `5005` everywhere below.
+
+#### IntelliJ IDEA
+
+1. Open the repo as a project and let it import the Maven model (this is the
+   `rspace-web` Maven module).
+2. **Run → Edit Configurations… → `+` → Remote JVM Debug.**
+3. Fill in:
+   - **Name:** `RSpace (Docker)`
+   - **Debugger mode:** `Attach to remote JVM`
+   - **Host:** `localhost`
+   - **Port:** your debug port (e.g. `5005`)
+   - **Use module classpath:** `rspace-web`
+   - Leave the command-line args field at its default — it should read
+     `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005`,
+     which is exactly what the container uses.
+4. Click **OK**, then **Debug 'RSpace (Docker)'** (the bug icon). The console
+   shows "Connected to the target VM". Set breakpoints and exercise the app.
+
+To debug application startup, set `RSPACE_DEBUG_SUSPEND=y` (see knobs below) and
+attach quickly after `restart` — the JVM waits for you before initialising.
+
+#### VS Code
+
+1. Install the **Extension Pack for Java** (includes *Language Support for Java*
+   and *Debugger for Java*).
+2. Open the repo folder; let the Java extension import the Maven project (the
+   status bar shows progress the first time).
+3. Create `.vscode/launch.json` at the repo root (this path is git-ignored, so
+   it stays a personal setting) with:
+
+   ```jsonc
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "type": "java",
+         "name": "Attach to RSpace (Docker)",
+         "request": "attach",
+         "hostName": "localhost",
+         "port": "${input:rspaceDebugPort}",
+         "projectName": "rspace-web"
+       }
+     ],
+     "inputs": [
+       {
+         "id": "rspaceDebugPort",
+         "type": "promptString",
+         "description": "RSpace debug port (run: ./docker/dev/rspace-dev ps)",
+         "default": "5005"
+       }
+     ]
+   }
+   ```
+
+   The `${input:...}` prompts for the port on each attach, which keeps one config
+   working across worktrees. If you only use one worktree, replace
+   `"${input:rspaceDebugPort}"` with your fixed port (e.g. `5005`) and drop the
+   `inputs` block.
+4. Open **Run and Debug** (Ctrl/Cmd+Shift+D), pick **Attach to RSpace (Docker)**,
+   press **F5**, and enter the port if prompted. Set breakpoints and go.
+
+#### Debug knobs
+
+Set in `docker/dev/.env`, then `rspace-dev restart`:
+
+- `RSPACE_DEBUG=false` — turn the debug agent off entirely.
+- `RSPACE_DEBUG_SUSPEND=y` — pause JVM startup until a debugger attaches (for
+  debugging Spring startup / early initialisation). Default `n`.
+- `RSPACE_HOTSWAP=false` — disable enhanced class redefinition (below).
+
+### Frontend
+
+Production sourcemaps are enabled by the dev server, so debug in the browser's
+devtools (Sources panel) against the original `.ts`/`.tsx`. No port to expose —
+it is served through the app origin you already browse.
+
+## Hot reloading Java (JBR + HotswapAgent)
+
+The backend runs on the **JetBrains Runtime (JBR)**, whose DCEVM-derived
+*enhanced class redefinition* lets you redefine a loaded class with structural
+changes (new/removed methods and fields), not just method bodies. RSpace is plain
+Spring Framework (not Spring Boot), so this replaces what Boot devtools would do.
+
+**Drive it from your IDE's debugger (hot code replace).** This is the supported
+path: the IDE compiles the single class you changed and pushes the new bytecode
+into the running JVM over the debug connection (JDWP) — it never touches the
+container filesystem, so it sidesteps the Maven/bind-mount issue below.
+
+1. Attach the debugger (see "Backend (Java remote debug)" above).
+2. Enable reload-on-compile:
+   - **IntelliJ:** Settings → Build, Execution, Deployment → Debugger → HotSwap →
+     *Reload classes after compilation = Always*; tick *Build project before
+     reloading*. Edit, then **Build → Recompile** (Ctrl/Cmd+Shift+F9).
+   - **VS Code:** `"java.debug.settings.hotCodeReplace": "auto"`; save the file.
+3. The change is live in the running app; the bean instance keeps its state.
+
+**Reloads live this way:** method-body changes, and adding/removing/changing
+methods and fields on existing classes (JBR enhanced redefinition, beyond plain
+HotSpot HotSwap). The existing bean runs the new code; it is not re-created.
+
+> **Two deliberate constraints, both because of RSpace's legacy stack:**
+> - HotswapAgent's **Spring, Hibernate, and Proxy plugins are disabled** (see
+>   `hotswap-agent.properties`). On RSpace's large XML/AOP context they break:
+>   the Hibernate plugin breaks transaction binding at startup, the Spring plugin
+>   throws mid-reload, and the Proxy plugin hits a Java 17 module error. So
+>   **code** in existing beans reloads, but **bean definitions/wiring** do not.
+> - There is **no in-container "recompile" command**: Maven's incremental build
+>   does not work over the bind mount (a one-line edit recompiles ~2000 classes),
+>   so file-watch auto-reload is off. Use the IDE path above, or `reload`.
+
+### What still requires a full restart
+
+HotswapAgent cannot apply everything. These need `rspace-dev reload` (rebuilds
+the Spring context in the same JVM) or `rspace-dev restart` (new JVM):
+
+- **New or re-wired Spring beans** — a new `@Component`/`@Service`/`@Repository`/
+  `@Controller`/`@Bean`, changed `@Autowired`/`@Value` injection, new or changed
+  `@RequestMapping`s, or `@Configuration` changes. The bean-reload plugin is
+  disabled (it breaks RSpace's context), so the registry is fixed at startup. The
+  *code* of an existing controller/service reloads live; its *registration* does
+  not. → `reload` (often enough) or `restart`.
+- **Spring XML config** (`applicationContext-*.xml`). RSpace wires most of its
+  context — including the `*Manager` **AOP transaction proxies** — in XML, which
+  HotswapAgent does not reload. Editing those needs `reload`/`restart`.
+- **Infrastructure / framework beans**: the `DataSource`, Hibernate
+  `SessionFactory`, transaction manager, the Liquibase bean, caches, the task
+  executors — anything created once at context startup. → `restart`.
+- **Hibernate entity mapping / Envers / Hibernate Search** changes (new or
+  remapped `@Entity`, audited fields, index mappings). → `restart` (and possibly
+  a `reset-db` if the schema changed).
+- **`web.xml`, Jetty config, servlets/filters/listeners** (e.g. the MIME and
+  decorator setup). → `restart`.
+- **Liquibase changesets / DB schema.** → `rspace-dev reset-db`.
+- **`pom.xml` / dependency changes** (new jars on the classpath). → `restart`.
+- **Compile-time constants and enums** used in `switch` (the value is inlined at
+  call sites), and **`static` initialisers** / already-run `@PostConstruct` side
+  effects on existing singletons. → `restart` if behaviour looks stale.
+- **JVM / agent args** (`MAVEN_OPTS`, `RSPACE_*` env, `hotswap-agent.properties`).
+  → `restart` (a container recreate, since those are set at JVM launch).
+
+Rule of thumb: Java *code* changes reload live; **configuration, schema, and
+framework-wiring** changes do not. When in doubt, `reload`; if that still looks
+wrong, `restart`.
+
+> `rspace-dev reload` keeps the same JVM, so an attached debugger stays
+> connected; `rspace-dev restart` is a new JVM, so re-attach afterward.
+> `RSPACE_HOTSWAP=false` disables the agent (e.g. to rule it out while diagnosing
+> a startup issue). JBR + HotswapAgent are pinned third-party components — see
+> `Dockerfile.app` for versions.
 
 ## Notes & gotchas
 

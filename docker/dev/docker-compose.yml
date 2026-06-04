@@ -73,12 +73,26 @@ services:
       # Used for absolute links (emails/exports) so they match the host port.
       APP_PUBLIC_PORT: ${APP_PORT:-8080}
       MAVEN_OPTS: ${MAVEN_OPTS:--Xmx2g}
+      # Remote JVM debugging (JDWP) for IntelliJ etc. Listens on 5005 in the
+      # container (published on the frontend service, since the app shares its
+      # network namespace). Set RSPACE_DEBUG=false to disable, or
+      # RSPACE_DEBUG_SUSPEND=y to pause startup until a debugger attaches.
+      RSPACE_DEBUG: ${RSPACE_DEBUG:-true}
+      RSPACE_DEBUG_SUSPEND: ${RSPACE_DEBUG_SUSPEND:-n}
+      # Enhanced class redefinition (JBR DCEVM + HotswapAgent), on by default, so
+      # the IDE's hot code replace can redefine changed classes live (README
+      # "Hot reloading Java"). Set to false to run plain (no agent).
+      RSPACE_HOTSWAP: ${RSPACE_HOTSWAP:-true}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
       - app-target:/rspace/target
-      - search-index:/rspace/FTsearchIndices
-      - lucene-index:/rspace/LuceneFTsearchIndices
+      # Search indices live in volumes OUTSIDE the bind mount. The entrypoint
+      # points Hibernate Search / Lucene at these paths, because under jetty:run
+      # the default index base is unset and Lucene would otherwise scatter
+      # per-entity index dirs into the worktree root.
+      - search-index:/var/rspace/search/hibernate
+      - lucene-index:/var/rspace/search/lucene
       - filestore:/var/rspace/filestore
     # Share the frontend's network namespace so the backend reaches Vite at
     # localhost:5173 (a host Vite trusts) instead of the service name "frontend"
@@ -125,11 +139,12 @@ services:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - node-modules:/rspace/node_modules
       - pnpm-store:/pnpm-store
-    # The app shares this service's network namespace, so BOTH the app's (8080)
-    # and Vite's (5173) host ports are published here.
+    # The app shares this service's network namespace, so the app's (8080), Vite's
+    # (5173), and the app's JDWP debug (5005) host ports are all published here.
     ports:
       - "127.0.0.1:${APP_PORT:-8080}:8080"
       - "127.0.0.1:${VITE_PORT:-5173}:5173"
+      - "127.0.0.1:${DEBUG_PORT:-5005}:5005"
     restart: unless-stopped
 
 volumes:
