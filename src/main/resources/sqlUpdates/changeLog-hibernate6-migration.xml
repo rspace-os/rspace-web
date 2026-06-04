@@ -14,6 +14,143 @@
                       newColumnName="next_val"
                       columnDataType="int"/>
     </changeSet>
+
+    <changeSet id="hibernate6-reseed-sequences" author="spring6-migration" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="hibernate_sequences not on the Hibernate 6 layout yet; nothing to reseed"
+                       onErrorMessage="hibernate_sequences not present / not MySQL; nothing to reseed">
+            <and>
+                <dbms type="mysql,mariadb"/>
+                <columnExists tableName="hibernate_sequences" columnName="next_val"/>
+            </and>
+        </preConditions>
+        <comment>
+            RSDEV-444 (B1): re-seed the Hibernate TABLE-generator counters after the Hibernate 5 to 6 upgrade.
+
+            Under Hibernate 5 (new_generator_mappings=false) the entities annotated
+            @GeneratedValue(strategy=TABLE) used the legacy MultipleHiLoPerTableGenerator, whose stored value
+            in hibernate_sequences is a hi/lo "high" marker, not the next id. Hibernate 6's enhanced
+            TableGenerator reads next_val much more literally, so the small legacy values would hand out ids
+            at or below ids already in use, colliding on the primary key across roughly 40 tables.
+
+            This changeset loops over every existing hibernate_sequences row and, for any row whose name is a
+            real base table with an "id" column, sets next_val above that table's MAX(id). Driving off the
+            existing rows makes it complete by construction: a TABLE-strategy table only has data if it has a
+            row here, so no entity can be missed (including MappedSuperclass subclasses such as Sample/SubSample/
+            Container and StoichiometryInventoryLink, whose ids would be easy to omit from a hand-written list).
+
+            The two TABLE_PER_CLASS hierarchies share one sequence across sibling tables and are keyed by the
+            abstract entity name (not a table), so they are handled explicitly:
+              - AbstractUserOrGroupImpl  -> shared by User + rsGroup
+              - Communication            -> shared by Notification, MessageOrRequest, GroupMessageOrRequest,
+                                            CreateGroupMessageOrRequest, ShareRecordMessageOrRequest
+            These two carry an explicit @TableGenerator(allocationSize=1) in rspace-core-model.
+
+            Finally a "default" insurance row is seeded above the global MAX(id). Hibernate 6 falls back to a
+            single shared "default" segment for bare TABLE entities when
+            hibernate.id.generator.prefer_entity_table_as_segment_value is not honoured; seeding it means even
+            that fallback path cannot collide. With the setting on (see applicationContext-dao.xml) Hibernate
+            reads the per-entity rows instead and the "default" row is simply unused.
+
+            Margin: next_val = MAX(id) + 51 clears a full default allocation block (allocationSize 50) plus one,
+            which is safe for the pooled, pooled-lo and no-op optimizers alike. It is idempotent: re-running
+            never lowers an existing value, and empty tables (MAX 0) are left for Hibernate to create lazily.
+
+            VERIFY ON A POPULATED DB before merge (see investigations/RSDEV-444-spring6-review.md, B1): apply
+            this changeset, boot the Hibernate 6 app, insert one of every TABLE entity, then confirm no NEW row
+            appeared in hibernate_sequences (a new row signals a segment-name mismatch) and that no insert
+            collided.
+        </comment>
+        <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
+        <sql splitStatements="false" stripComments="false"><![CDATA[
+CREATE PROCEDURE rsdev444_reseed_hibernate_sequences()
+BEGIN
+    DECLARE v_done   INT DEFAULT 0;
+    DECLARE v_seg    VARCHAR(255);
+    DECLARE v_is_tbl INT DEFAULT 0;
+    DECLARE v_global BIGINT DEFAULT 0;
+    DECLARE seg_cur CURSOR FOR SELECT sequence_name FROM hibernate_sequences;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
+
+    -- 1) Per-entity (table-named) segments: bump each above its own table's MAX(id).
+    OPEN seg_cur;
+    seg_loop: LOOP
+        FETCH seg_cur INTO v_seg;
+        IF v_done = 1 THEN
+            LEAVE seg_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO v_is_tbl
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = v_seg AND COLUMN_NAME = 'id';
+
+        IF v_is_tbl = 1 THEN
+            SET @m := 0;
+            SET @q := CONCAT('SELECT COALESCE(MAX(id),0) INTO @m FROM `', v_seg, '`');
+            PREPARE s FROM @q;
+            EXECUTE s;
+            DEALLOCATE PREPARE s;
+
+            IF @m > 0 THEN
+                UPDATE hibernate_sequences
+                SET next_val = @m + 51
+                WHERE sequence_name = v_seg AND (next_val IS NULL OR next_val < @m + 51);
+                IF @m > v_global THEN SET v_global = @m; END IF;
+            END IF;
+        END IF;
+    END LOOP;
+    CLOSE seg_cur;
+
+    -- 2) TABLE_PER_CLASS: AbstractUserOrGroupImpl shares ids across User + rsGroup.
+    SET @uog := GREATEST(
+        COALESCE((SELECT MAX(id) FROM `User`), 0),
+        COALESCE((SELECT MAX(id) FROM `rsGroup`), 0));
+    IF @uog > 0 THEN
+        INSERT INTO hibernate_sequences (sequence_name, next_val)
+            SELECT 'AbstractUserOrGroupImpl', @uog + 51 FROM DUAL
+            WHERE NOT EXISTS (SELECT 1 FROM hibernate_sequences WHERE sequence_name = 'AbstractUserOrGroupImpl');
+        UPDATE hibernate_sequences
+        SET next_val = @uog + 51
+        WHERE sequence_name = 'AbstractUserOrGroupImpl' AND (next_val IS NULL OR next_val < @uog + 51);
+        IF @uog > v_global THEN SET v_global = @uog; END IF;
+    END IF;
+
+    -- 3) TABLE_PER_CLASS: Communication shares ids across its concrete subclass tables.
+    SET @comm := GREATEST(
+        COALESCE((SELECT MAX(id) FROM `Notification`), 0),
+        COALESCE((SELECT MAX(id) FROM `MessageOrRequest`), 0),
+        COALESCE((SELECT MAX(id) FROM `GroupMessageOrRequest`), 0),
+        COALESCE((SELECT MAX(id) FROM `CreateGroupMessageOrRequest`), 0),
+        COALESCE((SELECT MAX(id) FROM `ShareRecordMessageOrRequest`), 0));
+    IF @comm > 0 THEN
+        INSERT INTO hibernate_sequences (sequence_name, next_val)
+            SELECT 'Communication', @comm + 51 FROM DUAL
+            WHERE NOT EXISTS (SELECT 1 FROM hibernate_sequences WHERE sequence_name = 'Communication');
+        UPDATE hibernate_sequences
+        SET next_val = @comm + 51
+        WHERE sequence_name = 'Communication' AND (next_val IS NULL OR next_val < @comm + 51);
+        IF @comm > v_global THEN SET v_global = @comm; END IF;
+    END IF;
+
+    -- 4) Insurance "default" segment above the global MAX(id) for the shared-segment fallback path.
+    IF v_global > 0 THEN
+        INSERT INTO hibernate_sequences (sequence_name, next_val)
+            SELECT 'default', v_global + 51 FROM DUAL
+            WHERE NOT EXISTS (SELECT 1 FROM hibernate_sequences WHERE sequence_name = 'default');
+        UPDATE hibernate_sequences
+        SET next_val = v_global + 51
+        WHERE sequence_name = 'default' AND (next_val IS NULL OR next_val < v_global + 51);
+    END IF;
+END
+        ]]></sql>
+        <sql splitStatements="true" stripComments="false">CALL rsdev444_reseed_hibernate_sequences();</sql>
+        <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
+        <rollback>
+            <!-- Re-seeding identifier counters cannot be safely reversed (lowering next_val would risk
+                 handing out ids that are already in use). Intentionally a no-op rollback. -->
+        </rollback>
+    </changeSet>
+
     <changeSet id="appconfigelementset-natural-id" author="spring6-migration">
         <preConditions onFail="MARK_RAN">
             <not><columnExists tableName="AppConfigElementSet" columnName="naturalId"/></not>
