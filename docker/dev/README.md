@@ -34,10 +34,50 @@ are reused across worktrees so you only download dependencies once.
 - Docker Engine + Docker Compose v2 (Docker Desktop on macOS/Windows works).
 - ~6 GB free RAM for the stack and a few GB of disk for caches.
 - No local Java, Maven, Node, or MariaDB needed — it all runs in containers.
+- **Windows: run this inside WSL2** — see [Windows (WSL2)](#windows-wsl2) below.
+  The launcher is a bash script and will not run from PowerShell or `cmd`.
+
+## Windows (WSL2)
+
+This stack is driven by a bash launcher and runs Linux containers, so on Windows
+use **WSL2** (the Windows Subsystem for Linux). Do not run `rspace-dev` from
+PowerShell or `cmd`.
+
+1. **Install WSL2 and a distro** (e.g. Ubuntu): in an admin PowerShell run
+   `wsl --install`, then reboot and finish the Ubuntu first-run setup.
+2. **Install Docker Desktop** and enable the WSL2 backend: Settings → General →
+   *Use the WSL 2 based engine*, and Settings → Resources → WSL Integration →
+   enable integration for your distro. This makes `docker` / `docker compose`
+   available inside WSL2.
+3. **Keep the repo on the Linux filesystem, not the Windows drive.** Clone (and
+   create any git worktrees) under your WSL2 home, e.g. `~/code/rspace-web` —
+   reachable from Windows as `\\wsl$\Ubuntu\home\<you>\code`. Working from a
+   `/mnt/c/...` path is the most common WSL2 mistake: bind-mount file I/O there
+   is very slow and filesystem change events are not delivered, so Maven, the
+   database, and Vite hot reload will all crawl or silently stop updating.
+4. **Run everything from the WSL2 shell:**
+
+   ```bash
+   cd ~/code/rspace-web          # a path on the Linux filesystem
+   ./docker/dev/rspace-dev up
+   ```
+
+5. **Open the app in your Windows browser** at the URL the launcher prints (e.g.
+   `http://localhost:8111`). Docker Desktop forwards `localhost` from Windows
+   into the WSL2 VM, so the published app/Vite ports and HMR work normally.
+
+Notes:
+- A `docker/dev/.gitattributes` forces LF line endings, so the scripts work even
+  if the repo is cloned with Windows defaults — but cloning *inside* WSL2 is
+  still recommended (it also avoids the `/mnt/c` performance trap above).
+- File watching already uses polling (`VITE_USE_POLLING=true`), which is what
+  makes HMR reliable across the WSL2/Windows boundary.
+- Give the WSL2 VM enough memory (Docker Desktop → Resources, or a `.wslconfig`
+  with e.g. `memory=8GB`); the backend defaults to a 2 GB JVM heap.
 
 ## Quick start
 
-From anywhere inside your worktree:
+From anywhere inside your worktree (on Windows, a WSL2 shell — see above):
 
 ```bash
 ./docker/dev/rspace-dev up
