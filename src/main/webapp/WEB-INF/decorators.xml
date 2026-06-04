@@ -3,6 +3,7 @@
         <pattern>/40*.jsp</pattern>
         <pattern>*/ajax/*</pattern>
         <pattern>/scripts/**</pattern>
+        <pattern>/ui/dist/**</pattern>
         <pattern>/*ajax=true*</pattern>
         <pattern>/resources/*</pattern>
         <pattern>/image/getImage/**</pattern>
