@@ -38,7 +38,7 @@
   "tinymceGallery": "src/tinyMCE/gallery/index.tsx",
   "tinymceGalleryUtils": "src/tinyMCE/gallery/GalleryUtilsEntrypoint.ts",
   "tinymceIdentifiers": "src/tinyMCE/inventory/identifiers/index.tsx",
-  "tinymceKetcher": "src/tinyMCE/ketcher/KetcherTinyMce.jsx",
+  "tinymceKetcher": "src/tinyMCE/ketcher/KetcherTinyMce.tsx",
   "tinymceOmero": "src/tinyMCE/omero/index.jsx",
   "tinymcePubchem": "src/tinyMCE/pubchem/index.tsx",
   "tinymcePyrat": "src/tinyMCE/pyrat/Pyrat.jsx",
