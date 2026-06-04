@@ -105,6 +105,10 @@ const useStyles = makeStyles()((theme) => ({
     padding: theme.spacing(0, 0.5),
     width: "70px",
   },
+  institutionLogo: {
+    maxHeight: "78px",
+    maxWidth: "255px",
+  },
   primary: { color: theme.palette.primary.main },
   grey: { color: theme.palette.lightestGrey },
   ac: { alignItems: "center" },
@@ -243,6 +247,7 @@ export const IdentifierDataGrid = ({
             src={INSTITUTION_LOGO_ADDRESS}
             alt="Institution Logo"
             title="Institution Logo"
+            className={classes.institutionLogo}
           />
         </Grid>
         <Grid>
