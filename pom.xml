@@ -2872,7 +2872,7 @@
 
 
     <!-- Database settings -->
-    <jdbc.version>8.0.33</jdbc.version>
+    <jdbc.version>8.4.0</jdbc.version>
     <jdbc.driverClassName.maven>com.mysql.cj.jdbc.Driver</jdbc.driverClassName.maven>
     <jdbc.username.maven>rspacedbuser</jdbc.username.maven>
     <jdbc.password.maven>rspacedbpwd</jdbc.password.maven>
