@@ -479,13 +479,13 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       orders.add(builder.asc(root.get(pgCrit.getOrderBy())));
       if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
         orders.add(builder.asc(root.get(FIRST_NAME)));
-        orders.add(builder.asc(root.get(LAST_NAME)));
+        orders.add(builder.asc(root.get(USERNAME)));
       }
     } else {
       orders.add(builder.desc(root.get(pgCrit.getOrderBy())));
       if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
         orders.add(builder.desc(root.get(FIRST_NAME)));
-        orders.add(builder.desc(root.get(LAST_NAME)));
+        orders.add(builder.desc(root.get(USERNAME)));
       }
     }
     query.orderBy(orders);
