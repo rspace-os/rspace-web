@@ -318,6 +318,8 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbContainer);
       if (contentChanged) {
+        // only content edits bump the user-facing version; moves don't
+        dbContainer.increaseVersion();
         dbContainer.setModificationDate(new Date());
         dbContainer.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
         publisher.publishEvent(new InventoryEditingEvent(dbContainer, user));

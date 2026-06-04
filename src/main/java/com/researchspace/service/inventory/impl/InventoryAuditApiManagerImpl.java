@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntityInfo;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
@@ -8,10 +9,10 @@ import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
-import com.researchspace.api.v1.model.ApiSampleTemplateInfo;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.model.audit.AuditedEntity;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
@@ -80,6 +81,22 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       initialiseInventoryRecordRelationships(subSample);
       result = (ApiSubSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(subSample);
       result.setRevisionId(revisionId);
+      result.setGlobalId(subSample.getOidWithVersion().toString());
+    }
+    return result;
+  }
+
+  @Override
+  public ApiContainer getApiContainerRevision(Long containerId, Long revisionId) {
+    ApiContainer result = null;
+    Container container = getInventoryRecordRevision(Container.class, containerId, revisionId);
+    if (container != null) {
+      initialiseInventoryRecordRelationships(container);
+      // locations are @NotAudited: a snapshot would lazily expose PRESENT-DAY contents,
+      // so the historical view is built without content
+      result = new ApiContainer(container, false);
+      result.setRevisionId(revisionId);
+      result.setGlobalId(container.getOidWithVersion().toString());
     }
     return result;
   }
@@ -90,22 +107,92 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       return new ApiSampleTemplate(currTemplate);
     }
 
-    List<ApiInventoryRecordRevision> templateRevisions =
-        getInventoryRecordRevisions(currTemplate).getRevisions();
-    List<ApiInventoryRecordRevision> versionRevisions =
-        templateRevisions.stream()
-            .filter(
-                recRev -> ((ApiSampleTemplateInfo) recRev.getRecord()).getVersion().equals(version))
-            .collect(Collectors.toList());
-    if (versionRevisions.isEmpty()) {
+    Long lastRevisionForVersion = findNewestRevisionForVersion(currTemplate, version);
+    if (lastRevisionForVersion == null) {
       return null;
     }
-
-    Long lastRevisionForVersion = versionRevisions.get(versionRevisions.size() - 1).getRevisionId();
     ApiSampleTemplate result =
         (ApiSampleTemplate) getApiSampleRevision(currTemplate.getId(), lastRevisionForVersion);
     result.setHistoricalVersion(true);
     return result;
+  }
+
+  @Override
+  public ApiSample getApiSampleVersion(Sample currentSample, Long version) {
+    if (currentSample.getVersion().equals(version)) {
+      return (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentSample);
+    }
+    Long revisionId = findNewestRevisionForVersion(currentSample, version);
+    if (revisionId == null) {
+      return null;
+    }
+    ApiSample result = getApiSampleRevision(currentSample.getId(), revisionId);
+    if (result != null) {
+      result.setHistoricalVersion(true);
+    }
+    return result;
+  }
+
+  @Override
+  public ApiSubSample getApiSubSampleVersion(SubSample currentSubSample, Long version) {
+    if (currentSubSample.getVersion().equals(version)) {
+      return (ApiSubSample)
+          ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentSubSample);
+    }
+    Long revisionId = findNewestRevisionForVersion(currentSubSample, version);
+    if (revisionId == null) {
+      return null;
+    }
+    ApiSubSample result = getApiSubSampleRevision(currentSubSample.getId(), revisionId);
+    if (result != null) {
+      result.setHistoricalVersion(true);
+    }
+    return result;
+  }
+
+  @Override
+  public ApiContainer getApiContainerVersion(Container currentContainer, Long version) {
+    if (currentContainer.getVersion().equals(version)) {
+      return new ApiContainer(currentContainer);
+    }
+    Long revisionId = findNewestRevisionForVersion(currentContainer, version);
+    if (revisionId == null) {
+      return null;
+    }
+    ApiContainer result = getApiContainerRevision(currentContainer.getId(), revisionId);
+    if (result != null) {
+      result.setHistoricalVersion(true);
+    }
+    return result;
+  }
+
+  @Override
+  public ApiInstrument getApiInstrumentVersion(Instrument currentInstrument, Long version) {
+    if (currentInstrument.getVersion().equals(version)) {
+      return (ApiInstrument)
+          ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentInstrument);
+    }
+    Long revisionId = findNewestRevisionForVersion(currentInstrument, version);
+    if (revisionId == null) {
+      return null;
+    }
+    ApiInstrument result = getApiInstrumentRevision(currentInstrument.getId(), revisionId);
+    if (result != null) {
+      result.setHistoricalVersion(true);
+    }
+    return result;
+  }
+
+  /**
+   * Finds the newest audit revision whose snapshot carries the given user-facing version, or null
+   * if no revision matches. Non-version-bumping edits create several revisions sharing a version;
+   * the version resolves to the last of them (the final state of that version).
+   */
+  private Long findNewestRevisionForVersion(InventoryRecord currentInvRec, Long version) {
+    Number revision =
+        auditManager.getRevisionNumberForInventoryRecordVersion(
+            currentInvRec.getClass(), currentInvRec.getId(), version);
+    return revision == null ? null : revision.longValue();
   }
 
   @Override

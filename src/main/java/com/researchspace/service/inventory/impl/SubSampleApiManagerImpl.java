@@ -152,6 +152,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               user);
 
       if (contentChanged) {
+        // only content edits bump the user-facing version; moves, notes and usage don't
+        dbSubSample.increaseVersion();
         registerSubSampleModification(user, dbSubSample);
       }
       if (moveSuccessful) {

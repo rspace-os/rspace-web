@@ -1,5 +1,4 @@
 import ApiService from "../../common/InvApiService";
-import { type URL as URLType } from "../../util/types";
 import { doNotAwait, sleep } from "../../util/Util";
 import {
   handleDetailedErrors,
@@ -109,23 +108,19 @@ const defaultEditableFields = new Set([...defaultEditableSampleFields]);
 export default class TemplateModel extends SampleModel implements Template {
   // @ts-expect-error Initialised by populateFromJson
   defaultUnitId: number;
-  // @ts-expect-error Initialised by populateFromJson
-  version: number;
+  // version and historicalVersion are inherited observables (InventoryBaseRecord)
+  declare version: number;
   latest: Template | null = null;
-  // @ts-expect-error Initialised by populateFromJson
-  historicalVersion: boolean;
   icon: string | null = null;
 
   constructor(
     factory: Factory,
-    params: TemplateAttrs = { ...DEFAULT_TEMPLATE }
+    params: TemplateAttrs = { ...DEFAULT_TEMPLATE },
   ) {
     super(factory, params as unknown as SampleAttrs);
     makeObservable(this, {
       defaultUnitId: observable,
-      version: observable,
       latest: observable,
-      historicalVersion: observable,
       icon: observable,
       addField: action,
       removeCustomField: action,
@@ -138,7 +133,6 @@ export default class TemplateModel extends SampleModel implements Template {
       paramsForBackend: override,
       setEditing: override,
       update: override,
-      permalinkURL: override,
       hasSubSamples: override,
       iconName: override,
       recordType: override,
@@ -174,16 +168,13 @@ export default class TemplateModel extends SampleModel implements Template {
   populateFromJson(
     factory: Factory,
     params: object,
-    defaultParams: object = {}
+    defaultParams: object = {},
   ) {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...defaultParams, ...params };
     // @ts-expect-error We assume that params has this property
     this.defaultUnitId = params.defaultUnitId ?? 3;
-    // @ts-expect-error We assume that params has this property
-    this.version = params.version;
-    // @ts-expect-error We assume that params has this property
-    this.historicalVersion = params.historicalVersion;
+    // version and historicalVersion are populated by the base class
   }
 
   get recordType(): RecordType {
@@ -228,7 +219,7 @@ export default class TemplateModel extends SampleModel implements Template {
     try {
       this.fetchingAdditionalInfo = ApiService.get<object>(
         "sampleTemplates",
-        this.version ? `${id}/versions/${this.version}` : `${id}`
+        this.version ? `${id}/versions/${this.version}` : `${id}`,
       );
       const { data } = await this.fetchingAdditionalInfo;
       this.fetchingAdditionalInfo = null;
@@ -256,7 +247,7 @@ export default class TemplateModel extends SampleModel implements Template {
       .then(
         action((x) => {
           this.icon = x;
-        })
+        }),
       );
   }
 
@@ -297,7 +288,7 @@ export default class TemplateModel extends SampleModel implements Template {
           .then(
             action((latest) => {
               this.latest = latest;
-            })
+            }),
           );
       } else {
         this.latest = this;
@@ -324,7 +315,7 @@ export default class TemplateModel extends SampleModel implements Template {
   async setEditing(
     value: boolean,
     refresh?: boolean,
-    goToLatest?: boolean
+    goToLatest?: boolean,
   ): Promise<LockStatus> {
     refresh = refresh ?? true;
     goToLatest = goToLatest ?? true;
@@ -349,7 +340,7 @@ export default class TemplateModel extends SampleModel implements Template {
     const latest = await getRootStore().searchStore.getTemplate(
       id,
       null,
-      this.factory.newFactory()
+      this.factory.newFactory(),
     );
     await mainSearch().setActiveResult(latest); // should not error because active result can't be modified after update
     mainSearch().replaceResult(latest);
@@ -380,7 +371,7 @@ export default class TemplateModel extends SampleModel implements Template {
       // User can only update samples they own
       const samplesToBeUpdated = this.search.fetcher.results.filter(
         // default to true so we don't miss any that could be the current user's
-        (r) => r.owner?.isCurrentUser ?? true
+        (r) => r.owner?.isCurrentUser ?? true,
       );
       if (this.version !== oldVersion && samplesToBeUpdated.length > 0) {
         const newToast = mkAlert({
@@ -418,7 +409,7 @@ export default class TemplateModel extends SampleModel implements Template {
           choice and radio fields.&nbsp;
           <strong>This action cannot be undone.</strong>
         </>,
-        "Update all"
+        "Update all",
       ))
     )
       return;
@@ -431,14 +422,14 @@ export default class TemplateModel extends SampleModel implements Template {
         }>;
       }>(
         `sampleTemplates/${id.toString()}/actions/updateSamplesToLatestTemplateVersion`,
-        {}
+        {},
       );
       handleDetailedErrors(
         data.errorCount,
         data.results.map((response) => ({ response })),
         "update",
         () => this.updateSamplesToLatest(),
-        ""
+        "",
       );
       const factory = this.factory.newFactory();
       handleDetailedSuccesses(
@@ -449,7 +440,7 @@ export default class TemplateModel extends SampleModel implements Template {
             newRecord.populateFromJson(factory, r.record, null);
             return newRecord;
           }),
-        "updated"
+        "updated",
       );
     } catch (error) {
       getRootStore().uiStore.addAlert(
@@ -457,11 +448,11 @@ export default class TemplateModel extends SampleModel implements Template {
           title: "Updating samples to latest template version failed.",
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-        })
+        }),
       );
       console.error(
         "Could not update samples to latest template version.",
-        error
+        error,
       );
     }
   }
@@ -473,17 +464,6 @@ export default class TemplateModel extends SampleModel implements Template {
         ? "Cannot modify a historical version of a template."
         : null)
     );
-  }
-
-  get permalinkURL(): URLType | null {
-    if (!this.id) return null;
-    const id = this.id;
-
-    if (this.historicalVersion)
-      return `/inventory/${this.recordType.toLowerCase()}/${id}?version=${
-        this.version
-      }`;
-    return `/inventory/${this.recordType.toLowerCase()}/${id}`;
   }
 
   get fieldNamesInUse(): Array<string> {
@@ -518,7 +498,7 @@ export default class TemplateModel extends SampleModel implements Template {
       throw new Error(
         `Could not find field with id '${
           field.id ?? "NEW FIELD"
-        }' in this sample.`
+        }' in this sample.`,
       );
 
     const without = [
@@ -573,7 +553,7 @@ export default class TemplateModel extends SampleModel implements Template {
         v !== "custom" &&
         v !== "customs" &&
         v.length > 1 &&
-        v.length <= 30
+        v.length <= 30,
     );
   }
 

@@ -261,9 +261,26 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
     instrumentApiMgr.assertUserCanReadInstrument(id, user);
     ApiInstrument instrument = inventoryAuditMgr.getApiInstrumentRevision(id, revisionId);
-    if (instrument != null) {
-      buildAndAddInventoryRecordLinks(instrument);
+    if (instrument == null) {
+      throw new NotFoundException(createNotFoundMessage("Instrument revision", revisionId));
     }
+    buildAndAddInventoryRecordLinks(instrument);
+    return instrument;
+  }
+
+  @Override
+  public ApiInstrument getInstrumentVersion(
+      @PathVariable Long id,
+      @PathVariable Long version,
+      @RequestAttribute(name = "user") User user) {
+    assertIsInventoryInstrumentEnabled();
+
+    Instrument dbInstrument = instrumentApiMgr.assertUserCanReadInstrument(id, user);
+    ApiInstrument instrument = inventoryAuditMgr.getApiInstrumentVersion(dbInstrument, version);
+    if (instrument == null) {
+      throw new NotFoundException(createNotFoundMessage("Instrument version", version));
+    }
+    buildAndAddInventoryRecordLinks(instrument);
     return instrument;
   }
 

@@ -161,6 +161,12 @@ export default class CoreFetcher {
   deletedItems: DeletedItems;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   benchOwner: Person | null;
+  /**
+   * Set when a permalink fetch fails, so that the UI can show a specific
+   * not-found state (e.g. "version 2 of this subsample was not found")
+   * instead of the generic no-active-result placeholder.
+   */
+  permalinkNotFound: Permalink | null = null;
   factory: Factory;
 
   constructor(
@@ -188,6 +194,7 @@ export default class CoreFetcher {
       owner: observable,
       deletedItems: observable,
       benchOwner: observable,
+      permalinkNotFound: observable,
       setAttributes: action,
       setPage: action,
       setOrder: action,
@@ -321,12 +328,17 @@ export default class CoreFetcher {
     params = this.applySearchParams(params);
     this.setEndpoint();
     const endpoint = this.endpoint;
+    runInAction(() => {
+      this.permalinkNotFound = null;
+    });
 
     try {
       if (endpoint !== "search" && params.permalink) {
-        const slug = params.permalink.version
-          ? `${params.permalink.id}/versions/${params.permalink.version}`
-          : params.permalink.id;
+        // `!= null` not truthiness: ?version=0 must 404, not show the live record
+        const slug =
+          params.permalink.version != null
+            ? `${params.permalink.id}/versions/${params.permalink.version}`
+            : params.permalink.id;
         const { data } = await ApiService.get<
           Record<string, unknown> & { globalId: GlobalId }
         >(endpoint, slug);
@@ -435,6 +447,12 @@ export default class CoreFetcher {
       this.setLoading(false);
     } catch (error) {
       this.resetSearch();
+      if (params.permalink) {
+        // let the right panel render a specific not-found state
+        runInAction(() => {
+          this.permalinkNotFound = params.permalink ?? null;
+        });
+      }
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: `Could not perform search.`,

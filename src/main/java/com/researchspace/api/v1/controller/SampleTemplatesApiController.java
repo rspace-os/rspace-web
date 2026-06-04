@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -91,6 +92,9 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
     ApiSampleTemplate template = sampleApiMgr.getApiSampleTemplateVersion(id, version, user);
+    if (template == null) {
+      throw new NotFoundException(createNotFoundMessage("Sample template version", version));
+    }
     buildAndAddInventoryRecordLinks(template);
     return template;
   }

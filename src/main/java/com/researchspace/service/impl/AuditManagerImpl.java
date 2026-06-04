@@ -157,6 +157,17 @@ public class AuditManagerImpl implements AuditManager {
     return docRevisionList.get(0).getRevision().intValue();
   }
 
+  @Override
+  public <T> Number getRevisionNumberForInventoryRecordVersion(
+      Class<T> cls, Long recordId, Number version) {
+    List<AuditedEntity<T>> revisionList =
+        auditDao.getRevisionsForInventoryRecordVersion(cls, recordId, version);
+    if (revisionList.isEmpty()) {
+      return null;
+    }
+    return revisionList.get(0).getRevision();
+  }
+
   private void loadUpLazyLoadedFields(StructuredDocument revision, StructuredDocument current) {
     revision.getOwner().getUsername();
     // all revisions of a doc should have same field count  RSPAC-1623

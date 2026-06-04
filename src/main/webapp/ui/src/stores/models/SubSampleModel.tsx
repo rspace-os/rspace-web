@@ -177,7 +177,7 @@ export default class SubSampleModel
   populateFromJson(
     factory: Factory,
     passedParams: object,
-    defaultParams: object = {}
+    defaultParams: object = {},
   ): void {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as SubSampleAttrs;
@@ -235,6 +235,7 @@ export default class SubSampleModel
         break;
       case "preview":
         this.setEditable(FIELDS, false);
+        // (isFieldEditable itself blocks notes on a historical version)
         this.setEditable(new Set(["notes"]), true);
         break;
       case "create":
@@ -261,7 +262,7 @@ export default class SubSampleModel
         createdBy: pick(
           "firstName",
           "lastName",
-          "id"
+          "id",
         )(getRootStore().peopleStore.currentUser),
         created: new Date().toISOString(),
       };
@@ -275,7 +276,7 @@ export default class SubSampleModel
     try {
       const { data } = await ApiService.post<{ notes: Array<Note> }>(
         `subSamples/${this.id}/notes`,
-        params
+        params,
       );
 
       runInAction(() => {
@@ -287,7 +288,7 @@ export default class SubSampleModel
         mkAlert({
           message: "Note successfully created.",
           variant: "success",
-        })
+        }),
       );
     } catch (error) {
       getRootStore().uiStore.addAlert(
@@ -296,7 +297,7 @@ export default class SubSampleModel
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
           duration: 8000,
-        })
+        }),
       );
       console.error("Could not create note.", error);
     }
@@ -360,9 +361,9 @@ export default class SubSampleModel
                 title: JSON.parse(jsonData).content,
                 help: error,
                 variant: "error",
-              })
+              }),
             ),
-        })
+        }),
       );
     }
   }
@@ -389,7 +390,7 @@ export default class SubSampleModel
         quantity: this.quantityLabel,
         sample: this.sample,
         location: this,
-      }
+      },
     );
   }
 
@@ -456,7 +457,7 @@ export default class SubSampleModel
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this as SubSample
+            this as SubSample,
           );
         },
       },
@@ -492,7 +493,7 @@ export class SubSampleCollection
 
   get fieldValues(): BatchSubSampleEditableFields {
     const currentQuanities = new RsSet(
-      this.records.map((r) => getValue(r.quantity))
+      this.records.map((r) => getValue(r.quantity)),
     );
 
     return {
@@ -501,11 +502,11 @@ export class SubSampleCollection
         currentQuanities.size === 1
           ? this.records.first.quantity
           : this.isFieldEditable("quantity")
-          ? {
-              numericValue: 0,
-              unitId: this.records.first.quantity?.unitId ?? 3,
-            }
-          : null,
+            ? {
+                numericValue: 0,
+                unitId: this.records.first.quantity?.unitId ?? 3,
+              }
+            : null,
     };
   }
 
@@ -513,7 +514,7 @@ export class SubSampleCollection
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {
     const currentQuanities = new RsSet(
-      this.records.map((r) => getValue(r.quantity))
+      this.records.map((r) => getValue(r.quantity)),
     );
     return {
       ...super.noValueLabel,

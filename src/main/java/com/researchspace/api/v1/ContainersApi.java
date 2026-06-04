@@ -8,6 +8,7 @@ import com.researchspace.api.v1.controller.InventoryApiPaginationCriteria;
 import com.researchspace.api.v1.controller.InventoryApiSearchConfig;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerSearchResult;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.model.User;
 import java.io.IOException;
 import javax.validation.Valid;
@@ -56,6 +57,15 @@ public interface ContainersApi {
 
   @GetMapping("/{id}/locationsImage/{unused}")
   ResponseEntity<byte[]> getContainerLocationsImage(Long id, User user) throws IOException;
+
+  @GetMapping(value = "/{id}/revisions")
+  ApiInventoryRecordRevisionList getContainerAllRevisions(Long id, User user);
+
+  @GetMapping(value = "/{id}/revisions/{revisionId}")
+  ApiContainer getContainerRevision(Long id, Long revisionId, User user);
+
+  @GetMapping(value = "/{id}/versions/{version}")
+  ApiContainer getContainerVersion(Long id, Long version, User user);
 
   @DeleteMapping(value = "/{id}")
   ApiContainer deleteContainer(Long id, User user);

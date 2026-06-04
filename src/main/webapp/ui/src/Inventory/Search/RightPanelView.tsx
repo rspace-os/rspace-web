@@ -12,6 +12,7 @@ import TemplateNewRecordForm from "../Template/NewRecordForm";
 import { withStyles } from "../../util/styles";
 import clsx from "clsx";
 import NoActiveResultPlaceholder from "./components/NoActiveResultPlaceholder";
+import PermalinkNotFound from "./PermalinkNotFound";
 import ContainerBatchForm from "../Container/BatchForm";
 import SampleBatchForm from "../Sample/BatchForm";
 import SubSampleBatchForm from "../Subsample/BatchForm";
@@ -135,6 +136,10 @@ function RightPanelView(): ReactNode {
       return (
         <MixedBatchForm records={search.batchEditingRecordsByType.records} />
       );
+
+    // a permalink (possibly versioned) pointed at something that doesn't exist
+    if (search.fetcher.permalinkNotFound)
+      return <PermalinkNotFound permalink={search.fetcher.permalinkNotFound} />;
 
     // if we're not loading then show placeholder
     if (!search.fetcher.loading) return <NoActiveResultPlaceholder />;

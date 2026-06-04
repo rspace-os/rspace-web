@@ -139,6 +139,8 @@ export type SampleAttrs = {
   sharingMode: SharingMode;
   sharedWith: Array<SharedWithGroup>;
   _links: Array<_LINK>;
+  version?: number | null;
+  historicalVersion?: boolean;
 };
 
 const DEFAULT_SAMPLE: SampleAttrs = {
