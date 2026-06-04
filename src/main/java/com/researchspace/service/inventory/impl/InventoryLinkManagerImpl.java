@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
@@ -12,6 +13,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   @Autowired private InventoryLinkDao linkDao;
   @Autowired private InventoryPermissionUtils permissionUtils;
   @Autowired private LinkTargetResolver linkTargetResolver;
+  @Autowired private LinkTargetSnapshotResolver snapshotResolver;
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
@@ -73,6 +76,16 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     return rows;
   }
 
+  @Override
+  public ApiInventoryLinkTargetSummary getTargetSummary(InventoryLink link, User actor) {
+    return snapshotResolver.resolveSummary(
+        link.getTargetPrefix(),
+        link.getTargetDbId(),
+        link.getVersionPin(),
+        link.getTargetRevisionId(),
+        actor);
+  }
+
   /**
    * Rejects links whose target does not resolve to a real record the actor can READ. Applies to all
    * targets, Inventory and ELN alike. The version suffix (if any) is ignored: only the base record
@@ -92,10 +105,15 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     GlobalIdentifier gid = new GlobalIdentifier(api.getTargetGlobalId());
     entity.setTargetPrefix(gid.getPrefix());
     entity.setTargetDbId(gid.getDbId());
-    if (gid.hasVersionId()) {
-      entity.setVersionPin(gid.getVersionId());
-    } else {
-      entity.setVersionPin(api.getVersionPin());
-    }
+    Long versionPin = gid.hasVersionId() ? gid.getVersionId() : api.getVersionPin();
+    entity.setVersionPin(versionPin);
+    // Capture the exact audit revision the pinned version maps to. Null version means "latest",
+    // which the snapshot resolver resolves dynamically at read time, so no revision is stored.
+    Long revisionId =
+        versionPin == null
+            ? null
+            : snapshotResolver.resolveRevisionForVersion(
+                gid.getPrefix(), gid.getDbId(), versionPin);
+    entity.setTargetRevisionId(revisionId);
   }
 }

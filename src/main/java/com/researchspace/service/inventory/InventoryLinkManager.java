@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.field.InventoryLink;
@@ -29,4 +30,13 @@ public interface InventoryLinkManager {
    * sources the requesting user can read.
    */
   List<ApiInventoryReferencingItem> findReferencingItems(String targetGlobalId, User actor);
+
+  /**
+   * Resolves the audit-backed summary of a link's target (globalId, name, type, deleted) for
+   * display, applying read permission. A "latest" link (no stored revision) resolves to the newest
+   * revision; a pinned link resolves to its stored {@code targetRevisionId}. This is the
+   * service-layer entry point the read/serialization path uses to populate {@link
+   * ApiInventoryLink#getTargetSummary()}.
+   */
+  ApiInventoryLinkTargetSummary getTargetSummary(InventoryLink link, User actor);
 }

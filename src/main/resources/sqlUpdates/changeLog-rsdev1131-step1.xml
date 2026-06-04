@@ -125,4 +125,24 @@
       referencedColumnNames="id"/>
   </changeSet>
 
+  <!--
+      ChangeSet 4: add target_revision_id (the Envers REV a pinned link resolved to; null = latest).
+      Added as a separate addColumn changeSet rather than folded into ChangeSet 1, because ChangeSet 1
+      has already been applied to existing dev databases and Liquibase will not re-run it. This applies
+      cleanly to both existing DBs (adds the column) and fresh installs (ChangeSet 1 creates the table
+      without it, then this adds it).
+  -->
+  <changeSet id="2026-06-03-rsdev1131-add-target-revision-id" context="run" author="nhanlon2">
+    <addColumn tableName="InventoryLink">
+      <column name="target_revision_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="InventoryLink_AUD">
+      <column name="target_revision_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>
