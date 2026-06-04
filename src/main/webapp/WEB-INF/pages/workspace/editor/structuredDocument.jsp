@@ -1,5 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 
+<!-- Styles for the ownCloud / NextCloud import picker dialog (#owncloudDialog) -->
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/ownCloud.css'/>" />
+
 <script>
   const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
 </script>
