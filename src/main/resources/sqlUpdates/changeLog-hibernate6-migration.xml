@@ -18,16 +18,20 @@
         <preConditions onFail="MARK_RAN">
             <not><columnExists tableName="AppConfigElementSet" columnName="naturalId"/></not>
         </preConditions>
-        <comment>Add stable UUID natural key for AppConfigElementSet so equals/hashCode are safe before and after persist</comment>
+        <comment>Add stable UUID natural key for AppConfigElementSet so equals/hashCode are safe before and after persist.
+            Column is added nullable and non-unique first, then populated, then constrained: adding it as
+            NOT NULL UNIQUE up front fails on a populated table because every existing row is back-filled with
+            the empty-string default, colliding on the unique index before the UPDATE can run.</comment>
         <addColumn tableName="AppConfigElementSet">
-            <column name="naturalId" type="varchar(36)">
-                <constraints nullable="false" unique="true"/>
-            </column>
+            <column name="naturalId" type="varchar(36)"/>
         </addColumn>
         <update tableName="AppConfigElementSet">
             <column name="naturalId" valueComputed="UUID()"/>
             <where>naturalId IS NULL OR naturalId = ''</where>
         </update>
+        <addNotNullConstraint tableName="AppConfigElementSet" columnName="naturalId" columnDataType="varchar(36)"/>
+        <addUniqueConstraint tableName="AppConfigElementSet" columnNames="naturalId"
+                             constraintName="uc_appconfigelementset_naturalid"/>
     </changeSet>
 
     <changeSet id="externalworkflowdata-enum-ordinal-to-string" author="spring6-migration">
