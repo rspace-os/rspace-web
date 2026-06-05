@@ -1,5 +1,3 @@
-define(function() {
-
     var settings;
 
     function loadSettingsFromServer() {
@@ -211,5 +209,3 @@ define(function() {
     $(document).ready(function() {
         $(document).on('click', '#systemSettingsLink', loadSettingsFromServer);
     });
-
-});
