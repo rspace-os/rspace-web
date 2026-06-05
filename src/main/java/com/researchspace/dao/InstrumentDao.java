@@ -22,4 +22,11 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
 
   /** Returns all instruments with the given name owned by the given user. */
   List<Instrument> findInstrumentsByName(String name, User user);
+
+  /**
+   * Returns instruments owned by the given user that were created from the given template and whose
+   * tracked template version is older than {@code version}.
+   */
+  List<Instrument> getInstrumentsLinkingOlderTemplateVersionForUser(
+      Long templateId, Long version, User user);
 }

@@ -96,6 +96,23 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .list();
   }
 
+  @Override
+  public List<Instrument> getInstrumentsLinkingOlderTemplateVersionForUser(
+      Long templateId, Long version, User user) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from Instrument where owner=:owner and deleted=false"
+                + " and DTYPE='Instrument'"
+                + " and instrumentTemplate.id=:parentTemplateId"
+                + " and templateLinkedVersion < :parentTemplateMaxVersion",
+            Instrument.class)
+        .setParameter("owner", user)
+        .setParameter("parentTemplateId", templateId)
+        .setParameter("parentTemplateMaxVersion", version)
+        .list();
+  }
+
   /*
    * ============
    *  for tests
