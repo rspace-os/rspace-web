@@ -10,6 +10,7 @@ import VersionHistory from "../VersionHistory";
 import InvApiService from "../../../../common/InvApiService";
 import { makeMockSubSample } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
+import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 import { render } from "@/__tests__/customQueries";
 
 vi.mock("../../../../common/InvApiService", () => ({
@@ -130,5 +131,95 @@ describe("VersionHistory", () => {
     const sample = makeMockSample({ id: null, globalId: null });
     const { container } = render(<VersionHistory record={sample} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  test("renders nothing for a sample template, which keeps its own version flow", () => {
+    const template = makeMockTemplate();
+    const { container } = render(<VersionHistory record={template} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test("shows an informational message when there is no history yet", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(revisionsResponse([])),
+    );
+    const subsample = makeMockSubSample({ version: 1 });
+    render(<VersionHistory record={subsample} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /view version history/i }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /no version history/i,
+    );
+  });
+
+  test("the current version row is marked as such", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(
+        revisionsResponse([
+          { revisionId: 100, version: 1 },
+          { revisionId: 250, version: 2 },
+        ]),
+      ),
+    );
+    const subsample = makeMockSubSample({ version: 2 });
+    render(<VersionHistory record={subsample} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /view version history/i }),
+    );
+
+    await screen.findByRole("table");
+    const currentRow = screen
+      .getAllByRole("row")
+      .find((row) => /version 2/i.test(row.textContent ?? ""));
+    expect(currentRow).toHaveTextContent("(current)");
+  });
+
+  test("the newest revision of a version wins regardless of response order", async () => {
+    // the endpoint returns oldest-first today, but nothing guarantees it:
+    // serve newest-first and assert the newest revision's details still win
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(
+        revisionsResponse([
+          {
+            revisionId: 380,
+            version: 2,
+            lastModified: "2026-06-03T10:00:00.000Z",
+            modifiedByFullName: "Newest Editor",
+          },
+          {
+            revisionId: 250,
+            version: 2,
+            lastModified: "2026-06-01T10:00:00.000Z",
+            modifiedByFullName: "Oldest Editor",
+          },
+        ]),
+      ),
+    );
+    const subsample = makeMockSubSample({ version: 2 });
+    render(<VersionHistory record={subsample} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /view version history/i }),
+    );
+
+    await screen.findByRole("table");
+    expect(screen.getByText("Newest Editor")).toBeVisible();
+    expect(screen.queryByText("Oldest Editor")).not.toBeInTheDocument();
+  });
+
+  test("the dialog is accessible", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
+    );
+    const subsample = makeMockSubSample({ version: 2 });
+    const { baseElement } = render(<VersionHistory record={subsample} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /view version history/i }),
+    );
+    await screen.findByRole("table");
+
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(baseElement).toBeAccessible(); // eslint-disable-line @typescript-eslint/no-unsafe-call
   });
 });

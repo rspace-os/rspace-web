@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -121,6 +122,17 @@ public class InventoryVersionEndpointsNotFoundTest {
     when(instrumentMgr.getApiInstrumentVersion(1L, 9L, user)).thenReturn(null);
 
     assertThrows(NotFoundException.class, () -> controller.getInstrumentVersion(1L, 9L, user));
+  }
+
+  @Test
+  public void instrumentVersionEndpointRejectedWhenInstrumentsDisabled() {
+    InstrumentsApiController controller = wire(new InstrumentsApiController());
+    ReflectionTestUtils.setField(controller, "inventoryInstrumentEnabled", false);
+
+    assertThrows(
+        UnsupportedOperationException.class, () -> controller.getInstrumentVersion(1L, 1L, user));
+    // the feature gate fires before any retrieval
+    verifyNoInteractions(instrumentMgr);
   }
 
   @Test

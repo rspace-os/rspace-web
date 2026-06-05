@@ -119,6 +119,9 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     if (currentSubSample.getVersion().equals(version)) {
       return getApiSubSampleById(subSampleId, user);
     }
+    // joins this transaction (REQUIRED propagation), so currentSubSample stays
+    // session-attached; historical reads intentionally publish no InventoryAccessEvent,
+    // matching the template-version precedent
     ApiSubSample apiSubSampleVersion =
         inventoryAuditMgr.getApiSubSampleVersion(currentSubSample, version);
     if (apiSubSampleVersion != null) {

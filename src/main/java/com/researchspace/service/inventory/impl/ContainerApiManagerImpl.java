@@ -167,6 +167,9 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
       }
       return getPopulatedApiContainer(currentContainer, true, user);
     }
+    // joins this transaction (REQUIRED propagation), so currentContainer stays
+    // session-attached; historical reads intentionally publish no InventoryAccessEvent,
+    // matching the template-version precedent
     ApiContainer apiContainerVersion =
         inventoryAuditMgr.getApiContainerVersion(currentContainer, version);
     if (apiContainerVersion != null) {

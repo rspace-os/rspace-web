@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
@@ -274,16 +275,125 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void instrumentVersionRetrieval() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/instruments", anyUser, "{ \"name\": \"version one instrument\" }"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiInstrument instrument = getFromJsonResponseBody(result, ApiInstrument.class);
+
+    // edit the instrument, bumping it to version 2
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                "/instruments/" + instrument.getId(),
+                anyUser,
+                "{ \"name\": \"version two instrument\" }"))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    // version 1 resolves to the historical snapshot
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + instrument.getId() + "/versions/1",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument instrumentV1 = getFromJsonResponseBody(result, ApiInstrument.class);
+    assertEquals("version one instrument", instrumentV1.getName());
+    assertTrue(instrumentV1.isHistoricalVersion());
+    assertEquals("IN" + instrument.getId() + "v1", instrumentV1.getGlobalId());
+    assertTrue(instrumentV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+
+    // the current version resolves to the live record, not flagged historical
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/" + instrument.getId() + "/versions/2",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument instrumentV2 = getFromJsonResponseBody(result, ApiInstrument.class);
+    assertEquals("version two instrument", instrumentV2.getName());
+    assertEquals(false, instrumentV2.isHistoricalVersion());
+
+    // a version that never existed is a clean 404
+    this.mockMvc
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE,
+                apiKey,
+                "/instruments/" + instrument.getId() + "/versions/99",
+                anyUser))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
   public void versionEndpointsDowngradeViewWithoutReadPermission() throws Exception {
     User owner = createInitAndLoginAnyUser();
+    String ownerApiKey = createNewApiKeyForUser(owner);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+    ApiContainer container = createBasicContainerForUser(owner, "private container");
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    ownerApiKey, "/instruments", owner, "{ \"name\": \"private instrument\" }"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiInstrument instrument = getFromJsonResponseBody(result, ApiInstrument.class);
+
+    // bump everything to version 2 so that version 1 exercises the HISTORICAL snapshot
+    // downgrade, not the live-record one
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                ownerApiKey, "/samples/" + sample.getId(), owner, "{ \"name\": \"sample v2\" }"))
+        .andExpect(status().isOk());
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                ownerApiKey, "/subSamples/" + subSampleId, owner, "{ \"name\": \"subsample v2\" }"))
+        .andExpect(status().isOk());
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                ownerApiKey,
+                "/containers/" + container.getId(),
+                owner,
+                "{ \"name\": \"container v2\" }"))
+        .andExpect(status().isOk());
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                ownerApiKey,
+                "/instruments/" + instrument.getId(),
+                owner,
+                "{ \"name\": \"instrument v2\" }"))
+        .andExpect(status().isOk());
 
     User otherUser = createInitAndLoginAnyUser();
     String otherApiKey = createNewApiKeyForUser(otherUser);
 
     // same outcome as reading the live record without permission: a cleared public view,
-    // with no permitted actions and sensitive properties stripped
-    MvcResult result =
+    // with no permitted actions and the sensitive properties stripped, for every type
+    result =
         this.mockMvc
             .perform(
                 createBuilderForGet(
@@ -293,8 +403,54 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
                     otherUser))
             .andExpect(status().isOk())
             .andReturn();
-    ApiSample publicViewV1 = getFromJsonResponseBody(result, ApiSample.class);
-    assertTrue(publicViewV1.getPermittedActions().isEmpty());
-    assertNull(publicViewV1.getFields());
+    ApiSample publicViewSample = getFromJsonResponseBody(result, ApiSample.class);
+    assertTrue(publicViewSample.getPermittedActions().isEmpty());
+    assertNull(publicViewSample.getFields());
+    assertNull(publicViewSample.getExtraFields());
+
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    otherApiKey,
+                    "/subSamples/" + subSampleId + "/versions/1",
+                    otherUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSubSample publicViewSubSample = getFromJsonResponseBody(result, ApiSubSample.class);
+    assertTrue(publicViewSubSample.getPermittedActions().isEmpty());
+    assertNull(publicViewSubSample.getNotes());
+    assertNull(publicViewSubSample.getExtraFields());
+
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    otherApiKey,
+                    "/containers/" + container.getId() + "/versions/1",
+                    otherUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiContainer publicViewContainer = getFromJsonResponseBody(result, ApiContainer.class);
+    assertTrue(publicViewContainer.getPermittedActions().isEmpty());
+    assertNull(publicViewContainer.getAttachments());
+    assertNull(publicViewContainer.getBarcodes());
+
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    otherApiKey,
+                    "/instruments/" + instrument.getId() + "/versions/1",
+                    otherUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument publicViewInstrument = getFromJsonResponseBody(result, ApiInstrument.class);
+    assertTrue(publicViewInstrument.getPermittedActions().isEmpty());
+    assertNull(publicViewInstrument.getAttachments());
+    assertNull(publicViewInstrument.getBarcodes());
   }
 }

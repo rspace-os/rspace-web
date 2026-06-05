@@ -725,6 +725,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     if (currentSample.getVersion().equals(version)) {
       return getApiSampleById(sampleId, user);
     }
+    // joins this transaction (REQUIRED propagation), so currentSample stays session-attached;
+    // historical reads intentionally publish no InventoryAccessEvent, matching the
+    // template-version precedent
     ApiSample apiSampleVersion = inventoryAuditMgr.getApiSampleVersion(currentSample, version);
     populateOutgoingHistoricalApiSample(apiSampleVersion, currentSample, user);
     return apiSampleVersion;

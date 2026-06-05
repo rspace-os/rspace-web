@@ -51,11 +51,16 @@ type State =
  * Groups the raw revisions list by user-facing version, keeping the newest
  * revision of each version (non-version-bumping edits create several
  * revisions sharing a version; the version's final state is the relevant
- * one). Returns the versions newest first.
+ * one). Revisions are sorted by ascending revisionId first so "last write
+ * wins" holds regardless of the order the endpoint returns them in. Returns
+ * the versions newest first.
  */
 function groupByVersion(response: RevisionsListResponse): Array<VersionRow> {
   const byVersion = new Map<number, VersionRow>();
-  for (const revision of response.revisions) {
+  const oldestFirst = [...response.revisions].sort(
+    (a, b) => a.revisionId - b.revisionId,
+  );
+  for (const revision of oldestFirst) {
     const version = revision.record.version;
     if (version === null || typeof version === "undefined") continue;
     byVersion.set(version, {
@@ -79,7 +84,7 @@ function DialogContents({
   onNavigate: (url: string) => void;
 }): React.ReactNode {
   if (state.state === "loading")
-    return <Skeleton variant="rectangular" width={210} height={118} />;
+    return <Skeleton variant="rectangular" width="100%" height={118} />;
   if (state.state === "fail")
     return <Alert severity="error">{state.error.message}</Alert>;
   if (state.state === "success") {

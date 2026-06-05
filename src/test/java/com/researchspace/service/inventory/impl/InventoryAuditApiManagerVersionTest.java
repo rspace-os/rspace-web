@@ -85,6 +85,29 @@ public class InventoryAuditApiManagerVersionTest {
   }
 
   @Test
+  public void subSampleVersionLookupReturnsLiveRecordForCurrentVersion() {
+    SubSample current = subSampleWithVersion(9L, 2L);
+
+    ApiSubSample result = mgr.getApiSubSampleVersion(current, 2L);
+
+    assertNotNull(result);
+    assertFalse(result.isHistoricalVersion());
+    assertEquals(2L, result.getVersion());
+    verifyNoInteractions(auditManager);
+  }
+
+  @Test
+  public void instrumentVersionLookupReturnsLiveRecordForCurrentVersion() {
+    Instrument current = instrumentWithVersion(7L, 1L);
+
+    ApiInstrument result = mgr.getApiInstrumentVersion(current, 1L);
+
+    assertNotNull(result);
+    assertFalse(result.isHistoricalVersion());
+    verifyNoInteractions(auditManager);
+  }
+
+  @Test
   public void subSampleVersionLookupResolvesHistoricalSnapshot() {
     SubSample current = subSampleWithVersion(9L, 2L);
     SubSample v1 = subSampleWithVersion(9L, 1L);

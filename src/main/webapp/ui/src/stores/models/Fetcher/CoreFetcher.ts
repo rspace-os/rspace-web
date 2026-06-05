@@ -447,8 +447,13 @@ export default class CoreFetcher {
       this.setLoading(false);
     } catch (error) {
       this.resetSearch();
-      if (params.permalink) {
-        // let the right panel render a specific not-found state
+      const notFound =
+        Parsers.objectPath(["response", "status"], error)
+          .flatMap(Parsers.isNumber)
+          .orElse(null) === 404;
+      if (params.permalink && notFound) {
+        // let the right panel render a specific not-found state; transient
+        // failures (500s, network errors) keep the generic error alert only
         runInAction(() => {
           this.permalinkNotFound = params.permalink ?? null;
         });

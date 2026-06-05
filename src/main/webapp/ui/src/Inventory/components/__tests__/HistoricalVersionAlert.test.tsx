@@ -60,6 +60,20 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    expect(screen.queryByText(/contents are not part of/i)).toBeNull();
+    expect(
+      screen.queryByText(/contents are not part of/i),
+    ).not.toBeInTheDocument();
+  });
+
+  test("the alert is accessible", async () => {
+    const subsample = makeMockSubSample({
+      version: 2,
+      historicalVersion: true,
+      globalId: "SS1v2",
+    });
+    const { baseElement } = render(<HistoricalVersionAlert record={subsample} />);
+
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(baseElement).toBeAccessible(); // eslint-disable-line @typescript-eslint/no-unsafe-call
   });
 });

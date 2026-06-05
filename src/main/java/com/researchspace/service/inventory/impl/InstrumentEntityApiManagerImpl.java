@@ -218,10 +218,15 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     if (currentInstrument.getVersion().equals(version)) {
       return getApiInstrumentById(instrumentId, user);
     }
+    // joins this transaction (REQUIRED propagation), so currentInstrument stays
+    // session-attached; historical reads intentionally publish no InventoryAccessEvent,
+    // matching the template-version precedent
     ApiInstrument apiInstrumentVersion =
         inventoryAuditMgr.getApiInstrumentVersion(currentInstrument, version);
-    // permissions are evaluated against the live instrument, as for a regular retrieval
-    populateOutgoingApiInstrumentEntity(apiInstrumentVersion, currentInstrument, user);
+    if (apiInstrumentVersion != null) {
+      // permissions are evaluated against the live instrument, as for a regular retrieval
+      populateOutgoingApiInstrumentEntity(apiInstrumentVersion, currentInstrument, user);
+    }
     return apiInstrumentVersion;
   }
 
