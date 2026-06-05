@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
 <title>You are connected to DMP Assistant</title>
-<script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 </head>
 
 <div id="dmpassistantAuthorizationSuccess" class="bootstrap-custom-flat">

@@ -56,11 +56,13 @@ public class DMPAssistantProviderImpl implements DMPAssistantProvider {
 
   @Override
   public JsonNode getPlanById(String id, Boolean complete, String accessToken) {
-    UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(urlPlans + "/" + id);
+    // pathSegment + encode keep a caller-supplied id inside a single path segment (a "/"
+    // becomes %2F), so it cannot traverse to a sibling endpoint on the DMP Assistant host
+    UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(urlPlans).pathSegment(id);
     if (complete != null) {
       uri.queryParam("complete", complete);
     }
-    return getJson(uri.build().toUri(), accessToken);
+    return getJson(uri.build().encode().toUri(), accessToken);
   }
 
   @Override
@@ -93,7 +95,10 @@ public class DMPAssistantProviderImpl implements DMPAssistantProvider {
 
   @Override
   public JsonNode getTemplateById(String id, String accessToken) {
-    return getJson(URI.create(urlTemplates + "/" + id), accessToken);
+    // see getPlanById: keep the id inside a single, percent-encoded path segment
+    return getJson(
+        UriComponentsBuilder.fromUriString(urlTemplates).pathSegment(id).build().encode().toUri(),
+        accessToken);
   }
 
   private JsonNode getJson(URI uri, String accessToken) {

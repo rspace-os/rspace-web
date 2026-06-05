@@ -40,10 +40,12 @@ export class DmpSummary {
   }
 
   get id(): string {
-    // dmp_id.identifier is a URL like "http://dmp-pgd.ca/api/v2/plans/19142";
-    // the numeric plan id is the trailing path segment.
+    // dmp_id.identifier is usually a URL like "http://dmp-pgd.ca/api/v2/plans/19142";
+    // the plan id is the last non-empty path segment (tolerating a trailing slash).
+    // A plain non-URL identifier is returned unchanged rather than silently corrupted.
     const identifier = this.#dmp_id.identifier;
-    return identifier.substring(identifier.lastIndexOf("/") + 1);
+    const segments = identifier.split("/").filter((s) => s.length > 0);
+    return segments.length > 0 ? segments[segments.length - 1] : identifier;
   }
 
   get title(): string {
@@ -85,7 +87,7 @@ export async function importDmpsIntoGallery(
       data: unknown;
       error: null | { errorMessages: Array<string> };
     }>(
-      "apps/dmpassistant/importPlans",
+      "/apps/dmpassistant/importPlans",
       dmps.map((d) => ({ id: d.id, filename: d.title }))
     );
     if (error !== null) throw new Error(error.errorMessages[0]);
@@ -128,7 +130,9 @@ export class DmpListing {
   page: number;
   pageSize: number;
 
-  #idMapping: { [id: string]: DmpSummary };
+  // index access can always come back empty at runtime (unknown or stale ids),
+  // so the value type is honest about that
+  #idMapping: { [id: string]: DmpSummary | undefined };
   #addAlert: (alert: Alert) => void;
 
   constructor(
@@ -155,7 +159,7 @@ export class DmpListing {
     return listPlans(this.#addAlert, 0, pageSize);
   }
 
-  getById(id: string): DmpSummary {
+  getById(id: string): DmpSummary | undefined {
     return this.#idMapping[id];
   }
 }

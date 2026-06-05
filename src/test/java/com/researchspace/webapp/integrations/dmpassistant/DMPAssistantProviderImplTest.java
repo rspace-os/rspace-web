@@ -104,6 +104,20 @@ class DMPAssistantProviderImplTest {
   }
 
   @Test
+  void getPlanByIdPercentEncodesPathTraversalAttempts() throws Exception {
+    // an id of "../me" must stay a single path segment, not traverse to /api/v2/me
+    mockServer
+        .expect(requestTo(BASE_URL + "/api/v2/plans/..%2Fme?complete=true"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
+        .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+    provider.getPlanById("../me", true, TOKEN);
+
+    mockServer.verify();
+  }
+
+  @Test
   void createPlanPostsJsonBodyWithBearerToken() throws Exception {
     JsonNode plan = MAPPER.readTree("{\"dmp\":{\"title\":\"Example DMP\",\"language\":\"eng\"}}");
     String responseBody = "{\"dmp\":{\"id\":99,\"title\":\"Example DMP\"}}";
@@ -152,6 +166,19 @@ class DMPAssistantProviderImplTest {
 
     mockServer.verify();
     assertEquals(1, response.get("items").get(0).get("id").asInt());
+  }
+
+  @Test
+  void getTemplateByIdPercentEncodesPathTraversalAttempts() throws Exception {
+    mockServer
+        .expect(requestTo(BASE_URL + "/api/v2/templates/..%2Fplans"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
+        .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+    provider.getTemplateById("../plans", TOKEN);
+
+    mockServer.verify();
   }
 
   @Test

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -77,6 +78,13 @@ import org.springframework.web.servlet.view.RedirectView;
 public class DMPAssistantController extends BaseOAuth2Controller {
 
   static final String APP_NAME = "DMPASSISTANT";
+  private static final String CONNECTED_VIEW = "connect/dmpassistant/connected";
+
+  /** Each imported plan costs an upstream fetch plus a media write; cap the batch size. */
+  static final int MAX_IMPORT_BATCH_SIZE = 50;
+
+  /** ObjectMapper is thread-safe and expensive to create; share one across imports. */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   @Autowired private MediaManager mediaManager;
   @Autowired private DMPManager dmpManager;
@@ -119,25 +127,31 @@ public class DMPAssistantController extends BaseOAuth2Controller {
 
   @PostMapping("/connect")
   public RedirectView connect() {
+    String state = generateState();
     String query =
         String.format(
-            "?client_id=%s&redirect_uri=%s&response_type=code&scope=%s",
+            "?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s",
             clientId,
             URLEncoder.encode(urlCallback, StandardCharsets.UTF_8),
-            URLEncoder.encode(scope, StandardCharsets.UTF_8));
+            URLEncoder.encode(scope, StandardCharsets.UTF_8),
+            state);
     return new RedirectView(urlAuthorize + query);
   }
 
   @GetMapping("/callback")
   public String callback(
-      @RequestParam Map<String, String> params, Model model, Principal principal) {
+      @RequestParam Map<String, String> params,
+      Model model,
+      Principal principal,
+      HttpServletRequest request) {
     OauthAuthorizationErrorBuilder error =
         OauthAuthorizationError.builder().appName("DMP Assistant");
     try {
+      verifyStateParameter(request);
       AccessToken accessToken = requestAccessToken(params.get("code"));
       createUserConnection(principal, accessToken);
       log.info("Connected DMP Assistant for user {}", principal.getName());
-      return "connect/dmpassistant/connected";
+      return CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMP Assistant", ex);
       error.errorMsg("Error during token creation");
@@ -170,7 +184,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       conn.setDisplayName("DMP Assistant refreshed access token");
       userConnectionManager.save(conn);
       log.info("Refreshed DMP Assistant token for user {}", principal.getName());
-      return "connect/dmpassistant/connected";
+      return CONNECTED_VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing DMP Assistant token: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
@@ -255,6 +269,12 @@ public class DMPAssistantController extends BaseOAuth2Controller {
   @ResponseBody
   public AjaxReturnObject<List<JsonNode>> importPlans(
       @RequestBody List<ImportPlanRequest> requests, Model model, Principal principal) {
+    if (requests.size() > MAX_IMPORT_BATCH_SIZE) {
+      return new AjaxReturnObject<>(
+          null,
+          getErrorListFromMessageCode(
+              "apps.dmpassistant.error.import.batch.too.large", MAX_IMPORT_BATCH_SIZE));
+    }
     return proxy(
         model,
         principal,
@@ -271,7 +291,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
   private JsonNode importSinglePlan(String id, String filename, String accessToken, User user)
       throws IOException {
     JsonNode plan = dmpAssistantProvider.getPlanById(id, true, accessToken);
-    byte[] bytes = new ObjectMapper().writeValueAsBytes(plan);
+    byte[] bytes = OBJECT_MAPPER.writeValueAsBytes(plan);
     EcatDocumentFile file =
         mediaManager.saveNewDMP(filename, new ByteArrayInputStream(bytes), user, null);
     JsonNode dmpNode = plan.has("dmp") ? plan.get("dmp") : plan;
@@ -311,6 +331,10 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     try {
       String accessToken = getExistingAccessToken(model, principal);
       return new AjaxReturnObject<>(call.call(accessToken), null);
+    } catch (TokenRefreshFailedException e) {
+      log.warn("DMP Assistant token refresh failed; user must reconnect");
+      return new AjaxReturnObject<>(
+          null, getErrorListFromMessageCode("apps.dmpassistant.error.refresh"));
     } catch (HttpStatusCodeException e) {
       // Log the full upstream message (which may include the response body, e.g. a
       // Cloudflare HTML challenge page on 403) but never surface that to the user —
@@ -336,11 +360,18 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     }
     Long expireTime = optConn.get().getExpireTime();
     if (expireTime != null && expireTime - Instant.now().toEpochMilli() < timeThreshold * 1000L) {
-      refreshToken(model, principal);
+      if (!CONNECTED_VIEW.equals(refreshToken(model, principal))) {
+        // proceeding with the stale token would only yield an opaque upstream 401; tell
+        // the user to reconnect instead
+        throw new TokenRefreshFailedException();
+      }
       optConn = getExistingUserConnection(principal.getName());
     }
     return optConn.get().getAccessToken();
   }
+
+  /** Thrown when a near-expiry token refresh fails; the user needs to reconnect. */
+  private static class TokenRefreshFailedException extends RuntimeException {}
 
   protected Optional<UserConnection> getExistingUserConnection(String username) {
     Optional<UserConnection> conn =
@@ -384,9 +415,14 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     formData.add("client_secret", clientSecret);
     formData.add("redirect_uri", urlCallback);
     HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-    return restTemplate
-        .exchange(URI.create(urlToken), HttpMethod.POST, request, AccessToken.class)
-        .getBody();
+    AccessToken body =
+        restTemplate
+            .exchange(URI.create(urlToken), HttpMethod.POST, request, AccessToken.class)
+            .getBody();
+    if (body == null) {
+      throw new IllegalStateException("DMP Assistant token endpoint returned an empty body");
+    }
+    return body;
   }
 
   private long getExpireTime(Long expiresIn) {

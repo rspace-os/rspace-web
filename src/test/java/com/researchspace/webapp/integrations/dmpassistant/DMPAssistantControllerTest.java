@@ -5,10 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -23,7 +26,10 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +39,7 @@ import org.mockito.Mock;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.ui.ExtendedModelMap;
@@ -57,9 +64,29 @@ class DMPAssistantControllerTest {
   private static final String SERVER_URL = "http://localhost:8080";
   private static final String SCOPE = "read write";
   private static final String USERNAME = "auser";
+  private static final String STATE = "test-state";
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  @InjectMocks private DMPAssistantController controller;
+  /**
+   * Test-specific subclass: the real state helpers in BaseOAuth2Controller store the nonce in the
+   * Shiro session, which is unavailable in a plain unit test. Modelled on
+   * FigshareOAuthControllerTest.
+   */
+  static class DMPAssistantControllerTSS extends DMPAssistantController {
+    Runnable stateVerifier = () -> {};
+
+    @Override
+    protected String generateState() {
+      return STATE;
+    }
+
+    @Override
+    protected void verifyStateParameter(javax.servlet.http.HttpServletRequest request) {
+      stateVerifier.run();
+    }
+  }
+
+  @InjectMocks private DMPAssistantControllerTSS controller;
   @Mock private UserConnectionManager userConnectionManager;
   @Mock private UserConnection userConnection;
   @Mock private IPropertyHolder properties;
@@ -106,7 +133,7 @@ class DMPAssistantControllerTest {
   }
 
   @Test
-  void connectRedirectsToAuthorizeEndpoint() throws Exception {
+  void connectRedirectsToAuthorizeEndpointWithCsrfState() throws Exception {
     RedirectView view = controller.connect();
 
     assertEquals(
@@ -114,7 +141,8 @@ class DMPAssistantControllerTest {
             + "/oauth/authorize?client_id="
             + CLIENT_ID
             + "&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapps%2Fdmpassistant%2Fcallback"
-            + "&response_type=code&scope=read+write",
+            + "&response_type=code&scope=read+write&state="
+            + STATE,
         view.getUrl());
   }
 
@@ -131,7 +159,11 @@ class DMPAssistantControllerTest {
     when(userConnectionManager.save(any(UserConnection.class))).thenReturn(userConnection);
 
     String result =
-        controller.callback(Map.of("code", "AUTH_CODE"), new ExtendedModelMap(), principal);
+        controller.callback(
+            Map.of("code", "AUTH_CODE", "state", STATE),
+            new ExtendedModelMap(),
+            principal,
+            new MockHttpServletRequest());
 
     mockServer.verify();
     assertEquals("connect/dmpassistant/connected", result);
@@ -144,9 +176,56 @@ class DMPAssistantControllerTest {
         .expect(requestTo(BASE_URL + "/oauth/token"))
         .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
-    String result = controller.callback(Map.of("code", "BAD"), new ExtendedModelMap(), principal);
+    String result =
+        controller.callback(
+            Map.of("code", "BAD", "state", STATE),
+            new ExtendedModelMap(),
+            principal,
+            new MockHttpServletRequest());
 
     assertEquals("connect/authorizationError", result);
+  }
+
+  @Test
+  void callbackReportsDescriptiveErrorWhenTokenResponseBodyIsEmpty() throws Exception {
+    mockServer
+        .expect(requestTo(BASE_URL + "/oauth/token"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess()); // HTTP 200 with an empty body
+
+    ExtendedModelMap model = new ExtendedModelMap();
+    String result =
+        controller.callback(
+            Map.of("code", "AUTH_CODE", "state", STATE),
+            model,
+            principal,
+            new MockHttpServletRequest());
+
+    assertEquals("connect/authorizationError", result);
+    OauthAuthorizationError error = (OauthAuthorizationError) model.getAttribute("error");
+    assertTrue(
+        error.getErrorDetails().contains("empty body"),
+        "Expected a descriptive empty-body message but was: " + error.getErrorDetails());
+    verify(userConnectionManager, never()).save(any(UserConnection.class));
+  }
+
+  @Test
+  void callbackRejectsMismatchedStateWithoutExchangingCode() throws Exception {
+    controller.stateVerifier =
+        () -> {
+          throw new IllegalStateException(
+              "The OAuth2 'state' parameter is missing or doesn't match.");
+        };
+
+    String result =
+        controller.callback(
+            Map.of("code", "AUTH_CODE", "state", "attacker-state"),
+            new ExtendedModelMap(),
+            principal,
+            new MockHttpServletRequest());
+
+    assertEquals("connect/authorizationError", result);
+    verify(userConnectionManager, never()).save(any(UserConnection.class));
   }
 
   @Test
@@ -238,6 +317,27 @@ class DMPAssistantControllerTest {
     verify(userConnection).setAccessToken("REFRESHED");
     assertNotNull(result.getData());
     assertEquals("u@example.ca", result.getData().get("email").asText());
+  }
+
+  @Test
+  void proxyReportsRefreshFailureWhenNearExpiryRefreshFails() throws Exception {
+    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
+        .thenReturn(Optional.of(userConnection));
+    when(userConnection.getAccessToken()).thenReturn("STALE");
+    when(userConnection.getRefreshToken()).thenReturn("OLD_REFRESH");
+    when(userConnection.getExpireTime())
+        .thenReturn(System.currentTimeMillis() + 60_000L); // within the 120s threshold
+    mockServer
+        .expect(requestTo(BASE_URL + "/oauth/token"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withStatus(HttpStatus.BAD_REQUEST));
+
+    AjaxReturnObject<JsonNode> result = controller.me(new BindingAwareModelMap(), principal);
+
+    assertNull(result.getData());
+    assertNotNull(result.getError());
+    String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
+    assertEquals("apps.dmpassistant.error.refresh", surfaced);
   }
 
   @Test
@@ -356,6 +456,24 @@ class DMPAssistantControllerTest {
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
     assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+  }
+
+  @Test
+  void importPlansRejectsBatchesOverTheCap() throws Exception {
+    List<DMPAssistantController.ImportPlanRequest> requests = new ArrayList<>();
+    for (int i = 0; i < 51; i++) {
+      requests.add(
+          new DMPAssistantController.ImportPlanRequest(String.valueOf(i), "plan-" + i + ".json"));
+    }
+
+    AjaxReturnObject<List<JsonNode>> result =
+        controller.importPlans(requests, new BindingAwareModelMap(), principal);
+
+    assertNull(result.getData());
+    assertNotNull(result.getError());
+    String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
+    assertEquals("apps.dmpassistant.error.import.batch.too.large:50", surfaced);
+    verifyNoInteractions(dmpAssistantProvider);
   }
 
   @Test
