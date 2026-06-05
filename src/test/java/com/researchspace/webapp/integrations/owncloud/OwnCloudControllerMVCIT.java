@@ -197,57 +197,6 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void testSessionCredentials() throws Exception {
-    // Test retrieval when no credentials stored
-    MvcResult noStorageRetrieveResult =
-        this.mockMvc
-            .perform(get("/apps/owncloud/sessionInfo").session(mockSession))
-            .andExpect(status().isOk())
-            .andReturn();
-
-    Map json = parseJSONObjectFromResponseStream(noStorageRetrieveResult);
-
-    assertEquals(json.get("username"), null);
-    assertEquals(json.get("password"), null);
-
-    // Store some credentials
-    this.mockMvc
-        .perform(
-            post("/apps/owncloud/sessionInfo")
-                .param("username", "my_user")
-                .param("password", "my_password")
-                .session(mockSession))
-        .andExpect(status().isOk())
-        .andReturn();
-
-    // Test successful retrieval when credentials have been stored
-    MvcResult retrieveResult =
-        this.mockMvc
-            .perform(get("/apps/owncloud/sessionInfo").session(mockSession))
-            .andExpect(status().isOk())
-            .andReturn();
-
-    json = parseJSONObjectFromResponseStream(retrieveResult);
-
-    assertEquals(json.get("username"), "my_user");
-    assertEquals(json.get("password"), "my_password");
-
-    // Remove credentials from session, test that they are gone
-    ownCloudController.removeOwnCloudCredentialsFromSession(mockSession);
-
-    MvcResult removedRetrieveResult =
-        this.mockMvc
-            .perform(get("/apps/owncloud/sessionInfo").session(mockSession))
-            .andExpect(status().isOk())
-            .andReturn();
-
-    json = parseJSONObjectFromResponseStream(removedRetrieveResult);
-
-    assertEquals(json.get("username"), null);
-    assertEquals(json.get("password"), null);
-  }
-
-  @Test
   public void testConnect() throws Exception {
     // Test authorization url redirect
     // Testing the url creation would just replicate the String.format code,

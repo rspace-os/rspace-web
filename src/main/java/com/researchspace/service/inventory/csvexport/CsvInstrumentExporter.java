@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CsvInstrumentExporter extends InventoryItemCsvExporter {
 
-  // additional props to export for instruments
+  // additional props to export for instruments (instances)
   private static ExportableInvRecProperty[] INSTRUMENT_EXPORTABLE_PROPS = {
     ExportableInvRecProperty.TEMPLATE_GLOBAL_ID,
     ExportableInvRecProperty.TEMPLATE_NAME,
@@ -26,7 +26,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   };
 
   public List<String> writeInstrumentCsvHeaderIntoOutput(
-      List<Instrument> instruments,
+      List<? extends InstrumentEntity> instruments,
       CsvExportMode exportMode,
       CsvMapper mapper,
       OutputStream outputStream)
@@ -47,7 +47,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   }
 
   private List<String> getInstrumentColumnNamesForCsv(
-      List<Instrument> instruments, CsvExportMode exportMode) {
+      List<? extends InstrumentEntity> instruments, CsvExportMode exportMode) {
     List<String> columnNames = super.getBasicColumnNamesForCsv(exportMode);
     for (ExportableInvRecProperty prop : getExportableProps()) {
       columnNames.add(prop.getCsvColumnHeader());
@@ -61,7 +61,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   }
 
   private List<InventoryEntityField> getInstrumentFieldsFromAllInstruments(
-      List<Instrument> instruments) {
+      List<? extends InstrumentEntity> instruments) {
     return instruments.stream()
         .flatMap(i -> i.getActiveFields().stream())
         .collect(Collectors.toList());
@@ -93,7 +93,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   }
 
   protected List<String> writeInstrumentCsvDetailsIntoOutput(
-      Instrument instrument,
+      InstrumentEntity instrument,
       List<String> csvColumnNames,
       CsvExportMode exportMode,
       CsvMapper mapper,
@@ -112,7 +112,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   }
 
   private List<String> getInstrumentPropertiesForCsv(
-      Instrument instrument, List<String> csvColumnNames, CsvExportMode exportMode) {
+      InstrumentEntity instrument, List<String> csvColumnNames, CsvExportMode exportMode) {
     List<String> itemProperties = getBasicItemPropertiesForExport(instrument, exportMode);
     addInstrumentSpecificPropertiesForExport(instrument, itemProperties);
     addVariableInstrumentPropertiesForExport(
@@ -121,26 +121,27 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
     return itemProperties;
   }
 
-  private void addInstrumentSpecificPropertiesForExport(
-      Instrument instrument, List<String> itemProperties) {
+  protected void addInstrumentSpecificPropertiesForExport(
+      InstrumentEntity entity, List<String> itemProperties) {
+    Instrument instrument = entity.isInstrument() ? (Instrument) entity : null;
     for (ExportableInvRecProperty prop : getExportableProps()) {
       String valueForProp = null;
       switch (prop) {
         case TEMPLATE_GLOBAL_ID:
           valueForProp =
-              instrument.getInstrumentTemplate() != null
+              instrument != null && instrument.getInstrumentTemplate() != null
                   ? instrument.getInstrumentTemplate().getGlobalIdentifier()
                   : null;
           break;
         case TEMPLATE_NAME:
           valueForProp =
-              instrument.getInstrumentTemplate() != null
+              instrument != null && instrument.getInstrumentTemplate() != null
                   ? instrument.getInstrumentTemplate().getName()
                   : null;
           break;
         case CONTAINER_GLOBAL_ID:
           valueForProp =
-              instrument.getParentContainer() != null
+              instrument != null && instrument.getParentContainer() != null
                   ? instrument.getParentContainer().getGlobalIdentifier()
                   : null;
           break;
@@ -152,7 +153,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   }
 
   private void addVariableInstrumentPropertiesForExport(
-      Instrument instrument,
+      InstrumentEntity instrument,
       CsvExportMode exportMode,
       List<String> csvColumnNames,
       List<String> itemProperties) {
@@ -173,13 +174,13 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
   }
 
   public OutputStream getCsvFragmentForInstruments(
-      List<Instrument> instruments, CsvExportMode exportMode) throws IOException {
+      List<? extends InstrumentEntity> instruments, CsvExportMode exportMode) throws IOException {
     CsvMapper mapper = getCsvMapper();
     OutputStream outputStream = new ByteArrayOutputStream();
     if (!instruments.isEmpty()) {
       List<String> columnNames =
           writeInstrumentCsvHeaderIntoOutput(instruments, exportMode, mapper, outputStream);
-      for (Instrument i : instruments) {
+      for (InstrumentEntity i : instruments) {
         writeInstrumentCsvDetailsIntoOutput(i, columnNames, exportMode, mapper, outputStream);
       }
     }

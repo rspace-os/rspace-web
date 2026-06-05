@@ -18,11 +18,11 @@ public class InstrumentApiPostValidatorTest extends InventoryRecordValidationTes
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
 
-  @Autowired private InstrumentApiPostValidator instrumentPostValidator;
+  @Autowired private InstrumentApiPostValidator instrumentApiPostValidator;
 
   @Before
   public void setup() {
-    validator = instrumentPostValidator;
+    validator = instrumentApiPostValidator;
   }
 
   @Test

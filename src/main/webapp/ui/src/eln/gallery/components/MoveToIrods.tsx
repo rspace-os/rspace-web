@@ -16,6 +16,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItem from "@mui/material/ListItem";
 import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ChoiceField from "../../../components/Inputs/ChoiceField";
@@ -278,21 +279,23 @@ function MoveCopyDialog({
                         renderInput={() => (
                           <Box>
                             <List>
-                              <ListItemButton
-                                sx={{ maxWidth: "400px" }}
-                                onClick={(e) =>
-                                  setLocationsAnchorEl(e.currentTarget)
-                                }
-                              >
-                                <ListItemText
-                                  primary={
-                                    selectedDestination?.name ??
-                                    "Select a destination"
+                              <ListItem disablePadding>
+                                <ListItemButton
+                                  sx={{ maxWidth: "400px" }}
+                                  onClick={(e) =>
+                                    setLocationsAnchorEl(e.currentTarget)
                                   }
-                                  secondary={selectedDestination?.path ?? ""}
-                                />
-                                <KeyboardArrowDownIcon />
-                              </ListItemButton>
+                                >
+                                  <ListItemText
+                                    primary={
+                                      selectedDestination?.name ??
+                                      "Select a destination"
+                                    }
+                                    secondary={selectedDestination?.path ?? ""}
+                                  />
+                                  <KeyboardArrowDownIcon />
+                                </ListItemButton>
+                              </ListItem>
                             </List>
                             <Menu
                               open={Boolean(locationsAnchorEl)}

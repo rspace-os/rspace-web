@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.InventoryImportApi;
 import com.researchspace.api.v1.controller.InventoryImportPostFullValidator.ApiInventoryImportPostFull;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
@@ -52,6 +53,9 @@ public class InventoryImportApiController extends BaseApiInventoryController
 
     @JsonProperty("subSampleSettings")
     private ApiInventoryImportSettings subSampleSettings;
+
+    @JsonProperty("instrumentSettings")
+    private ApiInventoryImportInstrumentsSettings instrumentSettings;
   }
 
   @Data
@@ -72,6 +76,18 @@ public class InventoryImportApiController extends BaseApiInventoryController
 
     @JsonProperty("templateInfo")
     private ApiSampleTemplatePost templateInfo;
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  @NoArgsConstructor
+  public static class ApiInventoryImportInstrumentsSettings extends ApiInventoryImportSettings {
+
+    @JsonProperty("templateId")
+    private Long templateId;
+
+    @JsonProperty("templateInfo")
+    private ApiInstrumentTemplatePost templateInfo;
   }
 
   /**
@@ -109,6 +125,9 @@ public class InventoryImportApiController extends BaseApiInventoryController
         case "CONTAINERS":
           result = importManager.parseContainersCsvFile(is, user);
           break;
+        case "INSTRUMENTS":
+          result = importManager.parseInstrumentsCsvFile(file.getOriginalFilename(), is, user);
+          break;
         default:
           throw new IllegalArgumentException("unrecoginzed fileType: " + recordType);
       }
@@ -124,6 +143,7 @@ public class InventoryImportApiController extends BaseApiInventoryController
       @RequestPart(value = "containersFile", required = false) MultipartFile containersFile,
       @RequestPart(value = "samplesFile", required = false) MultipartFile samplesFile,
       @RequestPart(value = "subSamplesFile", required = false) MultipartFile subSamplesFile,
+      @RequestPart(value = "instrumentsFile", required = false) MultipartFile instrumentsFile,
       @RequestParam("importSettings") ApiInventoryImportSettingsPost importSettings,
       @RequestAttribute(name = "user") User user)
       throws BindException {
@@ -131,7 +151,8 @@ public class InventoryImportApiController extends BaseApiInventoryController
     // validate incoming settings
     BindingResult errors = new BeanPropertyBindingResult(importSettings, "importSettings");
     ApiInventoryImportPostFull importPostFull =
-        new ApiInventoryImportPostFull(importSettings, containersFile, samplesFile, subSamplesFile);
+        new ApiInventoryImportPostFull(
+            importSettings, containersFile, samplesFile, subSamplesFile, instrumentsFile);
     inputValidator.validate(importPostFull, importPostFullValidator, errors);
     throwBindExceptionIfErrors(errors);
 

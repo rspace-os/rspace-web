@@ -16,11 +16,11 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.service.inventory.impl.InstrumentApiManagerImpl;
+import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import org.junit.Test;
 
-public class InstrumentApiManagerIT extends RealTransactionSpringTestBase {
+public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
 
   @Test
   public void checkBasicInstrumentCreateRetrieveAndExists() throws Exception {
@@ -48,7 +48,7 @@ public class InstrumentApiManagerIT extends RealTransactionSpringTestBase {
     request.setName(" ");
 
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
-    assertEquals(InstrumentApiManagerImpl.INSTRUMENT_DEFAULT_NAME, created.getName());
+    assertEquals(InstrumentEntityApiManagerImpl.INSTRUMENT_DEFAULT_NAME, created.getName());
   }
 
   @Test
