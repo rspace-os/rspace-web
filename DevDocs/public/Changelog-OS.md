@@ -4,6 +4,28 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.23.0 2026-06-05
+
+### ELN Features
+
+- RSDEV-1109 S3 File System connector supporting upload of Gallery Files and transfer between S3 buckets
+- RSDEV-1111 S3 File System configuration supports read/write allowlists, so access can be limited to specific RSpace users
+- RSDEV-833 sysadmin user deletion now supports transferring shared templates to sysadmin (this was previously blocking user deletion)
+- RSDEV-499 chemistry Ketcher dialog now prompts the user about unsaved changes
+- RSDEV-335 replaced Jove App with a more generic 'embed video' text editor plugin
+
+### ELN Bugfix
+
+- RSDEV-1005, RSDEV-1137, RSDEV-1138 various fixes around chemical stoichiometries
+- RSDEV-1108, RSDEV-1130 more robust sysadmin user deletion for users with complex stoichiometry content
+- RSDEV-1105 adjust sizing of a new RSpace logo in a few places where it was appearing extra large
+- ISSUE#567 we switched to new build process for front-end resources, and ant-based script for file renaming is no longer used
+
+### Inventory Bugfix
+
+- RSDEV-1066 more robust check of field name uniqueness when creating items through Inventory API
+- RSDEV-1067 more robust checks of sample/subsample units when creating through Inventory API
+
 # 2.22.0 2026-05-08
 
 ### ELN Features

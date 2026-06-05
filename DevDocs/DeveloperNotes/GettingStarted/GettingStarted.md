@@ -103,10 +103,15 @@ all code dependencies and compile the code.
 The application .war file can be built with the following maven command:  
 
 ```
-mvn clean package -DskipTests=true \
+mvn clean package -DgenerateReactDist -DskipTests=true \
   -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
   -Djava-version=17 -Djava-vendor=openjdk
 ```
+
+The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
+which installs Node/npm locally, runs `npm ci`, and runs the Vite production build,
+bundling the resulting `dist/` files into the WAR. Without this flag the frontend is
+not built.
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
