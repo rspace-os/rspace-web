@@ -6,7 +6,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
-import MenuItem from "@mui/material/MenuItem";
+import ListItemButton from "@mui/material/ListItemButton";
 import { inputBaseClasses } from "@mui/material/InputBase";
 import { buttonBaseClasses } from "@mui/material/ButtonBase";
 import { chipClasses } from "@mui/material/Chip";
@@ -30,9 +30,11 @@ NoOptionsMessage.propTypes = {
   selectProps: PropTypes.object.isRequired,
 };
 
-function inputComponent({ inputRef, ...props }) {
-  return <div ref={inputRef} {...props} />;
-}
+const inputComponent = React.forwardRef(({ inputRef, ...props }, ref) => (
+  <div ref={inputRef || ref} {...props} />
+));
+
+inputComponent.displayName = "TagSelectInput";
 
 inputComponent.propTypes = {
   inputRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
@@ -77,7 +79,7 @@ Control.propTypes = {
 
 function Option(props) {
   return (
-    <MenuItem
+    <ListItemButton
       data-test-id={`a-search-tag-option-${props.children}`}
       className="dropdown-item"
       ref={props.innerRef}
@@ -87,7 +89,7 @@ function Option(props) {
       {...props.innerProps}
     >
       {props.children}
-    </MenuItem>
+    </ListItemButton>
   );
 }
 
@@ -192,6 +194,10 @@ export default function TagSelect(props) {
   }
 
   const selectStyles = {
+    container: (base) => ({
+      ...base,
+      width: "100%",
+    }),
     input: (base) => ({
       ...base,
       color: theme.palette.text.primary,
