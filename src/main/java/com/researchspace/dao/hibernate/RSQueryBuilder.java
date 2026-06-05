@@ -182,23 +182,7 @@ class RSQueryBuilder {
     if (cfg.isRestrictByUser()) {
       BooleanPredicateClausesStep<?> userFilter = f.bool();
       for (String username : cfg.getUsernameFilterList()) {
-        // owner.username: embedded path on BaseRecord subtypes (StructuredDocument, EcatMedia,
-        // etc.)
-        //                 and on InventoryRecord via @IndexedEmbedded owner
-        // owner_username: flat keyword on EcatCommentItem (indexed from lastUpdater)
-        // Build gracefully — not all scopes have both fields.
-        BooleanPredicateClausesStep<?> ownerMatch = f.bool();
-        try {
-          ownerMatch = ownerMatch.should(f.match().field("owner.username").matching(username));
-        } catch (RuntimeException e) {
-          log.debug("owner.username not in scope: {}", e.getMessage());
-        }
-        try {
-          ownerMatch = ownerMatch.should(f.match().field("owner_username").matching(username));
-        } catch (RuntimeException e) {
-          log.debug("owner_username not in scope: {}", e.getMessage());
-        }
-        userFilter = userFilter.should(ownerMatch.minimumShouldMatchNumber(1));
+        userFilter = userFilter.should(ownerUsernameMatch(f, username));
       }
       for (String sharedWith : cfg.getSharedWithFilterList()) {
         // sharedWith is a @KeywordField storing a comma-joined string of group unique names.
@@ -212,6 +196,35 @@ class RSQueryBuilder {
       predicate = allUsers.must(userFilter).must(predicate).toPredicate();
     }
     return predicate;
+  }
+
+  /**
+   * Builds a SHOULD-over-both-fields owner match for a single username. Owner is indexed two ways:
+   *
+   * <ul>
+   *   <li>{@code owner.username}: embedded path on BaseRecord subtypes (StructuredDocument,
+   *       EcatMedia, etc.) and on InventoryRecord via {@code @IndexedEmbedded owner}
+   *   <li>{@code owner_username}: flat keyword on EcatCommentItem (indexed from lastUpdater)
+   * </ul>
+   *
+   * Either field may be absent from a given scope, so each clause is added defensively. Used by
+   * both the permission filter ({@link #addUserFilterInPredicate}) and the explicit owner search
+   * term ({@link #getPredicateList}) so they stay in step.
+   */
+  private BooleanPredicateClausesStep<?> ownerUsernameMatch(
+      SearchPredicateFactory f, String username) {
+    BooleanPredicateClausesStep<?> ownerMatch = f.bool();
+    try {
+      ownerMatch = ownerMatch.should(f.match().field("owner.username").matching(username));
+    } catch (RuntimeException e) {
+      log.debug("owner.username not in scope: {}", e.getMessage());
+    }
+    try {
+      ownerMatch = ownerMatch.should(f.match().field("owner_username").matching(username));
+    } catch (RuntimeException e) {
+      log.debug("owner_username not in scope: {}", e.getMessage());
+    }
+    return ownerMatch.minimumShouldMatchNumber(1);
   }
 
   /**
@@ -296,10 +309,13 @@ class RSQueryBuilder {
 
         ql.add(conjunction.toPredicate());
 
-      } else if (term.field().equals("owner.username")) {
+      } else if (term.field().equals(FieldNames.OWNER)) {
+        // Mirror addUserFilterInPredicate: owner lives at owner.username on most types and at the
+        // flat owner_username keyword on EcatCommentItem, so an owner search must cover both or it
+        // misses comments authored by the searched-for user.
         BooleanPredicateClausesStep<?> conjunction = f.bool();
         for (String userName : term.text().split(",")) {
-          conjunction = conjunction.should(f.match().field("owner.username").matching(userName));
+          conjunction = conjunction.should(ownerUsernameMatch(f, userName));
         }
         ql.add(conjunction.minimumShouldMatchNumber(1).toPredicate());
 

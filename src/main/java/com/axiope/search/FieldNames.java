@@ -42,6 +42,10 @@ public class FieldNames {
   // SubSample note content (indexed via @IndexedEmbedded with "notes." prefix on SubSample)
   public static final String NOTES_FIELD_DATA = "notes.fieldData";
 
+  // Attachment filenames on Sample, SubSample and Container (indexed via @IndexedEmbedded with
+  // "files." prefix; InventoryFile.fileName -> files.fieldData)
+  public static final String FILES_FIELD_DATA = "files.fieldData";
+
   /* for searching items by the id of the container they belong to */
   public static final String PARENT_ID = "parentId";
 
