@@ -33,5 +33,6 @@ export function useApplicationVersionQuery(): UseQueryResult<string, Error> {
     queryKey: applicationVersionQueryKeys.all,
     queryFn: getApplicationVersion,
     staleTime: Infinity,
+    gcTime: Infinity,
   });
 }
