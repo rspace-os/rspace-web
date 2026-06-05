@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
   <packaging>war</packaging>
-  <version>2.23.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.24.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>https://www.researchspace.com</url>
 
@@ -82,47 +82,6 @@
             <nonFilteredFileExtension>ttf</nonFilteredFileExtension>
           </nonFilteredFileExtensions>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>com.github.eirslett</groupId>
-        <artifactId>frontend-maven-plugin</artifactId>
-        <version>2.0.0</version>
-        <configuration>
-          <nodeVersion>v24.15.0</nodeVersion>
-          <npmVersion>11.14.1</npmVersion>
-          <workingDirectory>src/main/webapp/ui</workingDirectory>
-        </configuration>
-        <executions>
-          <execution>
-            <id>Install node and npm locally to the project</id>
-            <goals>
-              <goal>install-node-and-npm</goal>
-            </goals>
-            <configuration>
-              <skip>${reactDevMode}</skip>
-            </configuration>
-          </execution>
-          <execution>
-            <id>Collect npm dependencies</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <configuration>
-              <arguments>${npm.dependencies.collection.arg}</arguments>
-              <skip>${reactDevMode}</skip>
-            </configuration>
-          </execution>
-          <execution>
-            <id>Build react dist files</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <configuration>
-              <arguments>run build</arguments>
-              <skip>${reactDevMode}</skip>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -1493,7 +1452,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.23.3</version>
+      <version>2.24.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1952,6 +1911,63 @@
   </dependencies>
 
   <profiles>
+    <!-- Generates the React/Vite frontend dist files and bundles them into the WAR.
+      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the npm
+      install and Vite build out of everyday `mvn compile`/`test` runs, while CI
+      packaging and release stages pass the flag explicitly (see Jenkinsfile). The
+      executions use the implicit generate-resources phase so that
+      `mvn jetty:run -DgenerateReactDist` also rebuilds the bundle. The normal dev
+      loop uses -DreactDevMode=true and does not set this flag, so the build is
+      skipped and Jetty proxies frontend requests to the local Vite dev server. -->
+    <profile>
+      <id>generateReactDistFiles</id>
+      <activation>
+        <property>
+          <name>generateReactDist</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>2.0.0</version>
+            <configuration>
+              <nodeVersion>v24.15.0</nodeVersion>
+              <npmVersion>11.14.1</npmVersion>
+              <workingDirectory>src/main/webapp/ui</workingDirectory>
+            </configuration>
+            <executions>
+              <execution>
+                <id>Install node and npm locally to the project</id>
+                <goals>
+                  <goal>install-node-and-npm</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>Collect npm dependencies</id>
+                <goals>
+                  <goal>npm</goal>
+                </goals>
+                <configuration>
+                  <arguments>${npm.dependencies.collection.arg}</arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>Build react dist files</id>
+                <goals>
+                  <goal>npm</goal>
+                </goals>
+                <configuration>
+                  <arguments>run build</arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <!-- builds application but makes no changes to the database at all, for
       testing update scripts -->
     <profile>
@@ -2554,8 +2570,6 @@
     <deployment>dev</deployment>
     <!-- default location of external properties file is actually the classpath one! -->
     <propertyFileDirPlaceholder>classpath:deployments/${deployment}</propertyFileDirPlaceholder>
-    <!-- set to true when using a local Vite dev server, skipping the production Vite build -->
-    <reactDevMode>false</reactDevMode>
     <!-- opt-in cache busting for legacy /scripts/** and /styles/** assets in dev mode; production always cache-busts -->
     <legacyAssetCacheBustingInDevMode>false</legacyAssetCacheBustingInDevMode>
 

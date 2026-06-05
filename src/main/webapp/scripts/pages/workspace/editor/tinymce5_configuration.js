@@ -405,6 +405,7 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
 var initTinyMCE_cachedBoxSelectRequest;
+var initTinyMCE_cachedOneDriveScriptRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
 var defaultTinymceVitePluginBundles = {
@@ -430,6 +431,22 @@ function loadBoxSelectScript() {
 	}
 
 	return initTinyMCE_cachedBoxSelectRequest;
+}
+
+function loadOneDriveScript() {
+	if (typeof OneDrive === 'function') {
+		return $.Deferred().resolve().promise();
+	}
+	if (!initTinyMCE_cachedOneDriveScriptRequest) {
+		initTinyMCE_cachedOneDriveScriptRequest = $.getScript("https://js.live.net/v7.2/OneDrive.js");
+		initTinyMCE_cachedOneDriveScriptRequest.fail(function () {
+			initTinyMCE_cachedOneDriveScriptRequest = null;
+		});
+	} else {
+		console.log('using cached onedrive script request');
+	}
+
+	return initTinyMCE_cachedOneDriveScriptRequest;
 }
 
 function loadOwnCloudClientScript() {
@@ -592,7 +609,7 @@ function initTinyMCE(selector) {
 		var gitHubEnabled      = integrations.GITHUB.enabled && integrations.GITHUB.available;
 		var chemistryEnabled   = integrations.CHEMISTRY.enabled && integrations.CHEMISTRY.available;
 		var protocolsIOEnabled = integrations.PROTOCOLS_IO.enabled && integrations.PROTOCOLS_IO.available;
-		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["ownCloud.url"] !== '';
+		var ownCloudEnabled    = integrations.OWNCLOUD.enabled && integrations.OWNCLOUD.available && properties["owncloud.url"] !== '';
 		var nextCloudEnabled   = integrations.NEXTCLOUD.enabled && integrations.NEXTCLOUD.available && properties["nextcloud.url"] !== '';
 		let pyratEnabled       = integrations.PYRAT.enabled && integrations.PYRAT.available && properties["pyrat.server.config"] !== "";
 		const clustermarketEnabled =  integrations.CLUSTERMARKET.enabled && integrations.CLUSTERMARKET.available && properties["clustermarket.web.url"] !== "";
@@ -647,9 +664,22 @@ function initTinyMCE(selector) {
 			fileRepositoriesMenu += " optBox";
 		}
 		if (oneDriveEnabled) {
-			localTinymcesetup.external_plugins["onedrive"] = "/scripts/externalTinymcePlugins/onedrive/plugin.min.js";
-			enabledFileRepositories += " onedrive";
-			fileRepositoriesMenu += " optOneDrive";
+			const oneDriveClientId = properties['onedrive.client.id'];
+			const oneDriveRedirect = properties['onedrive.redirect'];
+			const hasValidOneDriveConfig =
+				typeof oneDriveClientId === "string" && oneDriveClientId.trim() !== "" &&
+				typeof oneDriveRedirect === "string" && oneDriveRedirect.trim() !== "";
+
+			if (!hasValidOneDriveConfig) {
+				apprise('OneDrive integration has not been set up ("clientId" or "redirectUri" missing). Contact your system administrator.');
+				oneDriveEnabled = false;
+			} else {
+				localTinymcesetup.external_plugins["onedrive"] = "/scripts/externalTinymcePlugins/onedrive/plugin.min.js";
+				localTinymcesetup.onedrive_client_id = oneDriveClientId;
+				localTinymcesetup.onedrive_redirect = oneDriveRedirect;
+				enabledFileRepositories += " onedrive";
+				fileRepositoriesMenu += " optOneDrive";
+			}
 		}
 		if (googleDriveEnabled) {
 			localTinymcesetup.external_plugins["googledrive"] = "/scripts/externalTinymcePlugins/googledrive/plugin.min.js";
@@ -717,6 +747,9 @@ function initTinyMCE(selector) {
 		var dependencyRequests = [];
 		if (boxEnabled && hasValidBoxClientId) {
 			dependencyRequests.push(loadBoxSelectScript());
+		}
+		if (oneDriveEnabled) {
+			dependencyRequests.push(loadOneDriveScript());
 		}
 		if (ownCloudEnabled) {
 			dependencyRequests.push(loadOwnCloudClientScript());

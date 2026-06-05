@@ -21,14 +21,14 @@ function Jove(): React.ReactNode {
           mode: "EXTERNAL",
           credentials: null,
         }}
-        explanatoryText="Watch, reference, and teach research methods and technologies through detailed process videos."
+        explanatoryText="Embed JoVE and other video players (e.g., YouTube, TIB AV-Portal)."
         image={JoveIcon}
         color={LOGO_COLOR}
         update={() => {}}
         usageText="Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
-        helpLinkText="JoVE integration docs"
+        helpLinkText="Video integration docs"
         website="jove.com"
-        docLink="jove"
+        docLink="videoIntegration"
         setupSection={
           <Stack direction="column" sx={{ gap: 2 }}>
             <ol>

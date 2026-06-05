@@ -19,6 +19,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
@@ -46,6 +47,7 @@ public abstract class InventoryItemCsvImporter {
   @Autowired protected InventoryBulkOperationHandler bulkOperationHandler;
   @Autowired protected InventoryImportSampleFieldCreator importedFieldCreator;
   @Autowired protected InventoryIdentifierApiManager inventoryIdentifierApiManager;
+  @Autowired protected MessageSourceUtils messages;
   @Autowired private ApiAvailabilityHandler apiHandler;
 
   private final Set<String> reservedSampleFieldNames = (new Sample()).getReservedFieldNames();

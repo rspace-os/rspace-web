@@ -204,6 +204,7 @@ export const IdentifierDataGrid = ({
             src={INSTITUTION_LOGO_ADDRESS}
             alt="Institution Logo"
             title="Institution Logo"
+            className={classes.institutionLogo}
           />
         </Grid>
         <Grid>

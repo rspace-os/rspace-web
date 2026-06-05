@@ -5,6 +5,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -14,11 +15,12 @@ import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.elninventory.MaterialUsage;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryExportManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.ListOfMaterialsApiManager;
@@ -28,6 +30,7 @@ import com.researchspace.service.inventory.csvexport.CsvContainerExporter;
 import com.researchspace.service.inventory.csvexport.CsvContentToExport;
 import com.researchspace.service.inventory.csvexport.CsvExportMode;
 import com.researchspace.service.inventory.csvexport.CsvInstrumentExporter;
+import com.researchspace.service.inventory.csvexport.CsvInstrumentTemplateExporter;
 import com.researchspace.service.inventory.csvexport.CsvListOfMaterialsExporter;
 import com.researchspace.service.inventory.csvexport.CsvSampleExporter;
 import com.researchspace.service.inventory.csvexport.CsvSampleTemplateExporter;
@@ -65,9 +68,11 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
 
   @Autowired private SampleDao sampleDao;
 
-  @Autowired private InstrumentApiManager instrumentManager;
+  @Autowired private InstrumentEntityApiManager instrumentManager;
 
   @Autowired private InstrumentDao instrumentDao;
+
+  @Autowired private InstrumentTemplateDao instrumentTemplateDao;
 
   @Autowired private CsvContainerExporter csvContainerExporter;
 
@@ -78,6 +83,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
   @Autowired private CsvSubSampleExporter csvSubSampleExporter;
 
   @Autowired private CsvInstrumentExporter csvInstrumentExporter;
+
+  @Autowired private CsvInstrumentTemplateExporter csvInstrumentTemplateExporter;
 
   @Autowired private CsvListOfMaterialsExporter csvLomExporter;
 
@@ -93,6 +100,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     private final Set<SubSample> subSamplesToExport;
     private final Set<ListOfMaterials> lomsToExport;
     private final Set<Instrument> instrumentsToExport;
+    private final Set<InstrumentTemplate> instrumentTemplatesToExport;
   }
 
   @Override
@@ -110,6 +118,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     Set<SubSample> subSamplesToExport = new LinkedHashSet<>();
     Set<ListOfMaterials> lomsToExport = new LinkedHashSet<>();
     Set<Instrument> instrumentsToExport = new LinkedHashSet<>();
+    Set<InstrumentTemplate> instrumentTemplatesToExport = new LinkedHashSet<>();
     ItemsToExport itemsToExport =
         new ItemsToExport(
             containersToExport,
@@ -117,7 +126,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
             templatesToExport,
             subSamplesToExport,
             lomsToExport,
-            instrumentsToExport);
+            instrumentsToExport,
+            instrumentTemplatesToExport);
 
     if (globalIdsToExport != null) {
       List<GlobalIdentifier> uniqueGlobalIds =
@@ -132,6 +142,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
             templatesToExport,
             subSamplesToExport,
             instrumentsToExport,
+            instrumentTemplatesToExport,
             includeSampleContent,
             user);
 
@@ -148,6 +159,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
                 templatesToExport,
                 subSamplesToExport,
                 instrumentsToExport,
+                instrumentTemplatesToExport,
                 includeSampleContent,
                 user);
           }
@@ -170,6 +182,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       Set<Sample> templatesToExport,
       Set<SubSample> subSamplesToExport,
       Set<Instrument> instrumentsToExport,
+      Set<InstrumentTemplate> instrumentTemplatesToExport,
       boolean includeSampleContent,
       User user) {
 
@@ -191,6 +204,10 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       Instrument instrument =
           instrumentManager.assertUserCanReadInstrument(globalId.getDbId(), user);
       instrumentsToExport.add(instrument);
+    } else if (globalId.getPrefix().equals(GlobalIdPrefix.NT)) {
+      InstrumentTemplate instrumentTemplate =
+          instrumentManager.assertUserCanReadInstrumentTemplate(globalId.getDbId(), user);
+      instrumentTemplatesToExport.add(instrumentTemplate);
     }
   }
 
@@ -268,6 +285,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     Set<SubSample> subSamplesToExport = new LinkedHashSet<>();
     Set<Sample> templatesToExport = new LinkedHashSet<>();
     Set<Instrument> instrumentsToExport = new LinkedHashSet<>();
+    Set<InstrumentTemplate> instrumentTemplatesToExport = new LinkedHashSet<>();
 
     if (usersToExport != null) {
       List<String> uniqueUsernames = new ArrayList<>(new LinkedHashSet<>(usersToExport));
@@ -282,6 +300,9 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       PaginationCriteria<Instrument> instrumentPgCrit =
           PaginationCriteria.createDefaultForClass(Instrument.class);
       instrumentPgCrit.setResultsPerPage(Integer.MAX_VALUE);
+      PaginationCriteria<InstrumentTemplate> instrumentTemplatePgCrit =
+          PaginationCriteria.createDefaultForClass(InstrumentTemplate.class);
+      instrumentTemplatePgCrit.setResultsPerPage(Integer.MAX_VALUE);
       for (String username : uniqueUsernames) {
         ISearchResults<Container> dbContainers =
             containerDao.getAllContainersForUser(containerPgCrit, username, null, user);
@@ -303,6 +324,10 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
         ISearchResults<Sample> dbTemplates =
             sampleDao.getTemplatesForUser(samplePgCrit, username, null, user);
         templatesToExport.addAll(dbTemplates.getResults());
+        ISearchResults<InstrumentTemplate> dbInstrumentTemplates =
+            instrumentTemplateDao.getTemplatesForUser(
+                instrumentTemplatePgCrit, username, null, user);
+        instrumentTemplatesToExport.addAll(dbInstrumentTemplates.getResults());
       }
     }
 
@@ -313,7 +338,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
             templatesToExport,
             subSamplesToExport,
             new HashSet<>(),
-            instrumentsToExport),
+            instrumentsToExport,
+            instrumentTemplatesToExport),
         ExportScope.USER,
         exportMode,
         user);
@@ -392,6 +418,19 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
           csvInstrumentExporter.getCsvCommentFragmentForInstruments(exportScope, exportMode, user)
               + instrumentData;
       contentToExport.setInstruments(instrumentFragment);
+    }
+
+    String instrumentTemplateData =
+        csvInstrumentTemplateExporter
+            .getCsvFragmentForInstruments(
+                List.copyOf(itemsToExport.getInstrumentTemplatesToExport()), exportMode)
+            .toString();
+    if (StringUtils.isNotBlank(instrumentTemplateData)) {
+      String instrumentTemplateFragment =
+          csvInstrumentTemplateExporter.getCsvCommentFragmentForInstrumentTemplates(
+                  exportScope, exportMode, user)
+              + instrumentTemplateData;
+      contentToExport.setInstrumentTemplates(instrumentTemplateFragment);
     }
 
     return contentToExport;

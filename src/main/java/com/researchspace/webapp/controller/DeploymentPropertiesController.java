@@ -54,9 +54,6 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${owncloud.server.name}")
   private String ownCloudServerName;
 
-  @Value("${owncloud.auth.type}")
-  private String ownCloudAuthType;
-
   @Value("${owncloud.client.id}")
   private String ownCloudClientId;
 
@@ -65,9 +62,6 @@ public class DeploymentPropertiesController extends BaseController {
 
   @Value("${nextcloud.server.name}")
   private String nextCloudServerName;
-
-  @Value("${nextcloud.auth.type}")
-  private String nextCloudAuthType;
 
   @Value("${nextcloud.client.id}")
   private String nextCloudClientId;
@@ -155,16 +149,12 @@ public class DeploymentPropertiesController extends BaseController {
         return ownCloudURL;
       case "owncloud.server.name":
         return ownCloudServerName;
-      case "owncloud.auth.type":
-        return ownCloudAuthType;
       case "owncloud.client.id":
         return ownCloudClientId;
       case "nextcloud.url":
         return nextCloudURL;
       case "nextcloud.server.name":
         return nextCloudServerName;
-      case "nextcloud.auth.type":
-        return nextCloudAuthType;
       case "nextcloud.client.id":
         return nextCloudClientId;
       case "googledrive.developer.key":
@@ -242,12 +232,10 @@ public class DeploymentPropertiesController extends BaseController {
 
     properties.put("owncloud.url", ownCloudURL);
     properties.put("owncloud.server.name", ownCloudServerName);
-    properties.put("owncloud.auth.type", ownCloudAuthType);
     properties.put("owncloud.client.id", ownCloudClientId);
 
     properties.put("nextcloud.url", nextCloudURL);
     properties.put("nextcloud.server.name", nextCloudServerName);
-    properties.put("nextcloud.auth.type", nextCloudAuthType);
     properties.put("nextcloud.client.id", nextCloudClientId);
 
     properties.put("pyrat.server.config", pyratServerConfig);
