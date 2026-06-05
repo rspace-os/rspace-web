@@ -11,6 +11,7 @@ import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
+import ErrorBoundary from "../ErrorBoundary";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,10 +23,23 @@ interface AboutRSpaceDialogProps {
   onClose: () => void;
 }
 
+/**
+ * Renders the running application version. Suspends while it loads, so it must
+ * be wrapped in a `<Suspense>` boundary, and throws on failure, so it must be
+ * wrapped in an error boundary.
+ */
+function ApplicationVersion(): React.ReactElement {
+  const { data: version } = useApplicationVersionQuery();
+  return (
+    <Typography variant="h6" gutterBottom>
+      {version}
+    </Typography>
+  );
+}
+
 export function AboutRSpaceContent(): React.ReactElement {
   const deploymentDescription = useDeploymentProperty("deployment.description");
   const helpEmail = useDeploymentProperty("deployment.helpEmail");
-  const versionQuery = useApplicationVersionQuery();
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" py={2}>
@@ -41,21 +55,17 @@ export function AboutRSpaceContent(): React.ReactElement {
       </Box>
 
       <Box sx={{ mb: 3 }}>
-        {versionQuery.isPending && (
-          <Typography variant="h6" gutterBottom color="textSecondary">
-            Loading version...
-          </Typography>
-        )}
-        {versionQuery.isError && (
-          <Typography variant="h6" gutterBottom color="error">
-            Version unavailable
-          </Typography>
-        )}
-        {versionQuery.isSuccess && (
-          <Typography variant="h6" gutterBottom>
-            {versionQuery.data}
-          </Typography>
-        )}
+        <ErrorBoundary message="Version unavailable">
+          <React.Suspense
+            fallback={
+              <Typography variant="h6" gutterBottom color="textSecondary">
+                Loading version...
+              </Typography>
+            }
+          >
+            <ApplicationVersion />
+          </React.Suspense>
+        </ErrorBoundary>
       </Box>
 
       {FetchingData.match(deploymentDescription, {

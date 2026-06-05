@@ -1,6 +1,8 @@
 import * as v from "valibot";
-import axios from "@/common/axios";
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useSuspenseQuery,
+  type UseSuspenseQueryResult,
+} from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 /**
@@ -14,7 +16,22 @@ export const applicationVersionQueryKeys = {
 };
 
 export async function getApplicationVersion(): Promise<string> {
-  const { data } = await axios.get<unknown>("/public/version");
+  const response = await fetch("/public/version", {
+    method: "GET",
+    // Flag the request as XHR so the server does not remember it as the last
+    // page the user tried to load (see the comment in `@/common/axios`).
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch application version: ${response.statusText}`,
+    );
+  }
+
+  const data: unknown = await response.text();
   return parseOrThrow(ApplicationVersionSchema, data);
 }
 
@@ -22,14 +39,21 @@ export async function getApplicationVersion(): Promise<string> {
  * Fetches the running RSpace application version; see
  * {@link getApplicationVersion}.
  *
+ * This is a suspense query, so the calling component must be rendered inside a
+ * `<Suspense>` boundary (for the loading state) and an error boundary (for the
+ * error state); in return `data` is always defined.
+ *
  * The version is constant for the lifetime of a page, so the query is
- * configured to never go stale. Combined with TanStack Query's request
- * de-duplication and caching, this means `/public/version` is requested at
- * most once per page no matter how many components mount this hook or how
- * often the About dialog is opened and closed.
+ * configured to never go stale and to never be garbage collected. Combined with
+ * TanStack Query's request de-duplication, this means `/public/version` is
+ * requested at most once per page no matter how many components mount this hook
+ * or how often the About dialog is opened and closed.
  */
-export function useApplicationVersionQuery(): UseQueryResult<string, Error> {
-  return useQuery({
+export function useApplicationVersionQuery(): UseSuspenseQueryResult<
+  string,
+  Error
+> {
+  return useSuspenseQuery({
     queryKey: applicationVersionQueryKeys.all,
     queryFn: getApplicationVersion,
     staleTime: Infinity,
