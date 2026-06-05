@@ -1,9 +1,6 @@
 package com.researchspace.webapp.integrations.dmpassistant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -12,58 +9,39 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.model.User;
-import com.researchspace.model.oauth.UserConnection;
-import com.researchspace.service.UserConnectionManager;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 /**
  * Pure unit tests for the DMP Assistant API client. Each test stands up a Spring {@link
- * MockRestServiceServer} bound to the provider's {@link RestTemplate}, mocks the {@link
- * UserConnectionManager} to return a token for the test user, calls the provider method, and
- * asserts the outbound request carries the expected Bearer header.
+ * MockRestServiceServer} bound to the provider's {@link RestTemplate}, sets one expectation, calls
+ * the provider method, and asserts the request was correct and the response propagated.
  */
 class DMPAssistantProviderImplTest {
 
   private static final String BASE_URL = "https://dmp-pgd.ca";
   private static final String TOKEN = "test-access-token";
-  private static final String USERNAME = "auser";
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private DMPAssistantProviderImpl provider;
   private RestTemplate restTemplate;
   private MockRestServiceServer mockServer;
-  @Mock private UserConnectionManager userConnectionManager;
-  @Mock private UserConnection userConnection;
-
-  private User user;
 
   @BeforeEach
   void setUp() throws Exception {
-    openMocks(this);
-    user = new User(USERNAME);
     restTemplate = new RestTemplate();
     provider = new DMPAssistantProviderImpl();
     ReflectionTestUtils.setField(provider, "restTemplate", restTemplate);
     ReflectionTestUtils.setField(provider, "baseUrl", BASE_URL);
-    ReflectionTestUtils.setField(provider, "userConnectionManager", userConnectionManager);
     provider.init();
     mockServer = MockRestServiceServer.createServer(restTemplate);
-
-    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
-        .thenReturn(Optional.of(userConnection));
-    when(userConnection.getAccessToken()).thenReturn(TOKEN);
   }
 
   @Test
@@ -77,29 +55,10 @@ class DMPAssistantProviderImplTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
         .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.me(user);
+    JsonNode response = provider.me(TOKEN);
 
     mockServer.verify();
     assertEquals("u@example.ca", response.get("email").asText());
-  }
-
-  @Test
-  void meThrowsNotFoundWhenNoUserConnection() {
-    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
-        .thenReturn(Optional.empty());
-
-    HttpClientErrorException ex =
-        assertThrows(HttpClientErrorException.class, () -> provider.me(user));
-    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-  }
-
-  @Test
-  void meThrowsNotFoundWhenAccessTokenIsBlank() {
-    when(userConnection.getAccessToken()).thenReturn("");
-
-    HttpClientErrorException ex =
-        assertThrows(HttpClientErrorException.class, () -> provider.me(user));
-    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
 
   @Test
@@ -111,7 +70,7 @@ class DMPAssistantProviderImplTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
         .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.listPlans("2", "25", true, user);
+    JsonNode response = provider.listPlans("2", "25", true, TOKEN);
 
     mockServer.verify();
     assertEquals(0, response.get("items").size());
@@ -124,7 +83,7 @@ class DMPAssistantProviderImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
-    provider.listPlans("1", "20", null, user);
+    provider.listPlans("1", "20", null, TOKEN);
 
     mockServer.verify();
   }
@@ -138,7 +97,7 @@ class DMPAssistantProviderImplTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
         .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.getPlanById("42", true, user);
+    JsonNode response = provider.getPlanById("42", true, TOKEN);
 
     mockServer.verify();
     assertEquals("A plan", response.get("dmp").get("title").asText());
@@ -159,7 +118,7 @@ class DMPAssistantProviderImplTest {
                 .body(responseBody)
                 .contentType(MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.createPlan(plan, user);
+    JsonNode response = provider.createPlan(plan, TOKEN);
 
     mockServer.verify();
     assertEquals(99, response.get("dmp").get("id").asInt());
@@ -175,7 +134,7 @@ class DMPAssistantProviderImplTest {
         .andExpect(header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE))
         .andRespond(withSuccess("{\"ok\":true}", MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.editPlanAnswers("7", answers, user);
+    JsonNode response = provider.editPlanAnswers("7", answers, TOKEN);
 
     mockServer.verify();
     assertEquals(true, response.get("ok").asBoolean());
@@ -189,7 +148,7 @@ class DMPAssistantProviderImplTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
         .andRespond(withSuccess("{\"items\":[{\"id\":1}]}", MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.listTemplates(user);
+    JsonNode response = provider.listTemplates(TOKEN);
 
     mockServer.verify();
     assertEquals(1, response.get("items").get(0).get("id").asInt());
@@ -203,7 +162,7 @@ class DMPAssistantProviderImplTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
         .andRespond(withSuccess("{\"id\":5}", MediaType.APPLICATION_JSON));
 
-    JsonNode response = provider.getTemplateById("5", user);
+    JsonNode response = provider.getTemplateById("5", TOKEN);
 
     mockServer.verify();
     assertEquals(5, response.get("id").asInt());

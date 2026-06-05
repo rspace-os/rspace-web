@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dmpassistant;
 
 import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -31,15 +32,16 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * Spring MVC integration test covering the multi-DMP import path through {@link
- * DMPAssistantController#importPlans}. The user's bearer token is provisioned by persisting a real
- * {@link UserConnection}; outbound calls from the provider to the DMP Assistant HTTP API are
- * intercepted with {@link MockRestServiceServer} bound to a freshly-installed {@link RestTemplate}.
+ * DMPAssistantController#importPlans}. The user's OAuth access token is provisioned by persisting a
+ * real {@link UserConnection} with a far-future expiry (so the controller never attempts a token
+ * refresh); outbound calls from the provider to the DMP Assistant HTTP API are intercepted with
+ * {@link MockRestServiceServer} bound to a freshly-installed {@link RestTemplate}.
  */
 @WebAppConfiguration
 public class DMPAssistantControllerMVCIT extends API_MVC_TestBase {
 
   private static final String DMP_ASSISTANT_BASE_URL = "https://dmp-pgd.ca";
-  private static final String TEST_TOKEN = "test-bearer-token";
+  private static final String TEST_TOKEN = "test-access-token";
 
   @Autowired private UserConnectionManager userConnectionManager;
   @Autowired private DMPManager dmpManager;
@@ -54,11 +56,11 @@ public class DMPAssistantControllerMVCIT extends API_MVC_TestBase {
     user = createInitAndLoginAnyUser();
 
     UserConnection conn = new UserConnection();
-    conn.setId(
-        new UserConnectionId(user.getUsername(), DMPASSISTANT_APP_NAME, DMPASSISTANT_APP_NAME));
+    conn.setId(new UserConnectionId(user.getUsername(), DMPASSISTANT_APP_NAME, PROVIDER_USER_ID));
     conn.setAccessToken(TEST_TOKEN);
+    conn.setRefreshToken("test-refresh-token");
     conn.setDisplayName("DMP Assistant test token");
-    conn.setExpireTime(0L);
+    conn.setExpireTime(System.currentTimeMillis() + 60L * 60 * 1000);
     userConnectionManager.save(conn);
 
     RestTemplate restTemplate = new RestTemplate();
