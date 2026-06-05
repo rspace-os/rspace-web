@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -121,5 +123,50 @@ public class DMPAssistantControllerMVCIT extends API_MVC_TestBase {
     assertEquals(DMPSource.DMP_ASSISTANT, dmp202.getSource());
     assertEquals("Plan One", dmp101.getTitle());
     assertEquals("Plan Two", dmp202.getTitle());
+  }
+
+  /**
+   * Exercises the documented partial-failure contract of importPlans: if any single plan fails, the
+   * whole batch fails (error envelope, no data), no further plans are imported, but plans imported
+   * before the failure are kept.
+   */
+  @Test
+  public void importPlansFailsBatchButKeepsAlreadyImportedPlans() throws Exception {
+    String planOne =
+        "{\"dmp\":{\"title\":\"Plan One\",\"dmp_id\":"
+            + "{\"identifier\":\"https://dmp-pgd.ca/api/v2/plans/101\"}}}";
+
+    mockServer
+        .expect(requestTo(DMP_ASSISTANT_BASE_URL + "/api/v2/plans/101?complete=true"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TEST_TOKEN))
+        .andRespond(withSuccess(planOne, MediaType.APPLICATION_JSON));
+    mockServer
+        .expect(requestTo(DMP_ASSISTANT_BASE_URL + "/api/v2/plans/202?complete=true"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TEST_TOKEN))
+        .andRespond(withStatus(HttpStatus.FORBIDDEN));
+
+    String requestBody =
+        "[{\"id\":\"101\",\"filename\":\"plan-one.json\"},"
+            + "{\"id\":\"202\",\"filename\":\"plan-two.json\"}]";
+
+    mockMvc
+        .perform(
+            post("/apps/dmpassistant/importPlans")
+                .principal(user::getUsername)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").doesNotExist())
+        .andExpect(jsonPath("$.error.errorMessages[0]").isNotEmpty());
+
+    mockServer.verify();
+
+    // the plan imported before the failure is kept; the failed one is not registered
+    List<DMPUser> savedDmps = dmpManager.findDMPsForUser(user);
+    assertEquals(1, savedDmps.size());
+    assertEquals("101", savedDmps.get(0).getDmpId());
+    assertEquals("Plan One", savedDmps.get(0).getTitle());
   }
 }

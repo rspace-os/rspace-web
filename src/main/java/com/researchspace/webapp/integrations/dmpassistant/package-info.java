@@ -12,6 +12,11 @@
  * within {@code dmpassistant.client.token.expire.threshold} seconds of expiry. The client id/secret
  * are issued by Portage when this RSpace deployment is registered as an OAuth application.
  *
+ * <p>Endpoint surface: the RSpace UI currently consumes only {@code GET /plans}, {@code POST
+ * /importPlans}, and the connect/disconnect flow. The remaining proxy endpoints ({@code /me},
+ * {@code GET/POST/PUT /plans/...}, {@code /templates...}) deliberately mirror the documented DMP
+ * Assistant v2 API as forward-looking surface and are not yet UI-consumed.
+ *
  * <p><b>Known production-host limitation:</b> traffic to {@code https://dmp-pgd.ca} is subject to
  * Cloudflare WAF rules and Portage allowlisting. End-to-end calls against production therefore fail
  * until Portage allowlists this client's egress IP. Until that happens, point {@code

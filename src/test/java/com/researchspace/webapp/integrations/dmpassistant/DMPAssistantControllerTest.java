@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -174,10 +175,69 @@ class DMPAssistantControllerTest {
   }
 
   @Test
+  void refreshTokenReturnsErrorViewWhenTokenEndpointFails() {
+    when(userConnection.getRefreshToken()).thenReturn("OLD_REFRESH");
+    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
+        .thenReturn(Optional.of(userConnection));
+    mockServer
+        .expect(requestTo(BASE_URL + "/oauth/token"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withStatus(HttpStatus.BAD_REQUEST));
+    ExtendedModelMap model = new ExtendedModelMap();
+
+    String result = controller.refreshToken(model, principal);
+
+    assertEquals("connect/authorizationError", result);
+    assertNotNull(model.getAttribute("error"));
+  }
+
+  @Test
+  void refreshTokenThrowsNotFoundWhenNoConnection() {
+    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
+        .thenReturn(Optional.empty());
+
+    HttpClientErrorException ex =
+        assertThrows(
+            HttpClientErrorException.class,
+            () -> controller.refreshToken(new ExtendedModelMap(), principal));
+
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
+
+  @Test
   void disconnectDeletesUserConnection() {
     when(userConnectionManager.deleteByUserAndProvider(anyString(), anyString())).thenReturn(1);
     controller.disconnect(principal);
     verify(userConnectionManager).deleteByUserAndProvider(USERNAME, "DMPASSISTANT");
+  }
+
+  @Test
+  void proxyRefreshesTokenWhenNearExpiryAndForwardsRefreshedToken() throws Exception {
+    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
+        .thenReturn(Optional.of(userConnection));
+    // first read passes the blank-token check with the stale token; once the refresh has
+    // saved the connection, the re-read returns the refreshed token
+    when(userConnection.getAccessToken()).thenReturn("STALE", "REFRESHED");
+    when(userConnection.getRefreshToken()).thenReturn("OLD_REFRESH");
+    when(userConnection.getExpireTime())
+        .thenReturn(System.currentTimeMillis() + 60_000L); // within the 120s threshold
+    when(userConnectionManager.save(any(UserConnection.class))).thenReturn(userConnection);
+    mockServer
+        .expect(requestTo(BASE_URL + "/oauth/token"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(
+            withSuccess(
+                "{\"access_token\":\"REFRESHED\",\"refresh_token\":\"NEW_REFRESH\",\"expires_in\":7200}",
+                MediaType.APPLICATION_JSON));
+    JsonNode payload = MAPPER.readTree("{\"email\":\"u@example.ca\"}");
+    when(dmpAssistantProvider.me(eq("REFRESHED"))).thenReturn(payload);
+
+    AjaxReturnObject<JsonNode> result = controller.me(new BindingAwareModelMap(), principal);
+
+    mockServer.verify(); // the refresh grant was actually exchanged
+    verify(userConnection).setAccessToken("REFRESHED");
+    assertNotNull(result.getData());
+    assertEquals("u@example.ca", result.getData().get("email").asText());
   }
 
   @Test
@@ -267,6 +327,35 @@ class DMPAssistantControllerTest {
         controller.getTemplateById("42", new BindingAwareModelMap(), principal);
 
     assertEquals(42, result.getData().get("id").asInt());
+  }
+
+  @Test
+  void proxyReturnsUpstreamErrorEnvelopeWhenNoUserConnection() throws Exception {
+    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
+        .thenReturn(Optional.empty());
+
+    AjaxReturnObject<JsonNode> result = controller.me(new BindingAwareModelMap(), principal);
+
+    // getExistingAccessToken throws HttpClientErrorException(NOT_FOUND), which the proxy's
+    // HttpStatusCodeException branch translates into the status-coded upstream envelope
+    assertNull(result.getData());
+    assertNotNull(result.getError());
+    String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
+    assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+  }
+
+  @Test
+  void proxyReturnsUpstreamErrorEnvelopeWhenStoredAccessTokenIsBlank() throws Exception {
+    when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
+        .thenReturn(Optional.of(userConnection));
+    when(userConnection.getAccessToken()).thenReturn("");
+
+    AjaxReturnObject<JsonNode> result = controller.me(new BindingAwareModelMap(), principal);
+
+    assertNull(result.getData());
+    assertNotNull(result.getError());
+    String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
+    assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
   }
 
   @Test

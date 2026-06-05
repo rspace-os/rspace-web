@@ -32,6 +32,22 @@
       "oauthConnected" : false,
       "options" : { }
     },
+    "DSW" : {
+      "name" : "DSW",
+      "displayName" : "Data Stewardship Wizard",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "RAID" : {
+      "name" : "RAID",
+      "displayName" : "RAiD",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
     "PYRAT" : {
       "name" : "PYRAT",
       "displayName" : "PyRAT",
