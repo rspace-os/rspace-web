@@ -82,7 +82,7 @@ export type IntegrationStates = {
     ACCESS_TOKEN: Optional<string>;
   }>;
   DMPASSISTANT: IntegrationState<{
-    DMPASSISTANT_USER_TOKEN: Optional<string>;
+    ACCESS_TOKEN: Optional<string>;
   }>;
   DMPONLINE: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -362,10 +362,7 @@ function decodeDmpAssistant(
   return {
     mode: parseState(data),
     credentials: {
-      DMPASSISTANT_USER_TOKEN: parseCredentialString(
-          data.options,
-          "DMPASSISTANT_USER_TOKEN"
-      ),
+      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
     },
   };
 }
@@ -1046,11 +1043,9 @@ const encodeIntegrationState = <I extends Integration>(
       name: "DMPASSISTANT",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: creds.DMPASSISTANT_USER_TOKEN.map((token) => ({
-        DMPASSISTANT_USER_TOKEN: token,
-      })).orElse({
-        DMPASSISTANT_USER_TOKEN: "",
-      }),
+      options: creds.ACCESS_TOKEN.map((token) => ({
+        ACCESS_TOKEN: token,
+      })).orElse({}),
     };
   }
   if (integration === "DMPONLINE") {
