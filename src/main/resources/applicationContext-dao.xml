@@ -37,7 +37,7 @@
     			     whereas existing databases (and the two explicitly-pinned hierarchies) use one
     			     hibernate_sequences row per entity table. Setting this true makes Hibernate 6 keep
     			     using the per-entity (table-named) segment rows, matching the existing data.
-    			     changeLog-hibernate6-migration.xml then re-seeds those rows above each table's MAX(id).
+    			     changeLog-rsdev-444.xml then re-seeds those rows above each table's MAX(id).
     			     NOTE: this must be confirmed on a populated DB (see the B1 verification steps in
     			     investigations/RSDEV-444-spring6-review.md); the migration also seeds a "default"
     			     insurance row so the fallback path cannot collide if this setting is ever not honoured. -->

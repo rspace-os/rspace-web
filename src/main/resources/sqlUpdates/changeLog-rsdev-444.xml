@@ -4,7 +4,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
 
-    <changeSet id="hibernate6-rename-sequence-column" author="spring6-migration">
+    <changeSet id="hibernate6-rename-sequence-column" author="spring6-migration" context="run">
         <preConditions onFail="MARK_RAN">
             <columnExists tableName="hibernate_sequences" columnName="sequence_next_hi_value"/>
         </preConditions>
@@ -151,7 +151,7 @@ END
         </rollback>
     </changeSet>
 
-    <changeSet id="appconfigelementset-natural-id" author="spring6-migration">
+    <changeSet id="appconfigelementset-natural-id" author="spring6-migration" context="run">
         <preConditions onFail="MARK_RAN">
             <not><columnExists tableName="AppConfigElementSet" columnName="naturalId"/></not>
         </preConditions>
@@ -171,7 +171,7 @@ END
                              constraintName="uc_appconfigelementset_naturalid"/>
     </changeSet>
 
-    <changeSet id="externalworkflowdata-enum-ordinal-to-string" author="spring6-migration">
+    <changeSet id="externalworkflowdata-enum-ordinal-to-string" author="spring6-migration" context="run">
         <comment>Convert ExternalWorkFlowData enum columns from ordinal (integer-as-string) to enum name strings for Hibernate 6 compatibility</comment>
         <update tableName="ExternalWorkFlowData">
             <column name="externalService" value="GALAXY"/>

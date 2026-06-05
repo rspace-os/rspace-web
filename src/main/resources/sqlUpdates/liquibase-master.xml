@@ -170,7 +170,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1062.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1063.xml"/>
 
-    <include relativeToChangelogFile="true" file="changeLog-hibernate6-migration.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-444.xml"/>
 
   <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
     <include relativeToChangelogFile="true" file="customUpdates-changeLog.xml"/>
