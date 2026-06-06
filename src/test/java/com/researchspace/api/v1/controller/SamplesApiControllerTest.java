@@ -52,6 +52,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -670,8 +671,10 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
         samplesApi.getSampleAllRevisions(basicSample.getId(), testUser);
     assertEquals(0, revisions.getRevisions().size());
 
-    ApiSample sample = samplesApi.getSampleRevision(basicSample.getId(), 1L, testUser);
-    assertNull(sample);
+    // a missing revision surfaces as 404, not a 200 null body
+    assertThrows(
+        NotFoundException.class,
+        () -> samplesApi.getSampleRevision(basicSample.getId(), 1L, testUser));
   }
 
   @Test
