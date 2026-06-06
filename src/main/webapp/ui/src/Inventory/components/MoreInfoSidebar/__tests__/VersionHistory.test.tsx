@@ -133,10 +133,39 @@ describe("VersionHistory", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  test("renders nothing for a sample template, which keeps its own version flow", () => {
-    const template = makeMockTemplate();
-    const { container } = render(<VersionHistory record={template} />);
-    expect(container).toBeEmptyDOMElement();
+  test("shows the version history of a sample template", async () => {
+    const spy = vi
+      .spyOn(InvApiService, "get")
+      .mockImplementation(() =>
+        Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
+      );
+    const template = makeMockTemplate({ version: 2 });
+    render(<VersionHistory record={template} />);
+
+    expect(screen.getByText("2")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: /view version history/i }),
+    );
+    expect(await screen.findByRole("table")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("sampleTemplates/1/revisions");
+  });
+
+  test("a template version row links to the versioned template viewer URL", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
+    );
+    const template = makeMockTemplate({ version: 2 });
+    render(<VersionHistory record={template} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /view version history/i }),
+    );
+
+    await screen.findByRole("table");
+    const link = screen.getByRole("link", { name: /version 1/i });
+    expect(link).toHaveAttribute(
+      "href",
+      "/inventory/sampletemplate/1?version=1",
+    );
   });
 
   test("shows an informational message when there is no history yet", async () => {

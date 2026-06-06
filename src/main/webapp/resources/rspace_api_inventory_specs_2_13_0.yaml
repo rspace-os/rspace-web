@@ -1098,6 +1098,24 @@ paths:
           $ref: '#/responses/NotFound'
 
 
+  '/sampleTemplates/{sampleTemplateId}/revisions':
+    get:
+      summary: 'Gets historical revisions of the Sample Template'
+      description:
+        Returns list of historical revisions saved for the Sample Template, starting from the earliest revision.
+      produces:
+        - application/json
+      tags:
+        - Sample Templates
+      parameters:
+        - $ref: '#/parameters/sampleTemplateIdParam'
+      responses:
+        '200':
+          description: A list of revision information objects.
+        '404':
+          $ref: '#/responses/NotFound'
+
+
   '/sampleTemplates/{sampleTemplateId}/image/{timestamp}':
     get:
       summary: 'Gets a full image connected to the Sample Template'

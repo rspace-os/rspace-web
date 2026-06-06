@@ -138,8 +138,6 @@ type VersionHistoryArgs = {
 /**
  * A MoreInfoSidebar row showing the record's current version, with a dialog
  * listing all of its versions; each row opens the read-only versioned viewer.
- * Sample templates are excluded: they have their own version display and
- * viewing flow.
  */
 function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
   const { useNavigate } = useContext(NavigateContext);
@@ -147,10 +145,10 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>({ state: "init" });
 
-  // templates have recordType "sampleTemplate": they keep their own version flow
   const supported =
-    ["sample", "subSample", "container"].includes(record.recordType) &&
-    record.id !== null;
+    ["sample", "subSample", "container", "sampleTemplate"].includes(
+      record.recordType,
+    ) && record.id !== null;
 
   useEffect(() => {
     if (open && supported) {

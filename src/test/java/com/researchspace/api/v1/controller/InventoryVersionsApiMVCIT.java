@@ -12,9 +12,13 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordP
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.units.RSUnitDef;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.web.servlet.MvcResult;
@@ -452,5 +456,63 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(publicViewInstrument.getPermittedActions().isEmpty());
     assertNull(publicViewInstrument.getAttachments());
     assertNull(publicViewInstrument.getBarcodes());
+  }
+
+  @Test
+  public void sampleTemplateRevisionsListing() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // create a template, then update it to bump it to version 2
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("template version one");
+    templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
+    templatePost.setSampleSource(SampleSource.LAB_CREATED);
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    ApiSampleTemplate template = getFromJsonResponseBody(result, ApiSampleTemplate.class);
+
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                "/sampleTemplates/" + template.getId(),
+                anyUser,
+                "{ \"name\": \"template version two\" }"))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    // both versions appear in the revisions history, oldest first
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/sampleTemplates/" + template.getId() + "/revisions",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInventoryRecordRevisionList history =
+        getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+    assertEquals(2, history.getRevisions().size());
+    assertEquals("template version one", history.getRevisions().get(0).getRecord().getName());
+    assertEquals("template version two", history.getRevisions().get(1).getRecord().getName());
+
+    // a plain sample id is not addressable through the template revisions endpoint
+    ApiSampleWithFullSubSamples plainSample = createBasicSampleForUser(anyUser, "not a template");
+    this.mockMvc
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE,
+                apiKey,
+                "/sampleTemplates/" + plainSample.getId() + "/revisions",
+                anyUser))
+        .andExpect(status().isNotFound())
+        .andReturn();
   }
 }
