@@ -1,13 +1,24 @@
 package com.researchspace.webapp.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletRegistration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
+import org.springframework.web.servlet.DispatcherServlet;
 
 class DispatcherServletInitializerTest {
 
@@ -107,5 +118,53 @@ class DispatcherServletInitializerTest {
     System.setProperty(DispatcherServletInitializer.PROPERTY_NAME, "0");
     assertEquals(
         DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, initializer.resolveMaxFileSize());
+  }
+
+  @Test
+  void contextInitializedRegistersDispatcherWithMappingsAndMultipartConfig() {
+    // Pin the resolved size so the multipart assertions are deterministic.
+    System.setProperty(DispatcherServletInitializer.PROPERTY_NAME, "12345");
+
+    ServletRegistration.Dynamic dynamic = mock(ServletRegistration.Dynamic.class);
+    ServletContext ctx = mock(ServletContext.class);
+    when(ctx.addServlet(eq("dispatcher"), any(DispatcherServlet.class))).thenReturn(dynamic);
+    ServletContextEvent sce = mock(ServletContextEvent.class);
+    when(sce.getServletContext()).thenReturn(ctx);
+
+    initializer.contextInitialized(sce);
+
+    verify(ctx).addServlet(eq("dispatcher"), any(DispatcherServlet.class));
+    verify(dynamic).setLoadOnStartup(1);
+    verify(dynamic).setAsyncSupported(true);
+    verify(dynamic).addMapping("/app/*", "/offline/*");
+
+    ArgumentCaptor<MultipartConfigElement> multipart =
+        ArgumentCaptor.forClass(MultipartConfigElement.class);
+    verify(dynamic).setMultipartConfig(multipart.capture());
+    MultipartConfigElement config = multipart.getValue();
+    assertEquals(12345L, config.getMaxFileSize());
+    // Request size is twice the per-file limit (a multipart request may carry several files).
+    assertEquals(24690L, config.getMaxRequestSize());
+    assertEquals(0, config.getFileSizeThreshold());
+    assertEquals("", config.getLocation());
+  }
+
+  @Test
+  void contextInitializedUsesDefaultSizeWhenNothingConfigured() {
+    ServletRegistration.Dynamic dynamic = mock(ServletRegistration.Dynamic.class);
+    ServletContext ctx = mock(ServletContext.class);
+    when(ctx.addServlet(eq("dispatcher"), any(DispatcherServlet.class))).thenReturn(dynamic);
+    ServletContextEvent sce = mock(ServletContextEvent.class);
+    when(sce.getServletContext()).thenReturn(ctx);
+
+    initializer.contextInitialized(sce);
+
+    ArgumentCaptor<MultipartConfigElement> multipart =
+        ArgumentCaptor.forClass(MultipartConfigElement.class);
+    verify(dynamic).setMultipartConfig(multipart.capture());
+    MultipartConfigElement config = multipart.getValue();
+    assertEquals(DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, config.getMaxFileSize());
+    assertEquals(
+        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE * 2, config.getMaxRequestSize());
   }
 }
