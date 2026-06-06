@@ -91,9 +91,13 @@ public class AsyncDepositorImplTest {
 
   @Test
   public void testMessageLink() throws MalformedURLException {
+    // The deposit-complete notification renders the repository landing URL (result.url), not the
+    // DOI link. Keep the two literals distinct so a regression that rendered the DOI here is
+    // caught.
+    String landingUrl = "http://www.bbc.co.uk";
+    String doiUrl = "https://doi.org/10.1234/distinct-doi";
     RepositoryOperationResult result =
-        new RepositoryOperationResult(
-            true, "hello", new URL("http://www.bbc.co.uk"), new URL("http://www.bbc.co.uk"));
+        new RepositoryOperationResult(true, "hello", new URL(landingUrl), new URL(doiUrl));
     underTest.postDeposit(
         result,
         SystemPropertyTestFactory.createAnyApp(),
@@ -103,7 +107,7 @@ public class AsyncDepositorImplTest {
     Mockito.verify(comm)
         .systemNotify(
             Mockito.any(NotificationType.class),
-            (Mockito.contains("http://www.bbc.co.uk")),
+            (Mockito.contains(landingUrl)),
             Mockito.eq(anyUser.getUsername()),
             Mockito.eq(true));
     Mockito.verifyNoMoreInteractions(comm);
@@ -122,7 +126,9 @@ public class AsyncDepositorImplTest {
     String repoName = "Dataverse";
     String expectedResultUrl =
         "https://dataverse.org/dataset.xhtml?persistentId=doi:10.70122/FK2/FNGEGH";
-    String expectedDoiLink = expectedResultUrl;
+    // Distinct from the landing URL above: reportDoiToRaid must report result.getDoiUrl(), not the
+    // landing URL. Keeping these distinct makes the assertions below meaningful.
+    String expectedDoiLink = "https://doi.org/10.70122/FK2/FNGEGH";
     String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
     String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
@@ -177,7 +183,9 @@ public class AsyncDepositorImplTest {
     // GIVEN
     String repoName = "Zenodo";
     String expectedResultUrl = "https://zenodo.org/records/18663592";
-    String expectedDoiLink = expectedResultUrl;
+    // Distinct from the landing URL above: reportDoiToRaid must report result.getDoiUrl(), not the
+    // landing URL. Keeping these distinct makes the assertions below meaningful.
+    String expectedDoiLink = "https://doi.org/10.5281/zenodo.18663592";
     String expectedRaidIdentifier = "https://raid.org/10.12345/ERTY88";
     String expectedRaidUrl = "https://demo.app.raid.org.au/raid/10.12345/ERTY88";
     String originalRaidUrl = "https://demo.static.raid.org.au/raid/10.12345/ERTY88";
