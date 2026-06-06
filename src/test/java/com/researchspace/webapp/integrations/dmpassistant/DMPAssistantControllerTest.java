@@ -21,10 +21,15 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.model.User;
+import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.DMPManager;
+import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
@@ -92,6 +97,9 @@ class DMPAssistantControllerTest {
   @Mock private IPropertyHolder properties;
   @Mock private DMPAssistantProvider dmpAssistantProvider;
   @Mock private MessageSourceUtils messages;
+  @Mock private UserManager userManager;
+  @Mock private MediaManager mediaManager;
+  @Mock private DMPManager dmpManager;
 
   private RestTemplate restTemplate;
   private MockRestServiceServer mockServer;
@@ -183,6 +191,7 @@ class DMPAssistantControllerTest {
             principal,
             new MockHttpServletRequest());
 
+    mockServer.verify();
     assertEquals("connect/authorizationError", result);
   }
 
@@ -201,6 +210,7 @@ class DMPAssistantControllerTest {
             principal,
             new MockHttpServletRequest());
 
+    mockServer.verify();
     assertEquals("connect/authorizationError", result);
     OauthAuthorizationError error = (OauthAuthorizationError) model.getAttribute("error");
     assertTrue(
@@ -266,6 +276,7 @@ class DMPAssistantControllerTest {
 
     String result = controller.refreshToken(model, principal);
 
+    mockServer.verify();
     assertEquals("connect/authorizationError", result);
     assertNotNull(model.getAttribute("error"));
   }
@@ -334,6 +345,7 @@ class DMPAssistantControllerTest {
 
     AjaxReturnObject<JsonNode> result = controller.me(new BindingAwareModelMap(), principal);
 
+    mockServer.verify(); // the refresh exchange was actually attempted
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
@@ -456,6 +468,30 @@ class DMPAssistantControllerTest {
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
     assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+  }
+
+  @Test
+  void importPlansFailsWhenGalleryDocumentIsNotCreated() throws Exception {
+    stubAccessToken("USER_TOKEN");
+    User user = new User(USERNAME);
+    when(userManager.getUserByUsername(USERNAME)).thenReturn(user);
+    JsonNode plan =
+        MAPPER.readTree(
+            "{\"dmp\":{\"title\":\"Plan One\",\"dmp_id\":"
+                + "{\"identifier\":\"https://dmp-pgd.ca/api/v2/plans/101\"}}}");
+    when(dmpAssistantProvider.getPlanById(eq("101"), eq(true), eq("USER_TOKEN"))).thenReturn(plan);
+    when(mediaManager.saveNewDMP(anyString(), any(), eq(user), any())).thenReturn(null);
+
+    AjaxReturnObject<List<JsonNode>> result =
+        controller.importPlans(
+            List.of(new DMPAssistantController.ImportPlanRequest("101", "plan-one.json")),
+            new BindingAwareModelMap(),
+            principal);
+
+    // a missing gallery document must fail the batch, not report success
+    assertNull(result.getData());
+    assertNotNull(result.getError());
+    verify(dmpManager, never()).save(any(DMPUser.class));
   }
 
   @Test

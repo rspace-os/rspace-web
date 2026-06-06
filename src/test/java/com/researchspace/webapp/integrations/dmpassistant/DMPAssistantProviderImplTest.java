@@ -81,6 +81,7 @@ class DMPAssistantProviderImplTest {
     mockServer
         .expect(requestTo(BASE_URL + "/api/v2/plans?page=1&per_page=20"))
         .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
         .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
     provider.listPlans("1", "20", null, TOKEN);

@@ -294,6 +294,12 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     byte[] bytes = OBJECT_MAPPER.writeValueAsBytes(plan);
     EcatDocumentFile file =
         mediaManager.saveNewDMP(filename, new ByteArrayInputStream(bytes), user, null);
+    if (file == null) {
+      // fail the batch visibly rather than registering a DMPUser row with no document
+      // and reporting success to the user
+      throw new IllegalStateException(
+          "saveNewDMP returned null for plan '" + id + "'; gallery document was not created");
+    }
     JsonNode dmpNode = plan.has("dmp") ? plan.get("dmp") : plan;
     String title = dmpNode.path("title").asText(filename);
     Optional<DMPUser> existing = dmpManager.findByDmpId(id, user);
@@ -308,9 +314,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
                         DMPSource.DMP_ASSISTANT,
                         null,
                         dmpNode.path("dmp_id").path("identifier").asText(null))));
-    if (file != null) {
-      dmpUser.setDmpDownloadFile(file);
-    }
+    dmpUser.setDmpDownloadFile(file);
     dmpManager.save(dmpUser);
     return plan;
   }
