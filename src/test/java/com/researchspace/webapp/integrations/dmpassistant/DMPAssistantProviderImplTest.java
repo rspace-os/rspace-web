@@ -155,6 +155,20 @@ class DMPAssistantProviderImplTest {
   }
 
   @Test
+  void editPlanAnswersPercentEncodesPathTraversalAttempts() throws Exception {
+    JsonNode answers = MAPPER.readTree("{\"answers\":[]}");
+    mockServer
+        .expect(requestTo(BASE_URL + "/api/v2/plans/..%2Fme"))
+        .andExpect(method(HttpMethod.PUT))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN))
+        .andRespond(withSuccess("{\"ok\":true}", MediaType.APPLICATION_JSON));
+
+    provider.editPlanAnswers("../me", answers, TOKEN);
+
+    mockServer.verify();
+  }
+
+  @Test
   void listTemplatesGetsTemplatesPath() throws Exception {
     mockServer
         .expect(requestTo(BASE_URL + "/api/v2/templates"))

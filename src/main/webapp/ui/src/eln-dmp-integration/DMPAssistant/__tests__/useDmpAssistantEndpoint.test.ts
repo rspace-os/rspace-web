@@ -34,6 +34,18 @@ describe("DmpSummary", () => {
       const dmp = new DmpSummary(aPlan("19142"));
       expect(dmp.id).toBe("19142");
     });
+
+    test("returns a DOI-style identifier containing slashes unchanged", () => {
+      const dmp = new DmpSummary(aPlan("doi:10.1234/abcd.5678"));
+      expect(dmp.id).toBe("doi:10.1234/abcd.5678");
+    });
+
+    test("returns a URN identifier unchanged", () => {
+      const dmp = new DmpSummary(
+        aPlan("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+      );
+      expect(dmp.id).toBe("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6");
+    });
   });
 });
 

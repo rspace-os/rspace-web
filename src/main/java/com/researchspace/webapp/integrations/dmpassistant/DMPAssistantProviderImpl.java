@@ -81,7 +81,8 @@ public class DMPAssistantProviderImpl implements DMPAssistantProvider {
     headers.setContentType(MediaType.APPLICATION_JSON);
     return restTemplate
         .exchange(
-            URI.create(urlPlans + "/" + id),
+            // see getPlanById: keep the id inside a single, percent-encoded path segment
+            UriComponentsBuilder.fromUriString(urlPlans).pathSegment(id).build().encode().toUri(),
             HttpMethod.PUT,
             new HttpEntity<>(answers, headers),
             JsonNode.class)

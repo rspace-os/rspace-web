@@ -42,10 +42,19 @@ export class DmpSummary {
   get id(): string {
     // dmp_id.identifier is usually a URL like "http://dmp-pgd.ca/api/v2/plans/19142";
     // the plan id is the last non-empty path segment (tolerating a trailing slash).
-    // A plain non-URL identifier is returned unchanged rather than silently corrupted.
+    // Anything that is not an http(s) URL (plain ids, DOIs, URNs) is returned
+    // unchanged rather than silently corrupted.
     const identifier = this.#dmp_id.identifier;
-    const segments = identifier.split("/").filter((s) => s.length > 0);
-    return segments.length > 0 ? segments[segments.length - 1] : identifier;
+    try {
+      const url = new URL(identifier);
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        return identifier;
+      }
+      const segments = url.pathname.split("/").filter((s) => s.length > 0);
+      return segments.length > 0 ? segments[segments.length - 1] : identifier;
+    } catch {
+      return identifier;
+    }
   }
 
   get title(): string {
