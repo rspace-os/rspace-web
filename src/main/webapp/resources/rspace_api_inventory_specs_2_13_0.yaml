@@ -1540,6 +1540,8 @@ paths:
       responses:
         '200':
           description: A list of revision information objects.
+        '404':
+          $ref: '#/responses/NotFound'
 
   '/containers/{containerId}/revisions/{revisionId}':
     get:
