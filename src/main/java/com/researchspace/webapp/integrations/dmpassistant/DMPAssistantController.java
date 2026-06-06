@@ -292,8 +292,12 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       throws IOException {
     JsonNode plan = dmpAssistantProvider.getPlanById(id, true, accessToken);
     byte[] bytes = OBJECT_MAPPER.writeValueAsBytes(plan);
+    String effectiveFilename =
+        StringUtils.isBlank(filename)
+            ? ("dmp-" + id + ".json")
+            : (filename.endsWith(".json") ? filename : filename + ".json");
     EcatDocumentFile file =
-        mediaManager.saveNewDMP(filename, new ByteArrayInputStream(bytes), user, null);
+        mediaManager.saveNewDMP(effectiveFilename, new ByteArrayInputStream(bytes), user, null);
     if (file == null) {
       // fail the batch visibly rather than registering a DMPUser row with no document
       // and reporting success to the user
