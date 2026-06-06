@@ -19,6 +19,7 @@ import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import ApiService from "../../../common/InvApiService";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import { getErrorMessage } from "../../../util/error";
 import { isoToLocale } from "../../../util/Util";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
@@ -75,11 +76,13 @@ function groupByVersion(response: RevisionsListResponse): Array<VersionRow> {
 function DialogContents({
   state,
   currentVersion,
+  historical,
   versionUrl,
   onNavigate,
 }: {
   state: State;
   currentVersion: number | null;
+  historical: boolean;
   versionUrl: (version: number) => string;
   onNavigate: (url: string) => void;
 }): React.ReactNode {
@@ -116,7 +119,9 @@ function DialogContents({
                 >
                   Version {row.version}
                 </Link>
-                {row.version === currentVersion && " (current)"}
+                {/* on a historical view, record.version is the pinned version, not the live one */}
+                {row.version === currentVersion &&
+                  (historical ? " (viewing)" : " (current)")}
               </TableCell>
               <TableCell>
                 {row.lastModified ? isoToLocale(row.lastModified) : "—"}
@@ -152,17 +157,29 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
 
   useEffect(() => {
     if (open && supported) {
+      // ignore responses landing after the record changed or the dialog closed
+      let cancelled = false;
       setState({ state: "loading" });
       void (async () => {
         try {
           const { data } = await ApiService.get<RevisionsListResponse>(
             `${record.recordType}s/${record.id}/revisions`,
           );
-          setState({ state: "success", versions: groupByVersion(data) });
+          if (!cancelled)
+            setState({ state: "success", versions: groupByVersion(data) });
         } catch (e) {
-          setState({ state: "fail", error: e as Error });
+          if (!cancelled)
+            setState({
+              state: "fail",
+              error: new Error(
+                getErrorMessage(e, "Could not load version history."),
+              ),
+            });
         }
       })();
+      return () => {
+        cancelled = true;
+      };
     }
   }, [open, supported, record.recordType, record.id]);
 
@@ -170,6 +187,12 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
 
   const versionUrl = (version: number) =>
     `/inventory/${record.recordType.toLowerCase()}/${record.id}?version=${version}`;
+
+  // reset on close so reopening shows a fresh loading state, not stale content
+  const close = () => {
+    setOpen(false);
+    setState({ state: "init" });
+  };
 
   return (
     <Grid item>
@@ -186,21 +209,22 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
           >
             View version history
           </Button>
-          <Dialog open={open} onClose={() => setOpen(false)}>
+          <Dialog open={open} onClose={close}>
             <DialogTitle>Version history</DialogTitle>
             <DialogContent>
               <DialogContents
                 state={state}
                 currentVersion={record.version ?? null}
+                historical={record.historicalVersion ?? false}
                 versionUrl={versionUrl}
                 onNavigate={(url) => {
-                  setOpen(false);
+                  close();
                   navigate(url);
                 }}
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setOpen(false)}>Close</Button>
+              <Button onClick={close}>Close</Button>
             </DialogActions>
           </Dialog>
         </FormGroup>

@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Pure unit tests for the user-version lookup methods of {@link InventoryAuditApiManagerImpl}, with
@@ -73,6 +74,23 @@ public class InventoryAuditApiManagerVersionTest {
     assertEquals(2L, result.getVersion());
     assertEquals(380L, result.getRevisionId());
     assertEquals("SA42v2", result.getGlobalId());
+  }
+
+  @Test
+  public void sampleVersionLookupSurvivesNullCurrentVersion() {
+    // legacy rows can hold a null version column; the lookup must not NPE on them
+    Sample current = sampleWithVersion(42L, 1L);
+    ReflectionTestUtils.setField(current, "version", null);
+    Sample v1 = sampleWithVersion(42L, 1L);
+    when(auditManager.getRevisionNumberForInventoryRecordVersion(current.getClass(), 42L, 1L))
+        .thenReturn(100L);
+    when(auditManager.getObjectForRevision(Sample.class, 42L, 100L))
+        .thenReturn(new AuditedEntity<>(v1, 100L));
+
+    ApiSample result = mgr.getApiSampleVersion(current, 1L);
+
+    assertNotNull(result);
+    assertTrue(result.isHistoricalVersion());
   }
 
   @Test

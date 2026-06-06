@@ -160,7 +160,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
   @Override
   public ApiContainer getApiContainerVersion(Long containerId, Long version, User user) {
     Container currentContainer = getIfExists(containerId);
-    if (currentContainer.getVersion().equals(version)) {
+    if (version.equals(currentContainer.getVersion())) {
       // as doGetContainer, but workbenches are versioned containers too, so no assertion
       if (!isWorkbenchOfCurrentUser(currentContainer, user)) {
         publisher.publishEvent(new InventoryAccessEvent(currentContainer, user));

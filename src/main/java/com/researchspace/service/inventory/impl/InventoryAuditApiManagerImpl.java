@@ -103,7 +103,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
 
   @Override
   public ApiSampleTemplate getApiTemplateVersion(Sample currTemplate, Long version) {
-    if (currTemplate.getVersion().equals(version)) {
+    if (version.equals(currTemplate.getVersion())) {
       return new ApiSampleTemplate(currTemplate);
     }
 
@@ -119,7 +119,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
 
   @Override
   public ApiSample getApiSampleVersion(Sample currentSample, Long version) {
-    if (currentSample.getVersion().equals(version)) {
+    if (version.equals(currentSample.getVersion())) {
       return (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentSample);
     }
     Long revisionId = findNewestRevisionForVersion(currentSample, version);
@@ -135,7 +135,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
 
   @Override
   public ApiSubSample getApiSubSampleVersion(SubSample currentSubSample, Long version) {
-    if (currentSubSample.getVersion().equals(version)) {
+    if (version.equals(currentSubSample.getVersion())) {
       return (ApiSubSample)
           ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentSubSample);
     }
@@ -152,7 +152,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
 
   @Override
   public ApiContainer getApiContainerVersion(Container currentContainer, Long version) {
-    if (currentContainer.getVersion().equals(version)) {
+    if (version.equals(currentContainer.getVersion())) {
       return new ApiContainer(currentContainer);
     }
     Long revisionId = findNewestRevisionForVersion(currentContainer, version);
@@ -168,7 +168,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
 
   @Override
   public ApiInstrument getApiInstrumentVersion(Instrument currentInstrument, Long version) {
-    if (currentInstrument.getVersion().equals(version)) {
+    if (version.equals(currentInstrument.getVersion())) {
       return (ApiInstrument)
           ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentInstrument);
     }
@@ -227,7 +227,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
   @Override
   public ApiInstrumentTemplate getApiInstrumentTemplateVersion(
       InstrumentTemplate currTemplate, Long version) {
-    if (currTemplate.getVersion().equals(version)) {
+    if (version.equals(currTemplate.getVersion())) {
       return new ApiInstrumentTemplate(currTemplate);
     }
 

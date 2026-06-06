@@ -709,7 +709,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       throw new IllegalArgumentException(
           String.format("Requested id (%d) points to the sample, not template", templateId));
     }
-    if (currentVersion.getVersion().equals(version)) {
+    if (version.equals(currentVersion.getVersion())) {
       return getApiSampleTemplateById(templateId, user);
     }
 
@@ -722,7 +722,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   @Override
   public ApiSample getApiSampleVersion(Long sampleId, Long version, User user) {
     Sample currentSample = getIfExists(sampleId);
-    if (currentSample.getVersion().equals(version)) {
+    if (version.equals(currentSample.getVersion())) {
       return getApiSampleById(sampleId, user);
     }
     // joins this transaction (REQUIRED propagation), so currentSample stays session-attached;

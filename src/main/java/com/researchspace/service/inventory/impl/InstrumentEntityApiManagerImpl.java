@@ -215,7 +215,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   @Override
   public ApiInstrument getApiInstrumentVersion(Long instrumentId, Long version, User user) {
     Instrument currentInstrument = (Instrument) getIfExists(instrumentId);
-    if (currentInstrument.getVersion().equals(version)) {
+    if (version.equals(currentInstrument.getVersion())) {
       return getApiInstrumentById(instrumentId, user);
     }
     // joins this transaction (REQUIRED propagation), so currentInstrument stays
@@ -416,7 +416,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   @Override
   public ApiInstrumentTemplate getApiInstrumentTemplateVersion(Long id, Long version, User user) {
     InstrumentTemplate dbTemplate = assertUserCanReadInstrumentTemplate(id, user);
-    if (dbTemplate.getVersion().equals(version)) {
+    if (version.equals(dbTemplate.getVersion())) {
       return getApiInstrumentTemplateById(id, user);
     }
     ApiInstrumentTemplate apiTemplateVersion =

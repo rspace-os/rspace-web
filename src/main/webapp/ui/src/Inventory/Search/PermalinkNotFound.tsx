@@ -35,8 +35,7 @@ function PermalinkNotFound({
 
   return (
     <Box p={2}>
-      {permalink.version !== null &&
-      typeof permalink.version !== "undefined" ? (
+      {permalink.version != null ? (
         <Alert severity="warning">
           <AlertTitle>
             Version {permalink.version} of this {TYPE_LABELS[permalink.type]}{" "}

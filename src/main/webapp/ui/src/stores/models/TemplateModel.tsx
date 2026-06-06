@@ -108,7 +108,9 @@ const defaultEditableFields = new Set([...defaultEditableSampleFields]);
 export default class TemplateModel extends SampleModel implements Template {
   // @ts-expect-error Initialised by populateFromJson
   defaultUnitId: number;
-  // version and historicalVersion are inherited observables (InventoryBaseRecord)
+  // version and historicalVersion are inherited observables (InventoryBaseRecord).
+  // The inherited number | null is narrowed to number to satisfy the Template
+  // interface: the API contract guarantees every sample template has a version.
   declare version: number;
   latest: Template | null = null;
   icon: string | null = null;
@@ -219,7 +221,7 @@ export default class TemplateModel extends SampleModel implements Template {
     try {
       this.fetchingAdditionalInfo = ApiService.get<object>(
         "sampleTemplates",
-        this.version ? `${id}/versions/${this.version}` : `${id}`,
+        this.version != null ? `${id}/versions/${this.version}` : `${id}`,
       );
       const { data } = await this.fetchingAdditionalInfo;
       this.fetchingAdditionalInfo = null;

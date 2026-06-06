@@ -116,7 +116,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   @Override
   public ApiSubSample getApiSubSampleVersion(Long subSampleId, Long version, User user) {
     SubSample currentSubSample = getIfExists(subSampleId);
-    if (currentSubSample.getVersion().equals(version)) {
+    if (version.equals(currentSubSample.getVersion())) {
       return getApiSubSampleById(subSampleId, user);
     }
     // joins this transaction (REQUIRED propagation), so currentSubSample stays
