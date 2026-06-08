@@ -247,7 +247,9 @@
                         <spring:message code="system.netfilesystem.details.allowlists.anyone" /></label><br/>
                     <label><input type="radio" id="fileSystemLimitReadYes" name="fileSystemLimitRead" value="yes">
                         <spring:message code="system.netfilesystem.details.allowlists.only.these" /></label>
-                    <input id="fileSystemReadAllowlist" type="text" style="width: 15em" placeholder="carol" />
+                    <input id="fileSystemReadAllowlist" type="text" style="width: 15em" placeholder="carol" /><br/>
+                    <label><input type="radio" id="fileSystemLimitReadNobody" name="fileSystemLimitRead" value="nobody">
+                        <spring:message code="system.netfilesystem.details.allowlists.read.nobody" /></label>
                 </td>
             </tr>
 

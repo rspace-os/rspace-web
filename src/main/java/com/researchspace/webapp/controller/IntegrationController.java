@@ -24,6 +24,7 @@ import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.model.User;
@@ -163,6 +164,23 @@ public class IntegrationController extends BaseController {
       removeEgnyteTokenFromSession(session);
       String egnyteUrl = (String) newInfo.getOptions().get(EGNYTE_DOMAIN_SETTING);
       error = new URLPreferenceValidator().connectAndReadUrl(egnyteUrl, null);
+    }
+    /*
+     * ownCloud / Nextcloud can only be enabled when the deployment has been configured with a
+     * server URL and OAuth credentials (client id and secret).
+     */
+    if (newInfo.isEnabled()) {
+      if (OWNCLOUD_APP_NAME.equals(newInfo.getName())
+          && (isBlank(properties.getOwnCloudUrl())
+              || isBlank(properties.getOwnCloudClientId())
+              || isBlank(properties.getOwnCloudSecret()))) {
+        error = "apps.owncloud.notConfigured.error";
+      } else if (NEXTCLOUD_APP_NAME.equals(newInfo.getName())
+          && (isBlank(properties.getNextCloudUrl())
+              || isBlank(properties.getNextCloudClientId())
+              || isBlank(properties.getNextCloudSecret()))) {
+        error = "apps.nextcloud.notConfigured.error";
+      }
     }
     if (error != null) {
       ErrorList errorList = ErrorList.of(getText(error));

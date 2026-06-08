@@ -1872,6 +1872,25 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
   }
 };
 
+// Readable message from a failed ajax response: the JSON error model, else the
+// ajaxError.jsp fragment's message, else raw responseText. Escape before rendering.
+RS.extractAjaxErrorMessage = function (jqxhr) {
+  if (jqxhr.responseJSON && jqxhr.responseJSON.exceptionMessage) {
+    return jqxhr.responseJSON.exceptionMessage;
+  }
+  var responseText = jqxhr.responseText || '';
+  if (responseText.indexOf('ajaxErrorMsg') !== -1) {
+    // Parse in an inert document (no script exec / resource loads / event handlers)
+    // rather than via jQuery, which is unsafe for untrusted HTML on this version.
+    var doc = new DOMParser().parseFromString(responseText, 'text/html');
+    var el = doc.getElementById('ajaxErrorMsg');
+    if (el && el.textContent.trim()) {
+      return el.textContent.trim();
+    }
+  }
+  return responseText;
+};
+
 RS.downloadNetFile = function (relPath, nfsId, fileSystemId) {
   if (!RS.isNullOrUndefined(relPath)) {
     var nfsparams = {
@@ -1893,7 +1912,7 @@ RS.downloadNetFile = function (relPath, nfsId, fileSystemId) {
       }
     });
     jqxhr.fail(function (result) {
-      apprise('An error occured on file download: ' + result.responseText);
+      apprise('An error occurred on file download: ' + RS.escapeHtml(RS.extractAjaxErrorMessage(result)));
     });
     jqxhr.always(function () {
       RS.unblockPage();
@@ -1923,7 +1942,7 @@ RS.updateNfsPath = function(relPath, nfsId, fileSystemId, $infoPanel) {
       }
     });
     jqxhr.fail(function (result) {
-      apprise('An error occured retrieving current path: ' + result.responseText);
+      apprise('An error occurred retrieving current path: ' + RS.escapeHtml(RS.extractAjaxErrorMessage(result)));
     });
     jqxhr.always(function () {
       RS.unblockPage();
@@ -2228,6 +2247,21 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
     return;
   }
 
+  // Resolve the file system up front (synchronous, from the client's list). A
+  // disabled/removed file system isn't in the list, so show a message rather than
+  // fetching and appending the login dialog and then crashing on fileSystem.authType.
+  var fileSystem;
+  if (fileSystemId != null) {
+    fileSystem = getFileSystemById(fileSystemId);
+  } else if (fileStoreId != null) {
+    var fileStore = getFileStoreById(fileStoreId);
+    fileSystem = fileStore && fileStore.fileSystem;
+  }
+  if (!fileSystem) {
+    apprise('This file system is no longer available; it may have been disabled or removed. Please contact your System Admin.');
+    return;
+  }
+
   var jqxhrPage = $.get('/netFiles/ajax/netFilesLoginView');
 
   jqxhrPage.done(function (page) {
@@ -2235,13 +2269,6 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
     $(document.body).append(page);
 
     initNetFilesLoginDialog();
-
-    var fileSystem;
-    if (fileSystemId != null) {
-      fileSystem = getFileSystemById(fileSystemId);
-    } else if (fileStoreId != null) {
-      fileSystem = getFileStoreById(fileStoreId).fileSystem;
-    }
 
     if (fileSystem.authType === "PASSWORD") {
       showUsernamePasswordDialog(fileSystem, afterLoginCallback);
@@ -2252,7 +2279,7 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
 
   });
   jqxhrPage.fail(function (jqxhr, settings, exception) {
-    apprise('An error occured on loading net files gallery');
+    apprise('An error occurred on loading net files gallery');
   });
 
 };

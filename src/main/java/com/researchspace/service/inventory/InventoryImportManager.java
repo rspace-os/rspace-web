@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.controller.InventoryImportPostFullValidator.ApiInventoryImportPostFull;
 import com.researchspace.api.v1.controller.SamplesApiController;
+import com.researchspace.api.v1.model.ApiInventoryImportInstrumentParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
@@ -29,6 +30,10 @@ public interface InventoryImportManager {
 
   ApiInventoryImportParseResult parseSubSamplesCsvFile(InputStream inputStream, User createdBy)
       throws IOException;
+
+  /** Parse csv file and return suggested instrument template + other information. */
+  ApiInventoryImportInstrumentParseResult parseInstrumentsCsvFile(
+      String filename, InputStream inputStream, User createdBy) throws IOException;
 
   ApiInventoryImportResult importInventoryCsvFiles(
       ApiInventoryImportPostFull importPostFull, User user) throws IOException;

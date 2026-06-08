@@ -532,6 +532,149 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(thumbResult.getResponse().getContentAsByteArray().length > 0);
   }
 
+  @Test
+  public void createInstrumentFromTemplateCopiesFieldsAndLinksTemplate() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    com.researchspace.api.v1.model.ApiInstrumentTemplate template =
+        createBasicInstrumentTemplateForUser(anyUser);
+
+    String instrumentJson =
+        "{ \"name\": \"from-template-MVC\", \"templateId\": " + template.getId() + " }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/instruments", anyUser, instrumentJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument created = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertNotNull(created);
+    assertEquals("from-template-MVC", created.getName());
+    assertEquals(template.getId(), created.getTemplateId());
+    assertEquals(template.getVersion(), created.getTemplateVersion());
+    // basic template has one field — should be copied onto the instrument
+    assertEquals(1, created.getFields().size());
+    assertEquals(template.getFields().get(0).getName(), created.getFields().get(0).getName());
+  }
+
+  @Test
+  public void createInstrumentWithUnknownTemplateIdReturnsBadRequest() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    String instrumentJson = "{ \"name\": \"orphan\", \"templateId\": 999999 }";
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/instruments", anyUser, instrumentJson))
+        .andExpect(status().isBadRequest())
+        .andReturn();
+  }
+
+  @Test
+  public void updateInstrumentMovesIntoListContainerViaParentContainers() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiContainer listContainer = createBasicContainerForUser(anyUser, "target-list");
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "to-move-list");
+
+    String updateJson = "{ \"parentContainers\": [ { \"id\": " + listContainer.getId() + " } ] }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + instrument.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    // NB: `storedInContainer` is JSON read-only, so it doesn't round-trip onto the deserialised
+    // test object — assert on parentContainers (writable) which does.
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertEquals(listContainer.getId(), updated.getParentContainers().get(0).getId());
+  }
+
+  @Test
+  public void updateInstrumentMovesIntoGridLocationViaParentContainersAndLocation()
+      throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiContainer gridContainer = createBasicGridContainerForUser(anyUser, 3, 3);
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "to-move-grid");
+
+    String updateJson =
+        "{ \"parentContainers\": [ { \"id\": "
+            + gridContainer.getId()
+            + " } ], \"parentLocation\": { \"coordX\": 2, \"coordY\": 3 } }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + instrument.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertEquals(gridContainer.getId(), updated.getParentContainers().get(0).getId());
+    assertNotNull(updated.getParentLocation());
+    assertEquals(Integer.valueOf(2), updated.getParentLocation().getCoordX());
+    assertEquals(Integer.valueOf(3), updated.getParentLocation().getCoordY());
+  }
+
+  @Test
+  public void updateInstrumentMovesIntoLocationByIdViaParentLocation() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiContainer imageContainer = createBasicImageContainerForUser(anyUser);
+    Long targetLocationId = imageContainer.getLocations().get(0).getId();
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "to-move-by-loc");
+
+    String updateJson = "{ \"parentLocation\": { \"id\": " + targetLocationId + " } }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + instrument.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertEquals(imageContainer.getId(), updated.getParentContainers().get(0).getId());
+  }
+
+  @Test
+  public void updateInstrumentWithoutParentFieldsDoesNotMove() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiContainer listContainer = createBasicContainerForUser(anyUser, "home-list");
+    ApiInstrument instrument = createBasicInstrumentForUser(anyUser, "stays-put");
+
+    // first move it into the list container
+    String moveJson = "{ \"parentContainers\": [ { \"id\": " + listContainer.getId() + " } ] }";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, "/instruments/" + instrument.getId(), anyUser, moveJson))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    // a content-only update with no parent fields must not dislodge it
+    String renameJson = "{ \"name\": \"stays-put-renamed\" }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + instrument.getId(), anyUser, renameJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+    assertEquals("stays-put-renamed", updated.getName());
+    assertEquals(listContainer.getId(), updated.getParentContainers().get(0).getId());
+  }
+
   private MockHttpServletRequestBuilder getInstrumentById(
       User user, String apiKey, Long instrumentId) {
     return createBuilderForGet(API_VERSION.ONE, apiKey, "/instruments/{id}", user, instrumentId);

@@ -1,5 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 
+<!-- Styles for the ownCloud / NextCloud import picker dialog (#owncloudDialog) -->
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/ownCloud.css'/>" />
+
 <script>
   const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
 </script>
@@ -106,6 +109,10 @@
   </jsp:include>
     </div>
   <jsp:include page="include/messagingDialogs.jsp" />
+
+  <%-- Import picker dialog for the ownCloud / NextCloud TinyMCE plugins. Both
+       plugins share this dialog id. --%>
+  <div id="owncloudDialog" title="Import From ownCloud / NextCloud"></div>
 
   <div id="tempData" style="display: none"></div>
 
