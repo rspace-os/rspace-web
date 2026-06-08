@@ -198,6 +198,25 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void testBatchUploadEmptyFileRejected() throws Exception {
+
+    // clicking 'Upload' with no file selected posts an empty multipart part (PRT-1005)
+    MockMultipartFile mf = new MockMultipartFile("xfile", "empty.csv", "csv", new byte[0]);
+    MvcResult result =
+        mockMvc
+            .perform(
+                fileUpload("/system/userRegistration/csvUpload")
+                    .file(mf)
+                    .principal(sysAdminPrincipal))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+
+    UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
+    assertEquals(0, importResults.getParsedUsers().size());
+    assertTrue(importResults.getErrors().hasErrorMessages());
+  }
+
+  @Test
   public void testBatchCreateUsersNoUsers() throws Exception {
     final String emptyImportJson = "{}";
 

@@ -58,6 +58,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -100,8 +101,19 @@ public class SysAdminUserRegistrationController extends BaseController {
    */
   @PostMapping("/csvUpload")
   @ResponseBody
-  public UserImportResult batchUploadParseCsvFile(MultipartFile xfile) throws IOException {
-    return getImportResultsFromCSVInput(xfile.getInputStream());
+  public ResponseEntity<UserImportResult> batchUploadParseCsvFile(MultipartFile xfile)
+      throws IOException {
+    if (xfile == null || xfile.isEmpty()) {
+      UserImportResult noFileResult =
+          new UserImportResult(
+              new ArrayList<>(),
+              new ArrayList<>(),
+              new ArrayList<>(),
+              ErrorList.createErrListWithSingleMsg(
+                  getText("system.batchRegistration.upload.noFile")));
+      return ResponseEntity.badRequest().body(noFileResult);
+    }
+    return ResponseEntity.ok(getImportResultsFromCSVInput(xfile.getInputStream()));
   }
 
   /**
