@@ -11,8 +11,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StoichiometryReader {
+
+  private static final Logger log = LoggerFactory.getLogger(StoichiometryReader.class);
 
   @SneakyThrows
   public List<StoichiometryDTO> extractStoichiometriesFromFieldContents(String htmlContent) {
@@ -33,15 +37,58 @@ public class StoichiometryReader {
       String htmlContent, StoichiometryDTO target, IdAndRevision newStoichiometry) {
     Document doc = Jsoup.parse(htmlContent);
     Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
+    ObjectMapper mapper = new ObjectMapper();
+    boolean modified = false;
     for (Element stoichiometryElement : stoichiometryElements) {
       String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
-      ObjectMapper mapper = new ObjectMapper();
-      StoichiometryDTO extracted = mapper.readValue(stoichiometryAttribute, StoichiometryDTO.class);
-      if (Objects.equals(extracted.getId(), target.getId())) {
-        stoichiometryElement.attr(
-            "data-stoichiometry-table", mapper.writeValueAsString(newStoichiometry));
+      try {
+        StoichiometryDTO extracted =
+            mapper.readValue(stoichiometryAttribute, StoichiometryDTO.class);
+        if (Objects.equals(extracted.getId(), target.getId())) {
+          stoichiometryElement.attr(
+              "data-stoichiometry-table", mapper.writeValueAsString(newStoichiometry));
+          modified = true;
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Could not parse data-stoichiometry-table attribute (target id {}): raw value=[{}]",
+            target.getId(),
+            stoichiometryAttribute,
+            e);
       }
     }
-    return doc.body().html();
+    // Avoid returning a Jsoup-normalised string when nothing matched: callers compare against the
+    // original to decide whether to persist, and Jsoup's parse/serialise round-trip is rarely
+    // byte-identical to the input.
+    return modified ? doc.body().html() : htmlContent;
+  }
+
+  @SneakyThrows
+  public String removeFromFieldHtml(String htmlContent, Long stoichiometryId) {
+    Document doc = Jsoup.parse(htmlContent);
+    Elements stoichiometryElements = doc.getElementsByAttribute("data-stoichiometry-table");
+    boolean modified = false;
+    for (Element stoichiometryElement : stoichiometryElements) {
+      String stoichiometryAttribute = stoichiometryElement.attr("data-stoichiometry-table");
+      try {
+        StoichiometryDTO extracted =
+            new ObjectMapper().readValue(stoichiometryAttribute, StoichiometryDTO.class);
+        if (Objects.equals(extracted.getId(), stoichiometryId)) {
+          if ("true".equals(stoichiometryElement.attr("data-stoichiometry-table-only"))) {
+            stoichiometryElement.remove();
+          } else {
+            stoichiometryElement.removeAttr("data-stoichiometry-table");
+          }
+          modified = true;
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Could not parse data-stoichiometry-table attribute (removing id {}): raw value=[{}]",
+            stoichiometryId,
+            stoichiometryAttribute,
+            e);
+      }
+    }
+    return modified ? doc.body().html() : htmlContent;
   }
 }

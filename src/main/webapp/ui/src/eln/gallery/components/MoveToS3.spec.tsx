@@ -216,9 +216,7 @@ const feature = test.extend<{
             (v) =>
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
-              v.id !== "region" &&
-              v.id !== "color-contrast" &&
-              v.id !== "list",
+              v.id !== "region",
           ),
         ).toEqual([]);
       },

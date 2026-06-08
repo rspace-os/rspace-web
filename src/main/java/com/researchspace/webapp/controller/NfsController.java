@@ -13,6 +13,7 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.NfsViewProperty;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserKeyManager;
@@ -29,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -68,6 +70,8 @@ public class NfsController extends BaseController {
 
   @Autowired private UserKeyManager userKeyManager;
 
+  @Autowired @Setter private FilestoreAclChecker aclChecker;
+
   /**
    * @return a view of login dialog for file system
    */
@@ -78,9 +82,9 @@ public class NfsController extends BaseController {
   }
 
   private void addFileStoresAndFileSystemsToView(Model model, Principal p) {
-    List<NfsFileStoreInfo> userStoreInfos =
-        nfsManager.getFileStoreInfosForUser(getPrincipalUser(p));
-    List<NfsFileSystemInfo> activeSystemInfos = nfsManager.getActiveFileSystemInfos();
+    User principalUser = getPrincipalUser(p);
+    List<NfsFileStoreInfo> userStoreInfos = nfsManager.getFileStoreInfosForUser(principalUser);
+    List<NfsFileSystemInfo> activeSystemInfos = nfsManager.getActiveFileSystemInfos(principalUser);
 
     String userStoresJson = null;
     String activeSystemsJson = null;
@@ -137,6 +141,7 @@ public class NfsController extends BaseController {
         return getText(NO_FILE_PATHS_IN_DIR_NAME);
     }
     User user = getPrincipalUser(p);
+    aclChecker.assertCanRead(user, nfsManager.getFileSystem(nfsLoginData.getFileSystemId()));
     Map<Long, NfsClient> nfsClients = retrieveNfsClientsMapFromSession(request);
 
     String loginResult =
@@ -218,6 +223,7 @@ public class NfsController extends BaseController {
     if (fileStore == null) {
       throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
     }
+    aclChecker.assertCanRead(user, fileStore.getFileSystem());
 
     Long fileSystemId = fileStore.getFileSystem().getId();
     if (!nfsManager.checkIfUserLoggedIn(fileSystemId, nfsClients, user)) {
@@ -263,6 +269,10 @@ public class NfsController extends BaseController {
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
       throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+    }
+    aclChecker.assertCanRead(user, fileStore.getFileSystem());
+    if (fileStore.getFileSystem().isDisabled()) {
+      return getText("net.filestores.error.disabled");
     }
 
     Long fileSystemId = fileStore.getFileSystem().getId();

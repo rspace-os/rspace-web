@@ -257,6 +257,18 @@
         <tracking-mode>COOKIE</tracking-mode>
     </session-config>
 
+    <!-- Ensure ES module assets (e.g. Vite output under /ui/dist) are served with a
+         JavaScript MIME type. Module scripts (type="module") are rejected by browsers
+         unless the response Content-Type is a JavaScript type, per the HTML spec. -->
+    <mime-mapping>
+        <extension>js</extension>
+        <mime-type>text/javascript</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>mjs</extension>
+        <mime-type>text/javascript</mime-type>
+    </mime-mapping>
+
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>

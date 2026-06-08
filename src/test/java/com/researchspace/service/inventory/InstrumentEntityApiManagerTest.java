@@ -10,10 +10,17 @@ import static org.mockito.Mockito.verify;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.Group;
@@ -23,10 +30,12 @@ import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
 import com.researchspace.model.events.InventoryEditingEvent;
+import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.service.inventory.impl.InstrumentApiManagerImpl;
+import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.Before;
@@ -34,7 +43,17 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
 
-public class InstrumentApiManagerTest extends SpringTransactionalTest {
+public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
+
+  /**
+   * Minimal valid PNG as data URI, used for base64-image update tests. Kept as a constant here to
+   * avoid a cross-layer dependency on the MVC test base.
+   */
+  private static final String BASE_64_PNG =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQIAAAESAQMAAAAsV"
+          + " 0mIAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURf///wAAAFXC034AAAAJcEhZcwAADsMAAA7"
+          + " DAcdvqGQAAABWSURBVGje7dUhDsAgEETR5VYcv8fCgUEg1rXdhOR9/ZKRE5LO2kwbH4snHe8EQRAEQWxR88g+m"
+          + " yAIgiDeCo9MEARBEP+Lmr/1yARBEARxhyj5fSktYgFPS1k85Tqe JQAAAABJRU5ErkJggg==";
 
   private ApplicationEventPublisher mockPublisher;
   private User testUser;
@@ -80,7 +99,7 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     request.setName(null);
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
 
-    assertEquals(InstrumentApiManagerImpl.INSTRUMENT_DEFAULT_NAME, created.getName());
+    assertEquals(InstrumentEntityApiManagerImpl.INSTRUMENT_DEFAULT_NAME, created.getName());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
   }
 
@@ -205,27 +224,240 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void createInstrumentFromTemplate() {
-    // first, build a template directly in the DB via a copy of an instrument
-    ApiInstrument baseInstrument = createBasicInstrumentForUser(testUser, "base-for-template");
+  public void createInstrumentFromTemplateCopiesFieldsAndLinksTemplate() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    assertTrue(template.isTemplate());
+    assertEquals(1, template.getFields().size());
 
-    // check templateId is initially null (no template)
-    assertNull(baseInstrument.getTemplateId());
+    ApiInstrument request = new ApiInstrument();
+    request.setName("from-template");
+    request.setTemplateId(template.getId());
 
-    // create another instrument without a template — templateId should still be null
-    ApiInstrument noTemplate = new ApiInstrument();
-    noTemplate.setName("no-template-instrument");
-    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(noTemplate, testUser);
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    assertNotNull(created);
+    assertEquals(template.getId(), created.getTemplateId());
+    assertEquals(template.getVersion(), created.getTemplateVersion());
+    assertFalse(created.isTemplate());
+    // fields copied from the template (1 in basic template)
+    assertEquals(1, created.getFields().size());
+    assertEquals(template.getFields().get(0).getName(), created.getFields().get(0).getName());
+  }
+
+  @Test
+  public void createInstrumentWithoutTemplateLeavesTemplateIdNull() {
+    ApiInstrument request = new ApiInstrument();
+    request.setName("no-template-instrument");
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
     assertNull(created.getTemplateId());
+    assertNull(created.getTemplateVersion());
+  }
+
+  @Test
+  public void getApiInstrumentTemplateByIdThrowsForUnknownId() {
+    assertThrows(
+        Exception.class,
+        () -> instrumentApiMgr.getApiInstrumentTemplateById(Long.MAX_VALUE, testUser));
+  }
+
+  @Test
+  public void createInstrumentTemplate_persistsAndReturnsApi() {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("created template");
+    templatePost.getFields().add(createBasicApiSampleField("F1", ApiFieldType.TEXT, "default"));
+
+    ApiInstrumentTemplate created =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+
+    assertNotNull(created);
+    assertNotNull(created.getId());
+    assertTrue(created.isTemplate());
+    assertEquals("created template", created.getName());
+    assertEquals(1L, (long) created.getVersion());
+    assertEquals(1, created.getFields().size());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
+    assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
+
+    ApiInstrumentTemplate retrieved =
+        instrumentApiMgr.getApiInstrumentTemplateById(created.getId(), testUser);
+    assertEquals(created.getId(), retrieved.getId());
+    assertEquals("created template", retrieved.getName());
+  }
+
+  @Test
+  public void getTemplatesForUser_returnsOnlyTemplates() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    createBasicInstrumentForUser(testUser, "instance-not-template");
+
+    ApiInstrumentTemplateSearchResult result =
+        instrumentApiMgr.getTemplatesForUser(
+            PaginationCriteria.createDefaultForClass(InstrumentTemplate.class),
+            null,
+            InventorySearchDeletedOption.EXCLUDE,
+            testUser);
+
+    assertNotNull(result);
+    assertTrue(result.getTotalHits() >= 1);
+    assertTrue(result.getTemplates().stream().allMatch(t -> t.isTemplate()));
+    assertTrue(result.getTemplates().stream().anyMatch(t -> t.getId().equals(template.getId())));
+  }
+
+  @Test
+  public void updateApiInstrumentTemplate_bumpsVersionOnContentChange() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    long initialVersion = template.getVersion();
+
+    template.setName("renamed template");
+    ApiInstrumentTemplate updated =
+        instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
+
+    assertEquals("renamed template", updated.getName());
+    assertEquals(initialVersion + 1, (long) updated.getVersion());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+  }
+
+  @Test
+  public void updateApiInstrumentTemplate_canAddAndDeleteFields() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    Long existingFieldId = template.getFields().get(0).getId();
+
+    ApiInventoryEntityField newField = new ApiInventoryEntityField();
+    newField.setName("added");
+    newField.setType(ApiFieldType.TEXT);
+    newField.setNewFieldRequest(true);
+    ApiInventoryEntityField toDelete = new ApiInventoryEntityField();
+    toDelete.setId(existingFieldId);
+    toDelete.setDeleteFieldRequest(true);
+    template.setFields(List.of(toDelete, newField));
+
+    ApiInstrumentTemplate updated =
+        instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
+
+    assertEquals(1, updated.getFields().size());
+    assertEquals("added", updated.getFields().get(0).getName());
+  }
+
+  @Test
+  public void markInstrumentTemplateAsDeleted_andRestore() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    assertFalse(template.isDeleted());
+
+    ApiInstrumentTemplate deleted =
+        instrumentApiMgr.markInstrumentTemplateAsDeleted(template.getId(), testUser);
+    assertTrue(deleted.isDeleted());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryDeleteEvent.class));
+
+    ApiInstrumentTemplate restored =
+        instrumentApiMgr.restoreDeletedInstrumentTemplate(template.getId(), testUser);
+    assertFalse(restored.isDeleted());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryRestoreEvent.class));
+  }
+
+  @Test
+  public void duplicateInstrumentTemplate_createsCopy() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+
+    ApiInstrumentTemplate copy =
+        instrumentApiMgr.duplicateInstrumentTemplate(template.getId(), testUser);
+
+    assertNotNull(copy.getId());
+    assertFalse(copy.getId().equals(template.getId()));
+    assertTrue(copy.isTemplate());
     verify(mockPublisher, Mockito.times(2)).publishEvent(Mockito.any(InventoryCreationEvent.class));
   }
 
   @Test
-  public void getApiInstrumentTemplateById() {
-    // verify that attempting to retrieve a non-existing instrument template throws
+  public void changeApiInstrumentTemplateOwner_transfersOwnership() {
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("ntOwner"));
+    initialiseContentWithEmptyContent(newOwner);
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+
+    template.setOwner(new ApiUser(newOwner));
+    ApiInstrumentTemplate transferred =
+        instrumentApiMgr.changeApiInstrumentTemplateOwner(template, testUser);
+
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+    verify(mockPublisher).publishEvent(Mockito.any(InventoryTransferEvent.class));
+  }
+
+  @Test
+  public void templateNameExistsForUser_detectsExistingName() {
+    String uniqueName = "unique-template-" + getRandomAlphabeticString("n");
+    assertFalse(instrumentApiMgr.templateNameExistsForUser(uniqueName, testUser));
+
+    createBasicInstrumentTemplateForUser(testUser, uniqueName);
+
+    assertTrue(instrumentApiMgr.templateNameExistsForUser(uniqueName, testUser));
+  }
+
+  @Test
+  public void updateInstrumentToLatestTemplateVersion_resyncsAfterTemplateChange() {
+    // Create a template, then an instrument from it
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    ApiInstrument instrumentReq = new ApiInstrument();
+    instrumentReq.setName("to-be-resynced");
+    instrumentReq.setTemplateId(template.getId());
+    ApiInstrument instrument = instrumentApiMgr.createNewApiInstrument(instrumentReq, testUser);
+    assertEquals(template.getVersion(), instrument.getTemplateVersion());
+
+    // Bump the template by adding a new field
+    ApiInventoryEntityField newField = new ApiInventoryEntityField();
+    newField.setName("extra-template-field");
+    newField.setType(ApiFieldType.TEXT);
+    newField.setNewFieldRequest(true);
+    template.setFields(List.of(newField));
+    ApiInstrumentTemplate updatedTemplate =
+        instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
+    assertTrue(updatedTemplate.getVersion() > instrument.getTemplateVersion());
+
+    // Sync the instrument with the latest template version
+    ApiInstrument resynced =
+        instrumentApiMgr.updateInstrumentToLatestTemplateVersion(instrument.getId(), testUser);
+    assertEquals(updatedTemplate.getVersion(), resynced.getTemplateVersion());
+    // instrument now carries the new field
+    assertTrue(
+        resynced.getFields().stream().anyMatch(f -> "extra-template-field".equals(f.getName())));
+  }
+
+  @Test
+  public void getInstrumentsLinkingOldTemplateVersion_returnsLaggingInstruments() {
+    // Create a template + an instrument from it (linked at version 1)
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    ApiInstrument instrumentReq = new ApiInstrument();
+    instrumentReq.setName("lagging");
+    instrumentReq.setTemplateId(template.getId());
+    ApiInstrument lagging = instrumentApiMgr.createNewApiInstrument(instrumentReq, testUser);
+
+    // Initially no lagging instruments (instrument is on latest version)
+    assertTrue(
+        instrumentApiMgr
+            .getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser)
+            .isEmpty());
+
+    // Bump the template — now the existing instrument is lagging
+    template.setDescription("new description");
+    instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
+
+    List<ApiInventoryRecordInfo> lagged =
+        instrumentApiMgr.getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser);
+    assertEquals(1, lagged.size());
+    assertEquals(lagging.getId(), lagged.get(0).getId());
+  }
+
+  @Test
+  public void updateApiInstrumentTemplate_throwsIfTargetIsNotATemplate() {
+    ApiInstrument instrument = createBasicInstrumentForUser(testUser, "not-a-template");
+    ApiInstrumentTemplate pretendTemplate = new ApiInstrumentTemplate();
+    pretendTemplate.setId(instrument.getId());
+    pretendTemplate.setName("hacking-attempt");
+
+    // assertUserCanEditInstrumentTemplate casts to InstrumentTemplate; on an Instrument
+    // record this should fail with a runtime exception (ClassCastException wrapped or similar)
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.getApiInstrumentTemplateById(Long.MAX_VALUE, testUser));
+        () -> instrumentApiMgr.updateApiInstrumentTemplate(pretendTemplate, testUser));
   }
 
   @Test
@@ -270,6 +502,31 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     assertEquals("renamed instrument", updated.getName());
     assertEquals("updated description", updated.getDescription());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+  }
+
+  @Test
+  public void moveInstrumentToListContainer() {
+    ApiContainer listContainer = createBasicContainerForUser(testUser);
+    ApiContainer workbench = getWorkbenchForUser(testUser);
+    int initialWorkbenchCount = workbench.getContentSummary().getTotalCount();
+
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "move-test");
+    assertEquals(workbench.getId(), created.getParentContainer().getId());
+
+    ApiInstrument updateRequest = new ApiInstrument();
+    updateRequest.setId(created.getId());
+    updateRequest.setParentContainer(listContainer);
+    ApiInstrument updated = instrumentApiMgr.updateApiInstrument(updateRequest, testUser);
+
+    assertEquals(listContainer.getId(), updated.getParentContainer().getId());
+    Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryMoveEvent.class));
+
+    listContainer = containerApiMgr.getApiContainerById(listContainer.getId(), testUser);
+    assertEquals(1, listContainer.getContentSummary().getTotalCount());
+    workbench = getWorkbenchForUser(testUser);
+    // instrument moved out of workbench into list container (which stays on workbench),
+    // so workbench direct-child count is the same as before the instrument was created
+    assertEquals(initialWorkbenchCount, workbench.getContentSummary().getTotalCount());
   }
 
   @Test
@@ -550,5 +807,97 @@ public class InstrumentApiManagerTest extends SpringTransactionalTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> instrumentApiMgr.changeApiInstrumentOwner(created, testUser));
+  }
+
+  @Test
+  public void updateApiInstrumentTemplateWithBase64Image() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+
+    ApiInstrumentTemplate update = new ApiInstrumentTemplate();
+    update.setId(template.getId());
+    update.setNewBase64Image(BASE_64_PNG);
+
+    // Before the fix this threw ClassCastException; the result must be non-null after the fix.
+    ApiInstrumentTemplate updated = instrumentApiMgr.updateApiInstrumentTemplate(update, testUser);
+    assertNotNull(updated);
+    assertEquals(template.getId(), updated.getId());
+  }
+
+  @Test
+  public void assertUserCanReadInstrument_withTemplateId_throwsNotFoundNotClassCast() {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    assertThrows(
+        javax.ws.rs.NotFoundException.class,
+        () -> instrumentApiMgr.assertUserCanReadInstrument(template.getId(), testUser));
+  }
+
+  @Test
+  public void assertUserCanReadInstrumentTemplate_withInstrumentId_throwsNotFoundNotClassCast() {
+    ApiInstrument instrument = createBasicInstrumentForUser(testUser, "type-mismatch-test");
+    assertThrows(
+        javax.ws.rs.NotFoundException.class,
+        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(instrument.getId(), testUser));
+  }
+
+  @Test
+  public void assertUserCanRead_eachTypeAccessibleIndependentlyWhenBothExist() {
+    ApiInstrument instrument = createBasicInstrumentForUser(testUser, "collision-instrument");
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+
+    Instrument dbInstrument =
+        instrumentApiMgr.assertUserCanReadInstrument(instrument.getId(), testUser);
+    assertNotNull(dbInstrument);
+    assertEquals(instrument.getId(), dbInstrument.getId());
+
+    InstrumentTemplate dbTemplate =
+        instrumentApiMgr.assertUserCanReadInstrumentTemplate(template.getId(), testUser);
+    assertNotNull(dbTemplate);
+    assertEquals(template.getId(), dbTemplate.getId());
+  }
+
+  /**
+   * Regression: {@code duplicateInstrument} returned {@code new ApiInstrument(copy)} without
+   * calling {@code populateOutgoingApiInstrumentEntity}, stripping {@code permittedActions} and
+   * owner/sharing fields from the response. Every sibling method ({@code createInstrument}, {@code
+   * updateApiInstrument}, {@code markInstrumentAsDeleted}, etc.) and {@code
+   * duplicateInstrumentTemplate} all call the populate helper.
+   */
+  @Test
+  public void duplicateInstrumentResponseIncludesPermittedActionsAndOwner() {
+    ApiInstrument original = createBasicInstrumentForUser(testUser, "dup-populate-test");
+
+    ApiInstrument copy = instrumentApiMgr.duplicateInstrument(original.getId(), testUser);
+
+    assertNotNull(copy.getId());
+    // permittedActions is set by populateOutgoingApiInstrumentEntity; empty without the call
+    assertNotNull(copy.getPermittedActions());
+    assertFalse(copy.getPermittedActions().isEmpty());
+    // owner is also populated by the helper
+    assertNotNull(copy.getOwner());
+    assertEquals(testUser.getUsername(), copy.getOwner().getUsername());
+  }
+
+  @Test
+  public void createInstrumentTemplateWithRadioField_persistsSuccessfully() {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("radio-field-template");
+
+    ApiInventoryEntityField radioField = new ApiInventoryEntityField();
+    radioField.setName("Status");
+    radioField.setType(ApiFieldType.RADIO);
+    ApiInventoryEntityField.ApiInventoryFieldDef def =
+        new ApiInventoryEntityField.ApiInventoryFieldDef();
+    def.setOptions(List.of("Active", "Inactive", "Maintenance"));
+    radioField.setDefinition(def);
+    templatePost.getFields().add(radioField);
+
+    ApiInstrumentTemplate created =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+
+    assertNotNull(created.getId());
+    assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
+    assertEquals(1, created.getFields().size());
+    assertEquals("Status", created.getFields().get(0).getName());
+    assertEquals(ApiFieldType.RADIO, created.getFields().get(0).getType());
   }
 }

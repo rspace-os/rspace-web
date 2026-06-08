@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.EcatImage;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -264,6 +265,12 @@ public interface RecordManager {
    * @return
    */
   EditStatus requestRecordView(Long recordId, User user);
+
+  /**
+   * Returns the username of the user currently holding the edit lock on a record, if any. Does not
+   * acquire or release the lock — purely a read.
+   */
+  Optional<String> getEditingUserForRecord(Long recordId);
 
   /**
    * Creates and persists a new empty {@link StructuredDocument}, using the {@link
@@ -656,4 +663,53 @@ public interface RecordManager {
       boolean isOnRoot,
       BaseRecord baseRecord,
       String mediaType);
+
+  /**
+   * Moves the specified records that are currently owned by the specified user to the given folder.
+   *
+   * @param recordIds
+   * @param currentOwner
+   * @param destinationFolder
+   */
+  void moveUsersRecordsToFolder(List<Long> recordIds, User currentOwner, Folder destinationFolder);
+
+  /**
+   * Returns true if the user has any templates which have been shared with other users or groups.
+   *
+   * @param u User
+   * @return
+   */
+  boolean hasUserSharedTemplatesUsedByOtherUsers(User u);
+
+  /**
+   * Gets all templates from a specific user that have been used by another user. This includes
+   * templates that might have once been shared, but which are currently no longer shared.
+   *
+   * @param u user
+   * @return
+   */
+  List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User u);
+
+  /**
+   * Move templates from one owner to a new owner. Optional: Update the name of the original user
+   * that created the template (this will mostly be of use when deleting users). Note that
+   * technically this method could transfer any type of BaseRecord, but the intended use is (as of
+   * time of writing this) for templates.
+   *
+   * @param originalOwner
+   * @param newOwner
+   * @param templateIds
+   * @param updatedOriginalOwnerName
+   */
+  void transferTemplates(
+      User originalOwner, User newOwner, List<Long> templateIds, String updatedOriginalOwnerName);
+
+  /**
+   * Returns all gallery items owned by originalOwner that are linked via FieldAttachment to any of
+   * the given template IDs.
+   */
+  List<EcatMediaFile> getGalleryItemsForTemplates(List<Long> templateIds, User originalOwner);
+
+  /** Updates FileProperty.fileOwner for the given media file IDs. */
+  void updateFilePropertyOwnerForMediaFiles(List<Long> mediaIds, String newOwnerUsername);
 }

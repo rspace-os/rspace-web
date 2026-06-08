@@ -28,6 +28,8 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DiskSpaceLimitException;
+import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoRService;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ExportImport;
@@ -63,6 +65,8 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
   private @Autowired BeanFactory beanFactory;
   private @Autowired ArchiveExportPlanner archivePlanner;
   private @Autowired RoRService rorService;
+  private @Autowired FilestoreAclChecker filestoreAclChecker;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public ArchiveResult exportArchive(
@@ -379,6 +383,8 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
     exportObjectGenerator.setExportConfig(aconfig);
     if (aconfig.isIncludeNfsLinks()) {
       NfsExportContext nfsContext = new NfsExportContext(aconfig);
+      nfsContext.setAclChecker(filestoreAclChecker);
+      nfsContext.setMessages(messages);
       nfsContext.configureArchiveNfsDirForAssemblyFolder(archiveAssmblyFlder);
       context.setNfsContext(nfsContext);
     }

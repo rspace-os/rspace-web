@@ -15,6 +15,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItem from "@mui/material/ListItem";
 import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ChoiceField from "../../../components/Inputs/ChoiceField";
@@ -36,6 +37,14 @@ const NoFilestoreAlert = () => (
     <AlertTitle>No S3 filestore has been configured.</AlertTitle>
     Add a new one in the filestore section of the Gallery or speak to your
     system administrator.
+  </Alert>
+);
+
+const NoWritableFilestoreAlert = () => (
+  <Alert severity="error">
+    <AlertTitle>You do not have write access to any S3 filestore.</AlertTitle>
+    Your account is not on the write allowlist for any S3 filestore. Ask your
+    system administrator if you need write access.
   </Alert>
 );
 
@@ -175,6 +184,10 @@ function MoveCopyDialog({
                     <Grid item>
                       <NoFilestoreAlert />
                     </Grid>
+                  ) : filestores.every((fs) => !fs.canWrite) ? (
+                    <Grid item>
+                      <NoWritableFilestoreAlert />
+                    </Grid>
                   ) : (
                     <>
                       <Grid item>
@@ -222,20 +235,22 @@ function MoveCopyDialog({
                           renderInput={() => (
                             <Box>
                               <List>
-                                <ListItemButton
-                                  sx={{ maxWidth: "400px" }}
-                                  onClick={(e) =>
-                                    setDestinationAnchorEl(e.currentTarget)
-                                  }
-                                >
-                                  <ListItemText
-                                    primary={
-                                      selectedFilestore?.name ??
-                                      "Select a filestore"
+                                <ListItem disablePadding>
+                                  <ListItemButton
+                                    sx={{ maxWidth: "400px" }}
+                                    onClick={(e) =>
+                                      setDestinationAnchorEl(e.currentTarget)
                                     }
-                                  />
-                                  <KeyboardArrowDownIcon />
-                                </ListItemButton>
+                                  >
+                                    <ListItemText
+                                      primary={
+                                        selectedFilestore?.name ??
+                                        "Select a filestore"
+                                      }
+                                    />
+                                    <KeyboardArrowDownIcon />
+                                  </ListItemButton>
+                                </ListItem>
                               </List>
                               <Menu
                                 open={Boolean(destinationAnchorEl)}
@@ -254,13 +269,21 @@ function MoveCopyDialog({
                                   <MenuItem
                                     key={fs.id}
                                     selected={fs === selectedFilestore}
+                                    disabled={!fs.canWrite}
                                     onClick={() => {
                                       setSelectedFilestore(fs);
                                       setDestinationAnchorEl(null);
                                     }}
                                     sx={{ width: "400px" }}
                                   >
-                                    <ListItemText primary={fs.name} />
+                                    <ListItemText
+                                      primary={fs.name}
+                                      secondary={
+                                        fs.canWrite
+                                          ? undefined
+                                          : "No write access"
+                                      }
+                                    />
                                   </MenuItem>
                                 ))}
                               </Menu>
