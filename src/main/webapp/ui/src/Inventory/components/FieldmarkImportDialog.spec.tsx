@@ -11,8 +11,7 @@ import {
 
 import { sleep } from "@/util/Util";
 
-const importNotebookEndpoint =
-  "/api/inventory/v1/import/fieldmark/notebook";
+const importNotebookEndpoint = "/api/inventory/v1/import/fieldmark/notebook";
 
 const feature = test.extend<{
   Given: {
@@ -60,7 +59,21 @@ const feature = test.extend<{
       await expect(radio).toBeChecked();
     };
     const clickImport = async () => {
+      /*
+       * Selecting a notebook kicks off an async fetch of IGSN candidate fields
+       * which shows a loading indicator and then mounts/unmounts the IGSN field
+       * selector, resizing the (centred) dialog and shifting the Import button.
+       * Selecting an IGSN field also leaves a closing menu whose backdrop can
+       * intercept clicks. On WebKit, clicking while the button is moving or
+       * covered silently misses, so the import request never fires and
+       * waitForRequest times out. Wait for both to settle before clicking.
+       */
+      await expect(
+        page.getByText(/Loading available IGSN ID fields/),
+      ).toBeHidden();
+      await expect(page.getByRole("listbox")).toBeHidden();
       const importButton = page.getByRole("button", { name: "Import" });
+      await expect(importButton).toBeEnabled();
       await Promise.all([
         page.waitForRequest(
           (request) =>
@@ -115,9 +128,7 @@ const feature = test.extend<{
       "the user selects a notebook with identifier columns and clicks import without selecting identifier":
         async () => {
           await selectNotebook("Notebook With Identifiers");
-          await page
-            .getByRole("combobox", { name: "IGSN ID field" })
-            .waitFor();
+          await page.getByRole("combobox", { name: "IGSN ID field" }).waitFor();
           await clickImport();
         },
       "the user selects a notebook that will trigger detailed import error":
@@ -185,7 +196,6 @@ const feature = test.extend<{
         ).toBeVisible();
         await expect(
           page.getByRole("gridcell", { name: "published" }),
-
         ).toBeVisible();
         await expect(
           page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }),
@@ -217,21 +227,22 @@ const feature = test.extend<{
             )
             .toBe(true);
         },
-      "an import request should be made without an identifier column": async () => {
-        await expect
-          .poll(() =>
-            networkRequests.some(
-              (request) =>
-                request.url.pathname ===
-                  "/api/inventory/v1/import/fieldmark/notebook" &&
-                request.postData?.includes(
-                  '"notebookId":"test-project-no-identifiers"',
-                ) &&
-                !request.postData?.includes('"identifier"'),
-            ),
-          )
-          .toBe(true);
-      },
+      "an import request should be made without an identifier column":
+        async () => {
+          await expect
+            .poll(() =>
+              networkRequests.some(
+                (request) =>
+                  request.url.pathname ===
+                    "/api/inventory/v1/import/fieldmark/notebook" &&
+                  request.postData?.includes(
+                    '"notebookId":"test-project-no-identifiers"',
+                  ) &&
+                  !request.postData?.includes('"identifier"'),
+              ),
+            )
+            .toBe(true);
+        },
       "an import request should be made with the selected identifier column":
         async () => {
           await expect
@@ -335,9 +346,15 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ page, networkRequests }) => {
+  /*
+   * Emulate reduced motion so the theme renders dialog and menu transitions
+   * instantly (transitionDuration becomes 0). This keeps the Import button
+   * from animating into place, which on WebKit can otherwise cause clicks to
+   * land before the button has settled.
+   */
+  await page.emulateMedia({ reducedMotion: "reduce" });
   page.on("request", (request) => {
     networkRequests.push({
       url: new URL(request.url()),
@@ -546,11 +563,9 @@ feature.beforeEach(async ({ page, networkRequests }) => {
       });
     },
   );
-
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-
 });
 test.describe("FieldmarkImportDialog", () => {
   test.describe("accessibility", () => {
@@ -561,7 +576,6 @@ test.describe("FieldmarkImportDialog", () => {
         await Then["there shouldn't be any axe violations"]();
       },
     );
-
   });
   test.describe("notebook fetching", () => {
     feature(
@@ -572,7 +586,6 @@ test.describe("FieldmarkImportDialog", () => {
         await Then["the notebooks should be displayed in the table"]();
       },
     );
-
   });
   test.describe("notebook import", () => {
     feature(
@@ -585,7 +598,6 @@ test.describe("FieldmarkImportDialog", () => {
           "an import request should be made to the server with the correct notebook ID"
         ]();
       },
-
     );
     feature(
       "should make an import request without identifier column when notebook has no identifier columns",
@@ -595,9 +607,10 @@ test.describe("FieldmarkImportDialog", () => {
         await When[
           "the user selects a notebook with no identifier columns and clicks import"
         ]();
-        await Then["an import request should be made without an identifier column"]();
+        await Then[
+          "an import request should be made without an identifier column"
+        ]();
       },
-
     );
     feature(
       "should make an import request with selected identifier column when notebook has identifier columns",
@@ -611,7 +624,6 @@ test.describe("FieldmarkImportDialog", () => {
           "an import request should be made with the selected identifier column"
         ]();
       },
-
     );
     feature(
       "should show importing alert during import process",
@@ -638,7 +650,6 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["an importing alert should be visible"]();
       },
-
     );
     feature(
       "should show success alert after import completes",
@@ -650,7 +661,6 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["a success alert should be visible"]();
       },
-
     );
     feature(
       "should show loading state on import button during import",
@@ -677,7 +687,6 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["the import button should show loading state"]();
       },
-
     );
     feature(
       "should display IGSN message when igsnCandidateFields endpoint returns IGSN error",
@@ -689,7 +698,6 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["the IGSN message should be displayed"]();
       },
-
     );
     feature(
       "should hide identifier parsing UI during import when identifier field is unselected",
@@ -717,7 +725,6 @@ test.describe("FieldmarkImportDialog", () => {
           "the identifier parsing UI should be hidden during import"
         ]();
       },
-
     );
     feature(
       "should show detailed error message when import fails with validation errors",

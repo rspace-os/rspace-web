@@ -3,7 +3,14 @@ import React from "react";
 import DMPDialog from "./DMPDialog";
 
 import AxeBuilder from "@axe-core/playwright";
-test.beforeEach(async ({ router }) => {
+test.beforeEach(async ({ router, page }) => {
+  /*
+   * Emulate reduced motion so the dialog renders without its fade/grow
+   * transition. On WebKit, clicking the Import button while the dialog is
+   * still animating in can land before the button has settled, so the import
+   * request never fires and waitForRequest times out.
+   */
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await router.route(/\/apps\/argos\/plans.*/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -69,7 +76,6 @@ test.beforeEach(async ({ router }) => {
       }),
     });
   });
-
 });
 test("Should have no axe violations.", async ({ mount, page }) => {
   await mount(<DMPDialog open={true} setOpen={() => {}} />);
@@ -92,9 +98,8 @@ test("Should have no axe violations.", async ({ mount, page }) => {
         v.description !==
         "Ensure elements with an ARIA role that require child roles contain them"
       );
-    })
+    }),
   ).toEqual([]);
-
 });
 test("Importing a selected DMP should call the import endpoint.", async ({
   mount,
@@ -117,14 +122,9 @@ test("Importing a selected DMP should call the import endpoint.", async ({
     ]);
     importRequestUrl = request.url();
   });
-  await test.step(
-    "Then the import endpoint is called for the selected DMP",
-    async () => {
-      expect(importRequestUrl).toMatch(
-        new RegExp(
-          "/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e"
-        )
-      );
-    }
-  );
+  await test.step("Then the import endpoint is called for the selected DMP", async () => {
+    expect(importRequestUrl).toMatch(
+      new RegExp("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e"),
+    );
+  });
 });
