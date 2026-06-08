@@ -1,0 +1,9 @@
+PRT-1005: address PR review on empty-upload test
+
+- Use non-deprecated MockMvcRequestBuilders.multipart() instead of
+  fileUpload() (deprecated since Spring 5), per Greptile review.
+- Assert the distinct 'no file provided' bundle message is returned, not
+  just that errors exist, per Copilot review. Resolved via the message
+  source so it stays robust to wording changes.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
