@@ -31,7 +31,6 @@ import useS3Filestores, {
   type S3TransferSource,
 } from "./useS3Filestores";
 
-
 type MoveCopyDialogArgs = {
   dialogOpen: boolean;
   setDialogOpen: (open: boolean) => void;
@@ -104,9 +103,10 @@ function MoveCopyDialog({
         },
       );
       const op = retainSourceCopy ? "copy" : "move";
-      void (retainSourceCopy
-        ? selectedFilestore.copy(recordIds)
-        : selectedFilestore.move(recordIds)
+      void (
+        retainSourceCopy
+          ? selectedFilestore.copy(recordIds)
+          : selectedFilestore.move(recordIds)
       )
         .then(() => {
           setDialogOpen(false);
@@ -225,20 +225,22 @@ function MoveCopyDialog({
                         renderInput={() => (
                           <Box>
                             <List>
-                              <ListItemButton
-                                sx={{ maxWidth: "400px" }}
-                                onClick={(e) =>
-                                  setDestinationAnchorEl(e.currentTarget)
-                                }
-                              >
-                                <ListItemText
-                                  primary={
-                                    selectedFilestore?.name ??
-                                    "Select a filestore"
+                              <ListItem disablePadding>
+                                <ListItemButton
+                                  sx={{ maxWidth: "400px" }}
+                                  onClick={(e) =>
+                                    setDestinationAnchorEl(e.currentTarget)
                                   }
-                                />
-                                <KeyboardArrowDownIcon />
-                              </ListItemButton>
+                                >
+                                  <ListItemText
+                                    primary={
+                                      selectedFilestore?.name ??
+                                      "Select a filestore"
+                                    }
+                                  />
+                                  <KeyboardArrowDownIcon />
+                                </ListItemButton>
+                              </ListItem>
                             </List>
                             <Menu
                               open={Boolean(destinationAnchorEl)}
@@ -297,11 +299,7 @@ function MoveCopyDialog({
                 onSubmit();
               }}
             >
-              {isTransferMode
-                ? "Transfer"
-                : retainSourceCopy
-                  ? "Copy"
-                  : "Move"}
+              {isTransferMode ? "Transfer" : retainSourceCopy ? "Copy" : "Move"}
             </ValidatingSubmitButton>
           </DialogActions>
         </Box>
