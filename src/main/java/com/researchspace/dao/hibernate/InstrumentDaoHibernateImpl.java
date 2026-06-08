@@ -57,7 +57,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .getCurrentSession()
             .createQuery(
                 "select count(i) from Instrument i where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Instrument' ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " type(i) = Instrument ")
                     + permittedFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
@@ -72,8 +72,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from Instrument where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Instrument' ")
+                "from Instrument i where "
+                    + connectSqlConditionsWithAnd(deletedFragment, " type(i) = Instrument ")
                     + permittedFragment
                     + orderByFragment,
                 Instrument.class)
@@ -90,7 +90,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   public List<Instrument> findInstrumentsByName(String name, User user) {
     return sessionFactory
         .getCurrentSession()
-        .createQuery("from Instrument where name=:name and owner=:owner", Instrument.class)
+        .createQuery("from Instrument where editInfo.name=:name and owner=:owner", Instrument.class)
         .setParameter("name", name)
         .setParameter("owner", user)
         .list();
@@ -103,7 +103,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .getCurrentSession()
         .createQuery(
             "from Instrument where owner=:owner and deleted=false"
-                + " and DTYPE='Instrument'"
                 + " and instrumentTemplate.id=:parentTemplateId"
                 + " and templateLinkedVersion < :parentTemplateMaxVersion",
             Instrument.class)
