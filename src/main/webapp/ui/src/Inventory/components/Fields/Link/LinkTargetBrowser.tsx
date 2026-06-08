@@ -73,6 +73,11 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
             onAddition={handleAddition}
             onCancel={props.onCancel}
             showActions
+            // clear the picker's active result after each pick/cancel so reopening the
+            // dialog starts fresh; otherwise the reused Search model re-emits the prior
+            // selection (instantConfirm + SINGLE auto-confirm), re-populating the target
+            // and immediately closing the dialog
+            resetActiveResultOnClose
           />
         </AlwaysNewWindowNavigationContext>
       </DialogContent>

@@ -25,6 +25,8 @@ const ROOTS: ReadonlyArray<Node> = [
   { id: 100, globalId: "FL100", name: "Projects", type: "FOLDER" },
   { id: 200, globalId: "NB200", name: "Lab NB", type: "NOTEBOOK" },
   { id: 300, globalId: "SD300", name: "Protocol doc", type: "DOCUMENT" },
+  // the folder-tree endpoint bundles Gallery/MEDIA files in with documents
+  { id: 400, globalId: "GL400", name: "lemmings.gif", type: "MEDIA" },
 ];
 
 function wireFolderTree() {
@@ -103,6 +105,18 @@ describe("ElnFolderBrowser", () => {
       globalId: "NB200",
       name: "Lab NB",
       type: "NOTEBOOK",
+    });
+  });
+
+  it("picks a Gallery file when its label is clicked", async () => {
+    const onPick = vi.fn();
+    renderBrowser(onPick);
+    const user = userEvent.setup();
+    await user.click(await screen.findByText(/lemmings\.gif/i));
+    expect(onPick).toHaveBeenCalledWith({
+      globalId: "GL400",
+      name: "lemmings.gif",
+      type: "MEDIA",
     });
   });
 

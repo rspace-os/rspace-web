@@ -162,6 +162,36 @@ describe("UpdateField — Field Type select includes Link", () => {
     ]);
   });
 
+  it("shows the relation-type error on the relation field, not the target field", async () => {
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await selectFieldType("Link");
+    // provide a valid target but leave the relation type empty
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "SA99",
+    );
+
+    // the relation prompt appears and is attached to the relation field, while the target
+    // field keeps its own default helper text (the prompt must not leak onto the target field)
+    expect(
+      screen.getByText("Pick a DataCite relation type"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Paste a Global ID, or use Browse Inventory above."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: /relation type/i }),
+    ).toHaveAttribute("aria-invalid", "true");
+  });
+
   it("opens the ELN picker from the Browse ELN button", async () => {
     const extraField = makeExtraField();
     const record = makeRecord();

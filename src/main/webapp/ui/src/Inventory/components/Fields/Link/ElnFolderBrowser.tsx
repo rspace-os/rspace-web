@@ -10,14 +10,17 @@ import useFolders, {
 import { Tree, TreeItem } from "../../../../components/Tree";
 
 // The /api/v1/folders/tree endpoint tags each row with an ApiRecordType: FOLDER,
-// NOTEBOOK, DOCUMENT, MEDIA, SNIPPET. We browse documents, notebooks and folders.
+// NOTEBOOK, DOCUMENT, MEDIA, SNIPPET. We request documents, notebooks and folders;
+// the endpoint bundles Gallery/MEDIA files in with documents (it only excludes
+// MEDIA_FILE when "document" is absent) and lists the Gallery root, so media files
+// are reachable in this tree too.
 const TYPES_TO_INCLUDE: Set<"document" | "notebook" | "folder"> = new Set([
   "document",
   "notebook",
   "folder",
 ]);
-// Documents and notebooks are valid link targets; folders are navigate-only.
-const PICKABLE_TYPES = new Set(["DOCUMENT", "NOTEBOOK"]);
+// Documents, notebooks and Gallery files are valid link targets; folders are navigate-only.
+const PICKABLE_TYPES = new Set(["DOCUMENT", "NOTEBOOK", "MEDIA"]);
 // Folders and notebooks have children that can be revealed; documents are leaves.
 const EXPANDABLE_TYPES = new Set(["FOLDER", "NOTEBOOK"]);
 
@@ -117,11 +120,11 @@ function TreeNodeContent({
 
 /**
  * A folder-tree browser for picking an ELN link target. Folders and notebooks can
- * be expanded to navigate; documents and notebooks can be selected as the target.
- * Clicking a node's expand chevron only navigates, while clicking its label selects
- * it, so a notebook can be both opened and chosen. Reuses the workspace folder-tree
- * data layer ({@link useFolders}); gallery files are not in this tree and are reached
- * through search instead.
+ * be expanded to navigate; documents, notebooks and Gallery files can be selected as
+ * the target. Clicking a node's expand chevron only navigates, while clicking its
+ * label selects it, so a notebook can be both opened and chosen. Reuses the workspace
+ * folder-tree data layer ({@link useFolders}), which also surfaces the Gallery, so
+ * gallery files can be picked here as well as via search.
  */
 export default function ElnFolderBrowser({
   onPick,

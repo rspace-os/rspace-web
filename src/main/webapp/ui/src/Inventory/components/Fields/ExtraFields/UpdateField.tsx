@@ -82,13 +82,12 @@ function isSelfLink(sourceGlobalId: string, targetGlobalId: string): boolean {
   );
 }
 
-function validateLink(
-  link: LinkState,
+/** Validates only the target Global ID; relation-type validity is reported on its own field. */
+function validateTarget(
+  targetGlobalId: string,
   sourceGlobalId: string,
 ): { ok: boolean; reason: string } {
-  if (!isValidDataCiteRelationType(link.relationType))
-    return { ok: false, reason: "Pick a DataCite relation type" };
-  const match = GLOBAL_ID_PATTERN.exec(link.targetGlobalId);
+  const match = GLOBAL_ID_PATTERN.exec(targetGlobalId);
   if (!match) return { ok: false, reason: "Target Global ID is required" };
   if (!ALLOWED_TARGET_PREFIXES.has(match[1]))
     return {
@@ -96,7 +95,7 @@ function validateLink(
       reason:
         "Target must be an Inventory item or an ELN document, notebook or gallery file",
     };
-  if (isSelfLink(sourceGlobalId, link.targetGlobalId))
+  if (isSelfLink(sourceGlobalId, targetGlobalId))
     return { ok: false, reason: "An item cannot link to itself" };
   return { ok: true, reason: "" };
 }
@@ -126,10 +125,18 @@ export default function UpdateField({
   }, [extraField]);
 
   const sourceGlobalId = record.globalId ?? "";
-  const linkValidity =
-    fieldState.type === "Link"
-      ? validateLink(linkState, sourceGlobalId)
-      : { ok: true, reason: "" };
+  const isLink = fieldState.type === "Link";
+  const relationValid =
+    !isLink || isValidDataCiteRelationType(linkState.relationType);
+  const targetValidity = isLink
+    ? validateTarget(linkState.targetGlobalId, sourceGlobalId)
+    : { ok: true, reason: "" };
+  const linkValid = relationValid && targetValidity.ok;
+  // surface the relation error on the relation field once the user has begun entering the link
+  const showRelationError =
+    isLink &&
+    !relationValid &&
+    (linkState.relationType !== "" || linkState.targetGlobalId !== "");
 
   const initialLink = linkStateFromExtraField(extraField);
   const linkChanged =
@@ -142,7 +149,7 @@ export default function UpdateField({
     !errorMessage &&
     fieldState.name !== "" &&
     fieldState.type !== "" &&
-    (fieldState.type !== "Link" || linkValidity.ok) &&
+    (fieldState.type !== "Link" || linkValid) &&
     (fieldState.name !== extraField.name ||
       fieldState.type !== extraField.type ||
       linkChanged);
@@ -312,6 +319,10 @@ export default function UpdateField({
                   {...params}
                   variant="standard"
                   label="Relation type"
+                  error={showRelationError}
+                  helperText={
+                    showRelationError ? "Pick a DataCite relation type" : ""
+                  }
                   inputProps={{
                     ...params.inputProps,
                     "aria-label": "Relation type",
@@ -386,11 +397,11 @@ export default function UpdateField({
                 size="small"
                 variant="standard"
                 helperText={
-                  !linkValidity.ok && linkState.targetGlobalId !== ""
-                    ? linkValidity.reason
+                  !targetValidity.ok && linkState.targetGlobalId !== ""
+                    ? targetValidity.reason
                     : "Paste a Global ID, or use Browse Inventory above."
                 }
-                error={!linkValidity.ok && linkState.targetGlobalId !== ""}
+                error={!targetValidity.ok && linkState.targetGlobalId !== ""}
               />
             </Box>
           </Grid>
