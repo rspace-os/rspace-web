@@ -54,9 +54,11 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
     <Card variant="outlined" aria-label={`Link field ${props.name}`}>
       <CardActionArea onClick={props.onPeek} disabled={false}>
         <CardContent>
-          <Typography variant="subtitle1" component="div">
-            {props.name}
-          </Typography>
+          {props.name && (
+            <Typography variant="subtitle1" component="div">
+              {props.name}
+            </Typography>
+          )}
           <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
             <Chip
               size="small"

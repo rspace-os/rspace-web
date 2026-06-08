@@ -14,6 +14,25 @@ vi.mock("@/Inventory/components/Fields/Link/ElnRecordPicker", () => ({
 }));
 // RecordTypeIcon needs app context to resolve its icon; irrelevant to this component's logic.
 vi.mock("@/components/RecordTypeIcon", () => ({ default: () => null }));
+// LinkField has its own tests; stub it so we can assert it is used for the committed-link display
+// (and drive its "Edit" affordance) without pulling in its info/version dialog chain.
+vi.mock("@/Inventory/components/Fields/Link/LinkField", () => ({
+  default: ({
+    link,
+    onEdit,
+  }: {
+    link: { relationType: string; targetGlobalId: string };
+    onEdit: () => void;
+  }) => (
+    <div data-test-id="link-field-display">
+      <span>{link.relationType}</span>
+      <span>{link.targetGlobalId}</span>
+      <button type="button" onClick={onEdit}>
+        Edit link
+      </button>
+    </div>
+  ),
+}));
 
 function linkField(overrides: Partial<Field> = {}): Field {
   return {
@@ -45,7 +64,39 @@ describe("LinkFieldValue", () => {
     expect(options).toEqual(["References", "IsDerivedFrom"]);
   });
 
-  it("commits the staged link to the field model only when Apply is clicked", async () => {
+  it("shows the full link card for a committed link and reveals the editor on Edit", async () => {
+    const user = userEvent.setup();
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA20",
+        versionPin: null,
+      },
+    });
+    render(
+      <LinkFieldValue
+        field={field}
+        sourceGlobalId="SA1"
+        disabled={false}
+        onChange={() => {}}
+      />,
+    );
+
+    // a committed link renders via the shared LinkField card, not the inline editor
+    expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /apply link/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+
+    // the editor is now shown
+    expect(
+      screen.getByRole("button", { name: /apply link/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("commits the staged link to the field model on Apply", async () => {
     const user = userEvent.setup();
     const setAttributesDirty = vi.fn();
     const field = linkField({
@@ -65,13 +116,11 @@ describe("LinkFieldValue", () => {
       />,
     );
 
-    // changing the relationship type stages the edit but does not yet write to the model
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
-    expect(setAttributesDirty).not.toHaveBeenCalled();
-
-    // Apply commits the full link (new relation + existing target)
     await user.click(screen.getByRole("button", { name: /apply link/i }));
+
     expect(setAttributesDirty).toHaveBeenCalledWith({
       link: {
         relationType: "IsDerivedFrom",
@@ -101,6 +150,7 @@ describe("LinkFieldValue", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
     // re-pick a relation but keep the same (self) target -> must remain un-appliable
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));

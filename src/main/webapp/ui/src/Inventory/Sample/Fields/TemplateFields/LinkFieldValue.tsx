@@ -13,6 +13,7 @@ import LinkTargetBrowser from "../../../components/Fields/Link/LinkTargetBrowser
 import ElnRecordPicker from "../../../components/Fields/Link/ElnRecordPicker";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import { iconForGlobalId } from "../../../components/Fields/Link/iconForGlobalId";
+import LinkField from "../../../components/Fields/Link/LinkField";
 
 type LinkFieldValueArgs = {
   field: Field;
@@ -33,13 +34,19 @@ function isSelfLink(sourceGlobalId: string, targetGlobalId: string): boolean {
   );
 }
 
+/** Opens the link target in a new tab, honouring a pinned version (e.g. an SD audit view). */
+function openTargetInNewTab(link: FieldLink): void {
+  const versionSuffix = link.versionPin != null ? `v${link.versionPin}` : "";
+  window.open(`/globalId/${link.targetGlobalId}${versionSuffix}`, "_blank");
+}
+
 /**
- * Editor for a sample's inherited Link field value: pick a relationship type (constrained to the
- * template field's allowed set, or any DataCite type when the whitelist is empty) and a target,
- * reusing the Inventory/ELN target pickers from the extra-field Link UI.
- *
- * Edits are staged locally and only written to the field model on "Apply" (or reverted on
- * "Discard"), mirroring the extra-field Link editor so the two link editors behave consistently.
+ * Editor + display for a sample's structured Link field value. A committed link is shown with the
+ * same {@link LinkField} card used for manually-created (extra-field) links: an outline, relation
+ * and target chips, an info dialog, a version pill (and version-pin control), and an Open button.
+ * "Edit" reveals the editor, where the relationship type (constrained to the template field's
+ * allowed set, or any DataCite type when the whitelist is empty) and a target are chosen and then
+ * committed on Apply, mirroring the extra-field Link editor.
  */
 function LinkFieldValue({
   field,
@@ -47,11 +54,14 @@ function LinkFieldValue({
   disabled,
   onChange,
 }: LinkFieldValueArgs): React.ReactNode {
-  const [browserOpen, setBrowserOpen] = useState(false);
-  const [elnOpen, setElnOpen] = useState(false);
-
   const committedRelationType = field.link?.relationType ?? "";
   const committedTargetGlobalId = field.link?.targetGlobalId ?? "";
+  const hasLink = committedTargetGlobalId !== "";
+
+  // Show the display card for an existing link; drop straight into the editor for an empty field.
+  const [editing, setEditing] = useState(!hasLink);
+  const [browserOpen, setBrowserOpen] = useState(false);
+  const [elnOpen, setElnOpen] = useState(false);
 
   // staged (uncommitted) edits; committed to the field model only on Apply
   const [stagedRelationType, setStagedRelationType] = useState<string>(
@@ -97,18 +107,47 @@ function LinkFieldValue({
         };
     field.setAttributesDirty({ link: nextLink });
     field.setError(false);
+    setEditing(false);
     onChange();
   };
 
   const discard = (): void => {
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
+    if (hasLink) {
+      setEditing(false);
+    }
   };
+
+  // Display the committed link with the same card as a manually-created link.
+  const committedLink = field.link;
+  if (committedLink && committedTargetGlobalId !== "" && !editing) {
+    return (
+      <LinkField
+        // the FormField wrapper already renders the field label, so suppress the card's own name
+        name=""
+        link={committedLink}
+        targetDeleted={false}
+        editable={!disabled}
+        onPeek={() => undefined}
+        onOpen={() => openTargetInNewTab(committedLink)}
+        onEdit={() => setEditing(true)}
+        onVersionPinChange={(versionPin) => {
+          field.setAttributesDirty({ link: { ...committedLink, versionPin } });
+          onChange();
+        }}
+      />
+    );
+  }
+
+  // View mode with no link to show or edit.
+  if (disabled) {
+    return null;
+  }
 
   return (
     <Box>
       <Autocomplete
-        disabled={disabled}
         options={relationOptions}
         value={stagedRelationType === "" ? null : stagedRelationType}
         onChange={(_event, value) => setStagedRelationType(value ?? "")}
@@ -141,62 +180,54 @@ function LinkFieldValue({
                     ) : undefined
                   }
                   label={stagedTargetGlobalId}
-                  onDelete={
-                    disabled ? undefined : () => setStagedTargetGlobalId("")
-                  }
+                  onDelete={() => setStagedTargetGlobalId("")}
                   data-test-id="LinkTarget-globalId"
                 />
               );
             })()
           : null}
-        {!disabled && (
-          <>
-            <Button
-              size="small"
-              variant="outlined"
-              aria-label="Browse Inventory"
-              onClick={() => setBrowserOpen(true)}
-            >
-              Browse Inventory
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              aria-label="Browse ELN"
-              onClick={() => setElnOpen(true)}
-            >
-              Browse ELN
-            </Button>
-          </>
-        )}
+        <Button
+          size="small"
+          variant="outlined"
+          aria-label="Browse Inventory"
+          onClick={() => setBrowserOpen(true)}
+        >
+          Browse Inventory
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          aria-label="Browse ELN"
+          onClick={() => setElnOpen(true)}
+        >
+          Browse ELN
+        </Button>
       </Stack>
       {validationMessage && (
         <FormHelperText error>{validationMessage}</FormHelperText>
       )}
-      {!disabled && (
-        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-          <Button
-            color="callToAction"
-            disableElevation
-            variant="contained"
-            aria-label="Apply link"
-            onClick={apply}
-            disabled={!canApply}
-            data-test-id="ApplyLinkButton"
-          >
-            Apply
-          </Button>
-          <Button
-            variant="text"
-            aria-label="Discard link changes"
-            onClick={discard}
-            disabled={!changed}
-            data-test-id="DiscardLinkButton"
-          >
-            Discard
-          </Button>
-        </Stack>
-      )}
+      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+        <Button
+          color="callToAction"
+          disableElevation
+          variant="contained"
+          aria-label="Apply link"
+          onClick={apply}
+          disabled={!canApply}
+          data-test-id="ApplyLinkButton"
+        >
+          Apply
+        </Button>
+        <Button
+          variant="text"
+          aria-label="Discard link changes"
+          onClick={discard}
+          disabled={!changed && !hasLink}
+          data-test-id="DiscardLinkButton"
+        >
+          Discard
+        </Button>
+      </Stack>
       <LinkTargetBrowser
         open={browserOpen}
         onCancel={() => setBrowserOpen(false)}
