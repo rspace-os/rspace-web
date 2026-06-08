@@ -10,6 +10,8 @@ public class DSWUser {
   @JsonProperty private String affiliation;
   @JsonProperty private String createdAt;
   @JsonProperty private String email;
+  @JsonProperty private String emailPending;
+  @JsonProperty private String emailVerifiedAt;
   @JsonProperty private String firstName;
   @JsonProperty private String imageUrl;
   @JsonProperty private String lastName;
