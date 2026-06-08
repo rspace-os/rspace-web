@@ -252,11 +252,6 @@
         <url-pattern>/app/*</url-pattern>
     </servlet-mapping>
 
-    <servlet-mapping>
-        <servlet-name>dispatcher</servlet-name>
-        <url-pattern>/offline/*</url-pattern>
-    </servlet-mapping>
-    
     <session-config>
         <session-timeout>30</session-timeout>
         <tracking-mode>COOKIE</tracking-mode>

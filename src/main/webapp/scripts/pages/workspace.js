@@ -278,10 +278,9 @@ function toolbarButtonsEventHandler() {
 
   $('#createFromWord').click(function (e) {
     e.preventDefault();
-    openWordChooserDlg(getSelectedIdsNamesAndTypes, {
+    openWordChooserDlg({
       title: "Import from Word/Open Office",
       fileType: "Word or Open Office",
-      showImportOptions: true,
       listNotebooks: true
     });
     RS.trackEvent("user:open:create_from_word_dialog:workspace");
@@ -289,9 +288,9 @@ function toolbarButtonsEventHandler() {
 
   $('#createFromEvernote').click(function (e) {
     e.preventDefault();
-    openWordChooserDlg(getSelectedIdsNamesAndTypes, {
+    openWordChooserDlg({
       title: "Import from Evernote",
-      fileType: "Evernote XML", showImportOptions: false, listNotebooks: false
+      fileType: "Evernote XML", listNotebooks: false
     });
     RS.trackEvent("user:open:create_from_evernote_dialog:workspace");
   });

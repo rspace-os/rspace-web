@@ -1,10 +1,10 @@
 function initWordChooserDlg() {
-    
+
     var isNotebook = _isNotebook();
     if (!isNotebook) {
         initFolderChooser('-wordimport');
     }
-    
+
     $('#wordDocChooserDlg').dialog({
         modal: true,
         autoOpen: false,
@@ -15,7 +15,6 @@ function initWordChooserDlg() {
                 _toggleWordFolderChooser($(this).data('config').listNotebooks);
             }
             $(this).find('.importfileType').text($(this).data('config').fileType);
-            $(this).find('#wordDocImportOptions').toggle($(this).data('config').showImportOptions)
         },
         buttons: {
             Cancel: function() {$(this).dialog('close');},
@@ -30,19 +29,10 @@ function initWordChooserDlg() {
             }
         }
     });
-    
-    $(".wordDocImportSelect").change(function(e, data) {
-        _toggleWordFolderChooser();
-    });
-    
-    
-    _toggleWordOptionSelect();
+
 }
 
-var wordImportSelectedIdsNamesTypes = null;
-
-function openWordChooserDlg(idsNamesTypesGetter, config) {
-    wordImportSelectedIdsNamesTypes = idsNamesTypesGetter();
+function openWordChooserDlg(config) {
     config = config || {};
     $('#wordDocChooserDlg').dialog({title:config.title}).data("config",config).dialog('open');
 }
@@ -55,56 +45,16 @@ function _toggleWordFolderChooser(listNotebooks) {
     if (_isNotebook()) {
         return;
     }
-    //RSPAC-1761: evernote import generates folder, can't shoose notebook
+    //RSPAC-1761: evernote import generates folder, can't choose notebook
     if(!listNotebooks) {
-    	setFolderChooserDirListingParams('-wordimport', "showNotebooks=false");
+        setFolderChooserDirListingParams('-wordimport', "showNotebooks=false");
     }
-    $('#folderChooser-wordimport').toggle(!_isWordReplace());
-   
+    $('#folderChooser-wordimport').show();
+
     $('#folderChooserDesc-wordimport').html('to put the imported documents. Otherwise, they will be put in the current folder.');
 }
 
-function _toggleWordOptionSelect() {
-    var isNotebook = _isNotebook();
-    $('#wordDocImportEntrySelect').toggle(isNotebook);
-    $('#wordDocImportRecordSelect').toggle(!isNotebook);
-}
-
-function _isWordReplace() {
-    var $select = $("#wordDocImportRecordSelect");
-    if (_isNotebook()) {
-        $select = $("#wordDocImportEntrySelect");
-    }
-    return $select.val() === 'REPLACE';
-}
-
 function _isFormValid(fileType) {
-    
-    var isReplace = _isWordReplace();
-    if (isReplace) {
-        if (!wordImportSelectedIdsNamesTypes || wordImportSelectedIdsNamesTypes.ids.length === 0) {
-            if (_isNotebook()) {
-                apprise("The Notebook is empty, cannot use 'save into the current entry' option.");
-            } else {
-                apprise("A target document should be selected in Workspace for 'replace selected document' option.");
-            }
-            return false;
-        } 
-        if (wordImportSelectedIdsNamesTypes.ids.length > 1) {
-            apprise("Just one target document should be selected in Workspace for 'replace selected document' option.");
-            return false;
-        }
-        var selectedRecordType = wordImportSelectedIdsNamesTypes.types[0];
-        if (!selectedRecordType || selectedRecordType.indexOf('NORMAL') < 0) {
-            apprise("The record selected in Workspace is not a Basic Document and can't be used with 'replace selected document' option.");
-            return false;
-        }
-        if ($('#wordImportFormFileInput').get(0).files.length > 1) {
-            apprise("Only one " +fileType+" file may be imported with 'replace selected document' option.");
-            return false;
-        }
-    }
-
     if ($('#wordImportFormFileInput').get(0).files.length === 0) {
         apprise("Please choose some "+fileType+" files to upload.");
         return false;
@@ -114,24 +64,17 @@ function _isFormValid(fileType) {
 }
 
 function _submitWordImportForm(fileType) {
-    
+
     if (!_isFormValid(fileType)) {
         return false;
     }
-    
+
     var $form = $("form#wordImportForm");
     var targetFolderId = $form.data("parentid");
     var val = $('#folderChooser-id-wordimport').val();
     if (val && val.length > 0) {
         targetFolderId = val.trim();
     }
-    
-    var recordToReplaceId = "";
-    if (_isWordReplace()) {
-        recordToReplaceId = wordImportSelectedIdsNamesTypes.ids[0];
-    }
-    $('#wordImportFormRecordToReplace').val(recordToReplaceId);
-
     var formData = new FormData($form[0]);
     formData.append("grandParentId", getGrandParentFolderId());
     var jqxhr = $.ajax({
@@ -140,7 +83,7 @@ function _submitWordImportForm(fileType) {
        data: formData,
        cache: false,
        contentType: false,
-       processData: false 
+       processData: false
     });
 
     jqxhr.always(function () {
@@ -173,6 +116,6 @@ function _submitWordImportForm(fileType) {
     jqxhr.fail(function (jqXHR) {
         RS.ajaxFailed("Importing Word Documents", true, jqXHR);
     });
-    
+
     return true;
 }
