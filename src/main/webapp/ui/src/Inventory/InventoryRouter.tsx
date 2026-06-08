@@ -67,6 +67,10 @@ function InventoryRouter(): React.ReactNode {
                   path="/sampletemplate/:id"
                   element={<PermalinkRouter type="sampletemplate" />}
                 />
+                <Route
+                  path="/instrument/:id"
+                  element={<PermalinkRouter type="instrument" />}
+                />
                 <Route path="/search/*" element={<SearchRouter />} />
                 <Route path="/import/*" element={<ImportRouter />} />
                 <Route path="/identifiers/*" element={<IdentifiersRouter />} />

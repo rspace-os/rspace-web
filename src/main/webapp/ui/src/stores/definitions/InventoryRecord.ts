@@ -43,7 +43,8 @@ export type RecordType =
   | "sample"
   | "container"
   | "subSample"
-  | "sampleTemplate";
+  | "sampleTemplate"
+  | "instrument";
 
 /**
  * The API encodes the type of the various Inventory records using an all-caps
@@ -53,12 +54,14 @@ export type ApiRecordType =
   | "SAMPLE"
   | "CONTAINER"
   | "SUBSAMPLE"
-  | "SAMPLE_TEMPLATE";
+  | "SAMPLE_TEMPLATE"
+  | "INSTRUMENT";
 
 export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   if (rt === "sample") return "SAMPLE";
   if (rt === "container") return "CONTAINER";
   if (rt === "subSample") return "SUBSAMPLE";
+  if (rt === "instrument") return "INSTRUMENT";
   return "SAMPLE_TEMPLATE";
 }
 

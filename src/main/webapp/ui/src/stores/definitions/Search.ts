@@ -50,7 +50,8 @@ export type ResultType =
   | "CONTAINER"
   | "SAMPLE"
   | "SUBSAMPLE"
-  | "TEMPLATE";
+  | "TEMPLATE"
+  | "INSTRUMENT";
 
 export function parseResultType(str: string): Result<ResultType> {
   return Result.first(
@@ -58,7 +59,8 @@ export function parseResultType(str: string): Result<ResultType> {
     parseString("CONTAINER", str),
     parseString("SAMPLE", str),
     parseString("SUBSAMPLE", str),
-    parseString("TEMPLATE", str)
+    parseString("TEMPLATE", str),
+    parseString("INSTRUMENT", str)
   );
 }
 
@@ -152,7 +154,8 @@ export type PermalinkType =
   | "sample"
   | "container"
   | "subsample"
-  | "sampletemplate";
+  | "sampletemplate"
+  | "instrument";
 export type Permalink = {
   type: PermalinkType;
   id: number;

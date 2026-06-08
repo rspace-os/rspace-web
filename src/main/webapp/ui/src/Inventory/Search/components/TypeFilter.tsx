@@ -9,6 +9,7 @@ import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
 import { match } from "../../../util/Util";
 import { useTheme } from "@mui/material/styles";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import BiotechIcon from "@mui/icons-material/Biotech";
 
 type TypeFilterArgs = {
   anchorEl: HTMLElement | null;
@@ -123,6 +124,25 @@ export default function TypeFilter({
             />
           </ListItemIcon>
           <ListItemText primary="Subsamples" />
+        </StyledMenuItem>
+        <StyledMenuItem
+          selected={current === "INSTRUMENT"}
+          aria-current={current === "INSTRUMENT"}
+          onClick={() => {
+            onClose("INSTRUMENT");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
+          data-test-id="instrumentType"
+        >
+          <ListItemIcon>
+            <BiotechIcon
+              sx={{
+                fontSize: "1em",
+                color: theme.palette.standardIcon.main,
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText primary="Instruments" />
         </StyledMenuItem>
         <StyledMenuItem
           selected={current === "TEMPLATE"}

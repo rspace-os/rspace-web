@@ -4,6 +4,7 @@ import { toTitleCase } from "../util/Util";
 import { useTheme } from "@mui/material/styles";
 import BenchIcon from "../assets/graphics/RecordTypeGraphics/Icons/Bench";
 import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
+import BiotechIcon from "@mui/icons-material/Biotech";
 import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
@@ -65,6 +66,14 @@ export default function RecordTypeIcon({
           size="1x"
           icon={faVials}
           color={color ?? theme.palette.record.subSample.fg}
+          style={style}
+        />
+      );
+      break;
+    case "instrument":
+      icon = (
+        <BiotechIcon
+          sx={{ fontSize: "1em", color: color ?? theme.palette.record.instrument.fg }}
           style={style}
         />
       );

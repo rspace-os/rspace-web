@@ -34,7 +34,8 @@ export type GlobalIdPrefix =
   | "IF"
   | "SF"
   | "SD"
-  | "GP";
+  | "GP"
+  | "IN";
 
 /**
  * The Global ID pattern is a regular expression that matches all Global IDs of
@@ -52,6 +53,7 @@ export const globalIdPatterns: Record<string, RegExp> = {
   field: /^sf\d+$/i,
   document: /^sd\d+$/i,
   group: /^gp\d+$/i,
+  instrument: /^in\d+$/i,
 };
 
 export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
@@ -65,6 +67,7 @@ export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
   field: "SF",
   document: "SD",
   group: "GP",
+  instrument: "IN",
 };
 
 /*
@@ -78,6 +81,7 @@ export const inventoryRecordTypeLabels = {
   sampleTemplate: "Sample Template",
   bench: "Bench",
   basket: "Basket",
+  instrument: "Instrument",
 };
 
 /**
@@ -111,6 +115,10 @@ export const globalIdToInventoryRecordTypeLabel: (
     [
       (globalId: GlobalId) => globalIdPatterns.basket.test(globalId),
       inventoryRecordTypeLabels.basket,
+    ],
+    [
+      (globalId: GlobalId) => globalIdPatterns.instrument.test(globalId),
+      inventoryRecordTypeLabels.instrument,
     ],
   ]);
 

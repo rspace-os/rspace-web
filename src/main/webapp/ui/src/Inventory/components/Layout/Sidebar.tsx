@@ -12,6 +12,7 @@ import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBen
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import BiotechIcon from "@mui/icons-material/Biotech";
 import { useTheme } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -266,6 +267,51 @@ const SampleNavItem = observer(
   },
 );
 
+const InstrumentNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Instruments"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("INSTRUMENT")
+        }
+        icon={
+          <BiotechIcon
+            sx={{
+              fontSize: "1.2em",
+              color: theme.palette.standardIcon.main,
+            }}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT",
+          });
+        }}
+      />
+    );
+  },
+);
+
 const TemplateNavItem = observer(
   ({
     index,
@@ -505,7 +551,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   const { getTabIndex, getRef, eventHandlers } =
     useOneDimensionalRovingTabIndex<HTMLDivElement>({
-      max: isSysAdmin ? 7 : 6,
+      max: isSysAdmin ? 8 : 7,
     });
 
   const afterClick = () => {
@@ -551,24 +597,29 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
               tabIndex={getTabIndex(3)}
               getRef={getRef}
             />
-            <TemplateNavItem
+            <InstrumentNavItem
               index={4}
               tabIndex={getTabIndex(4)}
               getRef={getRef}
             />
-            <IgsnNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+            <TemplateNavItem
+              index={5}
+              tabIndex={getTabIndex(5)}
+              getRef={getRef}
+            />
+            <IgsnNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
           </List>
           <Divider />
           <List component="ul" aria-label="Other places and action">
             <ExportNavItem
-              index={6}
-              tabIndex={getTabIndex(6)}
+              index={7}
+              tabIndex={getTabIndex(7)}
               getRef={getRef}
             />
             {isSysAdmin && (
               <SettingsNavItem
-                index={7}
-                tabIndex={getTabIndex(7)}
+                index={8}
+                tabIndex={getTabIndex(8)}
                 getRef={getRef}
               />
             )}

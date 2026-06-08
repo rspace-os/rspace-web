@@ -32,8 +32,8 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   private String query;
 
   @Pattern(
-      regexp = "SAMPLE|SUBSAMPLE|CONTAINER|TEMPLATE",
-      message = "Requested result type must be SAMPLE, SUBSAMPLE, CONTAINER or TEMPLATE")
+      regexp = "SAMPLE|SUBSAMPLE|CONTAINER|TEMPLATE|INSTRUMENT",
+      message = "{errors.inventory.search.resultType.invalid}")
   private String resultType;
 
   @Pattern(

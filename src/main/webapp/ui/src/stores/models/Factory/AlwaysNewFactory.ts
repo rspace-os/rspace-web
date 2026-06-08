@@ -6,6 +6,7 @@ import InventoryBaseRecord from "../InventoryBaseRecord";
 import SampleModel, { SampleAttrs } from "../SampleModel";
 import SubSampleModel, { SubSampleAttrs } from "../SubSampleModel";
 import TemplateModel, { TemplateAttrs } from "../TemplateModel";
+import InstrumentModel, { InstrumentAttrs } from "../InstrumentModel";
 import { type Factory } from "../../definitions/Factory";
 import {
   type PersistedBarcodeAttrs,
@@ -35,11 +36,12 @@ export default class AlwaysNewFactory implements Factory {
     const patterns = globalIdPatterns;
     // prettier-ignore
     const record =
-      patterns.sample.test(g)          ? new SampleModel   (this, params as SampleAttrs) :
-      patterns.subsample.test(g)       ? new SubSampleModel(this, params as SubSampleAttrs) :
-      patterns.container.test(g)       ? new ContainerModel(this, params as ContainerAttrs) :
-      patterns.sampleTemplate.test(g)  ? new TemplateModel (this, params as TemplateAttrs) :
-      patterns.bench.test(g)           ? new ContainerModel(this, params as ContainerAttrs) :
+      patterns.sample.test(g)          ? new SampleModel      (this, params as SampleAttrs) :
+      patterns.subsample.test(g)       ? new SubSampleModel   (this, params as SubSampleAttrs) :
+      patterns.container.test(g)       ? new ContainerModel   (this, params as ContainerAttrs) :
+      patterns.sampleTemplate.test(g)  ? new TemplateModel    (this, params as TemplateAttrs) :
+      patterns.bench.test(g)           ? new ContainerModel   (this, params as ContainerAttrs) :
+      patterns.instrument.test(g)      ? new InstrumentModel  (this, params as InstrumentAttrs) :
       /* otherwise */                    null;
     if (!record) throw new Error("Unknown Global ID");
     return record;
