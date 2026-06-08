@@ -1,3 +1,56 @@
+const path = require("node:path");
+const entryPaths = [
+  "src/App.tsx",
+  "src/components/PublicPages/IdentifierPublicPage.tsx",
+  "src/eln/apps/index.tsx",
+  "src/eln/gallery/index.tsx",
+  "src/eln/about/index.tsx",
+  "src/eln/AppBar.tsx",
+  "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.jsx",
+  "src/CreateGroup/CreateGroup.jsx",
+  "src/my-rspace/directory/groups/MyLabGroups.jsx",
+  "src/system-ror/RoRIntegration.tsx",
+  "src/Export/ExportModal.tsx",
+  "src/my-rspace/directory/groups/GroupEditBar.jsx",
+  "src/Toolbar/Workspace/Toolbar.jsx",
+  "src/Toolbar/Notebook/Toolbar.jsx",
+  "src/Toolbar/StructuredDocument/Toolbar.jsx",
+  "src/Toolbar/FileTreeToolbar.jsx",
+  "src/system-groups/NewLabGroup.jsx",
+  "src/tinyMCE/SidebarInfo.jsx",
+  "src/tinyMCE/PreviewInfo.tsx",
+  "src/components/UserDetailsEntrypoint.tsx",
+  "src/my-rspace/directory/groups/GroupUserActivity.jsx",
+  "src/my-rspace/profile/GroupActivity.jsx",
+  "src/my-rspace/profile/AccountActivity.jsx",
+  "src/my-rspace/profile/OAuthTrigger.jsx",
+  "src/my-rspace/profile/ConnectedAppsTrigger.jsx",
+  "src/my-rspace/profile/GroupsTable.jsx",
+  "src/tinyMCE/SnapGene/SnapGeneDialog.jsx",
+  "src/components/ToastMessage.jsx",
+  "src/tinyMCE/InternalLink.jsx",
+  "src/tinyMCE/shortcutsPlugin/Shortcuts.jsx",
+  "src/tinyMCE/pyrat/Pyrat.jsx",
+  "src/tinyMCE/clustermarket/index.jsx",
+  "src/tinyMCE/galaxy/index.tsx",
+  "src/tinyMCE/omero/index.jsx",
+  "src/tinyMCE/ketcher/KetcherTinyMce.jsx",
+  "src/tinyMCE/ketcher/KetcherViewer.tsx",
+  "src/tinyMCE/inventory/identifiers/index.tsx",
+  "src/tinyMCE/pubchem/index.tsx",
+  "src/tinyMCE/stoichiometry/index.tsx",
+  "src/tinyMCE/gallery/index.tsx",
+  "src/tinyMCE/gallery/GalleryUtilsEntrypoint.ts",
+  "src/components/BaseSearch.tsx",
+  "src/components/ConfirmationDialog.tsx",
+  "src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
+  "src/eln/eln-external-workflows/index.tsx",
+  "src/eln/jupyter-notebooks/index.tsx",
+  "src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
+  "src/eln/sysadmin/users/index.tsx",
+  "src/my-rspace/profile/RaidConnections/RaidConnectionsEntrypoint.tsx",
+];
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -59,7 +112,7 @@ module.exports = {
         "remove it. If it's logical this module is an orphan (i.e. it's a config file), " +
         "add an exception for it in your dependency-cruiser configuration. By default " +
         "this rule does not scrutinize dot-files (e.g. .eslintrc.js), TypeScript declaration " +
-        "files (.d.ts), tsconfig.json and some of the babel and webpack configs.",
+        "files (.d.ts), tsconfig.json and build configuration files.",
       severity: "warn",
       from: {
         orphan: true,
@@ -67,7 +120,7 @@ module.exports = {
           "(^|/).[^/]+.(js|cjs|mjs|ts|json)$", // dot files
           ".d.ts$", // TypeScript declaration files
           "(^|/)tsconfig.json$", // TypeScript config
-          "(^|/)(babel|webpack).config.(js|cjs|mjs|ts|json)$", // other configs
+          "(^|/)(babel|vite).config.(js|cjs|mjs|ts|json)$", // other configs
         ],
       },
       to: {},
@@ -83,55 +136,9 @@ module.exports = {
         path: "src",
         pathNot: [
           "__tests__|__mocks__|test-stubs|node_modules",
-          "\.*.spec.tsx",
-          // this list comes from webpack.config.js
-          "src/App.tsx",
-          "./src/components/PublicPages/IdentifierPublicPage.js",
-          "src/eln/apps/index.tsx",
-          "src/eln/gallery/index.js",
-          "src/eln/AppBar.tsx",
-          "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.js",
-          "src/CreateGroup/CreateGroup.js",
-          "src/my-rspace/directory/groups/MyLabGroups.js",
-          "src/system-ror/RoRIntegration.js",
-          "src/Export/ExportModal.tsx",
-          "src/my-rspace/directory/groups/GroupEditBar.js",
-          "src/Toolbar/Workspace/Toolbar.js",
-          "src/Toolbar/Notebook/Toolbar.js",
-          "src/Toolbar/StructuredDocument/Toolbar.js",
-          "src/Toolbar/FileTreeToolbar.js",
-          "src/Toolbar/Gallery/Toolbar.tsx",
-          "src/system-groups/NewLabGroup.js",
-          "src/tinyMCE/sidebarInfo.js",
-          "src/tinyMCE/PreviewInfo.tsx",
-          "src/components/UserDetails.js",
-          "src/my-rspace/directory/groups/GroupUserActivity.js",
-          "src/my-rspace/profile/GroupActivity.js",
-          "src/my-rspace/profile/AccountActivity.js",
-          "src/my-rspace/profile/OAuthTrigger.js",
-          "src/my-rspace/profile/ConnectedAppsTrigger.js",
-          "src/my-rspace/profile/GroupsTable.js",
-          "src/tinyMCE/SnapGene/snapGeneDialog.js",
-          "src/components/ToastMessage.js",
-          "src/tinyMCE/InternalLink.tsx",
-          "src/tinyMCE/shortcutsPlugin/shortcuts.js",
-          "src/tinyMCE/pyrat/Pyrat.js",
-          "src/tinyMCE/clustermarket/index.js",
-          "src/tinyMCE/omero/index.js",
-          "src/tinyMCE/pubchem/index.tsx",
-          "src/tinyMCE/inventory/identifiers/index.tsx",
-          "src/components/BaseSearch.js",
-          "src/components/ConfirmationDialog/ConfirmationDialog.tsx",
-          "src/Gallery/imageEditorDialog.js",
-          "src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
-          "src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
-          "src/eln/sysadmin/users/index.js",
-          "src/tinyMCE/ketcher/KetcherViewer.tsx",
-          "src/tinyMCE/ketcher/KetcherTinyMce.tsx",
-          "src/tinyMCE/stoichiometry/index.tsx",
-          "src/tinyMCE/galaxy/index.tsx",
-          "src/eln/eln-external-workflows/index.tsx",
-          "src/eln/about/index.tsx",
+          ".*\\.spec\\.tsx$",
+          // this list mirrors the entry points declared in vite.config.ts
+          ...entryPaths,
           // stores/defintion only export types so depcruise thinks it's never used, which at runtime it isn't
           "stores/definitions",
           // src/assets contains icon variants that may be useful in the future
@@ -433,22 +440,6 @@ module.exports = {
       fileName: "tsconfig.json",
     },
 
-    /* Webpack configuration to use to get resolve options from.
-
-       The (optional) fileName attribute specifies which file to take (relative
-       to dependency-cruiser's current working directory. When not provided defaults
-       to './webpack.conf.js'.
-
-       The (optional) `env` and `arguments` attributes contain the parameters to be passed if
-       your webpack config is a function and takes them (see webpack documentation
-       for details)
-     */
-    webpackConfig: {
-      fileName: "webpack.config.mjs",
-      env: {},
-      arguments: {},
-    },
-
     /* Babel config ('.babelrc', '.babelrc.json', '.babelrc.json5', ...) to use
       for compilation (and whatever other naughty things babel plugins do to
       source code). This feature is well tested and usable, but might change
@@ -466,19 +457,16 @@ module.exports = {
     */
     // exoticRequireStrings: [],
     /* options to pass on to enhanced-resolve, the package dependency-cruiser
-       uses to resolve module references to disk. You can set most of these
-       options in a webpack.conf.js - this section is here for those
-       projects that don't have a separate webpack config file.
-
-       Note: settings in webpack.conf.js override the ones specified here.
+       uses to resolve module references to disk.
      */
     enhancedResolveOptions: {
+      alias: {
+        Styles: path.resolve(__dirname, "src/util/styles"),
+        "@": path.resolve(__dirname, "src"),
+      },
       /* List of strings to consider as 'exports' fields in package.json. Use
          ['exports'] when you use packages that use such a field and your environment
          supports it (e.g. node ^12.19 || >=14.7 or recent versions of webpack).
-
-         If you have an `exportsFields` attribute in your webpack config, that one
-         will have precedence over the one specified here.
       */
       exportsFields: ["exports"],
       /* List of conditions to check for in the exports field. e.g. use ['imports']
@@ -486,9 +474,6 @@ module.exports = {
          or all conditions at once `(['import', 'require', 'node', 'default']`)
          if anything goes for you. Only works when the 'exportsFields' array is
          non-empty.
-
-        If you have a 'conditionNames' attribute in your webpack config, that one
-        will have precedence over the one specified here.
       */
       conditionNames: ["import", "require", "node", "default"],
       /*

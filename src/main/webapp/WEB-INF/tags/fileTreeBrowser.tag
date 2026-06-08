@@ -1,13 +1,14 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
-<link rel="stylesheet" href="<c:url value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/tags/fileTreeBrowser.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
 
-<script src="<c:url value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
-<script src="<c:url value='/scripts/bower_components/jquery.fancytree/dist/jquery.fancytree-all.min.js'/>"></script>
-<script src="<c:url value='/scripts/tags/fileTreeBrowser.js'/>"></script> 
-<script src="<c:url value='/scripts/tags/fileTreeBrowserSorter.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/jquery.fancytree-all.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/fileTreeBrowser.js'/>"></script> 
+<script src="<rst:assetUrl value='/scripts/tags/fileTreeBrowserSorter.js'/>"></script>
 
 <div id="fileBrowsing" class="fileTreeBrowserPanel bootstrap-custom-flat">
 

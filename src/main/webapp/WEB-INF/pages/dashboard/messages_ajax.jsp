@@ -5,7 +5,7 @@
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt"%>
-<link rel="stylesheet" media="all" href="<c:url value='/styles/messages.css'/>" />
+<link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
 
 <style>
     a,a:link a:active {

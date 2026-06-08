@@ -17,10 +17,10 @@
 		}
 	</style>
 
-	<link href="<c:url value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
-    <link href="<c:url value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
-    <script src="<c:url value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/rspace/cloudGroupCreation.js'/>"></script>
+	<link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
+    <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
+    <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/rspace/cloudGroupCreation.js'/>"></script>
 </head>
 	<jsp:include page="/WEB-INF/pages/admin/admin.jsp"></jsp:include>
 	<div class="container">
@@ -153,6 +153,6 @@
 	   	</form:form>-->--%>
 	</div>
 	<!-- React Scripts -->
-		<script src="<c:url value='/ui/dist/createGroup.js'/>"></script>
+		<rst:bundle bundle="createGroup" />
 	<!--End React Scripts -->
 </html>

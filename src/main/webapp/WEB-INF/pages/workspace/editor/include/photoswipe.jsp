@@ -1,12 +1,12 @@
 <%@ include file="/common/taglibs.jsp" %>
 
-    <link rel="stylesheet" href="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
+    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
     <link rel="stylesheet"
-        href="<c:url value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
+        href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
 
-    <script src="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
-    <script src="<c:url value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/photoswipe.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/photoswipe.js'/>"></script>
 
     <style>
         .pswp {

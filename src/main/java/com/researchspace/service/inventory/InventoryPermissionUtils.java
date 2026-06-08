@@ -258,7 +258,7 @@ public class InventoryPermissionUtils {
             record.getType()
                 + " with id ["
                 + record.getId()
-                + "] cannot be restored by current User");
+                + "] cannot be deleted by current User");
       }
       throwNotFoundException(record.getId());
     }

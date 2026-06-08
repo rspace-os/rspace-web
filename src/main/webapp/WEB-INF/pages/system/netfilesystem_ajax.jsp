@@ -195,6 +195,9 @@
                 </td>
             </tr>
 
+            <tr class="fileSystemDetailsS3Row">
+                <td colspan="2"><hr /></td>
+            </tr>
             <tr class="fileSystemDetailsAuthRow">
                 <td><label><spring:message code="system.netfilesystem.details.auth" /></label></td>
                 <td>
@@ -225,6 +228,34 @@
                 </td>
             </tr>
 
+            <tr class="fileSystemDetailsAllowlistsRow">
+                <td><label><spring:message code="system.netfilesystem.details.allowlists.write.question" /></label></td>
+                <td>
+                    <label><input type="radio" id="fileSystemLimitWriteNo" name="fileSystemLimitWrite" value="no">
+                        <spring:message code="system.netfilesystem.details.allowlists.anyone" /></label><br/>
+                    <label><input type="radio" id="fileSystemLimitWriteYes" name="fileSystemLimitWrite" value="yes">
+                        <spring:message code="system.netfilesystem.details.allowlists.only.these" /></label>
+                    <input id="fileSystemWriteAllowlist" type="text" style="width: 15em" placeholder="alice, bob" /><br/>
+                    <label><input type="radio" id="fileSystemLimitWriteNobody" name="fileSystemLimitWrite" value="nobody">
+                        <spring:message code="system.netfilesystem.details.allowlists.nobody" /></label>
+                </td>
+            </tr>
+            <tr class="fileSystemDetailsAllowlistsRow fileSystemDetailsReadAllowlistRow">
+                <td><label><spring:message code="system.netfilesystem.details.allowlists.read.question" /></label></td>
+                <td>
+                    <label><input type="radio" id="fileSystemLimitReadNo" name="fileSystemLimitRead" value="no">
+                        <spring:message code="system.netfilesystem.details.allowlists.anyone" /></label><br/>
+                    <label><input type="radio" id="fileSystemLimitReadYes" name="fileSystemLimitRead" value="yes">
+                        <spring:message code="system.netfilesystem.details.allowlists.only.these" /></label>
+                    <input id="fileSystemReadAllowlist" type="text" style="width: 15em" placeholder="carol" /><br/>
+                    <label><input type="radio" id="fileSystemLimitReadNobody" name="fileSystemLimitRead" value="nobody">
+                        <spring:message code="system.netfilesystem.details.allowlists.read.nobody" /></label>
+                </td>
+            </tr>
+
+            <tr class="fileSystemDetailsS3Row">
+                <td colspan="2"><hr /></td>
+            </tr>
             <tr>
                 <td><label><spring:message code="system.netfilesystem.details.status" /></label></td>
                 <td>

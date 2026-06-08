@@ -14,11 +14,12 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
+import jakarta.ws.rs.NotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -56,7 +57,7 @@ public class BaseApiInventoryController extends BaseApiController {
   protected @Autowired InventoryPermissionUtils invPermissions;
   protected @Autowired InventoryEditLockTracker tracker;
 
-  protected @Autowired InstrumentApiManager instrumentApiMgr;
+  protected @Autowired InstrumentEntityApiManager instrumentApiMgr;
   protected @Autowired SampleApiManager sampleApiMgr;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
   protected @Autowired ContainerApiManager containerApiMgr;
@@ -103,7 +104,7 @@ public class BaseApiInventoryController extends BaseApiController {
 
     FileProperty fileProp = fPSupplier.get();
     if (fileProp == null) {
-      throw new IllegalArgumentException(" no image found");
+      throw new NotFoundException("no image found");
     }
     byte[] bytes = getImageBytes(fileProp);
     final HttpHeaders headers = new HttpHeaders();

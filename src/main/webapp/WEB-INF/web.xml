@@ -189,7 +189,11 @@
         <filter-name>rewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-     <jsp-config>
+    <jsp-config>
+        <taglib>
+            <taglib-uri>http://researchspace.com/tags</taglib-uri>
+            <taglib-location>/WEB-INF/rs.tld</taglib-location>
+        </taglib>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>
             <page-encoding>UTF-8</page-encoding>
@@ -239,6 +243,18 @@
         <session-timeout>30</session-timeout>
         <tracking-mode>COOKIE</tracking-mode>
     </session-config>
+
+    <!-- Ensure ES module assets (e.g. Vite output under /ui/dist) are served with a
+         JavaScript MIME type. Module scripts (type="module") are rejected by browsers
+         unless the response Content-Type is a JavaScript type, per the HTML spec. -->
+    <mime-mapping>
+        <extension>js</extension>
+        <mime-type>text/javascript</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>mjs</extension>
+        <mime-type>text/javascript</mime-type>
+    </mime-mapping>
 
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

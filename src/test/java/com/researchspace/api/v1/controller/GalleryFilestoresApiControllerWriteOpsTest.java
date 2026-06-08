@@ -23,6 +23,8 @@ import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsAuthentication;
@@ -40,6 +42,7 @@ import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.util.Set;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -82,10 +85,12 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     filestoreWriteManager.setBaseRecordManager(baseRecordManager);
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
+    filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
     controller.credentialsStore = credentialsStore;
+    controller.aclChecker = GalleryFilestoreTestUtils.filestoreAclCheckerForTest();
     controller.deletionManager = deletionManager;
     controller.filestoreWriteManager = filestoreWriteManager;
     controller.setNfsFileHandler(nfsFileHandler);
@@ -101,9 +106,11 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     when(nfsAuthentication.login(eq(USERNAME), eq(PASSWORD), any(), any()))
         .thenReturn(nfsClientLoggedIn);
 
-    when(baseRecordManager.retrieveMediaFile(any(), eq(123L)))
+    when(baseRecordManager.get(eq(123L), any())).thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
+    when(baseRecordManager.get(eq(456L), any())).thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(123L)))
         .thenReturn(new EcatAudioFileStub(1L, "file1.wav"));
-    when(baseRecordManager.retrieveMediaFile(any(), eq(456L)))
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(456L)))
         .thenReturn(new EcatAudioFileStub(2L, "file2.wav"));
 
     when(nfsManager.uploadFilesToNfs(
@@ -143,9 +150,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
   @Test
   void copyToFilestore_multipleInvalidRecordIds_allErrorsReported() {
-    when(baseRecordManager.retrieveMediaFile(any(), eq(789L)))
+    when(baseRecordManager.get(eq(789L), any()))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
-    when(baseRecordManager.retrieveMediaFile(any(), eq(987L)))
+    when(baseRecordManager.get(eq(987L), any()))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "987"));
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(
@@ -503,5 +510,180 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
     verify(srcClient).deleteFile("src-root/file.png");
+  }
+
+  @Test
+  void copyToFilestore_folderRecordId_throwsBindException() {
+    Long folderId = 999L;
+    BaseRecord folderMock = mock(BaseRecord.class);
+    when(folderMock.isFolder()).thenReturn(true);
+    when(baseRecordManager.get(eq(folderId), any())).thenReturn(folderMock);
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(folderId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    BindException ex =
+        assertThrows(
+            BindException.class,
+            () ->
+                controller.copyToFilestore(
+                    validFilestorePathId,
+                    request,
+                    new BeanPropertyBindingResult(request, "request"),
+                    user));
+
+    assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void moveToFilestore_folderRecordId_throwsBindException() {
+    Long folderId = 999L;
+    BaseRecord folderMock = mock(BaseRecord.class);
+    when(folderMock.isFolder()).thenReturn(true);
+    when(baseRecordManager.get(eq(folderId), any())).thenReturn(folderMock);
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(folderId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    BindException ex =
+        assertThrows(
+            BindException.class,
+            () ->
+                controller.moveToFilestore(
+                    validFilestorePathId,
+                    request,
+                    new BeanPropertyBindingResult(request, "request"),
+                    user));
+
+    assertEquals(1, ex.getAllErrors().size());
+  }
+
+  @Test
+  void moveToFilestore_userNotOnWriteAllowlist_throwsAuthorizationException() throws IOException {
+    // override the permissive default with a allowlist that excludes the request's user
+    NfsFileStore restrictedFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(2L, "restricted", user);
+    NfsFileSystem restrictedFs = restrictedFilestore.getFileSystem();
+    restrictedFs.setReadAllowlist("*");
+    restrictedFs.setWriteAllowlist("alice"); // USER's username is "username", not "alice"
+    when(nfsManager.getNfsFileStore(2L)).thenReturn(restrictedFilestore);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            validRecordIds, new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.moveToFilestore(
+                2L, request, new BeanPropertyBindingResult(request, "request"), user));
+
+    verify(nfsManager, never())
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
+  }
+
+  @Test
+  void transferBetweenFilestores_userNotOnDestWriteAllowlist_throwsAuthorizationException() {
+    Long srcId = 10L;
+    Long dstId = 20L;
+    when(nfsManager.getNfsFileStore(srcId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user));
+    NfsFileStore destFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user);
+    destFilestore.getFileSystem().setWriteAllowlist("alice"); // user is "username"
+    when(nfsManager.getNfsFileStore(dstId)).thenReturn(destFilestore);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
+  }
+
+  @Test
+  void transferBetweenFilestores_readOnlySourceNonDeleting_isAllowed()
+      throws BindException, IOException {
+    // a non-deleting transfer only reads the source, so write access on the source is not required
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore
+        .getFileSystem()
+        .setWriteAllowlist("alice"); // read stays '*', so source is readable
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    WritableNfsClient srcClient = mock(WritableNfsClient.class);
+    WritableNfsClient destClient = mock(WritableNfsClient.class);
+    when(srcClient.supportsServerSideTransfer()).thenReturn(true);
+    when(destClient.supportsServerSideTransfer()).thenReturn(true);
+    when(nfsFactory.getNfsClient(any(), any(), any())).thenReturn(srcClient, destClient);
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", false);
+
+    ApiExternalStorageOperationResult result =
+        controller.transferBetweenFilestores(
+            srcId, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    assertTrue(result.getFileInfoDetails().iterator().next().getSucceeded());
+    verify(srcClient, never()).deleteFile(any());
+  }
+
+  @Test
+  void transferBetweenFilestores_deleteSourceWithoutSourceWrite_throwsAuthorizationException() {
+    // deleting the source modifies it, so write access on the source is required
+    Long srcId = 10L;
+    Long dstId = 20L;
+    NfsFileStore srcFilestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(srcId, "src", user);
+    srcFilestore.getFileSystem().setWriteAllowlist("alice"); // user is "username"
+    when(nfsManager.getNfsFileStore(srcId)).thenReturn(srcFilestore);
+    when(nfsManager.getNfsFileStore(dstId))
+        .thenReturn(GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(dstId, "dst", user));
+    when(user.getUsername()).thenReturn(USERNAME);
+
+    ApiGalleryFilestoreTransferRequest request =
+        new ApiGalleryFilestoreTransferRequest("src/file.txt", dstId, "dst/file.txt", true);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.transferBetweenFilestores(
+                srcId, request, new BeanPropertyBindingResult(request, "request"), user));
+  }
+
+  @Test
+  void copyToFilestore_unauthorizedMediaFile_propagatesAuthorizationExceptionAndDoesNotUpload()
+      throws IOException {
+    // AuthorizationException must propagate (rather than be caught and translated to a
+    // BindException), so the surrounding transaction rolls back cleanly.
+    Long unauthorizedId = 888L;
+    when(baseRecordManager.get(eq(unauthorizedId), any()))
+        .thenReturn(new EcatAudioFileStub(unauthorizedId, "secret.wav"));
+    when(baseRecordManager.retrieveMediaFile(any(User.class), eq(unauthorizedId)))
+        .thenThrow(new AuthorizationException("no read permission"));
+    ApiGalleryFilestoreOperationRequest request =
+        new ApiGalleryFilestoreOperationRequest(
+            Set.of(unauthorizedId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            controller.copyToFilestore(
+                validFilestorePathId,
+                request,
+                new BeanPropertyBindingResult(request, "request"),
+                user));
+
+    verify(nfsManager, never())
+        .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
   }
 }

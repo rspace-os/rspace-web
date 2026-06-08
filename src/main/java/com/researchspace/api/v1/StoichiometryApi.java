@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,17 +32,23 @@ public interface StoichiometryApi {
   StoichiometryDTO updateStoichiometry(
       @RequestParam("stoichiometryId") long stoichiometryId,
       @RequestBody StoichiometryUpdateDTO stoichiometryUpdateDTO,
-      @RequestAttribute(name = "user") User user);
+      @RequestParam(value = "updateFieldHtml", required = false, defaultValue = "false")
+          boolean updateFieldHtml,
+      @RequestAttribute(name = "user") User user)
+      throws DocumentAlreadyEditedException;
 
   @DeleteMapping
   Boolean deleteStoichiometry(
       @RequestParam("stoichiometryId") long stoichiometryId,
-      @RequestAttribute(name = "user") User user);
+      @RequestParam(value = "updateFieldHtml", required = false, defaultValue = "false")
+          boolean updateFieldHtml,
+      @RequestAttribute(name = "user") User user)
+      throws DocumentAlreadyEditedException;
 
   @PostMapping("/link/deductStock")
   StockDeductionResult deductStock(
-      @RequestBody @Valid StockDeductionRequest request,
-      @RequestAttribute(name = "user") User user);
+      @RequestBody @Valid StockDeductionRequest request, @RequestAttribute(name = "user") User user)
+      throws DocumentAlreadyEditedException;
 
   class ChemicalDTO {
     private String chemical;

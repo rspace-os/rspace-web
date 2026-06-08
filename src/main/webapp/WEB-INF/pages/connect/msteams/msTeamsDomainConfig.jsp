@@ -3,15 +3,15 @@
 <head>
     <title>Initial Tab configuration screen for MS Teams - Domain selection</title>
     
-    <link href="/styles/pages/connect/msteams/msTeamsThemes.css" rel="stylesheet" />
-    <link href="/styles/pages/connect/msteams/msTeamsDomainConfig.css" rel="stylesheet" />
+    <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsThemes.css'/>" rel="stylesheet" />
+    <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsDomainConfig.css'/>" rel="stylesheet" />
 
-    <script src="/scripts/global.js"></script>
-    <script src="/scripts/bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
-    <script src="/scripts/pages/connect/msteams/MicrosoftTeams_sdk_v1.0.min.js"></script>
-    <script src="/scripts/pages/connect/msteams/msTeamsInitialiser.js"></script>
-    <script src="/scripts/pages/connect/msteams/msTeamsDomainConfig.js"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/MicrosoftTeams_sdk_v1.0.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsInitialiser.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsDomainConfig.js'/>"></script>
 
 </head>
 

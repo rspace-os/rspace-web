@@ -8,6 +8,7 @@ import com.researchspace.model.dtos.chemistry.MoleculeInfoDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryUpdateDTO;
+import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -15,17 +16,24 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.FieldManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryService;
+import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
+import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.StoichiometryException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -33,12 +41,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class StoichiometryServiceImpl implements StoichiometryService {
 
+  private static final Logger log = LoggerFactory.getLogger(StoichiometryServiceImpl.class);
+
   private final ChemistryService chemistryService;
   private final StoichiometryManager stoichiometryManager;
   private final IPermissionUtils permissionUtils;
   private final ChemistryProvider chemistryProvider;
   private final RSChemElementManager rsChemElementManager;
   private final RecordManager recordManager;
+  private final FieldManager fieldManager;
+  private final StoichiometryReader stoichiometryReader;
 
   @Autowired
   public StoichiometryServiceImpl(
@@ -47,13 +59,16 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       IPermissionUtils permissionUtils,
       @Qualifier("chemistryProvider") ChemistryProvider chemistryProvider,
       RSChemElementManager rsChemElementManager,
-      RecordManager recordManager) {
+      RecordManager recordManager,
+      FieldManager fieldManager) {
     this.chemistryService = chemistryService;
     this.stoichiometryManager = stoichiometryManager;
     this.permissionUtils = permissionUtils;
     this.chemistryProvider = chemistryProvider;
     this.rsChemElementManager = rsChemElementManager;
     this.recordManager = recordManager;
+    this.fieldManager = fieldManager;
+    this.stoichiometryReader = new StoichiometryReader();
   }
 
   private boolean hasPermissions(Record record, User user, PermissionType permission) {
@@ -136,12 +151,20 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   }
 
   @Override
-  public void delete(long stoichiometryId, User user) {
+  @Transactional
+  public void delete(long stoichiometryId, User user, boolean updateFieldHtml)
+      throws DocumentAlreadyEditedException {
     Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
+    if (stoichiometry == null) {
+      throw new NotFoundException("Stoichiometry with id " + stoichiometryId + " not found");
+    }
     Record owningRecord = stoichiometry.getRecord();
     if (!hasPermissions(owningRecord, user, PermissionType.WRITE)) {
       throw new AuthorizationException(
           "User does not have write permissions on document containing stoichiometry");
+    }
+    if (updateFieldHtml) {
+      syncFieldHtml(stoichiometryId, null, user);
     }
     try {
       stoichiometryManager.remove(stoichiometryId);
@@ -186,6 +209,57 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   public Stoichiometry createReactionlessFromArchive(
       StoichiometryDTO stoichiometryDTO, Record record, User user) {
     return stoichiometryManager.createReactionlessFromArchive(stoichiometryDTO, record, user);
+  }
+
+  @Override
+  @Transactional
+  public void syncFieldHtml(long stoichiometryId, Long newRevision, User user)
+      throws DocumentAlreadyEditedException {
+    Stoichiometry stoichiometry = stoichiometryManager.get(stoichiometryId);
+    if (stoichiometry == null) {
+      log.warn("Cannot sync field HTML: stoichiometry {} not found", stoichiometryId);
+      return;
+    }
+    Record record = stoichiometry.getRecord();
+    if (record == null) {
+      log.warn("Cannot sync field HTML: stoichiometry {} has no owning record", stoichiometryId);
+      return;
+    }
+    if (!hasPermissions(record, user, PermissionType.WRITE)) {
+      throw new AuthorizationException(
+          "User does not have write permissions on document containing stoichiometry");
+    }
+    // Refuse if any session holds the edit lock: a concurrent autosave from the editor would
+    // POST the user's locally-buffered field HTML and silently overwrite the rewrite below.
+    Optional<String> currentEditor = recordManager.getEditingUserForRecord(record.getId());
+    if (currentEditor.isPresent()) {
+      throw new DocumentAlreadyEditedException(
+          "Cannot update document field HTML: document is currently being edited by "
+              + currentEditor.get());
+    }
+    List<Field> fields = fieldManager.getFieldsByRecordId(record.getId(), user);
+    for (Field field : fields) {
+      String fieldData = field.getFieldData();
+      if (fieldData == null || !fieldData.contains("data-stoichiometry-table")) {
+        continue;
+      }
+      String updated;
+      if (newRevision != null) {
+        IdAndRevision idAndRevision = new IdAndRevision();
+        idAndRevision.id = stoichiometryId;
+        idAndRevision.revision = newRevision;
+        StoichiometryDTO target = StoichiometryDTO.builder().id(stoichiometryId).build();
+        updated =
+            stoichiometryReader.createReplacementHtmlContentForTargetStoichiometryInFieldData(
+                fieldData, target, idAndRevision);
+      } else {
+        updated = stoichiometryReader.removeFromFieldHtml(fieldData, stoichiometryId);
+      }
+      if (!updated.equals(fieldData)) {
+        field.setFieldData(updated);
+        fieldManager.save(field, user);
+      }
+    }
   }
 
   private static boolean analysisExists(Optional<ElementalAnalysisDTO> analysis) {

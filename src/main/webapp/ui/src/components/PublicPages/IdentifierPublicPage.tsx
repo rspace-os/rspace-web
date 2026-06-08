@@ -5,7 +5,7 @@
  *  module, and any module that is imported, MUST NOT import anything from the
  *  global Inventory stores (i.e. from ../../stores/stores/*). If it does, then
  *  the page will be rendered as a blank screen and there will be an unhelpful
- *  error message on the browser's console saying that webpack export could not
+ *  error message on the browser's console saying that a module export could not
  *  be initialised. For more information, see the README in this directory.
  *
  * ============================================================================
@@ -104,6 +104,10 @@ const useStyles = makeStyles()((theme) => ({
   igsnLogo: {
     padding: theme.spacing(0, 0.5),
     width: "70px",
+  },
+  institutionLogo: {
+    maxHeight: "78px",
+    maxWidth: "255px",
   },
   primary: { color: theme.palette.primary.main },
   grey: { color: theme.palette.lightestGrey },
@@ -243,6 +247,7 @@ export const IdentifierDataGrid = ({
             src={INSTITUTION_LOGO_ADDRESS}
             alt="Institution Logo"
             title="Institution Logo"
+            className={classes.institutionLogo}
           />
         </Grid>
         <Grid>

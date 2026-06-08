@@ -3098,6 +3098,16 @@ paths:
           required: true
           type: integer
           format: int64
+        - name: updateFieldHtml
+          in: query
+          required: false
+          type: boolean
+          default: false
+          description: >
+            When true, updates the embedded stoichiometry reference in the owning document field
+            HTML to reflect the new revision. Leave false (the default) if your client writes the
+            field HTML itself. Will return 409 if the document is currently open in the editor on
+            this node — close the editor and retry.
         - in: body
           name: body
           required: true
@@ -3124,6 +3134,17 @@ paths:
               message:
                 type: string
                 example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '409':
+          description: >
+            updateFieldHtml=true was requested but the owning document is currently being edited.
+            Rewriting field HTML now would race with the editor's autosave and the API change could
+            be silently overwritten.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Cannot update document field HTML: document is currently being edited by user1a"
     delete:
       summary: Delete stoichiometry
       tags:
@@ -3134,6 +3155,16 @@ paths:
           required: true
           type: integer
           format: int64
+        - name: updateFieldHtml
+          in: query
+          required: false
+          type: boolean
+          default: false
+          description: >
+            When true, removes the stoichiometry reference from the owning document field HTML
+            before deletion. Leave false (the default) if your client writes the field HTML
+            itself. Will return 409 if the document is currently open in the editor on this node —
+            close the editor and retry.
       responses:
         '200':
           description: Deletion result
@@ -3155,6 +3186,16 @@ paths:
               message:
                 type: string
                 example: "No stoichiometry found for chemical with id 1 and revision 2"
+        '409':
+          description: >
+            updateFieldHtml=true was requested but the owning document is currently being edited.
+            Removing the field HTML reference now would race with the editor's autosave.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Cannot update document field HTML: document is currently being edited by user1a"
   /stoichiometry/molecule/info:
     post:
       summary: Get molecule info for stoichiometry
@@ -3621,9 +3662,18 @@ definitions:
           type: integer
           format: int64
         example: [1234, 1235]
+      updateFieldHtml:
+        type: boolean
+        default: false
+        description: >
+          When true, updates the embedded stoichiometry reference in the owning document field
+          HTML to reflect the new revision. Leave false (the default) if your client writes the
+          field HTML itself. The deductStock endpoint will return 409 if the document is
+          currently open in the editor on this node — close the editor and retry.
     example:
       stoichiometryId: 42
       linkIds: [1234, 1235]
+      updateFieldHtml: false
   StockDeductionResult:
     description: Result of a batch stock deduction operation
     properties:

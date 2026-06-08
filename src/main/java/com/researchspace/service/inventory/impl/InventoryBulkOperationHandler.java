@@ -2,6 +2,8 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
+import com.researchspace.api.v1.controller.InstrumentTemplatesApiController;
+import com.researchspace.api.v1.controller.InstrumentsApiController;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
 import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
@@ -38,6 +40,8 @@ public class InventoryBulkOperationHandler {
   private @Autowired ContainersApiController containersApiController;
   private @Autowired SubSamplesApiController subSamplesApiController;
   private @Autowired SampleTemplatesApiController templatesApiController;
+  private @Autowired InstrumentsApiController instrumentsApiController;
+  private @Autowired InstrumentTemplatesApiController instrumentTemplatesApiController;
 
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
 
@@ -258,6 +262,10 @@ public class InventoryBulkOperationHandler {
         return containersApiController.duplicate(recInfo.getId(), user);
       case SUBSAMPLE:
         return subSamplesApiController.duplicate(recInfo.getId(), user);
+      case INSTRUMENT:
+        return instrumentsApiController.duplicate(recInfo.getId(), user);
+      case INSTRUMENT_TEMPLATE:
+        return instrumentTemplatesApiController.duplicate(recInfo.getId(), user);
       default:
         throw new IllegalArgumentException(
             "bulk duplicate doesn't support records of type: " + recInfo.getType());
@@ -270,6 +278,8 @@ public class InventoryBulkOperationHandler {
     switch (recInfoType) {
       case SAMPLE:
         return samplesApiController.updateToLatestTemplateVersion(recInfo.getId(), user);
+      case INSTRUMENT:
+        return instrumentsApiController.updateToLatestTemplateVersion(recInfo.getId(), user);
       default:
         throw new IllegalArgumentException(
             "update to latest template doesn't support records of type: " + recInfo.getType());

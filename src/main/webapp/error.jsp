@@ -10,8 +10,8 @@
 <head>
 <title><fmt:message key="errorPage.title" /></title>
 <link rel="stylesheet" media="all"
-	href="<c:url value='/styles/simplicity/theme.css'/>" />
-	<link href="/styles/rs-global.css" rel="stylesheet">
+	href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
+	<link href="<rst:assetUrl value='/styles/rs-global.css'/>" rel="stylesheet">
 </head>
 
 <body id="error">

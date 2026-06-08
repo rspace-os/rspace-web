@@ -5,8 +5,8 @@ React and TypeScript. The application serves both as a Single Page Application
 (SPA) for Inventory, Gallery, and the Apps page, and provides React islands
 embedded within the ELN (Electronic Laboratory Notebook) JSP-based pages.
 
-The [webpack configuration](./webpack.config.mjs) defines multiple entry points
-for these different application parts -- see the entry object for the complete
+The [Vite config](./vite.config.ts) defines multiple entry points for these
+different application parts -- see the `bundleEntries` object for the complete
 list of bundles and their purposes.
 
 The [package.json](./package.json) defines the dependencies and scripts for
@@ -54,17 +54,37 @@ instead use React Context and custom hooks for state management.
 
 ## Building the code
 
-There are two approaches to building the code based on whether you want to make
-changes to the frontend code that is bundled by webpack, which is to say any of
-the React or TypeScript code. To build the codebase in either case, you will
-need to have Node.js and NPM installed. To start the Web server with the
-frontend code compiled, simply add `-DgenerateReactDist=clean` to the Maven
-command line. This can be quite slow and is not necessary for frontend
-development, instead run the maven command normally but in a separate terminal
-run `npm install` and then `npm run serve` from this directory to start a
-process that watches for changes to the React code and recompiles it as
-necessary. This is much faster and provides a better development experience,
-with shorter feedback loops and source maps for easier debugging.
+To build the codebase you will need to have Node.js and NPM installed. Maven
+builds the production frontend bundle by default. This can be quite slow and is
+not necessary for frontend development, instead run the maven command with
+`-DreactDevMode=true` but in a separate terminal run `npm install` and
+then `npm run serve` from this directory to start a process that watches
+for changes to the React code and recompiles it as necessary. This is much
+faster and provides a better development experience, with shorter feedback loops
+and source maps for easier debugging.
+
+The frontend build now uses Vite by default. `npm run build` and
+`npm run serve` both target the Vite configuration in `vite.config.ts`,
+emitting the main browser bundles into `dist`. Production builds use hashed
+filenames, while the development watch build keeps stable filenames to reduce
+stale-asset issues during JSP-driven development.
+
+Server-rendered pages use the server-side `rst:bundle` tag, which caches and
+reads `dist/.vite/manifest.json` to render the required
+`modulepreload`, stylesheet, and module script tags for each bundle. Legacy
+TinyMCE 5 pages also use `scripts/viteBundleLoader.mjs` plus bundle-name globals
+defined in the JSP headers to preload the Vite-built TinyMCE helper and plugin
+entrypoints before TinyMCE initialises.
+
+When `-DreactDevMode=true`, JSP-emitted asset URLs stay root-relative
+(`/ui/dist/...`). `ViteDevServerProxyServlet` reverse-proxies those requests
+from Jetty to the Vite dev server, so the browser never sees the dev server's
+origin for HTTP module fetches. The dev server's port can be overridden via
+the optional Maven/system flag
+`-DviteDevServerOrigin=http://127.0.0.1:5174` (or
+`VITE_DEV_SERVER_PORT` env var for the Vite side). The HMR WebSocket is **not**
+proxied — the `@vite/client` script connects directly to the dev server using
+`hmr.clientPort` from `vite.config.ts`.
 
 ## Testing Strategy
 

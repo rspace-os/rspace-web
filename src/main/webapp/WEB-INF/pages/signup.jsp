@@ -3,10 +3,10 @@
     <title><fmt:message key="signup.title"/></title>
     <meta name="heading" content="<fmt:message key='signup.heading'/>"/>
     <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
-    <link href="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
-    <script src="<c:url value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-    <script src="<c:url value='/scripts/global.js'/>"></script>
-    <script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+    <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
+    <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
   <script>
 
     $(document).ready(function () {
@@ -19,18 +19,18 @@
     });
   </script>
     <rst:hasDeploymentProperty name="cloud" value="true">
-      <script src="<c:url value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
-      <script src="<c:url value='/scripts/pages/signup/signup.js'/>"></script>
+      <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
+      <script src="<rst:assetUrl value='/scripts/pages/signup/signup.js'/>"></script>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
-      <script src="<c:url value='/scripts/pages/signup/google-signin.js'/>"></script>
-      <script src="<c:url value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
+      <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
+      <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty>
 
-    <link href="/styles/sign-in-up-common.css" rel="stylesheet">
-    <link href="/styles/bootstrap-custom-flat.css" rel="stylesheet">
-    <link href="/styles/simplicity/header.css" rel="stylesheet">
-    <link href="/styles/authentication/login.css" rel="stylesheet">
-    <link href="<c:url value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/simplicity/header.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/authentication/login.css'/>" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
 </head>
 
 <div class="page">
@@ -240,7 +240,7 @@
             <form:hidden path="token"/>
             <label>
               <input type="checkbox" value="remember-me" required/>
-              <span class="rs-field__text rs-field__text--normal">I agree to these <a href='<c:url value="http://researchspace.com/terms-conditions/" />' target='_blank'>Terms and Conditions</a></span>
+              <span class="rs-field__text rs-field__text--normal">I agree to these <a href='<c:url value="https://researchspace.com/terms-conditions/" />' target='_blank'>Terms and Conditions</a></span>
             </label>
           </div>
         </rst:hasDeploymentProperty>
@@ -275,7 +275,7 @@
 
 </div>
 
-<script src="<c:url value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 <script type="text/javascript">
   $(document).ready(function() {
     $.fn.bootstrapButton = $.fn.button.noConflict();

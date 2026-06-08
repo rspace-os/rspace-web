@@ -1,10 +1,11 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags"%>
 
 <%@ attribute name="isNotebook" required="true" type="java.lang.Boolean"%>
 <%@ attribute name="parentId" required="true" type="java.lang.Long"%>
 
-<script src="<c:url value='/scripts/tags/importFromWord.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/importFromWord.js'/>"></script>
 
 <style>
     #wordDocImportOptions {

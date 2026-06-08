@@ -109,11 +109,11 @@ the plugin should go. In most cases, this will involve displaying a dialog,
 making some API calls, and having the user make a selection before generating
 HTML to display, but before we get to that there are a few more initialisation
 steps to take care of.
-  1. In [/src/main/webapp/ui/webpack.config.js](/src/main/webapp/ui/webpack.config.js) we need to add a new entry point for our new script.
+  1. In [/src/main/webapp/ui/bundleEntries.json](/src/main/webapp/ui/bundleEntries.json) we need to add a new entry point for our new script.
      We load the plugin through a separate entry point so that it is only downloaded
      when the plugin is enabled.
-    ```
-      tinymceNewPlugin: "./src/tinyMCE/newPlugin/index.js",
+    ```json
+      "tinymceNewPlugin": "src/tinyMCE/newPlugin/index.js",
     ```
   2. In [/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js](/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js),
      we need to add the following code:

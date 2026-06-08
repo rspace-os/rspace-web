@@ -5,14 +5,14 @@
   <meta charset="UTF-8">
   <title>RSpace Api Documentation | ResearchSpace </title>
 
-  <link href='/scripts/bower_components/swagger-ui/dist-531/swagger-ui.css' rel='stylesheet' />
+  <link href='<rst:assetUrl value='/scripts/bower_components/swagger-ui/dist-531/swagger-ui.css'/>' rel='stylesheet' />
 
-  <link rel="icon" type="image/png" href="/scripts/bower_components/swagger-ui/dist-531/favicon-32x32.png" sizes="32x32" />
-  <link rel="icon" type="image/png" href="/scripts/bower_components/swagger-ui/dist-531/favicon-16x16.png" sizes="16x16" />
+  <link rel="icon" type="image/png" href="<rst:assetUrl value='/scripts/bower_components/swagger-ui/dist-531/favicon-32x32.png'/>" sizes="32x32" />
+  <link rel="icon" type="image/png" href="<rst:assetUrl value='/scripts/bower_components/swagger-ui/dist-531/favicon-16x16.png'/>" sizes="16x16" />
 
-  <script src='/scripts/bower_components/swagger-ui/dist-531/swagger-ui-bundle.js' ></script>
-  <script src='/scripts/bower_components/swagger-ui/dist-531/swagger-ui-standalone-preset.js' ></script>
-   <script src="<c:url value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+  <script src='<rst:assetUrl value='/scripts/bower_components/swagger-ui/dist-531/swagger-ui-bundle.js'/>' ></script>
+  <script src='<rst:assetUrl value='/scripts/bower_components/swagger-ui/dist-531/swagger-ui-standalone-preset.js'/>' ></script>
+   <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
 
   <style> 
     body { margin:0; }

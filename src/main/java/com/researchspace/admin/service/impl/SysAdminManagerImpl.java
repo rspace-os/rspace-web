@@ -161,6 +161,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
         .signupSource(user.getSignupSource().toString())
         .lastLogin(user.getLastLogin())
         .hasFormsUsedByOtherUsers(formDao.hasUserPublishedFormsUsedInOtherRecords(user))
+        .hasTemplatesUsedByOtherUsers(recordDao.hasUserSharedTemplatesUsedByOtherUsers(user))
         .build();
   }
 

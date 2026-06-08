@@ -35,6 +35,8 @@ public class NfsExportManagerTest extends SpringTransactionalTest {
 
   @Autowired private DiskSpaceChecker diskSpaceChecker;
 
+  @Autowired private com.researchspace.service.MessageSourceUtils messageSource;
+
   private User user;
   private NfsFileSystem testFileSystem;
   private NfsFileStore testFileStore;
@@ -142,7 +144,8 @@ public class NfsExportManagerTest extends SpringTransactionalTest {
     Map<String, String> messages = exportPlan.getCheckedNfsLinkMessages();
     assertEquals(1, messages.size());
     assertEquals(
-        NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG, messages.values().iterator().next());
+        messageSource.getMessage(NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG_KEY),
+        messages.values().iterator().next());
     assertTrue(messages.keySet().iterator().next().endsWith("test_moved.txt"));
     assertEquals(1, exportPlan.getFoundFileSystems().get(0).getCheckedNfsLinkMessages().size());
 

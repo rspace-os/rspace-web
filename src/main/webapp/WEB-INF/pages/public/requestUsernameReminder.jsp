@@ -2,7 +2,7 @@
 
 <head>
     <title>Request username reminder</title>
-    <link href="/styles/pages/public/passwordReset.css" rel="stylesheet">
+    <link href="<rst:assetUrl value='/styles/pages/public/passwordReset.css'/>" rel="stylesheet">
 </head>
 
 <div class="container passwordResetContainer">

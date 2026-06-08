@@ -1,15 +1,22 @@
 package com.axiope.webapp.listener;
 
+import com.axiope.webapp.dev.ViteDevServerProxyServlet;
+import com.axiope.webapp.taglib.BundleTag;
+import com.axiope.webapp.taglib.FrontendCacheVersion;
 import com.researchspace.Constants;
 import com.researchspace.properties.IPropertyHolder;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.ServletRegistration;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
@@ -21,6 +28,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
  */
 public class StartupListener implements ServletContextListener {
   public static final String RS_DEPLOY_PROPS_CTX_ATTR_NAME = "RS_DEPLOY_PROPS";
+  static final String VITE_DEV_SERVER_ORIGIN_PROPERTY = "viteDevServerOrigin";
   private static final Logger log = LoggerFactory.getLogger(StartupListener.class);
 
   /** {@inheritDoc} */
@@ -32,17 +40,20 @@ public class StartupListener implements ServletContextListener {
     // object already exists
     Map<String, Object> config = (HashMap<String, Object>) context.getAttribute(Constants.CONFIG);
     if (config == null) {
-      config = new HashMap<String, Object>();
+      config = new HashMap<>();
     }
     if (context.getInitParameter(Constants.CSS_THEME) != null) {
       config.put(Constants.CSS_THEME, context.getInitParameter(Constants.CSS_THEME));
     }
     ApplicationContext ctx = getApplicationContext(context);
-    IPropertyHolder propHolder = (IPropertyHolder) ctx.getBean(IPropertyHolder.class);
+    IPropertyHolder propHolder = ctx.getBean(IPropertyHolder.class);
     context.setAttribute(Constants.CONFIG, config);
 
     setupContext(context);
     getProperties(propHolder, context);
+    preWarmBundleManifestCache(ctx, context);
+    initCacheVersion(ctx, propHolder, context);
+    registerViteDevServerProxyIfEnabled(ctx, context);
   }
 
   ApplicationContext getApplicationContext(ServletContext context) {
@@ -68,6 +79,71 @@ public class StartupListener implements ServletContextListener {
       if (context.getAttribute(RS_DEPLOY_PROPS_CTX_ATTR_NAME) == null) {
         context.setAttribute(RS_DEPLOY_PROPS_CTX_ATTR_NAME, props);
       }
+    }
+  }
+
+  void preWarmBundleManifestCache(ApplicationContext applicationContext, ServletContext context) {
+    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
+    BundleTag.preWarmManifestCache(context, isDevMode);
+  }
+
+  /**
+   * Stores the cache-busting version token in the servlet context as {@link
+   * FrontendCacheVersion#CACHE_VERSION_ATTR}.
+   *
+   * <ul>
+   *   <li><b>Dev ({@code run} profile):</b> nothing is stored here; {@link FrontendCacheVersion}
+   *       generates a fresh UUID per request so every page hit forces browsers to re-fetch assets.
+   *   <li><b>Production:</b> the RSpace application version string (e.g. {@code 2.23.0}) so
+   *       browsers cache assets across requests within the same deployment and bust the cache on
+   *       upgrade.
+   * </ul>
+   */
+  void initCacheVersion(
+      ApplicationContext applicationContext, IPropertyHolder propHolder, ServletContext context) {
+    boolean isDevMode = applicationContext.getEnvironment().acceptsProfiles(Profiles.of("run"));
+    if (!isDevMode) {
+      String cacheVersion = propHolder.getVersionMessage();
+      log.info("Production mode: using RSpace version '{}' as cache-buster token", cacheVersion);
+      context.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, cacheVersion);
+    }
+    // In dev mode, FrontendCacheVersion generates a fresh UUID per request.
+  }
+
+  /**
+   * Registers a same-origin reverse proxy from {@code /ui/dist/*} to the local Vite dev server when
+   * {@code reactDevMode=true}. Lets JSPs emit relative asset URLs in both dev and production
+   * builds, removing the cross-origin asset load that the previous Vite integration required.
+   */
+  void registerViteDevServerProxyIfEnabled(
+      ApplicationContext applicationContext, ServletContext context) {
+    Environment environment = applicationContext.getEnvironment();
+    if (!Boolean.parseBoolean(
+        StringUtils.trimToEmpty(
+            environment.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY)))) {
+      return;
+    }
+    String configured =
+        StringUtils.trimToEmpty(environment.getProperty(VITE_DEV_SERVER_ORIGIN_PROPERTY));
+    String origin = configured.isEmpty() ? ViteDevServerProxyServlet.DEFAULT_ORIGIN : configured;
+    if (configured.isEmpty()) {
+      log.info("reactDevMode=true, viteDevServerOrigin unset — using default origin {}", origin);
+    }
+    try {
+      ServletRegistration.Dynamic registration =
+          context.addServlet("viteDevServerProxy", new ViteDevServerProxyServlet(origin));
+      if (registration == null) {
+        log.warn(
+            "Vite dev server proxy was already registered; skipping (origin would have been {})",
+            origin);
+        return;
+      }
+      registration.addMapping("/ui/dist/*");
+      log.info("Registered Vite dev server proxy at /ui/dist/* -> {}", origin);
+    } catch (IllegalStateException e) {
+      log.warn(
+          "Unable to register Vite dev server proxy at /ui/dist/*: {} (context already started?)",
+          e.getMessage());
     }
   }
 

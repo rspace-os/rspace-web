@@ -46,8 +46,6 @@ import org.springframework.web.servlet.view.RedirectView;
 @Controller
 @RequestMapping("/apps/nextcloud")
 public class NextCloudController extends BaseOAuth2Controller {
-  protected static final String SESSION_NEXTCLOUD_USERNAME = "SESSION_NEXTCLOUD_USERNAME";
-  protected static final String SESSION_NEXTCLOUD_PASSWORD = "SESSION_NEXTCLOUD_PASSWORD";
   private static final String ERROR = "error";
   private static final String CONNECT_AUTHORIZATION_ERROR = "connect/authorizationError";
   private static final String ACCESS_TOKEN = "access_token";
@@ -272,28 +270,6 @@ public class NextCloudController extends BaseOAuth2Controller {
     } else {
       return null;
     }
-  }
-
-  /** Likely unused? */
-  @GetMapping("/sessionInfo")
-  @ResponseBody
-  public Map<String, String> getNextCloudCredentialsFromSession(HttpSession session) {
-    HashMap<String, String> map = new HashMap<>();
-    map.put(USERNAME, (String) session.getAttribute(SESSION_NEXTCLOUD_USERNAME));
-    map.put("password", (String) session.getAttribute(SESSION_NEXTCLOUD_PASSWORD));
-    return map;
-  }
-
-  /** Likely unused? */
-  @PostMapping("/sessionInfo")
-  @ResponseBody
-  public String saveNextCloudCredentialsToSession(
-      @RequestParam(USERNAME) String username,
-      @RequestParam("password") String password,
-      HttpSession session) {
-    session.setAttribute(SESSION_NEXTCLOUD_USERNAME, username);
-    session.setAttribute(SESSION_NEXTCLOUD_PASSWORD, password);
-    return "OK";
   }
 
   @GetMapping("/redirectLink")

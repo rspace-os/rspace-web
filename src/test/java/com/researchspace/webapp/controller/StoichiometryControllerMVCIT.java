@@ -619,6 +619,106 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  public void updateStoichiometry_whenDocumentIsBeingEdited_returnsConflict() throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+    RSChemElement reaction = addReactionToField(docField, user);
+    MvcResult createResult = createStoichiometry(reaction);
+    StoichiometryDTO created = getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+
+    // Simulate an editor session holding the lock on the owning document.
+    assertEquals(
+        com.researchspace.model.EditStatus.EDIT_MODE,
+        recordMgr.requestRecordEdit(doc1.getId(), user, anySessionTracker()));
+
+    try {
+      StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
+      updateDTO.setId(created.getId());
+      updateDTO.setMolecules(List.of());
+
+      MvcResult conflictResult =
+          mockMvc
+              .perform(
+                  put(URL)
+                      .param("stoichiometryId", created.getId().toString())
+                      .param("updateFieldHtml", "true")
+                      .contentType(APPLICATION_JSON)
+                      .content(new ObjectMapper().writeValueAsString(updateDTO))
+                      .principal(principal)
+                      .header("apiKey", apiKey))
+              .andExpect(status().isConflict())
+              .andReturn();
+      assertTrue(
+          conflictResult.getResponse().getContentAsString().contains(user.getUsername()),
+          "409 body should name the user holding the lock");
+
+      // Without updateFieldHtml=true the same call must succeed even though the lock is held.
+      mockMvc
+          .perform(
+              put(URL)
+                  .param("stoichiometryId", created.getId().toString())
+                  .contentType(APPLICATION_JSON)
+                  .content(new ObjectMapper().writeValueAsString(updateDTO))
+                  .principal(principal)
+                  .header("apiKey", apiKey))
+          .andExpect(status().isOk());
+    } finally {
+      recordMgr.unlockRecord(doc1, user);
+    }
+
+    // After releasing the lock the HTML-sync path must succeed again.
+    StoichiometryUpdateDTO retryDTO = new StoichiometryUpdateDTO();
+    retryDTO.setId(created.getId());
+    retryDTO.setMolecules(List.of());
+    mockMvc
+        .perform(
+            put(URL)
+                .param("stoichiometryId", created.getId().toString())
+                .param("updateFieldHtml", "true")
+                .contentType(APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(retryDTO))
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  public void deleteStoichiometry_whenDocumentIsBeingEdited_returnsConflictAndPreservesRow()
+      throws Exception {
+    doc1 = createBasicDocumentInRootFolderWithText(user, "any");
+    Field docField = doc1.getFields().get(0);
+    RSChemElement reaction = addReactionToField(docField, user);
+    MvcResult createResult = createStoichiometry(reaction);
+    StoichiometryDTO created = getFromJsonResponseBody(createResult, StoichiometryDTO.class);
+
+    assertEquals(
+        com.researchspace.model.EditStatus.EDIT_MODE,
+        recordMgr.requestRecordEdit(doc1.getId(), user, anySessionTracker()));
+
+    try {
+      mockMvc
+          .perform(
+              delete(URL)
+                  .param("stoichiometryId", created.getId().toString())
+                  .param("updateFieldHtml", "true")
+                  .principal(principal)
+                  .header("apiKey", apiKey))
+          .andExpect(status().isConflict());
+
+      // Row must still exist — the gate fires before stoichiometryManager.remove().
+      mockMvc
+          .perform(
+              get(URL)
+                  .param("stoichiometryId", created.getId().toString())
+                  .principal(principal)
+                  .header("apiKey", apiKey))
+          .andExpect(status().isOk());
+    } finally {
+      recordMgr.unlockRecord(doc1, user);
+    }
+  }
+
+  @Test
   public void deleteStoichiometry_withNonexistentId_returnsError() throws Exception {
     String missingId = String.valueOf(-999L);
     MvcResult result =
@@ -790,7 +890,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                     .content(
                         new ObjectMapper()
                             .writeValueAsString(
-                                new StockDeductionRequest(stoichiometryId, List.of(linkId))))
+                                new StockDeductionRequest(stoichiometryId, List.of(linkId), false)))
                     .principal(principal)
                     .header("apiKey", apiKey))
             .andExpect(status().isOk())

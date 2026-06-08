@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
   "containerResults",
   "sampleResults",
   "subSampleResults",
+  "instrumentResults",
 })
 public class ApiInventoryImportResult {
 
@@ -36,9 +37,13 @@ public class ApiInventoryImportResult {
   @JsonProperty("subSampleResults")
   private ApiInventoryImportSubSampleImportResult subSampleResult;
 
+  @JsonProperty("instrumentResults")
+  private ApiInventoryImportInstrumentImportResult instrumentResult;
+
   @JsonIgnore private String containerCsvFilename;
   @JsonIgnore private String sampleCsvFilename;
   @JsonIgnore private String subSampleCsvFilename;
+  @JsonIgnore private String instrumentCsvFilename;
   @JsonIgnore private User currentUser;
 
   public ApiInventoryImportResult(User user) {
@@ -50,17 +55,31 @@ public class ApiInventoryImportResult {
       ApiInventoryImportPartialResult containerResult,
       ApiInventoryImportSampleImportResult sampleResult,
       ApiInventoryImportSubSampleImportResult subSampleResult,
+      ApiInventoryImportInstrumentImportResult instrumentResult,
       User user) {
 
     this(user);
     this.containerResult = containerResult;
     this.sampleResult = sampleResult;
     this.subSampleResult = subSampleResult;
+    this.instrumentResult = instrumentResult;
+  }
+
+  /**
+   * Convenience constructor without instrumentResult (kept for back-compat with existing tests that
+   * don't exercise the instruments import branch).
+   */
+  public ApiInventoryImportResult(
+      ApiInventoryImportPartialResult containerResult,
+      ApiInventoryImportSampleImportResult sampleResult,
+      ApiInventoryImportSubSampleImportResult subSampleResult,
+      User user) {
+    this(containerResult, sampleResult, subSampleResult, null, user);
   }
 
   public void setStatusForAllResults(InventoryBulkOperationStatus status) {
     this.status = status;
-    Stream.of(containerResult, sampleResult, subSampleResult)
+    Stream.of(containerResult, sampleResult, subSampleResult, instrumentResult)
         .filter(Objects::nonNull)
         .forEach(result -> result.setStatus(status));
   }
@@ -71,7 +90,9 @@ public class ApiInventoryImportResult {
         || (sampleResult != null
             && sampleResult.getStatus().equals(InventoryBulkOperationStatus.PREVALIDATION_ERROR))
         || (subSampleResult != null
-            && subSampleResult
+            && subSampleResult.getStatus().equals(InventoryBulkOperationStatus.PREVALIDATION_ERROR))
+        || (instrumentResult != null
+            && instrumentResult
                 .getStatus()
                 .equals(InventoryBulkOperationStatus.PREVALIDATION_ERROR));
   }

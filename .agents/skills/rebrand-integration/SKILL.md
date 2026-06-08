@@ -134,7 +134,7 @@ Leave alone:
 - The **lowercase** form (e.g. `clustermarket`, `clustermarketSearchOrder`,
   `optClustermarket`) — used in URL paths, CSS classes, HTML `id`s,
   `data-tableSource`, settings keys (`clustermarket.web.url`,
-  `clustermarket.api.url`), event names (`clustermarket-insert`), and Webpack
+  `clustermarket.api.url`), event names (`clustermarket-insert`), and Vite
   bundle names. Leaving lowercase alone is what keeps the rebrand non-breaking.
 - Property-bundle keys (left of `=`) and Liquibase / SQL identifiers.
 - Comments: `//`, `/* … */`, JSDoc, `<!-- … -->`, JSX `{/* … */}`. These are
@@ -232,7 +232,7 @@ Output:
 - Adding a brand-new integration (use `rspace-empty-integration`).
 - Renaming Java packages, classes, or DB tables.
 - Renaming URL paths, integration keys, system-property keys, event names,
-  Webpack bundle names, CSS classes, or HTML IDs.
+  Vite bundle names, CSS classes, or HTML IDs.
 - Auto-updating `DocLinks.ts` to a new vendor docs URL — flag as manual
   follow-up.
 - Changing OAuth client / secret / `*.api.url` / `*.web.url` property values

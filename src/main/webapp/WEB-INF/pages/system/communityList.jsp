@@ -5,11 +5,11 @@
 <title><spring:message code="system.communityList.button.label"/></title>
 
 <!-- moved to default.jsp -->
-<!-- <link rel="stylesheet" href="<c:url value='/styles/bootstrap-custom-flat.css'/>" /> -->
+<!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
 
-<link rel="stylesheet" href="<c:url value='/styles/system.css'/>" />
-<script src="<c:url value='/scripts/pages/system/system.js'/>"></script>
-<script src="<c:url value='/scripts/pages/system/communityList.js'/>"></script>
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
+<script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/system/communityList.js'/>"></script>
 </head>
 <body>
 

@@ -17,6 +17,8 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
@@ -130,7 +132,7 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.inventory.BasketApiManager;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -283,7 +285,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired FieldLinksEntitiesSynchronizer fieldSyncher;
   protected @Autowired NfsManager nfsMgr;
   protected @Autowired SampleApiManager sampleApiMgr;
-  protected @Autowired InstrumentApiManager instrumentApiMgr;
+  protected @Autowired InstrumentEntityApiManager instrumentApiMgr;
   protected @Autowired SampleDao sampleDao;
   protected @Autowired ContainerDao containerDao;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
@@ -1893,6 +1895,23 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
         .add(createBasicApiSampleField("text", ApiFieldType.TEXT, "text value"));
 
     return sampleApiMgr.createSampleTemplate(sampleTemplatePost, user);
+  }
+
+  /**
+   * Create a minimal instrument template (one text field) for the given user. Mirrors {@link
+   * #createBasicSampleTemplate(User)}.
+   */
+  protected ApiInstrumentTemplate createBasicInstrumentTemplateForUser(User user) {
+    return createBasicInstrumentTemplateForUser(user, "junit test instrument template");
+  }
+
+  protected ApiInstrumentTemplate createBasicInstrumentTemplateForUser(User user, String name) {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName(name);
+    templatePost
+        .getFields()
+        .add(createBasicApiSampleField("text", ApiFieldType.TEXT, "text value"));
+    return instrumentApiMgr.createInstrumentTemplate(templatePost, user);
   }
 
   protected ApiSampleWithFullSubSamples createBasicSampleTemplateAndSample(User user) {

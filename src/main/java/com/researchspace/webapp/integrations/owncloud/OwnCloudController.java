@@ -47,8 +47,6 @@ import org.springframework.web.servlet.view.RedirectView;
 public class OwnCloudController extends BaseOAuth2Controller {
 
   private static final String UTF_8 = "UTF-8";
-  protected static final String SESSION_OWNCLOUD_USERNAME = "SESSION_OWNCLOUD_USERNAME";
-  protected static final String SESSION_OWNCLOUD_PASSWORD = "SESSION_OWNCLOUD_PASSWORD";
   private static final String ERROR = "error";
   private static final String CONNECT_AUTHORIZATION_ERROR = "connect/authorizationError";
   private static final String ACCESS_TOKEN = "access_token";
@@ -279,27 +277,6 @@ public class OwnCloudController extends BaseOAuth2Controller {
     }
   }
 
-  @GetMapping("/sessionInfo")
-  @ResponseBody
-  public Map<String, String> getOwnCloudCredentialsFromSession(HttpSession session) {
-    HashMap<String, String> map = new HashMap<>();
-    map.put(USERNAME, (String) session.getAttribute(SESSION_OWNCLOUD_USERNAME));
-    map.put("password", (String) session.getAttribute(SESSION_OWNCLOUD_PASSWORD));
-    return map;
-  }
-
-  /** Likely unused? */
-  @PostMapping("/sessionInfo")
-  @ResponseBody
-  public String saveOwnCloudCredentialsToSession(
-      @RequestParam(USERNAME) String username,
-      @RequestParam("password") String password,
-      HttpSession session) {
-    session.setAttribute(SESSION_OWNCLOUD_USERNAME, username);
-    session.setAttribute(SESSION_OWNCLOUD_PASSWORD, password);
-    return "OK";
-  }
-
   @GetMapping("/redirectLink")
   @ResponseBody
   public ModelAndView redirectLink(@RequestParam("path") String path)
@@ -309,12 +286,6 @@ public class OwnCloudController extends BaseOAuth2Controller {
     String redirectURL = ownCloudBaseURL + "/index.php/apps/files/?dir=" + parentPath;
 
     return new ModelAndView("redirect:" + redirectURL);
-  }
-
-  public void removeOwnCloudCredentialsFromSession(HttpSession session) {
-    log.info("removing ownCloud credentials from session");
-    session.removeAttribute(SESSION_OWNCLOUD_USERNAME);
-    session.removeAttribute(SESSION_OWNCLOUD_PASSWORD);
   }
 
   /**

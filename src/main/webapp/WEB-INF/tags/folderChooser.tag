@@ -1,7 +1,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ attribute name="folderChooserId" required="true" type="java.lang.String" %>
 
-<script src="/scripts/tags/folderChooser.js"></script>
+<script src="<rst:assetUrl value='/scripts/tags/folderChooser.js'/>"></script>
 
 <div id="folderChooser${folderChooserId}" style="display: none;">
     <c:if test="${folderChooserId != '-shareIntoFolder'}">

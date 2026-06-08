@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportInstrumentsSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSamplesSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettingsPost;
@@ -22,6 +23,7 @@ public class InventoryImportPostFullValidator implements Validator {
     private MultipartFile containersFile;
     private MultipartFile samplesFile;
     private MultipartFile subSamplesFile;
+    private MultipartFile instrumentsFile;
   }
 
   @Override
@@ -74,6 +76,28 @@ public class InventoryImportPostFullValidator implements Validator {
           errors.rejectValue(
               "sampleSettings", "errors.inventory.import.subSampleImportRequiresSamplesImport");
         }
+      }
+    }
+
+    ApiInventoryImportInstrumentsSettings instrumentSettings =
+        inventorySettings.getInstrumentSettings();
+    if (instrumentSettings != null) {
+      if (instrumentSettings.getTemplateId() == null
+          && instrumentSettings.getTemplateInfo() == null) {
+        errors.rejectValue(
+            "instrumentSettings.templateInfo", "errors.inventory.import.templateInfo.empty");
+      }
+      if (instrumentSettings.getTemplateId() != null
+          && instrumentSettings.getTemplateInfo() != null) {
+        errors.rejectValue(
+            "instrumentSettings.templateId",
+            "errors.inventory.import.instrument.templateId.and.templateInfo.conflict");
+      }
+      if (instrumentSettings.getFieldMappings() == null
+          || !instrumentSettings.getFieldMappings().containsValue("name")) {
+        errors.rejectValue(
+            "instrumentSettings.fieldMappings",
+            "errors.inventory.import.fieldMappings.missingName");
       }
     }
   }

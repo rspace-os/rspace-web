@@ -38,7 +38,7 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
 import com.researchspace.service.fieldmark.FieldmarkServiceManager;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.service.inventory.InstrumentApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -83,7 +83,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
   private @Autowired InventoryFileApiManager inventoryFileManager;
   private @Autowired ContainerApiManager containerApiMgr;
   private @Autowired SampleApiManager sampleApiMgr;
-  private @Autowired InstrumentApiManager instrumentApiManager;
+  private @Autowired InstrumentEntityApiManager instrumentApiManager;
 
   @Override
   public List<FieldmarkNotebook> getFieldmarkNotebookList(User user) {

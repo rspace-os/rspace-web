@@ -5,14 +5,14 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
         <link rel="shortcut icon" href="${favIcon}" />
 
-        <script src="/scripts/bower_components/jquery/dist/jquery.min.js"></script>
-        <script src="/scripts/bower_components/jquery-ui/jquery-ui.min.js"></script>
-        <script src="/scripts/global.js"></script>
-        <script src="/scripts/pages/connect/wopi/collabora/collaboraView.js"></script>
+        <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+        <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+        <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+        <script src="<rst:assetUrl value='/scripts/pages/connect/wopi/collabora/collaboraView.js'/>"></script>
 
-        <link rel="stylesheet" href="/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css" />
-        <link rel="stylesheet" href="/styles/bootstrap-custom-flat.css" />
-        <link rel="stylesheet" href="/styles/pages/connect/wopi/collabora/collaboraView.css" />
+        <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" />
+        <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
+        <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/connect/wopi/collabora/collaboraView.css'/>" />
 
     </head>
 

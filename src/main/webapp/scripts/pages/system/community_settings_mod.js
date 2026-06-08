@@ -133,6 +133,7 @@ function editSetting($settingRow) {
 
 function saveSetting($settingRow) {
     var settingName = $settingRow.data('name');
+    var settingLabel = $settingRow.data('label') || settingName;
     var newValue = _get$InputFieldForRow($settingRow).val();
 
     RS.blockPage("Saving...");
@@ -145,10 +146,10 @@ function saveSetting($settingRow) {
     var jqxhr = $.post("/community/admin/ajax/updateProperty", data);
     jqxhr.done(function(result) {
         if (result.errorMsg) {
-            apprise('Community App Setting \'' + settingName + '\' couldn\'t be updated.');
+            apprise('Community App Setting \'' + settingLabel + '\' couldn\'t be updated.');
         } else {
             var safeResult = RS.escapeHtml(result.data);
-            $().toastmessage('showSuccessToast', 'Community App Setting \'' + settingName + '\' updated to \'' + safeResult + '\'');
+            $().toastmessage('showSuccessToast', 'Community App Setting \'' + settingLabel + '\' updated to \'' + safeResult + '\'');
             settings[settingName] = result.data;
             $settingRow.find('.settingViewDiv .settingValue').html(safeResult || '&nbsp;');
             toggleSettingMode($settingRow);
@@ -193,8 +194,10 @@ function _printSettings(settingsToPrint) {
         else
             value = values[0]; // show community setting value if it is available
 
+        var labelOverride = $('#systemSettingsLabels').find('div[id="' + name + '.label"]').text();
         var templateData = {
                 "name": name,
+                "label": labelOverride || name,
                 "value": RS.escapeHtml(value) || '&nbsp;',
                 "description": $('#systemSettingsDescriptions').find('div[id="' + name + '.description"]').text(),
                 "disabled": values[1] === "DENIED"

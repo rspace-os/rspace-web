@@ -4,15 +4,23 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
+import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
+import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
+import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -26,16 +34,23 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
+import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
@@ -43,6 +58,7 @@ import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
+import com.researchspace.service.impl.TemplateTransferService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestFactory;
@@ -60,6 +76,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -78,6 +95,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired StoichiometryManager stoichiometryMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
+  private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
+  private @Autowired InstrumentDao instrumentDao;
+  private @Autowired MessageSource messageSource;
 
   @Before
   public void setUp() throws Exception {
@@ -652,6 +672,179 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void testDeleteUserWithStoichiometryAndInventoryLink() throws Exception {
+    User userToDelete = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
+
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(userToDelete);
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    SubSample subSample = sample.getSubSamples().get(0);
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, subSample);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningStoichiometryLinkedToOtherUsersInventory() throws Exception {
+    // Inventory belongs to a different user from the one being deleted, so
+    // deleteInventoryItems cannot clean up the link row — the SQL in
+    // deleteRecords (joined via BaseRecord.owner_id) is the only thing that
+    // can remove it before the StoichiometryMolecule delete runs.
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
+
+    RSpaceTestUtils.logout();
+    User userToDelete = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(userToDelete);
+
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, sample);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(userToDelete.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(userToDelete);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningInventoryLinkedFromOtherUsersStoichiometry() throws Exception {
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(inventoryOwner);
+
+    openTransaction();
+    Sample sample = sampleDao.get(apiSample.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, sample);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningContainerLinkedFromOtherUsersStoichiometry() throws Exception {
+    // Exercises the container_id join in deleteInventoryItems.
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiContainer apiContainer = createBasicContainerForUser(inventoryOwner);
+
+    openTransaction();
+    Container container = containerDao.get(apiContainer.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, container);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  @Test
+  public void testDeleteUserOwningInstrumentLinkedFromOtherUsersStoichiometry() throws Exception {
+    // Exercises the instrumentEntity_id join in deleteInventoryItems.
+    User stoichOwner = createInitAndLoginAnyUser();
+    StoichiometryMolecule savedMolecule = createStoichiometryWithMoleculeForUser(stoichOwner);
+
+    RSpaceTestUtils.logout();
+    User inventoryOwner = createInitAndLoginAnyUser();
+    ApiInstrument apiInstrument = createBasicInstrumentForUser(inventoryOwner);
+
+    openTransaction();
+    Instrument instrument = instrumentDao.get(apiInstrument.getId());
+    Long linkId = saveStoichiometryInventoryLink(savedMolecule, instrument);
+    commitTransaction();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(inventoryOwner.getId(), policy, sysadmin);
+
+    assertTrue(result.isSucceeded());
+    assertUserNotExist(inventoryOwner);
+    assertStoichiometryInventoryLinkAndAuditDeleted(linkId);
+  }
+
+  private StoichiometryMolecule createStoichiometryWithMoleculeForUser(User user) throws Exception {
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "Chemistry doc");
+
+    RSChemElement chemElement = RSChemElement.builder().chemElements("CCO").record(doc).build();
+    chemElement = rsChemElementMgr.save(chemElement, user);
+
+    Stoichiometry stoichiometry =
+        Stoichiometry.builder().parentReaction(chemElement).record(doc).build();
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+
+    RSChemElement moleculeChemElement =
+        RSChemElement.builder().chemElements("C2H6O").record(doc).build();
+    moleculeChemElement = rsChemElementMgr.save(moleculeChemElement, user);
+
+    StoichiometryMolecule molecule =
+        StoichiometryMolecule.builder()
+            .stoichiometry(stoichiometry)
+            .rsChemElement(moleculeChemElement)
+            .role(MoleculeRole.REACTANT)
+            .formula("C2H6O")
+            .name("Ethanol")
+            .smiles("CCO")
+            .molecularWeight(46.07)
+            .build();
+    stoichiometry.addMolecule(molecule);
+    stoichiometry = stoichiometryMgr.save(stoichiometry);
+    return stoichiometry.getMolecules().get(0);
+  }
+
+  private Long saveStoichiometryInventoryLink(
+      StoichiometryMolecule molecule, InventoryRecord inventoryRecord) {
+    StoichiometryInventoryLink link = new StoichiometryInventoryLink();
+    link.setStoichiometryMolecule(molecule);
+    link.setInventoryRecord(inventoryRecord);
+    return stoichiometryInventoryLinkDao.save(link).getId();
+  }
+
+  private void assertStoichiometryInventoryLinkAndAuditDeleted(Long linkId) {
+    String where = "id = " + linkId;
+    assertEquals(
+        "StoichiometryInventoryLink row should have been deleted",
+        0,
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink", where));
+    assertEquals(
+        "StoichiometryInventoryLink_AUD rows should have been deleted",
+        0,
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink_AUD", where));
+  }
+
+  @Test
   public void deleteUserFormThatReferencesPreviousVersion() throws Exception {
     User formCreator = createInitAndLoginAnyUser();
 
@@ -763,6 +956,229 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertFormExistsOwnedBySysadmin(formVersion0.getId(), sysadmin);
     assertFormExistsOwnedBySysadmin(formVersion1.getId(), sysadmin);
     assertFormExistsOwnedBySysadmin(formVersion2.getId(), sysadmin);
+  }
+
+  @Test
+  public void testDeleteUserTransfersTemplateSharedWithGroupToSysadmin() throws Exception {
+    TestGroup testGroup = createTestGroup(1);
+    User userToDelete = testGroup.u1();
+    User pi = testGroup.getPi();
+
+    logoutAndLoginAs(userToDelete);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "doc");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), userToDelete);
+    shareRecordWithGroup(userToDelete, testGroup.getGroup(), template);
+
+    logoutAndLoginAs(pi);
+    StructuredDocument piDoc =
+        recordMgr
+            .createFromTemplate(
+                template.getId(), "piDoc", pi, folderMgr.getRootFolderForUser(pi).getId())
+            .getUniqueCopy()
+            .asStrucDoc();
+
+    User sysadmin =
+        createAndSaveUser(getRandomAlphabeticString("sysadmin"), Role.SYSTEM_ROLE.getName());
+    initUser(sysadmin);
+    logoutAndLoginAs(sysadmin);
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
+
+    StructuredDocument transferredTemplate = (StructuredDocument) recordMgr.get(template.getId());
+    assertEquals(sysadmin, transferredTemplate.getOwner());
+
+    Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
+    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+
+    assertNotNull(recordMgr.get(piDoc.getId()));
+  }
+
+  @Test
+  public void testDeleteUserTransfersTemplateSharedDirectlyWithUserToSysadmin() throws Exception {
+    // user-level sharing requires both users to be in the same group
+    TestGroup testGroup = createTestGroup(2);
+    User userToDelete = testGroup.u1();
+    User userB = testGroup.u2();
+
+    logoutAndLoginAs(userToDelete);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "doc");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), userToDelete);
+    shareRecordWithUser(userToDelete, template, userB);
+
+    logoutAndLoginAs(userB);
+    StructuredDocument userBDoc =
+        recordMgr
+            .createFromTemplate(
+                template.getId(), "userBDoc", userB, folderMgr.getRootFolderForUser(userB).getId())
+            .getUniqueCopy()
+            .asStrucDoc();
+
+    User sysadmin =
+        createAndSaveUser(getRandomAlphabeticString("sysadmin"), Role.SYSTEM_ROLE.getName());
+    initUser(sysadmin);
+    logoutAndLoginAs(sysadmin);
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
+
+    StructuredDocument transferredTemplate = (StructuredDocument) recordMgr.get(template.getId());
+    assertEquals(sysadmin, transferredTemplate.getOwner());
+
+    Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
+    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+
+    assertNotNull(recordMgr.get(userBDoc.getId()));
+  }
+
+  @Test
+  public void testDeleteUserDeletesTemplateOnlyUsedByDeletedUser() throws Exception {
+    User userToDelete = createInitAndLoginAnyUser();
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "doc");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), userToDelete);
+    createFromTemplate(userToDelete, template, "docFromOwnTemplate");
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
+    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(template.getId()));
+  }
+
+  @Test
+  public void testDeleteUserTransfersTemplateWithGalleryAttachmentToSysadmin() throws Exception {
+    TestGroup testGroup = createTestGroup(1);
+    User userToDelete = testGroup.u1();
+    User pi = testGroup.getPi();
+
+    logoutAndLoginAs(userToDelete);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "doc");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), userToDelete);
+    EcatImage image = addImageToField(template.getFields().get(0), userToDelete);
+    shareRecordWithGroup(userToDelete, testGroup.getGroup(), template);
+
+    logoutAndLoginAs(pi);
+    recordMgr
+        .createFromTemplate(
+            template.getId(), "piDoc", pi, folderMgr.getRootFolderForUser(pi).getId())
+        .getUniqueCopy()
+        .asStrucDoc();
+
+    User sysadmin =
+        createAndSaveUser(getRandomAlphabeticString("sysadmin"), Role.SYSTEM_ROLE.getName());
+    initUser(sysadmin);
+    logoutAndLoginAs(sysadmin);
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
+
+    StructuredDocument transferredTemplate = (StructuredDocument) recordMgr.get(template.getId());
+    assertEquals(sysadmin, transferredTemplate.getOwner());
+
+    EcatImage transferredImage = (EcatImage) recordMgr.get(image.getId());
+    assertEquals(sysadmin, transferredImage.getOwner());
+
+    Folder galleryImagesFolder =
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, sysadmin);
+    Folder galleryUserFolder =
+        findDeletedUsersSubfolder(galleryImagesFolder, userToDelete, sysadmin);
+    assertTrue(folderMgr.getFolderChildrenIds(galleryUserFolder).contains(image.getId()));
+  }
+
+  @Test
+  public void testDeleteUserWithBothSharedFormAndTemplateTransfersBothToSysadmin()
+      throws Exception {
+    // user-level sharing requires both users to be in the same group
+    TestGroup testGroup = createTestGroup(2);
+    User userToDelete = testGroup.u1();
+    User userB = testGroup.u2();
+
+    logoutAndLoginAs(userToDelete);
+    RSForm form = createAnyForm(userToDelete);
+    form.getAccessControl().setWorldPermissionType(PermissionType.READ);
+    form.publish();
+    formMgr.save(form);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(userToDelete, "doc");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), userToDelete);
+    shareRecordWithUser(userToDelete, template, userB);
+
+    logoutAndLoginAs(userB);
+    Record userBDocFromForm = recordFactory.createStructuredDocument("docFromForm", userB, form);
+    recordMgr.save(userBDocFromForm, userB);
+    StructuredDocument userBDocFromTemplate =
+        recordMgr
+            .createFromTemplate(
+                template.getId(),
+                "docFromTemplate",
+                userB,
+                folderMgr.getRootFolderForUser(userB).getId())
+            .getUniqueCopy()
+            .asStrucDoc();
+
+    User sysadmin =
+        createAndSaveUser(getRandomAlphabeticString("sysadmin"), Role.SYSTEM_ROLE.getName());
+    initUser(sysadmin);
+    logoutAndLoginAs(sysadmin);
+    ServiceOperationResult<User> report =
+        userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
+
+    assertTrue(report.isSucceeded());
+    assertEquals(sysadmin, formMgr.get(form.getId()).getOwner());
+    assertEquals(sysadmin, ((StructuredDocument) recordMgr.get(template.getId())).getOwner());
+
+    Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
+    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+
+    assertNotNull(recordMgr.get(userBDocFromForm.getId()));
+    assertNotNull(recordMgr.get(userBDocFromTemplate.getId()));
+  }
+
+  private Folder findDeletedUsersTemplateFolder(User deletedUser, User sysadmin) {
+    String deletedFolderName =
+        messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null);
+    Folder templateRoot = folderMgr.getTemplateFolderForUser(sysadmin);
+    Folder deletedUsersFolder =
+        folderMgr.getSubFolders(templateRoot).stream()
+            .filter(f -> deletedFolderName.equals(f.getName()))
+            .findFirst()
+            .orElseThrow(
+                () -> new AssertionError("'Deleted Users' folder not found under Templates"));
+    return folderMgr.getSubFolders(deletedUsersFolder).stream()
+        .filter(f -> deletedUser.getUsername().equals(f.getName()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new AssertionError(
+                    "User folder not found under Deleted Users: " + deletedUser.getUsername()));
+  }
+
+  private Folder findDeletedUsersSubfolder(Folder categoryFolder, User deletedUser, User sysadmin) {
+    String deletedFolderName =
+        messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null);
+    Folder deletedUsersFolder =
+        folderMgr.getSubFolders(categoryFolder).stream()
+            .filter(f -> deletedFolderName.equals(f.getName()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new AssertionError("'Deleted Users' subfolder not found in gallery category"));
+    return folderMgr.getSubFolders(deletedUsersFolder).stream()
+        .filter(f -> deletedUser.getUsername().equals(f.getName()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new AssertionError(
+                    "User subfolder not found in Deleted Users gallery: "
+                        + deletedUser.getUsername()));
   }
 
   private void assertFormExistsOwnedBySysadmin(Long formId, User sysadmin) {

@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script src="<c:url value='/scripts/jquery-simply-countable/jquery.simplyCountable.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/jquery-simply-countable/jquery.simplyCountable.js'/>"></script>
 
 <!--  component of message creation dialog -->
 <form:form class="requestForm" modelAttribute="request">

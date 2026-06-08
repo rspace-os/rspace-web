@@ -31,7 +31,7 @@
             <name>input</name>
             <required>true</required>
             <rtexprvalue>true</rtexprvalue>
-            <type>java.util.String</type>
+            <type>java.lang.String</type>
         </attribute>
         <attribute>
             <name>count</name>
@@ -130,6 +130,38 @@
             <rtexprvalue>true</rtexprvalue>
             <type>java.lang.Boolean</type>
         </attribute>
+    </tag>
+
+    <tag>
+        <name>bundle</name>
+        <tag-class>com.axiope.webapp.taglib.BundleTag</tag-class>
+        <attribute>
+            <name>bundle</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>viteClient</name>
+        <tag-class>com.axiope.webapp.taglib.ViteClientTag</tag-class>
+    </tag>
+
+    <tag>
+        <name>assetUrl</name>
+        <tag-class>com.axiope.webapp.taglib.AssetUrlTag</tag-class>
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>cacheVersion</name>
+        <tag-class>com.axiope.webapp.taglib.CacheVersionTag</tag-class>
     </tag>
 
 </taglib>

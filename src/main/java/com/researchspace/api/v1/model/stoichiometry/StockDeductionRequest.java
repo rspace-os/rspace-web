@@ -13,4 +13,5 @@ import lombok.NoArgsConstructor;
 public class StockDeductionRequest {
   @NotNull private Long stoichiometryId;
   @NotNull @NotEmpty private List<Long> linkIds;
+  private boolean updateFieldHtml;
 }

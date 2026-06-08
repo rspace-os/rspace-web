@@ -26,6 +26,7 @@ import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.NfsViewProperty;
 import com.researchspace.service.NfsManager;
+import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,7 +127,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
     testNfsFileSystemInfoList.add(testNfsFileSystem.toFileSystemInfo());
 
     when(nfsManagerMock.getFileStoreInfosForUser(testUser)).thenReturn(testNfsFileStoreInfoList);
-    when(nfsManagerMock.getActiveFileSystemInfos()).thenReturn(testNfsFileSystemInfoList);
+    when(nfsManagerMock.getActiveFileSystemInfos(testUser)).thenReturn(testNfsFileSystemInfoList);
     controller.getNetFilesLoginView(model, principalStub);
 
     // filesystem json double-escaped (RSPAC-2360)
@@ -140,8 +142,10 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
   @Test
   public void testLoginToNfs() {
+    // before stubbing manager.loginToNfs the call returns NEED_LOG_IN_MSG
     String loginResult =
-        controller.loginToNfs(1L, "username", "password", "target_dir", request, principalStub);
+        controller.loginToNfs(
+            TEST_FILE_SYSTEM_ID, "username", "password", "target_dir", request, principalStub);
     assertEquals(NEED_LOG_IN_MSG, loginResult);
     when(nfsManagerMock.loginToNfs(
             eq(TEST_FILE_SYSTEM_ID),
@@ -208,6 +212,24 @@ public class NfsControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void loginToNfsWithJson_userNotOnReadAllowlistForNoneAuth_throwsAuthorizationException() {
+    // ACL check should fire before nfsManager.loginToNfs for NONE-auth filesystems
+    testNfsFileSystem.setAuthType(NfsAuthenticationType.NONE);
+    testNfsFileSystem.setReadAllowlist("someoneElse");
+    testNfsFileSystem.setWriteAllowlist(null);
+    controller.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
+
+    NfsController.NfsLoginData data =
+        new NfsController.NfsLoginData(TEST_FILE_SYSTEM_ID, "u", "p", null);
+    try {
+      controller.loginToNfsWithJson(data, request, principalStub);
+      org.junit.Assert.fail("expected AuthorizationException");
+    } catch (AuthorizationException expected) {
+      // expected
+    }
+  }
+
+  @Test
   public void getNfsFileStoreInfo() {
     AjaxReturnObject<NfsFileStoreInfo> fileStoreResp =
         controller.getNfsFileStoreInfo(TEST_FILE_STORE_ID);
@@ -219,6 +241,17 @@ public class NfsControllerTest extends SpringTransactionalTest {
     assertEquals(TEST_FILE_SYSTEM_ID, fileStoreInfo.getFileSystem().getId().longValue());
     assertEquals(TEST_FILE_SYSTEM_NAME, fileStoreInfo.getFileSystem().getName());
     assertEquals(TEST_FILE_SYSTEM_URL, fileStoreInfo.getFileSystem().getUrl());
+  }
+
+  @Test
+  public void prepareNfsFileForDownload_fileSystemDisabled_returnsDisabledMessage() {
+    // a disabled file system must surface a clear message rather than need.log.in
+    testNfsFileSystem.setDisabled(true);
+    String filePath = TEST_FILE_STORE_ID + ":someFile";
+
+    String result = controller.prepareNfsFileForDownload(filePath, null, request, principalStub);
+
+    assertEquals(getMsgFromResourceBundler("net.filestores.error.disabled"), result);
   }
 
   private void loginTestUserToTestFileSystem() {

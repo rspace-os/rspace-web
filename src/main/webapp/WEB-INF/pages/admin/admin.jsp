@@ -1,11 +1,11 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <fmt:bundle basename="bundles.admin.admin">
-<link rel="stylesheet" href="<c:url value='/scripts/bower_components/slick-carousel/slick/slick.css'/>" />
-<link rel="stylesheet" href="<c:url value='/styles/admin.css'/>" />
-<script src="<c:url value='/scripts/bower_components/slick-carousel/slick/slick.min.js'/>"></script>
-<script src="<c:url value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-<script src="<c:url value='/scripts/pages/admin.js'/>"></script>
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/admin.css'/>" />
+<script src="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
 
 <div class="separator"></div>
 <div id="menuScrollContainer">

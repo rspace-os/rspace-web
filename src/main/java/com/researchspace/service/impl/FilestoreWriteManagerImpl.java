@@ -12,6 +12,7 @@ import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.netfiles.ApiNfsCredentials;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
@@ -19,6 +20,7 @@ import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsManager;
 import java.io.IOException;
@@ -46,6 +48,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
   @Autowired @Setter private BaseRecordManager baseRecordManager;
   @Autowired @Setter private ExternalStorageManager externalStorageManager;
   @Autowired @Setter private GalleryFilestoresCredentialsStore credentialsStore;
+  @Autowired @Setter private FilestoreAclChecker aclChecker;
 
   @Override
   public UploadOutcome uploadToFilestore(
@@ -57,6 +60,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     Set<Long> recordIds = request.getRecordIds();
     NfsFileStore filestore = validateInputAndGetFilestore(recordIds, filestoreId, errors);
+    aclChecker.assertCanWrite(user, filestore.getFileSystem());
     WritableNfsClient writableClient =
         resolveWritableClient(user, filestore, request.getCredentials(), errors);
     String absolutePath = resolveAbsoluteFilestorePath(filestore);
@@ -138,6 +142,15 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     }
     throwBindExceptionIfErrors(errors);
 
+    // the transfer reads the source and writes the destination; the source is only modified
+    // when deleteSource is set, so it needs read access unless we are deleting from it.
+    if (request.isDeleteSource()) {
+      aclChecker.assertCanWrite(user, sourceFilestore.getFileSystem());
+    } else {
+      aclChecker.assertCanRead(user, sourceFilestore.getFileSystem());
+    }
+    aclChecker.assertCanWrite(user, destFilestore.getFileSystem());
+
     WritableNfsClient sourceClient = resolveWritableClient(user, sourceFilestore, null, errors);
     WritableNfsClient destClient = resolveWritableClient(user, destFilestore, null, errors);
 
@@ -206,7 +219,26 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     Set<EcatMediaFile> filesRetrieved = new LinkedHashSet<>();
     for (Long recordId : recordIds) {
       try {
-        filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
+        BaseRecord record = baseRecordManager.get(recordId, user);
+        if (record.isFolder()) {
+          errors.addError(
+              new ObjectError(
+                  "recordIds",
+                  new String[] {"gallery.filestore.folder.upload.rejected"},
+                  null,
+                  "Cannot move folders to filestores."));
+        } else if (record.isMediaRecord()) {
+          // baseRecordManager.get() bypasses READ permission for record IDs; re-fetch via
+          // retrieveMediaFile() which asserts the permission before returning the file.
+          filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
+        } else {
+          errors.addError(
+              new ObjectError(
+                  "recordIds",
+                  new String[] {"gallery.filestore.not.media.file"},
+                  null,
+                  "Only media files can be moved to filestores."));
+        }
       } catch (ObjectRetrievalFailureException ex) {
         errors.addError(new ObjectError("recordIds", ex.getMessage()));
       }

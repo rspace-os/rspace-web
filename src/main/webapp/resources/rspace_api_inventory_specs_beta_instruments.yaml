@@ -90,7 +90,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/ownedByParam'
         - $ref: '#/parameters/deletedItemsParam'
@@ -137,7 +137,7 @@ paths:
         `{ "name": "My Complex API Instrument #1", "description": "my description", "templateId": 2, "fields": [{ "content": "5.0" }, { "content": "2020-05-13" }, { "content": "a string"}, { "content": "<p>MyText content</p>" }, { "content": "https://www.researchspace.com" }, { "content": "SD12345" }, { "content": "description of an attached file" }, { "selectedOptions": ["option1"] }, { "selectedOptions": ["optionA"] }], "extraFields": [ { "name": "my instrument extra field", "type": "text", "content" :"extra instrument content (text)" } ] }` | Creates a complex Instrument based on a specific template (with id `2`) which contains 9 fields of various types. In order these are number, date, string, text, uri, reference, attachment, radio, choice.
 
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - in: body
           name: instrument
@@ -161,7 +161,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
       responses:
@@ -178,7 +178,22 @@ paths:
 
         Extra fields can be updated, added and deleted as part of the update action. To create a new extra field, include its definition with `newFieldRequest` set to `true`. To delete an extra field, include a `deleteFieldRequest` property set to `true`.
 
-        This endpoint requires `UPDATE` permission to the Instrument.
+        ## Moving the instrument
+
+        An instrument can be moved as part of the update by setting `parentContainers` (and, for
+        grid/image containers, `parentLocation`) directly on the body — there is no need to use
+        `newTargetLocation`. The first element of `parentContainers` is treated as the direct
+        target parent. If neither `parentContainers` nor `parentLocation` is provided the
+        instrument is not moved.
+
+        - For a `LIST`/workbench container only the parent container `id` is needed.
+        - For a `GRID` container provide the parent container `id` plus a `parentLocation` with
+          `coordX` / `coordY`.
+        - For an `IMAGE` (visual) container provide a `parentLocation` with the target location
+          `id` (the parent container is resolved from it).
+
+        This endpoint requires `UPDATE` permission to the Instrument (and to the target container
+        when moving).
 
         ## Examples of the request body
 
@@ -186,9 +201,13 @@ paths:
         | --- | --- |
         `{ "name": "new name", "description": "new description" }` | Updates instrument name and description.
         `{ "extraFields": [ { "id": 21, "content": "...updated" }, { "newFieldRequest": true, "name": "my field", "content": "new field" }, { "id": 22, "deleteFieldRequest": true } ] }` | Updates extra field 21, deletes extra field 22, and creates a new text extra field.
+        `{ "newTargetLocation": { "containerId": 46 } }` | (legacy form) Moves the instrument into the container with id 46, at the next available location.
+        `{ "parentContainers": [ { "id": 11 } ] }` | Moves the instrument into the LIST/workbench container with id 11.
+        `{ "parentContainers": [ { "id": 16 } ], "parentLocation": { "coordX": 2, "coordY": 3 } }` | Moves the instrument into the GRID container with id 16 at grid coordinate (2,3).
+        `{ "parentLocation": { "id": 21 } }` | Moves the instrument into the IMAGE/visual container location with id 21 (the parent container is inferred from the location).
 
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
         - $ref: '#/parameters/instrumentBodyParam'
@@ -211,7 +230,7 @@ paths:
         This action requires `UPDATE` permission to the Instrument.
 
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
       responses:
@@ -226,7 +245,7 @@ paths:
       description: |
         Restores a previously deleted instrument.
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
       responses:
@@ -248,7 +267,7 @@ paths:
       produces:
         - image/png
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
         - $ref: '#/parameters/timeStampParam'
@@ -266,7 +285,7 @@ paths:
       produces:
         - image/png
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
         - $ref: '#/parameters/timeStampParam'
@@ -280,7 +299,7 @@ paths:
     get:
       summary: Check if a given string is valid for naming a new Instrument
       tags:
-        - Instruments (not enabled)
+        - Instruments
       consumes:
         - text/plain
       parameters:
@@ -310,7 +329,7 @@ paths:
         `{ "owner": { "username": "newOwner" } }` | Changes owner of an instrument to newOwner (requires `CHANGE_OWNER` permission). |
 
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
         - $ref: '#/parameters/instrumentBodyParam'
@@ -335,7 +354,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
       responses:
@@ -343,6 +362,30 @@ paths:
           description: The new, duplicate instrument.
           schema:
             $ref: '#/definitions/Instrument'
+
+  '/instruments/{instrumentId}/actions/updateToLatestTemplateVersion':
+    post:
+      summary: Update an Instrument to match the latest version of its Instrument Template
+      description: |
+        If the Instrument Template used to create this Instrument has been updated since,
+        calling this endpoint applies those changes to this Instrument (e.g. adds newly
+        added template fields, renames existing fields). No-op if the instrument is already
+        on the latest template version. Returns the updated Instrument.
+
+        This action requires `UPDATE` permission to the Instrument.
+      produces:
+        - application/json
+      tags:
+        - Instruments
+      parameters:
+        - $ref: '#/parameters/instrumentIdParam'
+      responses:
+        '200':
+          description: The updated Instrument.
+          schema:
+            $ref: '#/definitions/Instrument'
+        '404':
+          $ref: '#/responses/NotFound'
 
   '/instruments/{instrumentId}/revisions':
     get:
@@ -352,7 +395,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
       responses:
@@ -367,7 +410,7 @@ paths:
       produces:
         - application/json
       tags:
-        - Instruments (not enabled)
+        - Instruments
       parameters:
         - $ref: '#/parameters/instrumentIdParam'
         - $ref: '#/parameters/revisionIdParam'
@@ -378,6 +421,317 @@ paths:
             $ref: '#/definitions/Instrument'
         '404':
           $ref: '#/responses/NotFound'
+
+  /instrumentTemplates:
+    get:
+      summary: List Instrument Templates visible to the current user
+      description: >
+        Provides a paginated list of Instrument Templates visible to the current user.
+
+        Instrument templates can be used to create Instruments with a pre-defined set of fields.
+        Distinguished from instances by `template=true`. The list can be limited to templates
+        belonging to a particular user by passing their username in the `ownedBy` parameter.
+      produces:
+        - application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/ownedByParam'
+        - $ref: '#/parameters/deletedItemsParam'
+        - $ref: '#/parameters/pageNumberParam'
+        - $ref: '#/parameters/pageSizeParam'
+        - $ref: '#/parameters/orderByParam'
+      responses:
+        '200':
+          description: A list of Instrument Templates.
+          schema:
+            title: InstrumentTemplate List Results
+            properties:
+              totalHits:
+                type: number
+              pageNumber:
+                type: number
+              templates:
+                $ref: '#/definitions/InstrumentTemplateList'
+              _links:
+                $ref: '#/definitions/LinkItemList'
+    post:
+      summary: Create a new Instrument Template
+      description: |
+        Create a new Instrument Template, supplying the field definitions.
+
+        ## Mandatory content
+        - `name` is required.
+
+        ## Fields
+        Zero or more fields can be defined. Each field is `{ "name": "...", "type": "...", "content": "..." }`,
+        or for choice/radio fields `{ "name": "...", "type": "radio", "definition": { "options": [...] } }`.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "name": "Microscope template" }` | Creates a basic template with no fields.
+        `{ "name": "Microscope template", "fields": [{"name":"Serial Number","type":"string"},{"name":"Calibration","type":"number"}] }` | Creates a template with two fields.
+
+      consumes:
+        - application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - name: template
+          in: body
+          description: An InstrumentTemplate definition with optional fields.
+          required: true
+          schema:
+            $ref: '#/definitions/InstrumentTemplatePost'
+      responses:
+        '201':
+          description: The newly created Instrument Template.
+          schema:
+            $ref: '#/definitions/InstrumentTemplate'
+
+  '/instrumentTemplates/{instrumentTemplateId}':
+    get:
+      summary: Retrieve an Instrument Template by ID
+      produces:
+        - application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+      responses:
+        '200':
+          description: Instrument Template definition
+          schema:
+            $ref: '#/definitions/InstrumentTemplate'
+        '404':
+          $ref: '#/responses/NotFound'
+    put:
+      summary: Update an Instrument Template
+      description: >
+        Updates properties of an existing Instrument Template and its fields. On a content change
+        the template's `version` is bumped, allowing instruments to track and update from older versions.
+
+        This action requires `UPDATE` permission to the template.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        
+        | --- | --- |
+        
+        `{ "name": "new name" }` | Updates the template name.
+        
+        `{ "fields": [ { "id": 21, "name": "newName", "content": "..." }, { "newFieldRequest": true, "name": "new field", "type": "string" }, { "id": 22, "deleteFieldRequest": true, "deleteFieldOnSampleUpdate": true } ] }` | Updates field 21, adds a new field, and deletes field 22 (with option to remove from pre-existing instruments).
+      
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - name: template
+          in: body
+          description: 'An InstrumentTemplate object'
+          required: true
+          schema:
+            $ref: '#/definitions/InstrumentTemplate'
+      responses:
+        '200':
+          description: Success - template is updated.
+        '404':
+          $ref: '#/responses/NotFound'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+    delete:
+      summary: Delete an Instrument Template
+      description: >
+        Marks an instrument template as deleted, so it won't appear in default listings.
+
+        This action requires `UPDATE` permission to the template.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+      responses:
+        '200':
+          description: Deleted Instrument Template object.
+          schema:
+            $ref: '#/definitions/InstrumentTemplate'
+
+  '/instrumentTemplates/{instrumentTemplateId}/restore':
+    put:
+      summary: Restore a deleted Instrument Template
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+      responses:
+        '200':
+          description: Success - instrument template is restored.
+        '404':
+          $ref: '#/responses/NotFound'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+
+  '/instrumentTemplates/{instrumentTemplateId}/versions/{version}':
+    get:
+      summary: Get a specific version of an Instrument Template
+      description: |
+        Each Instrument Template has a `version` property starting at 1, incremented on each content update.
+        Use this endpoint to retrieve a particular historical version. Returned object has `historicalVersion=true`,
+        a `globalId` carrying the version, and a populated `revisionId`.
+      produces:
+        - application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - $ref: '#/parameters/versionParam'
+      responses:
+        '200':
+          description: An Instrument Template at the requested historical version.
+          schema:
+            $ref: '#/definitions/InstrumentTemplate'
+        '404':
+          $ref: '#/responses/NotFound'
+
+  '/instrumentTemplates/{instrumentTemplateId}/image/{timestamp}':
+    get:
+      summary: Get the full image attached to the Instrument Template
+      produces:
+        - image/png, application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - $ref: '#/parameters/timeStampParam'
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+
+  '/instrumentTemplates/{instrumentTemplateId}/thumbnail/{timestamp}':
+    get:
+      summary: Get the thumbnail image attached to the Instrument Template
+      produces:
+        - image/png, application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - $ref: '#/parameters/timeStampParam'
+      responses:
+        '200':
+          description: File as bytes.
+          schema:
+            type: file
+
+  '/instrumentTemplates/{instrumentTemplateId}/icon':
+    post:
+      summary: Set or replace the display icon of an Instrument Template
+      description: |
+        Upload a display icon for the template; should be viewable at 96x96px.
+
+        This action requires `UPDATE` permission to the template.
+      produces:
+        - application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - name: file
+          in: formData
+          type: file
+          required: true
+      consumes:
+        - multipart/form-data
+      responses:
+        '201':
+          description: Updated InstrumentTemplate info with the new iconId.
+          schema:
+            $ref: '#/definitions/InstrumentTemplateInfo'
+
+  '/instrumentTemplates/{instrumentTemplateId}/icon/{iconId}':
+    get:
+      summary: Get the icon for an Instrument Template
+      produces:
+        - application/octet-stream
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - name: iconId
+          description: The id for the formIcon
+          type: integer
+          format: int64
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Icon bytes.
+          schema:
+            type: file
+
+  '/instrumentTemplates/{instrumentTemplateId}/actions/changeOwner':
+    put:
+      summary: Transfer the Instrument Template to a new owner
+      description: |
+        Updates the `owner` field of an existing Instrument Template. No other changes are processed.
+        Use `/instrumentTemplates/{instrumentTemplateId}` PUT to update other fields.
+
+        This action requires `CHANGE_OWNER` permission to the template.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "owner": { "username": "newOwner" } }` | Changes owner of the template to newOwner (requires `CHANGE_OWNER` permission). |
+
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+        - name: template
+          in: body
+          description: 'An InstrumentTemplate object'
+          required: true
+          schema:
+            $ref: '#/definitions/InstrumentTemplate'
+      responses:
+        '200':
+          description: Success - instrument template owner is updated.
+        '404':
+          $ref: '#/responses/NotFound'
+        '422':
+          $ref: '#/responses/UnprocessableQuery'
+        '500':
+          $ref: '#/responses/LicenseProblem'
+
+  '/instrumentTemplates/{instrumentTemplateId}/actions/updateInstrumentsToLatestTemplateVersion':
+    post:
+      summary: Update user's instruments created from the template to match its latest definition
+      description: |
+        Walks the current user's instruments that were created from this template at an older version and
+        applies the template's latest changes to each (e.g. add or rename fields). If updating a particular
+        instrument fails, it is skipped and the process continues.
+
+        Result contains the list of updated instruments and any errors encountered.
+
+        This action checks `UPDATE` permission to each instrument.
+      produces:
+        - application/json
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: '#/parameters/instrumentTemplateIdParam'
+      responses:
+        '200':
+          description: Success.
 
 
   /samples:
@@ -1344,7 +1698,7 @@ paths:
       description:
         Returns full image uploaded for the template.
       produces:
-        - image/png
+        - image/png, application/json
       tags:
         - Sample Templates
       parameters:
@@ -1362,7 +1716,7 @@ paths:
       description:
         Returns a reduced-size image uploaded for the template.
       produces:
-        - image/png
+        - image/png, application/json
       tags:
         - Sample Templates
       parameters:
@@ -1974,6 +2328,11 @@ paths:
           * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
           * `rowsCount`: number of data rows found in CSV file
 
+
+        ### Parsing instruments CSV file
+
+        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response object contains `templateInfo` (an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`), `fieldNameForColumnName`, `radioOptionsForColumn`, `columnNames`, `columnsWithoutBlankValue`, and `rowsCount`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
+
       produces:
         - application/json
       tags:
@@ -1991,6 +2350,7 @@ paths:
             - SAMPLES
             - SUBSAMPLES
             - CONTAINERS
+            - INSTRUMENTS
       consumes:
         - multipart/form-data
       responses:
@@ -2002,16 +2362,17 @@ paths:
       summary: Import Containers, Samples and SubSamples from CSV files
       description: >-
 
-        Allows import of up to three CSV files describing samples and/or subSamples and/or containers. Providing multiple files allows referencing rows in one file with rows in another file, e.g. saying that particular subSample from subSample CSV should be part of a particular samples from sample CSV file placed in a particular container from container CSV. If the files don't need to reference each other it may be easier to to import them separately.
+        Allows import of up to four CSV files describing samples and/or subSamples and/or containers and/or instruments. Providing multiple files allows referencing rows in one file with rows in another file, e.g. saying that particular subSample from subSample CSV should be part of a particular samples from sample CSV file placed in a particular container from container CSV. If the files don't need to reference each other it may be easier to to import them separately.
 
 
         `importSettings` must be a JSON object that contains settings for one or more imported csv file:
            * `containerSettings` for containers (skip if not importing containers)
            * `sampleSettings` for samples (skip if not importing samples)
            * `subSampleSettings` for subSamples (skip if not importing subSamples)
+           * `instrumentSettings` for instruments (skip if not importing instruments)
 
 
-        There is a limit on size of CSV files. By default CSVs can containe no more than 500 containers, 1000 samples or 2000 subSamples.
+        There is a limit on size of CSV files. By default CSVs can containe no more than 500 containers, 1000 samples, 2000 subSamples or 500 instruments.
 
 
         ## Containers import
@@ -2068,10 +2429,29 @@ paths:
         Created subSamples will be placed by default in a new container that is created on user's Bench during import. To put a subsample into one of the containers imported through containers CSV in the same import operation the subSample CSV column can be mapped to `parent container import id`, with values corresponding to values in containers CSV mapped to `import identifier`. To put a subsample into preexisting container put the global id of that container in subSample CSV column mapped to `parent container global id`.
 
 
+        ## Instrument import
+
+        Imports content of CSV file as instruments based on a newly created, or pre-existing, Instrument Template.
+
+
+        `instrumentSettings` must be a JSON object with following properties:
+           * `templateInfo` field containing either a full definition for a new Instrument Template (same shape as used by `POST /instrumentTemplates`, or returned by `/import/parseFile?recordType=INSTRUMENTS`), or with `id` property pointing to an existing Instrument Template that should be used. Alternatively, `templateId` can be set at the same level as `templateInfo` to reference an existing template directly.
+           * `fieldMappings` field that maps CSV columns to standard instrument fields (optional, apart from `name`), and marks CSV columns that should be ignored.
+
+
+        To map a CSV column name to a standard instrument field set a property of `fieldMappings` with the CSV column name as key and a value being one of: `name`, `description`, `tags`, `parent container global id`. To ignore a CSV column set the value to null.
+
+
+        The values from CSV columns not mentioned in `fieldMappings` will be imported into instrument fields defined by the template, in the order of the fields in the template. The number of CSV columns mapped into instrument fields has to exactly match the number of template fields.
+
+
+        Imported instruments are placed on the user's Workbench unless a `parent container global id` mapping is provided.
+
+
         ## Import results
 
         Import result object contains:
-          * `containerResults`, `sampleResults` and `subSampleResults` objects with details of container/sample/subsamples imports
+          * `containerResults`, `sampleResults`, `subSampleResults` and `instrumentResults` objects with details of container/sample/subsample/instrument imports
           * `status` property, which for successful import will be set to "COMPLETED".
 
         If any error occurs before/during import process, then all changes are reverted, i.e. nothing is created unless the import completes with status "COMPLETED".
@@ -2104,6 +2484,12 @@ paths:
         { "subSampleSettings": { "fieldMappings" : { "Name": "name", "Parent Sample Global Id": "parent sample global id", "Parent Container Global Id": "parent container global id" } } } |
         Import subSamples into pre-existing samples and containers.
 
+        { "instrumentSettings": { "templateInfo": { ... }, "fieldMappings" : { "Name": "name" } } } |
+        Import instruments using a brand-new Instrument Template inferred from the CSV.
+
+        { "instrumentSettings": { "templateInfo": { "id": 42 }, "fieldMappings" : { "Name": "name", "Lab": "description" } } } |
+        Import instruments based on pre-existing Instrument Template with id = 42, mapping `Lab` CSV column into the instrument `description`.
+
       produces:
         - application/json
       tags:
@@ -2116,6 +2502,9 @@ paths:
           in: formData
           type: file
         - name: subSamplesFile
+          in: formData
+          type: file
+        - name: instrumentsFile
           in: formData
           type: file
         - name: importSettings
@@ -2210,12 +2599,12 @@ paths:
 
   '/export':
     post:
-      summary: Export Containers, Samples and SubSamples as CSV files
+      summary: Export Containers, Samples, SubSamples, Instruments and Instrument Templates as CSV files
       description: >-
 
         `exportSettings` is a required parameter, which must be a JSON object containing one of the following properties:
-           * `globalIds` with an array of global ids of inventory items that should be included in export
-           * `users` with an array of usernames of users whose inventory items should be included in export
+           * `globalIds` with an array of global ids of inventory items that should be included in export. Supported prefixes: `IC` (Container), `SA` (Sample), `SS` (SubSample), `IT` (Sample Template), `IN` (Instrument), `NT` (Instrument Template), `LM` (List of Materials).
+           * `users` with an array of usernames of users whose inventory items should be included in export. The user's Instrument Templates are included alongside their samples, subsamples, containers and instruments.
 
 
         `exportSettings` may also contain optional properties:
@@ -2244,9 +2633,14 @@ paths:
         { "users": [ "user1a" ], "resultFileType": "SINGLE_CSV" } |
         Export data of all inventory items belonging to user1a with results put into single CSV file, rather than ZIP archive.
 
+        { "globalIds": [ "NT7" ] } |
+        Export a single Instrument Template (`NT7`). The resulting archive contains an `instrument_templates.csv` entry; the SINGLE_CSV mode emits the corresponding section in the combined output.
+
         ## Result
 
         Successful export action will return details of executed export task, including links to created archive file in `"_links"` property. The link for direct download through UI (assumes client has active web session) is marked with `"rel": "downloadLink"`. The link for download through API is marked as `"rel": "enclosure"`.
+
+        The ZIP archive can include the following CSV files depending on what was selected: `containers.csv`, `samples.csv`, `subSamples.csv`, `sample_templates.csv`, `instruments.csv`, `instrument_templates.csv`, `list_of_materials.csv`.
 
       produces:
         - application/json
@@ -3211,6 +3605,64 @@ definitions:
           extraFields:
             $ref: '#/definitions/ExtraFieldList'
 
+  InstrumentTemplateInfo:
+    description: Summary information about an Instrument Template.
+    allOf:
+      - $ref: '#/definitions/InstrumentInfo'
+      - properties:
+          type:
+            example: INSTRUMENT_TEMPLATE
+          template:
+            type: boolean
+            example: true
+            description: Always true for an Instrument Template.
+
+  InstrumentTemplateList:
+    description: List of Instrument Template summary objects
+    type: array
+    items:
+      $ref: '#/definitions/InstrumentTemplateInfo'
+
+  InstrumentTemplate:
+    description: Full information about an Inventory Instrument Template
+    allOf:
+      - $ref: '#/definitions/InstrumentTemplateInfo'
+      - properties:
+          fields:
+            $ref: '#/definitions/SampleFieldList'
+          extraFields:
+            $ref: '#/definitions/ExtraFieldList'
+          sharedWith:
+            $ref: '#/definitions/GroupShareInfoList'
+
+  InstrumentTemplatePost:
+    description: Definition of a new Instrument Template, including fields.
+    properties:
+      name:
+        type: string
+        description: A required display name for the template.
+        minLength: 1
+      description:
+        type: string
+      tags:
+        $ref: '#/definitions/TagList'
+      iconId:
+        type: integer
+        format: int64
+      fields:
+        $ref: '#/definitions/SampleFieldList'
+      extraFields:
+        $ref: '#/definitions/ExtraFieldList'
+    example:
+      name: Microscope template
+      description: A template for the lab's microscopes
+      tags: [ { "value": "microscope" } ]
+      fields:
+        - name: Serial Number
+          type: string
+        - name: Calibration
+          type: number
+
 
   ApiTagInfo:
     description: Information about an RSpace inventory Tag
@@ -3941,6 +4393,13 @@ parameters:
     format: int64
     required: true
     description: An identifier of the sample template.
+  instrumentTemplateIdParam:
+    name: instrumentTemplateId
+    in: path
+    type: integer
+    format: int64
+    required: true
+    description: An identifier of the instrument template.
   workbenchIdParam:
     name: workbenchId
     in: path

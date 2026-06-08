@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentEntityInfo;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
@@ -11,11 +13,13 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hibernate.Hibernate;
@@ -115,6 +119,54 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
         (ApiInstrument) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(instrument);
     result.setRevisionId(revisionId);
     result.setGlobalId(instrument.getOidWithVersion().toString());
+    return result;
+  }
+
+  @Override
+  public ApiInstrumentTemplate getApiInstrumentTemplateRevision(Long templateId, Long revisionId) {
+    InstrumentTemplate template =
+        getInventoryRecordRevision(InstrumentTemplate.class, templateId, revisionId);
+    if (template == null) {
+      return null;
+    }
+    initialiseInventoryRecordRelationships(template);
+    ApiInstrumentTemplate result =
+        (ApiInstrumentTemplate) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(template);
+    result.setRevisionId(revisionId);
+    result.setGlobalId(template.getOidWithVersion().toString());
+    return result;
+  }
+
+  @Override
+  public ApiInstrumentTemplate getApiInstrumentTemplateVersion(
+      InstrumentTemplate currTemplate, Long version) {
+    if (currTemplate.getVersion().equals(version)) {
+      return new ApiInstrumentTemplate(currTemplate);
+    }
+
+    List<ApiInventoryRecordRevision> templateRevisions =
+        getInventoryRecordRevisions(currTemplate).getRevisions();
+    List<ApiInventoryRecordRevision> versionRevisions =
+        templateRevisions.stream()
+            .filter(
+                recRev ->
+                    version.equals(((ApiInstrumentEntityInfo) recRev.getRecord()).getVersion()))
+            .collect(Collectors.toList());
+    if (versionRevisions.isEmpty()) {
+      throw new NotFoundException(
+          "No Instrument Template with id="
+              + currTemplate.getId()
+              + " and version="
+              + version
+              + " has been found");
+    }
+
+    Long lastRevisionForVersion = versionRevisions.get(versionRevisions.size() - 1).getRevisionId();
+    ApiInstrumentTemplate result =
+        getApiInstrumentTemplateRevision(currTemplate.getId(), lastRevisionForVersion);
+    if (result != null) {
+      result.setHistoricalVersion(true);
+    }
     return result;
   }
 

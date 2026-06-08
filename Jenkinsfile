@@ -31,20 +31,18 @@ pipeline {
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
 
-    // these are defined in Jenkins global tool configurations. The JDK is the one used to run the Jenkins build, it does
-    // not set the maven toolchain, this is set in the ./mvnw command line
-
     //tools {
-        // maven 'maven3.8.1'
-        // this is the JDK used to run maven itself
-        // the toolchain settings just affect compilation
-        //jdk 'OPEN-JDK-11'
-    //  }
+    //    // this is the JDK used to run maven itself
+    //    // the toolchain settings just affect compilation
+    //    jdk 'OPEN-JDK-17'
+    //}
 
     environment {
         BUILD_FAILURE_EMAIL_LIST = 'dev@researchspace.com'
         CI = 'true'
-        RS_FILE_BASE = "/var/lib/jenkins/userContent/${BRANCH_NAME}-filestore"
+        // BRANCH_NAME may contain '/' (e.g. feature/foo); sanitise before using it in filesystem paths or resource names
+        SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
+        RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
         AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
         APP_VERSION = readMavenPom().getVersion()
@@ -64,7 +62,7 @@ pipeline {
                 '''
                 echo 'Cleaning out filestore'
                 sh "rm -rf $RS_FILE_BASE"
-                sh "mkdir $RS_FILE_BASE"
+                sh "mkdir -p $RS_FILE_BASE"
                 echo "Workspace jenkins var is $WORKSPACE"
             }
         }
@@ -117,7 +115,7 @@ pipeline {
                     echo 'Installing npm packages'
                     sh 'node -v'
                     sh 'npx -y npm@11.14.1 -v'
-                    sh 'npx -y npm@11.14.1 ci --force'
+                    sh 'npx -y npm@11.14.1 ci'
                 }
             }
         }
@@ -287,7 +285,7 @@ pipeline {
             steps {
                 echo 'Building feature branch'
                 sh '''
-                ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                ./mvnw clean package -DgenerateReactDist -DskipTests=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                 -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -314,7 +312,7 @@ pipeline {
             steps {
                 echo "Building prodRelease .war package"
                  sh '''
-                 ./mvnw clean package -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
+                 ./mvnw clean package -DgenerateReactDist -DskipTests=true \
                 -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                 -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
@@ -348,7 +346,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'SERVER_NAME',
-                                        value: "$BRANCH_NAME-$BUILD_ID"
+                                        value: "$SAFE_BRANCH_NAME-$BUILD_ID"
                                 ],
                                 [
                                         $class: 'StringParameterValue',
@@ -363,7 +361,7 @@ pipeline {
                                 [
                                         $class: 'StringParameterValue',
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
-                                        value: "$WORKSPACE/${BRANCH_NAME}.properties"
+                                        value: "$WORKSPACE/${SAFE_BRANCH_NAME}.properties"
                                 ]
                         ],
                         wait: false
@@ -415,7 +413,7 @@ pipeline {
                 // this is to create a valid datbase name from the branch name
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
-                sh "./mvnw clean verify -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./mvnw clean verify -DgenerateReactDist -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
@@ -462,6 +460,30 @@ def branchToDbName (String name) {
         newname = newname.substring(0, 63)
     }
     return newname
+}
+
+// Replaces characters that are unsafe in filesystem paths or AWS/host resource names (notably '/') with '-',
+// keeping dots, underscores and hyphens, and appends a short hash of the original name so that distinct
+// branches that would otherwise collide (e.g. 'feature/foo' and 'feature-foo') stay unique.
+def branchNameHash (String name) {
+    byte[] digest = java.security.MessageDigest.getInstance('MD5')
+        .digest(name.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    StringBuilder hash = new StringBuilder()
+    for (byte b : digest) {
+        hash.append(String.format('%02x', b & 0xff))
+    }
+    return hash.substring(0, 8)
+}
+
+def branchToSafeName (String name) {
+    String hash = branchNameHash(name)
+    String newname = name.replaceAll('[^A-Za-z0-9._-]', '-')
+    String candidate = "${newname}-${hash}"
+    if (candidate.length() > 63) {
+        newname = newname.substring(0, 63 - 1 - hash.length())
+        candidate = "${newname}-${hash}"
+    }
+    return candidate
 }
 
 def notifySlack(String buildStatus = 'STARTED', String info = '') {

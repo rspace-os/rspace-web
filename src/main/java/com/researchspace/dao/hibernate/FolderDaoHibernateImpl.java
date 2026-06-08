@@ -62,6 +62,17 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   }
 
   @Override
+  public List<Folder> getParentFolders(Long childId) {
+    Query<Folder> q =
+        getSession()
+            .createQuery(
+                "SELECT rtf.folder FROM RecordToFolder rtf WHERE rtf.record.id = :childId",
+                Folder.class);
+    q.setParameter("childId", childId);
+    return q.list();
+  }
+
+  @Override
   public ISearchResults<TreeViewItem> getFolderListingForTreeView(
       Long folderId, PaginationCriteria<TreeViewItem> pgCrit) {
 
@@ -188,6 +199,20 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
         .setParameter("owner", u)
         .setParameter("rootMedia", "%" + RecordType.ROOT_MEDIA.name() + "%")
         .uniqueResult();
+  }
+
+  @Override
+  public List<Folder> getSubFolders(Folder rootFolder) {
+    Query<Folder> query =
+        getSession()
+            .createQuery(
+                "SELECT f FROM RecordToFolder rtf JOIN BaseRecord br ON rtf.record.id = br.id JOIN"
+                    + " Folder f ON br.id = f.id WHERE rtf.folder.id = :rootFolderId AND "
+                    + " br.deleted = false",
+                Folder.class)
+            .setParameter("rootFolderId", rootFolder.getId());
+    List<Folder> folders = query.list();
+    return folders;
   }
 
   @Override

@@ -330,4 +330,40 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
     error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertApiErrorContainsMessage(error, "resultFileType should be either 'ZIP' or 'SINGLE_CSV'");
   }
+
+  @Test
+  public void exportInstrumentTemplateAsCsv() throws Exception {
+    com.researchspace.api.v1.model.ApiInstrumentTemplate template =
+        createBasicInstrumentTemplateForUser(anyUser, "export-target-template");
+
+    String settingsJson =
+        "{ \"globalIds\": [ \""
+            + template.getGlobalId()
+            + "\"], \"resultFileType\": \"SINGLE_CSV\" }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/export"))
+                    .param("exportSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiJob job = getFromJsonResponseBody(result, ApiJob.class);
+    assertNotNull(job);
+    result = downloadExportedFileLinkInExportJobResult(job);
+
+    String exportContent = result.getResponse().getContentAsString();
+    assertNotNull(exportContent);
+    // the exporter emits its own comment header for instrument templates
+    assertTrue(
+        exportContent.contains("# Exported content: INSTRUMENT_TEMPLATES"),
+        "expected INSTRUMENT_TEMPLATES marker, got:\n" + exportContent);
+    // and the template's data row appears with its global id
+    assertTrue(
+        exportContent.contains(template.getGlobalId()),
+        "expected the template global id " + template.getGlobalId() + " in:\n" + exportContent);
+    assertTrue(
+        exportContent.contains("export-target-template"),
+        "expected the template name in:\n" + exportContent);
+  }
 }

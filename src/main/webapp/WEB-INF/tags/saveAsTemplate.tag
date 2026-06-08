@@ -1,7 +1,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ attribute name="structuredDocument" required="true" type="com.researchspace.model.record.StructuredDocument" %>
 
-<script src="<c:url value='/scripts/tags/saveAsTemplate.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/saveAsTemplate.js'/>"></script>
 
 <style>
     #saveAsTemplateNameDiv {
