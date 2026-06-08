@@ -11,6 +11,7 @@ import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
 import type { ResultType } from "../../../stores/definitions/Search";
 import { match } from "../../../util/Util";
+import BiotechIcon from "@mui/icons-material/Biotech";
 
 type TypeFilterArgs = {
   anchorEl: HTMLElement | null;
@@ -114,6 +115,25 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             />
           </ListItemIcon>
           <ListItemText primary="Subsamples" />
+        </MenuItem>
+        <MenuItem
+            selected={current === "INSTRUMENT"}
+            aria-current={current === "INSTRUMENT"}
+            onClick={() => {
+              onClose("INSTRUMENT");
+            }}
+            disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
+            data-test-id="instrumentType"
+        >
+          <ListItemIcon>
+            <BiotechIcon
+                sx={{
+                  fontSize: "1em",
+                  color: theme.palette.standardIcon.main,
+                }}
+            />
+          </ListItemIcon>
+          <ListItemText primary="Instruments" />
         </MenuItem>
         <MenuItem
           selected={current === "TEMPLATE"}

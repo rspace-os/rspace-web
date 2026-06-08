@@ -23,6 +23,7 @@ import useNavigateHelpers from "../../useNavigateHelpers";
 import CreateNew from "../CreateNew";
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
+import BiotechIcon from "@mui/icons-material/Biotech";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -220,6 +221,51 @@ const SampleNavItem = observer(
         onClick={() => {
           navigateToSearch({
             resultType: "SAMPLE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const InstrumentNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Instruments"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("INSTRUMENT")
+        }
+        icon={
+          <BiotechIcon
+            sx={{
+              fontSize: "1.2em",
+              color: theme.palette.standardIcon.main,
+            }}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT",
           });
         }}
       />
@@ -434,7 +480,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const sidebarRef = useLandmark("Navigation");
 
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
-    max: isSysAdmin ? 7 : 6,
+    max: isSysAdmin ? 8 : 7,
   });
 
   const afterClick = () => {
@@ -460,13 +506,14 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             <ContainersNavItem index={1} tabIndex={getTabIndex(1)} getRef={getRef} />
             <SampleNavItem index={2} tabIndex={getTabIndex(2)} getRef={getRef} />
             <SubsampleNavItem index={3} tabIndex={getTabIndex(3)} getRef={getRef} />
-            <TemplateNavItem index={4} tabIndex={getTabIndex(4)} getRef={getRef} />
-            <IgsnNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+            <InstrumentNavItem index={4} tabIndex={getTabIndex(4)} getRef={getRef} />
+            <TemplateNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+            <IgsnNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
           </List>
           <Divider />
           <List component="ul" aria-label="Other places and action">
-            <ExportNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
-            {isSysAdmin && <SettingsNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />}
+            <ExportNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
+            {isSysAdmin && <SettingsNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />}
           </List>
         </Box>
       </Box>

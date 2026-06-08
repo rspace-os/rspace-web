@@ -12,6 +12,7 @@ import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
 import type { RecordIconData } from "../stores/definitions/BaseRecord";
 import { toTitleCase } from "../util/Util";
 import CustomTooltip from "./CustomTooltip";
+import BiotechIcon from "@mui/icons-material/Biotech";
 
 type RecordTypeIconArgs = {
   record: RecordIconData;
@@ -47,6 +48,11 @@ export default function RecordTypeIcon({
     case "subsample":
       icon = (
         <FontAwesomeIcon size="1x" icon={faVials} color={color ?? theme.palette.record.subSample.fg} style={style} />
+      );
+      break;
+    case "instrument":
+      icon = (
+          <BiotechIcon sx={{ fontSize: "1em", color: color ?? theme.palette.record.instrument.fg }} style={style} />
       );
       break;
     case "template":

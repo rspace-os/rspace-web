@@ -33,7 +33,7 @@ export function parseDeletedItems(str: string): Result<DeletedItems> {
   return Result.first(parseString("EXCLUDE", str), parseString("INCLUDE", str), parseString("DELETED_ONLY", str));
 }
 
-export type ResultType = "ALL" | "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "TEMPLATE";
+export type ResultType = "ALL" | "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "TEMPLATE" | "INSTRUMENT";
 
 export function parseResultType(str: string): Result<ResultType> {
   return Result.first(
@@ -42,6 +42,7 @@ export function parseResultType(str: string): Result<ResultType> {
     parseString("SAMPLE", str),
     parseString("SUBSAMPLE", str),
     parseString("TEMPLATE", str),
+    parseString("INSTRUMENT", str),
   );
 }
 
@@ -125,7 +126,7 @@ export type UiConfig = {
   onlyAllowSelectingEmptyLocations: boolean;
 };
 
-export type PermalinkType = "sample" | "container" | "subsample" | "sampletemplate";
+export type PermalinkType = "sample" | "container" | "subsample" | "sampletemplate" | "instrument";
 export type Permalink = {
   type: PermalinkType;
   id: number;

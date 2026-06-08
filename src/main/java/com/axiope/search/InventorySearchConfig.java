@@ -20,7 +20,8 @@ public class InventorySearchConfig extends SearchConfig {
     SAMPLE,
     SUBSAMPLE,
     CONTAINER,
-    TEMPLATE
+    TEMPLATE,
+    INSTRUMENT
   }
 
   /** Strategy for including deleted items in inventory search results */

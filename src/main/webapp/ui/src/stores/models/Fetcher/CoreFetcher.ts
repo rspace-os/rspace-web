@@ -254,6 +254,7 @@ export default class CoreFetcher {
         [(t) => t === "container", "containers"],
         [(t) => t === "subsample", "subSamples"],
         [(t) => t === "sampletemplate", "sampleTemplates"],
+        [(t) => t === "instrument", "instruments"],
       ])(type);
       return;
     }
@@ -270,6 +271,9 @@ export default class CoreFetcher {
       }
       if (!this.query && this.resultType === "TEMPLATE") {
         this.endpoint = "sampleTemplates";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT") {
+        this.endpoint = "instruments";
       }
     }
   }
@@ -352,6 +356,7 @@ export default class CoreFetcher {
           subSamples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          instruments?: Array<Record<string, unknown> & { globalId: GlobalId }>;
         }>(endpoint, new URLSearchParams(omitNull(params) as Record<string, string>));
         const records = match<void, Array<Record<string, unknown> & { globalId: GlobalId }>>([
           [() => endpoint === "search", data.records as Array<Record<string, unknown> & { globalId: GlobalId }>],
@@ -361,6 +366,12 @@ export default class CoreFetcher {
           [
             () => endpoint === "sampleTemplates",
             data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instruments",
+            data.instruments as Array<
+                Record<string, unknown> & { globalId: GlobalId }
+            >,
           ],
         ])();
         runInAction(() => {
@@ -495,7 +506,9 @@ export default class CoreFetcher {
 
     params.pageNumber = 0;
 
-    return new URLSearchParams(omitDefault(omitNull(params)) as Record<string, string>);
+    return new URLSearchParams(
+      omitDefault(omitNull(params)) as Record<string, string>,
+    );
   }
 
   /*
