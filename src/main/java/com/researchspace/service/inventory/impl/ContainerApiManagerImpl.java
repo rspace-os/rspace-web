@@ -159,6 +159,12 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
   @Override
   public ApiContainer getApiContainerVersion(Long containerId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiContainerById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
     Container currentContainer = getIfExists(containerId);
     if (version.equals(currentContainer.getVersion())) {
       // as doGetContainer, but workbenches are versioned containers too, so no assertion

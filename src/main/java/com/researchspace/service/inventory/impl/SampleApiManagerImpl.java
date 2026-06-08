@@ -721,6 +721,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public ApiSample getApiSampleVersion(Long sampleId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiSampleById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
     Sample currentSample = getIfExists(sampleId);
     if (version.equals(currentSample.getVersion())) {
       return getApiSampleById(sampleId, user);

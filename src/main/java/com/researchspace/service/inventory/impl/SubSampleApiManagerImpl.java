@@ -115,6 +115,12 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
   @Override
   public ApiSubSample getApiSubSampleVersion(Long subSampleId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiSubSampleById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
     SubSample currentSubSample = getIfExists(subSampleId);
     if (version.equals(currentSubSample.getVersion())) {
       return getApiSubSampleById(subSampleId, user);

@@ -214,6 +214,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument getApiInstrumentVersion(Long instrumentId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiInstrumentById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
     Instrument currentInstrument = (Instrument) getIfExists(instrumentId);
     if (version.equals(currentInstrument.getVersion())) {
       return getApiInstrumentById(instrumentId, user);
