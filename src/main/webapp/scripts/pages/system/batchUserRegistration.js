@@ -57,7 +57,7 @@ $(document).ready(function() {
             open : function () {
                 // reset any previous selection and disable 'Upload' until a file is chosen
                 $('#csvFileInput').val('');
-                getUploadButton($(this)).prop('disabled', true);
+                setUploadButtonEnabled($(this), false);
             },
             buttons :{
                 Cancel: function (){
@@ -86,13 +86,20 @@ $(document).ready(function() {
 
     // enable the dialog 'Upload' button only once a file has been selected
     $(document).on('change', '#csvFileInput', function() {
-        var hasFile = this.files.length > 0;
-        getUploadButton($('#batchUploadUserDlg')).prop('disabled', !hasFile);
+        setUploadButtonEnabled($('#batchUploadUserDlg'), this.files.length > 0);
     });
 
     function getUploadButton($dialogContent) {
         return $dialogContent.dialog('widget')
             .find('.ui-dialog-buttonpane button:contains("Upload")');
+    }
+
+    // toggle both the native disabled state and jQuery UI's disabled styling so the
+    // button is visibly greyed out, not just inert
+    function setUploadButtonEnabled($dialogContent, enabled) {
+        getUploadButton($dialogContent)
+            .prop('disabled', !enabled)
+            .toggleClass('ui-state-disabled ui-button-disabled', !enabled);
     }
 
     function submitBatchCsvInput() {
