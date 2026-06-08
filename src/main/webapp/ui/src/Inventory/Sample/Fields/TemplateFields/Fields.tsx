@@ -14,6 +14,7 @@ import StringField from "../../../../components/Inputs/StringField";
 import TextField from "../../../../components/Inputs/TextField";
 import TimeField from "../../../../components/Inputs/TimeField";
 import UriField from "../../../../components/Inputs/UriField";
+import LinkFieldValue from "./LinkFieldValue";
 import { type Field } from "../../../../stores/definitions/Field";
 import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
@@ -320,6 +321,31 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                   (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
+            />
+          )}
+        />
+      );
+    }
+
+    if (field.type === "link") {
+      return (
+        <FormField
+          {...commonProps}
+          key={field.name}
+          value={field.link?.targetGlobalId ?? ""}
+          // ID is not used because there is no singular HTMLInputElement to attach it to
+          doNotAttachIdToLabel
+          renderInput={() => (
+            <LinkFieldValue
+              field={field}
+              sourceGlobalId={sample.globalId ?? ""}
+              disabled={!sample.isFieldEditable("fields")}
+              onChange={() =>
+                onErrorStateChange(
+                  `template_${field.name}`,
+                  (field.mandatory && !field.hasContent) || field.error,
+                )
+              }
             />
           )}
         />

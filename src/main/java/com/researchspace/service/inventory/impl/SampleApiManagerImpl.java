@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSample;
@@ -37,15 +38,19 @@ import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
+import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +59,8 @@ import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service("sampleApiManager")
@@ -67,6 +74,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
+  private @Autowired InventoryLinkManager inventoryLinkManager;
+  private @Autowired MessageSource messageSource;
 
   @Override
   public ApiSampleSearchResult getSamplesForUser(
@@ -321,11 +330,88 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       String newFieldContent = apiField.getContent();
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (inventoryEntityField.isOptionsStoringField()) {
+      if (inventoryEntityField instanceof InventoryLinkField) {
+        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+      } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else {
         inventoryEntityField.setFieldData(newFieldContent);
       }
+    }
+  }
+
+  /**
+   * Applies a sample's chosen link value to its structured link field. The link is created through
+   * the {@link InventoryLinkManager} (which parses the target and captures the Envers revision, the
+   * same path used by extra-field links); the chosen relation type must be permitted by the
+   * template field's allowed-relation-types whitelist (an empty whitelist permits all).
+   */
+  private boolean applyLinkFieldValue(
+      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    ApiInventoryLink apiLink = apiField.getLink();
+    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
+    if (target == null || target.trim().isEmpty()) {
+      if (field.getLink() == null) {
+        return false; // no link before, none requested now
+      }
+      field.setLink(null);
+      return true;
+    }
+    assertRelationAllowed(field, apiLink.getRelationType());
+    field.setLink(inventoryLinkManager.createLink(apiLink, user));
+    return true;
+  }
+
+  /**
+   * Applies link values to an existing sample's structured link fields (the update path). The DTO
+   * apply loop leaves link fields untouched because it cannot reach the service-layer {@link
+   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
+   */
+  private boolean applyLinkFieldValuesOnUpdate(
+      ApiSampleWithoutSubSamples apiSample, Sample dbSample, User user) {
+    if (apiSample.getFields() == null) {
+      return false;
+    }
+    boolean changed = false;
+    for (ApiInventoryEntityField apiField : apiSample.getFields()) {
+      if (apiField.isNewFieldRequest()
+          || apiField.isDeleteFieldRequest()
+          || apiField.getId() == null) {
+        continue;
+      }
+      Optional<InventoryEntityField> dbFieldOpt =
+          dbSample.getActiveFields().stream()
+              .filter(
+                  f ->
+                      f instanceof InventoryLinkField
+                          && java.util.Objects.equals(f.getId(), apiField.getId()))
+              .findFirst();
+      if (dbFieldOpt.isPresent()) {
+        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
+      }
+    }
+    return changed;
+  }
+
+  private void assertRelationAllowed(InventoryLinkField field, String relationType) {
+    // a chosen relation must be a real DataCite relation type, even when the whitelist is empty
+    if (!DataCiteRelationType.isValid(relationType)) {
+      throw new IllegalArgumentException(
+          messageSource.getMessage(
+              "errors.inventory.field.link.relationTypeInvalid",
+              new Object[] {relationType},
+              LocaleContextHolder.getLocale()));
+    }
+    String allowed = field.getAllowedRelationTypes();
+    if (allowed == null || allowed.trim().isEmpty()) {
+      return; // empty whitelist = all relation types allowed
+    }
+    if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
+      throw new IllegalArgumentException(
+          messageSource.getMessage(
+              "errors.inventory.field.link.relationTypeNotPermitted",
+              new Object[] {relationType, field.getName()},
+              LocaleContextHolder.getLocale()));
     }
   }
 
@@ -558,6 +644,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
         identifiersHelper.createAssignRequestedIdentifiers(
             apiSample.getIdentifiers(), dbSample, user);
     contentChanged |= apiSample.applyChangesToDatabaseSample(dbSample, user);
+    if (!dbSample.isTemplate()) {
+      contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, dbSample, user);
+    }
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);
     dbSample.refreshActiveFieldsAndColumnIndex();

@@ -152,6 +152,7 @@
         <mapping class="com.researchspace.model.inventory.field.InventoryUriField"/>
         <mapping class="com.researchspace.model.inventory.field.InventoryReferenceField"/>
         <mapping class="com.researchspace.model.inventory.field.InventoryAttachmentField"/>
+        <mapping class="com.researchspace.model.inventory.field.InventoryLinkField"/>
 
         <mapping class="com.researchspace.model.inventory.field.ExtraField"/>
         <mapping class="com.researchspace.model.inventory.field.ExtraNumberField"/>

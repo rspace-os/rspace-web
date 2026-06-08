@@ -145,4 +145,41 @@
     </addColumn>
   </changeSet>
 
+  <!--
+      ChangeSet 5: structured Link template field (InventoryLinkField, @DiscriminatorValue("link")).
+      Adds the single optional InventoryLink value (link_id, FK) and the pipe-delimited
+      allowed-relation-types whitelist (allowed_relation_types) to the single-table
+      InventoryEntityField hierarchy and its Envers _AUD table. Separate addColumn changeSet (new id)
+      so it applies to both existing dev DBs and fresh installs.
+  -->
+  <changeSet id="2026-06-04-rsdev1131-inventoryentityfield-link" context="run" author="nhanlon2">
+    <addColumn tableName="InventoryEntityField">
+      <column name="link_id" type="bigint">
+        <constraints nullable="true" unique="true" uniqueConstraintName="UC_InvEntityField_link_id"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="InventoryEntityField">
+      <column name="allowed_relation_types" type="varchar(1024)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="InventoryEntityField_AUD">
+      <column name="link_id" type="bigint">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="InventoryEntityField_AUD">
+      <column name="allowed_relation_types" type="varchar(1024)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+
+    <addForeignKeyConstraint
+      constraintName="FK_InvEntityField_to_InvLink"
+      baseTableName="InventoryEntityField"
+      baseColumnNames="link_id"
+      referencedTableName="InventoryLink"
+      referencedColumnNames="id"/>
+  </changeSet>
+
 </databaseChangeLog>

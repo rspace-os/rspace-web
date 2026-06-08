@@ -3,6 +3,7 @@ package com.researchspace.api.v1.model;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import org.springframework.stereotype.Component;
@@ -45,6 +46,14 @@ public class ApiFieldToModelFieldFactory {
         }
         radioDef.setRadioOptionsList(field.getDefinition().getOptions());
         toAdd = new InventoryRadioField(radioDef, field.getName());
+        break;
+      case LINK:
+        InventoryLinkField linkField = new InventoryLinkField();
+        linkField.setAllowedRelationTypes(
+            ApiInventoryEntityField.joinRelationTypes(field.getAllowedRelationTypes()));
+        // The optional default link target is created via the InventoryLinkManager write path
+        // (which captures the Envers revision); the stateless factory only sets the whitelist.
+        toAdd = linkField;
         break;
       default:
         throw new IllegalArgumentException(
