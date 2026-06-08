@@ -2,7 +2,6 @@ package com.researchspace.webapp.integrations.dsw;
 
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.EcatDocumentFile;
@@ -58,8 +57,7 @@ public class DSWClient {
   @Autowired private MediaManager mediaManager;
   @Autowired private DMPManager dmpManager;
 
-  private ObjectMapper mapper =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private ObjectMapper mapper = new ObjectMapper();
 
   public DSWClient() {
     this.restTemplate = new RestTemplate();
