@@ -204,7 +204,7 @@ export const IdentifierDataGrid = ({
             src={INSTITUTION_LOGO_ADDRESS}
             alt="Institution Logo"
             title="Institution Logo"
-            className={classes.institutionLogo}
+            style={{ maxHeight: "78px", maxWidth: "255px" }}
           />
         </Grid>
         <Grid>
