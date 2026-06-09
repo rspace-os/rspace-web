@@ -15,6 +15,11 @@ import SidebarBody from "../../MoreInfoSidebar/SidebarBody";
 export interface InventoryInfoDialogProps {
   open: boolean;
   globalId: string;
+  /**
+   * When set, load the historical snapshot at this user-facing version (via the
+   * /versions/{n} endpoint added in RSDEV-1141) rather than the live record.
+   */
+  versionPin?: number | null;
   onClose: () => void;
 }
 
@@ -26,12 +31,16 @@ const PREFIX_TO_PATH: Record<string, string> = {
   IT: "sampleTemplates",
 };
 
-function recordEndpoint(globalId: string): string | null {
+function recordEndpoint(
+  globalId: string,
+  versionPin?: number | null,
+): string | null {
   const match = GLOBAL_ID_PATTERN.exec(globalId);
   if (!match) return null;
   const segment = PREFIX_TO_PATH[match[1]];
   if (!segment) return null;
-  return `${segment}/${match[2]}`;
+  const base = `${segment}/${match[2]}`;
+  return versionPin == null ? base : `${base}/versions/${versionPin}`;
 }
 
 type State =
@@ -53,7 +62,7 @@ export default function InventoryInfoDialog(
 
   useEffect(() => {
     if (!props.open) return;
-    const endpoint = recordEndpoint(props.globalId);
+    const endpoint = recordEndpoint(props.globalId, props.versionPin);
     if (!endpoint) {
       setState({
         state: "fail",
@@ -73,7 +82,7 @@ export default function InventoryInfoDialog(
         setState({ state: "fail", error: e as Error });
       }
     })();
-  }, [props.open, props.globalId, factory]);
+  }, [props.open, props.globalId, props.versionPin, factory]);
 
   if (!props.open) return null;
   return (

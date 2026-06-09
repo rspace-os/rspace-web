@@ -91,4 +91,43 @@ describe("InventoryInfoDialog", () => {
     expect(body).toHaveAttribute("data-created", "2026-05-01T10:00:00Z");
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42");
   });
+
+  it("fetches the pinned version snapshot when versionPin is set", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockImplementation((url) => {
+      if (url === "samples/42/versions/3") {
+        return Promise.resolve({
+          data: {
+            id: 42,
+            globalId: "SA42",
+            type: "SAMPLE",
+            name: "A sample (v3)",
+            version: 3,
+            created: "2026-05-01T10:00:00Z",
+            lastModified: "2026-05-03T10:00:00Z",
+            extraFields: [],
+            subSamples: [],
+            quantity: { numericValue: 1, unitId: 3 },
+            permittedActions: ["READ"],
+          },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.reject(new Error("unexpected url " + String(url)));
+    });
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA42" versionPin={3} onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    const body = await screen.findByTestId("sidebar-body");
+    expect(body).toHaveAttribute("data-globalid", "SA42");
+    expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/versions/3");
+  });
 });

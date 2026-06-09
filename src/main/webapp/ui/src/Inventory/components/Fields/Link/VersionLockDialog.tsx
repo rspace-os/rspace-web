@@ -19,7 +19,7 @@ export interface VersionLockDialogProps {
    * Current versionPin on the link. null means "latest" (unpinned).
    */
   currentVersionPin: number | null;
-  /** Called with the chosen versionPin (revisionId) or null for latest. */
+  /** Called with the chosen versionPin (the user-facing version) or null for latest. */
   onConfirm: (versionPin: number | null) => void;
   onCancel: () => void;
 }
@@ -62,6 +62,9 @@ interface ApiRevisionEntry {
   revisionId: number;
   revisionType: string;
   record: {
+    // The user-facing version of the item at this audit revision. Several revisions can share
+    // one version (non-version-bumping edits), so callers must group by it, not by revisionId.
+    version?: number | null;
     lastModified?: string;
   };
 }
@@ -120,11 +123,22 @@ export default function VersionLockDialog(
           const { data } = await ApiService.get<ApiRevisionList>(
             `${parsed.inventoryPathSegment}/${parsed.id}/revisions`,
           );
-          return data.revisions.map((entry) => ({
-            version: entry.revisionId,
-            revisionId: entry.revisionId,
-            modificationDate: entry.record.lastModified ?? "",
-          }));
+          // Audit rows carry the user-facing record.version; non-version-bumping edits create
+          // several revisions sharing one version. Collapse to one row per version, keeping the
+          // newest revision of each, and pin the user-facing version (mirrors VersionHistory).
+          const byVersion = new Map<number, VersionRecord>();
+          for (const entry of [...data.revisions].sort(
+            (a, b) => a.revisionId - b.revisionId,
+          )) {
+            const version = entry.record.version;
+            if (version == null) continue;
+            byVersion.set(version, {
+              version,
+              revisionId: entry.revisionId,
+              modificationDate: entry.record.lastModified ?? "",
+            });
+          }
+          return [...byVersion.values()].sort((a, b) => b.version - a.version);
         }
         return [];
       } catch {

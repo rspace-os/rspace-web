@@ -6,9 +6,21 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
 vi.mock("../InventoryInfoDialog", () => ({
-  default: ({ open, globalId }: { open: boolean; globalId: string }) =>
+  default: ({
+    open,
+    globalId,
+    versionPin,
+  }: {
+    open: boolean;
+    globalId: string;
+    versionPin?: number | null;
+  }) =>
     open ? (
-      <div data-testid="inventory-info-dialog" data-globalid={globalId} />
+      <div
+        data-testid="inventory-info-dialog"
+        data-globalid={globalId}
+        data-version-pin={versionPin == null ? "" : String(versionPin)}
+      />
     ) : null,
 }));
 
@@ -191,22 +203,29 @@ describe("LinkField", () => {
     );
   });
 
-  it("disables Open in Inventory when versionPin is set, with an explanatory tooltip", async () => {
-    renderField({ link: { ...baseLink, versionPin: 7 } });
+  it("enables Open for a pinned inventory target and navigates to the versioned viewer", async () => {
+    const openSpy = vi.spyOn(window, "open").mockReturnValue(null);
+    const onOpen = vi.fn();
+    const user = userEvent.setup();
+    renderField({
+      link: { ...baseLink, targetGlobalId: "SA42", versionPin: 3 },
+      onOpen,
+    });
 
     const openButton = screen.getByRole("button", {
       name: /open in inventory/i,
     });
-    expect(openButton).toBeDisabled();
+    expect(openButton).toBeEnabled();
+    await user.click(openButton);
 
-    // tooltip is rendered into MUI's portal on hover; presence of the title
-    // text in the document is sufficient to confirm wiring
-    const user = userEvent.setup();
-    // eslint-disable-next-line testing-library/no-node-access -- a disabled button does not fire hover; hover its wrapping span instead
-    await user.hover(openButton.parentElement!);
-    expect(
-      await screen.findByText(/version-specific view is not yet supported/i),
-    ).toBeInTheDocument();
+    // pinned inventory opens the read-only versioned viewer (RSDEV-1141 route),
+    // not the live record, and does not fall back to the parent onOpen handler.
+    expect(openSpy).toHaveBeenCalledWith(
+      "/inventory/sample/42?version=3",
+      "_blank",
+    );
+    expect(onOpen).not.toHaveBeenCalled();
+    openSpy.mockRestore();
   });
 
   it("keeps Open in Inventory enabled when no versionPin is set", () => {
@@ -252,6 +271,18 @@ describe("LinkField", () => {
     const dialog = screen.getByTestId("inventory-info-dialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute("data-globalid", "SA42");
+  });
+
+  it("passes the link's versionPin to the inventory record-info dialog", async () => {
+    const user = userEvent.setup();
+    renderField({ link: { ...baseLink, targetGlobalId: "SA42", versionPin: 3 } });
+    await user.click(
+      screen.getByRole("button", { name: /show info for sa42/i }),
+    );
+    expect(screen.getByTestId("inventory-info-dialog")).toHaveAttribute(
+      "data-version-pin",
+      "3",
+    );
   });
 
   it("hides the version-pin clock for notebook (NB) targets even when editable", () => {

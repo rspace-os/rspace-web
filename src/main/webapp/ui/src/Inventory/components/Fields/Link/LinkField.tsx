@@ -7,7 +7,6 @@ import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import EditIcon from "@mui/icons-material/Edit";
@@ -23,6 +22,15 @@ import {
 import InventoryInfoDialog from "./InventoryInfoDialog";
 import EnElnRecordInfoDialog from "./EnElnRecordInfoDialog";
 import VersionLockDialog from "./VersionLockDialog";
+
+// Read-only versioned viewer route added in RSDEV-1141 (matches MoreInfoSidebar/VersionHistory's
+// `/inventory/{recordType}/{id}?version=N`). Keyed by inventory Global ID prefix.
+const INVENTORY_PREFIX_TO_ROUTE: Record<string, string> = {
+  SA: "sample",
+  SS: "subsample",
+  IC: "container",
+  IN: "instrument",
+};
 
 export interface LinkFieldProps {
   /** Field name (the user-supplied label of the ExtraLinkField row) */
@@ -44,12 +52,26 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
     props.link.versionPin != null ? `Pinned to v${props.link.versionPin}` : "Latest";
   const iconData = iconForGlobalId(props.link.targetGlobalId);
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
-  // The inventory revision viewer is still deferred, so opening a version-pinned
-  // inventory target is disabled. ELN targets (SD audit view, NB, GL) can always open.
-  const openDisabled = props.link.versionPin != null && targetIsInventory;
   const openLabel = targetIsInventory ? "Open in Inventory" : "Open";
   const [infoOpen, setInfoOpen] = useState(false);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+
+  const handleOpen = () => {
+    // A version-pinned inventory target opens the read-only versioned viewer (RSDEV-1141)
+    // rather than the live record; every other case defers to the parent open handler.
+    if (targetIsInventory && props.link.versionPin != null) {
+      const match = /^([A-Z]{2})(\d+)/.exec(props.link.targetGlobalId);
+      const routeType = match ? INVENTORY_PREFIX_TO_ROUTE[match[1]] : undefined;
+      if (match && routeType) {
+        window.open(
+          `/inventory/${routeType}/${match[2]}?version=${props.link.versionPin}`,
+          "_blank",
+        );
+        return;
+      }
+    }
+    props.onOpen();
+  };
   return (
     <Card variant="outlined" aria-label={`Link field ${props.name}`}>
       <CardActionArea onClick={props.onPeek} disabled={false}>
@@ -116,25 +138,14 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
       </CardActionArea>
       <CardActions>
         {!props.targetDeleted && (
-          <Tooltip
-            title={
-              openDisabled
-                ? "Version-specific view is not yet supported in Inventory; opening would show the latest version. Tracked in RSDEV-1131 follow-up."
-                : ""
-            }
+          <Button
+            size="small"
+            startIcon={<OpenInNewIcon />}
+            onClick={handleOpen}
+            aria-label={openLabel}
           >
-            <span>
-              <Button
-                size="small"
-                startIcon={<OpenInNewIcon />}
-                onClick={props.onOpen}
-                disabled={openDisabled}
-                aria-label={openLabel}
-              >
-                {openLabel}
-              </Button>
-            </span>
-          </Tooltip>
+            {openLabel}
+          </Button>
         )}
         {props.editable && (
           <Button
@@ -151,6 +162,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
         <InventoryInfoDialog
           open={infoOpen}
           globalId={props.link.targetGlobalId}
+          versionPin={props.link.versionPin}
           onClose={() => setInfoOpen(false)}
         />
       ) : (

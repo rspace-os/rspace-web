@@ -22,17 +22,33 @@ vi.mock("@/common/axios", () => ({
 
 import VersionLockDialog from "../VersionLockDialog";
 
+// The inventory /revisions endpoint returns Envers audit rows. Each carries the audit
+// `revisionId` AND the user-facing `record.version`. Non-version-bumping edits create several
+// revisions sharing one version (here revisions 10 and 11 are both version 1), so the picker
+// must collapse to one row per user-facing version and pin the version, not the revisionId.
 const revisionsResponse = {
   data: {
     revisions: [
+      {
+        revisionId: 10,
+        revisionType: "MOD",
+        record: {
+          id: 42,
+          globalId: "SA42",
+          name: "Sample foo",
+          version: 1,
+          lastModified: "2026-01-15T10:00:00Z",
+        },
+      },
       {
         revisionId: 11,
         revisionType: "MOD",
         record: {
           id: 42,
           globalId: "SA42",
-          name: "Sample foo",
-          lastModified: "2026-01-15T10:00:00Z",
+          name: "Sample foo edited",
+          version: 1,
+          lastModified: "2026-01-20T10:00:00Z",
         },
       },
       {
@@ -42,11 +58,12 @@ const revisionsResponse = {
           id: 42,
           globalId: "SA42",
           name: "Sample foo v2",
+          version: 2,
           lastModified: "2026-02-15T10:00:00Z",
         },
       },
     ],
-    revisionsCount: 2,
+    revisionsCount: 3,
   },
   status: 200,
   statusText: "OK",
@@ -107,17 +124,21 @@ describe("VersionLockDialog", () => {
     vi.clearAllMocks();
   });
 
-  it("fetches revisions from /samples/{id}/revisions and shows a row per revision", async () => {
+  it("shows one row per user-facing version, collapsing multiple revisions of the same version", async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
     const apiGet = InvApiService.get;
     vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
     renderDialog();
-    expect(await screen.findByText(/version 11/i)).toBeInTheDocument();
-    expect(await screen.findByText(/version 22/i)).toBeInTheDocument();
+    expect(await screen.findByText("Version 1")).toBeInTheDocument();
+    expect(await screen.findByText("Version 2")).toBeInTheDocument();
+    // the raw Envers revision ids must NOT be presented as versions
+    expect(screen.queryByText("Version 10")).not.toBeInTheDocument();
+    expect(screen.queryByText("Version 11")).not.toBeInTheDocument();
+    expect(screen.queryByText("Version 22")).not.toBeInTheDocument();
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/revisions");
   });
 
-  it("calls onConfirm with the chosen revisionId after the user selects a version", async () => {
+  it("calls onConfirm with the chosen user-facing version, not the audit revisionId", async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
     const apiGet = InvApiService.get;
     vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
@@ -125,11 +146,11 @@ describe("VersionLockDialog", () => {
     const user = userEvent.setup();
     renderDialog({ onConfirm });
 
-    const row = await screen.findByText(/version 22/i);
+    const row = await screen.findByText("Version 2");
     await user.click(row);
     await user.click(screen.getByRole("button", { name: /lock to selected/i }));
 
-    expect(onConfirm).toHaveBeenCalledWith(22);
+    expect(onConfirm).toHaveBeenCalledWith(2);
   });
 
   it("calls onConfirm with null when the user selects 'latest' after a pin was in place", async () => {
@@ -138,7 +159,7 @@ describe("VersionLockDialog", () => {
     vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
     const onConfirm = vi.fn();
     const user = userEvent.setup();
-    renderDialog({ onConfirm, currentVersionPin: 11 });
+    renderDialog({ onConfirm, currentVersionPin: 1 });
 
     const latestRow = await screen.findByText(/^latest$/i);
     await user.click(latestRow);
