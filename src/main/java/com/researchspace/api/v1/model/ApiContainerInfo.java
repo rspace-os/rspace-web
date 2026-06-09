@@ -55,6 +55,9 @@ import org.springframework.web.util.UriComponentsBuilder;
   "parentLocation",
   "lastNonWorkbenchParent",
   "lastMoveDate",
+  "revisionId",
+  "version",
+  "historicalVersion",
   "locationsCount",
   "contentSummary",
   "cType",
@@ -64,6 +67,15 @@ import org.springframework.web.util.UriComponentsBuilder;
   "_links"
 })
 public class ApiContainerInfo extends ApiInventoryRecordInfo {
+
+  @JsonProperty("revisionId")
+  private Long revisionId;
+
+  @JsonProperty("version")
+  private Long version;
+
+  @JsonProperty("historicalVersion")
+  private boolean historicalVersion;
 
   @JsonProperty("locationsCount")
   private Integer locationsCount;
@@ -171,6 +183,7 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
     if (container.getLastMoveDate() != null) {
       setLastMoveDateMillis(Date.from(container.getLastMoveDate()).getTime());
     }
+    setVersion(container.getVersion());
   }
 
   @Data

@@ -5,10 +5,13 @@ import com.researchspace.api.v1.ContainersApi;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiContainerSearchResult;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import java.io.IOException;
 import java.util.List;
 import javax.validation.Valid;
@@ -30,6 +33,7 @@ public class ContainersApiController extends BaseApiInventoryController implemen
 
   @Autowired private ContainerApiPostValidator apiContainerPostValidator;
   @Autowired private ContainerApiPutValidator apiContainerPutValidator;
+  @Autowired private InventoryAuditApiManager inventoryAuditMgr;
 
   @Data
   @AllArgsConstructor
@@ -213,5 +217,47 @@ public class ContainersApiController extends BaseApiInventoryController implemen
     ApiContainer copy = containerApiMgr.duplicate(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
+  }
+
+  @Override
+  public ApiInventoryRecordRevisionList getContainerAllRevisions(
+      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+
+    Container dbContainer = containerApiMgr.assertUserCanReadContainer(id, user);
+    ApiInventoryRecordRevisionList revisions =
+        inventoryAuditMgr.getInventoryRecordRevisions(dbContainer);
+    for (ApiInventoryRecordRevision containerRev : revisions.getRevisions()) {
+      buildAndAddInventoryRecordLinks(containerRev.getRecord());
+    }
+    return revisions;
+  }
+
+  @Override
+  public ApiContainer getContainerRevision(
+      @PathVariable Long id,
+      @PathVariable Long revisionId,
+      @RequestAttribute(name = "user") User user) {
+
+    containerApiMgr.assertUserCanReadContainer(id, user);
+    ApiContainer container = inventoryAuditMgr.getApiContainerRevision(id, revisionId);
+    if (container == null) {
+      throw new NotFoundException(createNotFoundMessage("Container revision", revisionId));
+    }
+    buildAndAddInventoryRecordLinks(container);
+    return container;
+  }
+
+  @Override
+  public ApiContainer getContainerVersion(
+      @PathVariable Long id,
+      @PathVariable Long version,
+      @RequestAttribute(name = "user") User user) {
+
+    ApiContainer container = containerApiMgr.getApiContainerVersion(id, version, user);
+    if (container == null) {
+      throw new NotFoundException(createNotFoundMessage("Container version", version));
+    }
+    buildAndAddInventoryRecordLinks(container);
+    return container;
   }
 }

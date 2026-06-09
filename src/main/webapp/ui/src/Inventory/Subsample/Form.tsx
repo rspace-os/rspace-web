@@ -22,6 +22,7 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
+import HistoricalVersionAlert from "../components/HistoricalVersionAlert";
 import Typography from "@mui/material/Typography";
 import { RecordLink } from "../components/RecordLink";
 import Source from "../Sample/Fields/Source";
@@ -230,7 +231,7 @@ const SampleFieldsSection = observer(
         </HeadingContext>
       </StepperPanel>
     );
-  }
+  },
 );
 
 type ExtaFieldSectionArgs = {
@@ -301,6 +302,11 @@ function SubSampleForm(): ReactNode {
 
   return (
     <Stepper
+      stickyAlert={
+        activeResult.historicalVersion ? (
+          <HistoricalVersionAlert record={activeResult} />
+        ) : null
+      }
       titleText={activeResult.name}
       resetScrollPosition={activeResult}
       factory={activeResult.factory}

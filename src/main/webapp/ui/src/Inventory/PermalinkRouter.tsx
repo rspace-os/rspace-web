@@ -43,12 +43,19 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
      * If the user has provided the Global Id where they are meant to provide
      * an Id, and it matches the passed `type` then we can correct their
      * mistake by dropping the type prefix from the Global Id and silently
-     * redirecting.
+     * redirecting. A versioned Global Id (e.g. SS4v1) carries the version in
+     * its suffix; surface it as the `version` search param rather than
+     * dropping it.
      */
     if (globalIdPatterns[recordType].test(id)) {
+      const versionSuffix = /v(\d+)$/i.exec(id);
+      if (versionSuffix) urlSearchParams.set("version", versionSuffix[1]);
       return (
         <Navigate
-          to={`/inventory/${type}/${id.slice(2)}?${urlSearchParams.toString()}`}
+          to={`/inventory/${type}/${parseInt(
+            id.slice(2),
+            10
+          )}?${urlSearchParams.toString()}`}
           replace={true}
         />
       );

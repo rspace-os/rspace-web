@@ -51,6 +51,14 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   ApiInstrument getApiInstrumentById(Long id, User user);
 
   /**
+   * Returns the instrument as it was at the given user-facing version, with outgoing fields
+   * (permitted actions etc.) populated against the live instrument. The current version is served
+   * as a regular live retrieval; older versions resolve to a read-only historical snapshot. Returns
+   * null if the version does not exist.
+   */
+  ApiInstrument getApiInstrumentVersion(Long instrumentId, Long version, User user);
+
+  /**
    * @returns ApiInstrumentTemplate with a given id
    */
   ApiInstrumentTemplate getApiInstrumentTemplateById(Long id, User user);

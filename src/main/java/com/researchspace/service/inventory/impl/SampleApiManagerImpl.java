@@ -709,7 +709,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       throw new IllegalArgumentException(
           String.format("Requested id (%d) points to the sample, not template", templateId));
     }
-    if (currentVersion.getVersion().equals(version)) {
+    if (version.equals(currentVersion.getVersion())) {
       return getApiSampleTemplateById(templateId, user);
     }
 
@@ -717,6 +717,45 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
         inventoryAuditMgr.getApiTemplateVersion(currentVersion, version);
     populateOutgoingApiSample(apiTemplateVersion, currentVersion, user);
     return apiTemplateVersion;
+  }
+
+  @Override
+  public ApiSample getApiSampleVersion(Long sampleId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiSampleById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
+    Sample currentSample = getIfExists(sampleId);
+    if (version.equals(currentSample.getVersion())) {
+      return getApiSampleById(sampleId, user);
+    }
+    // joins this transaction (REQUIRED propagation), so currentSample stays session-attached;
+    // historical reads intentionally publish no InventoryAccessEvent, matching the
+    // template-version precedent
+    ApiSample apiSampleVersion = inventoryAuditMgr.getApiSampleVersion(currentSample, version);
+    populateOutgoingHistoricalApiSample(apiSampleVersion, currentSample, user);
+    return apiSampleVersion;
+  }
+
+  /**
+   * As populateOutgoingApiSample, but for a historical snapshot: permissions are evaluated against
+   * the live sample, and the snapshot's subsample listing (which may differ from the live one)
+   * inherits the sample's permissions.
+   */
+  private void populateOutgoingHistoricalApiSample(
+      ApiSample apiSample, Sample currentSample, User user) {
+    if (apiSample == null) {
+      return;
+    }
+    setOtherFieldsForOutgoingApiInventoryRecord(apiSample, currentSample, user);
+    populateSharingPermissions(apiSample.getSharedWith(), currentSample);
+    if (apiSample.getSubSamples() != null) {
+      for (ApiSubSampleInfo apiSubSample : apiSample.getSubSamples()) {
+        setOtherFieldsForOutgoingApiInventoryRecord(apiSubSample, currentSample, user);
+      }
+    }
   }
 
   @Override

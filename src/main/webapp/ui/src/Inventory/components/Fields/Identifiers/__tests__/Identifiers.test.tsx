@@ -1,6 +1,6 @@
 import { test, describe, expect } from 'vitest';
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { mockIGSNIdentifier } from "./mocking";
 import { IdentifiersList } from "../Identifiers";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
@@ -35,6 +35,27 @@ describe("Identifiers section", () => {
         </ThemeProvider>
       );
       expect(container).toHaveTextContent("Material Sample");
+    });
+  });
+  describe("When viewing a historical version", () => {
+    test("Preview, Publish/Republish and Delete/Retract are all disabled", () => {
+      const historicalSample: InventoryRecord = makeMockSample({
+        version: 1,
+        historicalVersion: true,
+      });
+      historicalSample.identifiers = [mockIGSNIdentifier("sample")];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={historicalSample} />
+        </ThemeProvider>
+      );
+      expect(screen.getByRole("button", { name: /preview/i })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /republish|publish/i })
+      ).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /delete|retract/i })
+      ).toBeDisabled();
     });
   });
 });

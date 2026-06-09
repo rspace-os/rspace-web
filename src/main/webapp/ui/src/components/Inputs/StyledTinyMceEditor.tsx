@@ -1,42 +1,36 @@
-
-import tinymce, { RawEditorOptions } from "tinymce";
+import { type RawEditorOptions } from "tinymce";
 import React from "react";
 import { Editor } from "@tinymce/tinymce-react";
-import "tinymce/models/dom/model";
-// Theme
-import "tinymce/themes/silver";
-// Toolbar icons
-import "tinymce/icons/default";
-// Editor styles
-import "tinymce/skins/ui/oxide/skin.min.css";
-// importing plugin resources
-import "tinymce/plugins/autolink";
-import "tinymce/plugins/charmap";
-import "tinymce/plugins/link";
-import "tinymce/plugins/lists";
-import "tinymce/plugins/media";
-import "tinymce/plugins/quickbars";
-import "tinymce/plugins/autoresize";
 
 /*
- * This is an unfortunate hack, for which there doesn't seem to be a better
- * alternative. An attempt was made to have this code run as part of the shared
- * frontend build setup, thereby ensuring that no matter where tinymce is used
- * this setup is performed. However, this resulted in the tinymce widget simply
- * rendering as a blank region with no console errors. Not at all clear why,
- * and with little to help debug the underlying issue, this hack seems
- * necessary.
- * As such, be careful when using tinymce in other components directly to ensure
- * that they do not depend on this component being rendered on the page to
- * correctly do this setup and also be aware that there is the possibility of
- * race conditions where this component is used multiple times on the same page.
+ * The Inventory rich-text editor uses a self-hosted TinyMCE 8 build that is
+ * loaded lazily at runtime rather than bundled. `tinymceScriptSrc` points at
+ * the TinyMCE assets served from the build output under `/ui/dist/tinymce/`
+ * (see the `rspace:tinymce-assets` plugin in vite.config.ts, which serves them
+ * in dev and copies them into `dist` for production). The wrapper injects
+ * tinymce.min.js from there; TinyMCE then derives its base URL from that
+ * script's location and lazy-loads its model, theme, icons, skin and plugins
+ * from the same directory at editor-init time.
+ *
+ * This replaces an earlier approach that imported the model/theme/plugins as
+ * bundler side effects. Under the bundler those side effects did not reliably
+ * register the `dom` model, so TinyMCE fell back to fetching
+ * `models/dom/model.js` from a wrong base URL (a 404). Loading the build as
+ * served static files also keeps TinyMCE's minified skin CSS away from
+ * lightningcss, which rejects its `:nth-child(2of...)` selector.
+ *
+ * The legacy document/notebook editor uses a separate global TinyMCE 5 and is
+ * unaffected: TinyMCE 5 and 8 are never present on the same page.
+ *
+ * Cache-busting: the assets are served from a stable path, so a `?v=<version>`
+ * query (keyed on the bundled TinyMCE version, injected by Vite) is appended to
+ * invalidate browser/proxy caches on upgrade, matching RSpace's `?v=<token>`
+ * asset convention. The script src carries it for the main script, and
+ * `cache_suffix` makes TinyMCE append the same query to every resource it
+ * lazy-loads (model, theme, icons, skin, plugins).
  */
-declare global {
-  interface Window {
-    tinymce: typeof tinymce;
-  }
-}
-window.tinymce = tinymce;
+const TINYMCE_CACHE_SUFFIX = `?v=${__TINYMCE_VERSION__}`;
+const TINYMCE_SCRIPT_SRC = `/ui/dist/tinymce/tinymce.min.js${TINYMCE_CACHE_SUFFIX}`;
 
 const customStyles =
   `.mce-content-body {
@@ -57,8 +51,21 @@ export default function StyledTinyMceEditor({
 } & React.ComponentProps<typeof Editor>): React.ReactNode {
   return (
     <Editor
+      tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
+      /*
+       * TinyMCE 8 requires a license key for self-hosted deployments. RSpace
+       * self-hosts under the GPL with only open-source plugins, so the key is
+       * the literal "gpl". The @tinymce/tinymce-react integration owns
+       * `init.license_key`, so it is supplied via this prop.
+       * https://www.tiny.cloud/docs/tinymce/latest/license-key/
+       */
+      licenseKey="gpl"
       init={{
         ...init,
+
+        // Append the same cache-busting query to every resource TinyMCE
+        // lazy-loads (model, theme, icons, skin, plugins).
+        cache_suffix: TINYMCE_CACHE_SUFFIX,
 
         // see https://www.tiny.cloud/docs/tinymce/latest/autoresize/
         autoresize: true,
@@ -66,16 +73,15 @@ export default function StyledTinyMceEditor({
         max_height: 500,
 
         /*
-         * This uses the default tinymce blue, which is a bit
-         * darker than our primary blue. Unfortunately, the only way to change
-         * this seems to be by defining a custom skin, which doesn't seem worth
-         * it for such a small thing.
+         * This uses the default tinymce blue, which is a bit darker than our
+         * primary blue. Unfortunately, the only way to change this seems to be
+         * by defining a custom skin, which doesn't seem worth it for such a
+         * small thing.
          * https://www.tiny.cloud/docs/tinymce/latest/content-appearance/#using-highlight_on_focus-with-custom-skins
          */
         highlight_on_focus: true,
 
         branding: false,
-        skin: false,
         content_css: false,
         content_style: [init.content_style || "", customStyles].join("\n"),
       }}

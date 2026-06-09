@@ -47,6 +47,13 @@ public interface AuditDao {
   List<AuditedEntity<EcatMediaFile>> getRevisionsForMediaFileVersion(Long mediaId, Number version);
 
   /**
+   * Gets revisions carrying the given user-facing version of an audited inventory record, newest
+   * revision first.
+   */
+  <T> List<AuditedEntity<T>> getRevisionsForInventoryRecordVersion(
+      Class<T> cls, Long recordId, Number version);
+
+  /**
    * Retrieves a single revision for a specified document, or <code>null</code> if a document of
    * that revision could not be found.
    *

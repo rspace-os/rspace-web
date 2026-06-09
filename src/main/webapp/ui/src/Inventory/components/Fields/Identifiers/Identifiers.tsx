@@ -82,7 +82,7 @@ const IdentifierWrapper = observer(
 
     const handleUpdate = (
       f: IdentifierField,
-      value: unknown,
+      value: string | number,
     ) => {
       if (f.handler) f.handler(value);
       /* setAttributesDirty on item */
@@ -494,10 +494,13 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                       color="callToAction"
                       variant="outlined"
                       size="small"
-                      onClick={() => {
-                        void handlePreview(id);
-                      }}
-                      disabled={activeResult.state === "edit" || !id.isValid}
+                      onClick={() => void handlePreview(id)}
+                      disabled={
+                        activeResult.state === "edit" ||
+                        !id.isValid ||
+                        // the preview dialog contains a publish action
+                        Boolean(activeResult.historicalVersion)
+                      }
                     >
                       Preview
                     </Button>
@@ -506,7 +509,10 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                 <Grid>
                   <PublishButton
                     identifier={id}
-                    disabled={activeResult.state === "edit"}
+                    disabled={
+                      activeResult.state === "edit" ||
+                      Boolean(activeResult.historicalVersion)
+                    }
                   />
                 </Grid>
                 <Grid>
@@ -530,7 +536,8 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                       }
                       disabled={
                         activeResult.state === "edit" ||
-                        id.state === "registered"
+                        id.state === "registered" ||
+                        Boolean(activeResult.historicalVersion)
                       }
                     >
                       {id.state === "draft" ? "Delete" : "Retract"}
@@ -696,32 +703,34 @@ const IdentifiersCard = observer((): ReactNode => {
           This item has not been created yet. Please save the item first.
         </Alert>
       )}
-      {activeResult.state !== "create" && identifiers.length === 0 && (
-        <Stack direction="row" spacing={1}>
-          <Button
-            color="primary"
-            variant="outlined"
-            onClick={doNotAwait(() => activeResult.addIdentifier())}
-          >
-            Create new IGSN ID
-          </Button>
-          <Button
-            color="primary"
-            variant="outlined"
-            onClick={() => {
-              setAssignDialogOpen(true);
-              trackEvent("user:open:assign-existing-igsn-dialog");
-            }}
-          >
-            Link existing IGSN ID
-          </Button>
-          <AssignDialog
-            recordToAssignTo={activeResult}
-            open={assignDialogOpen}
-            onClose={() => setAssignDialogOpen(false)}
-          />
-        </Stack>
-      )}
+      {activeResult.state !== "create" &&
+        identifiers.length === 0 &&
+        !activeResult.historicalVersion && (
+          <Stack direction="row" spacing={1}>
+            <Button
+              color="primary"
+              variant="outlined"
+              onClick={doNotAwait(() => activeResult.addIdentifier())}
+            >
+              Create new IGSN ID
+            </Button>
+            <Button
+              color="primary"
+              variant="outlined"
+              onClick={() => {
+                setAssignDialogOpen(true);
+                trackEvent("user:open:assign-existing-igsn-dialog");
+              }}
+            >
+              Link existing IGSN ID
+            </Button>
+            <AssignDialog
+              recordToAssignTo={activeResult}
+              open={assignDialogOpen}
+              onClose={() => setAssignDialogOpen(false)}
+            />
+          </Stack>
+        )}
       {identifiers.length > 0 && (
         <Card variant="outlined">
           <IdentifiersList activeResult={activeResult} />
