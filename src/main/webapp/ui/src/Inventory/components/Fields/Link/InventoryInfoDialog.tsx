@@ -6,11 +6,14 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Skeleton from "@mui/material/Skeleton";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import ApiService from "../../../../common/InvApiService";
 import AlwaysNewFactory from "../../../../stores/models/Factory/AlwaysNewFactory";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
 import SidebarBody from "../../MoreInfoSidebar/SidebarBody";
+import { iconForInventoryGlobalId } from "./iconForGlobalId";
 
 export interface InventoryInfoDialogProps {
   open: boolean;
@@ -102,7 +105,30 @@ export default function InventoryInfoDialog(
           <Alert severity="error">{state.error.message}</Alert>
         )}
         {state.state === "success" && (
-          <SidebarBody record={state.record} factory={factory} />
+          <>
+            {props.versionPin != null && (
+              <Box
+                role="note"
+                sx={{
+                  border: "1px solid",
+                  borderColor: "warning.main",
+                  borderRadius: 1,
+                  p: 1,
+                  mb: 1,
+                }}
+              >
+                <Typography variant="body2">
+                  The information below describes{" "}
+                  <strong>version {props.versionPin}</strong> of a{" "}
+                  {iconForInventoryGlobalId(props.globalId)?.recordTypeLabel.toLowerCase() ??
+                    "record"}{" "}
+                  {props.globalId.replace(/v\d+$/, "")}, which may not be the latest
+                  version.
+                </Typography>
+              </Box>
+            )}
+            <SidebarBody record={state.record} factory={factory} />
+          </>
         )}
       </DialogContent>
       <DialogActions>

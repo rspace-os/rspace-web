@@ -130,4 +130,71 @@ describe("InventoryInfoDialog", () => {
     expect(body).toHaveAttribute("data-globalid", "SA42");
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/versions/3");
   });
+
+  it("shows a historic-version note (matching the ELN dialog) when versionPin is set", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockResolvedValue({
+      data: {
+        id: 42,
+        globalId: "SA42",
+        type: "SAMPLE",
+        name: "A sample (v1)",
+        version: 1,
+        created: "2026-05-01T10:00:00Z",
+        lastModified: "2026-05-01T10:00:00Z",
+        extraFields: [],
+        subSamples: [],
+        quantity: { numericValue: 1, unitId: 3 },
+        permittedActions: ["READ"],
+      },
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config: {},
+    } as AxiosResponse);
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA42" versionPin={1} onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    await screen.findByTestId("sidebar-body");
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "The information below describes version 1 of a sample SA42, which may not be the latest version.",
+    );
+  });
+
+  it("shows no historic-version note when the link is not pinned", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockResolvedValue({
+      data: {
+        id: 42,
+        globalId: "SA42",
+        type: "SAMPLE",
+        name: "A sample",
+        created: "2026-05-01T10:00:00Z",
+        lastModified: "2026-05-02T10:00:00Z",
+        extraFields: [],
+        subSamples: [],
+        quantity: { numericValue: 1, unitId: 3 },
+        permittedActions: ["READ"],
+      },
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config: {},
+    } as AxiosResponse);
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA42" onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    await screen.findByTestId("sidebar-body");
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
 });
