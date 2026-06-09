@@ -143,7 +143,7 @@
     "react-window-infinite-loader": "1.0.10",
     "react-zoom-pan-pinch": "3.7.0",
     "sockjs-client": "1.6.1",
-    "tinymce": "7.9.2",
+    "tinymce": "8.5.1",
     "valibot": "1.4.0"
   },
   "overrides": {
