@@ -41,7 +41,13 @@ function DMPAssistant({
   }, []);
 
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="DMP Assistant"
         explanatoryText="Portage Network's DMP Assistant — create and manage Data Management Plans in DMPRoadmap."
