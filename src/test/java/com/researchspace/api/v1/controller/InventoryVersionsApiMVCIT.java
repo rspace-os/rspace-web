@@ -21,6 +21,7 @@ import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.RSUnitDef;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
@@ -28,6 +29,8 @@ import org.springframework.test.web.servlet.MvcResult;
  * /{samples|subSamples|containers}/{id}/versions/{version} and the container revisions endpoints,
  * exercising real Envers auditing.
  */
+// instrument endpoints are gated behind this feature flag, off by default
+@TestPropertySource(properties = {"inventory.instrument.enabled=true"})
 public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
 
   @Before
@@ -266,13 +269,15 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(false, containerV2.isHistoricalVersion());
     assertNotNull(containerV2.getLocations());
 
-    // a missing revision is a clean 404, not a 200 null body
+    // a revision before this container existed is a clean 404, not a 200 null body.
+    // (Envers resolves a too-high revision number as-of the latest snapshot, so a
+    // revision predating creation is the deterministic missing-revision case.)
     this.mockMvc
         .perform(
             createBuilderForGet(
                 API_VERSION.ONE,
                 apiKey,
-                "/containers/" + container.getId() + "/revisions/999999999",
+                "/containers/" + container.getId() + "/revisions/" + (firstRevisionId - 1),
                 anyUser))
         .andExpect(status().isNotFound())
         .andReturn();
