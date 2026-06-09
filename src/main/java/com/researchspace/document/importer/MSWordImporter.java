@@ -11,7 +11,6 @@ import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -83,28 +82,6 @@ public class MSWordImporter implements ExternalFileImporter {
       IOUtils.copy(wordFile, tempFos);
       File tempOutfile = File.createTempFile("word", ".html", tempOutputFolder);
       return converter.convert(new ConvertibleFile(tempInputFile), "html", tempOutfile);
-    }
-  }
-
-  @Override
-  public BaseRecord replace(InputStream wordFile, User user, Long toReplaceID, String originalName)
-      throws IOException, DocumentAlreadyEditedException {
-    TempConverterData converted = doConversion(wordFile, originalName);
-    if (converted.result.isSuccessful()) {
-      File html =
-          FileUtils.listFiles(
-                  converted.tempFolder,
-                  FileFilterUtils.and(suffixFileFilter("html"), FileFilterUtils.fileFileFilter()),
-                  null)
-              .iterator()
-              .next();
-      return creator.replace(
-          toReplaceID,
-          new HTMLContentProvider(converted.tempFolder, html),
-          converted.origDocName,
-          user);
-    } else {
-      throw new IllegalStateException(converted.result.getErrorMsg());
     }
   }
 

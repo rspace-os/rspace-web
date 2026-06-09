@@ -3,7 +3,6 @@ package com.researchspace.document.importer;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.service.DocumentAlreadyEditedException;
 import java.io.IOException;
 
 /** Creates an RSpace document from a {@link ContentProvider}. */
@@ -28,18 +27,4 @@ public interface RSpaceDocumentCreator {
       String origDocName,
       User creator)
       throws IOException;
-
-  /**
-   * Replaces content of an existing document with content supplied from the {@link ContentProvider}
-   *
-   * @param toReplaceId the document with content to replace
-   * @param provider
-   * @param origDocName
-   * @param user
-   * @return the updated document
-   * @throws IOException
-   * @throws DocumentAlreadyEditedException
-   */
-  BaseRecord replace(Long toReplaceId, ContentProvider provider, String origDocName, User user)
-      throws IOException, DocumentAlreadyEditedException;
 }
