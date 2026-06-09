@@ -2,6 +2,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -57,10 +58,12 @@ public class ApiInventoryEntityField extends ApiField {
 
   /** Link field: the whitelist of permitted DataCite relation types. Empty/null means all. */
   @JsonProperty("allowedRelationTypes")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private List<String> allowedRelationTypes;
 
   /** Link field: the (optional) single link value (target + relation + version pin). */
   @JsonProperty("link")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private ApiInventoryLink link;
 
   @JsonProperty("mandatory")

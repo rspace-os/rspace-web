@@ -8,10 +8,11 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.MapBindingResult;
 
 /**
  * Unit tests for {@link ApiFieldsHelper#validateMandatoryFieldsForEntityPost} focused on the
@@ -41,7 +42,7 @@ public class ApiFieldsHelperTest {
     incoming.setType(ApiFieldType.LINK);
     incoming.setLink(apiLink);
 
-    Errors errors = new BeanPropertyBindingResult(new Object(), "sample");
+    Errors errors = new MapBindingResult(new HashMap<>(), "sample");
     helper.validateMandatoryFieldsForEntityPost(
         "sample",
         List.of(incoming),
@@ -57,7 +58,7 @@ public class ApiFieldsHelperTest {
     incoming.setType(ApiFieldType.LINK);
     // no link object provided
 
-    Errors errors = new BeanPropertyBindingResult(new Object(), "sample");
+    Errors errors = new MapBindingResult(new HashMap<>(), "sample");
     helper.validateMandatoryFieldsForEntityPost(
         "sample",
         List.of(incoming),

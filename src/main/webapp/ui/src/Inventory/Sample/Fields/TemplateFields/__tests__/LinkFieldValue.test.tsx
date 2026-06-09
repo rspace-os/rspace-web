@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@/__tests__/customQueries";
+import materialTheme from "@/theme";
 import LinkFieldValue from "../LinkFieldValue";
 import { type Field } from "@/stores/definitions/Field";
 
@@ -24,7 +26,7 @@ vi.mock("@/Inventory/components/Fields/Link/LinkField", () => ({
     link: { relationType: string; targetGlobalId: string };
     onEdit: () => void;
   }) => (
-    <div data-test-id="link-field-display">
+    <div data-testid="link-field-display">
       <span>{link.relationType}</span>
       <span>{link.targetGlobalId}</span>
       <button type="button" onClick={onEdit}>
@@ -46,17 +48,29 @@ function linkField(overrides: Partial<Field> = {}): Field {
   } as unknown as Field;
 }
 
+// The editor's Apply button uses the custom `callToAction` palette, so a theme is required.
+function renderField(props: {
+  field: Field;
+  sourceGlobalId: string;
+  disabled: boolean;
+  onChange: () => void;
+}) {
+  return render(
+    <ThemeProvider theme={materialTheme}>
+      <LinkFieldValue {...props} />
+    </ThemeProvider>,
+  );
+}
+
 describe("LinkFieldValue", () => {
   it("constrains the relationship type options to the field's allowed set", async () => {
     const user = userEvent.setup();
-    render(
-      <LinkFieldValue
-        field={linkField()}
-        sourceGlobalId="SA1"
-        disabled={false}
-        onChange={() => {}}
-      />,
-    );
+    renderField({
+      field: linkField(),
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
 
     await user.click(screen.getByRole("button", { name: /open/i }));
 
@@ -73,14 +87,12 @@ describe("LinkFieldValue", () => {
         versionPin: null,
       },
     });
-    render(
-      <LinkFieldValue
-        field={field}
-        sourceGlobalId="SA1"
-        disabled={false}
-        onChange={() => {}}
-      />,
-    );
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
 
     // a committed link renders via the shared LinkField card, not the inline editor
     expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
@@ -107,14 +119,12 @@ describe("LinkFieldValue", () => {
       },
       setAttributesDirty,
     });
-    render(
-      <LinkFieldValue
-        field={field}
-        sourceGlobalId="SA1"
-        disabled={false}
-        onChange={() => {}}
-      />,
-    );
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
     await user.click(screen.getByRole("button", { name: /open/i }));
@@ -141,14 +151,12 @@ describe("LinkFieldValue", () => {
       },
       setAttributesDirty,
     });
-    render(
-      <LinkFieldValue
-        field={field}
-        sourceGlobalId="SA10"
-        disabled={false}
-        onChange={() => {}}
-      />,
-    );
+    renderField({
+      field,
+      sourceGlobalId: "SA10",
+      disabled: false,
+      onChange: () => {},
+    });
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
     // re-pick a relation but keep the same (self) target -> must remain un-appliable
