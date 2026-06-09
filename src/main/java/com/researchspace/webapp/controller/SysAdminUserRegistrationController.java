@@ -103,17 +103,25 @@ public class SysAdminUserRegistrationController extends BaseController {
   @ResponseBody
   public ResponseEntity<UserImportResult> batchUploadParseCsvFile(MultipartFile xfile)
       throws IOException {
-    if (xfile == null || xfile.isEmpty()) {
-      UserImportResult noFileResult =
-          new UserImportResult(
-              new ArrayList<>(),
-              new ArrayList<>(),
-              new ArrayList<>(),
-              ErrorList.createErrListWithSingleMsg(
-                  getText("system.batchRegistration.upload.noFile")));
-      return ResponseEntity.badRequest().body(noFileResult);
+    if (xfile == null) {
+      // no file part in the request at all (e.g. a direct API call without the file)
+      return badRequestWithError("system.batchRegistration.upload.noFile");
+    }
+    if (xfile.isEmpty()) {
+      // a file was selected but it has no content
+      return badRequestWithError("system.batchRegistration.upload.emptyFile");
     }
     return ResponseEntity.ok(getImportResultsFromCSVInput(xfile.getInputStream()));
+  }
+
+  private ResponseEntity<UserImportResult> badRequestWithError(String messageKey) {
+    UserImportResult result =
+        new UserImportResult(
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            ErrorList.createErrListWithSingleMsg(getText(messageKey)));
+    return ResponseEntity.badRequest().body(result);
   }
 
   /**
