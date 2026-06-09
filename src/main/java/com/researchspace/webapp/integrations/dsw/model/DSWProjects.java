@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-@JsonIgnoreProperties({"page"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DSWProjects {
   @JsonProperty private ProjectsArr _embedded;
 
