@@ -39,6 +39,22 @@ function HistoricalVersionAlert({
         It is read-only.{" "}
         <Link
           href={latestUrl}
+          underline="always"
+          // accentedTheme (which wraps the Inventory views) overrides links
+          // inside an info Alert: MuiAlert.standardInfo repaints all typography
+          // the dark alert colour and the MuiAppBar block strips the underline
+          // (`text-decoration: unset !important`, replaced by a hover-only bar),
+          // both with higher specificity than a plain sx rule. Self-double the
+          // selector (`&&&`) to win the cascade and restore the standard
+          // Inventory link look: the theme's linkColor (exposed as
+          // primary.dark), bold, and a persistent underline.
+          sx={(theme) => ({
+            "&&&": {
+              color: `${theme.palette.primary.dark} !important`,
+              fontWeight: 700,
+              textDecoration: "underline !important",
+            },
+          })}
           onClick={(e: React.MouseEvent) => {
             e.preventDefault();
             navigate(latestUrl);

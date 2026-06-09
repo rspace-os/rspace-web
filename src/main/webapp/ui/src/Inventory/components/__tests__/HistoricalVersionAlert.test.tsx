@@ -66,6 +66,22 @@ describe("HistoricalVersionAlert", () => {
     );
   });
 
+  test("makes only the 'View the latest version' words an obvious underlined link", () => {
+    const subsample = makeMockSubSample({
+      version: 2,
+      historicalVersion: true,
+      globalId: "SS1v2",
+    });
+    render(<HistoricalVersionAlert record={subsample} />);
+
+    const link = screen.getByRole("link", { name: /view the latest version/i });
+    // only those words are the link, not the surrounding "It is read-only." text
+    expect(link).toHaveTextContent(/^View the latest version$/);
+    // rendered as an obvious, always-underlined link (consistent with other
+    // Inventory links), not plain text
+    expect(link.className).toMatch(/underlineAlways/);
+  });
+
   test("renders nothing for a live record", () => {
     const subsample = makeMockSubSample();
     const { container } = render(<HistoricalVersionAlert record={subsample} />);
