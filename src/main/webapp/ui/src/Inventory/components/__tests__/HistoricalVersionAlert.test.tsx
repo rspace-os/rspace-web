@@ -35,6 +35,37 @@ describe("HistoricalVersionAlert", () => {
     expect(link).toHaveAttribute("href", "/inventory/subsample/1");
   });
 
+  test("describes the version as read-only and drops the 'may not be the latest' hedge", () => {
+    // viewing the latest version's snapshot still shows this banner, so the old
+    // "may not be the latest version" wording was sometimes wrong (PR #831 review)
+    const subsample = makeMockSubSample({
+      version: 2,
+      historicalVersion: true,
+      globalId: "SS1v2",
+    });
+    render(<HistoricalVersionAlert record={subsample} />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("It is read-only.");
+    expect(alert).not.toHaveTextContent(/may not be the latest version/i);
+  });
+
+  test("renders the back-link with no orphaned full stop trailing it", () => {
+    const subsample = makeMockSubSample({
+      version: 2,
+      historicalVersion: true,
+      globalId: "SS1v2",
+    });
+    render(<HistoricalVersionAlert record={subsample} />);
+
+    const link = screen.getByRole("link", { name: /view the latest version/i });
+    expect(link).toHaveAttribute("href", "/inventory/subsample/1");
+    // the trailing full stop that orphaned onto its own line is gone (PR #831 review)
+    expect(screen.getByRole("alert")).not.toHaveTextContent(
+      /View the latest version\s*\./,
+    );
+  });
+
   test("renders nothing for a live record", () => {
     const subsample = makeMockSubSample();
     const { container } = render(<HistoricalVersionAlert record={subsample} />);

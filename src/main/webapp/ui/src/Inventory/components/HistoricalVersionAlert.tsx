@@ -35,8 +35,8 @@ function HistoricalVersionAlert({
       <AlertTitle>
         This is version {record.version} of the {typeLabel}.
       </AlertTitle>
-      <span>
-        It is shown read-only and may not be the latest version.{" "}
+      <div>
+        It is read-only.{" "}
         <Link
           href={latestUrl}
           onClick={(e: React.MouseEvent) => {
@@ -46,16 +46,12 @@ function HistoricalVersionAlert({
         >
           View the latest version
         </Link>
-        .
-      </span>
+      </div>
       {record instanceof ContainerModel && (
-        <>
-          {" "}
-          <span>
-            Contents are not part of the historical snapshot, so they are not
-            shown.
-          </span>
-        </>
+        <div>
+          Contents are not part of the historical snapshot, so they are not
+          shown.
+        </div>
       )}
     </Alert>
   );

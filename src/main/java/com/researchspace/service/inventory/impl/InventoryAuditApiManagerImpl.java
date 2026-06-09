@@ -19,8 +19,11 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.hibernate.Hibernate;
@@ -31,6 +34,7 @@ import org.springframework.stereotype.Service;
 public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
 
   protected @Autowired AuditManager auditManager;
+  protected @Autowired UserManager userManager;
 
   @Override
   public ApiInventoryRecordRevisionList getInventoryRecordRevisions(InventoryRecord currentInvRec) {
@@ -38,6 +42,8 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
     Class<?> cls = currentInvRec.getClass();
     List<?> entityRevisions = auditManager.getRevisionsForEntity(cls, currentInvRec.getId());
 
+    // memo so a record edited many times by the same user resolves that user's full name once
+    Map<String, String> fullNameByUsername = new HashMap<>();
     ApiInventoryRecordRevisionList apiRevisions = new ApiInventoryRecordRevisionList();
     for (Object entityRevision : entityRevisions) {
       AuditedEntity<?> auditedEntity = (AuditedEntity<?>) entityRevision;
@@ -48,6 +54,13 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       long revisionId = auditedEntity.getRevision().longValue();
       ApiInventoryRecordInfo apiInvRec = ApiInventoryRecordInfo.fromInventoryRecord(invRec);
       apiInvRec.setRevisionId(revisionId);
+      // fromInventoryRecord only knows the username; the version-history "By" column needs the
+      // full name, resolved the same way as the live (non-revision) record path
+      String modifiedBy = apiInvRec.getModifiedBy();
+      if (modifiedBy != null) {
+        apiInvRec.setModifiedByFullName(
+            fullNameByUsername.computeIfAbsent(modifiedBy, userManager::getFullNameByUsername));
+      }
       ApiInventoryRecordRevision apiRevision =
           new ApiInventoryRecordRevision(
               apiInvRec, revisionId, auditedEntity.getRevisionTypeString());

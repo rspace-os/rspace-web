@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
@@ -20,26 +23,69 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
- * Pure unit tests for the user-version lookup methods of {@link InventoryAuditApiManagerImpl}, with
- * a mocked {@link AuditManager}. Envers-backed behaviour is covered by the IT.
+ * Pure unit tests for {@link InventoryAuditApiManagerImpl} (user-version lookups and the revisions
+ * list), with a mocked {@link AuditManager} and {@link UserManager}. Envers-backed behaviour is
+ * covered by the IT.
  */
 public class InventoryAuditApiManagerVersionTest {
 
   private final AuditManager auditManager = Mockito.mock(AuditManager.class);
+  private final UserManager userManager = Mockito.mock(UserManager.class);
   private final InventoryAuditApiManagerImpl mgr = new InventoryAuditApiManagerImpl();
   private final User user = TestFactory.createAnyUser("versionLookupUser");
 
   @BeforeEach
   public void setUp() {
     mgr.auditManager = auditManager;
+    mgr.userManager = userManager;
+  }
+
+  @Test
+  public void revisionsListPopulatesModifiedByFullName() {
+    // the version-history dialog shows a "By" column, so each revision must carry the
+    // editor's full name; fromInventoryRecord() only knows the username
+    Sample current = sampleWithVersion(42L, 2L);
+    Sample v1 = sampleWithVersion(42L, 1L);
+    v1.setModifiedBy("alice");
+    when(auditManager.getRevisionsForEntity(Sample.class, 42L))
+        .thenReturn(List.of(new AuditedEntity<>(v1, 100L)));
+    when(userManager.getFullNameByUsername("alice")).thenReturn("Alice Smith");
+
+    ApiInventoryRecordRevisionList result = mgr.getInventoryRecordRevisions(current);
+
+    assertEquals(1, result.getRevisions().size());
+    assertEquals("Alice Smith", result.getRevisions().get(0).getRecord().getModifiedByFullName());
+  }
+
+  @Test
+  public void revisionsListResolvesEachAuthorFullNameOnce() {
+    Sample current = sampleWithVersion(42L, 3L);
+    Sample v1 = sampleWithVersion(42L, 1L);
+    v1.setModifiedBy("alice");
+    Sample v2 = sampleWithVersion(42L, 2L);
+    v2.setModifiedBy("alice");
+    when(auditManager.getRevisionsForEntity(Sample.class, 42L))
+        .thenReturn(List.of(new AuditedEntity<>(v1, 100L), new AuditedEntity<>(v2, 200L)));
+    when(userManager.getFullNameByUsername("alice")).thenReturn("Alice Smith");
+
+    ApiInventoryRecordRevisionList result = mgr.getInventoryRecordRevisions(current);
+
+    assertEquals(2, result.getRevisions().size());
+    result
+        .getRevisions()
+        .forEach(rev -> assertEquals("Alice Smith", rev.getRecord().getModifiedByFullName()));
+    // repeated authors are resolved once: this endpoint is hot on heavily edited items
+    verify(userManager, times(1)).getFullNameByUsername("alice");
   }
 
   @Test
