@@ -69,6 +69,7 @@ function printSettingsList() {
 
     _printCategory('Data Management Plans');
     _printSettings([ 'argos.available' ]);
+    _printSettings([ 'dmpassistant.available' ]);
     _printSettings([ 'dmponline.available' ]);
     _printSettings([ 'dmptool.available' ]);
     _printSettings([ 'dsw.available' ]);

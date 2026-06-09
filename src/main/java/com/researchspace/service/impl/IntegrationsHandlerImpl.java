@@ -181,6 +181,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DMPTOOL_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, DMPTOOL_APP_NAME);
         return;
+      case DMPASSISTANT_APP_NAME:
+        setSingleOAuthConnectionStatus(info, user, DMPASSISTANT_APP_NAME);
+        return;
       case OWNCLOUD_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, OWNCLOUD_APP_NAME);
         return;
@@ -491,6 +494,11 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   protected void saveNewUserConnectionForMultipleOptionApp(
       String token, User user, String appName, String discriminant) {
+    if (MASKED_TOKEN.equals(token)) {
+      // UI re-posted the masked sentinel (read-time placeholder) — preserve the existing
+      // token. With no existing connection there is nothing to persist.
+      return;
+    }
     Optional<UserConnection> existingConnection =
         userConnManager.findByUserNameProviderName(user.getUsername(), appName, discriminant);
     UserConnection conn = existingConnection.orElse(new UserConnection());
@@ -668,6 +676,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case EGNYTE_APP_NAME:
       case PROTOCOLS_IO_APP_NAME:
       case DMPTOOL_APP_NAME:
+      case DMPASSISTANT_APP_NAME:
       case PYRAT_APP_NAME:
         return true;
     }

@@ -1,10 +1,14 @@
-import { test, describe, expect } from 'vitest';
+import { test, describe, expect, vi } from 'vitest';
 import React, { useEffect } from "react";
-import { render } from "@testing-library/react";
-import { useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
+import { render, waitFor } from "@testing-library/react";
+import {
+  useIntegrationsEndpoint,
+  type IntegrationStates,
+} from "../useIntegrationsEndpoint";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";
+import allIntegrationsAreDisabled from "./allIntegrationsAreDisabled.json";
 
 import "@/__tests__/__mocks__/matchMedia";
 describe("useIntegrationsEndpoint", () => {
@@ -32,6 +36,83 @@ describe("useIntegrationsEndpoint", () => {
       );
       expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("1");
       expect(JSON.parse(mockAxios.history.post[0].data).foo).toBe("bar");
+    });
+  });
+
+  describe("DMPASSISTANT", () => {
+    test("allIntegrations decodes options.ACCESS_TOKEN into credentials.ACCESS_TOKEN", async () => {
+      const mockAxios = new MockAdapter(axios);
+      const data = {
+        ...allIntegrationsAreDisabled.data,
+        DMPASSISTANT: {
+          ...allIntegrationsAreDisabled.data.DMPASSISTANT,
+          options: { ACCESS_TOKEN: "abc123" },
+        },
+      };
+      mockAxios
+        .onGet("integration/allIntegrations")
+        .reply(200, { success: true, data, error: null });
+      const onSuccess = vi.fn<(states: IntegrationStates) => void>();
+
+      function Wrapper() {
+        const { allIntegrations } = useIntegrationsEndpoint();
+        useEffect(() => {
+          void allIntegrations().then(onSuccess);
+        }, []);
+        return <></>;
+      }
+      render(<Wrapper />);
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      const states = onSuccess.mock.calls[0][0];
+      expect(states.DMPASSISTANT.credentials.ACCESS_TOKEN.isPresent()).toBe(
+        true
+      );
+      expect(states.DMPASSISTANT.credentials.ACCESS_TOKEN.orElse("")).toBe(
+        "abc123"
+      );
+    });
+
+    function UpdateWrapper({ token }: { token: Optional<string> }) {
+      const { update } = useIntegrationsEndpoint();
+      useEffect(() => {
+        void update("DMPASSISTANT", {
+          mode: "DISABLED",
+          credentials: { ACCESS_TOKEN: token },
+        }).catch(() => {});
+      }, []);
+      return <></>;
+    }
+
+    test("update encodes a present ACCESS_TOKEN into options", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onPost("integration/update").reply(500);
+
+      render(<UpdateWrapper token={Optional.present("tok")} />);
+
+      await waitFor(() => expect(mockAxios.history.post.length).toBe(1));
+      const posted = JSON.parse(mockAxios.history.post[0].data as string) as {
+        name: string;
+        options: object;
+      };
+      expect(posted.name).toBe("DMPASSISTANT");
+      expect(posted.options).toEqual({ ACCESS_TOKEN: "tok" });
+    });
+
+    test("update encodes an absent ACCESS_TOKEN as empty options", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onPost("integration/update").reply(500);
+
+      render(<UpdateWrapper token={Optional.empty()} />);
+
+      await waitFor(() => expect(mockAxios.history.post.length).toBe(1));
+      const posted = JSON.parse(mockAxios.history.post[0].data as string) as {
+        name: string;
+        options: object;
+      };
+      expect(posted.name).toBe("DMPASSISTANT");
+      // must not post a blank token that would overwrite the stored one
+      expect(posted.options).toEqual({});
     });
   });
 });

@@ -1,7 +1,9 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.service.IntegrationsHandler.ACCESS_TOKEN_SETTING;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
+import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
@@ -10,6 +12,7 @@ import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.SystemPropertyName.BOX_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.DIGITAL_COMMON_DATA_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.DMPASSISTANT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.DROPBOX_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.PYRAT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.SLACK_AVAILABLE;
@@ -358,6 +361,28 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
+  public void getDmpAssistantOAuthStatus() {
+    SystemPropertyValue dmpAssistantAvailable =
+        getSystemPropertyValueAllowed(DMPASSISTANT_AVAILABLE);
+
+    UserConnection userConn = new UserConnection();
+    userConn.setAccessToken("<ACCESS_TOKEN>");
+
+    when(sysPropMgr.findByName(DMPASSISTANT_AVAILABLE)).thenReturn(dmpAssistantAvailable);
+    when(userConnectionManager.findByUserNameProviderName(anyString(), eq(DMPASSISTANT_APP_NAME)))
+        .thenReturn(Optional.of(userConn));
+
+    IntegrationInfo info = handler.getIntegration(subject, DMPASSISTANT_APP_NAME);
+    assertEquals(DMPASSISTANT_APP_NAME, info.getName());
+    assertTrue(info.isOauthConnected());
+    Map<String, Object> options = info.getOptions();
+    assertNotNull(options);
+    assertEquals(1, options.size());
+    // the real token must never be surfaced to the Apps page; only the masked sentinel
+    assertEquals(MASKED_TOKEN, options.get(ACCESS_TOKEN_SETTING));
+  }
+
+  @Test
   public void getPyratIntegrationOptions() {
     SystemPropertyValue pyratDataAvailable = getSystemPropertyValueAllowed(PYRAT_AVAILABLE);
 
@@ -475,7 +500,7 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(0))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(1)).save(any());
+    Mockito.verify(userConnectionManager, times(0)).save(any());
   }
 
   @Test

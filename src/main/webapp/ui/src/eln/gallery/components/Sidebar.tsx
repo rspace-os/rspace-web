@@ -17,6 +17,7 @@ import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
 import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentMenuItem";
+import DMPAssistantAccentMenuItem from "../../../eln-dmp-integration/DMPAssistant/DMPAssistantAccentMenuItem";
 import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
 import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
@@ -399,6 +400,9 @@ const DmpMenuSection = ({
   const showArgos = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("ARGOS"),
   ).orElse(false);
+  const showDmpAssistant = FetchingData.getSuccessValue(
+    useIntegrationIsAllowedAndEnabled("DMPASSISTANT"),
+  ).orElse(false);
   const showDmponline = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("DMPONLINE"),
   ).orElse(false);
@@ -457,13 +461,23 @@ const DmpMenuSection = ({
     })();
   }, []);
 
-  if (!showArgos && !showDmponline && !showDmptool && !showDsw) return null;
+  if (
+    !showArgos &&
+    !showDmpAssistant &&
+    !showDmponline &&
+    !showDmptool &&
+    !showDsw
+  )
+    return null;
   return (
     <>
       <Divider textAlign="left" aria-label="DMPs">
         DMP Import
       </Divider>
       {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
+      {showDmpAssistant && (
+        <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />
+      )}
       {showDmponline && (
         <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
       )}
