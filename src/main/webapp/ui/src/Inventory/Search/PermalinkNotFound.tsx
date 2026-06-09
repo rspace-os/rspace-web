@@ -34,7 +34,7 @@ function PermalinkNotFound({
   const latestUrl = `/inventory/${permalink.type}/${permalink.id}`;
 
   return (
-    <Box p={2}>
+    <Box sx={{ p: 2 }}>
       {permalink.version != null ? (
         <Alert severity="warning">
           <AlertTitle>

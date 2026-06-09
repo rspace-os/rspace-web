@@ -82,7 +82,7 @@ const IdentifierWrapper = observer(
 
     const handleUpdate = (
       f: IdentifierField,
-      value: string | number | CreatorType,
+      value: string | number,
     ) => {
       if (f.handler) f.handler(value);
       /* setAttributesDirty on item */
