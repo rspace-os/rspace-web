@@ -60,11 +60,16 @@ import {
  * https://react-window.vercel.app/#/examples/list/variable-size
  * https://www.npmjs.com/package/react-window-infinite-loader
  *
- * Note that there is a bug with useAutocomplete that makes it report an
- * error to the JS console about a missing <input> ref. This is an issue that
- * is not easy to resolve, but doesn't appear to cause any issues. See
- * this discussions:
- * https://github.com/mui/material-ui/issues/28687
+ * IMPORTANT: MUI's useAutocomplete validates on mount that its <input> element
+ * is present in the DOM, and immediately operates on the input's ref. Because
+ * the input is rendered inside a Popover (which mounts its contents through a
+ * Portal, one commit after the Popover-owning component), useAutocomplete must
+ * NOT be called by the Popover-owning component -- on mount its input would not
+ * yet exist, logging a "missing input ref" error and crashing on a null ref
+ * (see https://github.com/mui/material-ui/issues/28687). The export below
+ * therefore splits responsibilities: TagsCombobox owns the Popover, while the
+ * inner TagsComboboxContent (rendered as a child of the Popover) calls
+ * useAutocomplete, so the hook and its <input> mount together.
  */
 
 /*
@@ -106,7 +111,7 @@ function OptionsListing({
   getOptionProps: (optionAndIndex: {
     option: InternalTag;
     index: number;
-  }) => object;
+  }) => React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
   groupedOptions:
     | Array<InternalTag>
     | Array<AutocompleteGroupedOption<InternalTag>>;
@@ -156,9 +161,17 @@ function OptionsListing({
         name
       );
 
+    /*
+     * In MUI v9 getOptionProps returns a `key`. React requires keys to be
+     * passed to JSX directly rather than spread in with the other props, so we
+     * pull it out here and apply it explicitly.
+     */
+    const { key, ...optionProps } = getOptionProps({ option, index });
+
     return (
       <li
-        {...getOptionProps({ option, index })}
+        key={key}
+        {...optionProps}
         style={{
           padding: "8px",
           cursor: "default",
@@ -365,7 +378,21 @@ type TagsComboboxArgs<
   onClose: () => void;
 };
 
-export default function TagsCombobox<
+/*
+ * The autocomplete-driven body of the combobox. This is deliberately a
+ * separate component, rendered *inside* the Popover (see TagsCombobox below),
+ * rather than being part of the Popover-owning component. MUI's
+ * useAutocomplete validates on mount that its <input> is in the DOM and
+ * immediately operates on that input's ref (e.g. to clear
+ * aria-activedescendant). The Popover renders its contents through a Portal,
+ * which mounts them one commit *after* the Popover-owning component itself; if
+ * useAutocomplete lived in that owning component it would run its on-mount
+ * effects before the input existed, logging a "missing input ref" error (and,
+ * with the popup open, crashing on a null ref). Keeping useAutocomplete here,
+ * as a child of the Popover, guarantees the hook and its <input> mount in the
+ * same commit.
+ */
+function TagsComboboxContent<
   Toggle extends
     | {
         enforce: true;
@@ -575,19 +602,17 @@ export default function TagsCombobox<
       }
     },
   });
-  const { ref: autocompleteInputRef, ...inputProps } = getInputProps();
+  /*
+   * Local ref to the filter <input>, used to focus the field when the Popover
+   * opens (see the `anchorEl` effect below). It is forked with
+   * useAutocomplete's own input ref (carried on `getInputProps().ref`) by
+   * MUI's InputBase: the local ref is passed via the TextField `inputRef`
+   * prop, while the autocomplete ref is spread into `slotProps.htmlInput`.
+   * Both are stable across renders, so the input node is attached to each
+   * without the ref churn that previously left useAutocomplete's ref null when
+   * it ran its on-mount "input element present" validation.
+   */
   const inputRef = useRef<HTMLInputElement | null>(null);
-
-  const setInputRef = (node: HTMLInputElement | null) => {
-    inputRef.current = node;
-    if (typeof autocompleteInputRef === "function") {
-      autocompleteInputRef(node);
-    } else if (autocompleteInputRef) {
-      (
-        autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>
-      ).current = node;
-    }
-  };
 
   /*
    * Whenever tags are added or removed from `value`, update the set of
@@ -653,275 +678,307 @@ export default function TagsCombobox<
   const textFieldId = useId();
   return (
     <>
-      <Popover
-        onClose={() => {
-          onClose();
-          setKeyboardFocusIndex(null);
-        }}
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "left",
-        }}
-        elevation={0}
-        keepMounted
-        transitionDuration={
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? 0
-            : "auto"
-        }
-        slotProps={{
-          backdrop: {
-            invisible: false,
-            transitionDuration: window.matchMedia(
-              "(prefers-reduced-motion: reduce)",
-            ).matches
-              ? 0
-              : 225,
-          },
-
-          paper: {
-            variant: "outlined",
-            style: {
-              padding: "4px",
-              paddingBottom: "12px",
-              width: POPOVER_WIDTH,
-            },
-          },
+      <div
+        {...getRootProps()}
+        style={{
+          padding: "8px",
+          ...getRootProps().style,
         }}
       >
-        <div
-          {...getRootProps()}
-          style={{
-            padding: "8px",
-            ...getRootProps().style,
+        <TextField
+          variant="standard"
+          label="Filter suggested tags"
+          inputRef={inputRef}
+          onFocus={() => {
+            /*
+             * When the user taps on the "Add Tag" button we open the Popover
+             * and focus this filter Textfield. When this happens, we want to
+             * reset the state of the Popover by clearing the field and
+             * reseting back to the first page so that the user can
+             * immediately start a new filter.
+             */
+            if (filter !== "") {
+              setFilter("");
+              setPage(0);
+              setReachedEnd(false);
+            }
           }}
-        >
-          <TextField
-            variant="standard"
-            label="Filter suggested tags"
-            onFocus={() => {
-              /*
-               * When the user taps on the "Add Tag" button we open the Popover
-               * and focus this filter Textfield. When this happens, we want to
-               * reset the state of the Popover by clearing the field and
-               * reseting back to the first page so that the user can
-               * immediately start a new filter.
-               */
-              if (filter !== "") {
-                setFilter("");
-                setPage(0);
-                setReachedEnd(false);
-              }
-            }}
-            onKeyDown={({ key }) => {
-              if (key === "Enter") {
-                if (keyboardFocusIndex !== null) {
-                  const chosenTag = sortedOptions[keyboardFocusIndex];
-                  if (enforceOntologies) {
-                    lift3(
-                      (vocabulary: string, uri: string, version: string) => ({
-                        value: chosenTag.value,
-                        vocabulary,
-                        uri,
-                        version,
-                      }),
-                      chosenTag.vocabulary,
-                      chosenTag.uri,
-                      chosenTag.version,
-                    ).map((newTag) => onSelection(newTag));
-                  } else {
-                    onSelection({
+          onKeyDown={({ key }) => {
+            if (key === "Enter") {
+              if (keyboardFocusIndex !== null) {
+                const chosenTag = sortedOptions[keyboardFocusIndex];
+                if (enforceOntologies) {
+                  lift3(
+                    (vocabulary: string, uri: string, version: string) => ({
                       value: chosenTag.value,
-                      vocabulary: chosenTag.vocabulary,
-                      uri: chosenTag.uri,
-                      version: chosenTag.version,
-                    });
-                  }
-                  setKeyboardFocusIndex(null);
-                  onClose();
-                  return;
+                      vocabulary,
+                      uri,
+                      version,
+                    }),
+                    chosenTag.vocabulary,
+                    chosenTag.uri,
+                    chosenTag.version,
+                  ).map((newTag) => onSelection(newTag));
+                } else {
+                  onSelection({
+                    value: chosenTag.value,
+                    vocabulary: chosenTag.vocabulary,
+                    uri: chosenTag.uri,
+                    version: chosenTag.version,
+                  });
                 }
-
-                /*
-                 * In addition to selecting a tag from the menu, users can also
-                 * enter any tag they like when ontologies are not being
-                 * enforced.
-                 */
-                if (isAllowed(checkUserInputString(filter))) {
-                  if (!enforceOntologies) {
-                    onSelection({
-                      value: filter,
-                      vocabulary: Optional.empty(),
-                      uri: Optional.empty(),
-                      version: Optional.empty(),
-                    });
-                    setKeyboardFocusIndex(null);
-                    onClose();
-                  }
-                }
-                return;
-              }
-
-              if (key === "Escape") {
                 setKeyboardFocusIndex(null);
                 onClose();
                 return;
               }
 
-              // focus next allowed tag; do nothing if there are no more
-              if (key === "ArrowDown") {
-                let newIndex = keyboardFocusIndex ?? -1;
-                do {
-                  newIndex++;
-                  if (
-                    newIndex === tags.length - 1 &&
-                    !isAllowed(
-                      checkInternalTag(sortedOptions[newIndex], {
-                        enforceOntologies,
-                      }),
-                    )
-                  ) {
-                    newIndex = keyboardFocusIndex ?? 0;
-                    break;
-                  }
-                } while (
-                  !isAllowed(
-                    checkInternalTag(sortedOptions[newIndex], {
-                      enforceOntologies,
-                    }),
-                  )
-                );
-                setKeyboardFocusIndex(newIndex);
-                listRef.current?.scrollToItem(newIndex);
-                return;
+              /*
+               * In addition to selecting a tag from the menu, users can also
+               * enter any tag they like when ontologies are not being
+               * enforced.
+               */
+              if (isAllowed(checkUserInputString(filter))) {
+                if (!enforceOntologies) {
+                  onSelection({
+                    value: filter,
+                    vocabulary: Optional.empty(),
+                    uri: Optional.empty(),
+                    version: Optional.empty(),
+                  });
+                  setKeyboardFocusIndex(null);
+                  onClose();
+                }
               }
+              return;
+            }
 
-              // focus previous allowed tag; do nothing if on first allowed
-              if (key === "ArrowUp") {
-                let newIndex = keyboardFocusIndex ?? tags.length;
-                do {
-                  newIndex--;
-                  if (
-                    newIndex === 0 &&
-                    !isAllowed(
-                      checkInternalTag(sortedOptions[newIndex], {
-                        enforceOntologies,
-                      }),
-                    )
-                  ) {
-                    newIndex = keyboardFocusIndex ?? 0;
-                    break;
-                  }
-                } while (
-                  !isAllowed(
-                    checkInternalTag(sortedOptions[newIndex], {
-                      enforceOntologies,
-                    }),
-                  )
-                );
-                setKeyboardFocusIndex(newIndex);
-                listRef.current?.scrollToItem(newIndex);
-                return;
-              }
-
-              // any other key resets keyboard focus as filter has changed
+            if (key === "Escape") {
               setKeyboardFocusIndex(null);
-            }}
-            error={!isAllowed(checkUserInputString(filter))}
-            helperText={helpText(checkUserInputString(filter))}
-            tabIndex={0}
-            fullWidth
-            value={filter}
-            sx={{
-              fontSize: "1.1em",
-            }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <FilterIcon />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="start">
-                    {/* Because the icon is so small, the animations need to be
-                     * more exagerated, hence the timeout and animationDuration
-                     */}
-                    <Grow in={isNextPageLoading} timeout={300}>
-                      <div>
-                        <FontAwesomeIcon
-                          icon={faSpinner}
-                          spin
-                          size="sm"
-                          style={{ animationDuration: "1.5s" }}
-                        />
-                      </div>
-                    </Grow>
-                  </InputAdornment>
-                ),
-              },
+              onClose();
+              return;
+            }
 
-              htmlInput: {
-                ...inputProps,
-                ref: setInputRef,
-                id: textFieldId,
-                value: filter,
-              },
+            // focus next allowed tag; do nothing if there are no more
+            if (key === "ArrowDown") {
+              let newIndex = keyboardFocusIndex ?? -1;
+              do {
+                newIndex++;
+                if (
+                  newIndex === tags.length - 1 &&
+                  !isAllowed(
+                    checkInternalTag(sortedOptions[newIndex], {
+                      enforceOntologies,
+                    }),
+                  )
+                ) {
+                  newIndex = keyboardFocusIndex ?? 0;
+                  break;
+                }
+              } while (
+                !isAllowed(
+                  checkInternalTag(sortedOptions[newIndex], {
+                    enforceOntologies,
+                  }),
+                )
+              );
+              setKeyboardFocusIndex(newIndex);
+              listRef.current?.scrollToItem(newIndex);
+              return;
+            }
 
-              inputLabel: {
-                htmlFor: textFieldId,
-              },
-            }}
-          />
-        </div>
-        {groupedOptions.length > 0 && (
-          <OptionsListing
-            hasNextPage={!reachedEnd}
-            isNextPageLoading={isNextPageLoading}
-            sortedOptions={sortedOptions}
-            loadNextPage={loadNextPage}
-            getOptionProps={getOptionProps}
-            groupedOptions={groupedOptions}
-            listboxProps={getListboxProps()}
-            listRef={listRef}
-            keyboardFocusIndex={keyboardFocusIndex}
-            filter={filter}
-            enforceOntologies={enforceOntologies}
-          />
-        )}
-        {!error && groupedOptions.length === 0 && filter === "" && (
-          <Alert severity="info">
-            <AlertTitle>No tags available</AlertTitle>
-          </Alert>
-        )}
-        {!error && groupedOptions.length === 0 && filter !== "" && (
-          <Alert severity="info">
-            <AlertTitle>
-              No matching tag suggestions{" "}
-              {enforceOntologies ? "from ontologies" : ""}.
-            </AlertTitle>
-            {enforceOntologies ? <></> : <>To use a new tag, press Enter.</>}
-          </Alert>
-        )}
-        {error && (
-          <Alert severity="warning">
-            <AlertTitle>Error fetching tags</AlertTitle>
-            {enforceOntologies ? (
-              <>
-                Please check that the ontology files are correctly configured.
-              </>
-            ) : (
-              <>Simply type in the tag and press enter instead.</>
-            )}
-          </Alert>
-        )}
-      </Popover>
+            // focus previous allowed tag; do nothing if on first allowed
+            if (key === "ArrowUp") {
+              let newIndex = keyboardFocusIndex ?? tags.length;
+              do {
+                newIndex--;
+                if (
+                  newIndex === 0 &&
+                  !isAllowed(
+                    checkInternalTag(sortedOptions[newIndex], {
+                      enforceOntologies,
+                    }),
+                  )
+                ) {
+                  newIndex = keyboardFocusIndex ?? 0;
+                  break;
+                }
+              } while (
+                !isAllowed(
+                  checkInternalTag(sortedOptions[newIndex], {
+                    enforceOntologies,
+                  }),
+                )
+              );
+              setKeyboardFocusIndex(newIndex);
+              listRef.current?.scrollToItem(newIndex);
+              return;
+            }
+
+            // any other key resets keyboard focus as filter has changed
+            setKeyboardFocusIndex(null);
+          }}
+          error={!isAllowed(checkUserInputString(filter))}
+          helperText={helpText(checkUserInputString(filter))}
+          tabIndex={0}
+          fullWidth
+          value={filter}
+          sx={{
+            fontSize: "1.1em",
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <FilterIcon />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="start">
+                  {/* Because the icon is so small, the animations need to be
+                   * more exagerated, hence the timeout and animationDuration
+                   */}
+                  <Grow in={isNextPageLoading} timeout={300}>
+                    <div>
+                      <FontAwesomeIcon
+                        icon={faSpinner}
+                        spin
+                        size="sm"
+                        style={{ animationDuration: "1.5s" }}
+                      />
+                    </div>
+                  </Grow>
+                </InputAdornment>
+              ),
+            },
+
+            htmlInput: {
+              ...getInputProps(),
+              id: textFieldId,
+              value: filter,
+            },
+
+            inputLabel: {
+              htmlFor: textFieldId,
+            },
+          }}
+        />
+      </div>
+      {groupedOptions.length > 0 && (
+        <OptionsListing
+          hasNextPage={!reachedEnd}
+          isNextPageLoading={isNextPageLoading}
+          sortedOptions={sortedOptions}
+          loadNextPage={loadNextPage}
+          getOptionProps={getOptionProps}
+          groupedOptions={groupedOptions}
+          listboxProps={getListboxProps()}
+          listRef={listRef}
+          keyboardFocusIndex={keyboardFocusIndex}
+          filter={filter}
+          enforceOntologies={enforceOntologies}
+        />
+      )}
+      {!error && groupedOptions.length === 0 && filter === "" && (
+        <Alert severity="info">
+          <AlertTitle>No tags available</AlertTitle>
+        </Alert>
+      )}
+      {!error && groupedOptions.length === 0 && filter !== "" && (
+        <Alert severity="info">
+          <AlertTitle>
+            No matching tag suggestions{" "}
+            {enforceOntologies ? "from ontologies" : ""}.
+          </AlertTitle>
+          {enforceOntologies ? <></> : <>To use a new tag, press Enter.</>}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="warning">
+          <AlertTitle>Error fetching tags</AlertTitle>
+          {enforceOntologies ? (
+            <>Please check that the ontology files are correctly configured.</>
+          ) : (
+            <>Simply type in the tag and press enter instead.</>
+          )}
+        </Alert>
+      )}
     </>
+  );
+}
+
+/**
+ * A general-purpose combobox for selecting a tag, shown in a Popover anchored
+ * to `anchorEl`. The list of suggestions is prepopulated from the ontologies
+ * feature; unless ontologies are enforced the user may also type any tag.
+ *
+ * The actual autocomplete UI lives in {@link TagsComboboxContent}, which is
+ * rendered as a child of the Popover so that MUI's useAutocomplete hook and the
+ * <input> it manages mount together in the same commit (see the comment on
+ * TagsComboboxContent for why this matters).
+ */
+export default function TagsCombobox<
+  Toggle extends
+    | {
+        enforce: true;
+        tag: {
+          value: string;
+          vocabulary: string;
+          uri: string;
+          version: string;
+        };
+      }
+    | {
+        enforce: false;
+        tag: {
+          value: string;
+          vocabulary: Optional<string>;
+          uri: Optional<string>;
+          version: Optional<string>;
+        };
+      },
+>(props: TagsComboboxArgs<Toggle>): React.ReactNode {
+  const { anchorEl, onClose } = props;
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  return (
+    <Popover
+      onClose={onClose}
+      open={Boolean(anchorEl)}
+      anchorEl={anchorEl}
+      anchorOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "left",
+      }}
+      elevation={0}
+      keepMounted
+      transitionDuration={reduceMotion ? 0 : "auto"}
+      slotProps={{
+        backdrop: {
+          invisible: false,
+          transitionDuration: reduceMotion ? 0 : 225,
+        },
+
+        paper: {
+          variant: "outlined",
+          style: {
+            padding: "4px",
+            paddingBottom: "12px",
+            width: POPOVER_WIDTH,
+          },
+        },
+      }}
+    >
+      {/*
+       * Only mount the autocomplete content while the Popover is open. This
+       * keeps useAutocomplete (and its on-mount input validation) from running
+       * while there is no input to bind to.
+       */}
+      {Boolean(anchorEl) && <TagsComboboxContent {...props} />}
+    </Popover>
   );
 }
