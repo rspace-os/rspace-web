@@ -1,0 +1,18 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="rsdev-1136-remove-offline-work-a" context="run" author="tchoi-rs">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="OfflineRecordUser"/>
+        </preConditions>
+        <comment>
+            Remove the offline / end-offline work feature: drop the OfflineRecordUser table
+            (and its foreign keys to BaseRecord and User) now that the feature has been removed.
+        </comment>
+        <dropTable tableName="OfflineRecordUser"/>
+    </changeSet>
+
+</databaseChangeLog>

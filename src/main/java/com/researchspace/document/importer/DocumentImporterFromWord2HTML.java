@@ -11,7 +11,6 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
@@ -124,30 +123,5 @@ public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
     Element tag = docx.getElementsByTag("img").get(0);
     tag.attr("style", wordStyle + tag.attr("style"));
     img.replaceWith(tag);
-  }
-
-  @Override
-  public BaseRecord replace(
-      Long toReplaceId, ContentProvider provider, String origDocName, User user)
-      throws IOException, DocumentAlreadyEditedException {
-    log.info(
-        "Replacing content in doc [{}] using content in {}",
-        toReplaceId,
-        provider.getContentFolder().getName());
-    // flush any autosaved content
-    recMgr.saveStructuredDocument(toReplaceId, user.getUsername(), false, null);
-    File contentFolder = provider.getContentFolder();
-
-    // StructuredDocument toReplace = recMgr.get(toReplaceId).asStrucDoc();
-    Document doc = Jsoup.parse(provider.getTextFieldSource(), null, "");
-    Elements images = doc.getElementsByTag("img");
-    StructuredDocument strucDoc = recMgr.getRecordWithFields(toReplaceId, user).asStrucDoc();
-    if (strucDoc.getFieldCount() != 1 && !strucDoc.getFields().get(0).isTextField()) {
-      throw new IllegalArgumentException(
-          String.format("Document with ID %d isn't a basic document", toReplaceId));
-    }
-    StructuredDocument replaced =
-        updateFieldContent(user, contentFolder, doc, images, null, strucDoc);
-    return replaced;
   }
 }

@@ -56,7 +56,6 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from Thumbnail");
     jdbcTemplate.update("delete from community_labGroups");
     jdbcTemplate.update("delete from community_admin");
-    jdbcTemplate.update("delete from OfflineRecordUser");
     jdbcTemplate.update("delete from WhiteListedSysAdminIPAddress");
 
     jdbcTemplate.update("delete from ExternalStorageLocation");
