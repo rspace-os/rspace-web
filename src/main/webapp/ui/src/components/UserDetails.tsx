@@ -6,6 +6,7 @@ import CardHeader from "@mui/material/CardHeader";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -105,15 +106,24 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     setFetched(true);
   };
 
+  /*
+   * Links share the buttons' `primary` colour and keep it when visited, rather
+   * than falling back to the browser's default blue/purple link colours.
+   */
+  const linkSx = {
+    color: "primary.main",
+    "&:visited": { color: "primary.main" },
+  };
+
   const listLabgroups = user?.groups.map((group) => (
     <TableRow key={group.groupId}>
       <TableCell component="th" scope="row">
         {group.roleInGroup} at
       </TableCell>
       <TableCell align="right">
-        <a href={`/groups/view/${group.groupId}`}>
+        <Link href={`/groups/view/${group.groupId}`} sx={linkSx}>
           {group.groupName}
-        </a>
+        </Link>
       </TableCell>
     </TableRow>
   )) ?? <></>;
@@ -209,9 +219,9 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                       Email
                     </TableCell>
                     <TableCell align="right">
-                      <a href={`mailto:${user.email}`}>
+                      <Link href={`mailto:${user.email}`} sx={linkSx}>
                         {user.email}
-                      </a>
+                      </Link>
                     </TableCell>
                   </TableRow>
                   <TableRow>

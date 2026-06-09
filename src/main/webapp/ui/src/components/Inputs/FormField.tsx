@@ -1,11 +1,10 @@
 import React from "react";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import { type SxProps, type Theme } from "@mui/material/styles";
 import { Optional } from "../../util/optional";
 import Typography from "@mui/material/Typography";
-import { Heading } from "../DynamicHeadingLevel";
+import FieldLabel from "./FieldLabel";
 
 /**
  * This component provides all of the UI around a MUI input component (like
@@ -284,12 +283,6 @@ export default function FormField<T>({
     return Optional.present(`${value.length} / ${maxLength}`);
   };
 
-  const labelComponent = () => {
-    if (disabled) return Heading;
-    if (asFieldset) return "legend";
-    return "label";
-  };
-
   return (
     <FormControl
       role="group"
@@ -309,15 +302,14 @@ export default function FormField<T>({
         : {})}
       {...(asFieldset && !disabled ? { component: "fieldset" } : {})}
     >
-      <FormLabel
+      <FieldLabel
         id={labelId}
-        component={labelComponent()}
-        // reset styles added by browser when setting component prop
-        sx={{ mt: 0, textAlign: "left" }}
-        {...(asFieldset || doNotAttachIdToLabel ? {} : { htmlFor: inputId })}
+        disabled={disabled}
+        asFieldset={asFieldset}
+        htmlFor={doNotAttachIdToLabel ? undefined : inputId}
       >
         {label}
-      </FormLabel>
+      </FieldLabel>
       {Boolean(explanation) && (
         <Typography id={explanationId} variant="body2" sx={{ mb: 0.5 }}>
           {explanation}

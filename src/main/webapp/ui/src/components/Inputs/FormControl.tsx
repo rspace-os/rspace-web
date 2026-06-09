@@ -2,8 +2,8 @@ import React, { useId } from "react";
 import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
-import FormLabel from "@mui/material/FormLabel";
 import FormHelperText from "@mui/material/FormHelperText";
+import FieldLabel from "./FieldLabel";
 import { inputBaseClasses } from "@mui/material/InputBase";
 import { formControlLabelClasses } from "@mui/material/FormControlLabel";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -114,8 +114,8 @@ function CustomFormControl({
         }}
       >
         {typeof label !== "undefined" && (
-          <FormLabel
-            component="legend"
+          <FieldLabel
+            asFieldset
             classes={{ root: classes.formLabel ?? "" }}
             sx={slotProps?.label?.sx}
             required={required}
@@ -126,7 +126,7 @@ function CustomFormControl({
               explanationId={explanationId}
               disabled={disabled}
             />
-          </FormLabel>
+          </FieldLabel>
         )}
         {actions}
       </Stack>

@@ -97,14 +97,6 @@ body td.field-value-inner span[style*="line-height: 36pt;"], body .journalPagePa
 a, a:link, a:active {
   text-decoration: none; }
 
-a:visited {
-  color: #1465b7;
-  background-color: transparent; }
-
-a:hover {
-  color: #cc0000;
-  text-decoration: none; }
-
 /* END LINKS */
 /* HEADINGS */
 div#branding h1 {
@@ -149,20 +141,6 @@ ul.glassList {
 ul ul.glassList {
   vertical-align: top;
   line-height: 1.5em; }
-
-dl {
-  margin: 0 0 1.5em 0;
-  padding: 0;
-  line-height: 1.4em; }
-
-dl dt {
-  font-weight: bold;
-  margin: 0.25em 0 0.25em 0;
-  padding: 0; }
-
-dl dd {
-  margin: 0 0 0 30px;
-  padding: 0; }
 
 /* END LISTS */
 /* TABLE */

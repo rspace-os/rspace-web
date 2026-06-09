@@ -130,7 +130,6 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
           size="small"
           aria-label="Search results"
           stickyHeader
-          sx={{ minWidth: 600 }}
         >
           <CustomTableHead
             selectedCount={search.selectedResults.length}

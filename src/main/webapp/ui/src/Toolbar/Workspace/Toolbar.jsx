@@ -294,7 +294,16 @@ class WorkspaceToolbar extends React.Component {
 
   content = () => {
     return (
-      <Box component="span" sx={{ display: "flex", width: "100%" }}>
+      <Box
+        component="span"
+        sx={{
+          display: "flex",
+          width: "100%",
+          // Query container so the Create button's font-size (clamp with cqi)
+          // tracks the toolbar's available width.
+          containerType: "inline-size",
+        }}
+      >
         <CreateMenu
           pioEnabled={this.state.pioEnabled}
           evernoteEnabled={this.state.evernoteEnabled}

@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import Button from "@mui/material/Button";
+import Button, { buttonClasses } from "@mui/material/Button";
 import { type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { useTheme, darken, lighten } from "@mui/material/styles";
@@ -623,6 +623,12 @@ function ActionsMenu({
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
           setActionsMenuAnchorEl(e.currentTarget);
+        }}
+        sx={{
+          [`&.${buttonClasses.disabled}`]: {
+            backgroundColor: theme.palette.action.disabledBackground,
+            color: theme.palette.action.disabled,
+          },
         }}
       >
         Actions

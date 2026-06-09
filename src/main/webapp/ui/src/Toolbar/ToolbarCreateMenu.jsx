@@ -52,7 +52,7 @@ export default function CreateMenu(props) {
         variant="outlined"
         sx={{
           color: "white",
-          fontSize: "calc(8px + .2cqw)",
+          fontSize: "clamp(1.2rem, 1cqi, 1.5rem)",
           fontWeight: "normal",
           borderColor: "white",
         }}
