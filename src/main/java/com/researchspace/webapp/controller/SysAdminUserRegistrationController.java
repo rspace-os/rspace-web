@@ -58,6 +58,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -100,8 +101,26 @@ public class SysAdminUserRegistrationController extends BaseController {
    */
   @PostMapping("/csvUpload")
   @ResponseBody
-  public UserImportResult batchUploadParseCsvFile(MultipartFile xfile) throws IOException {
-    return getImportResultsFromCSVInput(xfile.getInputStream());
+  public ResponseEntity<UserImportResult> batchUploadParseCsvFile(MultipartFile xfile)
+      throws IOException {
+    if (xfile == null) {
+      // no file part in the request at all (e.g. a direct API call without the file)
+      return badRequestWithError("system.batchRegistration.upload.noFile");
+    }
+    if (xfile.isEmpty()) {
+      return badRequestWithError("system.batchRegistration.upload.emptyFile");
+    }
+    return ResponseEntity.ok(getImportResultsFromCSVInput(xfile.getInputStream()));
+  }
+
+  private ResponseEntity<UserImportResult> badRequestWithError(String messageKey) {
+    UserImportResult result =
+        new UserImportResult(
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            ErrorList.createErrListWithSingleMsg(getText(messageKey)));
+    return ResponseEntity.badRequest().body(result);
   }
 
   /**

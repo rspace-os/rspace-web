@@ -32,6 +32,22 @@
       "oauthConnected" : false,
       "options" : { }
     },
+    "DSW" : {
+      "name" : "DSW",
+      "displayName" : "Data Stewardship Wizard",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
+    "RAID" : {
+      "name" : "RAID",
+      "displayName" : "RAiD",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
+    },
     "PYRAT" : {
       "name" : "PYRAT",
       "displayName" : "PyRAT",
@@ -139,6 +155,14 @@
       "options" : {
         "onedrive.linking.enabled" : false
       }
+    },
+    "DMPASSISTANT" : {
+      "name" : "DMPASSISTANT",
+      "displayName" : "DMP Assistant",
+      "available" : false,
+      "enabled" : false,
+      "oauthConnected" : false,
+      "options" : { }
     },
     "DMPONLINE" : {
       "name" : "DMPONLINE",

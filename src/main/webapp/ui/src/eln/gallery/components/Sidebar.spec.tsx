@@ -158,6 +158,25 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
+  await router.route("/integration/integrationInfo?name=DMPASSISTANT", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          name: "DMPASSISTANT",
+          displayName: "DMP Assistant",
+          available: false,
+          enabled: false,
+          oauthConnected: false,
+          options: {},
+        },
+        error: null,
+        success: true,
+        errorMsg: null,
+      }),
+    });
+  });
   await router.route("/integration/integrationInfo?name=DMPONLINE", (route) => {
     return route.fulfill({
       status: 200,
