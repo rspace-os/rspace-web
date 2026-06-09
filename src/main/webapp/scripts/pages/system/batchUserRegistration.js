@@ -54,17 +54,26 @@ $(document).ready(function() {
             autoOpen:false,
             width: 420,
             title: "Batch upload users",
+            open : function () {
+                $('#csvFileInput').val('');
+                setUploadButtonEnabled($(this), false);
+            },
             buttons :{
                 Cancel: function (){
                     $(this).dialog('close');
                 },
                 "Upload" : function () {
 
+                    if (!$('#csvFileInput')[0].files.length) {
+                        $().toastmessage('showErrorToast', 'Please select a CSV file to upload');
+                        return;
+                    }
+
                     var url = "/system/userRegistration/csvUpload";
                     var jqxhr = submitBatchCsvFile(url);
 
                     addCsvUploadHandlers(jqxhr);
-                    
+
                     jqxhr.always(function() {
                         $('#batchUploadUserDlg').dialog('close');
                     });
@@ -72,15 +81,23 @@ $(document).ready(function() {
             }
         });
     });
-    
-    // disabling 'upload' button on a dialog until file is selected
-    (function() {
-        var $uploadSelectedCsvButton = $('#batchUploadUserDlg').parent().find('button:contains("Upload")');
-        $uploadSelectedCsvButton.prop('disabled', true);
-        $("#csvFileInput").change(function() {
-            $uploadSelectedCsvButton.prop('disabled', false);
-        });
-    })();
+
+    $(document).on('change', '#csvFileInput', function() {
+        setUploadButtonEnabled($('#batchUploadUserDlg'), this.files.length > 0);
+    });
+
+    function getUploadButton($dialogContent) {
+        return $dialogContent.dialog('widget')
+            .find('.ui-dialog-buttonpane button:contains("Upload")');
+    }
+
+    // toggle both the native disabled state and jQuery UI's disabled styling so the
+    // button is visibly greyed out, not just inert
+    function setUploadButtonEnabled($dialogContent, enabled) {
+        getUploadButton($dialogContent)
+            .prop('disabled', !enabled)
+            .toggleClass('ui-state-disabled ui-button-disabled', !enabled);
+    }
 
     function submitBatchCsvInput() {
 
@@ -122,7 +139,7 @@ $(document).ready(function() {
 
     function addCsvUploadHandlers(jqxhr) {
         jqxhr.done(function(result) {
-            var validationErrors = result.errors && result.errors.errorMessages
+            var validationErrors = (result.errors && result.errors.errorMessages) || [];
             if (validationErrors.length > 0) {
                 $().toastmessage('showErrorToast', 'Errors in CSV content');
                 displayServerMessages($("#batchServerErrorMsgs"), result.errors.errorMessages);
@@ -131,6 +148,14 @@ $(document).ready(function() {
             $().toastmessage('showSuccessToast', 'CSV content loaded fine');
             $('#csvInputContent').slideUp();
             displayUserImportResults(result);
+        });
+        jqxhr.fail(function(xhr) {
+            var serverErrors = xhr.responseJSON
+                && xhr.responseJSON.errors
+                && xhr.responseJSON.errors.errorMessages;
+            $().toastmessage('showErrorToast', 'Errors in CSV content');
+            displayServerMessages($("#batchServerErrorMsgs"),
+                serverErrors && serverErrors.length ? serverErrors : [ 'Could not process CSV upload.' ]);
         });
     }
     

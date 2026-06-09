@@ -475,6 +475,13 @@ public abstract class BaseController implements ServletContextAware {
     if (dmpOnlineIsEnabled) {
       return true;
     }
+    IntegrationInfo dmpAssistantInfo =
+        integrationsHandler.getIntegration(currUser, IntegrationsHandler.DMPASSISTANT_APP_NAME);
+    boolean dmpAssistantIsEnabled =
+        dmpAssistantInfo != null && dmpAssistantInfo.isEnabled() && dmpAssistantInfo.isAvailable();
+    if (dmpAssistantIsEnabled) {
+      return true;
+    }
     return false;
   }
 

@@ -12,6 +12,7 @@ import Chemistry from "./integrations/Chemistry";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
 import DigitalCommonsData from "./integrations/DigitalCommonsData";
+import DMPAssistant from "./integrations/DMPAssistant";
 import DMPonline from "./integrations/DMPonline";
 import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
@@ -115,6 +116,15 @@ function CardListing({
       });
     },
     [update, integrationStates.DIGITALCOMMONSDATA],
+  );
+
+  const dmpassistantUpdate = React.useCallback(
+    (newState: IntegrationStates["DMPASSISTANT"]) => {
+      void runInAction(async () => {
+        integrationStates.DMPASSISTANT = await update("DMPASSISTANT", newState);
+      });
+    },
+    [update, integrationStates.DMPASSISTANT],
   );
 
   const dmponlineUpdate = React.useCallback(
@@ -373,6 +383,12 @@ function CardListing({
         <DigitalCommonsData
           integrationState={integrationStates.DIGITALCOMMONSDATA}
           update={digitalCommonsDataUpdate}
+        />
+      )}
+      {integrationStates.DMPASSISTANT.mode === mode && (
+        <DMPAssistant
+          integrationState={integrationStates.DMPASSISTANT}
+          update={dmpassistantUpdate}
         />
       )}
       {integrationStates.DMPONLINE.mode === mode && (
