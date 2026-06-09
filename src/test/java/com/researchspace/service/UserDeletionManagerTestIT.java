@@ -94,6 +94,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired UserConnectionManager userConn;
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired StoichiometryManager stoichiometryMgr;
+  private @Autowired StoichiometryMoleculeManager stoichiometryMoleculeMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
   private @Autowired InstrumentDao instrumentDao;
@@ -827,7 +828,10 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private Long saveStoichiometryInventoryLink(
       StoichiometryMolecule molecule, InventoryRecord inventoryRecord) {
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(molecule);
+    // Reload the molecule within the current transaction so it is a managed (not detached)
+    // entity, mirroring StoichiometryInventoryLinkManagerImpl.createLink. Hibernate 6's persist()
+    // cannot cascade to a detached association, unlike Hibernate 5's saveOrUpdate().
+    link.setStoichiometryMolecule(stoichiometryMoleculeMgr.getById(molecule.getId()));
     link.setInventoryRecord(inventoryRecord);
     return stoichiometryInventoryLinkDao.save(link).getId();
   }
