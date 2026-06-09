@@ -41,7 +41,7 @@ export function parseDeletedItems(str: string): Result<DeletedItems> {
   return Result.first(
     parseString("EXCLUDE", str),
     parseString("INCLUDE", str),
-    parseString("DELETED_ONLY", str)
+    parseString("DELETED_ONLY", str),
   );
 }
 
@@ -58,7 +58,7 @@ export function parseResultType(str: string): Result<ResultType> {
     parseString("CONTAINER", str),
     parseString("SAMPLE", str),
     parseString("SUBSAMPLE", str),
-    parseString("TEMPLATE", str)
+    parseString("TEMPLATE", str),
   );
 }
 
@@ -215,6 +215,14 @@ export interface CoreFetcher {
    * ignored.
    */
   permalink: Permalink | null;
+
+  /*
+   * When a permalink fetch fails this MUST expose the permalink that could
+   * not be resolved, so that the UI can show a specific not-found state
+   * (including which version was requested, for versioned permalinks). It
+   * MUST be null while no permalink fetch has failed.
+   */
+  permalinkNotFound: Permalink | null;
 
   /*
    * Result can be filted based on a query string. For information on what
@@ -380,7 +388,7 @@ export interface Search {
   activeResult: InventoryRecord | null;
   setActiveResult(
     result?: InventoryRecord | null,
-    options?: { defaultToFirstResult?: boolean; force?: boolean }
+    options?: { defaultToFirstResult?: boolean; force?: boolean },
   ): Promise<void>;
 
   /*
@@ -420,7 +428,7 @@ export interface Search {
   createTemplateFromSample(
     name: string,
     sample: Sample,
-    includeContentForFields: Set<Id>
+    includeContentForFields: Set<Id>,
   ): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
@@ -428,11 +436,11 @@ export interface Search {
   splitRecord(copies: number, subsample: SubSample): Promise<void>;
   transferRecords(
     username: Username,
-    records: Array<InventoryRecord>
+    records: Array<InventoryRecord>,
   ): Promise<void>;
   exportRecords(
     exportOptions: ExportOptions,
-    records: Array<InventoryRecord>
+    records: Array<InventoryRecord>,
   ): Promise<void>;
 
   /*

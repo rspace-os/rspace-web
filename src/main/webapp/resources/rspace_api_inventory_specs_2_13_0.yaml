@@ -451,6 +451,29 @@ paths:
         '404':
           $ref: '#/responses/NotFound'
 
+  '/samples/{sampleId}/versions/{version}':
+    get:
+      summary: 'Gets a particular version of a Sample'
+      description: |
+        Each sample has a 'version' property, which starts at 1, and is increased with every update to the sample.
+
+        Use this endpoint to retrieve full details of a particular historical version of the sample. The returned record has the `historicalVersion` boolean flag set, a `globalId` with version number, and populated `revisionId` field.
+
+      produces:
+        - application/json
+      tags:
+        - Samples
+      parameters:
+        - $ref: '#/parameters/sampleIdParam'
+        - $ref: '#/parameters/versionParam'
+      responses:
+        '200':
+          description: A Sample, as it was at the requested version
+          schema:
+            $ref: '#/definitions/Sample'
+        '404':
+          $ref: '#/responses/NotFound'
+
   '/samples/validateNameForNewSample':
     get:
       summary: Check if given string is valid for naming a new Sample
@@ -828,6 +851,29 @@ paths:
         '404':
           $ref: '#/responses/NotFound'
 
+  '/subSamples/{subSampleId}/versions/{version}':
+    get:
+      summary: 'Gets a particular version of a SubSample'
+      description: |
+        Each subsample has a 'version' property, which starts at 1, and is increased with every update to the subsample.
+
+        Use this endpoint to retrieve full details of a particular historical version of the subsample. The returned record has the `historicalVersion` boolean flag set, a `globalId` with version number, and populated `revisionId` field.
+
+      produces:
+        - application/json
+      tags:
+        - SubSamples
+      parameters:
+        - $ref: '#/parameters/subSampleIdParam'
+        - $ref: '#/parameters/versionParam'
+      responses:
+        '200':
+          description: A SubSample, as it was at the requested version
+          schema:
+            $ref: '#/definitions/SubSample'
+        '404':
+          $ref: '#/responses/NotFound'
+
 
   /sampleTemplates:
     get:
@@ -1048,6 +1094,24 @@ paths:
           description: A template, as it was at a requested historical revision
           schema:
             $ref: '#/definitions/Sample'
+        '404':
+          $ref: '#/responses/NotFound'
+
+
+  '/sampleTemplates/{sampleTemplateId}/revisions':
+    get:
+      summary: 'Gets historical revisions of the Sample Template'
+      description:
+        Returns list of historical revisions saved for the Sample Template, starting from the earliest revision.
+      produces:
+        - application/json
+      tags:
+        - Sample Templates
+      parameters:
+        - $ref: '#/parameters/sampleTemplateIdParam'
+      responses:
+        '200':
+          description: A list of revision information objects.
         '404':
           $ref: '#/responses/NotFound'
 
@@ -1461,6 +1525,69 @@ paths:
           description: File as bytes.
           schema:
             type: file
+
+  '/containers/{containerId}/revisions':
+    get:
+      summary: 'Gets historical revisions of the Container'
+      description:
+        Returns list of historical revisions saved for the Container, starting from the earliest revision.
+      produces:
+        - application/json
+      tags:
+        - Containers
+      parameters:
+        - $ref: '#/parameters/containerIdParam'
+      responses:
+        '200':
+          description: A list of revision information objects.
+        '404':
+          $ref: '#/responses/NotFound'
+
+  '/containers/{containerId}/revisions/{revisionId}':
+    get:
+      summary: 'Gets historical revision of the Container'
+      description: |
+        Returns full details of a historical revision saved for the Container.
+
+        Container locations are not audited, so the historical record is returned without content (`locations` is null).
+      produces:
+        - application/json
+      tags:
+        - Containers
+      parameters:
+        - $ref: '#/parameters/containerIdParam'
+        - $ref: '#/parameters/revisionIdParam'
+      responses:
+        '200':
+          description: A Container, as it was at a requested historical revision
+          schema:
+            $ref: '#/definitions/Container'
+        '404':
+          $ref: '#/responses/NotFound'
+
+  '/containers/{containerId}/versions/{version}':
+    get:
+      summary: 'Gets a particular version of a Container'
+      description: |
+        Each container has a 'version' property, which starts at 1, and is increased with every update to the container.
+
+        Use this endpoint to retrieve full details of a particular historical version of the container. The returned record has the `historicalVersion` boolean flag set, a `globalId` with version number, and populated `revisionId` field.
+
+        Container locations are not audited, so the historical record is returned without content (`locations` is null).
+      produces:
+        - application/json
+      tags:
+        - Containers
+      parameters:
+        - $ref: '#/parameters/containerIdParam'
+        - $ref: '#/parameters/versionParam'
+      responses:
+        '200':
+          description: A Container, as it was at the requested version
+          schema:
+            $ref: '#/definitions/Container'
+        '404':
+          $ref: '#/responses/NotFound'
 
   '/containers/{containerId}/actions/changeOwner':
     put:

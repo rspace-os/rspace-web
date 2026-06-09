@@ -49,6 +49,8 @@ import org.springframework.web.util.UriComponentsBuilder;
   "lastNonWorkbenchParent",
   "lastMoveDate",
   "revisionId",
+  "version",
+  "historicalVersion",
   "deletedOnSampleDeletion",
   "storedInContainer",
   "_links"
@@ -72,6 +74,12 @@ public class ApiSubSampleInfo extends ApiInventoryRecordInfo {
 
   @JsonProperty("revisionId")
   private Long revisionId;
+
+  @JsonProperty("version")
+  private Long version;
+
+  @JsonProperty("historicalVersion")
+  private boolean historicalVersion;
 
   @JsonProperty("deletedOnSampleDeletion")
   private boolean deletedOnSampleDeletion;
@@ -102,6 +110,7 @@ public class ApiSubSampleInfo extends ApiInventoryRecordInfo {
     }
     setDeletedOnSampleDeletion(subSample.isDeletedOnSampleDeletion());
     setStoredInContainer(subSample.isStoredInContainer());
+    setVersion(subSample.getVersion());
   }
 
   protected void addImageLinksFromParentSample(

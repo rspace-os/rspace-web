@@ -96,7 +96,7 @@ const IdentifierWrapper = observer(
 
     const handleUpdate = (
       f: IdentifierField,
-      value: string | number | CreatorType
+      value: string | number | CreatorType,
     ) => {
       if (f.handler) f.handler(value);
       /* setAttributesDirty on item */
@@ -281,7 +281,7 @@ const IdentifierWrapper = observer(
         </section>
       </>
     );
-  }
+  },
 );
 
 type IdentifiersListArgs = { activeResult: InventoryRecord };
@@ -347,10 +347,10 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
       if (id.state !== "findable") {
         try {
           const idResponse: { data: string } = await axios.get(
-            "/global/ror/existingGlobalRoRID"
+            "/global/ror/existingGlobalRoRID",
           );
           const nameResponse: { data: string } = await axios.get(
-            "/global/ror/existingGlobalRoRName"
+            "/global/ror/existingGlobalRoRName",
           );
           id.creatorAffiliationIdentifier = idResponse.data;
           id.creatorAffiliation = nameResponse.data;
@@ -360,7 +360,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
             mkAlert({
               variant: "error",
               message: "Could not get RoR data.",
-            })
+            }),
           );
         }
       } else {
@@ -495,7 +495,12 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                       variant="outlined"
                       size="small"
                       onClick={() => handlePreview(id)}
-                      disabled={activeResult.state === "edit" || !id.isValid}
+                      disabled={
+                        activeResult.state === "edit" ||
+                        !id.isValid ||
+                        // the preview dialog contains a publish action
+                        Boolean(activeResult.historicalVersion)
+                      }
                     >
                       Preview
                     </Button>
@@ -504,7 +509,10 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                 <Grid item>
                   <PublishButton
                     identifier={id}
-                    disabled={activeResult.state === "edit"}
+                    disabled={
+                      activeResult.state === "edit" ||
+                      Boolean(activeResult.historicalVersion)
+                    }
                   />
                 </Grid>
                 <Grid item>
@@ -513,8 +521,8 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                       id.state === "draft"
                         ? "Delete Draft"
                         : id.state === "findable"
-                        ? "Retract"
-                        : "Not published yet"
+                          ? "Retract"
+                          : "Not published yet"
                     }
                   >
                     <Button
@@ -528,7 +536,8 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
                       }
                       disabled={
                         activeResult.state === "edit" ||
-                        id.state === "registered"
+                        id.state === "registered" ||
+                        Boolean(activeResult.historicalVersion)
                       }
                     >
                       {id.state === "draft" ? "Delete" : "Retract"}
@@ -575,7 +584,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
         )}
       </Grid>
     );
-  }
+  },
 );
 
 const AssignDialog = observer(
@@ -647,9 +656,9 @@ const AssignDialog = observer(
                 .map((igsn) =>
                   igsn.associatedGlobalId !== null
                     ? IsInvalid(
-                        "The selected IGSN ID is already assigned to another item."
+                        "The selected IGSN ID is already assigned to another item.",
                       )
-                    : IsValid()
+                    : IsValid(),
                 )
                 .orElse(IsInvalid("No IGSN ID selected."))}
               onClick={doNotAwait(async () => {
@@ -657,8 +666,8 @@ const AssignDialog = observer(
                   .toResult(
                     () =>
                       new Error(
-                        "Invalid state: zero or many identifiers are selected"
-                      )
+                        "Invalid state: zero or many identifiers are selected",
+                      ),
                   )
                   .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
                 await recordToAssignTo.fetchAdditionalInfo();
@@ -673,7 +682,7 @@ const AssignDialog = observer(
         </Dialog>
       </ThemeProvider>
     );
-  }
+  },
 );
 
 const IdentifiersCard = observer((): ReactNode => {
@@ -692,32 +701,34 @@ const IdentifiersCard = observer((): ReactNode => {
           This item has not been created yet. Please save the item first.
         </Alert>
       )}
-      {activeResult.state !== "create" && identifiers.length === 0 && (
-        <Stack direction="row" spacing={1}>
-          <Button
-            color="primary"
-            variant="outlined"
-            onClick={doNotAwait(() => activeResult.addIdentifier())}
-          >
-            Create new IGSN ID
-          </Button>
-          <Button
-            color="primary"
-            variant="outlined"
-            onClick={() => {
-              setAssignDialogOpen(true);
-              trackEvent("user:open:assign-existing-igsn-dialog");
-            }}
-          >
-            Link existing IGSN ID
-          </Button>
-          <AssignDialog
-            recordToAssignTo={activeResult}
-            open={assignDialogOpen}
-            onClose={() => setAssignDialogOpen(false)}
-          />
-        </Stack>
-      )}
+      {activeResult.state !== "create" &&
+        identifiers.length === 0 &&
+        !activeResult.historicalVersion && (
+          <Stack direction="row" spacing={1}>
+            <Button
+              color="primary"
+              variant="outlined"
+              onClick={doNotAwait(() => activeResult.addIdentifier())}
+            >
+              Create new IGSN ID
+            </Button>
+            <Button
+              color="primary"
+              variant="outlined"
+              onClick={() => {
+                setAssignDialogOpen(true);
+                trackEvent("user:open:assign-existing-igsn-dialog");
+              }}
+            >
+              Link existing IGSN ID
+            </Button>
+            <AssignDialog
+              recordToAssignTo={activeResult}
+              open={assignDialogOpen}
+              onClose={() => setAssignDialogOpen(false)}
+            />
+          </Stack>
+        )}
       {identifiers.length > 0 && (
         <Card variant="outlined">
           <IdentifiersList activeResult={activeResult} />
@@ -731,7 +742,7 @@ function Identifiers<
   Fields extends {
     identifiers: Array<Identifier>;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
   return (
     <InputWrapper

@@ -136,7 +136,7 @@ type LockOwner = {
 };
 
 export class RecordLockedError extends Error {
-  record: InventoryBaseRecord;  
+  record: InventoryBaseRecord;
   lockOwner: LockOwner;
 
   constructor(record: InventoryBaseRecord, lockOwner: LockOwner) {
@@ -194,6 +194,8 @@ type ResultAttrs = {
   _links: Array<_LINK>;
   barcodes: Array<PersistedBarcodeAttrs>;
   identifiers: Array<IdentifierAttrs>;
+  version?: number | null;
+  historicalVersion?: boolean;
 };
 
 /**
@@ -269,6 +271,15 @@ export default class InventoryBaseRecord
   sharingMode: SharingMode;
   // @ts-expect-error sharingWith is initialised by populateFromJson
   sharedWith: Array<SharedWithGroup> | null;
+  /** The user-facing version of the record, bumped on every content edit. */
+  version: number | null = null;
+  /**
+   * True when this instance models a historical version of the record rather
+   * than its live state. Historical records are read-only: the context menu
+   * is disabled, the permalink carries the version, and full details are
+   * fetched from the versions API.
+   */
+  historicalVersion: boolean = false;
 
   /*
    * This list of toasts is used to clear alert toasts specific to this record
@@ -319,6 +330,8 @@ export default class InventoryBaseRecord
       iconId: observable,
       sharingMode: observable,
       sharedWith: observable,
+      version: observable,
+      historicalVersion: observable,
       setAttributesDirty: action,
       unsetDirtyFlag: action,
       setAttributes: action,
@@ -392,6 +405,13 @@ export default class InventoryBaseRecord
     const params = { ...defaultParams, ...passedParams } as ResultAttrs;
     this.id = params.id;
     this.globalId = params.globalId;
+    /*
+     * version/historicalVersion are assigned before anything that reads
+     * permalinkURL (attachments, barcodes) so that all consumers see a
+     * consistent value.
+     */
+    this.version = params.version ?? null;
+    this.historicalVersion = params.historicalVersion ?? false;
     this.type = params.type;
     this.name = params.name;
     this.description = params.description;
@@ -443,7 +463,13 @@ export default class InventoryBaseRecord
     ) {
       this.barcodes = [
         new GeneratedBarcode({
-          data: `${window.location.origin}${this.permalinkURL}`,
+          /*
+           * A barcode is a durable, physical artefact: it must always resolve
+           * to the live record, never a version-pinned view.
+           */
+          data: `${window.location.origin}/inventory/${this.recordType.toLowerCase()}/${
+            this.id
+          }`,
         }),
         ...params.barcodes.map((attrs) => factory.newBarcode(attrs)),
       ];
@@ -843,6 +869,16 @@ export default class InventoryBaseRecord
     refresh?: boolean | null,
     silent?: boolean | null,
   ): Promise<LockStatus> {
+    /*
+     * Defence-in-depth: a historical version must never enter edit mode, as
+     * saving would overwrite the live record with stale snapshot values. The
+     * UI affordances are all disabled separately, but any path that slips
+     * through is refused here.
+     */
+    if (value && this.historicalVersion) {
+      console.warn("Refusing to edit a historical version of a record.");
+      return "CANNOT_LOCK";
+    }
     refresh = refresh ?? true;
     silent = silent ?? false;
     const doSetEditing = action<() => void>(() => {
@@ -1005,8 +1041,17 @@ export default class InventoryBaseRecord
 
     this.setLoading(true);
     try {
+      /*
+       * A historical record must be re-fetched from the versions API:
+       * fetching the plain record would silently overwrite the snapshot
+       * with the latest state.
+       */
+      const endpoint =
+        this.historicalVersion && this.version !== null
+          ? `${this.recordType}s/${id}/versions/${this.version}`
+          : `${this.recordType}s/${id}`;
       this.fetchingAdditionalInfo = ApiService.query<object>(
-        `${this.recordType}s/${id}`,
+        endpoint,
         new URLSearchParams(queryParameters),
       );
       const { data } = await this.fetchingAdditionalInfo;
@@ -1319,7 +1364,11 @@ export default class InventoryBaseRecord
 
   isFieldEditable(field: string): boolean {
     return (
-      !this.loading && !this.deleted && this.currentlyEditableFields.has(field)
+      !this.loading &&
+      !this.deleted &&
+      // a historical version is read-only by construction
+      !this.historicalVersion &&
+      this.currentlyEditableFields.has(field)
     );
   }
 
@@ -1577,12 +1626,18 @@ export default class InventoryBaseRecord
   }
 
   contextMenuDisabled(): string | null {
-    return null;
+    return this.historicalVersion
+      ? `Cannot modify a historical version of a ${
+          this.recordTypeLabel.toLowerCase() || "record"
+        }.`
+      : null;
   }
 
   get permalinkURL(): URLType | null {
     const permalinkType = this.recordType.toLowerCase();
     if (!this.id) return null;
+    if (this.historicalVersion && this.version !== null)
+      return `/inventory/${permalinkType}/${this.id}?version=${this.version}`;
     return `/inventory/${permalinkType}/${this.id}`;
   }
 

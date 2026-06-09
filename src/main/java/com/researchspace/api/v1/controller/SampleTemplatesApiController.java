@@ -10,6 +10,7 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOpera
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -20,6 +21,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +46,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
 
   private @Autowired IconImageManager iconImageManager;
   private @Autowired InventoryBulkOperationHandler bulkOperationHandler;
+  private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   private @Autowired SampleTemplatePostValidator postValidator;
   private @Autowired SampleTemplatePutValidator putValidator;
@@ -91,8 +95,28 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
     ApiSampleTemplate template = sampleApiMgr.getApiSampleTemplateVersion(id, version, user);
+    if (template == null) {
+      throw new NotFoundException(createNotFoundMessage("Sample template version", version));
+    }
     buildAndAddInventoryRecordLinks(template);
     return template;
+  }
+
+  @Override
+  public ApiInventoryRecordRevisionList getSampleTemplateAllRevisions(
+      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+    Sample dbTemplate = sampleApiMgr.assertUserCanReadSample(id, user);
+    if (!dbTemplate.isTemplate()) {
+      // a plain sample id is not addressable through the template endpoint
+      throw new NotFoundException(createNotFoundMessage("Sample template", id));
+    }
+    ApiInventoryRecordRevisionList revisions =
+        inventoryAuditMgr.getInventoryRecordRevisions(dbTemplate);
+    for (ApiInventoryRecordRevisionList.ApiInventoryRecordRevision templateRev :
+        revisions.getRevisions()) {
+      buildAndAddInventoryRecordLinks(templateRev.getRecord());
+    }
+    return revisions;
   }
 
   @Override

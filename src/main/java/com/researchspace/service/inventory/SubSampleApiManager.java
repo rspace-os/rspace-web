@@ -40,6 +40,14 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
   ApiSubSample getApiSubSampleById(Long id, User user);
 
   /**
+   * Returns the subsample as it was at the given user-facing version, with outgoing fields
+   * (permitted actions etc.) populated against the live subsample. The current version is served as
+   * a regular live retrieval; older versions resolve to a read-only historical snapshot. Returns
+   * null if the version does not exist.
+   */
+  ApiSubSample getApiSubSampleVersion(Long subSampleId, Long version, User user);
+
+  /**
    * @return updated subSample
    */
   ApiSubSample updateApiSubSample(ApiSubSample incomingSubSample, User user);

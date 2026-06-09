@@ -3,7 +3,7 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.api.v1.model.ApiField.ApiFieldType.ATTACHMENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,6 +43,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import javax.ws.rs.NotFoundException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -456,8 +457,9 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
         subSamplesApi.getSubSampleAllRevisions(subSample.getId(), testUser);
     assertEquals(0, revisions.getRevisions().size());
 
-    ApiSubSample subSampleRevision =
-        subSamplesApi.getSubSampleRevision(subSample.getId(), 1L, testUser);
-    assertNull(subSampleRevision);
+    // a missing revision surfaces as 404, not a 200 null body
+    assertThrows(
+        NotFoundException.class,
+        () -> subSamplesApi.getSubSampleRevision(subSample.getId(), 1L, testUser));
   }
 }
