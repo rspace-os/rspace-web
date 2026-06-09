@@ -64,7 +64,9 @@ public class ApiFieldToModelFieldFactory {
     toAdd.setColumnIndex(field.getColumnIndex());
     if (toAdd.isOptionsStoringField()) {
       toAdd.setSelectedOptions(field.getSelectedOptions());
-    } else {
+    } else if (!(toAdd instanceof InventoryLinkField)) {
+      // Link fields hold their value in the InventoryLink association, not the data column,
+      // so they must not have the (empty) content string written into their data.
       toAdd.setFieldData(field.getContent());
     }
     if (field.getMandatory() != null) {

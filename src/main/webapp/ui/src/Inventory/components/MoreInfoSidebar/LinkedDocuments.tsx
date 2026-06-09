@@ -129,7 +129,7 @@ function DocumentsTable({
                   position={["bottom", "right"]}
                 />
               ) : (
-                <>&emdash;</>
+                <>-</>
               )}
             </TableCell>
           </TableRow>

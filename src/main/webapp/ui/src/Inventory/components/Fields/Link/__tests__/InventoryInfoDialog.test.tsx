@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@/__tests__/customQueries";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 import InvApiService from "../../../../../common/InvApiService";

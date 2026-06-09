@@ -50,13 +50,24 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public List<ApiInventoryReferencingItem> findReferencingItems(String targetGlobalId, User actor) {
-    GlobalIdentifier target = new GlobalIdentifier(targetGlobalId);
+    GlobalIdentifier target;
+    try {
+      target = new GlobalIdentifier(targetGlobalId);
+    } catch (IllegalArgumentException ex) {
+      // a malformed Global ID does not resolve to any target; surface it as a clean API error
+      // rather than letting the raw IllegalArgumentException escape to the HTTP layer
+      throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
+    }
     List<ExtraLinkField> fields =
         linkDao.findReferencingLinkFields(target.getPrefix(), target.getDbId());
     List<ApiInventoryReferencingItem> rows = new ArrayList<>(fields.size());
     for (ExtraLinkField field : fields) {
       InventoryRecord parent = field.getInventoryRecord();
       if (parent == null) {
+        continue;
+      }
+      InventoryLink link = field.getLink();
+      if (link == null) {
         continue;
       }
       if (!permissionUtils.canUserReadInventoryRecord(parent, actor)) {
@@ -66,10 +77,10 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
       row.setSourceGlobalId(parent.getOid().toString());
       row.setSourceName(parent.getName());
       row.setSourceType(parent.getType().toString());
-      row.setRelationType(field.getLink().getRelationType());
-      row.setVersionPin(field.getLink().getVersionPin());
-      if (field.getLink().getModifiedAt() != null) {
-        row.setModifiedAtMillis(field.getLink().getModifiedAt().getTime());
+      row.setRelationType(link.getRelationType());
+      row.setVersionPin(link.getVersionPin());
+      if (link.getModifiedAt() != null) {
+        row.setModifiedAtMillis(link.getModifiedAt().getTime());
       }
       rows.add(row);
     }

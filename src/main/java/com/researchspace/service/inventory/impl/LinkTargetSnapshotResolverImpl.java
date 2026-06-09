@@ -89,6 +89,9 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
     if (linkTargetResolver.targetExistsAndIsReadable(baseGid, user)) {
       return true;
     }
+    // Fallback: the live record is gone (hard-deleted), so no live permission check is possible.
+    // Intentionally restrict the audit-only snapshot to its original owner; every other user
+    // (including admins, who have no live grant on a destroyed record) is denied here.
     User owner = ownerOf(entity);
     return owner != null
         && user != null

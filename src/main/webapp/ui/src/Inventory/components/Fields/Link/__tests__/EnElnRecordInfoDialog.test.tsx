@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@/__tests__/customQueries";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
 
