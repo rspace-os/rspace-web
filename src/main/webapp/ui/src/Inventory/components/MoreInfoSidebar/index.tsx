@@ -8,7 +8,7 @@ import useStores from "../../../stores/use-stores";
 import GlobalId from "./GlobalId";
 import Date from "./Date";
 import LatestTemplateActions from "./LatestTemplateActions";
-import TemplateVersion from "./TemplateVersion";
+import VersionHistory from "./VersionHistory";
 import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
@@ -57,7 +57,7 @@ function Sidebar({ factory }: SidebarArgs): React.ReactNode {
             <GlobalId record={activeResult} />
             <Date label="Created" date={activeResult.created} />
             <Date label="Last Modified" date={activeResult.lastModified} />
-            <TemplateVersion record={activeResult} />
+            <VersionHistory record={activeResult} />
             <LatestTemplateActions record={activeResult} />
             {activeResult.usableInLoM && activeResult.globalId && (
               <LinkedDocuments

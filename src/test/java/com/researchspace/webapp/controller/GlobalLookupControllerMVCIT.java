@@ -76,6 +76,19 @@ public class GlobalLookupControllerMVCIT extends MVCTestBase {
     GlobalIdentifier conGid = new GlobalIdentifier(GlobalIdPrefix.IC, 12345L);
     assertRedirect(conGid, "/inventory/container");
 
+    // version-suffixed inventory global ids open the read-only versioned viewer (RSDEV-1141)
+    GlobalIdentifier saVersionGid = new GlobalIdentifier(GlobalIdPrefix.SA, 12345L, 2L);
+    assertRedirect(saVersionGid, "/inventory/sample/12345?version=2");
+
+    GlobalIdentifier ssVersionGid = new GlobalIdentifier(GlobalIdPrefix.SS, 12345L, 3L);
+    assertRedirect(ssVersionGid, "/inventory/subsample/12345?version=3");
+
+    GlobalIdentifier itVersionGid = new GlobalIdentifier(GlobalIdPrefix.IT, 12345L, 2L);
+    assertRedirect(itVersionGid, "/inventory/sampletemplate/12345?version=2");
+
+    GlobalIdentifier icVersionGid = new GlobalIdentifier(GlobalIdPrefix.IC, 12345L, 1L);
+    assertRedirect(icVersionGid, "/inventory/container/12345?version=1");
+
     GlobalIdentifier groupId = new GlobalIdentifier(GlobalIdPrefix.GP, 12345L);
     assertRedirect(groupId, "/groups/view");
 

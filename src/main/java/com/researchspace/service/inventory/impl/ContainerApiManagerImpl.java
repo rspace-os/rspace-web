@@ -28,6 +28,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
   public static final String CONTAINER_DEFAULT_NAME = "Generic Container";
 
   @Autowired private InventoryMoveHelper moveHelper;
+  @Autowired private InventoryAuditApiManager inventoryAuditMgr;
 
   @Override
   public ISearchResults<ApiContainerInfo> getTopContainersForUser(
@@ -153,6 +155,36 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
   private boolean isWorkbenchOfCurrentUser(Container container, User currentUser) {
     return container.isWorkbench()
         && container.getOwner().getUsername().equals(currentUser.getUsername());
+  }
+
+  @Override
+  public ApiContainer getApiContainerVersion(Long containerId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiContainerById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
+    Container currentContainer = getIfExists(containerId);
+    if (version.equals(currentContainer.getVersion())) {
+      // as doGetContainer, but workbenches are versioned containers too, so no assertion
+      if (!isWorkbenchOfCurrentUser(currentContainer, user)) {
+        publisher.publishEvent(new InventoryAccessEvent(currentContainer, user));
+      }
+      return getPopulatedApiContainer(currentContainer, true, user);
+    }
+    // joins this transaction (REQUIRED propagation), so currentContainer stays
+    // session-attached; historical reads intentionally publish no InventoryAccessEvent,
+    // matching the template-version precedent
+    ApiContainer apiContainerVersion =
+        inventoryAuditMgr.getApiContainerVersion(currentContainer, version);
+    if (apiContainerVersion != null) {
+      // permissions are evaluated against the live container; historical views have no
+      // content, so there are no locations to populate
+      setOtherFieldsForOutgoingApiInventoryRecord(apiContainerVersion, currentContainer, user);
+      populateSharingPermissions(apiContainerVersion.getSharedWith(), currentContainer);
+    }
+    return apiContainerVersion;
   }
 
   private ApiContainer getPopulatedApiContainer(
@@ -318,6 +350,8 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbContainer);
       if (contentChanged) {
+        // only content edits bump the user-facing version; moves don't
+        dbContainer.increaseVersion();
         dbContainer.setModificationDate(new Date());
         dbContainer.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
         publisher.publishEvent(new InventoryEditingEvent(dbContainer, user));

@@ -180,10 +180,7 @@ export interface CreateFrom {
  * different views.
  */
 export interface InventoryRecord
-  extends Record,
-    Editable,
-    HasChildren,
-    CreateFrom {
+  extends Record, Editable, HasChildren, CreateFrom {
   /*
    * These properties are simply shared by all record classes.
    */
@@ -198,6 +195,14 @@ export interface InventoryRecord
   lastModified: string;
   modifiedByFullName: string;
   readonly illustration: React.ReactNode;
+
+  /*
+   * The user-facing version of the record, bumped on every content edit, and
+   * whether this instance models a historical (read-only) version rather than
+   * the live state. Optional so that lightweight stubs need not provide them.
+   */
+  readonly version?: number | null;
+  readonly historicalVersion?: boolean;
 
   /*
    * Records may have an associated image. It MUST be possible to set the

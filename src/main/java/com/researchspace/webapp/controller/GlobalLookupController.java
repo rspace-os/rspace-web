@@ -4,8 +4,10 @@ import static java.lang.String.format;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,6 +66,10 @@ public class GlobalLookupController extends BaseController {
     prefixToUrl.put(GlobalIdPrefix.BE, "/inventory/search?parentGlobalId=BE");
   }
 
+  /** Inventory record types whose version-suffixed global IDs open the versioned viewer. */
+  private static final Set<GlobalIdPrefix> VERSIONED_INVENTORY_PREFIXES =
+      EnumSet.of(GlobalIdPrefix.SA, GlobalIdPrefix.SS, GlobalIdPrefix.IC, GlobalIdPrefix.IT);
+
   private String getRedirect(GlobalIdentifier oid) {
     GlobalIdPrefix prefix = oid.getPrefix();
     String url = null;
@@ -82,6 +88,10 @@ public class GlobalLookupController extends BaseController {
     if (oid.hasVersionId() && GlobalIdPrefix.GL.equals(oid.getPrefix())) {
       url = FileDownloadController.STREAM_URL;
       url += "/" + oid.getDbId() + "?version=" + oid.getVersionId();
+    }
+    if (oid.hasVersionId() && VERSIONED_INVENTORY_PREFIXES.contains(prefix)) {
+      // versioned inventory global IDs (e.g. SA42v2) open the read-only versioned viewer
+      url = prefixToUrl.get(prefix) + oid.getDbId() + "?version=" + oid.getVersionId();
     }
 
     if (url == null) {

@@ -54,6 +54,13 @@ public interface AuditManager {
   /** Returns revision number from media file id and version number. */
   Number getRevisionNumberForMediaFileVersion(Long mediaId, Number version);
 
+  /**
+   * Returns the newest Envers revision number carrying the given user-facing version of an audited
+   * inventory record, or null if no revision carries that version.
+   */
+  <T> Number getRevisionNumberForInventoryRecordVersion(
+      Class<T> cls, Long recordId, Number version);
+
   AuditedEntity<EcatMediaFile> getRevisionForMediaFile(EcatMediaFile mediaFile, Number revision);
 
   /**

@@ -531,6 +531,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(0, retrievedSubSample.getNotes().size());
     assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(testUser.getFullName(), retrievedSubSample.getModifiedByFullName());
+    assertEquals(1L, retrievedSubSample.getVersion());
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryAccessEvent.class));
 
     // update metadata information
@@ -558,6 +559,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, retrievedSubSample.getNotes().size());
     assertEquals("4.999 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(testUser.getFullName(), retrievedSubSample.getModifiedByFullName());
+    // only the content update (rename) bumps the user-facing version; notes and usage don't
+    assertEquals(2L, retrievedSubSample.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
@@ -628,6 +631,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     updateRequest.setParentContainer(listContainer);
     ApiSubSample updatedSubSample = subSampleApiMgr.updateApiSubSample(updateRequest, testUser);
     assertEquals(listContainer.getId(), updatedSubSample.getParentContainer().getId());
+    // a move-only update does not bump the user-facing version
+    assertEquals(1L, updatedSubSample.getVersion());
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryMoveEvent.class));
 
     // verify target container updated
@@ -689,6 +694,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiSubSample deletedSubSample =
         subSampleApiMgr.markSubSampleAsDeleted(subSampleInfo.getId(), testUser, false);
     assertNull(deletedSubSample.getParentContainer());
+    // five moves and a delete: still version 1
+    assertEquals(1L, deletedSubSample.getVersion());
     listContainer = containerApiMgr.getApiContainerById(listContainer.getId(), testUser);
     assertEquals(0, listContainer.getContentSummary().getTotalCount());
 
