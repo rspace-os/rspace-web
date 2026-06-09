@@ -38,6 +38,9 @@ function ContextMenu({
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [overflow, setOverflow] = useState<Set<number>>(new Set());
+  // Buttons stay hidden until the first width measurement so that only the
+  // ones that actually fit are ever shown, rather than flashing the full set.
+  const [measured, setMeasured] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const actions = contextActions({
@@ -55,6 +58,32 @@ function ContextMenu({
   useLayoutEffect(() => {
     const root = containerRef.current;
     if (!root) return;
+
+    /*
+     * Measure synchronously, before the browser paints, which buttons fit. The
+     * buttons render hidden until this runs (see `measured`), so the first
+     * painted frame shows only the buttons that fit rather than flashing the
+     * full set and then hiding the overflow once the IntersectionObserver
+     * (which reports asynchronously, after the first paint) catches up. A
+     * button overflows when its right edge extends past the container's visible
+     * right edge (its content box, i.e. excluding the trailing padding).
+     */
+    const visibleRight =
+      root.getBoundingClientRect().right -
+      (parseFloat(window.getComputedStyle(root).paddingRight) || 0);
+    const initialOverflow = new Set<number>();
+    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((el) => {
+      if (el.getBoundingClientRect().right > visibleRight + 1)
+        initialOverflow.add(Number(el.dataset.idx));
+    });
+    setOverflow((prev) =>
+      prev.size === initialOverflow.size &&
+      [...prev].every((i) => initialOverflow.has(i))
+        ? prev
+        : initialOverflow,
+    );
+    setMeasured(true);
+
     const io = new IntersectionObserver(
       (entries) => {
         setOverflow((prev) => {
@@ -80,7 +109,16 @@ function ContextMenu({
     `Please select only 'Current' or 'In Trash' items to view more actions`;
 
   return (
-    <div>
+    /*
+     * This sits inside a `colSpan` header cell of an auto-layout table. Letting
+     * its content (the action buttons and the warning alert) define the cell's
+     * intrinsic width would widen the whole table past its container. Pinning
+     * `width: 0` keeps the cell's intrinsic width contribution at ~0 (so the
+     * table stays sized by its data rows), while `minWidth: 100%` makes this
+     * box fill the cell at layout time. That gives the overflow container below
+     * a real width to measure against, so surplus buttons move into the menu.
+     */
+    <Box sx={{ width: 0, minWidth: "100%" }}>
       {anySelected && (
         <Box
           sx={{
@@ -108,9 +146,10 @@ function ContextMenu({
                     flex: "0 0 auto",
                     px: "2px",
                     "&:first-of-type": { pl: 0 },
-                    visibility: overflow.has(i) ? "hidden" : "visible",
+                    visibility:
+                      measured && !overflow.has(i) ? "visible" : "hidden",
                   }}
-                  aria-hidden={overflow.has(i)}
+                  aria-hidden={!measured || overflow.has(i)}
                 >
                   {action.component}
                 </Box>
@@ -143,7 +182,7 @@ function ContextMenu({
           {alertMessage}
         </Alert>
       )}
-    </div>
+    </Box>
   );
 }
 

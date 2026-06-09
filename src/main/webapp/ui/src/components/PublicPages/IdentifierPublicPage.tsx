@@ -62,6 +62,19 @@ const STYLED_DL_SX = (theme: Theme) => ({
   "& dd": { margin: 0, marginTop: theme.spacing(0.5) },
 });
 
+const ROW_SX = (theme: Theme) => ({
+  width: "100%",
+  padding: theme.spacing(0.5, 2, 0.5, 2),
+  alignItems: "flex-start",
+});
+
+const COLUMN_SX = (theme: Theme) => ({
+  ...ROW_SX(theme),
+  flexDirection: "column" as const,
+});
+
+const LABEL_SX = { width: "230px", fontWeight: "bold" as const };
+
 type DividedPairArgs = {
   children: [
     ReactElement<"dt">,
@@ -183,9 +196,7 @@ export const IdentifierDataGrid = ({
         aria-hidden={true}
         container
         sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
+          ...ROW_SX(theme),
           backgroundColor: "#e3f0ff",
           borderBottom: "2px solid black",
         })}
@@ -204,7 +215,7 @@ export const IdentifierDataGrid = ({
             src={INSTITUTION_LOGO_ADDRESS}
             alt="Institution Logo"
             title="Institution Logo"
-            className={classes.institutionLogo}
+            style={{ maxHeight: "78px", maxWidth: "255px" }}
           />
         </Grid>
         <Grid>
@@ -278,44 +289,17 @@ export const IdentifierDataGrid = ({
           </Grid>
         </Grid>
       </Grid>
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
         <Grid>
           <h2>General</h2>
         </Grid>
       </Grid>
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
-        <Grid sx={{ width: "230px", fontWeight: "bold" }}>Name:</Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Name:</Grid>
         <Grid>{identifier.title}</Grid>
       </Grid>
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
-        <Grid sx={{ width: "230px", fontWeight: "bold" }}>IGSN ID: </Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>IGSN ID: </Grid>
         <Grid data-testid="identifier-public-url">
           {identifier.publicUrl ? (
             <a href={identifier.publicUrl} title="DOI - address">
@@ -326,65 +310,25 @@ export const IdentifierDataGrid = ({
           )}
         </Grid>
       </Grid>
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
-        <Grid sx={{ width: "230px", fontWeight: "bold" }}>Resource Type:</Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Resource Type:</Grid>
         <Grid data-testid="identifier-resource-type">
           {identifier.resourceType}
         </Grid>
       </Grid>
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
-        <Grid sx={{ width: "230px", fontWeight: "bold" }}>Creator: </Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Creator: </Grid>
         <Grid>{identifier.creatorName}</Grid>
       </Grid>
       {identifier.creatorAffiliation && (
-        <Grid
-          container
-          direction="row"
-          sx={(theme) => ({
-            width: "100%",
-            padding: theme.spacing(0.5, 2, 0.5, 2),
-            alignItems: "flex-start",
-          })}
-          spacing={1}
-        >
-          <Grid sx={{ width: "230px", fontWeight: "bold" }}>
-            Creator Affiliation:{" "}
-          </Grid>
+        <Grid container direction="row" sx={ROW_SX} spacing={1}>
+          <Grid sx={LABEL_SX}>Creator Affiliation: </Grid>
           <Grid>{identifier.creatorAffiliation}</Grid>
         </Grid>
       )}
       {identifier.creatorAffiliationIdentifier && (
-        <Grid
-          container
-          direction="row"
-          sx={(theme) => ({
-            width: "100%",
-            padding: theme.spacing(0.5, 2, 0.5, 2),
-            alignItems: "flex-start",
-          })}
-          spacing={1}
-        >
-          <Grid sx={{ width: "230px", fontWeight: "bold" }}>
-            Creator Affiliation Identifier:{" "}
-          </Grid>
+        <Grid container direction="row" sx={ROW_SX} spacing={1}>
+          <Grid sx={LABEL_SX}>Creator Affiliation Identifier: </Grid>
           <Grid>
             <a
               target="_blank"
@@ -396,46 +340,17 @@ export const IdentifierDataGrid = ({
           </Grid>
         </Grid>
       )}
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
-        <Grid sx={{ width: "230px", fontWeight: "bold" }}>Organisation: </Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Organisation: </Grid>
         <Grid>{identifier.publisher}</Grid>
       </Grid>
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
-        <Grid sx={{ width: "230px", fontWeight: "bold" }}>
-          Publication Year:{" "}
-        </Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Publication Year: </Grid>
         <Grid>{identifier.publicationYear}</Grid>
       </Grid>
       {anyRecommendedGiven && (
         <>
-          <Grid
-            container
-            direction="row"
-            sx={(theme) => ({
-              width: "100%",
-              padding: theme.spacing(0.5, 2, 0.5, 2),
-              alignItems: "flex-start",
-            })}
-            spacing={1}
-          >
+          <Grid container direction="row" sx={ROW_SX} spacing={1}>
             <Grid>
               <h2>Optional Fields</h2>
             </Grid>
@@ -444,12 +359,7 @@ export const IdentifierDataGrid = ({
             identifier.subjects.length > 0 && (
               <Grid
                 container
-                sx={(theme) => ({
-                  flexDirection: "column",
-                  width: "100%",
-                  padding: theme.spacing(0.5, 2, 0.5, 2),
-                  alignItems: "flex-start",
-                })}
+                sx={COLUMN_SX}
                 spacing={1}
                 role="group"
                 aria-label="subjects"
@@ -458,29 +368,18 @@ export const IdentifierDataGrid = ({
                   <h3>Subjects</h3>
                 </Grid>
                 {identifier.subjects.map((s) => (
-                  <Grid
-                    sx={(theme) => ({
-                      width: "100%",
-                      padding: theme.spacing(0.5, 2, 0.5, 2),
-                      alignItems: "flex-start",
-                    })}
-                    key={s.value}
-                  >
+                  <Grid sx={ROW_SX} key={s.value}>
                     <Grid sx={{ margin: "8px" }}>{s.value}</Grid>
                     {subFields(s).length > 0 &&
                       subFields(s).map((sf) => (
                         <Grid
                           container
                           direction="row"
-                          sx={(theme) => ({
-                            width: "100%",
-                            padding: theme.spacing(0.5, 2, 0.5, 2),
-                            alignItems: "flex-start",
-                          })}
+                          sx={ROW_SX}
                           spacing={1}
                           key={sf.key}
                         >
-                          <Grid sx={{ width: "230px", fontWeight: "bold" }}>
+                          <Grid sx={LABEL_SX}>
                             {RECOMMENDED_FIELDS_LABELS[sf.key]}
                           </Grid>
                           <Grid>
@@ -506,12 +405,7 @@ export const IdentifierDataGrid = ({
             identifier.descriptions.length > 0 && (
               <Grid
                 container
-                sx={(theme) => ({
-                  flexDirection: "column",
-                  width: "100%",
-                  padding: theme.spacing(0.5, 2, 0.5, 2),
-                  alignItems: "flex-start",
-                })}
+                sx={COLUMN_SX}
                 spacing={1}
                 role="group"
                 aria-label="descriptions"
@@ -523,15 +417,11 @@ export const IdentifierDataGrid = ({
                   <Grid
                     container
                     direction="row"
-                    sx={(theme) => ({
-                      width: "100%",
-                      padding: theme.spacing(0.5, 2, 0.5, 2),
-                      alignItems: "flex-start",
-                    })}
+                    sx={ROW_SX}
                     spacing={1}
                     key={d.value}
                   >
-                    <Grid sx={{ width: "230px", fontWeight: "bold" }}>
+                    <Grid sx={LABEL_SX}>
                       {capitaliseJustFirstChar(d.type.toLowerCase())}
                     </Grid>
                     <Grid>{d.value}</Grid>
@@ -543,12 +433,7 @@ export const IdentifierDataGrid = ({
             identifier.alternateIdentifiers.length > 0 && (
               <Grid
                 container
-                sx={(theme) => ({
-                  flexDirection: "column",
-                  width: "100%",
-                  padding: theme.spacing(0.5, 2, 0.5, 2),
-                  alignItems: "flex-start",
-                })}
+                sx={COLUMN_SX}
                 spacing={1}
                 role="group"
                 aria-label="alternate-identifiers"
@@ -560,11 +445,7 @@ export const IdentifierDataGrid = ({
                   <Grid
                     container
                     direction="row"
-                    sx={(theme) => ({
-                      width: "100%",
-                      padding: theme.spacing(0.5, 2, 0.5, 2),
-                      alignItems: "flex-start",
-                    })}
+                    sx={ROW_SX}
                     spacing={1}
                     key={id.value}
                   >
@@ -574,15 +455,11 @@ export const IdentifierDataGrid = ({
                         <Grid
                           container
                           direction="row"
-                          sx={(theme) => ({
-                            width: "100%",
-                            padding: theme.spacing(0.5, 2, 0.5, 2),
-                            alignItems: "flex-start",
-                          })}
+                          sx={ROW_SX}
                           spacing={1}
                           key={sf.key}
                         >
-                          <Grid sx={{ width: "230px", fontWeight: "bold" }}>
+                          <Grid sx={LABEL_SX}>
                             {RECOMMENDED_FIELDS_LABELS[sf.key]}
                           </Grid>
                           <Grid>
@@ -597,12 +474,7 @@ export const IdentifierDataGrid = ({
           {Array.isArray(identifier.dates) && identifier.dates.length > 0 && (
             <Grid
               container
-              sx={(theme) => ({
-                flexDirection: "column",
-                width: "100%",
-                padding: theme.spacing(0.5, 2, 0.5, 2),
-                alignItems: "flex-start",
-              })}
+              sx={COLUMN_SX}
               spacing={1}
               role="group"
               aria-label="dates"
@@ -614,15 +486,11 @@ export const IdentifierDataGrid = ({
                 <Grid
                   container
                   direction="row"
-                  sx={(theme) => ({
-                    width: "100%",
-                    padding: theme.spacing(0.5, 2, 0.5, 2),
-                    alignItems: "flex-start",
-                  })}
+                  sx={ROW_SX}
                   spacing={1}
                   key={d.value.toString() + "-" + i}
                 >
-                  <Grid sx={{ width: "230px", fontWeight: "bold" }}>
+                  <Grid sx={LABEL_SX}>
                     {capitaliseJustFirstChar(d.type.toLowerCase())}
                   </Grid>
                   <Grid>
@@ -782,30 +650,12 @@ export const IdentifierDataGrid = ({
       )}
       {identifier.customFieldsOnPublicPage && (
         <>
-          <Grid
-            container
-            direction="row"
-            sx={(theme) => ({
-              width: "100%",
-              padding: theme.spacing(0.5, 2, 0.5, 2),
-              alignItems: "flex-start",
-            })}
-            spacing={1}
-          >
+          <Grid container direction="row" sx={ROW_SX} spacing={1}>
             <Grid>
               <h2>Inventory</h2>
             </Grid>
           </Grid>
-          <Grid
-            container
-            sx={(theme) => ({
-              flexDirection: "column",
-              width: "100%",
-              padding: theme.spacing(0.5, 2, 0.5, 2),
-              alignItems: "flex-start",
-            })}
-            spacing={2}
-          >
+          <Grid container sx={COLUMN_SX} spacing={2}>
             <Grid>
               <Description
                 fieldOwner={{
@@ -916,16 +766,7 @@ export const IdentifierDataGrid = ({
           </Grid>
         </>
       )}
-      <Grid
-        container
-        direction="row"
-        sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
-        })}
-        spacing={1}
-      >
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
         <Grid>
           <h2>Other Information</h2>
         </Grid>
@@ -934,9 +775,7 @@ export const IdentifierDataGrid = ({
         container
         direction="row"
         sx={(theme) => ({
-          width: "100%",
-          padding: theme.spacing(0.5, 2, 0.5, 2),
-          alignItems: "flex-start",
+          ...ROW_SX(theme),
           marginBottom: theme.spacing(1),
         })}
         spacing={1}

@@ -308,6 +308,7 @@ const DescriptionField = observer(
             fullWidth
             size="small"
             sx={(theme) => ({
+              width: '100%',
               [`& .${outlinedInputClasses.root}`]: {
                 borderRadius: "4px",
                 fontSize: "0.9rem",

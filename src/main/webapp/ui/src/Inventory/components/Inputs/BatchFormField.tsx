@@ -4,9 +4,8 @@ import BaseFormField, {
 } from "./FormField";
 import ChooseToEdit from "../../../components/Inputs/ChooseToEdit";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
+import FieldLabel from "../../../components/Inputs/FieldLabel";
 import NoValue from "../../../components/NoValue";
-import { Heading } from "../../../components/DynamicHeadingLevel";
 import { INVENTORY_FORM_FIELD_SX } from "./FormField";
 
 /**
@@ -126,9 +125,9 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
         aria-labelledby={labelId}
         sx={INVENTORY_FORM_FIELD_SX}
       >
-        <FormLabel component={Heading} sx={{ mt: 0 }} id={labelId}>
+        <FieldLabel disabled id={labelId}>
           {label}
-        </FormLabel>
+        </FieldLabel>
         <NoValue label={noValueLabel ?? "No Value"} />
         {canChooseWhichToEdit ? (
           <ChooseToEdit

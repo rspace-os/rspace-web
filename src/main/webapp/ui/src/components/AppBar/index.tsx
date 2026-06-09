@@ -799,6 +799,7 @@ function GalleryAppBar({
                         <ListItemText
                           sx={{
                             mt: 0.5,
+                            ml: 1.6,
                           }}
                           primary={
                             <>

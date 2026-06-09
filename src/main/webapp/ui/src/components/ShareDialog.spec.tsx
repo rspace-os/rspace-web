@@ -52,7 +52,7 @@ const feature = test.extend<{
     }: {
       newPermission: "EDIT" | "READ";
     }) => Promise<void>;
-    "a POST request should have been made to move the document to the new folder": () => void;
+    "a POST request should have been made to move the document to the new folder": () => Promise<void>;
   };
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
 }>({
@@ -282,7 +282,6 @@ const feature = test.extend<{
           );
           await expect(directShareRow.getByRole("cell").nth(3)).toHaveText(
             /A notebook/,
-
           );
           const notebookShareRow = notebookShareTable.getByRole("row").nth(1);
           await expect(notebookShareRow).toBeVisible();
@@ -410,14 +409,18 @@ const feature = test.extend<{
           }
         },
       "a POST request should have been made to move the document to the new folder":
-        () => {
-          const moveRequest = networkRequests.find(
-            (request) =>
-              request.url.pathname === "/api/v1/documents/move" &&
-              request.method === "POST" &&
-              request.postData !== null,
-          );
-          expect(moveRequest).toBeDefined();
+        async () => {
+          const findMoveRequest = () =>
+            networkRequests.find(
+              (request) =>
+                request.url.pathname === "/api/v1/documents/move" &&
+                request.method === "POST" &&
+                request.postData !== null,
+            );
+          // Poll rather than read once: on WebKit the move request may not be
+          // registered the instant the save action resolves.
+          await expect.poll(findMoveRequest).toBeDefined();
+          const moveRequest = findMoveRequest();
           if (moveRequest != null && moveRequest.postData != null) {
             const body = JSON.parse(moveRequest.postData) as object;
             expect(body).toHaveProperty("docId");
@@ -437,7 +440,6 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   page.on("request", (request) => {
@@ -607,26 +609,29 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       ]),
     });
   });
-  await router.route(/\/?api\/v1\/userDetails\/groupMembers.*/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 2,
-          username: "bob",
-          email: "bob@example.com",
-          firstName: "Bob",
-          lastName: "",
-          homeFolderId: 2,
-          workbenchId: 1,
-          hasPiRole: false,
-          hasSysAdminRole: false,
-          _links: [],
-        },
-      ]),
-    });
-  });
+  await router.route(
+    /\/?api\/v1\/userDetails\/groupMembers.*/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: 2,
+            username: "bob",
+            email: "bob@example.com",
+            firstName: "Bob",
+            lastName: "",
+            homeFolderId: 2,
+            workbenchId: 1,
+            hasPiRole: false,
+            hasSysAdminRole: false,
+            _links: [],
+          },
+        ]),
+      });
+    },
+  );
   await router.route(
     "/api/v1/folders/1?includePathToRootFolder=true",
     async (route) => {
@@ -801,11 +806,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
 
     await route.fulfill({ status: 405 });
   });
-
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-
 });
 test.describe("ShareDialog", () => {
   test.describe("Renders correctly", () => {
@@ -815,7 +818,6 @@ test.describe("ShareDialog", () => {
       ]();
       await Then["a dialog should be visible"]();
       await Then["there shouldn't be any axe violations"]();
-
     });
     feature(
       "When a document has been shared with another user, there's a table",
@@ -828,7 +830,6 @@ test.describe("ShareDialog", () => {
         ]();
         await Then["there shouldn't be any axe violations"]();
       },
-
     );
     feature(
       "When a document has been shared with another group, there's a table",
@@ -841,7 +842,6 @@ test.describe("ShareDialog", () => {
         ]();
         await Then["there shouldn't be any axe violations"]();
       },
-
     );
     /*
      * This is because the UI became too complex to show a table for each document
@@ -853,7 +853,6 @@ test.describe("ShareDialog", () => {
         await Then["no table should be visible"]();
         await Then["there shouldn't be any axe violations"]();
       },
-
     );
     feature(
       "When a document has been shared into a notebook, the implicit shares are shown",
@@ -867,7 +866,6 @@ test.describe("ShareDialog", () => {
         await Then["there shouldn't be any axe violations"]();
       },
     );
-
   });
   test.describe("Creating new shares", () => {
     feature(
@@ -881,7 +879,6 @@ test.describe("ShareDialog", () => {
         await Then["the Save button should have changed to Done"]();
         Then["a POST request should have been made to create the share"]();
       },
-
     );
     feature(
       "Multiple documents should be sharable with a group",
@@ -894,7 +891,6 @@ test.describe("ShareDialog", () => {
         await Then["the Save button should have changed to Done"]();
         Then["a POST request should have been made to create the share"]();
       },
-
     );
     feature(
       "The same document shouldn't be shareable twice with the same user",
@@ -904,7 +900,6 @@ test.describe("ShareDialog", () => {
         ]();
         await Then["Bob is disabled in the recipient dropdown"]();
       },
-
     );
     feature(
       "When sharing multiple documents, choosing a recipient who already has access to one of them will share both with default read permission",
@@ -921,7 +916,6 @@ test.describe("ShareDialog", () => {
         ]();
       },
     );
-
   });
   test.describe("Removing shares", () => {
     feature(
@@ -937,7 +931,6 @@ test.describe("ShareDialog", () => {
         Then["a DELETE request should have been made to remove the share"]();
       },
     );
-
   });
   test.describe("Updating shares", () => {
     feature(
@@ -952,7 +945,6 @@ test.describe("ShareDialog", () => {
           "a PUT request should have been made to update Bob's permission to EDIT"
         ]();
       },
-
     );
     feature(
       "When the user changes a group's permission from EDIT to read, it should make a PUT request",
@@ -968,7 +960,6 @@ test.describe("ShareDialog", () => {
           "a PUT request should have been made to update the group's permission to {newPermission}"
         ]({ newPermission: "READ" });
       },
-
     );
     feature(
       "When the user changes the folder location for a group share, it should make a POST request to move the document",
@@ -983,7 +974,7 @@ test.describe("ShareDialog", () => {
           "the user selects a different folder in the folder selection dialog"
         ]();
         await When["the user saves the new share"]();
-        Then[
+        await Then[
           "a POST request should have been made to move the document to the new folder"
         ]();
       },
@@ -1041,8 +1032,9 @@ test.describe("ShareDialog", () => {
       "Saving outside workspace should still close and show success alert",
       async ({ mount, page }) => {
         await page.evaluate(() => {
-          delete (window as Window & { getAndDisplayWorkspaceResults?: unknown })
-            .getAndDisplayWorkspaceResults;
+          delete (
+            window as Window & { getAndDisplayWorkspaceResults?: unknown }
+          ).getAndDisplayWorkspaceResults;
           delete (window as Window & { workspaceSettings?: unknown })
             .workspaceSettings;
         });
@@ -1084,14 +1076,16 @@ test.describe("ShareDialog", () => {
         } else if (await doneButton.isVisible()) {
           await doneButton.click();
         } else {
-          throw new Error("Neither Save nor Done button is visible in share dialog");
+          throw new Error(
+            "Neither Save nor Done button is visible in share dialog",
+          );
         }
         await expect(dialog).not.toBeVisible();
 
         const trackedEvents = await page.evaluate(
           () =>
-            (window as Window & { __trackedEvents?: string[] }).__trackedEvents ??
-            [],
+            (window as Window & { __trackedEvents?: string[] })
+              .__trackedEvents ?? [],
         );
         expect(trackedEvents).toContain("user:close:share_dialog");
       },

@@ -74,9 +74,10 @@ const feature = test.extend<{
       "the Move to S3 dialog in transfer mode is mounted": async () => {
         await mount(<MoveToS3DialogInTransferMode />);
       },
-      "the Move to S3 dialog in transfer mode with two files is mounted": async () => {
-        await mount(<MoveToS3DialogInTransferModeWithTwoFiles />);
-      },
+      "the Move to S3 dialog in transfer mode with two files is mounted":
+        async () => {
+          await mount(<MoveToS3DialogInTransferModeWithTwoFiles />);
+        },
     });
   },
   When: async ({ page }, use) => {
@@ -86,9 +87,7 @@ const feature = test.extend<{
           await page
             .getByRole("button", { name: /select a filestore/i })
             .click();
-          await page
-            .getByRole("menuitem", { name: /my s3 bucket/i })
-            .click();
+          await page.getByRole("menuitem", { name: /my s3 bucket/i }).click();
         },
       "the user checks 'Retain a copy in RSpace'": async () => {
         await page
@@ -126,19 +125,19 @@ const feature = test.extend<{
         await page.locator(`.${backdropClasses.root}`).last().click();
       },
       "the submit button should be enabled": async () => {
-        await expect(
-          page.getByRole("button", { name: /^move$/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /^move$/i })).toBeVisible(
+          { timeout: 5000 },
+        );
       },
       "the submit button should say 'Move'": async () => {
-        await expect(
-          page.getByRole("button", { name: /^move$/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /^move$/i })).toBeVisible(
+          { timeout: 5000 },
+        );
       },
       "the submit button should say 'Copy'": async () => {
-        await expect(
-          page.getByRole("button", { name: /^copy$/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /^copy$/i })).toBeVisible(
+          { timeout: 5000 },
+        );
       },
       "the submit button should say 'Transfer'": async () => {
         await expect(
@@ -168,7 +167,9 @@ const feature = test.extend<{
       },
       "the 'retain on source' checkbox should be visible": async () => {
         await expect(
-          page.getByRole("checkbox", { name: /retain a copy on source bucket/i }),
+          page.getByRole("checkbox", {
+            name: /retain a copy on source bucket/i,
+          }),
         ).toBeVisible({ timeout: 5000 });
       },
       "the move endpoint should have been called": () => {
@@ -184,19 +185,19 @@ const feature = test.extend<{
         expect(paths).toContain("/api/v1/gallery/filestores/2/transfer");
       },
       "a success alert should be visible": async () => {
-        await expect(
-          page.getByText(/successfully moved/i),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/successfully moved/i)).toBeVisible({
+          timeout: 5000,
+        });
       },
       "a copy success alert should be visible": async () => {
-        await expect(
-          page.getByText(/successfully copied/i),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/successfully copied/i)).toBeVisible({
+          timeout: 5000,
+        });
       },
       "a transfer success alert should be visible": async () => {
-        await expect(
-          page.getByText(/successfully transferred/i),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/successfully transferred/i)).toBeVisible({
+          timeout: 5000,
+        });
       },
       "the dialog title 'Transfer to S3' should be visible": async () => {
         await expect(
@@ -303,7 +304,14 @@ feature.afterEach(({ networkRequests }) => {
 test.describe("MoveToS3", () => {
   test.describe("Accessibility", () => {
     test.setTimeout(30000);
-    feature("Should have no axe violations", async ({ Given, Then }) => {
+    feature("Should have no axe violations", async ({ Given, Then, page }) => {
+      /*
+       * The dialog fades in, so scanning mid-fade trips axe's color-contrast
+       * check because the text is composited at partial opacity over the
+       * background. Emulating reduced motion makes the dialog render at its
+       * final opacity immediately, so axe scans the settled UI.
+       */
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await Given["the Move to S3 dialog with one file is mounted"]();
       await Then["the dialog title 'Move to S3' should be visible"]();
       await Then["there shouldn't be any axe violations"]();
@@ -423,8 +431,11 @@ test.describe("MoveToS3", () => {
   test.describe("Transfer mode", () => {
     feature(
       "Should have no axe violations in transfer mode",
-      async ({ Given, Then }) => {
+      async ({ Given, Then, page }) => {
         test.setTimeout(30000);
+        // Emulate reduced motion so the dialog is at final opacity when axe
+        // scans (otherwise the fade-in trips axe's color-contrast check).
+        await page.emulateMedia({ reducedMotion: "reduce" });
         await Given["the Move to S3 dialog in transfer mode is mounted"]();
         await Then["the dialog title 'Transfer to S3' should be visible"]();
         await Then["there shouldn't be any axe violations"]();
