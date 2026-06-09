@@ -8,6 +8,9 @@ import useFolders, {
   type FolderTreeNode,
 } from "../../../../hooks/api/useFolders";
 import { Tree, TreeItem } from "../../../../components/Tree";
+import { justFilenameExtension } from "@/util/files";
+// Reuse the Gallery's own extension groupings so MEDIA files get the Gallery's per-type icons.
+import EXT_BY_TYPE from "@/eln/gallery/fileExtensionsByType.json";
 
 // The /api/v1/folders/tree endpoint tags each row with an ApiRecordType: FOLDER,
 // NOTEBOOK, DOCUMENT, MEDIA, SNIPPET. We request documents, notebooks and folders;
@@ -46,15 +49,51 @@ function isExpandable(node: FolderTreeNode): boolean {
  */
 const ELN_ICON_BASE = "/images/icons";
 
-function iconUrlForType(type: string): string {
-  switch (type) {
+/*
+ * Gallery (MEDIA) files reuse the Gallery's own per-type icons: the same extension groupings
+ * (fileExtensionsByType.json) and extension parser (justFilenameExtension) the Gallery uses,
+ * mapped to its category SVG icons (image/document/pdf/...). Only this small category->icon map
+ * is copied; the extension data and parser are reused, and useGalleryListing is not modified.
+ */
+const mapToSvgImageIcon = (
+  extensions: ReadonlyArray<string>,
+  filename: string,
+): ReadonlyArray<[string, string]> =>
+  extensions.map((ext) => [ext, `${ELN_ICON_BASE}/${filename}.svg`]);
+
+const galleryFileIconMap = new Map<string, string>([
+  ...mapToSvgImageIcon(EXT_BY_TYPE.CHEMISTRY, "chemistry"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.DNA, "dna"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.AUDIO, "audio"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.VIDEO, "video"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.SPREADSHEET, "sheet"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.IMAGES, "image"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.DOCUMENTS, "document"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.PRESENTATION, "presentation"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.HTML, "html"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.CSV, "csv"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.PDF, "pdf"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.XML, "xml"),
+  ...mapToSvgImageIcon(EXT_BY_TYPE.ZIP, "zip"),
+]);
+
+/** Gallery file icon, matching the Gallery: extension -> category SVG, else the unknown fallback. */
+function galleryIconUrl(name: string): string {
+  return (
+    galleryFileIconMap.get(justFilenameExtension(name)) ??
+    `${ELN_ICON_BASE}/unknown.svg`
+  );
+}
+
+function iconUrlForNode(node: FolderTreeNode): string {
+  switch (node.type) {
     case "FOLDER":
       return `${ELN_ICON_BASE}/folder.png`;
     case "NOTEBOOK":
       return `${ELN_ICON_BASE}/notebook.png`;
     case "MEDIA":
-      // Gallery files get a single generic gallery icon (the workspace tree has no media precedent)
-      return `${ELN_ICON_BASE}/GalleryPlaceholder.png`;
+      // Gallery files use the Gallery's own per-type icons (image/pdf/document/...)
+      return galleryIconUrl(node.name);
     default:
       // DOCUMENT and any other leaf type use the ELN's generic document icon
       return `${ELN_ICON_BASE}/unknownDocument.png`;
@@ -69,7 +108,7 @@ function NodeLabel({ node }: { node: FolderTreeNode }): React.ReactElement {
     >
       <Box
         component="img"
-        src={iconUrlForType(node.type)}
+        src={iconUrlForNode(node)}
         alt=""
         aria-hidden
         sx={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }}

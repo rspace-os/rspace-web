@@ -26,10 +26,18 @@ MUI tree's DOM (`.MuiTreeItem-content`, `.MuiTreeItem-label`). So the ELN CSS
 Reproduce the ELN/Workspace tree look in the picker's MUI tree, scoped to the
 Link-picker files only:
 
-- **Reuse the ELN icon assets by URL** (no copies): folder → `/images/icons/folder.png`,
-  notebook → `/images/icons/notebook.png`, document → `/images/icons/unknownDocument.png`,
-  Gallery/MEDIA → a single generic `/images/icons/GalleryPlaceholder.png`, and folder
-  expanders → `/images/icons/RightArrow25.png` (collapsed) / `DownArrow25.png` (expanded).
+- **Reuse the ELN icon assets by URL** (no copies) for ELN node types: folder →
+  `/images/icons/folder.png`, notebook → `/images/icons/notebook.png`, document →
+  `/images/icons/unknownDocument.png`, and folder expanders → `/images/icons/RightArrow25.png`
+  (collapsed) / `DownArrow25.png` (expanded).
+- **Gallery (MEDIA) files use the Gallery's own per-type icons**, not the ELN set, so they look
+  like the Gallery (images, PDFs, documents, spreadsheets, etc.). The picker **reuses** the
+  Gallery's extension groupings (`src/eln/gallery/fileExtensionsByType.json`) and the shared
+  `justFilenameExtension` parser (`src/util/files.ts`), and **copies only** the small
+  category→SVG map (`/images/icons/{image,document,pdf,sheet,presentation,audio,video,chemistry,dna,html,csv,xml,zip}.svg`),
+  falling back to `/images/icons/unknown.svg`. `useGalleryListing` is not modified. DMP gallery
+  files fall back to `unknown.svg` (the picker's `folders/tree` node carries no gallery-section
+  info, which the Gallery's `dmp.svg` special-case needs).
 - **Copy the few visual values** that cannot be reused (DOM mismatch): selected-row
   background `rgba(193, 193, 193, 0.5)`, ~25px rows, ~20px per-level indent.
 - Node labels show the **name only** (the picked target's global ID still surfaces in
@@ -37,9 +45,11 @@ Link-picker files only:
 - Styling is **picker-local** (applied at `ElnFolderBrowser` via `sx`/slots on the
   forwarded MUI tree); the generic `Tree` is not modified.
 
-**Hard constraint honoured:** zero changes to existing ELN/Gallery styling. No edits to
-`fileTreeBrowser.css`, Fancytree assets, the MUI theme, `src/eln/gallery/*`, or
-`src/components/Tree.tsx` (also used by `FolderTree`). Verified by the `git diff` scope.
+**Hard constraint honoured:** zero changes to existing ELN/Gallery styling or code. The Gallery's
+`fileExtensionsByType.json` and the shared `justFilenameExtension` are *imported* (read-only reuse),
+not modified. No edits to `fileTreeBrowser.css`, Fancytree assets, the MUI theme, `useGalleryListing`
+or any other `src/eln/gallery/*` file, or `src/components/Tree.tsx` (also used by `FolderTree`).
+Verified by the `git diff` scope.
 
 ## Considered options
 
