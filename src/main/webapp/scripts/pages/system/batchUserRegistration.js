@@ -55,7 +55,6 @@ $(document).ready(function() {
             width: 420,
             title: "Batch upload users",
             open : function () {
-                // reset any previous selection and disable 'Upload' until a file is chosen
                 $('#csvFileInput').val('');
                 setUploadButtonEnabled($(this), false);
             },
@@ -65,7 +64,6 @@ $(document).ready(function() {
                 },
                 "Upload" : function () {
 
-                    // guard against submitting with no file selected (see PRT-1005)
                     if (!$('#csvFileInput')[0].files.length) {
                         $().toastmessage('showErrorToast', 'Please select a CSV file to upload');
                         return;
@@ -84,7 +82,6 @@ $(document).ready(function() {
         });
     });
 
-    // enable the dialog 'Upload' button only once a file has been selected
     $(document).on('change', '#csvFileInput', function() {
         setUploadButtonEnabled($('#batchUploadUserDlg'), this.files.length > 0);
     });

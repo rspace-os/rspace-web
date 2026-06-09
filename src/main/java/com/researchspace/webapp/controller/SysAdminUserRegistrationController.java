@@ -108,7 +108,6 @@ public class SysAdminUserRegistrationController extends BaseController {
       return badRequestWithError("system.batchRegistration.upload.noFile");
     }
     if (xfile.isEmpty()) {
-      // a file was selected but it has no content
       return badRequestWithError("system.batchRegistration.upload.emptyFile");
     }
     return ResponseEntity.ok(getImportResultsFromCSVInput(xfile.getInputStream()));

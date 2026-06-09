@@ -201,7 +201,6 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
   @Test
   public void testBatchUploadEmptyFileRejected() throws Exception {
 
-    // a file was selected but it is empty (PRT-1005)
     MockMultipartFile mf = new MockMultipartFile("xfile", "empty.csv", "text/csv", new byte[0]);
     MvcResult result =
         mockMvc
@@ -223,7 +222,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
   @Test
   public void testBatchUploadNoFileRejected() throws Exception {
 
-    // no file part at all in the request (e.g. a direct API call without the file)
+    // no .file() part, so xfile resolves to null server-side
     MvcResult result =
         mockMvc
             .perform(multipart("/system/userRegistration/csvUpload").principal(sysAdminPrincipal))
