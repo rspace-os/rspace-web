@@ -552,7 +552,18 @@ feature.afterEach(({ networkRequests, consoleErrors }) => {
 });
 test.describe("ActionsMenu", () => {
   test.describe("Should have no axe violations", () => {
-    feature("Should have no axe violations", async ({ Given, Then }) => {
+    feature("Should have no axe violations", async ({ Given, Then, page }) => {
+      /*
+       * The story mounts with an empty selection and only populates it in a
+       * useEffect, so the "Actions" trigger button starts disabled (rendered in
+       * the grey action.disabledBackground/action.disabled palette) and then
+       * flips to enabled. MUI animates the background-color over that change, so
+       * on WebKit axe can scan mid-transition and read the stale disabled colours
+       * (≈1.84 contrast), tripping color-contrast. Emulating reduced motion makes
+       * the transition instant, so axe scans the settled enabled callToAction
+       * button. This mirrors MainPanel's axe test.
+       */
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await Given["the actions menu with a non-folder is mounted"]();
       await Then["there shouldn't be any axe violations"]();
     });
