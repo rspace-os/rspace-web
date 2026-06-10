@@ -30,7 +30,11 @@ import { Editor } from "@tinymce/tinymce-react";
  * lazy-loads (model, theme, icons, skin, plugins).
  */
 const TINYMCE_CACHE_SUFFIX = `?v=${__TINYMCE_VERSION__}`;
-const TINYMCE_SCRIPT_SRC = `/ui/dist/tinymce/tinymce.min.js${TINYMCE_CACHE_SUFFIX}`;
+// `__TINYMCE_BASE__` is injected by the bundler and is the full directory URL
+// the self-hosted TinyMCE assets are served from (always ending in a slash):
+// "/ui/dist/tinymce/" for the app build, and "/" for the Playwright CT build
+// (where the assets are served at the server root via Vite's publicDir).
+const TINYMCE_SCRIPT_SRC = `${__TINYMCE_BASE__}tinymce.min.js${TINYMCE_CACHE_SUFFIX}`;
 
 const customStyles =
   `.mce-content-body {
