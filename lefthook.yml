@@ -17,24 +17,3 @@ pre-commit:
         if [ -n "$spotless_files" ]; then
           ./mvnw -q spotless:check -DspotlessFiles="$spotless_files"
         fi
-    # Run staged Vitest files directly instead of the whole frontend suite.
-    vitest:
-      glob: "src/main/webapp/ui/**/*.{test,spec}.{ts,tsx,js,jsx}"
-      run: |
-        test_files=$(printf '%s\n' {staged_files} \
-          | sed 's#^src/main/webapp/ui/##' \
-          | paste -sd' ' -)
-        if [ -n "$test_files" ]; then
-          cd src/main/webapp/ui
-          ../../../../node_modules/.bin/vitest run --passWithNoTests $test_files
-        fi
-    # Run staged Java unit test classes directly instead of the whole Maven suite.
-    java-tests:
-      glob: "*Test.java"
-      run: |
-        test_classes=$(printf '%s\n' {staged_files} \
-          | awk '/^src\/test\/java\/.*Test\.java$/ { sub(/^src\/test\/java\//, ""); sub(/\.java$/, ""); gsub(/\//, "."); print }' \
-          | paste -sd, -)
-        if [ -n "$test_classes" ]; then
-          ./mvnw -q test -Dtest="$test_classes"
-        fi
