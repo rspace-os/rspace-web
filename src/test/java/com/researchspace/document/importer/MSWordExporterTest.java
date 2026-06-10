@@ -84,5 +84,4 @@ public class MSWordExporterTest {
     assertEquals(doc, wordImporter.create(fis, any, targetFolder, null, inputFile.getName()));
     fis.close();
   }
-
 }
