@@ -11,6 +11,7 @@ import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import { stableSort, getSorting } from "@/util/table";
 import axios from "@/common/axios";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 
 const headCells = [
   { id: "userFullName", numeric: false, label: "User" },
@@ -95,4 +96,8 @@ export default GroupActivity;
 
 const domContainer = document.getElementById("groupActivity");
 const root = createRoot(domContainer);
-root.render(<GroupActivity groupId={domContainer.dataset.groupid} />);
+root.render(
+  <MuiCssLayerProvider>
+    <GroupActivity groupId={domContainer.dataset.groupid} />
+  </MuiCssLayerProvider>,
+);

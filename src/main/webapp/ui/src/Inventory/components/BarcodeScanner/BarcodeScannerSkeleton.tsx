@@ -1,34 +1,19 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
-import { makeStyles } from "tss-react/mui";
 import useStores from "../../../stores/use-stores";
-import { mkAlert } from "../../../stores/contexts/Alert";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import { mkAlert } from "@/stores/contexts/Alert";
+import Alert from "@mui/material/Alert";
 import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
 import StringField from "../../../components/Inputs/StringField";
-import { barcodeFormatAsString, type Barcode } from "../../../util/barcode";
+import { barcodeFormatAsString, type Barcode } from "@/util/barcode";
 import FormField from "../../../components/Inputs/FormField";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
-
-const useStyles = makeStyles()((theme) => ({
-  video: {
-    height: "37vh",
-    width: "37vw",
-    [theme.breakpoints.down("sm")]: {
-      width: "100%",
-      height: "100%",
-      maxHeight: "50vh",
-      maxWidth: "80vw",
-    },
-  },
-  hidden: { display: "none" },
-}));
 
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
@@ -56,12 +41,20 @@ export default function BarcodeScannerSkeleton({
   error,
 }: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
-  const { classes } = useStyles();
 
   function handleOnSubmit() {
     try {
-      if (!barcode || typeof barcode.rawValue !== "string")
-        throw new Error("Unable to search. Scan has not completed.");
+      if (!barcode || typeof barcode.rawValue !== "string") {
+        uiStore.addAlert(
+          mkAlert({
+            title: "An error occurred.",
+            message: "Unable to search. Scan has not completed.",
+            variant: "error",
+            isInfinite: true,
+          }),
+        );
+        return;
+      }
       onScan(barcode);
     } catch (e) {
       if (e instanceof Error)
@@ -79,84 +72,87 @@ export default function BarcodeScannerSkeleton({
   }
 
   return (
-    <Grid container direction="column" alignItems="center">
-      <Grid
-        container
+    <Stack sx={{ alignItems: "center" }}>
+      <Stack
         direction="row"
-        justifyContent="space-around"
-        style={{ width: "100%", marginBottom: "8px" }}
+        sx={{
+          justifyContent: "space-around",
+          width: "100%",
+          marginBottom: "8px",
+        }}
       >
-        <HelpTextAlert
-          severity="info"
-          condition={true}
-          text={
-            loading ? (
-              `Loading Barcode Scanner...`
-            ) : barcode?.rawValue ? (
-              <>
-                {`Barcode detected: ${barcodeFormatAsString(barcode.format)}
-                format.`}
-                <br />
-                {`${barcode.rawValue}`}
-              </>
-            ) : (
-              `Barcode Scanner: ${beforeScanHelpText}.`
-            )
-          }
-        />
+        <Alert severity="info">
+          {loading ? (
+            `Loading Barcode Scanner...`
+          ) : barcode?.rawValue ? (
+            <>
+              {`Barcode detected: ${barcodeFormatAsString(barcode.format)}
+              format.`}
+              <br />
+              {`${barcode.rawValue}`}
+            </>
+          ) : (
+            `Barcode Scanner: ${beforeScanHelpText}.`
+          )}
+        </Alert>
         <HelpLinkIcon
           link={docLinks.barcodes}
           title="Info on using barcodes."
         />
-      </Grid>
-      <Grid item>
-        <CardActions>
+      </Stack>
+      <CardActions>
+        <Button
+          onClick={() => {
+            onClose();
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          disabled={!barcode?.rawValue}
+          color="callToAction"
+          variant="contained"
+          disableElevation
+          onClick={handleOnSubmit}
+        >
+          {buttonPrefix}
+        </Button>
+        {barcode && (
           <Button
             onClick={() => {
-              onClose();
+              setBarcode(null);
             }}
           >
-            Cancel
+            Clear
           </Button>
-          <Button
-            disabled={!barcode?.rawValue}
-            color="callToAction"
-            variant="contained"
-            disableElevation
-            onClick={handleOnSubmit}
-          >
-            {buttonPrefix}
-          </Button>
-          {barcode && (
-            <Button
-              onClick={() => {
-                setBarcode(null);
-              }}
-            >
-              Clear
-            </Button>
-          )}
-        </CardActions>
-      </Grid>
+        )}
+      </CardActions>
       {/* hide via CSS on detection (not on loading or scanner won't start in Safari)  */}
-      <Grid item>
-        <video
-          ref={videoElem}
-          className={
-            barcode?.rawValue || error ? classes.hidden : classes.video
-          }
-        />
-      </Grid>
-      {warning !== null && <Grid item>{warning}</Grid>}
+      <Box
+        component="video"
+        ref={videoElem}
+        sx={(theme) => ({
+          display: barcode?.rawValue || error ? "none" : "block",
+          height: "37vh",
+          width: "37vw",
+          [theme.breakpoints.down("sm")]: {
+            width: "100%",
+            height: "100%",
+            maxHeight: "50vh",
+            maxWidth: "80vw",
+          },
+        })}
+      />
+      {warning !== null && <Box>{warning}</Box>}
       {(!barcode || barcode.format === "Unknown") && (
         <>
-          <Grid item style={{ width: "100%" }}>
-            <Box m={1}>
+          <Box sx={{ width: "100%" }}>
+            <Box sx={{ m: 1 }}>
               <Divider orientation="horizontal" />
             </Box>
-          </Grid>
-          <Grid item style={{ alignSelf: "flex-start" }}>
-            <Box m={1}>
+          </Box>
+          <Box sx={{ alignSelf: "flex-start" }}>
+            <Box sx={{ m: 1 }}>
               <FormField
                 label="Alternatively, enter the data encoded in the barcode"
                 renderInput={(props) => (
@@ -174,9 +170,9 @@ export default function BarcodeScannerSkeleton({
                 value={barcode?.rawValue ?? ""}
               />
             </Box>
-          </Grid>
+          </Box>
         </>
       )}
-    </Grid>
+    </Stack>
   );
 }

@@ -196,7 +196,7 @@ class Folder extends React.Component {
                 edge="start"
                 checked={this.props.selected}
                 onChange={this.updateSelfSelect}
-                style={{ padding: 0 }}
+                sx={{ padding: 0 }}
                 data-test-id={`select-folder-${this.props.folder.globalId}`}
               />
               {this.props.folder.notebook ? (
@@ -219,7 +219,7 @@ class Folder extends React.Component {
             <List
               disablePadding
               component="div"
-              style={{ paddingLeft: 15 * this.props.level }}
+              sx={{ paddingLeft: `${15 * this.props.level}px` }}
             >
               {this.state.subfiles.map((subfile) => this.renderFile(subfile))}
             </List>

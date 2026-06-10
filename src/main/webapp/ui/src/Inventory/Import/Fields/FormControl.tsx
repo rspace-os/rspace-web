@@ -1,6 +1,6 @@
-import React, { type ComponentType } from "react";
+import React from "react";
+import Box from "@mui/material/Box";
 import FormControl from "../../../components/Inputs/FormControl";
-import { withStyles } from "../../../util/styles";
 
 /*
  * Because the Upload page is only a single column layout, we limit the width
@@ -15,17 +15,12 @@ export type UploadFormControlArgs = {
   helperText?: string;
 };
 
-const UploadFormControl: ComponentType<UploadFormControlArgs> = withStyles<
-  UploadFormControlArgs,
-  { formControl?: string; formLabel?: string }
->(() => ({
-  formControl: {
-    maxWidth: 660,
-  },
-}))((props) => {
-  const { classes, ...rest } = props;
-  return <FormControl classes={classes} {...rest} />;
-});
+function UploadFormControl(props: UploadFormControlArgs): React.ReactNode {
+  return (
+    <Box sx={{ maxWidth: 660 }}>
+      <FormControl {...props} />
+    </Box>
+  );
+}
 
-UploadFormControl.displayName = "UploadFormControl";
 export default UploadFormControl;

@@ -8,11 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import RaidConnectionsDisassociateButton from "@/my-rspace/profile/RaidConnections/RaidConnectionsDisassociateButton";
 import RaidConnectionsAddForm from "@/my-rspace/profile/RaidConnections/RaidConnectionsAddForm";
 
-const RaidConnectionsEntry = ({
-  groupId,
-}: {
-  groupId: string;
-}) => {
+const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
   const [isEditing, setIsEditing] = useState(false);
   const { data: token } = useOauthTokenQuery();
   const { data: groupData } = useGetGroupByIdQuery({ id: groupId, token });
@@ -20,59 +16,51 @@ const RaidConnectionsEntry = ({
   const raidIdentifier = groupData?.raid?.raidIdentifier ?? "";
   const raidTitle = groupData?.raid?.raidTitle ?? "";
 
-    return (
-      <Stack
-        spacing={2}
-        direction="row"
-        alignItems="center"
-        sx={{ marginTop: 0 }}
-      >
-        {isEditing ? (
-          <Suspense
-            fallback={
-              <FontAwesomeIcon
-                icon={faSpinner}
-                spin
-                size="3x"
-              />
-            }
-          >
-            <RaidConnectionsAddForm
-              groupId={groupId}
-              handleCloseForm={() => setIsEditing(false)}
-            />
-          </Suspense>
-        ) : (
-          <>
-            <Typography variant="body2">
-              {raidIdentifier ? (
-                <>
-                  {raidTitle} ({raidIdentifier})
-                </>
-              ) : (
-                "Not connected"
-              )}
-            </Typography>
+  return (
+    <Stack
+      spacing={2}
+      direction="row"
+      sx={{ alignItems: "center", marginTop: 0 }}
+    >
+      {isEditing ? (
+        <Suspense
+          fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}
+        >
+          <RaidConnectionsAddForm
+            groupId={groupId}
+            handleCloseForm={() => setIsEditing(false)}
+          />
+        </Suspense>
+      ) : (
+        <>
+          <Typography variant="body2">
             {raidIdentifier ? (
-              <RaidConnectionsDisassociateButton
-                groupId={groupId}
-                raidIdentifier={raidIdentifier}
-                raidTitle={raidTitle}
-              />
+              <>
+                {raidTitle} ({raidIdentifier})
+              </>
             ) : (
-              <Button
-                type="button"
-                variant="outlined"
-                onClick={() => setIsEditing(true)}
-              >
-                Add
-              </Button>
+              "Not connected"
             )}
-          </>
-        )}
-      </Stack>
-    );
-
+          </Typography>
+          {raidIdentifier ? (
+            <RaidConnectionsDisassociateButton
+              groupId={groupId}
+              raidIdentifier={raidIdentifier}
+              raidTitle={raidTitle}
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="outlined"
+              onClick={() => setIsEditing(true)}
+            >
+              Add
+            </Button>
+          )}
+        </>
+      )}
+    </Stack>
+  );
 };
 
 export default RaidConnectionsEntry;

@@ -51,7 +51,7 @@ export default function Stepper({
 
   return (
     <MobileStepper
-      style={{ width: "100%" }}
+      sx={{ width: "100%" }}
       variant="dots"
       steps={stepsCount}
       position="static"

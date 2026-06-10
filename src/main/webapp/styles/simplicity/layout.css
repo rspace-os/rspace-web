@@ -94,6 +94,10 @@
             margin: 0 auto;
             padding: 20px 0px;
         }
+        div#footer a,
+        div#footer a:visited {
+            color: #1465b7;
+        }
         div#footer .version {
             font-size: 0.8em;
         }

@@ -1,5 +1,6 @@
 "use strict";
 import React, { useEffect } from "react";
+import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -84,15 +85,15 @@ export default function GroupsTable(props) {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <div style={{ width: "690px", padding: "0px 15px" }}>
-          <div
+        <Box sx={{ width: "690px", padding: "0px 15px" }}>
+          <Box
             className="api-menu__header"
-            style={{ marginTop: "15px", display: "flex" }}
+            sx={{ marginTop: "15px", display: "flex" }}
           >
-            <div style={{ flexGrow: "1", lineHeight: "42px" }}>Groups</div>
-          </div>
+            <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>Groups</Box>
+          </Box>
           <br />
           {groups.length > 0 && fetchSuccess && (
             <TableContainer>
@@ -150,7 +151,7 @@ export default function GroupsTable(props) {
               </Table>
             </TableContainer>
           )}
-        </div>
+        </Box>
       </ThemeProvider>
     </StyledEngineProvider>
   );

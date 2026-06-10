@@ -7,8 +7,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { faVial } from "@fortawesome/free-solid-svg-icons/faVial";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { type ElnFieldId } from "../../stores/models/MaterialsModel";
 import MenuItem from "@mui/material/MenuItem";
@@ -28,76 +28,12 @@ import Analytics from "../../components/Analytics";
 
 const FAB_SIZE = 48;
 
-const WrappingMenuItem = withStyles<
-  React.ComponentProps<typeof MenuItem>,
-  { root: string }
->(() => ({
-  root: {
-    display: "flex",
-    flexDirection: "column",
-  },
-}))((props) => <MenuItem {...props} />);
-
-const NewLoMButtonWrapper = withStyles<
-  { children: React.ReactNode },
-  { root: string }
->(() => ({
-  root: {
-    "@media print": {
-      display: "none",
-    },
-  },
-}))(({ children, classes }) => <div className={classes.root}>{children}</div>);
-
-const useStyles = makeStyles<{ fabRightPadding: number }>()(
-  (theme, { fabRightPadding }) => ({
-    launcherWrapper: {
-      position: "absolute",
-      top: FAB_SIZE,
-      right: fabRightPadding,
-      bottom: FAB_SIZE,
-      pointerEvents: "none",
-      "@media print": {
-        display: "none",
-      },
-    },
-    growTransform: { transformOrigin: "center right" },
-    primary: { color: theme.palette.primary.main },
-    popper: {
-      zIndex: 1, // so it appears above the TinyMCE Editor
-      pointerEvents: "auto",
-    },
-    itemName: { fontWeight: "bold" },
-    itemText: {
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      width: "240px",
-    },
-    fab: {
-      zIndex: "initial",
-    },
-  }),
-);
-
-const CustomBadge = withStyles<
-  { children: React.ReactNode; count: number },
-  { root: string; badge: string }
->(() => ({
-  root: {
-    position: "sticky",
-    top: FAB_SIZE,
-    zIndex: 1, // so it appears above the TinyMCE Editor
-    pointerEvents: "auto",
-  },
-  badge: {
-    transform: "none",
-  },
-}))(({ classes, children, count }) => (
-  <Badge badgeContent={count} color="callToAction" classes={classes}>
-    {children}
-  </Badge>
-));
+const itemTextSx = {
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  width: "240px",
+} as const;
 
 const MaterialsLauncher = observer(
   ({
@@ -113,8 +49,6 @@ const MaterialsLauncher = observer(
     const [showMenu, setShowMenu] = useState(false);
     const [showDialog, _setShowDialog] = useState(false);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const { classes } = useStyles({ fabRightPadding });
-
     const setShowDialog = (value: boolean) => {
       _setShowDialog(value);
       window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
@@ -129,10 +63,26 @@ const MaterialsLauncher = observer(
         <PrintedMaterialsListing
           listsOfMaterials={materialsStore.fieldLists.get(elnFieldId) ?? []}
         />
-        <div className={classes.launcherWrapper}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: FAB_SIZE,
+            right: fabRightPadding,
+            bottom: FAB_SIZE,
+            pointerEvents: "none",
+            "@media print": {
+              display: "none",
+            },
+          }}
+        >
           {typeof fieldListCount === "number" && fieldListCount > 0 && (
             <>
-              <CustomBadge count={fieldListCount}>
+              <Badge
+                badgeContent={fieldListCount}
+                color="callToAction"
+                sx={{ position: "sticky", top: FAB_SIZE, zIndex: 1 }}
+                slotProps={{ badge: { style: { transform: "none" } } }}
+              >
                 <Fab
                   disabled={!materialsStore.canEdit && fieldListCount === 0}
                   color="callToAction"
@@ -144,23 +94,29 @@ const MaterialsLauncher = observer(
                     setAnchorEl(currentTarget);
                   }}
                   size="medium"
-                  className={classes.fab}
+                  sx={{ zIndex: "initial" }}
                   aria-label="Show list of materials associated with this field"
                   aria-haspopup="menu"
                 >
                   <FontAwesomeIcon icon={faVial} size="sm" />
                 </Fab>
-              </CustomBadge>
+              </Badge>
               <Popper
                 open={showMenu}
                 anchorEl={anchorEl}
                 transition
                 disablePortal
                 placement="left"
-                className={classes.popper}
+                sx={{
+                  zIndex: 1,
+                  pointerEvents: "auto",
+                }}
               >
                 {({ TransitionProps }) => (
-                  <Grow {...TransitionProps} className={classes.growTransform}>
+                  <Grow
+                    {...TransitionProps}
+                    style={{ transformOrigin: "center right" }}
+                  >
                     <Paper
                       sx={{
                         maxHeight: "calc(100vh - 16px)",
@@ -171,7 +127,8 @@ const MaterialsLauncher = observer(
                       <ClickAwayListener onClickAway={handleClose}>
                         <MenuList>
                           {fieldListings?.map((list, i) => (
-                            <WrappingMenuItem
+                            <MenuItem
+                              sx={{ display: "flex", flexDirection: "column" }}
                               key={i}
                               onClick={() => {
                                 trackEvent("user:open:list_of_materials");
@@ -180,13 +137,21 @@ const MaterialsLauncher = observer(
                                 handleClose();
                               }}
                             >
-                              <span className={classes.itemText}>
+                              <Typography
+                                variant="inherit"
+                                component="span"
+                                sx={itemTextSx}
+                              >
                                 {i + 1}: {list.name}
-                              </span>
-                              <em className={classes.itemText}>
+                              </Typography>
+                              <Typography
+                                variant="inherit"
+                                component="em"
+                                sx={itemTextSx}
+                              >
                                 {list.description}
-                              </em>
-                            </WrappingMenuItem>
+                              </Typography>
+                            </MenuItem>
                           ))}
                         </MenuList>
                       </ClickAwayListener>
@@ -200,7 +165,7 @@ const MaterialsLauncher = observer(
           <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
             <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
           </ThemeProvider>
-        </div>
+        </Box>
       </>
     );
   },
@@ -219,7 +184,6 @@ const MaterialsListing = observer(
 
     useEffect(() => {
       materialsStore.canEdit = canEdit;
-
     }, [canEdit]);
 
     useEffect(() => {
@@ -227,17 +191,15 @@ const MaterialsListing = observer(
         .setup()
         .then(() => setLoading(false))
         .catch((e) => console.error(e));
-
     }, []);
 
     useEffect(() => {
       if (!loading)
         void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
-
     }, [loading]);
 
     return !loading ? (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <AlwaysNewWindowNavigationContext>
             {materialsStore.fieldLists.has(parseInt(elnFieldId, 10)) && (
@@ -267,8 +229,8 @@ const NewMaterialsListing = observer(
       window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
     };
     return (
-      <NewLoMButtonWrapper>
-        <StyledEngineProvider injectFirst>
+      <Box sx={{ "@media print": { display: "none" } }}>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <AlwaysNewWindowNavigationContext>
               <div className="bootstrap-custom-flat">
@@ -294,7 +256,7 @@ const NewMaterialsListing = observer(
             </AlwaysNewWindowNavigationContext>
           </ThemeProvider>
         </StyledEngineProvider>
-      </NewLoMButtonWrapper>
+      </Box>
     );
   },
 );

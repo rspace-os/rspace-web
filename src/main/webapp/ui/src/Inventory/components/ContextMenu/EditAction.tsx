@@ -13,8 +13,8 @@ import ContextMenuAction, {
 import { Observer } from "mobx-react-lite";
 import React, { forwardRef } from "react";
 import { type AllSettled } from "../../../util/types";
-import singleEditIcon from "../../../assets/graphics/SingleEditIcon";
-import doubleEditIcon from "../../../assets/graphics/DoubleEditIcon";
+import SingleEditIcon from "../../../assets/graphics/SingleEditIcon";
+import DoubleEditIcon from "../../../assets/graphics/DoubleEditIcon";
 import { getErrorMessage, UserCancelledAction } from "../../../util/error";
 
 type EditActionArgs = {
@@ -194,7 +194,9 @@ const EditAction = forwardRef<
       {() => (
         <ContextMenuAction
           onClick={doNotAwait(doEdit)}
-          icon={selectedResults.length > 1 ? doubleEditIcon : singleEditIcon}
+          icon={
+            selectedResults.length > 1 ? <DoubleEditIcon /> : <SingleEditIcon />
+          }
           label={`${selectedResults.length > 1 ? "Batch " : ""}Edit`}
           disabledHelp={disabledHelp()}
           as={as}

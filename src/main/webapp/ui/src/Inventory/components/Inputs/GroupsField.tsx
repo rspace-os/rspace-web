@@ -3,52 +3,10 @@ import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
 import Autocomplete from "@mui/material/Autocomplete";
+import { autocompleteClasses } from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import { type Group } from "../../../stores/definitions/Group";
-import { withStyles } from "Styles";
-
-const CustomAutocomplete = withStyles<
-  React.ComponentProps<typeof Autocomplete<Group>>,
-  { root: string; option: string }
->(() => ({
-  root: {
-    maxWidth: 500,
-  },
-  option: {
-    cursor: "default",
-  },
-}))(Autocomplete<Group>);
-
-const RecipientTextField = ({
-  InputProps,
-  loading,
-  label,
-  ...rest
-}: {
-  InputProps: { endAdornment: React.ReactNode };
-  loading: boolean;
-  label: string;
-}) => (
-  <TextField
-    {...rest}
-    variant="outlined"
-    autoFocus
-    InputProps={{
-      ...InputProps,
-      startAdornment: (
-        <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-      ),
-      endAdornment: (
-        <>
-          {loading && <CircularProgress color="inherit" size={20} />}
-          {InputProps.endAdornment}
-        </>
-      ),
-    }}
-  />
-);
 
 type GroupsFieldArgs = {
   onSelection: (selectedGroup: Group) => Promise<void> | void;
@@ -84,13 +42,31 @@ function GroupsField({
   };
 
   return (
-    <CustomAutocomplete
+    <Autocomplete<Group>
+      sx={{
+        maxWidth: 500,
+        [`& .${autocompleteClasses.option}`]: { cursor: "default" },
+      }}
       loading={false}
       options={[...searchResults]}
       getOptionLabel={(g) => g.name}
       getOptionDisabled={getOptionDisabled}
-      renderInput={(props) => (
-        <RecipientTextField {...props} loading={false} label={label} />
+      renderInput={({ slotProps: inputSlotProps, ...rest }) => (
+        <TextField
+          {...rest}
+          variant="outlined"
+          autoFocus
+          slotProps={{
+            ...inputSlotProps,
+            input: {
+              ...inputSlotProps?.input,
+              startAdornment: (
+                <InputAdornment position="start">&nbsp;{label}</InputAdornment>
+              ),
+              endAdornment: inputSlotProps?.input.endAdornment ?? null,
+            },
+          }}
+        />
       )}
       size="small"
       value={null}

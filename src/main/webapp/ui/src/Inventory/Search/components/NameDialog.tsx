@@ -99,10 +99,12 @@ const NameDialog = ({
             error={error}
             variant="outlined"
             size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Name</InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">Name</InputAdornment>
+                ),
+              },
             }}
             onFocus={({ target }) => target.select()}
             onKeyDown={(e) => {

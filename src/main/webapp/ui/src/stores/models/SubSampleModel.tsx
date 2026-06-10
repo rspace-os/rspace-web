@@ -457,7 +457,7 @@ export default class SubSampleModel
         onSubmit: () => {
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this as SubSample,
+            this
           );
         },
       },

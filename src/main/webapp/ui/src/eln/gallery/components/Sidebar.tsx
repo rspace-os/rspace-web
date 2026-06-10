@@ -2,7 +2,6 @@ import React from "react";
 import { useLandmark } from "../../../components/LandmarksContext";
 import Box from "@mui/material/Box";
 import { Drawer, Menu } from "../../../components/DialogBoundary";
-import { styled } from "@mui/material/styles";
 import {
   gallerySectionLabel,
   gallerySectionIcon,
@@ -10,7 +9,6 @@ import {
 } from "../common";
 import DrawerTab from "../../../components/DrawerTab";
 import List from "@mui/material/List";
-
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
@@ -25,6 +23,7 @@ import { type Id } from "../useGalleryListing";
 import { useGalleryActions } from "../useGalleryActions";
 import * as FetchingData from "../../../util/fetchingData";
 import Dialog from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -34,7 +33,7 @@ import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integratio
 import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { observer } from "mobx-react-lite";
-import {autorun} from "mobx";
+import { autorun } from "mobx";
 import EventBoundary from "../../../components/EventBoundary";
 import ValidatingSubmitButton, {
   IsValid,
@@ -49,61 +48,8 @@ import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty"
 import AddFilestoreDialog from "./AddFilestoreDialog";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import {DswConfig} from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import {Integration, FetchedState} from "../../apps/useIntegrationsEndpoint";
-
-const StyledMenu = styled(Menu)(({ open }) => ({
-  "& .MuiPaper-root": {
-    ...(open
-      ? {
-          transform: "translate(-4px, 4px) !important",
-        }
-      : {}),
-  },
-}));
-
-const AddButton = styled(
-  ({
-    drawerOpen,
-    ...props
-  }: { drawerOpen: boolean } & React.ComponentProps<typeof Button>) => (
-    <Button
-      {...props}
-      fullWidth
-      style={{ minWidth: "unset" }}
-      aria-haspopup="menu"
-      variant="contained"
-      color="callToAction"
-      startIcon={
-        <AddIcon
-          style={{
-            marginLeft: drawerOpen ? "0px" : "11px",
-          }}
-        />
-      }
-    >
-      {drawerOpen && <div>Create</div>}
-    </Button>
-  ),
-)(() => ({
-  overflowX: "hidden",
-  height: "32px",
-}));
-
-const CustomDrawer = styled(Drawer)(({ open }) => ({
-  // on small viewports, it will hidden entirely when not open
-  width: open ? "200px" : "64px",
-  // drawer should float over dialog in Inventory
-  zIndex: 1300,
-  "& .MuiPaper-root": {
-    /*
-     * We set this position so that the drawer does not float above the AppBar
-     * and so that the active tab indicator can slide up and down relative to
-     * this bounding box.
-     */
-    position: "relative",
-  },
-}));
+import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import { Integration, FetchedState } from "../../apps/useIntegrationsEndpoint";
 
 const UploadMenuItem = ({
   folderId,
@@ -136,7 +82,6 @@ const UploadMenuItem = ({
     input?.addEventListener("cancel", onCancel);
     return () => input?.removeEventListener("cancel", onCancel);
   }, [inputRef, onCancel]);
-
   return (
     <>
       <AccentMenuItem
@@ -148,7 +93,6 @@ const UploadMenuItem = ({
         onClick={() => {
           inputRef.current?.click();
         }}
-
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         compact
@@ -176,7 +120,6 @@ const UploadMenuItem = ({
     </>
   );
 };
-
 const NewFolderMenuItem = ({
   folderId,
   onDialogClose,
@@ -197,15 +140,12 @@ const NewFolderMenuItem = ({
   const { createFolder } = useGalleryActions();
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
-
   const inputRef = React.useRef<HTMLInputElement | null>(null);
-
   React.useEffect(() => {
     setTimeout(() => {
       if (open) inputRef.current?.focus();
     }, 100);
   }, [inputRef, open]);
-
   return (
     <>
       <EventBoundary>
@@ -219,14 +159,23 @@ const NewFolderMenuItem = ({
           <form /* onSubmit is handled by ValidatingSubmitButton */>
             <DialogTitle>New Folder</DialogTitle>
             <DialogContent>
-              <DialogContentText variant="body2" sx={{ mb: 2 }}>
+              <DialogContentText
+                variant="body2"
+                sx={{
+                  mb: 2,
+                }}
+              >
                 Please give the new folder a name.
               </DialogContentText>
               <TextField
                 size="small"
                 label="Name"
                 onChange={({ target: { value } }) => setName(value)}
-                inputProps={{ ref: inputRef }}
+                slotProps={{
+                  htmlInput: {
+                    ref: inputRef,
+                  },
+                }}
               />
             </DialogContent>
             <DialogActions>
@@ -269,7 +218,6 @@ const NewFolderMenuItem = ({
         onClick={() => {
           setOpen(true);
         }}
-
         autoFocus={autoFocus}
         tabIndex={tabIndex}
         aria-haspopup="dialog"
@@ -279,7 +227,6 @@ const NewFolderMenuItem = ({
     </>
   );
 };
-
 const AddFilestoreMenuItem = ({
   onMenuClose,
   autoFocus,
@@ -310,7 +257,6 @@ const AddFilestoreMenuItem = ({
       });
     })(),
   );
-
   React.useEffect(() => {
     void (async () => {
       const { data } = await (await api.current).get<unknown>("filesystems");
@@ -331,7 +277,11 @@ const AddFilestoreMenuItem = ({
                     const url = Parsers.getValueWithKey("url")(obj)
                       .flatMap(Parsers.isString)
                       .elseThrow();
-                    return Result.Ok({ id, name, url });
+                    return Result.Ok({
+                      id,
+                      name,
+                      url,
+                    });
                   } catch (e) {
                     return Result.Error<{
                       id: number;
@@ -346,7 +296,6 @@ const AddFilestoreMenuItem = ({
         .do((newFilesystems) => setFilesystems(newFilesystems));
     })();
   }, []);
-
   return (
     <>
       <AddFilestoreDialog
@@ -372,7 +321,6 @@ const AddFilestoreMenuItem = ({
             onClick={() => {
               setOpen(true);
             }}
-
             autoFocus={autoFocus}
             tabIndex={tabIndex}
             aria-haspopup="dialog"
@@ -384,19 +332,17 @@ const AddFilestoreMenuItem = ({
     </>
   );
 };
-
 type DmpMenuSectionArgs = {
   onDialogClose: () => void;
   showDmpPanel: () => void;
 };
-
 const DmpMenuSection = ({
   onDialogClose,
   showDmpPanel,
 }: DmpMenuSectionArgs) => {
-
-  const [dswConnections, setDswConnections] = React.useState<null | DswConfig[]>(null);
-
+  const [dswConnections, setDswConnections] = React.useState<
+    null | DswConfig[]
+  >(null);
   const showArgos = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("ARGOS"),
   ).orElse(false);
@@ -412,7 +358,6 @@ const DmpMenuSection = ({
   const showDsw = FetchingData.getSuccessValue(
     useIntegrationIsAllowedAndEnabled("DSW"),
   ).orElse(false);
-
   React.useEffect(() => {
     /*
      * This is to maintain backwards compatibility with the old Gallery. It
@@ -423,35 +368,33 @@ const DmpMenuSection = ({
     // @ts-expect-error gallery is a global function
     window.gallery = showDmpPanel;
   }, [showDmpPanel]);
-
   React.useEffect(() => {
     void (async () => {
-
       const ONE_MINUTE_IN_MS = 60 * 1000;
-
       const api = axios.create({
         baseURL: "/integration",
         timeout: ONE_MINUTE_IN_MS,
       });
-
       try {
         const states = await api.get<
-            | {
-          success: true;
-          data: { [integration in Integration]: FetchedState };
-          error: null;
-        }
-            | {
-          success: false;
-          data: null;
-          error: string;
-        }
+          | {
+              success: true;
+              data: { [integration in Integration]: FetchedState };
+              error: null;
+            }
+          | {
+              success: false;
+              data: null;
+              error: string;
+            }
         >("allIntegrations");
         if (states.data.success) {
           const data = states.data.data;
-          const configs = Object.entries(data.DSW.options).map(([optionsId, config]) => {
-            return config as DswConfig;
-          });
+          const configs = Object.entries(data.DSW.options).map(
+            ([optionsId, config]) => {
+              return config as DswConfig;
+            },
+          );
           setDswConnections(configs);
         }
       } catch (e) {
@@ -482,16 +425,19 @@ const DmpMenuSection = ({
         <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
       )}
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
-      {
-        showDsw && dswConnections &&
+      {showDsw &&
+        dswConnections &&
         dswConnections.map((connection, index) => {
-          return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection}/>
-        })
-      }
+          return (
+            <DSWAccentMenuItem
+              onDialogClose={onDialogClose}
+              connection={connection}
+            />
+          );
+        })}
     </>
   );
 };
-
 type SidebarArgs = {
   selectedSection: GallerySection | null;
   setSelectedSection: (section: GallerySection) => void;
@@ -501,7 +447,6 @@ type SidebarArgs = {
   refreshListing: () => Promise<void>;
   id: string;
 };
-
 const Sidebar = ({
   selectedSection,
   setSelectedSection,
@@ -516,26 +461,21 @@ const Sidebar = ({
     React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
-
   React.useEffect(() => {
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
     });
-
   }, [viewport]);
-
   const showFilestores = FetchingData.getSuccessValue(filestoresEnabled)
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
     .orElse(false);
-
   const { getTabIndex, getRef, eventHandlers } =
     useOneDimensionalRovingTabIndex<HTMLDivElement>({
       max: showFilestores ? 9 : 8,
     });
-
   return (
-    <CustomDrawer
+    <Drawer
       open={drawerOpen}
       anchor="left"
       variant={viewport.isViewportSmall ? "temporary" : "permanent"}
@@ -546,21 +486,57 @@ const Sidebar = ({
       aria-label="gallery sections drawer"
       id={id}
       ref={sidebarRef as React.Ref<HTMLDivElement>}
+      sx={{
+        width: drawerOpen ? "200px" : "64px",
+        zIndex: 1300,
+        [`& .${paperClasses.root}`]: {
+          position: "relative",
+        },
+      }}
     >
-      <Box width="100%" p={1.5}>
-        <AddButton
+      <Box
+        sx={{
+          width: "100%",
+          p: 1.5,
+        }}
+      >
+        <Button
           onClick={(e) => setNewMenuAnchorEl(e.currentTarget)}
-          drawerOpen={drawerOpen}
-        />
-        <StyledMenu
+          fullWidth
+          aria-haspopup="menu"
+          variant="contained"
+          color="callToAction"
+          startIcon={
+            <AddIcon
+              sx={{
+                marginLeft: drawerOpen ? "0px" : "11px",
+              }}
+            />
+          }
+          sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
+        >
+          {drawerOpen && <div>Create</div>}
+        </Button>
+        <Menu
           open={Boolean(newMenuAnchorEl)}
           anchorEl={newMenuAnchorEl}
           onClose={() => {
             if (viewport.isViewportSmall) setDrawerOpen(false);
             setNewMenuAnchorEl(null);
           }}
-          MenuListProps={{
-            disablePadding: true,
+          sx={{
+            [`& .${paperClasses.root}`]: {
+              ...(newMenuAnchorEl
+                ? {
+                    transform: "translate(-4px, 4px) !important",
+                  }
+                : {}),
+            },
+          }}
+          slotProps={{
+            list: {
+              disablePadding: true,
+            },
           }}
         >
           <UploadMenuItem
@@ -605,7 +581,7 @@ const Sidebar = ({
               }
             }}
           />
-        </StyledMenu>
+        </Menu>
       </Box>
       <Divider />
       <Box
@@ -617,7 +593,11 @@ const Sidebar = ({
         }}
       >
         <div role="navigation">
-          <List sx={{ position: "static" }}>
+          <List
+            sx={{
+              position: "static",
+            }}
+          >
             <DrawerTab
               label={gallerySectionLabel.Images}
               icon={gallerySectionIcon.Images}
@@ -711,7 +691,11 @@ const Sidebar = ({
             />
           </List>
           <Divider />
-          <List sx={{ position: "static" }}>
+          <List
+            sx={{
+              position: "static",
+            }}
+          >
             {showFilestores && (
               <DrawerTab
                 key={null}
@@ -757,7 +741,7 @@ const Sidebar = ({
           </List>
         </div>
       </Box>
-    </CustomDrawer>
+    </Drawer>
   );
 };
 

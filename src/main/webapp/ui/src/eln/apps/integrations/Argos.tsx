@@ -17,7 +17,12 @@ type ArgosArgs = {
  */
 function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12
+      }}>
       <IntegrationCard
         name="ARGOS"
         explanatoryText="Create, manage and exchange Data Management Plans on an extensible open platform."

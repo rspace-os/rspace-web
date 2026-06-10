@@ -49,7 +49,7 @@ function ExpiryDate<
           id={id}
           disabled={disabled}
           onChange={handleChange}
-          datatestid="SetExpiryDateButton"
+          data-test-id="SetExpiryDateButton"
           alert={
             <>
               {expiryDate && new Date(expiryDate) < todaysDate() && (

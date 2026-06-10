@@ -1,7 +1,7 @@
 "use strict";
 import React from "react";
 import { produce } from "immer";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -14,9 +14,12 @@ import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
-import { CardWrapper } from "../../../styles/CommonStyles.js";
+import { CardWrapper } from "../../../styles/CommonStyles";
 import DateField from "../../../components/Inputs/DateField";
 import Grid from "@mui/material/Grid";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { buttonBaseClasses } from "@mui/material/ButtonBase";
+import { chipClasses } from "@mui/material/Chip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 import { faTrashAlt } from "@fortawesome/free-solid-svg-icons/faTrashAlt";
@@ -28,35 +31,36 @@ import TagSelect from "./TagSelect/TagSelect";
 import Searchbox from "./Searchbox";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
-const QueryRow = styled.tr`
-  td {
-    padding: 0px 0px 10px 0px;
-  }
-  .search-type {
-    width: 150px;
-  }
-  .search-term {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  .actions {
-    width: 100px;
-  }
-  .MuiInputBase-root {
-    width: 100%;
-  }
-  .MuiInputBase-root {
-    input:hover,
-    input:active {
-      background-color: transparent !important;
-    }
-  }
-  .MuiButtonBase-root:not(.MuiChip-root) {
-    width: 39px;
-    font-size: 15px;
-    margin-left: 10px;
-  }
-`;
+const queryRowSx = {
+  "& td": {
+    padding: "0px 0px 10px 0px",
+  },
+  "& .search-type": {
+    width: "150px",
+  },
+  "& .search-term": {
+    paddingLeft: "10px",
+    paddingRight: "10px",
+  },
+  "& .actions": {
+    width: "100px",
+  },
+  [`& .${inputBaseClasses.root}`]: {
+    width: "100%",
+    "& input:hover, & input:active": {
+      backgroundColor: "transparent !important",
+    },
+  },
+  [`& .${buttonBaseClasses.root}:not(.${chipClasses.root})`]: {
+    width: 39,
+    fontSize: 15,
+    marginLeft: "10px",
+  },
+};
+
+function QueryRow(props) {
+  return <Box component="tr" {...props} sx={{ ...queryRowSx, ...props.sx }} />;
+}
 
 const SEARCH_TYPES = {
   fullText: "Text",
@@ -71,9 +75,21 @@ const SEARCH_TYPES = {
   records: "Within records",
 };
 
+// Filters grouped by how their term is entered and validated
+const SIMPLE_FILTERS = ["fullText", "name", "form", "template", "attachment"];
+const DATE_FILTERS = ["created", "lastModified"];
+const SELECTABLE_FILTERS = ["owner", "tag"];
+
+const makeQuery = () => ({
+  filter: "fullText",
+  term: "",
+  from: null,
+  to: null,
+});
+
 const DEFAULT_STATE = {
   loading: false,
-  queries: [{ filter: "fullText", term: "", from: null, to: null }],
+  queries: [makeQuery()],
   fulfillAll: workspaceSettings.operator == "AND" ? "true" : "false",
 };
 
@@ -108,62 +124,55 @@ class AdvancedSearch extends React.Component {
     this.setState({ fulfillAll: event.target.value });
   };
 
+  // Apply an Immer recipe to the queries array and store the result
+  updateQueries = (recipe) => {
+    this.setState((prevState) => ({
+      queries: produce(prevState.queries, recipe),
+    }));
+  };
+
   handleChange = (idx, input) => (event) => {
     const value = event.target.value;
-    this.setState((prevState) => ({
-      queries: produce(prevState.queries, (draft) => {
-        if (value === "records") {
-          draft[idx] = { filter: value, term: getSelectedGlobalIds() };
-          return;
-        }
-
-        if (input === "filter") {
-          draft[idx].term = "";
-        }
-
-        draft[idx][input] = value;
-      }),
-    }));
+    this.updateQueries((draft) => {
+      if (value === "records") {
+        draft[idx] = { filter: value, term: getSelectedGlobalIds() };
+        return;
+      }
+      if (input === "filter") {
+        draft[idx].term = "";
+      }
+      draft[idx][input] = value;
+    });
   };
 
   updateSelected = (idx, selected) => {
-    this.setState((prevState) => ({
-      queries: produce(prevState.queries, (draft) => {
-        draft[idx].term = selected;
-      }),
-    }));
+    this.updateQueries((draft) => {
+      draft[idx].term = selected;
+    });
   };
 
   handleDateChange = (idx, input, value) => {
-    this.setState((prevState) => ({
-      queries: produce(prevState.queries, (draft) => {
-        draft[idx][input] = value;
-      }),
-    }));
+    this.updateQueries((draft) => {
+      draft[idx][input] = value;
+    });
   };
 
   handleSelectAutocomplete = (selects, label, idx) => {
-    this.setState((prevState) => ({
-      queries: produce(prevState.queries, (draft) => {
-        draft[idx].term = selects.map((s) => s[label]).join("<<>>");
-      }),
-    }));
+    this.updateQueries((draft) => {
+      draft[idx].term = selects.map((s) => s[label]).join("<<>>");
+    });
   };
 
   addNewQuery = () => {
-    this.setState((prevState) => ({
-      queries: produce(prevState.queries, (draft) => {
-        draft.push({ filter: "fullText", term: "", from: null, to: null });
-      }),
-    }));
+    this.updateQueries((draft) => {
+      draft.push(makeQuery());
+    });
   };
 
   deleteQuery = (idx) => {
-    this.setState((prevState) => ({
-      queries: produce(prevState.queries, (draft) => {
-        draft.splice(idx, 1);
-      }),
-    }));
+    this.updateQueries((draft) => {
+      draft.splice(idx, 1);
+    });
   };
 
   submitSearch = () => {
@@ -184,7 +193,7 @@ class AdvancedSearch extends React.Component {
   };
 
   formatTerm = (query) => {
-    if (["created", "lastModified"].includes(query.filter)) {
+    if (DATE_FILTERS.includes(query.filter)) {
       // Setting beginning of the day for 'from' and end of the day for 'to'
       return `${this.toISO(query.from, 0, 0, 0)}; ${this.toISO(
         query.to,
@@ -216,23 +225,15 @@ class AdvancedSearch extends React.Component {
   validateQueries = () => {
     let valid = true;
     let oneValid = false;
-    let queries = produce(this.state.queries, (draft) => {
+    const queries = produce(this.state.queries, (draft) => {
       this.state.queries.forEach((query, idx) => {
-        const isSimple = [
-          "fullText",
-          "name",
-          "form",
-          "template",
-          "attachment",
-        ].includes(query.filter);
-        const isSelectable = ["owner", "tag"].includes(query.filter);
+        const isSimple = SIMPLE_FILTERS.includes(query.filter);
+        const isSelectable = SELECTABLE_FILTERS.includes(query.filter);
         const isScopeRecords = query.filter === "records";
 
         if (isSimple) {
           if (query.term.length >= 2) {
-            valid &= true;
             oneValid = true;
-
             draft[idx].error = null;
           } else {
             draft[idx].error = "The term should be at least 2 symbols";
@@ -240,34 +241,26 @@ class AdvancedSearch extends React.Component {
           }
         } else if (isSelectable || isScopeRecords) {
           if (query.term.length > 0) {
-            valid &= true;
             oneValid = true;
-
             draft[idx].error = null;
           } else {
             draft[idx].error = "Include at least one " + query.filter;
             if (draft.length === 1) valid = false;
           }
         } else {
-          valid &= true;
           oneValid = true;
         }
       });
     });
     valid = valid && oneValid;
 
-    if (valid) {
-      queries = queries.filter((q) => q.error == null);
-    }
+    const validatedQueries = valid
+      ? queries.filter((q) => q.error == null)
+      : queries;
 
-    this.setState(
-      {
-        queries,
-      },
-      () => {
-        if (valid) this.submitSearch();
-      },
-    );
+    this.setState({ queries: validatedQueries }, () => {
+      if (valid) this.submitSearch();
+    });
   };
 
   // lists all the queries inputs in the advanced search
@@ -280,10 +273,8 @@ class AdvancedSearch extends React.Component {
             data-test-id={`a-search-type-${idx}`}
             value={query.filter}
             onChange={this.handleChange(idx, "filter")}
-            style={{
-              paddingTop: ["created", "lastModified"].includes(query.filter)
-                ? "16px"
-                : "0px",
+            sx={{
+              paddingTop: DATE_FILTERS.includes(query.filter) ? "16px" : "0px",
             }}
           >
             {Object.keys(SEARCH_TYPES).map((key) => (
@@ -298,9 +289,7 @@ class AdvancedSearch extends React.Component {
           </Select>
         </td>
         <td className="search-term">
-          {["fullText", "name", "form", "template", "attachment"].includes(
-            query.filter,
-          ) && (
+          {SIMPLE_FILTERS.includes(query.filter) && (
             <Searchbox
               idx={idx}
               query={query}
@@ -308,7 +297,7 @@ class AdvancedSearch extends React.Component {
               onSubmit={this.validateQueries}
             />
           )}
-          {["owner"].includes(query.filter) && (
+          {query.filter === "owner" && (
             <UserSelect
               error={query.error}
               selected={query.term}
@@ -319,7 +308,7 @@ class AdvancedSearch extends React.Component {
               testId={`a-search-input-${idx}`}
             />
           )}
-          {["tag"].includes(query.filter) && (
+          {query.filter === "tag" && (
             <TagSelect
               error={query.error}
               selected={query.term}
@@ -330,11 +319,11 @@ class AdvancedSearch extends React.Component {
               testId={`a-search-input-${idx}`}
             />
           )}
-          {["created", "lastModified"].includes(query.filter) && (
+          {DATE_FILTERS.includes(query.filter) && (
             <Grid container spacing={1}>
-              <Grid item>
+              <Grid>
                 <DateField
-                  datatestid={`a-search-input-${idx}-from`}
+                  data-test-id={`a-search-input-${idx}-from`}
                   label="From"
                   value={query.from}
                   disableFuture
@@ -346,9 +335,9 @@ class AdvancedSearch extends React.Component {
                   outputFormat="date"
                 />
               </Grid>
-              <Grid item>
+              <Grid>
                 <DateField
-                  datatestid={`a-search-input-${idx}-to`}
+                  data-test-id={`a-search-input-${idx}-to`}
                   label="To"
                   value={query.to}
                   disableFuture
@@ -396,91 +385,67 @@ class AdvancedSearch extends React.Component {
     ));
   };
 
+  // Renders one "satisfy all / at least one" radio option. Shows an info
+  // tooltip whenever a 'Within records' condition is present.
+  renderFulfillOption = (value, dataTestId, label) => (
+    <FormControlLabel
+      value={value}
+      control={
+        <Radio color="primary" slotProps={{ input: { "aria-label": label } }} />
+      }
+      label={
+        <div>
+          {label}
+          {this.state.queries.some((q) => q.filter === "records") && (
+            <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
+              <IconButton
+                data-test-id="show-condition-info"
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  marginLeft: "10px",
+                  padding: "0px",
+                }}
+              >
+                <FontAwesomeIcon icon={faInfoCircle} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </div>
+      }
+      data-test-id={dataTestId}
+    />
+  );
+
   render() {
     return (
       <CardWrapper>
-        <Card style={{ overflow: "visible" }}>
+        <Card sx={{ overflow: "visible" }}>
           <CardHeader subheader="Advanced search" />
           <CardContent>
-            <table style={{ width: "80%", marginBottom: "0px" }}>
+            <Box component="table" sx={{ width: "80%", marginBottom: "0px" }}>
               <tbody>{this.searchQueries()}</tbody>
-            </table>
+            </Box>
             {this.state.queries.length > 1 && (
               <RadioGroup
                 value={this.state.fulfillAll}
                 onChange={this.handleCheck}
                 margin="dense"
               >
-                <FormControlLabel
-                  value="true"
-                  control={
-                    <Radio
-                      color="primary"
-                      inputProps={{ "aria-label": "Satisfy all conditions" }}
-                    />
-                  }
-                  label={
-                    <div>
-                      Satisfy all conditions
-                      {this.state.queries.findIndex(
-                        (q) => q.filter == "records",
-                      ) != -1 && (
-                        <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
-                          <IconButton
-                            data-test-id={`show-condition-info`}
-                            style={{
-                              width: "40px",
-                              height: "40px",
-                              marginLeft: "10px",
-                              padding: "0px",
-                            }}
-                          >
-                            <FontAwesomeIcon icon={faInfoCircle} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </div>
-                  }
-                  data-test-id="fullfill-all"
-                />
-                <FormControlLabel
-                  value="false"
-                  control={
-                    <Radio
-                      color="primary"
-                      inputProps={{
-                        "aria-label": "Satisfy at least one condition",
-                      }}
-                    />
-                  }
-                  label={
-                    <div>
-                      Satisfy at least one condition
-                      {this.state.queries.findIndex(
-                        (q) => q.filter == "records",
-                      ) != -1 && (
-                        <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
-                          <IconButton
-                            data-test-id={`show-condition-info`}
-                            style={{
-                              width: "40px",
-                              height: "40px",
-                              marginLeft: "10px",
-                              padding: "0px",
-                            }}
-                          >
-                            <FontAwesomeIcon icon={faInfoCircle} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </div>
-                  }
-                  data-test-id="fullfill-one"
-                />
+                {this.renderFulfillOption(
+                  "true",
+                  "fullfill-all",
+                  "Satisfy all conditions",
+                )}
+                {this.renderFulfillOption(
+                  "false",
+                  "fullfill-one",
+                  "Satisfy at least one condition",
+                )}
               </RadioGroup>
             )}
           </CardContent>
-          <CardActions style={{ backgroundColor: "#eceff1" }}>
+          <CardActions sx={{ backgroundColor: "#eceff1" }}>
             <span></span>
             <span className="group-right">
               <Button onClick={this.reset} data-test-id="a-search-reset">

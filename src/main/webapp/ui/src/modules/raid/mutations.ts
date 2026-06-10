@@ -29,7 +29,7 @@ export const addRaidIdentifierAjax = async ({
         raidServerAlias,
         raidIdentifier,
       },
-    } as AssociateRaidIdentifierRequestBody),
+    }),
   });
 
   if (!response.ok) {

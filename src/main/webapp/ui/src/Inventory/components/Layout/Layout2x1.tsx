@@ -1,5 +1,4 @@
 import React from "react";
-import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
@@ -79,44 +78,6 @@ export const RightPanelToggle = observer(() => {
   );
 });
 
-const useStyles = makeStyles()((theme) => ({
-  paper: {
-    width: "100%",
-    height: "100%",
-    padding: theme.spacing(0),
-  },
-  wrapper: {
-    padding: 0,
-    width: "100%",
-    margin: "0",
-    height: "100%",
-  },
-  leftPanel: {
-    position: "sticky",
-    top: 0,
-    padding: "0px !important",
-    flexDirection: "column",
-    maxHeight: "100vh",
-    height: "100%",
-  },
-  rightPanel: {
-    height: "100%",
-    padding: "0px !important",
-    flexDirection: "column",
-  },
-  leftPanelMobile: {
-    height: "100%",
-    flexDirection: "column",
-    padding: theme.spacing(1),
-  },
-  dialogWrapper: {
-    height: "calc(100vh - 100px)",
-    padding: "0px",
-    width: "100%",
-    margin: "0",
-  },
-}));
-
 type Layout2x1Args = {
   colRight: React.ReactNode;
   colLeft: React.ReactNode;
@@ -133,35 +94,44 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
   const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
   const hideRightPanel =
     isSingleColumnLayout && uiStore.visiblePanel !== "right";
-  const { classes } = useStyles();
-
   return (
     <Grid
       container
       spacing={isSingleColumnLayout ? 0 : 1}
-      className={
+      sx={
         isSingleColumnLayout
-          ? classes.paper
+          ? { width: "100%", height: "100%", p: 0 }
           : props.isDialog
-            ? classes.dialogWrapper
-            : classes.wrapper
+            ? { height: "calc(100vh - 100px)", p: 0, width: "100%", m: 0 }
+            : { p: 0, width: "100%", m: 0, height: "100%" }
       }
     >
       <Grid
         hidden={hideLeftPanel}
-        item
-        xs={isSingleColumnLayout ? 12 : 5}
-        className={
-          isSingleColumnLayout ? classes.leftPanelMobile : classes.leftPanel
+        sx={
+          isSingleColumnLayout
+            ? { height: "100%", flexDirection: "column", p: 1 }
+            : {
+                position: "sticky",
+                top: 0,
+                p: "0px !important",
+                flexDirection: "column",
+                maxHeight: "100vh",
+                height: "100%",
+              }
         }
+        size={isSingleColumnLayout ? 12 : 5}
       >
         {props.colLeft}
       </Grid>
       <Grid
-        item
-        xs={isSingleColumnLayout ? 12 : 7}
-        className={classes.rightPanel}
+        sx={{
+          height: "100%",
+          p: "0px !important",
+          flexDirection: "column",
+        }}
         hidden={hideRightPanel}
+        size={isSingleColumnLayout ? 12 : 7}
       >
         {props.colRight}
       </Grid>

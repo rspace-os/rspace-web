@@ -40,7 +40,12 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
   }, []);
 
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12
+      }}>
       <IntegrationCard
         name="DMPTool"
         integrationState={integrationState}

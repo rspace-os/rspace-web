@@ -26,7 +26,7 @@ export default function Searchbox({
       data-test-id={`a-search-input-${idx}`}
       error={query.error !== null && typeof query.error !== "undefined"}
       placeholder={query.error || "Search term"}
-      inputProps={{ "aria-label": "Search term" }}
+      slotProps={{ input: { "aria-label": "Search term" } }}
       value={query.term}
       onChange={onChange}
       endAdornment={

@@ -1,10 +1,12 @@
+/* global configurePermittedActions */
 import React from "react";
 import axios from "@/common/axios";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
+import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileWord } from "@fortawesome/free-solid-svg-icons/faFileWord";
 import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
@@ -14,16 +16,9 @@ import { faEvernote } from "@fortawesome/free-brands-svg-icons/faEvernote";
 import NewFolder from "./Workspace/Misc/NewFolder";
 import NewNotebook from "./Workspace/Misc/NewNotebook";
 
-const CreateMenuWrapper = styled.div`
-  .create-button {
-    color: white;
-    font-size: 20px;
-    font-weight: normal;
-    border-color: white;
-    margin-right: 20px;
-  }
-`;
-
+/**
+ * Primary create menu shown in the workspace toolbar.
+ */
 export default function CreateMenu(props) {
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -49,13 +44,18 @@ export default function CreateMenu(props) {
   }
 
   return (
-    <CreateMenuWrapper>
+    <>
       <Button
         id="create"
         data-test-id="create-btn"
         onClick={(e) => openMenu(e)}
         variant="outlined"
-        className="create-button"
+        sx={{
+          color: "white",
+          fontSize: "clamp(1.2rem, 1cqi, 1.5rem)",
+          fontWeight: "normal",
+          borderColor: "white",
+        }}
         aria-label="Create a record"
       >
         Create
@@ -69,20 +69,28 @@ export default function CreateMenu(props) {
         onClose={() => setOpen(false)}
       >
         <MenuItem id="createEntry" data-test-id="create-btn-new-entry">
-          <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} />
+          <FontAwesomeIcon
+            icon={faFileAlt}
+            style={{ paddingRight: "10px" }}
+            aria-hidden="true"
+          />
           New entry
         </MenuItem>
         <MenuItem id="createFolder" data-test-id="create-btn-folder">
-          <img
+          <Box
+            component="img"
             src="/images/icons/folder.png"
-            style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
+            alt="Folder icon"
+            sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Folder
         </MenuItem>
         <MenuItem data-test-id="create-btn-notebook" id="createNotebook">
-          <img
+          <Box
+            component="img"
             src="/images/icons/notebook.png"
-            style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
+            alt="Notebook Icon"
+            sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           Notebook
         </MenuItem>
@@ -95,9 +103,11 @@ export default function CreateMenu(props) {
               .toLowerCase()
               .replace(" ", "-")}`}
           >
-            <img
+            <Box
+              component="img"
               src={entry.iconURL}
-              style={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
+              alt="Folder icon"
+              sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
             />
             {entry.name}
             <input type="hidden" name="template" value={entry.id} />
@@ -108,15 +118,18 @@ export default function CreateMenu(props) {
             <FontAwesomeIcon
               icon={faFileAlt}
               style={{ paddingRight: "10px" }}
+              aria-hidden="true"
             />
             From Form
           </MenuItem>
         )}
         <MenuItem id="createFromTemplate" data-test-id="create-btn-template">
-          <span style={{ paddingRight: "6px" }}>
-            <FontAwesomeIcon icon={faFolderOpen} />
-            <span
-              style={{
+          <Box component="span" sx={{ paddingRight: "6px" }}>
+            <FontAwesomeIcon icon={faFolderOpen} aria-hidden="true" />
+            <Box
+              component="span"
+              aria-hidden="true"
+              sx={{
                 position: "absolute",
                 color: "white",
                 fontSize: "9px",
@@ -126,8 +139,8 @@ export default function CreateMenu(props) {
               }}
             >
               T
-            </span>
-          </span>
+            </Box>
+          </Box>
           From Template
         </MenuItem>
         {props.asposeEnabled && (
@@ -135,6 +148,7 @@ export default function CreateMenu(props) {
             <FontAwesomeIcon
               icon={faFileWord}
               style={{ paddingRight: "10px" }}
+              aria-hidden="true"
             />
             From Word
           </MenuItem>
@@ -144,6 +158,7 @@ export default function CreateMenu(props) {
             <FontAwesomeIcon
               icon={faEvernote}
               style={{ paddingRight: "10px" }}
+              aria-hidden="true"
             />
             From Evernote
           </MenuItem>
@@ -153,21 +168,33 @@ export default function CreateMenu(props) {
             id="createFromProtocolsIo"
             data-test-id="create-btn-protocols"
           >
-            <img
+            <Box
+              component="img"
               src="/images/integrations/protocolsio.png"
-              style={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
+              alt="Protocols.io Icon"
+              sx={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
             From Protocols.io
           </MenuItem>
         )}
         <Divider className="createMenuItemDivider" />
         <MenuItem id="createNewForm" data-test-id="create-btn-new-form">
-          <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} />
+          <FontAwesomeIcon
+            icon={faFileAlt}
+            style={{ paddingRight: "10px" }}
+            aria-hidden="true"
+          />
           New Form
         </MenuItem>
       </Menu>
       <NewFolder />
       <NewNotebook />
-    </CreateMenuWrapper>
+    </>
   );
 }
+
+CreateMenu.propTypes = {
+  asposeEnabled: PropTypes.bool,
+  evernoteEnabled: PropTypes.bool,
+  pioEnabled: PropTypes.bool,
+};

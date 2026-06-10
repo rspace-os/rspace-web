@@ -2,12 +2,12 @@
 import { test, describe, expect, beforeAll, vi } from 'vitest';
 import React from "react";
 import {
+  act,
   render,
   screen,
   fireEvent,
   waitFor,
 } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
 import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import { persistedBarcode1 } from "./mocking";

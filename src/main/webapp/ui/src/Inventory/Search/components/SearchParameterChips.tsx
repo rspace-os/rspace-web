@@ -2,36 +2,25 @@ import React, { useContext, useEffect } from "react";
 import Chip from "@mui/material/Chip";
 import SearchContext from "../../../stores/contexts/Search";
 import { toTitleCase } from "../../../util/Util";
-import { withStyles } from "Styles";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import useStores from "../../../stores/use-stores";
 
-const CustomChip = withStyles<
-  React.ComponentProps<typeof Chip>,
-  { label: string; root: string }
->(() => ({
-  label: {
-    letterSpacing: "0.02em",
-    padding: "4px 12px",
-  },
-  root: {
-    maxWidth: "100%",
-  },
-}))((props) => <Chip size="small" {...props} />);
-
-const CustomGridItem = withStyles<
-  { children: React.ReactNode },
-  { root: string }
->(() => ({
-  root: {
-    maxWidth: "100%",
-  },
-}))(({ children, classes }) => (
-  <Grid item className={classes.root}>
-    {children}
-  </Grid>
-));
+function ParameterChip({
+  label,
+  onDelete,
+}: {
+  label: string;
+  onDelete?: () => void;
+}): React.ReactNode {
+  return (
+    <Chip
+      size="small"
+      label={label}
+      onDelete={onDelete}
+    />
+  );
+}
 
 function SearchParameterChips(): React.ReactNode {
   const { search } = useContext(SearchContext);
@@ -41,86 +30,71 @@ function SearchParameterChips(): React.ReactNode {
     void searchStore.getBaskets();
   }, []);
 
+  const { resultType } = search.fetcher;
+  const currentBasket = search.currentBasket(searchStore.savedBaskets);
+
   return (
-    <Grid container direction="row" spacing={1}>
-      {["CONTAINER", "SAMPLE", "SUBSAMPLE", "TEMPLATE"].map(
-        (resultType) =>
-          search.fetcher.resultType === resultType && (
-            <Grid item key={resultType}>
-              <CustomChip
-                label={`Type: ${toTitleCase(resultType)}s`}
-                onDelete={
-                  search.fetcher.allTypesAllowed &&
-                  search.uiConfig.allowedTypeFilters.has("ALL")
-                    ? () => {
-                        search.setTypeFilter("ALL");
-                      }
-                    : undefined
+    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+      {resultType && resultType !== "ALL" && (
+        <ParameterChip
+          label={`Type: ${toTitleCase(resultType)}s`}
+          onDelete={
+            search.fetcher.allTypesAllowed &&
+            search.uiConfig.allowedTypeFilters.has("ALL")
+              ? () => {
+                  search.setTypeFilter("ALL");
                 }
-              />
-            </Grid>
-          )
+              : undefined
+          }
+        />
       )}
       {search.fetcher.owner && (
-        <CustomGridItem>
-          <CustomChip
-            label={`Owner: ${search.fetcher.owner.label}`}
-            onDelete={() => {
-              search.setOwner(null);
-            }}
-          />
-        </CustomGridItem>
+        <ParameterChip
+          label={`Owner: ${search.fetcher.owner.label}`}
+          onDelete={() => {
+            search.setOwner(null);
+          }}
+        />
       )}
       {search.fetcher.benchOwner && (
-        <CustomGridItem>
-          <CustomChip
-            label={`Bench Owner: ${search.fetcher.benchOwner.label}`}
-            onDelete={() => {
-              search.setBench(null);
-            }}
-          />
-        </CustomGridItem>
+        <ParameterChip
+          label={`Bench Owner: ${search.fetcher.benchOwner.label}`}
+          onDelete={() => {
+            search.setBench(null);
+          }}
+        />
       )}
       {search.fetcher.deletedItems && (
-        <Grid item>
-          <CustomChip
-            label={`Status: ${search.fetcher.deletedItemsLabel}`}
-            onDelete={
-              search.fetcher.deletedItems !== "EXCLUDE" &&
-              search.showStatusFilter
-                ? () => {
-                    search.setDeletedItems("EXCLUDE");
-                  }
-                : undefined
-            }
-          />
-        </Grid>
+        <ParameterChip
+          label={`Status: ${search.fetcher.deletedItemsLabel}`}
+          onDelete={
+            search.fetcher.deletedItems !== "EXCLUDE" && search.showStatusFilter
+              ? () => {
+                  search.setDeletedItems("EXCLUDE");
+                }
+              : undefined
+          }
+        />
       )}
-      {search.currentBasket(searchStore.savedBaskets) && (
-        <Grid item>
-          <CustomChip
-            label={`Basket: ${
-              search.currentBasket(searchStore.savedBaskets)?.name ?? "UNKNOWN"
-            }`}
-            onDelete={() => {
-              search.setParentGlobalId(null);
-            }}
-          />
-        </Grid>
+      {currentBasket && (
+        <ParameterChip
+          label={`Basket: ${currentBasket.name ?? "UNKNOWN"}`}
+          onDelete={() => {
+            search.setParentGlobalId(null);
+          }}
+        />
       )}
       {search.fetcher.parentGlobalId &&
         (search.fetcher.parentIsSample || search.fetcher.parentIsContainer) &&
         !search.uiConfig.hideContentsOfChip && (
-          <Grid item>
-            <CustomChip
-              label={`Contents of: ${search.fetcher.parentGlobalId}`}
-              onDelete={() => {
-                search.setParentGlobalId(null);
-              }}
-            />
-          </Grid>
+          <ParameterChip
+            label={`Contents of: ${search.fetcher.parentGlobalId}`}
+            onDelete={() => {
+              search.setParentGlobalId(null);
+            }}
+          />
         )}
-    </Grid>
+    </Stack>
   );
 }
 

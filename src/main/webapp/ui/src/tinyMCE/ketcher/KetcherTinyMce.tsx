@@ -59,7 +59,7 @@ function getMustacheRenderer(): MustacheRenderer | undefined {
 }
 
 function getActiveEditor(): TinyMceEditor | null {
-  return (window.tinymce?.activeEditor as TinyMceEditor | undefined) ?? null;
+  return (window.tinymce?.activeEditor) ?? null;
 }
 
 function getSelectedNode(editor: TinyMceEditor | null): Node | null {

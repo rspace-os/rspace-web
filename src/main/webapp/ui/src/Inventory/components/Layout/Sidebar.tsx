@@ -3,20 +3,17 @@ import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
 import CreateNew from "../CreateNew";
 import Drawer from "@mui/material/Drawer";
-import SettingsIcon from "@mui/icons-material/Settings";
+import { drawerClasses } from "@mui/material/Drawer";
 import List from "@mui/material/List";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
-import clsx from "clsx";
+import { useTheme } from "@mui/material/styles";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { useTheme } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/igsn";
+import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
 import { useLandmark } from "../../../components/LandmarksContext";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -34,91 +31,75 @@ function isSearchListing() {
 
 const drawerWidth = 200;
 
-const CustomDrawer = withStyles<
-  { children: React.ReactNode; drawerWidth?: number; id: string },
-  {
-    drawer: string;
-    drawerPaper: string;
-    floatingDrawerPaper: string;
-    drawerOpen: string;
-    drawerClose: string;
-    drawerCloseParent: string;
-  }
->((theme) => ({
-  drawer: {
-    width: drawerWidth,
-    flexShrink: 0,
-    whiteSpace: "nowrap",
-    zIndex: 1100, // less than the Gallery picker, which is a dialog
-  },
-  drawerPaper: {
-    /*
-     * We set this position so that the drawer does not float above the AppBar.
-     */
-    position: "relative",
-  },
-  floatingDrawerPaper: {
-    width: drawerWidth,
-  },
-  drawerOpen: {
-    overflow: "visible",
-    width: drawerWidth,
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  },
-  drawerClose: {
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen,
-    }),
-    overflowX: "hidden",
-    width: theme.spacing(5),
-    [theme.breakpoints.up("sm")]: {
-      width: theme.spacing(7.75),
-    },
-    overflow: "visible",
-  },
-  drawerCloseParent: {
-    [theme.breakpoints.up("sm")]: {
-      width: theme.spacing(8),
-    },
-  },
-}))(
-  observer(({ classes, children, id }) => {
+const CustomDrawer = observer(
+  ({ children, id }: { children: React.ReactNode; id: string }) => {
     const { uiStore } = useStores();
-
+    const alwaysVisible = uiStore.alwaysVisibleSidebar;
+    const isOpen = uiStore.sidebarOpen;
     return (
       <Drawer
-        open={uiStore.alwaysVisibleSidebar || uiStore.sidebarOpen}
-        variant={uiStore.alwaysVisibleSidebar ? "persistent" : "temporary"}
+        open={alwaysVisible || isOpen}
+        variant={alwaysVisible ? "persistent" : "temporary"}
         onClose={() => uiStore.toggleSidebar(false)}
         id={id}
-        className={
-          !uiStore.alwaysVisibleSidebar
-            ? classes.drawer
-            : clsx(classes.drawer, {
-                [classes.drawerOpen]: uiStore.sidebarOpen,
-                [classes.drawerClose]: !uiStore.sidebarOpen,
-                [classes.drawerCloseParent]: !uiStore.sidebarOpen,
-              })
-        }
-        classes={{
-          paper: clsx(
-            classes.drawerPaper,
-            !uiStore.alwaysVisibleSidebar && classes.floatingDrawerPaper,
-            uiStore.alwaysVisibleSidebar && {
-              [classes.drawerOpen]: uiStore.sidebarOpen,
-              [classes.drawerClose]: !uiStore.sidebarOpen,
-            },
-          ),
-        }}
+        sx={(theme) => ({
+          width: drawerWidth,
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+          zIndex: 1100,
+          ...(alwaysVisible &&
+            isOpen && {
+              overflow: "visible",
+              transition: theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+            }),
+          ...(alwaysVisible &&
+            !isOpen && {
+              overflowX: "hidden",
+              overflow: "visible",
+              width: theme.spacing(5),
+              transition: theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.leavingScreen,
+              }),
+              [theme.breakpoints.up("sm")]: {
+                width: theme.spacing(8),
+              },
+            }),
+          [`& .${drawerClasses.paper}`]: {
+            position: "relative",
+            ...(!alwaysVisible && { width: drawerWidth }),
+            ...(alwaysVisible &&
+              isOpen && {
+                overflow: "visible",
+                width: drawerWidth,
+                transition: theme.transitions.create("width", {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.enteringScreen,
+                }),
+              }),
+            ...(alwaysVisible &&
+              !isOpen && {
+                overflowX: "hidden",
+                overflow: "visible",
+                width: theme.spacing(5),
+                transition: theme.transitions.create("width", {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.leavingScreen,
+                }),
+                [theme.breakpoints.up("sm")]: {
+                  width: theme.spacing(7.75),
+                },
+              }),
+          },
+        })}
       >
         {children}
       </Drawer>
     );
-  }),
+  }
 );
 
 const largestFittingCount = 999;
@@ -332,7 +313,7 @@ const IgsnNavItem = observer(
       <DrawerTab
         label="IGSN IDs"
         selected={/identifiers\/igsn/.test(window.location.pathname)}
-        icon={<IgsnIcon style={{ width: "16px", height: "16px" }} />}
+        icon={<IgsnIcon sx={{ width: "16px", height: "16px" }} />}
         index={index}
         tabIndex={tabIndex}
         ref={getRef(index)}
@@ -478,27 +459,11 @@ const SettingsNavItem = observer(
   },
 );
 
-const useStyles = makeStyles()(() => ({
-  drawerContainer: {
-    overflowY: "auto",
-    overflowX: "hidden",
-    "& a.active": {
-      backgroundColor: "transparent",
-      color: "#00adef",
-      fontWeight: "bold !important",
-      "& svg": {
-        color: "#00adef",
-      },
-    },
-  },
-}));
-
 type SidebarArgs = {
   id: string;
 };
 
 function Sidebar({ id }: SidebarArgs): React.ReactNode {
-  const { classes } = useStyles();
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const sidebarRef = useLandmark("Navigation");

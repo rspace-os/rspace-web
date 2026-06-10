@@ -1,5 +1,6 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { vi } from "vitest";
 
 type JQueryWithTestDoubles = JQueryStatic & {
@@ -40,7 +41,11 @@ export type LegacyEditorHarness = {
   getFieldIdFromTextFieldId: ReturnType<typeof vi.fn>;
 };
 
-const WEBAPP_ROOT = path.resolve(process.cwd(), "..");
+// Resolve from this file's location rather than process.cwd(): the jsdom test
+// environment polyfills `process` (vite-plugin-node-polyfills), so
+// `process.cwd()` returns "/" instead of the ui directory.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WEBAPP_ROOT = path.resolve(__dirname, "../../../..");
 const SCRIPTS_ROOT = path.resolve(WEBAPP_ROOT, "scripts");
 const EDITOR_SCRIPTS_ROOT = path.resolve(
   SCRIPTS_ROOT,

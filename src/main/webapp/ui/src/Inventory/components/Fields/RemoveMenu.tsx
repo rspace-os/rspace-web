@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import RemoveButton from "../../../components/RemoveButton";
 
 export type DeleteOption = {
@@ -40,7 +41,7 @@ const RemoveMenu = ({
         onClose={handleClose}
       >
         {deleteOptions.map((option) => (
-          <StyledMenuItem
+          <MenuItem
             key={String(option.value)}
             onClick={() => {
               onClick(option.value);
@@ -48,7 +49,7 @@ const RemoveMenu = ({
             }}
           >
             <ListItemText primary={option.label} />
-          </StyledMenuItem>
+          </MenuItem>
         ))}
       </StyledMenu>
     </div>

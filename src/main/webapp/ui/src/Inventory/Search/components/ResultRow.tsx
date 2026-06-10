@@ -5,8 +5,9 @@ import SearchContext from "../../../stores/contexts/Search";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import TableCell from "./TableCell";
-import TableRow from "@mui/material/TableRow";
-import Checkbox from "@mui/material/Checkbox";
+import { tableCellClasses } from "@mui/material/TableCell";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
+import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
 import NameWithBadge from "../../components/NameWithBadge";
 import AdjustableCell from "../../components/Tables/AdjustableCell";
 import { match } from "../../../util/Util";
@@ -17,7 +18,7 @@ import {
 import { UserCancelledAction } from "../../../util/error";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import { alpha } from "@mui/material/styles";
-import Radio from "@mui/material/Radio";
+import Radio, { radioClasses } from "@mui/material/Radio";
 import Tooltip from "@mui/material/Tooltip";
 
 type ResultRowArgs = {
@@ -117,20 +118,21 @@ function ResultRow({
             pointerEvents: "none !important",
           }),
         }),
-        "&.Mui-selected": {
+        [`&.${tableRowClasses.selected}`]: {
           backgroundColor: theme.palette.primary.background,
           color: theme.palette.primary.contrastText,
-          "& .MuiTableCell-root": {
+          [`& .${tableCellClasses.root}`]: {
             color: theme.palette.primary.contrastText,
           },
         },
         "@media (prefers-contrast: more)": {
-          "&.Mui-selected .MuiCheckbox-root, &.Mui-selected .MuiRadio-root": {
-            color: theme.palette.primary.contrastText,
-          },
+          [`&.${tableRowClasses.selected} .${checkboxClasses.root}, &.${tableRowClasses.selected} .${radioClasses.root}`]:
+            {
+              color: theme.palette.primary.contrastText,
+            },
         },
         ...(!rowIsFilteredOut && {
-          "&.Mui-selected:hover": {
+          [`&.${tableRowClasses.selected}:hover`]: {
             backgroundColor: `${alpha(theme.palette.primary.background, 0.8)} !important`,
           },
           "&:hover": {
@@ -160,7 +162,7 @@ function ResultRow({
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            inputProps={{ "aria-label": "Select result item" }}
+            slotProps={{ input: { "aria-label": "Select result item" } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>
@@ -182,7 +184,7 @@ function ResultRow({
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            inputProps={{ "aria-label": "Select result item" }}
+            slotProps={{ input: { "aria-label": "Select result item" } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>

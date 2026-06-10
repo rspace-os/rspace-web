@@ -50,7 +50,7 @@ const mockSnippetFile: GalleryFile = {
   canBeLoggedOutOf: Result.Error([new Error("Not applicable")]),
   deconstructor: () => {},
   treeViewItemId: "tree-item-123",
-} as GalleryFile;
+};
 
 function TestComponent() {
   const { openSnippetPreview } = useSnippetPreview();

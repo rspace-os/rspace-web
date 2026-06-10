@@ -12,43 +12,16 @@ import InputWrapper from "../../../components/Inputs/InputWrapper";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
-import { makeStyles } from "tss-react/mui";
 import FieldTypeMenu from "./FieldTypeMenu";
 import DefaultValueField from "./DefaultValueField";
 import NameField from "./CustomFieldNameField";
 import Typography from "@mui/material/Typography";
-import RelativeBox from "../../../components/RelativeBox";
 import RemoveButton from "../../../components/RemoveButton";
 import RemoveMenu, {
   type DeleteOption,
 } from "../../components/Fields/RemoveMenu";
-import clsx from "clsx";
 import Switch from "@mui/material/Switch";
 import MoveButtons from "./MoveButtons";
-
-const useStyles = makeStyles()((theme) => ({
-  removeWrapper: {
-    marginLeft: theme.spacing(0.75),
-    marginBottom: theme.spacing(0.75),
-  },
-  row: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  column: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-  },
-  noWrap: {
-    whiteSpace: "nowrap",
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  leftSpaced: { marginLeft: theme.spacing(1.5) },
-}));
 
 const deleteOptions: Array<DeleteOption> = [
   { value: false, label: "Keep field in existing samples" },
@@ -57,15 +30,6 @@ const deleteOptions: Array<DeleteOption> = [
     label: "Remove field from existing samples",
   },
 ];
-
-const FieldTypeLabel = ({ field }: { field: FieldModel }) => {
-  const { classes } = useStyles();
-  return (
-    <Typography variant="subtitle1" className={classes.noWrap}>
-      {FIELD_LABEL[field.fieldType]}
-    </Typography>
-  );
-};
 
 const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
   return (
@@ -109,25 +73,8 @@ const Mandatory = observer(
         )}
       </InputWrapper>
     );
-  }
+  },
 );
-
-const DeletionRecap = ({ field }: { field: FieldModel }) => {
-  return (
-    <Box p={2}>
-      <Typography variant="subtitle1">
-        <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will
-        be deleted from this template.
-      </Typography>
-      <p>
-        New samples will not include this field.{" "}
-        {field.deleteFieldOnSampleUpdate
-          ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
-          : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
-      </p>
-    </Box>
-  );
-};
 
 type CustomFieldArgs = {
   field: FieldModel;
@@ -149,17 +96,34 @@ function CustomField({
   onMove,
 }: CustomFieldArgs): React.ReactNode {
   const nameFieldId = useId();
-  const { classes } = useStyles();
 
   return (
-    <Grid item role="region" aria-labelledby={nameFieldId}>
+    <Grid role="region" aria-labelledby={nameFieldId}>
       <div data-testid="TemplateField">
         <Paper variant="outlined">
           {field.deleteFieldRequest ? (
-            <DeletionRecap field={field} />
+            <Box sx={{ p: 2 }}>
+              <Typography variant="subtitle1">
+                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]}{" "}
+                field will be deleted from this template.
+              </Typography>
+              <p>
+                New samples will not include this field.{" "}
+                {field.deleteFieldOnSampleUpdate
+                  ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
+                  : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
+              </p>
+            </Box>
           ) : (
-            <RelativeBox p={2}>
-              <div className={clsx(classes.fullWidth, classes.row)}>
+            <Box sx={{ position: "relative", p: 2 }}>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
                 <NameField
                   field={field}
                   editing={editable}
@@ -168,9 +132,16 @@ function CustomField({
                   }}
                   id={nameFieldId}
                 />
-                <Box className={clsx(classes.leftSpaced, classes.column)}>
+                <Box
+                  sx={{
+                    ml: 1.5,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                  }}
+                >
                   {editable && (
-                    <div className={classes.removeWrapper}>
+                    <Box sx={{ ml: 0.75, mb: 0.75 }}>
                       {field.initial ? (
                         <RemoveButton
                           onClick={() => onRemove()}
@@ -183,22 +154,34 @@ function CustomField({
                           tooltipTitle="Delete field"
                         />
                       )}
-                    </div>
+                    </Box>
                   )}
-                  {!field.initial && <FieldTypeLabel field={field} />}
+                  {!field.initial && (
+                    <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
+                      {FIELD_LABEL[field.fieldType]}
+                    </Typography>
+                  )}
                 </Box>
-              </div>
-              <Box mt={4}>
+              </Box>
+              <Box sx={{ mt: 4 }}>
                 <Grid
                   container
-                  direction={forceColumnLayout ? "column" : "row"}
+                  sx={{ flexDirection: forceColumnLayout ? "column" : "row" }}
                 >
-                  <Grid item lg={3}>
+                  <Grid
+                    size={{
+                      lg: 3,
+                    }}
+                  >
                     <Mandatory field={field} editing={editable} />
                   </Grid>
-                  <Grid item lg={9}>
+                  <Grid
+                    size={{
+                      lg: 9,
+                    }}
+                  >
                     {field.initial && (
-                      <Box mt={forceColumnLayout ? 3 : 0}>
+                      <Box sx={{ mt: forceColumnLayout ? 3 : 0 }}>
                         <FieldTypeSelector field={field} />
                       </Box>
                     )}
@@ -212,7 +195,7 @@ function CustomField({
                   onClick={(newIndex) => onMove(newIndex)}
                 />
               )}
-            </RelativeBox>
+            </Box>
           )}
         </Paper>
       </div>

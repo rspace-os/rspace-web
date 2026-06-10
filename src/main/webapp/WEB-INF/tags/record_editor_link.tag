@@ -30,12 +30,12 @@
 				<c:url value='/notebookEditor/${recordId}?initialRecordToDisplay=${record.id}&settingsKey=${settingsKey}&grandParentId=${bcrumb.getFolderId()}'
 					var="notebookentryLink"/>
 
-				<a id="structuredDocument_${record.id}" class="structuredDocument recordNameCell"
+				<a id="structuredDocument_${record.id}" class="structuredDocument recordNameCell workspace-link"
 					href="${notebookentryLink}" title="${record.name}">${visibleRecordName}</a>
 			</c:when>
 			<c:when test="${empty editStatus or editStatus eq 'EDIT_MODE'}">
 				<c:url value='/workspace/editor/structuredDocument/${record.id}?settingsKey=${settingsKey}' var="regularLink" />
-				<a id="structuredDocument_${record.id}" class="structuredDocument recordNameCell" href="${regularLink}" title="${record.name}">
+				<a id="structuredDocument_${record.id}" class="structuredDocument recordNameCell workspace-link" href="${regularLink}" title="${record.name}">
                    ${visibleRecordName}
                 </a>
                 <c:if test="${record.type eq 'NORMAL:TEMPLATE'}">
@@ -50,39 +50,39 @@
 	</c:when>
 
 	<c:when test="${record.folder}">
-		<a id="folder_${record.id}" class="folder recordNameCell" data-folderId="${record.id}" data-parentFolderId="${recordId}" href="/workspace/${record.id}" title="${record.name}">
+		<a id="folder_${record.id}" class="folder recordNameCell workspace-link" data-folderId="${record.id}" data-parentFolderId="${recordId}" href="/workspace/${record.id}" title="${record.name}">
 			${visibleRecordName}
 		</a>
 	</c:when>
 
 	<c:when test="${record['class'].name eq 'com.researchspace.model.EcatImage'}">
-		<a id="image_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
+		<a id="image_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
 			${visibleRecordName}
 		</a>
 	</c:when>
 
 	<c:when test="${record['class'].name eq 'com.researchspace.model.EcatAudio'}">
-		<a id="audio_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
+		<a id="audio_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
 			${visibleRecordName}
 		</a>
 	</c:when>
 
 	<c:when test="${record['class'].name eq 'com.researchspace.model.EcatVideo'}">
-		<a id="video_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
+		<a id="video_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
 			${visibleRecordName}
 		</a>
 	</c:when>
 
 	<c:when
 		test="${record['class'].name eq 'com.researchspace.model.EcatDocumentFile'}">
-		<a id="document_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
+		<a id="document_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
 			${visibleRecordName}
 		</a>
 	</c:when>
 
 	<c:when
 		test="${record['class'].name eq 'com.researchspace.model.EcatChemistryFile'}">
-		<a id="document_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
+		<a id="document_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.parent.id}?term=${record.globalIdentifier}" title="${record.name}">
 			${visibleRecordName}
 		</a>
 	</c:when>
@@ -90,19 +90,19 @@
 	<c:when
 		test="${record['class'].name eq 'com.researchspace.model.record.Snippet'}">
         <c:if test="${record.getOwnerOrSharedParentForUser(user).isPresent()}">
-		<a id="snippet_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.getOwnerOrSharedParentForUser(user).get().id}?term=${record.globalIdentifier}&mediaType=Snippets" title="${record.name}">
+		<a id="snippet_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.getOwnerOrSharedParentForUser(user).get().id}?term=${record.globalIdentifier}&mediaType=Snippets" title="${record.name}">
 				${visibleRecordName}
 		</a>
         </c:if>
         <c:if test="${not record.getOwnerOrSharedParentForUser(user).isPresent() and record.getSharedFolderParent().isPresent()}">
-            <a id="snippet_${record.id}" class="recordNameCell" target="_blank" href="/gallery/${record.getSharedFolderParent().get().id}?term=${record.globalIdentifier}&mediaType=Snippets" title="${record.name}">
+            <a id="snippet_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/${record.getSharedFolderParent().get().id}?term=${record.globalIdentifier}&mediaType=Snippets" title="${record.name}">
                     ${visibleRecordName}
             </a>
         </c:if>
         <!--It should not be possible for a shared snippet to have BOTH these test conditions
         as false but this is included to prevent JSP render error IF that should occur-->
         <c:if test="${not record.getOwnerOrSharedParentForUser(user).isPresent() and not record.getSharedFolderParent().isPresent()}">
-            <a id="snippet_${record.id}" class="recordNameCell" target="_blank" href="/gallery/?term=${record.globalIdentifier}&mediaType=Snippets" title="${record.name}">
+            <a id="snippet_${record.id}" class="recordNameCell workspace-link" target="_blank" href="/gallery/?term=${record.globalIdentifier}&mediaType=Snippets" title="${record.name}">
                     ${visibleRecordName}
             </a>
         </c:if>

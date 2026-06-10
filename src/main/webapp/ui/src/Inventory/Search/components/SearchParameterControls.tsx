@@ -41,12 +41,14 @@ const Panel = ({ anchorEl, children, onClose }: PanelProps) => (
       vertical: "top",
       horizontal: "center",
     }}
-    PaperProps={{
-      variant: "outlined",
-      elevation: 0,
-      style: {
-        minWidth: 300,
-      },
+    slotProps={{
+      paper: {
+        variant: "outlined",
+        elevation: 0,
+        style: {
+          minWidth: 300,
+        },
+      }
     }}
   >
     {Boolean(anchorEl) && children}
@@ -193,17 +195,26 @@ function SearchParameterControls(): React.ReactNode {
         }}
         disabled={!search.showTagsFilter}
       >
-        <TagsCombobox
-          enforceOntologies={false}
-          value={new RsSet<Tag>([])}
-          onSelection={(tag) => {
-            navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
-          }}
-          onClose={() => {
-            setTagsDropdown(null);
-          }}
-          anchorEl={tagsDropdown}
-        />
+        {/*
+         * Only mount the combobox once its popover is open. TagsCombobox calls
+         * MUI's useAutocomplete, which validates on mount that its input
+         * element exists; mounting it while closed runs that validation before
+         * the input is rendered, producing a console error. Mounting it only
+         * when `tagsDropdown` is set guarantees the input is present.
+         */}
+        {tagsDropdown && (
+          <TagsCombobox
+            enforceOntologies={false}
+            value={new RsSet<Tag>([])}
+            onSelection={(tag) => {
+              navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
+            }}
+            onClose={() => {
+              setTagsDropdown(null);
+            }}
+            anchorEl={tagsDropdown}
+          />
+        )}
       </DropdownButton>
       <DropdownButton
         name="Saved Searches"

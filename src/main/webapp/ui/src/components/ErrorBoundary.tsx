@@ -1,7 +1,5 @@
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import React from "react";
-import clsx from "clsx";
-import { withStyles } from "Styles";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 
 /**
@@ -19,45 +17,39 @@ export const ERROR_MSG: React.ReactNode = (
   </>
 );
 
-const Container = withStyles<
-  { topOfViewport?: boolean; children: React.ReactNode },
-  { topOfViewport: string }
->(() => ({
-  topOfViewport: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    fontSize: 20,
-    backgroundColor: "white",
-    borderBottom: "2px solid black",
-    padding: 20,
-    zIndex: 9999 /* higher than anything else */,
-    paddingBottom: 0,
-  },
-}))(
-  ({
-    topOfViewport,
-    classes,
-    children,
-  }: {
-    topOfViewport?: boolean;
-    children: React.ReactNode;
-    classes: { topOfViewport: string };
-  }) => (
-    <Grid
-      container
-      direction="column"
-      alignItems="center"
-      justifyContent="center"
-      className={clsx(
-        (topOfViewport === false || topOfViewport === null) &&
-          classes.topOfViewport
-      )}
+function Container({
+  topOfViewport,
+  children,
+}: {
+  topOfViewport?: boolean;
+  children: React.ReactNode;
+}): React.ReactNode {
+  const applyTopOfViewport =
+    topOfViewport === false || topOfViewport === null;
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        ...(applyTopOfViewport && {
+          position: "fixed",
+          top: 0,
+          left: 0,
+          fontSize: 20,
+          backgroundColor: "white",
+          borderBottom: "2px solid black",
+          padding: "20px",
+          zIndex: 9999 /* higher than anything else */,
+          paddingBottom: 0,
+        }),
+      }}
     >
       {children}
-    </Grid>
-  )
-);
+    </Box>
+  );
+}
 
 type ErrorBoundaryArgs = {
   message?: string;
@@ -103,7 +95,7 @@ export default class ErrorBoundary extends React.Component<
   componentDidMount(): void {
     if (!this.context) {
       throw new Error(
-        "ErrorBoundary must be used within an AnalyticsContext provider"
+        "ErrorBoundary must be used within an AnalyticsContext provider",
       );
     }
   }
@@ -112,9 +104,7 @@ export default class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <Container topOfViewport={this.props.topOfViewport}>
-          <Grid item>
-            <p>{this.message}</p>
-          </Grid>
+          <p>{this.message}</p>
         </Container>
       );
     }

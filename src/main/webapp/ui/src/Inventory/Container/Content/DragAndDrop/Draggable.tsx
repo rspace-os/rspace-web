@@ -193,7 +193,7 @@ export function Draggable({
             ? numberOfItemsBeingDragged
             : 0
         }
-        style={{ display: "contents" }}
+        sx={{ display: "contents" }}
       >
         {children}
       </Badge>

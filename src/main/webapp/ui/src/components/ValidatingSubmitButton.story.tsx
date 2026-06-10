@@ -8,6 +8,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../theme";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/other";
+import Box from "@mui/material/Box";
 
 /**
  * A simple example of how to use ValidatingSubmitButton
@@ -27,9 +28,9 @@ export const SimpleExample = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <div style={{ padding: "20px" }}>
+      <Box sx={{ padding: "20px" }}>
         <h3>Validating Submit Button</h3>
-        <div style={{ marginBottom: "10px" }}>
+        <Box sx={{ marginBottom: "10px" }}>
           <button onClick={() => setValidationResult(IsValid())}>
             Set Valid
           </button>
@@ -41,7 +42,7 @@ export const SimpleExample = ({
           <button onClick={() => setLoading(!loading)}>
             Toggle Loading ({loading ? "Off" : "On"})
           </button>
-        </div>
+        </Box>
         <ValidatingSubmitButton
           validationResult={validationResult}
           loading={loading}
@@ -49,7 +50,7 @@ export const SimpleExample = ({
         >
           Submit
         </ValidatingSubmitButton>
-      </div>
+      </Box>
     </ThemeProvider>
   );
 };
@@ -83,9 +84,9 @@ export const ProgressExample = ({
 
   return (
     <ThemeProvider theme={theme}>
-      <div style={{ padding: "20px" }}>
+      <Box sx={{ padding: "20px" }}>
         <h3>Validating Submit Button with Progress</h3>
-        <div style={{ marginBottom: "10px" }}>
+        <Box sx={{ marginBottom: "10px" }}>
           <button onClick={() => setValidationResult(IsValid())}>
             Set Valid
           </button>
@@ -97,7 +98,7 @@ export const ProgressExample = ({
           <button onClick={() => setLoading(!loading)}>
             Toggle Loading ({loading ? "Off" : "On"})
           </button>
-        </div>
+        </Box>
         <ValidatingSubmitButton
           validationResult={validationResult}
           loading={loading}
@@ -106,7 +107,7 @@ export const ProgressExample = ({
         >
           Submit
         </ValidatingSubmitButton>
-      </div>
+      </Box>
     </ThemeProvider>
   );
 };
@@ -126,9 +127,9 @@ export const HighContrastExample = ({
 
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      <div style={{ padding: "20px" }}>
+      <Box sx={{ padding: "20px" }}>
         <h3>Validating Submit Button (High Contrast)</h3>
-        <div style={{ marginBottom: "10px" }}>
+        <Box sx={{ marginBottom: "10px" }}>
           <button onClick={() => setValidationResult(IsValid())}>
             Set Valid
           </button>
@@ -140,7 +141,7 @@ export const HighContrastExample = ({
           <button onClick={() => setLoading(!loading)}>
             Toggle Loading ({loading ? "Off" : "On"})
           </button>
-        </div>
+        </Box>
         <ValidatingSubmitButton
           validationResult={validationResult}
           loading={loading}
@@ -148,7 +149,7 @@ export const HighContrastExample = ({
         >
           Submit
         </ValidatingSubmitButton>
-      </div>
+      </Box>
     </ThemeProvider>
   );
 };

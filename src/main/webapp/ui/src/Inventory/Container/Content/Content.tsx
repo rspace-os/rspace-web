@@ -1,7 +1,5 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
-import { type Theme } from "@mui/material/styles";
 import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import ContentContextMenu from "./ContentContextMenu";
 import useStores from "../../../stores/use-stores";
@@ -10,26 +8,13 @@ import SearchViewComponent from "../../Search/SearchView";
 import Search from "../../Search/Search";
 import { menuIDs } from "../../../util/menuIDs";
 import Alert from "@mui/material/Alert";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { isMac } from "../../../util/shortcuts";
 import docLinks from "../../../assets/DocLinks";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-
-const useStyles = makeStyles<void>()(
-  // @ts-expect-error !important isn't recognised
-  (theme: Theme) => ({
-    alert: {
-      marginBottom: theme.spacing(1),
-    },
-    searchViewWrapper: {
-      overflowX: "auto !important",
-      overflow: "hidden",
-      width: "100%",
-    },
-  })
-);
 
 function ImageContainerZoomHelpText() {
   const { uiStore } = useStores();
@@ -75,7 +60,7 @@ function _Content() {
   const fromCType = activeResult.cType.toUpperCase();
   const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
   if (fromCType === "IMAGE" || fromCType === "GRID")
-    TABS.unshift(fromCType as SearchViewType);
+    TABS.unshift(fromCType);
 
   const handleSearch = (query: string) => {
     const params = {
@@ -91,13 +76,12 @@ function _Content() {
   const locationsAlert =
     "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.";
 
-  const { classes } = useStyles();
   return (
     <>
       {activeResult.cType === "IMAGE" &&
         !activeResult.loading &&
         (!activeResult.locationsImage || !activeResult.locationsCount) && (
-          <Alert severity="warning" className={classes.alert}>
+          <Alert severity="warning" sx={{ mb: 1 }}>
             {locationsAlert}
           </Alert>
         )}
@@ -110,19 +94,15 @@ function _Content() {
         }}
       >
         <InnerSearchNavigationContext>
-          <Grid container direction="column" spacing={1}>
-            <Grid item>
-              <Search handleSearch={handleSearch} TABS={TABS} size="small" />
-            </Grid>
+          <Stack spacing={1}>
+            <Search handleSearch={handleSearch} TABS={TABS} size="small" />
             {["GRID", "IMAGE"].includes(search.searchView) && (
-              <Grid item>
-                <ContentContextMenu />
-              </Grid>
+              <ContentContextMenu />
             )}
-            <Grid item className={classes.searchViewWrapper}>
+            <Box sx={{ overflowX: "auto !important", overflow: "hidden", width: "100%" }}>
               <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </InnerSearchNavigationContext>
       </SearchContext.Provider>
       {search.searchView === "IMAGE" && <ImageContainerZoomHelpText />}

@@ -2,6 +2,7 @@ import React, { type ReactNode, type ComponentType } from "react";
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import {
@@ -85,16 +86,19 @@ const PolygonEditor = observer(
           width: "100%",
         }}
       >
-        <Grid item md={5}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`Point ${i + 1} Latitude`}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_Y }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                datatestid={`Polygon-point-${i}-latitude`}
+                data-test-id={`Polygon-point-${i}-latitude`}
                 disabled={false}
                 value={point.pointLatitude ?? ""}
                 placeholder="Enter Point Latitude"
@@ -112,20 +116,31 @@ const PolygonEditor = observer(
               />
             ) : (
               /* last point is edited by editing first */
-              point.pointLatitude || <span style={{ color: "#949494" }}>-</span>
+              point.pointLatitude || (
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
+              )
             )}
           </InputWrapper>
         </Grid>
-        <Grid item md={5}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`Point ${i + 1} Longitude`}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_X }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                datatestid={`Polygon-point-${i + 1}-longitude`}
+                data-test-id={`Polygon-point-${i + 1}-longitude`}
                 disabled={false}
                 value={point.pointLongitude ?? ""}
                 placeholder="Enter Point Longitude"
@@ -144,12 +159,22 @@ const PolygonEditor = observer(
             ) : (
               /* last point is edited by editing first */
               point.pointLongitude || (
-                <span style={{ color: "#949494" }}>-</span>
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
               )
             )}
           </InputWrapper>
         </Grid>
-        <Grid item md={1}>
+        <Grid
+          size={{
+            md: 1,
+          }}
+        >
           {canBeAdded(i) ? (
             <AddButton
               onClick={() => handleAddPoint(i)}
@@ -159,7 +184,11 @@ const PolygonEditor = observer(
             <>&nbsp;</>
           )}
         </Grid>
-        <Grid item md={1}>
+        <Grid
+          size={{
+            md: 1,
+          }}
+        >
           {canBeRemoved(i) ? (
             <RemoveButton
               onClick={() => handleRemovePoint(i)}
@@ -171,7 +200,7 @@ const PolygonEditor = observer(
         </Grid>
       </Grid>
     ));
-  }
+  },
 );
 
 type PolygonCardArgs = {
@@ -198,16 +227,19 @@ function PolygonCard({
           width: "100%",
         }}
       >
-        <Grid item md={5}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`In Polygon Point Latitude`}>
             {editable ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_Y }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                datatestid={`In-polygon-point-latitude`}
+                data-test-id={`In-polygon-point-latitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLatitude}
                 placeholder="Enter Point Latitude"
@@ -227,7 +259,7 @@ function PolygonCard({
                   (isEmpty(geoLocationInPolygonPoint.pointLatitude) &&
                     inPolygonPointIncomplete) ||
                   isOutOfRangeY(
-                    Number(geoLocationInPolygonPoint.pointLatitude)
+                    Number(geoLocationInPolygonPoint.pointLatitude),
                   ) ? (
                     <>Between &minus;90.0˚ and 90.0˚.</>
                   ) : null
@@ -235,21 +267,30 @@ function PolygonCard({
               />
             ) : (
               geoLocationInPolygonPoint.pointLatitude || (
-                <span style={{ color: "#949494" }}>-</span>
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
               )
             )}
           </InputWrapper>
         </Grid>
-        <Grid item md={5}>
+        <Grid
+          size={{
+            md: 5,
+          }}
+        >
           <InputWrapper label={`In Polygon Point Longitude`}>
             {editable ? (
               <AmberNumberField
-                inputProps={{ ...COORD_RANGE_X }}
+                slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
                 size="small"
                 variant="standard"
                 fullWidth
-                // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                datatestid={`In-polygon-point-longitude`}
+                data-test-id={`In-polygon-point-longitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLongitude ?? ""}
                 placeholder="Enter Point Longitude"
@@ -264,14 +305,14 @@ function PolygonCard({
                   (isEmpty(geoLocationInPolygonPoint.pointLongitude) &&
                     inPolygonPointIncomplete) ||
                   isOutOfRangeX(
-                    Number(geoLocationInPolygonPoint.pointLongitude)
+                    Number(geoLocationInPolygonPoint.pointLongitude),
                   )
                 }
                 helperText={
                   (isEmpty(geoLocationInPolygonPoint.pointLongitude) &&
                     inPolygonPointIncomplete) ||
                   isOutOfRangeX(
-                    Number(geoLocationInPolygonPoint.pointLongitude)
+                    Number(geoLocationInPolygonPoint.pointLongitude),
                   ) ? (
                     <>Between &minus;180.0˚ and 180.0˚.</>
                   ) : null
@@ -279,7 +320,13 @@ function PolygonCard({
               />
             ) : (
               geoLocationInPolygonPoint.pointLongitude || (
-                <span style={{ color: "#949494" }}>-</span>
+                <Typography
+                  variant="inherit"
+                  component="span"
+                  sx={{ color: "#949494" }}
+                >
+                  -
+                </Typography>
               )
             )}
           </InputWrapper>

@@ -7,6 +7,7 @@ import {
 } from "./ValidatingSubmitButton.story";
 
 import AxeBuilder from "@axe-core/playwright";
+import { touchRippleClasses } from "@mui/material/ButtonBase";
 const createOnClickSpy = () => {
 
   let clicked = false;
@@ -161,17 +162,17 @@ const feature = test.extend<{
          * determine the contrast of the button text. We remove it here
          * before performing the analysis.
          */
-        await page.evaluate(() => {
+        await page.evaluate((rippleClass) => {
           const button = Array.from(document.querySelectorAll("button")).find(
             (btn) => btn.textContent === "Submit",
           );
           if (!button) return;
-          const ripple = button.querySelector(".MuiTouchRipple-root");
+          const ripple = button.querySelector(`.${rippleClass}`);
           if (ripple) {
             ripple.remove();
           }
 
-        });
+        }, touchRippleClasses.root);
         const { violations } = await new AxeBuilder({
           page,
         })

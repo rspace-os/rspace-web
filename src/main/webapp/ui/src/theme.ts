@@ -1,7 +1,12 @@
-import { createTheme, ThemeOptions as MuiThemeOptions } from "@mui/material";
-import { type Transitions } from "@mui/material/styles/createTransitions";
-import { makeStyles } from "tss-react/mui";
+import {
+  createTheme,
+  type ThemeOptions as MuiThemeOptions,
+  type PaletteColorOptions,
+  type Transitions,
+} from "@mui/material/styles";
 import { grey, red } from "@mui/material/colors";
+import { inputLabelClasses } from "@mui/material/InputLabel";
+import { formLabelClasses } from "@mui/material/FormLabel";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -15,7 +20,6 @@ export type RecordPalette = {
 };
 
 declare module "@mui/material/styles" {
-
   interface Theme {
     borders: {
       table?: string;
@@ -44,10 +48,6 @@ declare module "@mui/material/styles" {
     iconTransformations: string;
     filterToggle: string;
   }
-}
-
-declare module "@mui/material/styles/createTheme" {
-
   interface ThemeOptions {
     borders?: {
       table: string;
@@ -61,10 +61,6 @@ declare module "@mui/material/styles/createTheme" {
       themedDialogTitle: (hue: number, sat: number, lig: number) => string;
     };
   }
-}
-
-declare module "@mui/material/styles/createPalette" {
-
   interface PaletteColor {
     background: string;
     saturated?: string;
@@ -136,6 +132,19 @@ declare module "@mui/material/styles/createPalette" {
   interface TypeBackground {
     alt?: string;
   }
+  interface TypographyVariants {
+    letterSpacing: {
+      spaced: string;
+      dense: string;
+    };
+  }
+
+  interface TypographyVariantsOptions {
+    letterSpacing?: {
+      spaced: string;
+      dense: string;
+    };
+  }
 }
 
 /*
@@ -151,14 +160,12 @@ declare module "@mui/material/styles/createPalette" {
  * accept.
  */
 declare module "@mui/material/Button" {
-
   interface ButtonPropsColorOverrides {
     standardIcon: true;
     callToAction: true;
   }
 }
 declare module "@mui/material/IconButton" {
-
   interface IconButtonPropsColorOverrides {
     standardIcon: true;
   }
@@ -174,31 +181,13 @@ declare module "@mui/material/Switch" {
   }
 }
 declare module "@mui/material/Chip" {
-
   interface ChipPropsColorOverrides {
     callToAction: true;
   }
 }
 declare module "@mui/material/Fab" {
-
   interface FabPropsColorOverrides {
     callToAction: true;
-  }
-}
-
-declare module "@mui/material/styles/createTypography" {
-  interface Typography {
-    letterSpacing: {
-      spaced: string;
-      dense: string;
-    };
-  }
-
-  interface TypographyOptions {
-    letterSpacing?: {
-      spaced: string;
-      dense: string;
-    };
   }
 }
 
@@ -373,11 +362,11 @@ export default createTheme({
           marginBottom: baseTheme.spacing(0.25),
           fontWeight: 600,
           fontSize: "0.95em",
-          "&.MuiInputLabel-outlined": {
+          [`&.${inputLabelClasses.outlined}`]: {
             fontWeight: "initial",
             fontSize: "1.1em",
           },
-          "&.Mui-focused": {
+          [`&.${formLabelClasses.focused}`]: {
             color: "rgb(10,10,10)",
           },
         },
@@ -403,6 +392,16 @@ export default createTheme({
       styleOverrides: {
         containedCallToAction: {
           fontWeight: 700,
+          "&&": {
+            color: baseTheme.palette.callToAction.contrastText,
+            "@media (prefers-contrast: more), (forced-colors: active)": {
+              backgroundColor: "black",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "black",
+              },
+            },
+          },
         },
       },
     },
@@ -469,16 +468,4 @@ export default createTheme({
       },
     },
   },
-} as MuiThemeOptions);
-
-/**
- * Some global styles used in various places
- * @deprecated
- */
-export const globalStyles = makeStyles()(() => ({
-  greyOut: {
-    filter: "grayscale(1)",
-    pointerEvents: "none",
-    opacity: 0.6,
-  },
-}));
+});

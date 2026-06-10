@@ -83,3 +83,25 @@ if (typeof globalThis.sessionStorage !== "object") {
     value: createStorageMock(),
   });
 }
+
+/*
+ * Polyfill for IntersectionObserver in jsdom. Some components (e.g.
+ * ExtendedContextMenu) instantiate one on mount to detect overflowing child
+ * elements. jsdom does not implement this API, so we provide a no-op stub.
+ */
+if (typeof globalThis.IntersectionObserver !== "function") {
+  class IntersectionObserverMock {
+    root: Element | Document | null = null;
+    rootMargin: string = "";
+    thresholds: ReadonlyArray<number> = [];
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  // @ts-expect-error Mocking
+  globalThis.IntersectionObserver = IntersectionObserverMock;
+}
+

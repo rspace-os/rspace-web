@@ -80,13 +80,23 @@ export default function AddTag<
         clickable={!disabled}
         skipFocusWhenDisabled
       />
-      <TagsCombobox
-        enforceOntologies={enforceOntologies}
-        onSelection={onSelection}
-        value={new RsSet(value)}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-      />
+      {/*
+       * Only mount the combobox once its popover is open. TagsCombobox calls
+       * MUI's useAutocomplete, which validates on mount that its input element
+       * exists; mounting it while the popover is closed (e.g. as soon as the
+       * sample form enters edit mode) runs that validation before the input is
+       * rendered, producing a console error. Mounting it only when `anchorEl`
+       * is set guarantees the input is present.
+       */}
+      {anchorEl && (
+        <TagsCombobox
+          enforceOntologies={enforceOntologies}
+          onSelection={onSelection}
+          value={new RsSet(value)}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
+        />
+      )}
     </>
   );
 }

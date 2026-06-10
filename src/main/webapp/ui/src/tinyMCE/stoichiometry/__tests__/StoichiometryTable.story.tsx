@@ -23,7 +23,9 @@ function TestProviders({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 }
 const StoichiometryTableWithQueryData = () => {
   const { hasChanges, tableController } = useEditableStoichiometryTable({
@@ -54,13 +56,15 @@ export const StoichiometryTableWithDataStory = () => {
             <React.Suspense
               fallback={
                 <Box
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="center"
-                  alignItems="center"
-                  minHeight={100}
-                  my={2}
-                  gap={1}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 100,
+                    my: 2,
+                    gap: 1,
+                  }}
                 >
                   <CircularProgress
                     size={24}
@@ -79,7 +83,7 @@ export const StoichiometryTableWithDataStory = () => {
       </ThemeProvider>
     </StyledEngineProvider>
   );
-}
+};
 
 export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
   return (
@@ -92,13 +96,15 @@ export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
             <React.Suspense
               fallback={
                 <Box
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="center"
-                  alignItems="center"
-                  minHeight={100}
-                  my={2}
-                  gap={1}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 100,
+                    my: 2,
+                    gap: 1,
+                  }}
                 >
                   <CircularProgress
                     size={24}
@@ -110,11 +116,14 @@ export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
                 </Box>
               }
             >
-              <StoichiometryTable stoichiometryId={1} stoichiometryRevision={1} />
+              <StoichiometryTable
+                stoichiometryId={1}
+                stoichiometryRevision={1}
+              />
             </React.Suspense>
           </Alerts>
         </TestProviders>
       </ThemeProvider>
     </StyledEngineProvider>
   );
-};
+}

@@ -1,7 +1,8 @@
 import React from "react";
 import Checkbox from "@mui/material/Checkbox";
-import Grid from "@mui/material/Grid";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import Stack from "@mui/material/Stack";
+import Alert, { type AlertColor } from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 import Row from "./ColumnFieldMapRow";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -11,286 +12,191 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "Styles";
 import OverlayLoadingSpinner from "../../components/OverlayLoadingSpinner";
-import RelativeBox from "../../../components/RelativeBox";
-import ImportModel, {
-  ColumnFieldMap,
-} from "../../../stores/models/ImportModel";
+import Box from "@mui/material/Box";
+import { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import { type ImportRecordType } from "../../../stores/stores/ImportStore";
 import { type URL } from "../../../util/types";
 import { Link } from "react-router-dom";
 
-type MatchTemplateAlertArgs = {
-  importData: ImportModel;
+type AlertSpec = {
+  key: string;
+  show: boolean;
+  severity: AlertColor;
+  title?: React.ReactNode;
+  content: React.ReactNode;
 };
 
-const MatchTemplateAlert = ({ importData }: MatchTemplateAlertArgs) => {
-  const matchExistingTemplate = importData.importMatchesExistingTemplate;
+function AlertList({ specs }: { specs: ReadonlyArray<AlertSpec> }) {
   return (
-    <HelpTextAlert
-      severity="error"
-      condition={
-        importData.isSamplesImport &&
-        importData.nameFieldIsSelected &&
-        !importData.createNewTemplate &&
-        !matchExistingTemplate?.matches
-      }
-      title="The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file."
-      text={
-        matchExistingTemplate && !matchExistingTemplate.matches
-          ? matchExistingTemplate.reason
-          : ""
-      }
-    />
+    <>
+      {specs
+        .filter((s) => s.show)
+        .map((s) => (
+          <Alert key={s.key} severity={s.severity}>
+            {s.title ? <AlertTitle>{s.title}</AlertTitle> : null}
+            {s.content}
+          </Alert>
+        ))}
+    </>
   );
-};
-
-type NameMappingAlertArgs = {
-  importData: ImportModel;
-  rowCount: number;
-};
-
-const NameMappingAlert = ({ importData, rowCount }: NameMappingAlertArgs) => {
-  const labelByRecordType = importData.byRecordType("label") || "records";
-  const label =
-    typeof labelByRecordType === "string" ? labelByRecordType : "records";
-  return (
-    <HelpTextAlert
-      severity="info"
-      condition={
-        typeof rowCount === "number" &&
-        rowCount > 0 &&
-        !importData.nameFieldIsSelected
-      }
-      text={`You must select one column to convert to the Name of the ${label}.`}
-    />
-  );
-};
-
-type QuantityConversionAlertArgs = {
-  importData: ImportModel;
-};
-
-const QuantityConversionAlert = ({
-  importData,
-}: QuantityConversionAlertArgs) => {
-  const { unitStore } = useStores();
-  const mappingsByRecordType = importData.byRecordType("mappings") as
-    | ColumnFieldMap[]
-    | undefined;
-  const rowCount: number | undefined = mappingsByRecordType?.length;
-  const labelByRecordType = importData.byRecordType("label") || "records";
-  const label =
-    typeof labelByRecordType === "string" ? labelByRecordType : "records";
-  const unitLabel = unitStore.getUnit(
-    importData.templateInfo?.defaultUnitId || 3
-  )?.label;
-
-  return (
-    <HelpTextAlert
-      severity="info"
-      condition={
-        typeof rowCount === "number" &&
-        rowCount > 0 &&
-        importData.isSamplesImport &&
-        !importData.quantityFieldIsSelected
-      }
-      text={`Quantity conversion is not set. All imported ${label} will have a total quantity of 1 ${
-        unitLabel || "ml"
-      }.`}
-    />
-  );
-};
-
-type WithoutConversionAlertArgs = {
-  importData: ImportModel;
-  rowCount: number;
-};
-
-const WithoutConversionAlert = ({
-  importData,
-  rowCount,
-}: WithoutConversionAlertArgs) => {
-  return (
-    <HelpTextAlert
-      severity="info"
-      condition={
-        typeof rowCount === "number" &&
-        rowCount > 0 &&
-        importData.unconvertedFieldIsSelected
-      }
-      text="You have one or more columns selected without conversion. The columns' data will not be used."
-    />
-  );
-};
-
-type SampleReferenceAlertArgs = {
-  importData: ImportModel;
-  rowCount: number;
-};
-
-const SampleReferenceAlert = ({
-  importData,
-  rowCount,
-}: SampleReferenceAlertArgs) => {
-  return (
-    <HelpTextAlert
-      severity="info"
-      condition={
-        typeof rowCount === "number" &&
-        rowCount > 0 &&
-        importData.isSubSamplesImport &&
-        !importData.anyParentSamplesFieldIsSelected
-      }
-      text={`You must select one column that refers to a Sample.`}
-    />
-  );
-};
-
-type ParentSampleAlertArgs = {
-  importData: ImportModel;
-  rowCount: number;
-  onTypeSelect: (type: ImportRecordType) => URL;
-};
-
-const ParentSampleAlert = ({
-  importData,
-  rowCount,
-  onTypeSelect,
-}: ParentSampleAlertArgs) => {
-  const labelByRecordType = importData.byRecordType("label") || "records";
-  const label =
-    typeof labelByRecordType === "string" ? labelByRecordType : "records";
-  return (
-    <HelpTextAlert
-      severity="info"
-      condition={
-        typeof rowCount === "number" &&
-        rowCount > 0 &&
-        importData.isSubSamplesImport &&
-        importData.parentSamplesImportIdUndefined
-      }
-      text={
-        <>
-          RSpace cannot find Parent Sample Import IDs for {label}. Please ensure
-          you are importing a{" "}
-          <Link to={onTypeSelect("SAMPLES")}>Samples CSV</Link> with mapped
-          &quot;Import ID&quot;.
-        </>
-      }
-    />
-  );
-};
-
-type ParentContainerAlertArgs = {
-  importData: ImportModel;
-  rowCount: number;
-  onTypeSelect: (type: ImportRecordType) => URL;
-};
-
-const ParentContainerAlert = ({
-  importData,
-  rowCount,
-  onTypeSelect,
-}: ParentContainerAlertArgs) => {
-  const labelByRecordType = importData.byRecordType("label") || "records";
-  const label =
-    typeof labelByRecordType === "string" ? labelByRecordType : "records";
-  return (
-    <HelpTextAlert
-      severity="info"
-      condition={
-        typeof rowCount === "number" &&
-        rowCount > 0 &&
-        importData.parentContainersImportIdUndefined
-      }
-      text={
-        <>
-          RSpace cannot find Parent Containers Import IDs for {label}. Please
-          ensure you are importing a{" "}
-          <Link to={onTypeSelect("CONTAINERS")}>Containers CSV</Link> with
-          mapped &quot;Import ID&quot;, or unselect the &quot;Parent Container
-          Import ID&quot; conversion.
-        </>
-      }
-    />
-  );
-};
+}
 
 type SimpleBottomHeadCellArgs = React.ComponentProps<typeof TableCell> & {
   children: React.ReactNode;
   colSpan?: number;
 };
 
-const SimpleBottomHeadCell = withStyles<
-  SimpleBottomHeadCellArgs,
-  { root: string }
->({
-  root: {
-    fontWeight: "600",
-  },
-})(
-  ({
-    children,
-    classes,
-    colSpan,
-    ...rest
-  }: SimpleBottomHeadCellArgs & { classes: { root: string } }) => (
+function SimpleBottomHeadCell({
+  children,
+  colSpan,
+  ...rest
+}: SimpleBottomHeadCellArgs): React.ReactNode {
+  return (
     <TableCell
       padding="none"
       align="left"
       variant="head"
-      classes={classes}
+      sx={{ fontWeight: 600 }}
       colSpan={colSpan}
       {...rest}
     >
       {children}
     </TableCell>
-  )
-);
+  );
+}
 
 type MappingArgs = {
   onTypeSelect: (type: ImportRecordType) => URL;
 };
 
 function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
-  const { importStore } = useStores();
+  const { importStore, unitStore } = useStores();
 
   const importData = importStore.importData;
   if (!importData) return null;
 
   const labelByRecordType = importData.byRecordType("label") || "records";
+  const label =
+    typeof labelByRecordType === "string" ? labelByRecordType : "records";
 
   const mappingsByRecordType = importData.byRecordType("mappings") as
     | ColumnFieldMap[]
     | undefined;
 
   const numSelected: number | undefined = mappingsByRecordType?.filter(
-    (m: ColumnFieldMap) => m.selected
+    (m: ColumnFieldMap) => m.selected,
   ).length;
 
   const rowCount: number = mappingsByRecordType?.length ?? 0;
+  const hasRows = rowCount > 0;
+
+  const matchExistingTemplate = importData.importMatchesExistingTemplate;
+  const unitLabel =
+    unitStore.getUnit(importData.templateInfo?.defaultUnitId || 3)?.label ??
+    "ml";
+
+  const alertsBeforeTable: ReadonlyArray<AlertSpec> = [
+    {
+      key: "template-mismatch",
+      show:
+        importData.isSamplesImport &&
+        importData.nameFieldIsSelected &&
+        !importData.createNewTemplate &&
+        !matchExistingTemplate?.matches,
+      severity: "error",
+      title:
+        "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
+      content: matchExistingTemplate?.matches
+        ? ""
+        : matchExistingTemplate?.reason ?? "",
+    },
+    {
+      key: "name-required-info",
+      show: hasRows && !importData.nameFieldIsSelected,
+      severity: "info",
+      content: `You must select one column to convert to the Name of the ${label}.`,
+    },
+    {
+      key: "quantity-conversion",
+      show:
+        hasRows &&
+        importData.isSamplesImport &&
+        !importData.quantityFieldIsSelected,
+      severity: "info",
+      content: `Quantity conversion is not set. All imported ${label} will have a total quantity of 1 ${unitLabel}.`,
+    },
+    {
+      key: "unconverted",
+      show: hasRows && importData.unconvertedFieldIsSelected,
+      severity: "info",
+      content:
+        "You have one or more columns selected without conversion. The columns' data will not be used.",
+    },
+    {
+      key: "subsample-parent-required",
+      show:
+        hasRows &&
+        importData.isSubSamplesImport &&
+        !importData.anyParentSamplesFieldIsSelected,
+      severity: "info",
+      content: "You must select one column that refers to a Sample.",
+    },
+    {
+      key: "parent-sample-import-id",
+      show:
+        hasRows &&
+        importData.isSubSamplesImport &&
+        importData.parentSamplesImportIdUndefined,
+      severity: "info",
+      content: (
+        <>
+          RSpace cannot find Parent Sample Import IDs for {label}. Please ensure
+          you are importing a{" "}
+          <Link to={onTypeSelect("SAMPLES")}>Samples CSV</Link> with mapped
+          &quot;Import ID&quot;.
+        </>
+      ),
+    },
+    {
+      key: "parent-container-import-id",
+      show: hasRows && importData.parentContainersImportIdUndefined,
+      severity: "info",
+      content: (
+        <>
+          RSpace cannot find Parent Containers Import IDs for {label}. Please
+          ensure you are importing a{" "}
+          <Link to={onTypeSelect("CONTAINERS")}>Containers CSV</Link> with mapped
+          &quot;Import ID&quot;, or unselect the &quot;Parent Container Import
+          ID&quot; conversion.
+        </>
+      ),
+    },
+  ];
+
+  const alertsAfterTable: ReadonlyArray<AlertSpec> = [
+    {
+      key: "no-csv",
+      show: rowCount < 1,
+      severity: "info",
+      content:
+        "Column conversion is only available once a CSV file has been selected.",
+    },
+    {
+      key: "name-required-error",
+      show:
+        Boolean(mappingsByRecordType) &&
+        !importData.nameFieldIsSelected &&
+        importStore.isCurrentImportState("nameRequired"),
+      severity: "error",
+      content: `It is required that a column be mapped to 'Name', as all ${label} must have a name.`,
+    },
+  ];
 
   return (
-    <Grid container direction="column" spacing={1}>
-      <MatchTemplateAlert importData={importData} />
-      <NameMappingAlert importData={importData} rowCount={rowCount} />
-      <QuantityConversionAlert importData={importData} />
-      <WithoutConversionAlert importData={importData} rowCount={rowCount} />
-      <SampleReferenceAlert importData={importData} rowCount={rowCount} />
-      <ParentSampleAlert
-        importData={importData}
-        rowCount={rowCount}
-        onTypeSelect={onTypeSelect}
-      />
-      <ParentContainerAlert
-        importData={importData}
-        rowCount={rowCount}
-        onTypeSelect={onTypeSelect}
-      />
-      <Grid item>
-        <RelativeBox>
+    <Stack spacing={1}>
+      <AlertList specs={alertsBeforeTable} />
+      <Box sx={{ position: "relative" }}>
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -327,28 +233,9 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
           {importData.isSamplesImport &&
             !importData.createNewTemplate &&
             importData.template?.loading && <OverlayLoadingSpinner />}
-        </RelativeBox>
-      </Grid>
-      <HelpTextAlert
-        severity="info"
-        condition={
-          typeof mappingsByRecordType?.length === "number" &&
-          mappingsByRecordType.length < 1
-        }
-        text="Column conversion is only available once a CSV file has been selected."
-      />
-      <HelpTextAlert
-        severity="error"
-        condition={
-          Boolean(mappingsByRecordType) &&
-          !importData.nameFieldIsSelected &&
-          importStore.isCurrentImportState("nameRequired")
-        }
-        text={`It is required that a column be mapped to 'Name', as all ${
-          typeof labelByRecordType === "string" ? labelByRecordType : "records"
-        } must have a name.`}
-      />
-    </Grid>
+        </Box>
+      <AlertList specs={alertsAfterTable} />
+    </Stack>
   );
 }
 

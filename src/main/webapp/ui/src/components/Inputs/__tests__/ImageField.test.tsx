@@ -22,15 +22,15 @@ vi.mock("../FileField", () => ({
   default: vi.fn(
     ({
       icon,
-      InputProps,
+      slotProps,
     }: {
       icon: React.ReactNode;
-      InputProps?: { endAdornment?: React.ReactNode };
+      slotProps?: { input?: { endAdornment?: React.ReactNode } };
     }) => {
       return (
         <>
           <div id="icon">{icon}</div>
-          <div id="endAdornment">{InputProps?.endAdornment}</div>
+          <div id="endAdornment">{slotProps?.input?.endAdornment}</div>
         </>
       );
     },

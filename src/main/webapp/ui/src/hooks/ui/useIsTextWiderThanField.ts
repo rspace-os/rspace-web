@@ -19,7 +19,7 @@ export default function useIsTextWiderThanField(): {
   textTooWide: Optional<boolean>;
 } {
   const [width, setWidth] = useState(0);
-  const ref = useRef<HTMLInputElement>();
+  const ref = useRef<HTMLInputElement | undefined>(undefined);
 
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {

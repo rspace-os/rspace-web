@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import AddTag from "../../../components/Tags/AddTag";
 import { type Tag } from "../../../stores/definitions/Tag";
-import Grid from "@mui/material/Grid";
 import TagListing from "../../../components/Tags/TagListing";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -53,7 +52,7 @@ function Tags<
       }}
       renderInput={({ disabled }) => (
         // id prop is ignored because there is no singular HTMLInputElement to attach it to
-        <TagListing
+        (<TagListing
           onClick={(tag) => {
             navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
           }}
@@ -73,25 +72,23 @@ function Tags<
             : {})}
           endAdornment={
             !disabled && (
-              <Grid item>
-                <AddTag
-                  onSelection={(tag) => {
-                    if (fieldOwner.fieldValues.tags.includes(tag as Tag)) {
-                      console.warn(
-                        "Preventing the same tag from being added twice"
-                      );
-                      return;
-                    }
-                    fieldOwner.setFieldsDirty({
-                      tags: [...fieldOwner.fieldValues.tags, tag as Tag],
-                    });
-                  }}
-                  value={fieldOwner.fieldValues.tags}
-                />
-              </Grid>
+                  <AddTag
+                    onSelection={(tag) => {
+                      if (fieldOwner.fieldValues.tags.includes(tag as Tag)) {
+                        console.warn(
+                          "Preventing the same tag from being added twice"
+                        );
+                        return;
+                      }
+                      fieldOwner.setFieldsDirty({
+                        tags: [...fieldOwner.fieldValues.tags, tag as Tag],
+                      });
+                    }}
+                    value={fieldOwner.fieldValues.tags}
+                  />
             )
           }
-        />
+        />)
       )}
     />
   );

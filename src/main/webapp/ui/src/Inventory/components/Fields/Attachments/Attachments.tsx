@@ -26,36 +26,20 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
-import { withStyles } from "Styles";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { type Attachment } from "../../../../stores/definitions/Attachment";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type BlobUrl } from "../../../../util/types";
 import BigIconButton from "../../../../components/BigIconButton";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Grid";
 import UploadIcon from "@mui/icons-material/Publish";
 import Result from "../../../../util/result";
 import { useDeploymentProperty } from "../../../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../../../util/fetchingData";
 import * as Parser from "../../../../util/parsers";
-
 const GalleryPicker = React.lazy(
   () => import("../../../../eln/gallery/picker"),
 );
-
-const CustomCardHeader = withStyles<
-  React.ComponentProps<typeof CardHeader>,
-  { root: string; action: string }
->((theme) => ({
-  root: {
-    padding: theme.spacing(0.5, 1.5, 0.25, 2),
-  },
-  action: {
-    margin: 0,
-  },
-}))(CardHeader);
-
 const CollapseContents = <
   Fields extends {
     image: BlobUrl | null;
@@ -77,7 +61,11 @@ const CollapseContents = <
     .flatMap(Parser.isString)
     .orElse("");
   return (
-    <Box mt={1}>
+    <Box
+      sx={{
+        mt: 1,
+      }}
+    >
       <TableContainer>
         <Table size="small">
           <TableHead>
@@ -102,31 +90,6 @@ const CollapseContents = <
     </Box>
   );
 };
-
-const ToggleButton = ({
-  attachmentCount,
-  open,
-  setOpen,
-}: {
-  attachmentCount: number;
-  open: boolean;
-  setOpen: (value: boolean) => void;
-}): ReactNode => (
-  <CustomTooltip
-    title={match<void, string>([
-      [() => attachmentCount === 0, "No current attachments"],
-      [() => open, "Hide attachment listing"],
-      [() => true, "Show attachment listing"],
-    ])()}
-  >
-    <IconButton onClick={() => setOpen(!open)} disabled={attachmentCount === 0}>
-      <Badge color="primary" badgeContent={attachmentCount}>
-        <ExpandCollapseIcon open={open} />
-      </Badge>
-    </IconButton>
-  </CustomTooltip>
-);
-
 const FileSelector = ({
   activeResult,
   setOpen,
@@ -138,7 +101,6 @@ const FileSelector = ({
 }): ReactNode => {
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
-
   const onFileSelection = ({ file }: { file: File }) => {
     activeResult.setAttributesDirty({
       attachments: [
@@ -154,7 +116,6 @@ const FileSelector = ({
       contentMimeType: file.type,
     });
   };
-
   return (
     <>
       <FileField
@@ -171,12 +132,11 @@ const FileSelector = ({
         explanatoryText="Upload a file from your device."
         containerProps={{
           wrap: "nowrap",
-          alignItems: "stretch",
-          flexDirection: "column",
+          sx: { alignItems: "stretch", flexDirection: "column" },
         }}
-        InputProps={{
-          startAdornment: (
-            <Grid item>
+        slotProps={{
+          input: {
+            startAdornment: (
               <BigIconButton
                 onClick={() => {
                   setGalleryDialogOpen(true);
@@ -185,8 +145,8 @@ const FileSelector = ({
                 label="Browse Gallery"
                 explanatoryText="Link to existing items in the Gallery."
               />
-            </Grid>
-          ),
+            ),
+          },
         }}
       />
       {galleryDialogOpen && (
@@ -233,7 +193,6 @@ const FileSelector = ({
     </>
   );
 };
-
 const FilesCard = observer(
   <
     Fields extends {
@@ -247,36 +206,53 @@ const FilesCard = observer(
     fieldOwner?: FieldOwner;
   }): ReactNode => {
     const [open, setOpen] = useState(false);
-
     const {
       searchStore: { activeResult },
     } = useStores();
     if (!activeResult) throw new Error("ActiveResult must be a Record");
     const editable = activeResult.isFieldEditable("attachments");
     const attachments = activeResult.attachments ?? [];
-
     useEffect(() => {
       setOpen(attachments.length > 0);
-
     }, [attachments]);
-
     return (
       <Card variant="outlined">
-        <CustomCardHeader
+        <CardHeader
+          sx={{ p: "4px 12px 2px 16px" }}
+          slotProps={{
+            action: { sx: { m: 0 } },
+            subheader: {
+              variant: "body2",
+            },
+          }}
           subheader="Attach files of any type, e.g. images, documents, or chemistry files."
-          subheaderTypographyProps={{ variant: "body2" }}
           action={
             <>
-              <ToggleButton
-                attachmentCount={attachments.length}
-                open={open}
-                setOpen={setOpen}
-              />
+              <CustomTooltip
+                title={match<void, string>([
+                  [() => attachments.length === 0, "No current attachments"],
+                  [() => open, "Hide attachment listing"],
+                  [() => true, "Show attachment listing"],
+                ])()}
+              >
+                <IconButton
+                  onClick={() => setOpen(!open)}
+                  disabled={attachments.length === 0}
+                >
+                  <Badge color="primary" badgeContent={attachments.length}>
+                    <ExpandCollapseIcon open={open} />
+                  </Badge>
+                </IconButton>
+              </CustomTooltip>
             </>
           }
         />
         {editable && (
-          <CardContent sx={{ pt: 0.5 }}>
+          <CardContent
+            sx={{
+              pt: 0.5,
+            }}
+          >
             <FileSelector
               activeResult={activeResult}
               setOpen={setOpen}
@@ -295,7 +271,6 @@ const FilesCard = observer(
     );
   },
 );
-
 function Attachments<
   Fields extends {
     image: BlobUrl | null;
@@ -307,7 +282,6 @@ function Attachments<
     searchStore: { activeResult },
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
-
   return (
     <InputWrapper
       label=""
@@ -328,5 +302,4 @@ function Attachments<
     </InputWrapper>
   );
 }
-
 export default observer(Attachments);

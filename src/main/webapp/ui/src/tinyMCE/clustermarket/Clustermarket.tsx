@@ -28,17 +28,52 @@ import { type UseState } from "../../util/types";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-
 const TABLE_HEADER_CELLS = [
-  { id: "bookingID" as const, numeric: false, label: "Booking ID" },
-  { id: "equipmentName" as const, numeric: false, label: "Equipment Name" },
-  { id: "manufacturer" as const, numeric: false, label: "Manufacturer" },
-  { id: "model" as const, numeric: false, label: "Model" },
-  { id: "requesterName" as const, numeric: false, label: "Booked by" },
-  { id: "start_time" as const, numeric: false, label: "Start Time" },
-  { id: "duration" as const, numeric: false, label: "Duration (mins)" },
-  { id: "bookingType" as const, numeric: false, label: "Booking Type" },
-  { id: "status" as const, numeric: false, label: "Status" },
+  {
+    id: "bookingID" as const,
+    numeric: false,
+    label: "Booking ID",
+  },
+  {
+    id: "equipmentName" as const,
+    numeric: false,
+    label: "Equipment Name",
+  },
+  {
+    id: "manufacturer" as const,
+    numeric: false,
+    label: "Manufacturer",
+  },
+  {
+    id: "model" as const,
+    numeric: false,
+    label: "Model",
+  },
+  {
+    id: "requesterName" as const,
+    numeric: false,
+    label: "Booked by",
+  },
+  {
+    id: "start_time" as const,
+    numeric: false,
+    label: "Start Time",
+  },
+  {
+    id: "duration" as const,
+    numeric: false,
+    label: "Duration (mins)",
+  },
+  {
+    id: "bookingType" as const,
+    numeric: false,
+    label: "Booking Type",
+  },
+  {
+    id: "status" as const,
+    numeric: false,
+    label: "Status",
+  },
 ];
 // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
 // therefore its OK to just cache notes in the DB along with the other booking details
@@ -47,22 +82,52 @@ const maintenanceNotes = {
   numeric: false,
   label: "Maintenance notes",
 };
-
 const EQUIPMENT_TABLE_HEADER_CELLS = [
-  { id: "equipmentID" as const, numeric: false, label: "Equipment ID" },
-  { id: "equipmentName" as const, numeric: false, label: "Equipment Name" },
-  { id: "manufacturer" as const, numeric: false, label: "Manufacturer" },
-  { id: "model" as const, numeric: false, label: "Model" },
-  { id: "bookingType" as const, numeric: false, label: "Booking Type" },
-  { id: "bookingID" as const, numeric: false, label: "Last use" },
-  { id: "start_time" as const, numeric: false, label: "On date" },
-  { id: "requesterName" as const, numeric: false, label: "Booked by" },
+  {
+    id: "equipmentID" as const,
+    numeric: false,
+    label: "Equipment ID",
+  },
+  {
+    id: "equipmentName" as const,
+    numeric: false,
+    label: "Equipment Name",
+  },
+  {
+    id: "manufacturer" as const,
+    numeric: false,
+    label: "Manufacturer",
+  },
+  {
+    id: "model" as const,
+    numeric: false,
+    label: "Model",
+  },
+  {
+    id: "bookingType" as const,
+    numeric: false,
+    label: "Booking Type",
+  },
+  {
+    id: "bookingID" as const,
+    numeric: false,
+    label: "Last use",
+  },
+  {
+    id: "start_time" as const,
+    numeric: false,
+    label: "On date",
+  },
+  {
+    id: "requesterName" as const,
+    numeric: false,
+    label: "Booked by",
+  },
 ];
 type ClustermarketArgs = {
   defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
   clustermarket_web_url: string;
 };
-
 let VISIBLE_HEADER_CELLS:
   | typeof TABLE_HEADER_CELLS
   | typeof EQUIPMENT_TABLE_HEADER_CELLS = TABLE_HEADER_CELLS;
@@ -97,7 +162,6 @@ function Clustermarket({
     (typeof ErrorReason)[keyof typeof ErrorReason]
   >(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
-
   const [selectedBookingIds, setSelectedBookingIds] = useState<Array<string>>(
     [],
   );
@@ -114,7 +178,6 @@ function Clustermarket({
     false,
   );
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
-
   const addMaintanceNotesToHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
     if (!headers.find((header) => header.id === maintenanceNotes.id)) {
       // @ts-expect-error type mismatch
@@ -122,7 +185,6 @@ function Clustermarket({
     }
     return headers;
   };
-
   const removeMaintanceNotesFromHeaders = (
     headers: typeof VISIBLE_HEADER_CELLS,
   ) => {
@@ -131,7 +193,6 @@ function Clustermarket({
     }
     return headers;
   };
-
   const setHeadersByBookingType = (
     newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE],
     newIsMaintenance: boolean,
@@ -146,10 +207,12 @@ function Clustermarket({
         : removeMaintanceNotesFromHeaders(TABLE_HEADER_CELLS);
     }
   };
-
   function handleRequestError(error: {
     message: string;
-    response: { status: number; data: string } | null;
+    response: {
+      status: number;
+      data: string;
+    } | null;
   }) {
     if (error.message === "Network Error") {
       setErrorReason(ErrorReason.NetworkError);
@@ -168,7 +231,6 @@ function Clustermarket({
       setErrorReason(ErrorReason.UNKNOWN);
     }
   }
-
   const fetchBookings = async () => {
     setSelectedBookingIds([]);
     setHeadersByBookingType(bookingType, isMaintenance);
@@ -191,7 +253,6 @@ function Clustermarket({
               isMaintenance,
             );
           setEquipment(equipmentTableRows);
-
           trackEvent("FetchClustermarketEquipmentData", {
             count: equipmentTableRows.length,
             bookingType: bookingType,
@@ -206,7 +267,6 @@ function Clustermarket({
               isMaintenance,
             );
           setBookings(bookingTableRows);
-
           trackEvent("FetchClustermarketBookingData", {
             count: bookingTableRows.length,
             bookingType: bookingType,
@@ -220,7 +280,6 @@ function Clustermarket({
       handleRequestError(error);
     }
   };
-
   const handleBookingTypeChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -228,15 +287,12 @@ function Clustermarket({
     setBookingType(newBookingType);
     setHeadersByBookingType(newBookingType, isMaintenance);
   };
-
   const handleMaintenanceChange = (checked: boolean) => {
     setIsMaintenance(checked);
   };
-
   useEffect(() => {
     void fetchBookings();
   }, [bookingType, isMaintenance]);
-
   SELECTED_BOOKINGS = useMemo(() => {
     const selected_bookings: ReadonlyArray<
       BookingAndEquipmentDetails | EquipmentWithBookingDetails
@@ -248,22 +304,19 @@ function Clustermarket({
         : bookings.filter((booking) =>
             selectedBookingIds.includes(booking.bookingID),
           );
-
     window.parent.postMessage(
       {
         mceAction: selected_bookings.length > 0 ? "enable" : "disable",
       },
       "*",
     );
-
     return selected_bookings;
   }, [selectedBookingIds]);
-
   if (errorReason !== ErrorReason.None) {
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
   }
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <FormControl>
           <RadioGroup
@@ -298,13 +351,17 @@ function Clustermarket({
               size="small"
               onChange={(e) => handleMaintenanceChange(e.target.checked)}
               color="primary"
-              inputProps={{ "aria-label": "maintenance" }}
+              slotProps={{
+                input: {
+                  "aria-label": "maintenance",
+                },
+              }}
             />
           }
           label={`maintenance only`}
         />
         <Grid container spacing={1}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <ResultsTable
               clustermarket_web_url={clustermarket_web_url}
               // @ts-expect-error type mismatch
@@ -322,7 +379,12 @@ function Clustermarket({
               bookingType={bookingType}
             />
           </Grid>
-          <Grid item xs={12} sx={{ align: "center" }}>
+          <Grid
+            sx={{
+              align: "center",
+            }}
+            size={12}
+          >
             {!fetchDone && <CircularProgress />}
           </Grid>
         </Grid>
@@ -330,5 +392,4 @@ function Clustermarket({
     </StyledEngineProvider>
   );
 }
-
 export default Clustermarket;

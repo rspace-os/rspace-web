@@ -38,15 +38,15 @@ function LoadingList({
   }, [pageNumber, loading]);
 
   return (
-    <BatchGridContainer ref={ref} style={{ marginTop: 0 }}>
+    <BatchGridContainer ref={ref} sx={{ marginTop: 0 }}>
       {[...take(incrementForever(), count)].map((i) => (
         <Grid
-          item
-          xs={12}
-          md={isSingleColumnLayout ? 6 : 12}
-          xl={isSingleColumnLayout ? 4 : 12}
           key={i}
-        >
+          size={{
+            xs: 12,
+            md: isSingleColumnLayout ? 6 : 12,
+            xl: isSingleColumnLayout ? 4 : 12
+          }}>
           {placeholder}
         </Grid>
       ))}

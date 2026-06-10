@@ -1,6 +1,5 @@
 import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
@@ -9,7 +8,7 @@ import SearchContext from "../../../stores/contexts/Search";
 import SelectAllIcon from "@mui/icons-material/SelectAll";
 import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { menuIDs } from "../../../util/menuIDs";
-import AdjustableHeadCell from "../../components/Tables/AdjustableHeadCell";
+import AdjustableHeadCell from "@/Inventory/components/Tables/AdjustableHeadCell";
 import SortableProperty, {
   type SortProperty,
 } from "../../components/Tables/SortableProperty";
@@ -17,24 +16,11 @@ import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables
 import {
   sortProperties,
   isSortable,
-} from "../../../stores/models/InventoryBaseRecord";
-import * as ArrayUtils from "../../../util/ArrayUtils";
+} from "@/stores/models/InventoryBaseRecord";
+import * as ArrayUtils from "@/util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-
-const useStyles = makeStyles()((theme) => ({
-  iconCell: {
-    padding: theme.spacing(0, 0, 0, 0.75),
-  },
-  iconButton: {
-    padding: theme.spacing(0.75),
-  },
-  contextMenuCell: {
-    padding: "6px !important",
-    paddingTop: "0px !important",
-  },
-}));
 
 type TableHeadArgs = {
   selectedCount: number;
@@ -73,19 +59,18 @@ function CustomTableHead({
       search.setAdjustableColumn(newColumn, index);
     };
 
-  const { classes } = useStyles();
   return (
     <TableHead>
       <TableRow>
         {selectedCount === 0 ? (
           <>
             {multiSelect && (
-              <TableCell variant="head" className={classes.iconCell}>
+              <TableCell variant="head" sx={{ pl: 0.75, pr: 0, py: 0 }}>
                 <IconButtonWithTooltip
                   title="Select all"
                   icon={<SelectAllIcon />}
                   onClick={toggleAll}
-                  className={classes.iconButton}
+                  sx={{ p: 0.75 }}
                 />
               </TableCell>
             )}
@@ -125,7 +110,7 @@ function CustomTableHead({
             <TableCell
               variant="head"
               colSpan={cols}
-              className={classes.contextMenuCell}
+              sx={{ p: "6px !important", pt: "0px !important" }}
             >
               <ContextMenu
                 menuID={contextMenuId}

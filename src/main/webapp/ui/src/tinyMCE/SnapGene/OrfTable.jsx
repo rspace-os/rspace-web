@@ -1,6 +1,5 @@
 "use strict";
 import React, { useEffect } from "react";
-import { makeStyles } from "tss-react/mui";
 import Grid from "@mui/material/Grid";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
@@ -17,18 +16,6 @@ import TableRow from "@mui/material/TableRow";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
 import { stableSort, getSorting, paginationOptions } from "../../util/table";
-
-const useStyles = makeStyles()((theme) => ({
-  settings: {
-    textAlign: "right",
-  },
-  label: {
-    marginBottom: "10px",
-  },
-  radio: {
-    marginBottom: "30px",
-  },
-}));
 
 const readingFrameOptions = {
   ALL: { label: "All", filter: [-3, -2, -1, 1, 2, 3] },
@@ -72,7 +59,6 @@ const headCells = [
 ];
 
 export default function OrfTable(props) {
-  const { classes } = useStyles();
   const [order, setOrder] = React.useState("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
@@ -158,21 +144,14 @@ export default function OrfTable(props) {
 
   return (
     <>
-      <Grid item xs={8}>
+      <Grid size={8}>
         {loading && <LoadingCircular />}
         {!loading && (
           <>
-            <TableContainer style={{ maxHeight: "449px" }}>
-              <Table
-                stickyHeader
-                className={classes.table}
-                aria-labelledby="ORF table"
-                size="small"
-                aria-label="enhanced table"
-              >
+            <TableContainer sx={{ maxHeight: "449px" }}>
+              <Table stickyHeader size="small" aria-label="ORF table">
                 <EnhancedTableHead
                   headCells={headCells}
-                  classes={classes}
                   order={order}
                   orderBy={orderBy}
                   onRequestSort={handleRequestSort}
@@ -199,7 +178,7 @@ export default function OrfTable(props) {
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}
@@ -218,10 +197,9 @@ export default function OrfTable(props) {
           </>
         )}
       </Grid>
-
-      <Grid item xs={2} className={classes.settings}>
-        <FormControl component="fieldset" className={classes.radio}>
-          <FormLabel component="legend" className={classes.label}>
+      <Grid sx={{ textAlign: "right" }} size={2}>
+        <FormControl component="fieldset" sx={{ mb: "30px" }}>
+          <FormLabel component="legend" sx={{ mb: "10px" }}>
             Open Reading Frames
           </FormLabel>
           <RadioGroup

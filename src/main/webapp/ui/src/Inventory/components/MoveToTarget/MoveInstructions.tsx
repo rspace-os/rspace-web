@@ -187,7 +187,7 @@ function MoveInstructions(): React.ReactNode {
     const nextRecord = nextSelection();
     return nextRecord ? (
       <Card variant="outlined">
-        <CardContent style={{ paddingBottom: 0 }}>
+        <CardContent sx={{ paddingBottom: 0 }}>
           <Typography variant="h6" gutterBottom>
             Next item to be placed:
           </Typography>

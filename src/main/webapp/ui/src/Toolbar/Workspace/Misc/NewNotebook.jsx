@@ -80,7 +80,9 @@ export default function NewNotebook() {
               onChange={(e) => setName(e.target.value)}
               aria-describedby="component-error-text"
               data-test-id="new-notebook-name"
-              inputProps={{ "aria-label": "New notebook name" }}
+              slotProps={{
+                htmlInput: { "aria-label": "New notebook name" },
+              }}
             />
             <FormHelperText id="component-error-text">{error}</FormHelperText>
           </FormControl>
@@ -89,7 +91,7 @@ export default function NewNotebook() {
       <DialogActions>
         <Button
           onClick={() => setOpen(false)}
-          style={{ color: "grey" }}
+          sx={{ color: "grey" }}
           data-test-id="new-notebook-cancel"
         >
           Cancel

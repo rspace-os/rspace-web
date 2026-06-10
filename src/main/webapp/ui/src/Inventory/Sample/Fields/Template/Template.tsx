@@ -55,7 +55,7 @@ function Template(): React.ReactNode {
       <>
         <InputWrapper
           label="Sample Template"
-          dataTestId="ChooseTemplate"
+          data-test-id="ChooseTemplate"
           explanation={
             activeResult.isFieldEditable("template") ? (
               <>
@@ -72,7 +72,7 @@ function Template(): React.ReactNode {
             ) : null
           }
         >
-          <Stack flexWrap="nowrap">
+          <Stack sx={{ flexWrap: "nowrap" }}>
             <FormControlLabel
               value="no-template"
               control={<Radio checked={template === null} />}
@@ -97,7 +97,7 @@ function Template(): React.ReactNode {
     <>
       <InputWrapper
         label="Sample Template"
-        dataTestId="ChooseTemplate"
+        data-test-id="ChooseTemplate"
         disabled
         explanation={
           activeResult.isFieldEditable("template") ? (
@@ -119,10 +119,9 @@ function Template(): React.ReactNode {
           <Grid
             container
             direction="row"
-            alignItems="center"
-            justifyContent="space-between"
+            sx={{ alignItems: "center", justifyContent: "space-between" }}
           >
-            <Grid item style={{ flexGrow: 1 }}>
+            <Grid sx={{ flexGrow: 1 }}>
               <SummaryInfo
                 template={template}
                 loading={
@@ -134,7 +133,7 @@ function Template(): React.ReactNode {
               />
             </Grid>
             {activeResult.isFieldEditable("template") && (
-              <Grid item>
+              <Grid>
                 <IconButton
                   onClick={() => {
                     setOpen(!open);
@@ -167,7 +166,7 @@ function Template(): React.ReactNode {
             </Alert>
           )}
           <Collapse in={open} component="div" collapsedSize={0}>
-            <Box mb={1}>
+            <Box sx={{ mb: 1 }}>
               <Divider />
             </Box>
             <TemplatePicker

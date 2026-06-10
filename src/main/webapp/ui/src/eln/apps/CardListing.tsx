@@ -164,12 +164,12 @@ function CardListing({
   );
 
   const dswUpdate = React.useCallback(
-      (newState: IntegrationStates["DSW"]) => {
-        void runInAction(async () => {
-          integrationStates.DSW = await update("DSW", newState);
-        });
-      },
-      [update, integrationStates.DSW],
+    (newState: IntegrationStates["DSW"]) => {
+      void runInAction(async () => {
+        integrationStates.DSW = await update("DSW", newState);
+      });
+    },
+    [update, integrationStates.DSW],
   );
 
   const egnyteUpdate = React.useCallback(
@@ -214,7 +214,7 @@ function CardListing({
         integrationStates.GALAXY = await update("GALAXY", newState);
       });
     },
-    [update, integrationStates.GALAXY]
+    [update, integrationStates.GALAXY],
   );
 
   const githubUpdate = React.useCallback(
@@ -348,7 +348,7 @@ function CardListing({
    * product/service over the company that provides it.
    */
   return (
-    <Grid container spacing={3} alignItems="stretch">
+    <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
       {integrationStates.ARGOS.mode === mode && (
         <Argos
           integrationState={integrationStates.ARGOS}
@@ -416,10 +416,7 @@ function CardListing({
         />
       )}
       {integrationStates.DSW.mode === mode && (
-          <DSW
-              integrationState={integrationStates.DSW}
-              update={dswUpdate}
-          />
+        <DSW integrationState={integrationStates.DSW} update={dswUpdate} />
       )}
       {integrationStates.EGNYTE.mode === mode && (
         <Egnyte

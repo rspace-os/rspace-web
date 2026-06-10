@@ -11,29 +11,10 @@ import GlobalId from "../../components/GlobalId";
 import { RecordLink } from "./RecordLink";
 import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useContext } from "react";
 import TagListing from "../../components/Tags/TagListing";
 import NavigateContext from "../../stores/contexts/Navigate";
-
-const useStyles = makeStyles()((theme) => ({
-  label: {
-    color: theme.palette.text.secondary,
-  },
-  image: {
-    height: 150,
-    width: 150,
-    margin: "auto",
-    "& img": {
-      objectFit: "contain",
-    },
-    borderRadius: 0,
-  },
-  grow: {
-    flexGrow: 1,
-  },
-}));
 
 type RecordDetailsArgs = {
   record: Record;
@@ -47,21 +28,33 @@ function RecordDetails({
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
-  const { classes } = useStyles();
 
   return (
     <Grid
       container
-      direction={uiStore.isVerySmall ? "column" : "row"}
-      wrap="nowrap"
-      alignContent="center"
+      sx={{
+        flexDirection: uiStore.isVerySmall ? "column" : "row",
+        flexWrap: "nowrap",
+        alignContent: "center",
+      }}
     >
       {record.thumbnail && (
-        <Grid item>
-          <Avatar src={record.thumbnail} className={classes.image} />
+        <Grid>
+          <Avatar
+            src={record.thumbnail}
+            sx={{
+              height: 150,
+              width: 150,
+              m: "auto",
+              borderRadius: 0,
+              "& img": {
+                objectFit: "contain",
+              },
+            }}
+          />
         </Grid>
       )}
-      <Grid item className={classes.grow}>
+      <Grid sx={{ flexGrow: 1 }}>
         <DescriptionList
           /* some elements are not displayed depending on view (public or limited) */
           content={[
@@ -126,7 +119,7 @@ function RecordDetails({
                         dangerouslySetInnerHTML={{
                           __html: DOMPurify.sanitize(
                             record.recordDetails.description,
-                            { ADD_ATTR: ["target"] }
+                            { ADD_ATTR: ["target"] },
                           ),
                         }}
                       ></span>
@@ -142,7 +135,7 @@ function RecordDetails({
                       <TagListing
                         onClick={(tag) => {
                           navigate(
-                            `/inventory/search?query=l: (tags:"${tag.value}")`
+                            `/inventory/search?query=l: (tags:"${tag.value}")`,
                           );
                         }}
                         tags={record.recordDetails.tags}

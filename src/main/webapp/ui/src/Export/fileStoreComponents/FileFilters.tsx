@@ -60,21 +60,23 @@ export default function FileFilters({
         <DialogTitle>Filtering options for filestore files</DialogTitle>
         <DialogContent>
           <Grid container>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 variant="standard"
                 label="Individual file size limit (MB)"
                 value={maxFileSizeInMB}
                 onChange={({ target: { value } }) => setMaxFileSizeInMB(value)}
                 type="number"
-                InputLabelProps={{
-                  shrink: true,
-                }}
                 margin="normal"
                 data-test-id="file-size-limit"
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  }
+                }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 variant="standard"
                 label="File types to exclude (comma-separated list)"
@@ -82,11 +84,13 @@ export default function FileFilters({
                 onChange={({ target: { value } }) =>
                   setExcludedFileExtensions(value)
                 }
-                InputLabelProps={{
-                  shrink: true,
-                }}
                 margin="normal"
                 data-test-id="types-to-exclude"
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  }
+                }}
               />
             </Grid>
           </Grid>

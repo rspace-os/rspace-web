@@ -1,5 +1,5 @@
 import React from "react";
-import Chip from "@mui/material/Chip";
+import Chip, { chipClasses } from "@mui/material/Chip";
 
 const StoichiometryTableRoleChip = ({ role }: { role: string }) => {
   const getRoleColor = (role: string) => {
@@ -38,7 +38,7 @@ const StoichiometryTableRoleChip = ({ role }: { role: string }) => {
         border: `1px solid ${color}`,
         fontWeight: 500,
         textTransform: "lowercase",
-        "&.MuiChip-filled": {
+        [`&.${chipClasses.filled}`]: {
           backgroundColor: `${backgroundColor} !important`,
           border: `1px solid ${color}`,
         },

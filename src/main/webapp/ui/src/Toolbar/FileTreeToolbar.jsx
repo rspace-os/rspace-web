@@ -2,65 +2,66 @@
 import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import Box from "@mui/material/Box";
 import materialTheme from "../theme";
-import styled from "@emotion/styled";
 import { createRoot } from "react-dom/client";
 
 import BaseToolbar from "../components/BaseToolbar";
 import TreeSort from "../components/TreeSort";
 
-const ToolbarWrapper = styled.div`
-  display: flex;
-  width: 100%;
-  .sortingSettings {
-    justify-content: flex-start;
-    .MuiSelect-selectMenu {
-      padding-left: 5px !important;
-    }
-  }
-  ul {
-    position: absolute;
-    right: 0;
-    height: 100%;
-    top: 0;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    color: white;
-    list-style: none;
-    padding: 0px 5px;
-    a {
-      color: white;
-      font-size: 18px;
-    }
-  }
-`;
-
+/**
+ * Toolbar shown above the file tree browser.
+ */
 export default function FileTreeToolbar() {
+  /**
+   * Content rendered inside the toolbar chrome.
+   */
   function content() {
     return (
-      <ToolbarWrapper>
-        <TreeSort />
-        <ul>
+      <Box sx={{ display: "flex", width: "100%" }}>
+        <TreeSort justifyContent="flex-start" selectPaddingLeft={5} />
+        <Box
+          component="ul"
+          sx={{
+            position: "absolute",
+            right: 0,
+            height: "100%",
+            top: 0,
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            color: "white",
+            listStyle: "none",
+            padding: "0px 5px",
+          }}
+        >
           <li>
-            <a
+            <Box
+              component="button"
+              type="button"
               id="hideFileTreeSmall"
-              href="#"
-              className="rs-actionbar__item rs-actionbar__item--icon"
               title="Hide tree browser"
               data-test-id="hide-tree"
               aria-label="Hide tree browser"
+              sx={{
+                color: "white",
+                fontSize: "18px",
+                background: "transparent",
+                border: 0,
+                padding: 0,
+                cursor: "pointer",
+              }}
             >
               <span className="glyphicon glyphicon-menu-right"></span>
-            </a>
+            </Box>
           </li>
-        </ul>
-      </ToolbarWrapper>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <BaseToolbar content={content()} />
       </ThemeProvider>

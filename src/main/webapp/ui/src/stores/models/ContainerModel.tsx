@@ -309,7 +309,7 @@ export default class ContainerModel
     const params = {
       ...DEFAULT_CONTAINER,
       ...passedParams,
-    } as ContainerAttrs;
+    };
     this.canStoreContainers = params.canStoreContainers;
     this.canStoreSamples = params.canStoreSamples;
     this.quantity = params.quantity;

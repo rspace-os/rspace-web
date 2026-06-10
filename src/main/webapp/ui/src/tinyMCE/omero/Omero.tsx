@@ -9,6 +9,7 @@ import {
   getImage,
   getPlateAcquisitions,
 } from "./OmeroClient";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { FormControlLabel, Stack } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -22,7 +23,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import { makeStyles } from "tss-react/mui";
 import { $PropertyExists, type OmeroItem, type OmeroArgs } from "./OmeroTypes";
 import type { Cell } from "../../components/EnhancedTableHead";
 
@@ -70,20 +70,6 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const [newItems, setNewItems] = useState<Array<OmeroItem>>([]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const useStyles = makeStyles()(() => ({
-    firstDescription: {
-      fontStyle: "italic",
-      fontWeight: "bold",
-    },
-    restOfDescription: {
-      fontWeight: "lighter",
-    },
-    nameText: {
-      fontWeight: "bold",
-      fontSize: "16px",
-    },
-  }));
-  const { classes } = useStyles();
   useEffect(() => {
     setItems([...items]);
   }, [latestGridOfThumbnails]);
@@ -627,18 +613,18 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       const restOfText = annotation.substring(originalText.length);
       return annotation.indexOf("Publication Title") !== -1 ? (
         <div key={annotationId}>
-          <div
+          <Box
             id={`${item.type}_first_description_${item.id}`}
-            className={classes.firstDescription}
+            sx={{ fontStyle: "italic", fontWeight: "bold" }}
           >
             {publicationTitle}
-          </div>
-          <div
+          </Box>
+          <Box
             id={`${item.type}_rest_description_${item.id}`}
-            className={classes.restOfDescription}
+            sx={{ fontWeight: "lighter" }}
           >
             {restOfText}
-          </div>
+          </Box>
         </div>
       ) : (
         <div key={annotationId} data-testid={annotationId}>
@@ -760,7 +746,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <RadioGroup
           row
@@ -793,7 +779,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           onKeyPress={filterDataAndDeselectHidden}
         />
         <Grid container spacing={1}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <ResultsTable
               populateOmeroItemWithFetchedChildrenOrShowHiddenChildren={
                 populateOmeroItemWithFetchedChildrenOrShowHiddenChildren
@@ -818,11 +804,11 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
               ref={scrollRef}
             />
           </Grid>
-          <Grid item xs={12} sx={{ textAlign: "center" }}>
+          <Grid sx={{ textAlign: "center" }} size={12}>
             {!fetchDone && (
               <Stack
-                alignItems="center"
                 sx={{
+                  alignItems: "center",
                   m: 1,
                   position: "fixed",
                   top: "50%",

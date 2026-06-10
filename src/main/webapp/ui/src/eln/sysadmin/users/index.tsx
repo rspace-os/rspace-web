@@ -1,4 +1,4 @@
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -10,8 +10,10 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import Typography from "@mui/material/Typography";
-import Grid from "@mui/material/Grid";
-import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { tablePaginationClasses } from "@mui/material/TablePagination";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,18 +28,21 @@ import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import {
   DataGrid,
-  GridToolbarColumnsButton,
+  Toolbar as DataGridToolbar,
+  ColumnsPanelTrigger,
   GridToolbarExportContainer,
   useGridApiContext,
   GridColumnVisibilityModel,
   GridRowSelectionModel,
   GridSortModel,
+  GridSlotProps,
 } from "@mui/x-data-grid";
 import TextField from "@mui/material/TextField";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -75,11 +80,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import ExpandCircleDownIcon from "@mui/icons-material/ExpandCircleDown";
 import DialogContentText from "@mui/material/DialogContentText";
 import { doNotAwait, sleep } from "../../../util/Util";
-import Grow from "@mui/material/Grow";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Dialog from "@mui/material/Dialog";
 import Alerts from "../../../components/Alerts/Alerts";
-import Badge from "@mui/material/Badge";
 import docLinks from "../../../assets/DocLinks";
 import createAccentedTheme from "../../../accentedTheme";
 import UserAliasIcon from "@mui/icons-material/ContactEmergency";
@@ -95,6 +98,22 @@ import Analytics from "../../../components/Analytics";
 import Alert from "@mui/material/Alert";
 
 /*
+ * `userListing` and `selectedCount` are passed to the `UsersToolbar` slot via
+ * `slotProps.toolbar`, so they are added to the DataGrid's toolbar prop types
+ * here. Passing them through `slotProps` (rather than wrapping the slot in a
+ * `useCallback` closure that changes identity when `userListing` updates) keeps
+ * the slot component referentially stable. That way the DataGrid re-renders the
+ * toolbar with fresh props instead of remounting it, which would otherwise
+ * reset the toolbar's filter state and hide the active-filters chip.
+ */
+declare module "@mui/x-data-grid" {
+  interface ToolbarPropsOverrides {
+    userListing: FetchingData.Fetched<UserListing>;
+    selectedCount: number;
+  }
+}
+
+/*
  * All of the DOM events that happen inside of components that are themselves
  * inside menu items, such as events within a dialog, shouln't propagate
  * outside as the menu will take them to be events that it should
@@ -103,7 +122,6 @@ import Alert from "@mui/material/Alert";
  * information.
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
-
   <div
     onKeyDown={(e) => {
       e.stopPropagation();
@@ -118,7 +136,6 @@ const EventBoundary = ({ children }: { children: React.ReactNode }) => (
     {children}
   </div>
 );
-
 const Panel = ({
   anchorEl,
   children,
@@ -142,106 +159,32 @@ const Panel = ({
       vertical: "top",
       horizontal: "left",
     }}
-    PaperProps={{
-      elevation: 2,
-      style: {
-        maxWidth: 400,
+    slotProps={{
+      paper: {
+        elevation: 2,
+        style: {
+          maxWidth: 400,
+        },
+        role: "dialog",
+        "aria-label": ariaLabel,
       },
-      role: "dialog",
-      "aria-label": ariaLabel,
     }}
   >
     {Boolean(anchorEl) && children}
   </Popover>
 );
-
-const CustomGrow = React.forwardRef<
-  typeof Grow,
-  React.ComponentProps<typeof Grow>
->((props: React.ComponentProps<typeof Grow>, ref: React.Ref<typeof Grow>) => (
-  <Grow
+const Abbr = (props: React.ComponentPropsWithoutRef<"abbr">) => (
+  <Box
+    component="abbr"
     {...props}
-    ref={ref}
-    timeout={
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
-    }
-    style={{
-      transformOrigin: "center 70%",
-    }}
+    sx={(theme) => ({
+      textDecorationStyle: "dashed",
+      textDecorationColor: theme.palette.standardIcon,
+      textDecorationThickness: "2px",
+      textDecorationLine: "underline",
+    })}
   />
-));
-CustomGrow.displayName = "CustomGrow";
-
-const StyledCard = styled(Card)(({ theme }) => ({
-  "&.MuiPaper-root": {
-    border: theme.borders.themedDialog?.(200, 90, 20),
-    borderRadius: 6,
-    position: "relative",
-  },
-}));
-
-const StyledCardHeader = styled(CardHeader)(({ theme }) => ({
-  borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
-  paddingTop: theme.spacing(1.5),
-  paddingBottom: theme.spacing(1.5),
-}));
-
-const StyledCardContent = styled(CardContent)(() => ({
-  "&:last-child": {
-    paddingBottom: 0,
-  },
-}));
-
-const SummaryInfoCard = styled(Card)(({ theme }) => ({
-  border: theme.borders.themedDialogTitle?.(200, 90, 20),
-  boxShadow: "none",
-}));
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  padding: "4px 12px",
-  backgroundColor: "#edf7fc",
-  borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
-}));
-
-// @ts-expect-error This works just fine but errors for some reason
-const Abbr = styled("abbr")(({ theme }) => ({
-  textDecorationStyle: "dashed",
-  textDecorationColor: theme.palette.standardIcon,
-  textDecorationThickness: "2px",
-  textDecorationLine: "underline",
-}));
-
-const StyledSearchIcon = styled(SearchIcon)(({ theme }) => ({
-  color: theme.palette.standardIcon.main,
-  height: 20,
-  width: 20,
-}));
-
-const StyledCloseIcon = styled(CloseIcon)(({ theme }) => ({
-  color: theme.palette.standardIcon.main,
-  height: 20,
-  width: 20,
-}));
-
-const StyledTextField = styled(TextField)(() => ({
-  width: "253px",
-  "& .MuiOutlinedInput-root": {
-    height: "32px",
-  },
-}));
-
-const ChipWithMenu = styled(Chip)(({ theme }) => ({
-  backgroundColor: "transparent",
-  border: "2px solid #94a7b2",
-  color: theme.palette.standardIcon.main,
-  textTransform: "capitalize",
-  letterSpacing: "0.04em",
-  "& .MuiChip-deleteIcon": {
-    color: "#94a7b2",
-    marginRight: 0,
-  },
-}));
-
+);
 const TagDialog = ({
   selectedUsers,
   open,
@@ -263,7 +206,6 @@ const TagDialog = ({
   const [addedTags, setAddedTags] = React.useState<Array<string>>([]);
   const [deletedTags, setDeletedTags] = React.useState<Array<string>>([]);
   const [submitting, setSubmitting] = React.useState(false);
-
   const visibleTags = React.useMemo(() => {
     return [
       ...new RsSet(addedTags)
@@ -271,9 +213,7 @@ const TagDialog = ({
         .subtract(new RsSet(deletedTags)),
     ];
   }, [commonTags, addedTags, deletedTags]);
-
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-
   React.useEffect(() => {
     setCommonTags(
       flattenWithIntersection(
@@ -281,7 +221,6 @@ const TagDialog = ({
       ),
     );
   }, [selectedUsers]);
-
   return (
     <Portal>
       <Dialog open={open} onClose={onClose}>
@@ -290,64 +229,64 @@ const TagDialog = ({
           {(selectedUsers.length ?? 0) > 1 && "s"}
         </DialogTitle>
         <DialogContent>
-          <Grid container direction="column" spacing={2}>
-            <Grid item>
-              <Typography variant="body2">
-                You can tag users to categorise them, and filter users by tag.
-                These tags are only visible to System Admins and Community
-                Admins. If you&apos;ve selected several users, only shared tags
-                will be shown.{" "}
-                <Link
-                  target="_blank"
-                  rel="noreferrer"
-                  href={docLinks.taggingUsers}
-                >
-                  Read more about tagging users here.
-                </Link>{" "}
-              </Typography>
-            </Grid>
-            <Grid item>
-              <Grid container direction="row" spacing={1}>
-                {visibleTags.map((tag) => (
-                  <Grid item key={tag}>
-                    <Chip
-                      label={tag}
-                      variant="outlined"
-                      onDelete={() => {
-                        setDeletedTags([...deletedTags, tag]);
-                        setAddedTags(addedTags.filter((aTag) => aTag !== tag));
-                      }}
-                    />
-                  </Grid>
-                ))}
-                <Grid item>
-                  <Chip
-                    icon={<AddIcon />}
-                    label="Add Tag"
-                    color="primary"
-                    skipFocusWhenDisabled
-                    onClick={(e) => {
-                      setAnchorEl(e.currentTarget);
-                    }}
-                  />
-                  <TagsCombobox
-                    value={new RsSet(visibleTags)}
-                    anchorEl={anchorEl}
-                    onSelection={(newTag) => {
-                      if (!addedTags.includes(newTag))
-                        setAddedTags([...addedTags, newTag]);
-                        setDeletedTags(
-                          deletedTags.filter((dTag) => dTag !== newTag),
-                        );
-                    }}
-                    onClose={() => {
-                      setAnchorEl(null);
-                    }}
-                  />
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
+          <Stack spacing={2}>
+            <Typography variant="body2">
+              You can tag users to categorise them, and filter users by tag.
+              These tags are only visible to System Admins and Community Admins.
+              If you&apos;ve selected several users, only shared tags will be
+              shown.{" "}
+              <Link
+                target="_blank"
+                rel="noreferrer"
+                href={docLinks.taggingUsers}
+              >
+                Read more about tagging users here.
+              </Link>{" "}
+            </Typography>
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              sx={{ flexWrap: "wrap" }}
+            >
+              {visibleTags.map((tag) => (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  variant="outlined"
+                  onDelete={() => {
+                    setDeletedTags([...deletedTags, tag]);
+                    setAddedTags(addedTags.filter((aTag) => aTag !== tag));
+                  }}
+                />
+              ))}
+              <Box>
+                <Chip
+                  icon={<AddIcon />}
+                  label="Add Tag"
+                  color="primary"
+                  skipFocusWhenDisabled
+                  onClick={(e) => {
+                    setAnchorEl(e.currentTarget);
+                  }}
+                />
+                <TagsCombobox
+                  value={new RsSet(visibleTags)}
+                  anchorEl={anchorEl}
+                  onSelection={(newTag) => {
+                    if (!addedTags.includes(newTag))
+                      setAddedTags([...addedTags, newTag]);
+                    setDeletedTags(
+                      deletedTags.filter((dTag) => dTag !== newTag),
+                    );
+                  }}
+                  onClose={() => {
+                    setAnchorEl(null);
+                  }}
+                />
+              </Box>
+            </Stack>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
@@ -387,7 +326,6 @@ const TagDialog = ({
     </Portal>
   );
 };
-
 const SearchBox = ({
   userListing,
 }: {
@@ -406,41 +344,64 @@ const SearchBox = ({
         });
       }}
     >
-      <StyledTextField
+      <TextField
         variant="outlined"
         onChange={({ target: { value } }) => {
           setSearchTerm(value);
         }}
         value={searchTerm}
-        sx={{ height: 32 }}
-        inputProps={{
-          /*
-           * Whilst semantically the correct type would be a "search", that
-           * means browsers add in their own clear buttons which don't fire the
-           * onChange handler
-           */
-          type: "input",
-          role: "searchbox",
-          "aria-label": "Search users",
+        sx={{
+          [`& .${inputBaseClasses.input}`]: {
+            p: "5px 0",
+          },
         }}
-        InputProps={{
-          startAdornment: <StyledSearchIcon sx={{ mx: 0.5 }} />,
-          endAdornment:
-            searchTerm !== "" ? (
-              <IconButtonWithTooltip
-                title="Clear"
-                icon={<StyledCloseIcon />}
-                size="small"
-                onClick={() => {
-                  setSearchTerm("");
-                  FetchingData.match(userListing, {
-                    loading: () => {},
-                    error: () => {},
-                    success: (listing) => void listing.setSearchTerm(""),
-                  });
+        slotProps={{
+          htmlInput: {
+            /*
+             * Whilst semantically the correct type would be a "search", that
+             * means browsers add in their own clear buttons which don't fire the
+             * onChange handler
+             */
+            type: "input",
+            role: "searchbox",
+            "aria-label": "Search users",
+          },
+          input: {
+            startAdornment: (
+              <SearchIcon
+                sx={{
+                  color: "standardIcon.main",
+                  height: 20,
+                  width: 20,
+                  mx: 0.5,
                 }}
               />
-            ) : null,
+            ),
+            endAdornment:
+              searchTerm !== "" ? (
+                <IconButtonWithTooltip
+                  title="Clear"
+                  icon={
+                    <CloseIcon
+                      sx={{
+                        color: "standardIcon.main",
+                        height: 20,
+                        width: 20,
+                      }}
+                    />
+                  }
+                  size="small"
+                  onClick={() => {
+                    setSearchTerm("");
+                    FetchingData.match(userListing, {
+                      loading: () => {},
+                      error: () => {},
+                      success: (listing) => void listing.setSearchTerm(""),
+                    });
+                  }}
+                />
+              ) : null,
+          },
         }}
         size="small"
         placeholder="Search"
@@ -467,20 +428,27 @@ const PiAction = ({
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
   const verificationPasswordNeeded = useCheckVerificationPasswordNeeded();
-
-  const allowedPiAction: Result<{ user: User; action: "revoke" | "grant" }> =
-    selectedUser
-      .mapError(() => new Error("Only one user can be modified at a time."))
-      .flatMap((user) => {
-        if (user.isPi) return Result.Ok({ user, action: "revoke" });
-        if (user.isRegularUser) return Result.Ok({ user, action: "grant" });
-        return Result.Error([new Error("The selected user is an admin.")]);
-      });
-
+  const allowedPiAction: Result<{
+    user: User;
+    action: "revoke" | "grant";
+  }> = selectedUser
+    .mapError(() => new Error("Only one user can be modified at a time."))
+    .flatMap((user) => {
+      if (user.isPi)
+        return Result.Ok({
+          user,
+          action: "revoke",
+        });
+      if (user.isRegularUser)
+        return Result.Ok({
+          user,
+          action: "grant",
+        });
+      return Result.Error([new Error("The selected user is an admin.")]);
+    });
   return (
     <>
       <MenuItem
-
         autoFocus={autoFocus}
         disabled={allowedPiAction.isError}
         onClick={() => {
@@ -499,9 +467,11 @@ const PiAction = ({
           secondary={allowedPiAction
             .map(() => null)
             .orElseGet(([error]) => error.message)}
-          secondaryTypographyProps={{
-            style: {
-              whiteSpace: "break-spaces",
+          slotProps={{
+            secondary: {
+              style: {
+                whiteSpace: "break-spaces",
+              },
             },
           }}
         />
@@ -578,24 +548,44 @@ const PiAction = ({
                 <DialogContent>
                   {FetchingData.match(verificationPasswordNeeded, {
                     loading: () => (
-                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                      <DialogContentText
+                        variant="body2"
+                        sx={{
+                          mb: 2,
+                        }}
+                      >
                         Loading
                       </DialogContentText>
                     ),
                     error: (errorMsg) => (
-                      <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                      <DialogContentText
+                        variant="body2"
+                        sx={{
+                          mb: 2,
+                        }}
+                      >
                         ERROR: {errorMsg}
                       </DialogContentText>
                     ),
                     success: (veriPwdNeeded) =>
                       veriPwdNeeded ? (
-                        <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                        <DialogContentText
+                          variant="body2"
+                          sx={{
+                            mb: 2,
+                          }}
+                        >
                           Please set your verification password in My RSpace
                           before performing this action.
                         </DialogContentText>
                       ) : (
                         <>
-                          <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                          <DialogContentText
+                            variant="body2"
+                            sx={{
+                              mb: 2,
+                            }}
+                          >
                             To{" "}
                             {action === "grant"
                               ? "grant the PI role to"
@@ -645,7 +635,6 @@ const PiAction = ({
     </>
   );
 };
-
 const SetUsernamAliasAction = ({
   selectedUser,
   setActionsAnchorEl,
@@ -656,11 +645,9 @@ const SetUsernamAliasAction = ({
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [alias, setAlias] = React.useState("");
-
   const allowedToSetAlias: Result<User> = selectedUser.mapError(
     () => new Error("Only one user can have an alias set at a time."),
   );
-
   return (
     <>
       <MenuItem
@@ -677,9 +664,11 @@ const SetUsernamAliasAction = ({
           secondary={allowedToSetAlias
             .map(() => null)
             .orElseGet(([error]) => error.message)}
-          secondaryTypographyProps={{
-            style: {
-              whiteSpace: "break-spaces",
+          slotProps={{
+            secondary: {
+              style: {
+                whiteSpace: "break-spaces",
+              },
             },
           }}
         />
@@ -724,7 +713,12 @@ const SetUsernamAliasAction = ({
             >
               <DialogTitle>Set Username Alias</DialogTitle>
               <DialogContent>
-                <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                <DialogContentText
+                  variant="body2"
+                  sx={{
+                    mb: 2,
+                  }}
+                >
                   <Typography variant="body2">
                     SysAdmins can set a username alias for a user, enabling both
                     the username and its alias to be used during login. The
@@ -767,7 +761,6 @@ const SetUsernamAliasAction = ({
     </>
   );
 };
-
 const DeleteAction = ({
   selectedUser,
   setActionsAnchorEl,
@@ -779,7 +772,6 @@ const DeleteAction = ({
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState("");
   const canDelete = useDeploymentProperty("sysadmin.delete.user");
-
   const allowedToDelete: Result<User> = FetchingData.getSuccessValue(canDelete)
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
@@ -792,7 +784,6 @@ const DeleteAction = ({
         () => new Error("Only one user can be deleted at a time."),
       ),
     );
-
   return (
     <>
       <MenuItem
@@ -809,9 +800,11 @@ const DeleteAction = ({
           secondary={allowedToDelete
             .map(() => null)
             .orElseGet(([error]) => error.message)}
-          secondaryTypographyProps={{
-            style: {
-              whiteSpace: "break-spaces",
+          slotProps={{
+            secondary: {
+              style: {
+                whiteSpace: "break-spaces",
+              },
             },
           }}
         />
@@ -858,7 +851,12 @@ const DeleteAction = ({
             >
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
-                <DialogContentText variant="body2" sx={{ mb: 2 }}>
+                <DialogContentText
+                  variant="body2"
+                  sx={{
+                    mb: 2,
+                  }}
+                >
                   {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
                       <Alert severity="info" sx={{ mb: 1 }}>
                         <Typography variant="body2">
@@ -873,15 +871,47 @@ const DeleteAction = ({
                         </Typography>
                       </Alert>
                   )}
-                  <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1,
+                    }}
+                  >
                     User deletion is irreversible, and all documents will be
                     deleted.
                   </Typography>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
+                  {user.hasFormsUsedByOtherUsers && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mb: 1,
+                      }}
+                    >
+                      The user you are trying to delete is{" "}
+                      <strong>
+                        the owner of Forms that are used by other users.
+                      </strong>
+                      To ensure continued access to these Forms, the system
+                      <strong> will transfer ownership</strong> of the Forms to
+                      <strong> this System Administrator</strong> account. Forms
+                      that are not used by others will be deleted.
+                    </Typography>
+                  )}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1,
+                    }}
+                  >
                     An XML archive will be made of the user&apos;s work which
                     will be available for a short time on the server.
                   </Typography>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1,
+                    }}
+                  >
                     To delete{" "}
                     <strong>
                       {selectedUser.map((u) => u.fullName).orElse("")}
@@ -923,7 +953,6 @@ const DeleteAction = ({
     </>
   );
 };
-
 const SelectionActions = ({
   selectedIds,
   fetchedListing,
@@ -936,14 +965,12 @@ const SelectionActions = ({
   const [actionsAnchorEl, setActionsAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const [tagDialogOpen, setTagDialogOpen] = React.useState(false);
-
   const exportAllowed: Result<React.ReactNode> =
     selectedIds.length === 1
       ? Result.Ok(null)
       : Result.Error([
           new Error("Only one user's work can be exported at a time."),
         ]);
-
   const selectedUsers: Result<ReadonlyArray<User>> =
     selectedIds.length === 0
       ? Result.Error([new Error("No users selected")])
@@ -954,7 +981,6 @@ const SelectionActions = ({
             ),
           ),
         );
-
   const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
     .toResult(() => new Error("selectedIds is empty"))
     .flatMap((id) =>
@@ -967,7 +993,6 @@ const SelectionActions = ({
         listing.getById(id),
       ),
     );
-
   const enableDisableAction: Result<{
     user: User;
     action: "enable" | "disable";
@@ -976,9 +1001,16 @@ const SelectionActions = ({
       () => new Error("Only one user can be enabled / disabled at a time."),
     )
     .map((user) =>
-      user.enabled ? { user, action: "disable" } : { user, action: "enable" },
+      user.enabled
+        ? {
+            user,
+            action: "disable",
+          }
+        : {
+            user,
+            action: "enable",
+          },
     );
-
   const unlockAction: Result<User> = selectedUser
     .mapError(() => new Error("Only one user can be unlocked at a time."))
     .flatMap((user) =>
@@ -986,20 +1018,22 @@ const SelectionActions = ({
         ? Result.Ok(user)
         : Result.Error([new Error("Only locked accounts can be unlocked.")]),
     );
-
   return (
     <>
       {FetchingData.match(fetchedListing, {
         loading: () => <></>,
         error: () => <></>,
         success: (listing) => (
-          <Grid
-            container
+          <Stack
             direction="row"
-            sx={{ width: 598, alignItems: "center", mb: 0.5 }}
             spacing={1}
+            sx={{
+              width: 598,
+              alignItems: "center",
+              mb: 0.5,
+            }}
           >
-            <Grid item>
+            <Box>
               <Button
                 variant="outlined"
                 color="primary"
@@ -1036,7 +1070,6 @@ const SelectionActions = ({
                    * ../../../../../QuirksOfMaterialUi.md, section
                    * "Custom components that wrap `MenuItem`s"
                    */
-
                   autoFocus
                   selectedUser={selectedUser}
                   setActionsAnchorEl={setActionsAnchorEl}
@@ -1084,9 +1117,11 @@ const SelectionActions = ({
                     secondary={exportAllowed.orElseGet(
                       ([error]) => error.message,
                     )}
-                    secondaryTypographyProps={{
-                      style: {
-                        whiteSpace: "break-spaces",
+                    slotProps={{
+                      secondary: {
+                        style: {
+                          whiteSpace: "break-spaces",
+                        },
                       },
                     }}
                   />
@@ -1128,9 +1163,11 @@ const SelectionActions = ({
                     secondary={unlockAction
                       .map(() => null)
                       .orElseGet(([error]) => error.message)}
-                    secondaryTypographyProps={{
-                      style: {
-                        whiteSpace: "break-spaces",
+                    slotProps={{
+                      secondary: {
+                        style: {
+                          whiteSpace: "break-spaces",
+                        },
                       },
                     }}
                   />
@@ -1206,9 +1243,11 @@ const SelectionActions = ({
                     secondary={enableDisableAction
                       .map(() => null)
                       .orElseGet(([error]) => error.message)}
-                    secondaryTypographyProps={{
-                      style: {
-                        whiteSpace: "break-spaces",
+                    slotProps={{
+                      secondary: {
+                        style: {
+                          whiteSpace: "break-spaces",
+                        },
                       },
                     }}
                   />
@@ -1220,24 +1259,20 @@ const SelectionActions = ({
                   />
                 </EventBoundary>
               </Menu>
-            </Grid>
-            <Grid item>
-              <Typography
-                variant="body2"
-                sx={{
-                  ml: 0.5,
-                  p: 0,
-                  color: selectedIds.length > 0 ? "initial" : "grey",
-                }}
-              >
-                {selectedIds.length > 0
-                  ? `${selectedIds.length} user${
-                      selectedIds.length > 1 ? "s" : ""
-                    } selected`
-                  : "No selection"}
-              </Typography>
-            </Grid>
-          </Grid>
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                ml: 0.5,
+                p: 0,
+                color: selectedIds.length > 0 ? "initial" : "grey",
+              }}
+            >
+              {selectedIds.length > 0
+                ? `${selectedIds.length} user${selectedIds.length > 1 ? "s" : ""} selected`
+                : "No selection"}
+            </Typography>
+          </Stack>
         ),
       })}
       <ExportDialog
@@ -1255,48 +1290,16 @@ const SelectionActions = ({
     </>
   );
 };
-
-const ExportMenuItem = ({
-  onClick,
-  children,
-  ...rest
-}: {
-  onClick: () => Promise<void>;
-  children: React.ReactNode;
-}) => (
-  <MenuItem
-    onClick={doNotAwait(async () => {
-      await onClick();
-      /*
-       * `hideMenu` is injected by MUI into the children of
-       * `GridToolbarExportContainer`. See
-       * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
-       * However, if we add `hideMenu` to the type of the `ExportMenuItem`
-       * props then TypeScript will complain we're not passing it in at the call site
-       */
-      // @ts-expect-error see explanation above
-      // eslint-disable-next-line
-      rest.hideMenu();
-    })}
-  >
-    {children}
-  </MenuItem>
-);
-
-const Toolbar = ({
+const UsersToolbar = ({
   userListing,
   selectedCount,
-}: {
-  userListing: FetchingData.Fetched<UserListing>;
-  selectedCount: number;
-}) => {
+}: GridSlotProps["toolbar"]) => {
   const [filterAnchorEl, setFilterAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] =
     React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
   const [tags, setTags] = React.useState<Array<string>>([]);
-
   const apiRef = useGridApiContext();
 
   /*
@@ -1325,41 +1328,50 @@ const Toolbar = ({
       await newListing.setSearchParameters(priorSearchParameters);
     }
   };
-
   const exportVisibleRows = () => {
     apiRef.current?.exportDataAsCsv({
       allColumns: true,
     });
   };
-
   return (
-    <Box
-      role="toolbar"
+    <DataGridToolbar
       aria-label="Users table actions"
-      sx={{
+      style={{
         width: "100%",
         display: "flex",
         alignItems: "center",
-        gap: 1,
+        gap: "8px",
         flexWrap: "wrap",
       }}
     >
       <SearchBox userListing={userListing} />
-      <Badge badgeContent={tagsChecked ? tags.length : null} color="primary">
-        <Button
-          variant="outlined"
-          color={tagsChecked && tags.length > 0 ? "primary" : "standardIcon"}
-          startIcon={<FilterListIcon />}
-          onClick={(e) => {
-            setFilterAnchorEl(e.currentTarget);
-          }}
-          aria-label="Filter users"
-          aria-haspopup="dialog"
-          aria-expanded={Boolean(filterAnchorEl)}
-        >
-          Filters
-        </Button>
-      </Badge>
+      <Button
+        variant="outlined"
+        color={tagsChecked && tags.length > 0 ? "primary" : "standardIcon"}
+        startIcon={<FilterListIcon />}
+        onClick={(e) => {
+          setFilterAnchorEl(e.currentTarget);
+        }}
+        aria-label="Filter users"
+        aria-haspopup="dialog"
+        aria-expanded={Boolean(filterAnchorEl)}
+      >
+        Filters
+        {tagsChecked && tags.length > 0 && (
+          <Chip
+            label={tags.length}
+            size="small"
+            color="primary"
+            aria-label={`${tags.length} filter${tags.length === 1 ? "" : "s"} active`}
+            sx={{
+              ml: 1,
+              height: 20,
+              pointerEvents: "none",
+              [`& .${chipClasses.label}`]: { px: 1 },
+            }}
+          />
+        )}
+      </Button>
       <Panel
         anchorEl={filterAnchorEl}
         onClose={() => {
@@ -1368,117 +1380,140 @@ const Toolbar = ({
         ariaLabel="Filters"
       >
         <Card>
-          <CardContent sx={{ pt: 1 }}>
-            <Grid container direction="column" spacing={2}>
-              <Grid item container direction="column" spacing={1}>
-                <Grid item>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        size="small"
-                        checked={tagsChecked}
-                        onChange={(event) => {
-                          setTagsChecked(event.target.checked);
-                          FetchingData.getSuccessValue(userListing).do(
-                            (listing) => {
-                              void listing.applyTagsFilter(
-                                event.target.checked ? tags : [],
-                              );
-                            },
+          <CardContent
+            sx={{
+              pt: 1,
+            }}
+          >
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={tagsChecked}
+                    onChange={(event) => {
+                      setTagsChecked(event.target.checked);
+                      // When turning the Tags filter off, always refetch
+                      // so any previously-applied tag filter is cleared
+                      // from the listing. When turning it on, only
+                      // refetch if there are tags selected — otherwise
+                      // toggling on with no tags is a no-op for the
+                      // listing and would just cause an unnecessary
+                      // re-render of the whole page.
+                      if (event.target.checked && tags.length === 0) return;
+                      FetchingData.getSuccessValue(userListing).do(
+                        (listing) => {
+                          void listing.applyTagsFilter(
+                            event.target.checked ? tags : [],
                           );
-                        }}
-                      />
-                    }
-                    label="Tags"
+                        },
+                      );
+                    }}
                   />
-                </Grid>
-                <Grid
-                  item
-                  container
+                }
+                label="Tags"
+              />
+              <Stack direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
+                <Box sx={{ width: 30, flexShrink: 0 }} />
+                <Stack
                   direction="row"
                   spacing={1}
-                  sx={{ flexWrap: "nowrap" }}
+                  useFlexGap
+                  sx={{ flexWrap: "wrap" }}
                 >
-                  <Grid item sx={{ width: 30 }}></Grid>
-                  <Grid item container direction="row" spacing={1}>
-                    {tags.map((tag) => (
-                      <Grid item key={tag}>
-                        <Chip
-                          label={tag}
-                          variant="outlined"
-                          onDelete={() => {
-                            const newTags = tags.filter((t) => t !== tag);
-                            setTags(newTags);
-                            FetchingData.getSuccessValue(userListing).do(
-                              (listing) => {
-                                void listing.applyTagsFilter(newTags);
-                              },
-                            );
-                          }}
-                          disabled={!tagsChecked}
-                        />
-                      </Grid>
-                    ))}
-                    <Grid item>
-                      <Chip
-                        icon={<AddIcon />}
-                        label="Add Tag"
-                        color="primary"
-                        skipFocusWhenDisabled
-                        onClick={(e) => {
-                          setTagsComboboxAnchorEl(e.currentTarget);
-                        }}
-                        disabled={!tagsChecked}
-                      />
-                      <TagsCombobox
-                        value={new RsSet(tags)}
-                        anchorEl={tagsComboboxAnchorEl}
-                        onSelection={(newTag) => {
-                          if (!tags.includes(newTag)) {
-                            const newTags = [...tags, newTag];
-                            setTags(newTags);
-                            FetchingData.getSuccessValue(userListing).do(
-                              (listing) => {
-                                void listing.applyTagsFilter(newTags);
-                              },
-                            );
-                          }
-                        }}
-                        onClose={() => {
-                          setTagsComboboxAnchorEl(null);
-                        }}
-                      />
-                    </Grid>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
+                  {tags.map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      variant="outlined"
+                      onDelete={() => {
+                        const newTags = tags.filter((t) => t !== tag);
+                        setTags(newTags);
+                        FetchingData.getSuccessValue(userListing).do(
+                          (listing) => {
+                            void listing.applyTagsFilter(newTags);
+                          },
+                        );
+                      }}
+                      disabled={!tagsChecked}
+                    />
+                  ))}
+                  <Box>
+                    <Chip
+                      icon={<AddIcon />}
+                      label="Add Tag"
+                      color="primary"
+                      skipFocusWhenDisabled
+                      onClick={(e) => {
+                        setTagsComboboxAnchorEl(e.currentTarget);
+                      }}
+                      disabled={!tagsChecked}
+                    />
+                    <TagsCombobox
+                      value={new RsSet(tags)}
+                      anchorEl={tagsComboboxAnchorEl}
+                      allowNewTags={false}
+                      onSelection={(newTag) => {
+                        if (!tags.includes(newTag)) {
+                          const newTags = [...tags, newTag];
+                          setTags(newTags);
+                          FetchingData.getSuccessValue(userListing).do(
+                            (listing) => {
+                              void listing.applyTagsFilter(newTags);
+                            },
+                          );
+                        }
+                      }}
+                      onClose={() => {
+                        setTagsComboboxAnchorEl(null);
+                      }}
+                    />
+                  </Box>
+                </Stack>
+              </Stack>
+            </Stack>
           </CardContent>
         </Card>
       </Panel>
-      <Box flexGrow={1}></Box>
-      <GridToolbarColumnsButton />
-      <GridToolbarExportContainer /*variant="outlined"*/>
-        <ExportMenuItem onClick={() => exportAllRows()}>
-          Export all rows to CSV
-        </ExportMenuItem>
-        <ExportMenuItem
-          onClick={() => {
-            exportVisibleRows();
-            return Promise.resolve();
+      <ColumnsPanelTrigger style={{ marginLeft: "auto" }}>
+        <ViewColumnIcon sx={{ fontSize: 18, mr: 1 }} />
+        Columns
+      </ColumnsPanelTrigger>
+      <GridToolbarExportContainer>
+        <MenuItem
+          onClick={(event: React.MouseEvent<HTMLElement>) => {
+            void (async () => {
+              await exportAllRows();
+              event.currentTarget.closest('[role="menu"]')?.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                  bubbles: true,
+                  key: "Escape",
+                }),
+              );
+            })();
           }}
         >
-          Export {selectedCount > 0 ? "selected" : "this page of"}{" "}
-          rows to CSV
-        </ExportMenuItem>
+          Export all rows to CSV
+        </MenuItem>
+        <MenuItem
+          onClick={(event: React.MouseEvent<HTMLElement>) => {
+            exportVisibleRows();
+            event.currentTarget.closest('[role="menu"]')?.dispatchEvent(
+              new KeyboardEvent("keydown", {
+                bubbles: true,
+                key: "Escape",
+              }),
+            );
+          }}
+        >
+          Export {selectedCount > 0 ? "selected" : "this page of"} rows to CSV
+        </MenuItem>
       </GridToolbarExportContainer>
-    </Box>
+    </DataGridToolbar>
   );
 };
-
 export const UsersPage = (): React.ReactNode => {
   const { userListing } = useUserListing();
-
   const [rowSelectionModel, setRowSelectionModel] =
     React.useState<GridRowSelectionModel>({
       type: "include",
@@ -1492,55 +1527,51 @@ export const UsersPage = (): React.ReactNode => {
     null,
   );
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
-  const [columnVisibility, setColumnVisibility] = useUiPreference(
-    PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
-    {
-      defaultValue: {
-        email: false,
-        recordCount: false,
-        created: false,
-        firstName: false,
-        lastName: false,
-        locked: false,
-        tags: false,
-        usernameAlias: false,
-      } as GridColumnVisibilityModel,
-    },
-  );
-
+  const [columnVisibility, setColumnVisibility] =
+    useUiPreference<GridColumnVisibilityModel>(
+      PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
+      {
+        defaultValue: {
+          email: false,
+          recordCount: false,
+          created: false,
+          firstName: false,
+          lastName: false,
+          locked: false,
+          tags: false,
+          usernameAlias: false,
+        },
+      },
+    );
   const selectedIds = React.useMemo(
-    () => (rowSelectionModel.type === "include" ? [...rowSelectionModel.ids] : []),
+    () =>
+      rowSelectionModel.type === "include" ? [...rowSelectionModel.ids] : [],
     [rowSelectionModel],
   );
-
   const columns = [
-    DataGridColumn.newColumnWithValueMapper(
-      "fullNameSurnameFirst",
-      (v) => v,
-      {
-        headerName: "Full Name",
-        flex: 1,
-        renderCell: (params: {
-          value?: string;
-          row: User;
-          tabIndex: number;
-        }): React.ReactNode => {
-          if (!params.value) return null;
-          return (
-            <Link
-              tabIndex={params.tabIndex}
-              href={params.row.url}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              {params.value}
-            </Link>
-          );
-        },
-        disableExport: true,
+    DataGridColumn.newColumnWithValueMapper("fullNameSurnameFirst", (v) => v, {
+      headerName: "Full Name",
+      flex: 1,
+      renderCell: (params: {
+        value?: string;
+        row: User;
+        tabIndex: number;
+      }): React.ReactNode => {
+        if (!params.value) return null;
+        return (
+          <Link
+            tabIndex={params.tabIndex}
+            href={params.row.url}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            {params.value}
+          </Link>
+        );
       },
-    ),
+      disableExport: true,
+    }),
     DataGridColumn.newColumnWithFieldName<"firstName", User>("firstName", {
       headerName: "First Name",
       flex: 1,
@@ -1636,7 +1667,7 @@ export const UsersPage = (): React.ReactNode => {
         const value = params.value;
         if (value.length === 0) return <>&mdash;</>;
         return (
-          <ChipWithMenu
+          <Chip
             role="none"
             tabIndex={-1}
             variant="filled"
@@ -1647,16 +1678,27 @@ export const UsersPage = (): React.ReactNode => {
             }}
             deleteIcon={
               <IconButtonWithTooltip
-                sx={{ mr: 0 }}
-                ariaLabel={`${value.length} group${
-                  value.length === 1 ? "" : "s"
-                }. Show list of groups.`}
+                sx={{
+                  mr: 0,
+                }}
+                ariaLabel={`${value.length} group${value.length === 1 ? "" : "s"}. Show list of groups.`}
                 title="Show list of groups"
                 tabIndex={params.tabIndex}
                 size="small"
                 icon={<ExpandCircleDownIcon />}
               />
             }
+            sx={{
+              backgroundColor: "transparent",
+              border: "2px solid #94a7b2",
+              color: "standardIcon.main",
+              textTransform: "capitalize",
+              letterSpacing: "0.04em",
+              [`& .${chipClasses.deleteIcon}`]: {
+                color: "#94a7b2",
+                marginRight: 0,
+              },
+            }}
           />
         );
       },
@@ -1671,7 +1713,7 @@ export const UsersPage = (): React.ReactNode => {
         const value = params.value;
         if (value.length === 0) return <>&mdash;</>;
         return (
-          <ChipWithMenu
+          <Chip
             role="none"
             tabIndex={-1}
             variant="filled"
@@ -1682,16 +1724,27 @@ export const UsersPage = (): React.ReactNode => {
             }}
             deleteIcon={
               <IconButtonWithTooltip
-                sx={{ mr: 0 }}
-                ariaLabel={`${value.length} tag${
-                  value.length === 1 ? "" : "s"
-                }. Show list of tags.`}
+                sx={{
+                  mr: 0,
+                }}
+                ariaLabel={`${value.length} tag${value.length === 1 ? "" : "s"}. Show list of tags.`}
                 title="Show list of tags"
                 tabIndex={params.tabIndex}
                 size="small"
                 icon={<ExpandCircleDownIcon />}
               />
             }
+            sx={{
+              backgroundColor: "transparent",
+              border: "2px solid #94a7b2",
+              color: "standardIcon.main",
+              textTransform: "capitalize",
+              letterSpacing: "0.04em",
+              [`& .${chipClasses.deleteIcon}`]: {
+                color: "#94a7b2",
+                marginRight: 0,
+              },
+            }}
           />
         );
       },
@@ -1705,21 +1758,40 @@ export const UsersPage = (): React.ReactNode => {
       },
     ),
   ];
-
   return (
     <Analytics>
       <ErrorBoundary topOfViewport>
         <Alerts>
-          <div
-            style={{
+          <Box
+            sx={{
               width: "calc(100% - 16px)",
               backgroundColor: "#f5f5f5",
               padding: "8px",
             }}
           >
-            <StyledCard sx={{ m: 3 }} variant="outlined">
-              <StyledCardHeader title="Users" />
-              <StyledCardContent>
+            <Card
+              sx={{
+                border: (theme) => theme.borders.themedDialog?.(200, 90, 20),
+                m: 3,
+                position: "relative",
+              }}
+              variant="outlined"
+            >
+              <CardHeader
+                title="Users"
+                sx={(theme) => ({
+                  borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
+                  paddingTop: theme.spacing(1.5),
+                  paddingBottom: theme.spacing(1.5),
+                })}
+              />
+              <CardContent
+                sx={{
+                  "&:last-child": {
+                    paddingBottom: 0,
+                  },
+                }}
+              >
                 <Box
                   sx={{
                     position: "absolute",
@@ -1729,14 +1801,34 @@ export const UsersPage = (): React.ReactNode => {
                     zIndex: 1000,
                   }}
                 >
-                  <TableContainer component={SummaryInfoCard}>
-                    <Table size="small" sx={{ mb: 0 }}>
+                  <TableContainer
+                    component={Card}
+                    sx={(theme) => ({
+                      border: theme.borders.themedDialogTitle?.(200, 90, 20),
+                      boxShadow: "none",
+                    })}
+                  >
+                    <Table
+                      size="small"
+                      sx={(theme) => ({
+                        [`& .${tableCellClasses.root}`]: {
+                          backgroundColor: "#edf7fc",
+                          padding: "4px 12px",
+                          borderBottom: theme.borders.themedDialogTitle?.(
+                            200,
+                            90,
+                            20,
+                          ),
+                        },
+                        [`& tr:last-of-type .${tableCellClasses.root}`]: {
+                          borderBottom: "unset",
+                        },
+                      })}
+                    >
                       <TableBody>
                         <TableRow>
-                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                            Available Seats
-                          </StyledTableCell>
-                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
+                          <TableCell>Available Seats</TableCell>
+                          <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(
                               userListing,
                               {
@@ -1745,15 +1837,15 @@ export const UsersPage = (): React.ReactNode => {
                                 success: (listing) => listing.availableSeats,
                               },
                             )}
-                          </StyledTableCell>
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <StyledTableCell>
+                          <TableCell>
                             <CustomTooltip title="Enabled users and PIs, excluding admins.">
                               <Abbr>Billable Users</Abbr>
                             </CustomTooltip>
-                          </StyledTableCell>
-                          <StyledTableCell>
+                          </TableCell>
+                          <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(
                               userListing,
                               {
@@ -1763,11 +1855,11 @@ export const UsersPage = (): React.ReactNode => {
                                   listing.billableUsersCount,
                               },
                             )}
-                          </StyledTableCell>
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <StyledTableCell>System Admins</StyledTableCell>
-                          <StyledTableCell>
+                          <TableCell>System Admins</TableCell>
+                          <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(
                               userListing,
                               {
@@ -1776,13 +1868,11 @@ export const UsersPage = (): React.ReactNode => {
                                 success: (listing) => listing.systemAdminCount,
                               },
                             )}
-                          </StyledTableCell>
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
-                            Community Admins
-                          </StyledTableCell>
-                          <StyledTableCell sx={{ borderBottomWidth: 2 }}>
+                          <TableCell>Community Admins</TableCell>
+                          <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(
                               userListing,
                               {
@@ -1792,15 +1882,15 @@ export const UsersPage = (): React.ReactNode => {
                                   listing.communityAdminCount,
                               },
                             )}
-                          </StyledTableCell>
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <StyledTableCell sx={{ borderBottom: "unset" }}>
+                          <TableCell>
                             <CustomTooltip title="All users including admins and those with disabled accounts.">
                               <Abbr>Total Users</Abbr>
                             </CustomTooltip>
-                          </StyledTableCell>
-                          <StyledTableCell sx={{ borderBottom: "unset" }}>
+                          </TableCell>
+                          <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(
                               userListing,
                               {
@@ -1809,35 +1899,41 @@ export const UsersPage = (): React.ReactNode => {
                                 success: (listing) => listing.totalUsersCount,
                               },
                             )}
-                          </StyledTableCell>
+                          </TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
                   </TableContainer>
                 </Box>
-                <Grid container direction="column" spacing={1.25}>
-                  <Grid item>
-                    <Typography variant="body2" sx={{ maxWidth: 575 }}>
-                      You can search, filter, and tag user accounts, as well as
-                      export summary information about the users on this server.
-                      See our{" "}
-                      <Link
-                        target="_blank"
-                        rel="noreferrer"
-                        href={docLinks.taggingUsers}
-                      >
-                        Tagging docs
-                      </Link>{" "}
-                      for more.
-                    </Typography>
-                  </Grid>
-                  <Grid item>
-                    <Box height={4}></Box>
-                  </Grid>
-                  <Grid item sx={{ width: "100%" }}>
+                <Stack spacing={1.25}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      maxWidth: 575,
+                    }}
+                  >
+                    You can search, filter, and tag user accounts, as well as
+                    export summary information about the users on this server.
+                    See our{" "}
+                    <Link
+                      target="_blank"
+                      rel="noreferrer"
+                      href={docLinks.taggingUsers}
+                    >
+                      Tagging docs
+                    </Link>{" "}
+                    for more.
+                  </Typography>
+                  <Box sx={{ height: 4 }} />
+                  <Box sx={{ width: "100%" }}>
                     {FetchingData.match(userListing, {
                       loading: () => (
-                        <Typography variant="body2" sx={{ height: "36px" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            height: "36px",
+                          }}
+                        >
                           Loading listing of users.
                         </Typography>
                       ),
@@ -1856,8 +1952,13 @@ export const UsersPage = (): React.ReactNode => {
                       selectedIds={selectedIds as ReadonlyArray<UserId>}
                       fetchedListing={userListing}
                     />
-                    <div style={{ width: "100%" }}>
+                    <Box sx={{ width: "100%" }}>
                       <DataGrid
+                        sx={{
+                          [`& .${tablePaginationClasses.selectLabel}`]: {
+                            m: 0,
+                          },
+                        }}
                         aria-label="users"
                         autoHeight
                         columns={columns}
@@ -1867,7 +1968,9 @@ export const UsersPage = (): React.ReactNode => {
                           success: (listing) => listing.users,
                         })}
                         columnVisibilityModel={columnVisibility}
-                        onColumnVisibilityModelChange={setColumnVisibility}
+                        onColumnVisibilityModelChange={(model) => {
+                          setColumnVisibility(model);
+                        }}
                         density="standard"
                         getRowId={(row: User) => row.id}
                         hideFooterSelectedRowCount
@@ -1899,8 +2002,14 @@ export const UsersPage = (): React.ReactNode => {
                           success: (listing) => listing.totalListingCount,
                         })}
                         paginationModel={FetchingData.match(userListing, {
-                          loading: () => ({ page: 0, pageSize: 0 }),
-                          error: () => ({ page: 0, pageSize: 0 }),
+                          loading: () => ({
+                            page: 0,
+                            pageSize: 0,
+                          }),
+                          error: () => ({
+                            page: 0,
+                            pageSize: 0,
+                          }),
                           success: (listing) => ({
                             page: listing.page,
                             pageSize: listing.pageSize,
@@ -1931,9 +2040,7 @@ export const UsersPage = (): React.ReactNode => {
                         }}
                         sortingMode="server"
                         sortModel={sortModel}
-                        onSortModelChange={(
-                          newSortModel: GridSortModel,
-                        ) => {
+                        onSortModelChange={(newSortModel: GridSortModel) => {
                           FetchingData.match(userListing, {
                             loading: () => {},
                             error: () => {},
@@ -1947,7 +2054,10 @@ export const UsersPage = (): React.ReactNode => {
                                 { field: newOrderBy, sort: newSortOrder },
                               ] = newSortModel;
                               setSortModel([
-                                { field: newOrderBy, sort: newSortOrder },
+                                {
+                                  field: newOrderBy,
+                                  sort: newSortOrder,
+                                },
                               ]);
                               const apiOrderBy = {
                                 username: "username",
@@ -1976,12 +2086,10 @@ export const UsersPage = (): React.ReactNode => {
                           });
                         }}
                         slots={{
-                          // @ts-expect-error The type of toolbar does not account for the slotProps that also get passed
-                          toolbar: Toolbar,
+                          toolbar: UsersToolbar,
                         }}
                         slotProps={{
                           toolbar: {
-                            // @ts-expect-error Needed by <Toolbar>
                             userListing,
                             selectedCount: selectedIds.length,
                           },
@@ -1992,18 +2100,27 @@ export const UsersPage = (): React.ReactNode => {
                           success: () => false,
                         })}
                         {...FetchingData.match(userListing, {
-                          loading: () => ({ "aria-hidden": true }),
-                          error: () => ({ "aria-hidden": true }),
+                          loading: () => ({
+                            "aria-hidden": true,
+                          }),
+                          error: () => ({
+                            "aria-hidden": true,
+                          }),
                           success: () => ({}),
                         })}
-                        showToolbar />
-                    </div>
+                        showToolbar
+                      />
+                    </Box>
                     <Panel
                       anchorEl={groupsAnchorEl}
                       onClose={() => setGroupsAnchorEl(null)}
                       ariaLabel="Groups"
                     >
-                      <List sx={{ p: 0 }}>
+                      <List
+                        sx={{
+                          p: 0,
+                        }}
+                      >
                         {groupsList.map((group) => (
                           <ListItem key={group}>
                             <ListItemText primary={group} />
@@ -2016,7 +2133,11 @@ export const UsersPage = (): React.ReactNode => {
                       onClose={() => setTagsAnchorEl(null)}
                       ariaLabel="Tags"
                     >
-                      <List sx={{ p: 0 }}>
+                      <List
+                        sx={{
+                          p: 0,
+                        }}
+                      >
                         {tagsList.map((tag) => (
                           <ListItem key={tag}>
                             <ListItemText primary={tag} />
@@ -2024,31 +2145,29 @@ export const UsersPage = (): React.ReactNode => {
                         ))}
                       </List>
                     </Panel>
-                  </Grid>
-                </Grid>
-              </StyledCardContent>
-            </StyledCard>
-          </div>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Box>
         </Alerts>
       </ErrorBoundary>
     </Analytics>
   );
 };
-
 const queryClient = new QueryClient();
-
 const wrapperDiv = document.getElementById("sysadminUsers");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
     <QueryClientProvider client={queryClient}>
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
           <UiPreferences>
             <UsersPage />
           </UiPreferences>
         </ThemeProvider>
       </StyledEngineProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }

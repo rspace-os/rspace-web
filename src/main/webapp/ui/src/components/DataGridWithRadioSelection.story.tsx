@@ -6,6 +6,7 @@ import {
   GridRowId,
   Toolbar,
 } from "@mui/x-data-grid";
+import Box from "@mui/material/Box";
 
 type DemoRow = {
   id: number;
@@ -42,7 +43,7 @@ export function DataGridWithRadioSelectionExample() {
   };
 
   return (
-    <div style={{ height: 400, width: "100%" }}>
+    <Box sx={{ height: 400, width: "100%" }}>
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
@@ -57,7 +58,7 @@ export function DataGridWithRadioSelectionExample() {
           ? `Selected ID: ${lastSelectedId}`
           : "Nothing selected"}
       </div>
-    </div>
+    </Box>
   );
 }
 
@@ -81,7 +82,7 @@ export function ControlledDataGridWithRadioSelectionExample({
   };
 
   return (
-    <div style={{ height: 400, width: "100%" }}>
+    <Box sx={{ height: 400, width: "100%" }}>
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
@@ -99,7 +100,7 @@ export function ControlledDataGridWithRadioSelectionExample({
       </div>
       <button onClick={() => setSelectedRowId(null)}>Reset Selection</button>
       <button onClick={() => setSelectedRowId(2)}>Select Row 2</button>
-    </div>
+    </Box>
   );
 }
 
@@ -116,7 +117,7 @@ export function DataGridWithFeatures() {
   };
 
   return (
-    <div style={{ height: 400, width: "100%" }}>
+    <Box sx={{ height: 400, width: "100%" }}>
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
@@ -137,7 +138,7 @@ export function DataGridWithFeatures() {
           ? `Selected ID: ${lastSelectedId}`
           : "Nothing selected"}
       </div>
-    </div>
+    </Box>
   );
 }
 

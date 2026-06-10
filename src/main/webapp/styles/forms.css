@@ -2,21 +2,6 @@
 /* FORM ELEMENTS */
 /* From http://www.wufoo.com/css/global/dynamic.css */
 
-/* ----- CLASSIC WUFOO FORM ----- */
-form {
-    /* font-size: .9em; */
-}
-
-
-
-form ul {
-    position: relative;
-    list-style: none;
-    width: 100%;
-    padding: 0;
-}
-
-
 /* Fixes for forms around everything in JSF */
 form ul.glassList {
     list-style: url(../images/aquadot.jpg) disc outside;
@@ -309,15 +294,6 @@ p.error{
 }
 
 /* ----- Fieldsets ----- */
-fieldset {
-    margin: 10px 0 5px 0;
-    padding: 10px 10px 5px 10px;
-    color: #444;
-}
-
-/* Firefox and others, don't apply to IE or it will put a border under each input element */
-li>fieldset, form>fieldset { border: 1px solid silver }
-
 fieldset.choices{
     padding: 10px 5px 10px 10px;
 }

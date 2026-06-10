@@ -1,40 +1,25 @@
-import { makeStyles } from "tss-react/mui";
 import * as React from "react";
-import clsx from "clsx";
-import styled from "@mui/system/styled";
-
-const useStyles = makeStyles()((theme) => ({
-  main: {
-    flexGrow: 1,
-    minWidth: 0, // this is for the right hand panel 'title' ellipsis to work as expected
-    height: "100%",
-  },
-  hiddenSidebar: {
-    paddingTop: theme.spacing(7), // this for the header which includes the open sidebar button
-  },
-}));
+import Box from "@mui/material/Box";
+import { type SxProps, type Theme } from "@mui/material/styles";
+import { mergeSx } from "@/modules/common/utils/styles";
 
 type MainArgs = {
   children: React.ReactNode;
-  sx?: Record<string, unknown>;
+  sx?: SxProps<Theme>;
 } & React.HTMLAttributes<HTMLElement>;
-
-const StyledMain = styled("main")``;
 
 export default React.forwardRef<HTMLElement, MainArgs>(function Main(
   { children, sx, ...htmlAttributes },
   ref,
 ) {
-  const { classes } = useStyles();
-
   return (
-    <StyledMain
+    <Box
+      component="main"
       ref={ref}
-      className={clsx(classes.main)}
-      sx={sx}
+      sx={mergeSx({ flexGrow: 1, minWidth: 0, height: "100%" }, sx)}
       {...htmlAttributes}
     >
       {children}
-    </StyledMain>
+    </Box>
   );
 });

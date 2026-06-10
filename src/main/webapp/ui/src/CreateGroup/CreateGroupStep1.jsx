@@ -1,6 +1,7 @@
 "use strict";
 import React from "react";
 import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
@@ -30,16 +31,10 @@ class CreateGroupStep1 extends React.Component {
     this.setState({ value: this.props.groupName });
   }
 
-  styles = {
-    container: {
-      padding: "0 25px 10px 25px",
-    },
-  };
-
   render() {
     return (
-      <div style={this.styles.container}>
-        <StyledEngineProvider injectFirst>
+      <Box sx={{ padding: "0 25px 10px 25px" }}>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <h3>Group Name</h3>
             <p>Enter a name to identify the new group</p>
@@ -52,7 +47,7 @@ class CreateGroupStep1 extends React.Component {
             />
           </ThemeProvider>
         </StyledEngineProvider>
-      </div>
+      </Box>
     );
   }
 }

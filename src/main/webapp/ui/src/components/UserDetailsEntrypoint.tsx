@@ -115,7 +115,7 @@ function mountUserDetails(domContainer: Element): void {
   const root = createRoot(domContainer);
   mountedRoots.set(domContainer, root);
   root.render(
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <UserDetails
           userId={userId}

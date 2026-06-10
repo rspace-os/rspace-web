@@ -3,19 +3,12 @@ import { observer } from "mobx-react-lite";
 import FieldModel from "../../../stores/models/FieldModel";
 import useStores from "../../../stores/use-stores";
 import NewField from "./NewField";
-import Grid from "@mui/material/Grid";
-import { makeStyles } from "tss-react/mui";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import NoValue from "../../../components/NoValue";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import CustomField from "./CustomField";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-
-const useStyles = makeStyles()((theme) => ({
-  textSpacer: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(1),
-  },
-}));
 
 type FieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, errorState: boolean) => void;
@@ -28,7 +21,6 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
   } = useStores();
   if (!activeResult || !(activeResult instanceof TemplateModel))
     throw new Error("ActiveResult must be a Template");
-  const { classes } = useStyles();
 
   const TemplateFields = observer(({ editable }: { editable: boolean }) => {
     const removeCustomField =
@@ -37,12 +29,12 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
         activeResult.removeCustomField(
           field.id,
           activeResult.fields.indexOf(field),
-          deleteFromSamples
+          deleteFromSamples,
         );
       };
 
     return (
-      <Grid container direction="column" spacing={2}>
+      <Stack spacing={2}>
         {ArrayUtils.filterClass(FieldModel, activeResult.fields).map(
           (field: FieldModel, i: number) => (
             <CustomField
@@ -57,9 +49,9 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
               forceColumnLayout={!uiStore.isLarge}
               onMove={(index) => activeResult.moveField(field, index)}
             />
-          )
+          ),
         )}
-      </Grid>
+      </Stack>
     );
   });
 
@@ -70,9 +62,9 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
       {fields.length > 0 ? (
         <TemplateFields editable={editable} />
       ) : (
-        <div className={classes.textSpacer}>
+        <Box sx={{ mt: 2, mb: 1 }}>
           <NoValue label="No more fields" />
-        </div>
+        </Box>
       )}
       {editable && <NewField record={activeResult} />}
     </>

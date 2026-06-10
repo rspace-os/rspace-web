@@ -15,7 +15,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Box from "@mui/material/Box";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "../../../accentedTheme";
 import AppBar from "../../../components/AppBar";
 import Drawer from "@mui/material/Drawer";
@@ -40,13 +40,6 @@ import { stableSort, getSorting, paginationOptions } from "../../../util/table";
 import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
 import * as Parsers from "../../../util/parsers";
 import { type Order } from "../../../util/types";
-
-const CustomDrawer = styled(Drawer)(() => ({
-  "& .MuiPaper-root": {
-    paddingTop: "8px",
-    position: "relative",
-  },
-}));
 
 function DnaPreview({
   show,
@@ -79,7 +72,7 @@ function DnaPreview({
           linear ? "true" : "false"
         }&showEnzymes=${showEnzymes ? "true" : "false"}&showORFs=${
           showORFs ? "true" : "false"
-        }`
+        }`,
       );
     } catch (e) {
       if (e instanceof Error) setError(e.message);
@@ -92,8 +85,12 @@ function DnaPreview({
       role="tabpanel"
       direction="column"
       spacing={2}
-      flexGrow={1}
-      style={{ display: show ? "flex" : "none", minHeight: 0, height: "100%" }}
+      sx={{
+        flexGrow: 1,
+        display: show ? "flex" : "none",
+        minHeight: 0,
+        height: "100%",
+      }}
       aria-labelledby={idOfDnaPreviewTab}
     >
       <Stack direction="row" spacing={1}>
@@ -123,7 +120,7 @@ function DnaPreview({
           }
           label="Show ORFs"
         />
-        <Box flexGrow={1} />
+        <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup>
           <IconButton
             onClick={() => setZoom((z) => z * 1.1)}
@@ -142,9 +139,9 @@ function DnaPreview({
           </IconButton>
         </ButtonGroup>
       </Stack>
-      { }
-      <div
-        style={{
+      {}
+      <Box
+        sx={{
           borderRadius: "3px",
           border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
           overflow: "hidden",
@@ -177,7 +174,7 @@ function DnaPreview({
           };
           thisNode.scrollTo(
             scrollPos.scrollLeft - moved.x,
-            scrollPos.scrollTop - moved.y
+            scrollPos.scrollTop - moved.y,
           );
         }}
         onMouseUp={() => {
@@ -188,13 +185,14 @@ function DnaPreview({
         {error ? (
           <div>{error}</div>
         ) : (
-          <img
+          <Box
+            component="img"
             alt={`DNA preview of ${file.name}`}
             {...(image !== null ? { src: image } : {})}
             onError={() => {
               setError("Coult not load DNA preview image.");
             }}
-            style={{
+            sx={{
               maxHeight: "100%",
               maxWidth: "100%",
               transform: `scale(${zoom})`,
@@ -204,7 +202,7 @@ function DnaPreview({
             }}
           />
         )}
-      </div>
+      </Box>
     </Stack>
   );
 }
@@ -266,7 +264,7 @@ function RestrictionSites({
         topCutPosition: number;
         bottomCutPosition: number;
       }>;
-    }>
+    }>,
   ) => {
     setEnzymeList(
       list
@@ -276,9 +274,9 @@ function RestrictionSites({
             id: enzyme.id,
             topCutPosition: hit.topCutPosition,
             bottomCutPosition: hit.bottomCutPosition,
-          }))
+          })),
         )
-        .flat()
+        .flat(),
     );
   };
 
@@ -287,7 +285,7 @@ function RestrictionSites({
 
     try {
       const url = `/molbiol/dna/enzymes/${idToString(
-        file.id
+        file.id,
       ).elseThrow()}?enzymeSet=${enzymeSet}`;
       const response = await axios.get<{
         enzymes: ReadonlyArray<{
@@ -313,7 +311,6 @@ function RestrictionSites({
     setPage(0);
     setEnzymeList([]);
     void fetchEnzymes();
-
   }, [enzymeSet]);
 
   const handleRequestSort = (_event: unknown, property: string) => {
@@ -341,22 +338,16 @@ function RestrictionSites({
       spacing={2}
       component="section"
       role="tabpanel"
-      style={{ display: show ? "flex" : "none" }}
-      flexWrap="nowrap"
+      sx={{ flexWrap: "nowrap", display: show ? "flex" : "none" }}
       aria-labelledby={idOfRestrictionSitesTab}
     >
-      <Grid item flexGrow={1}>
+      <Grid sx={{ flexGrow: 1 }}>
         {error && <div>{error}</div>}
         {!error && loading && <LoadingCircular />}
         {!error && !loading && (
           <>
-            <TableContainer style={{ maxHeight: "387px" }}>
-              <Table
-                stickyHeader
-                aria-labelledby="Enzyme table"
-                size="small"
-                aria-label="enhanced table"
-              >
+            <TableContainer sx={{ maxHeight: "387px" }}>
+              <Table stickyHeader size="small" aria-label="Enzyme table">
                 <EnhancedTableHead
                   headCells={enzymeHeadCells}
                   order={order}
@@ -383,7 +374,7 @@ function RestrictionSites({
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}
@@ -403,7 +394,7 @@ function RestrictionSites({
         )}
       </Grid>
 
-      <Grid item>
+      <Grid>
         <FormControl component="fieldset">
           <FormLabel component="legend" sx={{ textAlign: "right" }}>
             Enzyme Sets
@@ -466,13 +457,14 @@ function ViewAsFasta({
   }, [file]);
 
   return (
-    <section
+    <Box
+      component="section"
       role="tabpanel"
-      style={{ display: show ? "flex" : "none" }}
+      sx={{ display: show ? "flex" : "none" }}
       aria-labelledby={idOfViewAsFastaTab}
     >
       <pre>{sequence}</pre>
-    </section>
+    </Box>
   );
 }
 
@@ -551,7 +543,7 @@ function OrfTable({
   const filterResults = (passedResults: ReadonlyArray<Orf>) => {
     const toInclude = readingFrameOptions[readingFrameOption].filter;
     const filtered = passedResults.filter((r) =>
-      toInclude.includes(r.readingFrame)
+      toInclude.includes(r.readingFrame),
     );
     setFilteredResults(filtered);
   };
@@ -577,13 +569,11 @@ function OrfTable({
 
   React.useEffect(() => {
     void fetchData();
-
   }, []);
 
   React.useEffect(() => {
     setPage(0);
     filterResults(results);
-
   }, [readingFrameOption]);
 
   const handleRequestSort = (_event: unknown, property: string) => {
@@ -610,24 +600,18 @@ function OrfTable({
     <Grid
       container
       spacing={2}
-      flexWrap="nowrap"
+      sx={{ flexWrap: "nowrap", display: show ? "flex" : "none" }}
       component="section"
       role="tabpanel"
-      style={{ display: show ? "flex" : "none" }}
       aria-labelledby={idOfOrfTableTab}
     >
-      <Grid item sx={{ minWidth: 0 }}>
+      <Grid sx={{ minWidth: 0 }}>
         {error && <div>{error}</div>}
         {loading && !error && <LoadingCircular />}
         {!loading && !error && (
           <>
-            <TableContainer style={{ maxHeight: "449px" }}>
-              <Table
-                stickyHeader
-                aria-labelledby="ORF table"
-                size="small"
-                aria-label="enhanced table"
-              >
+            <TableContainer sx={{ maxHeight: "449px" }}>
+              <Table stickyHeader size="small" aria-label="ORF table">
                 <EnhancedTableHead
                   headCells={orfHeadCells}
                   order={order}
@@ -656,7 +640,7 @@ function OrfTable({
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
-                    <TableRow style={{ height: 33 * emptyRows }}>
+                    <TableRow sx={{ height: 33 * emptyRows }}>
                       <TableCell colSpan={6} />
                     </TableRow>
                   )}
@@ -676,7 +660,7 @@ function OrfTable({
         )}
       </Grid>
 
-      <Grid item sx={{ minWidth: "200px" }}>
+      <Grid sx={{ minWidth: "200px" }}>
         <FormControl component="fieldset">
           <FormLabel component="legend" sx={{ textAlign: "right" }}>
             Open Reading Frames
@@ -687,7 +671,7 @@ function OrfTable({
             value={readingFrameOption}
             onChange={(event) =>
               setReadingFrameOption(
-                event.target.value as keyof typeof readingFrameOptions
+                event.target.value as keyof typeof readingFrameOptions,
               )
             }
           >
@@ -736,7 +720,7 @@ export function useSnapGenePreview(): {
   openSnapGenePreview: (file: GalleryFile) => void;
 } {
   const { setFile: openSnapGenePreview } = React.useContext(
-    SnapGenePreviewContext
+    SnapGenePreviewContext,
   );
   return {
     openSnapGenePreview,
@@ -764,7 +748,7 @@ export function CallableSnapGenePreview({
 
   function switchTab(
     _e: unknown,
-    value: "DNA preview" | "Restriction sites" | "View as FASTA" | "ORF table"
+    value: "DNA preview" | "Restriction sites" | "View as FASTA" | "ORF table",
   ) {
     setTab(value);
   }
@@ -794,11 +778,19 @@ export function CallableSnapGenePreview({
               }}
             />
             <Stack direction="row" spacing={1} sx={{ minHeight: 0 }}>
-              <CustomDrawer
+              <Drawer
                 variant="permanent"
                 sx={{ mt: 2 }}
                 role="tablist"
                 aria-orientation="vertical"
+                slotProps={{
+                  paper: {
+                    sx: {
+                      paddingTop: "8px",
+                      position: "relative",
+                    },
+                  },
+                }}
               >
                 <ListItem
                   disablePadding
@@ -856,8 +848,8 @@ export function CallableSnapGenePreview({
                     <ListItemText primary="ORF Table" />
                   </ListItemButton>
                 </ListItem>
-              </CustomDrawer>
-              <Stack spacing={1} flexGrow={1} sx={{ minWidth: 0 }}>
+              </Drawer>
+              <Stack spacing={1} sx={{ flexGrow: 1, minWidth: 0 }}>
                 <DialogContent>
                   <DnaPreview
                     show={tab === "DNA preview"}
