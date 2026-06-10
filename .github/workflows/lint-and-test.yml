@@ -259,7 +259,7 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-${{ matrix.browser }}.json
         run: |
           rm -rf src/main/webapp/ui/playwright/.cache
-          pnpm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          pnpm run test-ct --project=${{ matrix.browser }} --workers=2 --reporter=html,json
 
       - name: Summarize Playwright report
         if: always()
@@ -270,7 +270,7 @@ jobs:
           create-comment: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
           job-summary: true
           comment-title: Playwright component test results
-          test-command: pnpm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          test-command: pnpm run test-ct --project=${{ matrix.browser }} --workers=2 --reporter=html,json
 
   # Bundle-size comparison: build the frontend on both the PR and the base
   # branch, then diff the two stats.json files and post the result as a PR
@@ -336,13 +336,30 @@ jobs:
           ref: ${{ github.base_ref }}
           persist-credentials: false
 
+      # The base branch may predate the pnpm migration (no root pnpm-lock.yaml or
+      # build:stats script). There is nothing to build in that case, so detect it
+      # and skip the build; the report job tolerates a missing base artifact and
+      # simply omits the comparison. Once the migration lands on the base branch
+      # this guard becomes a no-op and the comparison runs normally.
+      - name: Check base branch supports bundle stats
+        id: base-support
+        run: |
+          if [ -f pnpm-lock.yaml ] && [ -f package.json ] && grep -q '"build:stats"' package.json; then
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "supported=false" >> "$GITHUB_OUTPUT"
+            echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
+          fi
+
       - name: Setup pnpm
+        if: steps.base-support.outputs.supported == 'true'
         uses: pnpm/action-setup@v6.0.8
         with:
           version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
+        if: steps.base-support.outputs.supported == 'true'
         uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
@@ -350,12 +367,15 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
+        if: steps.base-support.outputs.supported == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build with bundle stats
+        if: steps.base-support.outputs.supported == 'true'
         run: pnpm run build:stats
 
       - name: Upload base bundle stats
+        if: steps.base-support.outputs.supported == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: bundle-stats-base
@@ -377,13 +397,18 @@ jobs:
           name: bundle-stats-pr
           path: pr
 
+      # The base artifact is absent when the base branch predates the pnpm
+      # migration (see bundle-size-base). Tolerate that and skip the comparison.
       - name: Download base bundle stats
+        id: download-base
+        continue-on-error: true
         uses: actions/download-artifact@v8.0.1
         with:
           name: bundle-stats-base
           path: base
 
       - name: Compare bundle size and comment
+        if: steps.download-base.outcome == 'success' && hashFiles('base/stats.json') != ''
         uses: wojtekmaj/vite-compare-bundle-size@v1.2.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
