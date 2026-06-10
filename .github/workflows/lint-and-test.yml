@@ -270,7 +270,7 @@ jobs:
           create-comment: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
           job-summary: true
           comment-title: Playwright component test results
-          test-command: pnpm run test-ct --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          test-command: pnpm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
 
   # Bundle-size comparison: build the frontend on both the PR and the base
   # branch, then diff the two stats.json files and post the result as a PR
