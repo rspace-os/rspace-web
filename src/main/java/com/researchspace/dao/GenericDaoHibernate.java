@@ -122,6 +122,11 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    * persist()} for new/managed entities (same-instance semantics) and {@code merge()} only for
    * detached entities.
    *
+   * <p>Note: a NEW entity with an application-assigned id (no {@code @GeneratedValue}, e.g. {@code
+   * ArchivalCheckSum}) has a non-null id while still transient, so it is indistinguishable from a
+   * detached entity here and goes through {@code merge()}. Callers must therefore use the returned
+   * instance, not the argument, as the managed entity.
+   *
    * <p>{@inheritDoc}
    */
   @SuppressWarnings("unchecked")
