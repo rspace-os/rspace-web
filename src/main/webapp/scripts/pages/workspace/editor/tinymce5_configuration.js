@@ -248,10 +248,59 @@ var tinymcesetup = {
 			return '<ul class="rte-autocomplete dropdown-menu mentions-list-wrapper"></ul>';
 		},
 
+		// RSDEV-992: the plugin's default highlighter builds a regex from its internal query;
+		// because of the caret issue (see `source`) that query is always empty, and an empty
+		// query produces /()/ig which matches every character boundary and wraps each character
+		// of every entry in <strong>, stalling large lists. Skip highlighting when there is
+		// no query.
+		highlighter: function (text) {
+			if (!this.query) {
+				return text;
+			}
+			return text.replace(
+				new RegExp('(' + this.query.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1') + ')', 'ig'),
+				function (match, group) {
+					return '<strong>' + group + '</strong>';
+				}
+			);
+		},
+
 		// get the items to be shown in the pop up box
 		source(query, process, delimiter) {
+			// RSDEV-992: in this TinyMCE version the mention plugin's caret lands in the
+			// '#autocomplete-delimiter' span, so the typed text never reaches '#autocomplete-searchtext'
+			// and the plugin always passes an empty `query`. That made every lookup send term="" and
+			// return the entire shared group, which for large labgroups stalled rendering and showed an
+			// empty list. Read the actually-typed text from the autocomplete span (inside the editor
+			// iframe) and use it as the search term so the server filters the recipient list.
+			var term = query;
+			try {
+				var ed = tinymce.activeEditor;
+				var autocomplete = ed && ed.getBody().querySelector('#autocomplete');
+				if (autocomplete) {
+					// strip the zero-width no-break space left by the plugin's dummy caret span
+					var typed = (autocomplete.textContent || "").replace(/\ufeff/g, "").trim();
+					if (delimiter && typed.indexOf(delimiter) === 0) {
+						typed = typed.substring(delimiter.length);
+					}
+					if (typed) {
+						term = typed;
+					}
+				}
+			} catch (e) {
+				console.warn("mentions: could not read typed text, falling back to plugin query", e);
+			}
+			// RSDEV-992: lookups race - the broad term="" request fired on the initial '@' can
+			// resolve after a later, narrower request and clobber the filtered dropdown. Tag each
+			// lookup and ignore responses that are no longer the latest.
+			var mentionsConfig = tinymcesetup.mentions;
+			mentionsConfig._lookupSeq = (mentionsConfig._lookupSeq || 0) + 1;
+			var seq = mentionsConfig._lookupSeq;
 			let id = $('.rs-global-id a:not(.recordInfoIcon)').text().replace(/\D/g, '');
-			var get_users = $.get("/messaging/ajax/recipients", { term: query, messageType: "SIMPLE_MESSAGE", targetFinderPolicy: "STRICT", recordId: id }, function (data) {
+			var get_users = $.get("/messaging/ajax/recipients", { term: term, messageType: "SIMPLE_MESSAGE", targetFinderPolicy: "STRICT", recordId: id }, function (data) {
+				if (seq !== mentionsConfig._lookupSeq) {
+					return; // a newer lookup is in flight or already rendered
+				}
 				data = data.data;
 				if (!data) {
 					process({});
@@ -263,6 +312,9 @@ var tinymcesetup = {
 				process(data);
 			});
 			get_users.fail(function () {
+				if (seq !== mentionsConfig._lookupSeq) {
+					return;
+				}
 				process({});
 			});
 		},
