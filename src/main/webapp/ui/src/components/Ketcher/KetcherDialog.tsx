@@ -1,7 +1,8 @@
 import "ketcher-react/dist/index.css";
 
 import React, { useMemo, useRef, useState } from "react";
-import Dialog from "@mui/material/Dialog";
+import Dialog, { dialogClasses } from "@mui/material/Dialog";
+import { paperClasses } from "@mui/material/Paper";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
@@ -10,7 +11,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
-import { styled, ThemeProvider, useTheme } from "@mui/material/styles";
+import { ThemeProvider, useTheme } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Ketcher } from "ketcher-core";
@@ -70,12 +71,6 @@ type KetcherDialogArgs = {
   onChange?: () => void;
   instructionText?: string;
 };
-
-const StyledDialog = styled(Dialog)(() => ({
-  "& > .MuiDialog-container > .MuiPaper-root": {
-    height: "calc(100% - 64px)",
-  },
-}));
 
 const KetcherDialog = ({
   isOpen = true,
@@ -141,9 +136,19 @@ const KetcherDialog = ({
   };
 
   return (
-    <StyledDialog open={isOpen} onClose={handleDialogClose} fullWidth maxWidth="xl">
+    <Dialog
+      open={isOpen}
+      onClose={handleDialogClose}
+      fullWidth
+      maxWidth="xl"
+      sx={{
+        [`& > .${dialogClasses.container} > .${paperClasses.root}`]: {
+          height: "calc(100% - 64px)",
+        },
+      }}
+    >
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent style={{ minHeight: "0" }}>
+      <DialogContent sx={{ minHeight: "0" }}>
         <Stack sx={{ height: "100%" }}>
           {instructionText && (
             <Typography variant="body2" sx={{ pb: 2 }}>
@@ -204,7 +209,10 @@ const KetcherDialog = ({
           </ValidatingSubmitButton>
         )}
       </DialogActions>
-      <Dialog open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)}>
+      <Dialog
+        open={showDiscardConfirm}
+        onClose={() => setShowDiscardConfirm(false)}
+      >
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -226,7 +234,7 @@ const KetcherDialog = ({
           </Button>
         </DialogActions>
       </Dialog>
-    </StyledDialog>
+    </Dialog>
   );
 };
 

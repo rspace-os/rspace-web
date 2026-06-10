@@ -17,7 +17,6 @@ import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
 import { type Factory } from "../../../stores/definitions/Factory";
 import RsSet, { unionWith } from "../../../util/set";
-import Grid from "@mui/material/Grid";
 import Skeleton from "@mui/material/Skeleton";
 import NoValue from "../../../components/NoValue";
 import {
@@ -36,68 +35,6 @@ type State =
   | { state: "loading" }
   | { state: "success"; documents: RsSet<Document> }
   | { state: "fail"; error: Error };
-
-function DialogContents({ state }: { state: State }): React.ReactNode {
-  if (state.state === "loading")
-    return <Skeleton variant="rectangular" width={210} height={118} />;
-  if (state.state === "fail")
-    return <Alert severity="error">{state.error.message}</Alert>;
-  if (state.state === "success") {
-    const { documents } = state;
-    if (documents.size === 0)
-      return (
-        <>
-          <NoValue label="None" />
-          <Box mt={1}>
-            <Typography variant="body1">
-              Adding this item to a document&apos;s{" "}
-              <a
-                href={docLinks.listOfMaterials}
-                rel="noreferrer"
-                target="_blank"
-              >
-                List of Materials
-              </a>{" "}
-              will add an entry for the document in this panel.
-            </Typography>
-          </Box>
-        </>
-      );
-    return (
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Global ID</TableCell>
-            <TableCell>Owner</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {documents.map((document) => (
-            <TableRow key={document.globalId}>
-              <TableCell>{document.name}</TableCell>
-              <TableCell>
-                <GlobalIdLink record={document} />
-              </TableCell>
-              <TableCell>
-                {document.owner ? (
-                  <UserDetails
-                    userId={document.owner.id}
-                    fullName={document.owner.fullName}
-                    position={["bottom", "right"]}
-                  />
-                ) : (
-                  <>&emdash;</>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
-  }
-  return null;
-}
 
 type LinkedDocumentsArgs = {
   globalId: GlobalId;
@@ -156,32 +93,85 @@ function LinkedDocuments({
   }, [open]);
 
   return (
-    <Grid item>
-      <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
-        <FormLabel component="legend">Linked Documents</FormLabel>
-        <FormGroup>
-          <Button
-            variant="outlined"
-            disableElevation
-            onClick={() => {
-              setOpen(true);
-            }}
-            disabled={!factory}
-          >
-            Show Linked Documents
-          </Button>
-          <Dialog open={open} onClose={() => setOpen(false)}>
-            <DialogTitle>Linked Documents</DialogTitle>
-            <DialogContent>
-              <DialogContents state={state} />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpen(false)}>Close</Button>
-            </DialogActions>
-          </Dialog>
-        </FormGroup>
-      </FormControl>
-    </Grid>
+    <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
+      <FormLabel component="legend">Linked Documents</FormLabel>
+      <FormGroup>
+        <Button
+          variant="outlined"
+          disableElevation
+          onClick={() => {
+            setOpen(true);
+          }}
+          disabled={!factory}
+        >
+          Show Linked Documents
+        </Button>
+        <Dialog open={open} onClose={() => setOpen(false)}>
+          <DialogTitle>Linked Documents</DialogTitle>
+          <DialogContent>
+            {state.state === "loading" && (
+              <Skeleton variant="rectangular" width={210} height={118} />
+            )}
+            {state.state === "fail" && (
+              <Alert severity="error">{state.error.message}</Alert>
+            )}
+            {state.state === "success" && state.documents.size === 0 && (
+              <>
+                <NoValue label="None" />
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="body1">
+                    Adding this item to a document&apos;s{" "}
+                    <a
+                      href={docLinks.listOfMaterials}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      List of Materials
+                    </a>{" "}
+                    will add an entry for the document in this panel.
+                  </Typography>
+                </Box>
+              </>
+            )}
+            {state.state === "success" && state.documents.size > 0 && (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Global ID</TableCell>
+                    <TableCell>Owner</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {state.documents.map((document) => (
+                    <TableRow key={document.globalId}>
+                      <TableCell>{document.name}</TableCell>
+                      <TableCell>
+                        <GlobalIdLink record={document} />
+                      </TableCell>
+                      <TableCell>
+                        {document.owner ? (
+                          <UserDetails
+                            userId={document.owner.id}
+                            fullName={document.owner.fullName}
+                            position={["bottom", "right"]}
+                          />
+                        ) : (
+                          <>&emdash;</>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+      </FormGroup>
+    </FormControl>
   );
 }
 

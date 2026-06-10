@@ -1,8 +1,9 @@
 import React, { useContext } from "react";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import CustomTooltip from "../../../components/CustomTooltip";
-import TextField from "@mui/material/TextField";
+import TextField, { textFieldClasses } from "@mui/material/TextField";
+import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
@@ -12,29 +13,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
 import SearchDialog from "../../../components/SearchDialog";
 import { runInAction } from "mobx";
-
-const SearchBar = styled.div`
-  form {
-    display: flex;
-    align-items: center;
-    width: 100%;
-  }
-  .MuiTextField-root {
-    flex-grow: 1;
-    .MuiOutlinedInput-root {
-      input:focus,
-      input:hover {
-        background-color: transparent !important;
-      }
-    }
-    .MuiOutlinedInput-input {
-      padding: 8px 0 8px 0;
-    }
-  }
-  .grow {
-    flex-grow: 1;
-  }
-`;
 
 type FormArgs = {
   handleSearch: (query: string) => void;
@@ -68,77 +46,72 @@ const Form = observer(({ handleSearch }: FormArgs) => {
 
   return (
     <>
-      <form
+      <Box
+        component="form"
         onSubmit={(e) => {
           e.preventDefault();
           onSearch();
         }}
-        style={{ width: "100%" }}
+        sx={{ width: "100%" }}
       >
         <TextField
           data-test-id="s-search-input-normal"
           placeholder="Search"
           value={search.fetcher.query ?? ""}
           onChange={handleChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <IconButton
-                  aria-label="Search"
-                  data-test-id="s-search-submit"
-                  onClick={onSearch}
-                  size="small"
-                  edge="start"
-                >
-                  <SearchOutlinedIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
-            ...(search.fetcher.query
-              ? {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <ClearSearch handleReset={handleReset} />
-                    </InputAdornment>
-                  ),
-                }
-              : {}),
-          }}
-          inputProps={{
-            "aria-label": "Search",
-            type: "search",
-            ref: inputRef,
-          }}
           sx={{ flexGrow: 1 }}
-        />
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <IconButton
+                    aria-label="Search"
+                    data-test-id="s-search-submit"
+                    onClick={onSearch}
+                    size="small"
+                    edge="start"
+                  >
+                    <SearchOutlinedIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+              ...(search.fetcher.query
+                ? {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <CustomTooltip title="Clear search">
+                          <IconButton
+                            size="small"
+                            data-test-id="reset-search"
+                            aria-label="close"
+                            color="inherit"
+                            onClick={handleReset}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </CustomTooltip>
+                      </InputAdornment>
+                    ),
+                  }
+                : {}),
+            },
+
+            htmlInput: {
+              "aria-label": "Search",
+              type: "search",
+              ref: inputRef,
+            }
+          }} />
         <SearchDialog
           visible={textTooWide.orElse(false)}
           onSubmit={onSearch}
           query={search.fetcher.query ?? ""}
           setQuery={handleChange}
         />
-      </form>
+      </Box>
     </>
   );
 });
-
-type ClearSearchArgs = {
-  handleReset: () => void;
-};
-
-const ClearSearch = ({ handleReset }: ClearSearchArgs) => (
-  <CustomTooltip title="Clear search">
-    <IconButton
-      size="small"
-      data-test-id="reset-search"
-      aria-label="close"
-      color="inherit"
-      onClick={handleReset}
-    >
-      <CloseIcon fontSize="small" />
-    </IconButton>
-  </CustomTooltip>
-);
 
 type SearchbarArgs = {
   handleSearch: (query: string) => void;
@@ -146,10 +119,29 @@ type SearchbarArgs = {
 
 function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
   return (
-    <div style={{ flexGrow: 1 }}>
-      <SearchBar>
+    <Box sx={{ flexGrow: 1 }}>
+      <Box
+        sx={{
+          "& form": {
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+          },
+          [`& .${textFieldClasses.root}`]: {
+            flexGrow: 1,
+            [`& .${outlinedInputClasses.root}`]: {
+              "& input:focus, & input:hover": {
+                backgroundColor: "transparent !important",
+              },
+            },
+            [`& .${outlinedInputClasses.input}`]: {
+              padding: "8px 0 8px 0",
+            },
+          },
+        }}
+      >
         <Paper
-          style={{
+          sx={{
             display: "flex",
             alignItems: "center",
           }}
@@ -157,8 +149,8 @@ function Searchbar({ handleSearch }: SearchbarArgs): React.ReactNode {
         >
           <Form handleSearch={handleSearch} />
         </Paper>
-      </SearchBar>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

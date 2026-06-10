@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -156,6 +157,48 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundLists = mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
     assertEquals(0, foundLists.size());
+  }
+
+  @Test
+  public void listOfMaterialsForInstrumentReturnsLinkedDocuments() throws Exception {
+
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiInstrument myInstrument = createBasicInstrumentForUser(anyUser);
+    StructuredDocument myDoc = createBasicDocumentInRootFolderWithText(anyUser, "text");
+    Field myField = myDoc.getFields().get(0);
+
+    // link the instrument to the document field via a List of Materials (no quantity)
+    createBasicListOfMaterialsForUserAndDocField(
+        anyUser, myField, List.of(new ApiMaterialUsage(myInstrument, null)));
+
+    // GET /listOfMaterials/forInventoryItem/{instrumentGlobalId}
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/listOfMaterials/forInventoryItem/" + myInstrument.getGlobalId(),
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    List<ApiListOfMaterials> foundLists =
+        mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
+    assertNotNull(foundLists);
+    assertEquals(1, foundLists.size());
+
+    // the endpoint returns the list of linked documents: each LoM carries its ELN document
+    ApiListOfMaterials lom = foundLists.get(0);
+    assertNotNull(lom.getElnDocument());
+    assertEquals(myDoc.getGlobalIdentifier(), lom.getElnDocument().getGlobalId());
+
+    // and the linked material is the instrument we added
+    assertEquals(1, lom.getMaterials().size());
+    assertEquals(myInstrument.getGlobalId(), lom.getMaterials().get(0).getRecord().getGlobalId());
   }
 
   @Test

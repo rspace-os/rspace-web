@@ -1,37 +1,33 @@
 import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
-import { makeStyles } from "tss-react/mui";
-
-const useStyles = makeStyles()(() => ({
-  root: {
-    fontSize: "--var(--fa-width, 1.25em)",
-    marginLeft: "2px",
-  },
-  element: {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 3,
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    strokeMiterlimit: 10,
-  },
-}));
 
 /**
  * A simple chemical bond for use as a generic icon for chemistry files.
  */
 export default function ChemistryIcon(): React.ReactNode {
-  const { classes } = useStyles();
   return (
-    <SvgIcon viewBox="0 0 40 40" className={classes.root}>
+    <SvgIcon
+      viewBox="0 0 40 40"
+      sx={{ fontSize: "--var(--fa-width, 1.25em)", ml: "2px" }}
+    >
       <g>
         <polygon
-          className={classes.element}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeMiterlimit={10}
           points="28.2,5.7 11.8,5.7 3.5,20 11.8,34.3 28.2,34.3 36.5,20"
         />
         <g>
           <line
-            className={classes.element}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeMiterlimit={10}
             x1="25.2"
             y1="11.2"
             x2="30.3"

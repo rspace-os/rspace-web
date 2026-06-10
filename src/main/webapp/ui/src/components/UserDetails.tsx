@@ -6,6 +6,7 @@ import CardHeader from "@mui/material/CardHeader";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -41,6 +42,36 @@ type Person = {
   accountEnabled: boolean;
 };
 
+const OPEN_CREATE_REQUEST_DIALOG_EVENT = "OPEN_CREATE_REQUEST_DIALOG";
+
+function getCreateRequestDialog(): HTMLElement | null {
+  const dialog = document.getElementById("createRequestDlg");
+
+  return dialog instanceof HTMLElement ? dialog : null;
+}
+
+function canOpenMessageDialog(): boolean {
+  return Boolean(
+    getCreateRequestDialog() &&
+      document.body.querySelector("[aria-describedby='messageDlg']"),
+  );
+}
+
+function openCreateRequestDialog(recipient: string): void {
+  const dialog = getCreateRequestDialog();
+
+  if (!dialog) {
+    return;
+  }
+
+  dialog.dispatchEvent(
+    new CustomEvent<{ recipient: string }>(OPEN_CREATE_REQUEST_DIALOG_EVENT, {
+      bubbles: true,
+      detail: { recipient },
+    }),
+  );
+}
+
 export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   const variant = props.variant ?? "filled";
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
@@ -55,11 +86,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
 
     setAnchorEl(null);
     const recipient = `${user.username}<${user.fullname}>,`;
-    const dialog = $("#createRequestDlg");
-    dialog.data("recipient", recipient);
-    (dialog as JQuery<HTMLElement> & { dialog: (action: string) => void }).dialog(
-      "open",
-    );
+    openCreateRequestDialog(recipient);
   };
 
   const fetchUser = () => {
@@ -79,15 +106,25 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     setFetched(true);
   };
 
+  /*
+   * Links and buttons share a single accent colour and keep it when visited,
+   * rather than falling back to the browser's default blue/purple link colours.
+   */
+  const accentColor = "#1465b7";
+  const linkSx = {
+    color: accentColor,
+    "&:visited": { color: accentColor },
+  };
+
   const listLabgroups = user?.groups.map((group) => (
     <TableRow key={group.groupId}>
       <TableCell component="th" scope="row">
         {group.roleInGroup} at
       </TableCell>
       <TableCell align="right">
-        <a href={`/groups/view/${group.groupId}`}>
+        <Link href={`/groups/view/${group.groupId}`} sx={linkSx}>
           {group.groupName}
-        </a>
+        </Link>
       </TableCell>
     </TableRow>
   )) ?? <></>;
@@ -98,11 +135,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     props.onOpen?.();
     if (!fetched) {
       fetchUser();
-      if (
-        props.allowMessaging &&
-        $("#createRequestDlg").length > 0 &&
-        $("body").find("[aria-describedby='messageDlg']").length > 0
-      ) {
+      if (props.allowMessaging && canOpenMessageDialog()) {
         setMessagingAvailable(true);
       }
     }
@@ -187,9 +220,9 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                       Email
                     </TableCell>
                     <TableCell align="right">
-                      <a href={`mailto:${user.email}`}>
+                      <Link href={`mailto:${user.email}`} sx={linkSx}>
                         {user.email}
-                      </a>
+                      </Link>
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -208,13 +241,13 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               {messagingAvailable && user.username && (
                 <Button
                   size="small"
-                  color="primary"
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     sendMessage();
                   }}
                   href="#"
+                  sx={{ color: accentColor }}
                 >
                   Send a message
                 </Button>
@@ -222,10 +255,10 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               <Button
                 component="a"
                 size="small"
-                color="primary"
                 href={`/userform?userId=${props.userId}`}
                 sx={{
                   cursor: "pointer",
+                  color: accentColor,
                 }}
               >
                 Open profile

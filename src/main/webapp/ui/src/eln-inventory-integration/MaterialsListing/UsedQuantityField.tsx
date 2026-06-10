@@ -8,13 +8,6 @@ import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
 import { hasQuantity } from "../../stores/models/HasQuantity";
 import { inputBaseClasses } from "@mui/material/InputBase";
-import { styled } from "@mui/material/styles";
-
-const CustomNumberField = styled(NumberField)(() => ({
-  [`& .${inputBaseClasses.root}`]: {
-    paddingRight: 0,
-  },
-}));
 
 type UsedQuantityFieldArgs = {
   material: Material;
@@ -90,8 +83,8 @@ function UsedQuantityField({
   };
 
   return (
-    <CustomNumberField
-      datatestid={`material-additional-quantity-${globalId}`}
+    <NumberField
+      data-test-id={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
 
@@ -104,23 +97,30 @@ function UsedQuantityField({
       error={mixedSelectedCategories || notValidAmount || !enoughLeft}
       helperText={material.selected ? errorMessage : null}
       noValueLabel={"—"}
-      inputProps={{
-        step: "any",
-        min: 0,
+      sx={{
+        [`& .${inputBaseClasses.root}`]: {
+          paddingRight: 0,
+        },
       }}
-      InputProps={{
-        endAdornment: (
-          <UnitSelect
-            disabled={!material.selected || mixedSelectedCategories}
-            categories={hasQuantity(material.invRec)
-              .map((r) => [r.quantityCategory])
-              .orElse([])}
-            value={getUnitId()}
-            handleChange={({ target }) => {
-              onChangeUnitId(parseInt(String(target.value), 10));
-            }}
-          />
-        ),
+      slotProps={{
+        htmlInput: {
+          step: "any",
+          min: 0,
+        },
+        input: {
+          endAdornment: (
+            <UnitSelect
+              disabled={!material.selected || mixedSelectedCategories}
+              categories={hasQuantity(material.invRec)
+                .map((r) => [r.quantityCategory])
+                .orElse([])}
+              value={getUnitId()}
+              handleChange={({ target }) => {
+                onChangeUnitId(parseInt(String(target.value), 10));
+              }}
+            />
+          ),
+        },
       }}
     />
   );

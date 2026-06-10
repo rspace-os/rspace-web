@@ -142,11 +142,17 @@ function GridDimensions(): React.ReactNode {
   const editable = activeResult.isFieldEditable("organization");
   return (
     <InputWrapper label="Grid Dimensions" flexWrap="nowrap">
-      <Box mt={1} mb={0.5}>
+      <Box sx={{ mt: 1, mb: 0.5 }}>
         <Typography variant="body2">Choose a common size</Typography>
       </Box>
-
-      <Grid item xs={12} sm={8} md={8} xl={6}>
+      <Grid
+        size={{
+          xs: 12,
+          sm: 8,
+          md: 8,
+          xl: 6,
+        }}
+      >
         <FormControl fullWidth size="small">
           <Select value={commonSize} label="" onChange={handleChooseCommonSize}>
             {Object.values(
@@ -162,13 +168,19 @@ function GridDimensions(): React.ReactNode {
           </Select>
         </FormControl>
       </Grid>
-
-      <Box mt={1} mb={0.5}>
+      <Box sx={{ mt: 1, mb: 0.5 }}>
         <Typography variant="body2">Or specify the dimensions</Typography>
       </Box>
-
       <Grid container spacing={1}>
-        <Grid item xs={6} sm={5} md={6} lg={4} xl={3}>
+        <Grid
+          size={{
+            xs: 6,
+            sm: 5,
+            md: 6,
+            lg: 4,
+            xl: 3,
+          }}
+        >
           <NumberField
             fullWidth
             disabled={!editable}
@@ -177,16 +189,18 @@ function GridDimensions(): React.ReactNode {
             size="small"
             variant="outlined"
             error={!validRows}
-            ariaLabel="rows"
-            inputProps={{
-              max: maxGridSize,
-              min: minGridSize,
-              step: 1,
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Rows</InputAdornment>
-              ),
+            slotProps={{
+              htmlInput: {
+                "aria-label": "rows",
+                max: maxGridSize,
+                min: minGridSize,
+                step: 1,
+              },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">Rows</InputAdornment>
+                ),
+              },
             }}
           />
           <FormHelperText component="div" error>
@@ -194,7 +208,15 @@ function GridDimensions(): React.ReactNode {
           </FormHelperText>
         </Grid>
 
-        <Grid item xs={6} sm={5} md={6} lg={4} xl={3}>
+        <Grid
+          size={{
+            xs: 6,
+            sm: 5,
+            md: 6,
+            lg: 4,
+            xl: 3,
+          }}
+        >
           <NumberField
             fullWidth
             disabled={!editable}
@@ -203,16 +225,18 @@ function GridDimensions(): React.ReactNode {
             size="small"
             variant="outlined"
             error={!validColumns}
-            ariaLabel="columns"
-            inputProps={{
-              max: maxGridSize,
-              min: minGridSize,
-              step: 1,
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Columns</InputAdornment>
-              ),
+            slotProps={{
+              htmlInput: {
+                "aria-label": "columns",
+                max: maxGridSize,
+                min: minGridSize,
+                step: 1,
+              },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">Columns</InputAdornment>
+                ),
+              },
             }}
           />
           <FormHelperText component="div" error>

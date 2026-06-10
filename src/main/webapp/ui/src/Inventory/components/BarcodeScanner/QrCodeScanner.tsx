@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import QrScanner from "qr-scanner";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import Alert from "@mui/material/Alert";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import useStores from "../../../stores/use-stores";
 import BarcodeScannerSkeleton, {
@@ -78,18 +78,19 @@ export default function QrCodeScanner({
       loading={loading}
       warning={
         error ? (
-          <HelpTextAlert
-            severity="warning"
-            condition={!loading}
-            text="Could not access camera, please enter code below."
-          />
+          !loading && (
+            <Alert severity="warning">
+              {"Could not access camera, please enter code below."}
+            </Alert>
+          )
         ) : (
-          <HelpTextAlert
-            severity="warning"
-            condition={!loading && !barcode?.rawValue}
-            text={`To scan other formats,
+          !loading &&
+          !barcode?.rawValue && (
+            <Alert severity="warning">
+              {`To scan other formats,
               please try an Android device, or Chrome on a Mac (with a webcam).`}
-          />
+            </Alert>
+          )
         )
       }
       error={error}

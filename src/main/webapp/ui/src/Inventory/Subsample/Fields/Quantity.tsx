@@ -15,20 +15,28 @@ import Typography from "@mui/material/Typography";
 import { type Sample } from "../../../stores/definitions/Sample";
 import Link from "@mui/material/Link";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
 import { textFieldClasses } from "@mui/material/TextField";
 import { inputBaseClasses } from "@mui/material/InputBase";
 
-const CustomBatchFormField = styled(BatchFormField)(() => ({
-  [`& .${textFieldClasses.root}`]: {
-    maxWidth: "264px",
-    [`& .${inputBaseClasses.root}`]: {
-      paddingRight: 0,
-    },
-  },
-})) as <T>(
+function CustomBatchFormField<T>(
   props: React.ComponentProps<typeof BatchFormField<T>>,
-) => React.ReactNode;
+): React.ReactNode {
+  return (
+    <Box
+      sx={{
+        [`& .${textFieldClasses.root}`]: {
+          maxWidth: "264px",
+          [`& .${inputBaseClasses.root}`]: {
+            paddingRight: 0,
+          },
+        },
+      }}
+    >
+      <BatchFormField {...props} />
+    </Box>
+  );
+}
 
 function QuantityField<
   Fields extends {
@@ -126,18 +134,20 @@ function QuantityField<
               size="small"
               variant="outlined"
               error={error}
-              inputProps={{
-                min: 0,
-                step: 0.001,
-              }}
-              InputProps={{
-                endAdornment: (
-                  <UnitSelect
-                    categories={[quantityCategory]}
-                    value={quantityUnitId}
-                    handleChange={handleChangeQuantityUnit}
-                  />
-                ),
+              slotProps={{
+                htmlInput: {
+                  min: 0,
+                  step: 0.001,
+                },
+                input: {
+                  endAdornment: (
+                    <UnitSelect
+                      categories={[quantityCategory]}
+                      value={quantityUnitId}
+                      handleChange={handleChangeQuantityUnit}
+                    />
+                  ),
+                },
               }}
             />
           )}

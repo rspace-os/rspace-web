@@ -219,7 +219,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   }
 
   @Override
-  public ApiInstrument duplicateInstrument(
+  public ApiInstrument duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
     assertIsInventoryInstrumentEnabled();
     instrumentApiMgr.assertUserCanReadInstrument(id, user);
@@ -227,6 +227,15 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     ApiInstrument copy = instrumentApiMgr.duplicateInstrument(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
+  }
+
+  @Override
+  public ApiInstrument updateToLatestTemplateVersion(
+      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+    assertIsInventoryInstrumentEnabled();
+    ApiInstrument updated = instrumentApiMgr.updateInstrumentToLatestTemplateVersion(id, user);
+    buildAndAddInventoryRecordLinks(updated);
+    return updated;
   }
 
   @Override
@@ -252,9 +261,25 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
     instrumentApiMgr.assertUserCanReadInstrument(id, user);
     ApiInstrument instrument = inventoryAuditMgr.getApiInstrumentRevision(id, revisionId);
-    if (instrument != null) {
-      buildAndAddInventoryRecordLinks(instrument);
+    if (instrument == null) {
+      throw new NotFoundException(createNotFoundMessage("Instrument revision", revisionId));
     }
+    buildAndAddInventoryRecordLinks(instrument);
+    return instrument;
+  }
+
+  @Override
+  public ApiInstrument getInstrumentVersion(
+      @PathVariable Long id,
+      @PathVariable Long version,
+      @RequestAttribute(name = "user") User user) {
+    assertIsInventoryInstrumentEnabled();
+
+    ApiInstrument instrument = instrumentApiMgr.getApiInstrumentVersion(id, version, user);
+    if (instrument == null) {
+      throw new NotFoundException(createNotFoundMessage("Instrument version", version));
+    }
+    buildAndAddInventoryRecordLinks(instrument);
     return instrument;
   }
 
@@ -270,10 +295,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   public void validateCreateInstrumentInput(
       ApiInstrument apiInstrument, BindingResult errors, User user) throws BindException {
 
-    // TODO[nik]: implement this on RSDEV-1059, until that, it will be always null
-    // reinstate this: InstrumentTemplate instrumentTemplate =
-    //                                            verifyTemplate(apiInstrument, errors, user);
-    InstrumentTemplate instrumentTemplate = null;
+    InstrumentTemplate instrumentTemplate = verifyTemplate(apiInstrument, errors, user);
 
     // we validate the posted object. We can set errors on individual fields in this validator (
     // doesn't need template)
@@ -286,6 +308,24 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     inputValidator.validate(allData, instrumentApiPostFullValidator, errors);
     // this will collate all errors together.
     throwBindExceptionIfErrors(errors);
+  }
+
+  // ok for templateId to be null
+  private InstrumentTemplate verifyTemplate(
+      ApiInstrument apiInstrument, BindingResult errors, User user) throws BindException {
+    if (apiInstrument.getTemplateId() == null) {
+      return null;
+    }
+    try {
+      // Use the populated-fields variant so the returned template can be safely walked by
+      // downstream validators outside the manager's transaction (mirrors the sample-side pattern).
+      return instrumentApiMgr.assertUserCanReadInstrumentTemplateWithPopulatedFields(
+          apiInstrument.getTemplateId(), user);
+    } catch (NotFoundException e) {
+      errors.rejectValue("templateId", "", e.getMessage());
+      throwBindExceptionIfErrors(errors);
+    }
+    return null;
   }
 
   /* errors might already be populated with simple validation errors using javax.validation annotations

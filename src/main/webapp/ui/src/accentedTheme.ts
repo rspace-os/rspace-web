@@ -1,13 +1,12 @@
 import {
   createTheme,
-  PaletteOptions,
+  PaletteColorOptions,
   SimplePaletteColorOptions,
-} from "@mui/material";
-import { ThemeOptions } from "@mui/material/styles/createTheme";
-import { PaletteColorOptions } from "@mui/material/styles/createPalette";
+  Theme,
+  ThemeOptions,
+} from "@mui/material/styles";
 import baseTheme from "./theme";
-import { mergeThemes } from "./util/styles";
-import { darken, alpha, lighten, Theme } from "@mui/system";
+import { darken, alpha, lighten } from "@mui/system";
 import { toolbarClasses } from "@mui/material/Toolbar";
 import { typographyClasses } from "@mui/material/Typography";
 import { svgIconClasses } from "@mui/material/SvgIcon";
@@ -22,7 +21,7 @@ import { cardActionAreaClasses } from "@mui/material/CardActionArea";
 import { buttonClasses } from "@mui/material/Button";
 import { iconButtonClasses } from "@mui/material/IconButton";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
-import { gridClasses } from "@mui/x-data-grid";
+import { gridClasses, getDataGridUtilityClass } from "@mui/x-data-grid";
 import { alertTitleClasses } from "@mui/material/AlertTitle";
 import { chipClasses } from "@mui/material/Chip";
 import { formLabelClasses } from "@mui/material/FormLabel";
@@ -33,6 +32,8 @@ import { selectClasses } from "@mui/material/Select";
 import { checkboxClasses } from "@mui/material/Checkbox";
 import { radioClasses } from "@mui/material/Radio";
 import { buttonGroupClasses } from "@mui/material/ButtonGroup";
+import { touchRippleClasses } from "@mui/material/ButtonBase";
+import { treeItemClasses, getTreeItemUtilityClass } from "@mui/x-tree-view/TreeItem";
 
 /**
  * Represents an HSL color.
@@ -49,7 +50,7 @@ declare module "@mui/material/Button" {
     containedCallToAction: string;
   }
 }
-declare module "@mui/material/styles/components" {
+declare module "@mui/material/styles" {
   interface Components {
     MuiDataGrid?: {
       defaultProps?: {
@@ -217,7 +218,8 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
   const hoverDarkenCoefficient = 0.05;
 
   return createTheme(
-    mergeThemes(baseTheme, {
+    baseTheme as unknown as ThemeOptions,
+    {
       palette: {
         DataGrid: {
           bg: mainBackground,
@@ -236,7 +238,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
         standardIcon: {
           main: darken(interactiveColor, 0.5),
         } as PaletteColorOptions,
-      } as unknown as PaletteOptions,
+      } as unknown as ThemeOptions["palette"],
       borders: {
         card: accentedBorder,
         section: accentedBorder,
@@ -394,9 +396,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
         },
         MuiDialog: {
           defaultProps: {
-            TransitionProps: {
-              timeout: prefersReducedMotion ? 0 : 200,
-            },
+            transitionDuration: prefersReducedMotion ? 0 : 200,
           },
           styleOverrides: {
             paper: {
@@ -480,7 +480,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                     hoverDarkenCoefficient,
                   ),
                 },
-                "& .MuiTouchRipple-root": {
+                [`& .${touchRippleClasses.root}`]: {
                   color: accentedBackground,
                 },
                 [`& .${listItemIconClasses.root}`]: {
@@ -547,38 +547,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 borderColor: disabledColor,
               },
             },
-            containedCallToAction: {
-              border: "none",
-              paddingTop: baseTheme.spacing(0.5),
-              paddingBottom: baseTheme.spacing(0.5),
-              backgroundColor: prefersMoreContrast
-                ? "black"
-                : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
-                    .main,
-              color: prefersMoreContrast
-                ? "white"
-                : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
-                    .contrastText,
-              "&:hover": {
-                backgroundColor: prefersMoreContrast ? "black" : null,
-              },
-            },
-            containedPrimary: {
-              backgroundColor: accentedBackground,
-              color: contrastTextColor,
-              borderColor: accentedBackground,
-              "&:hover": {
-                borderColor: darken(mainAccentColor, hoverDarkenCoefficient),
-                backgroundColor: darken(
-                  mainAccentColor,
-                  hoverDarkenCoefficient,
-                ),
-              },
-              [`&.${buttonClasses.disabled}`]: {
-                backgroundColor: disabledColor,
-                borderColor: disabledColor,
-              },
-            },
             outlined: {
               color: linkButtonText,
               border: accentedBorder,
@@ -591,23 +559,86 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 borderColor: disabledColor,
               },
             },
-            outlinedPrimary: {
-              color: interactiveColor,
-              "&:hover": {
-                /*
-                 * we have to replicate specifying the border width here
-                 * because DataGrid doesn't just set the borderColor in its
-                 * :hover style so if we don't also set set the whole border
-                 * then our width gets unset
-                 */
-                border: accentedBorder,
+          },
+          variants: [
+            {
+              props: { variant: "contained", color: "callToAction" as "primary" },
+              style: {
+                border: "none",
+                paddingTop: baseTheme.spacing(0.5),
+                paddingBottom: baseTheme.spacing(0.5),
+                backgroundColor: prefersMoreContrast
+                  ? "black"
+                  : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                      .main,
+                color: prefersMoreContrast
+                  ? "white"
+                  : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                      .contrastText,
+                "&:hover": {
+                  backgroundColor: prefersMoreContrast
+                    ? "black"
+                    : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                        .main,
+                },
+                "&&": {
+                  color: prefersMoreContrast
+                    ? "white"
+                    : (baseTheme.palette.callToAction as SimplePaletteColorOptions)
+                        .contrastText,
+                  "@media (prefers-contrast: more), (forced-colors: active)": {
+                    backgroundColor: "black",
+                    color: "white",
+                    forcedColorAdjust: "none",
+                    "&:hover": {
+                      backgroundColor: "black",
+                    },
+                  },
+                },
               },
             },
-            outlinedError: {
-              color: baseTheme.palette.error.main,
-              borderColor: baseTheme.palette.error.main,
+            {
+              props: { variant: "contained", color: "primary" },
+              style: {
+                backgroundColor: accentedBackground,
+                color: contrastTextColor,
+                borderColor: accentedBackground,
+                "&:hover": {
+                  borderColor: darken(mainAccentColor, hoverDarkenCoefficient),
+                  backgroundColor: darken(
+                    mainAccentColor,
+                    hoverDarkenCoefficient,
+                  ),
+                },
+                [`&.${buttonClasses.disabled}`]: {
+                  backgroundColor: disabledColor,
+                  borderColor: disabledColor,
+                },
+              },
             },
-          },
+            {
+              props: { variant: "outlined", color: "primary" },
+              style: {
+                color: interactiveColor,
+                "&:hover": {
+                  /*
+                   * we have to replicate specifying the border width here
+                   * because DataGrid doesn't just set the borderColor in its
+                   * :hover style so if we don't also set set the whole border
+                   * then our width gets unset
+                   */
+                  border: accentedBorder,
+                },
+              },
+            },
+            {
+              props: { variant: "outlined", color: "error" },
+              style: {
+                color: baseTheme.palette.error.main,
+                borderColor: baseTheme.palette.error.main,
+              },
+            },
+          ],
         },
         MuiButtonGroup: {
           styleOverrides: {
@@ -779,7 +810,9 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 "&:hover": {
                   backgroundColor: `hsl(${accent.background.hue}deg, 40%, ${accent.background.lightness}%, 25%)`,
                 },
-                "&.Mui-selected": {
+                // DataGrid exposes no state-class constant; its own
+                // getDataGridUtilityClass resolves the global Mui-selected class.
+                [`&.${getDataGridUtilityClass("selected")}`]: {
                   backgroundColor: `hsl(${accent.main.hue}deg, ${accent.main.saturation}%, ${accent.main.lightness}%, 20%)`,
                 },
               },
@@ -804,7 +837,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                   ),
                 },
               },
-              [`& .${buttonClasses.outlinedPrimary}`]: {
+              [`& .${buttonClasses.outlined}.${buttonClasses.colorPrimary}`]: {
                 color: linkButtonText,
                 border: accentedBorder,
                 "&:hover": {
@@ -820,10 +853,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
               border: accentedBorder,
             },
             menu: {
-              "& .MuiPaper-root": {
+              [`& .${paperClasses.root}`]: {
                 boxShadow: "none",
               },
-              "& .MuiDataGrid-menuList": {
+              [`& .${gridClasses.menuList}`]: {
                 border: accentedBorder,
               },
             },
@@ -999,18 +1032,24 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
           },
         },
         MuiAlert: {
-          styleOverrides: {
-            standardInfo: {
-              [`& .${typographyClasses.root}`]: {
-                color: "hsl(206.47deg 53.13% 25.1%) !important",
+          variants: [
+            {
+              props: { variant: "standard", severity: "info" },
+              style: {
+                [`& .${typographyClasses.root}`]: {
+                  color: "hsl(206.47deg 53.13% 25.1%) !important",
+                },
               },
             },
-            standardSuccess: {
-              [`& .${typographyClasses.root}`]: {
-                color: "hsl(123deg 40% 19.61%) !important",
+            {
+              props: { variant: "standard", severity: "success" },
+              style: {
+                [`& .${typographyClasses.root}`]: {
+                  color: "hsl(123deg 40% 19.61%) !important",
+                },
               },
             },
-          },
+          ],
         },
         MuiAvatar: {
           styleOverrides: {
@@ -1074,20 +1113,22 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                   ? "transparent"
                   : darken(secondaryBackground, hoverDarkenCoefficient * 2),
               },
-              "&.Mui-selected": {
+              // Tree View exposes no state-class constants; its own
+              // getTreeItemUtilityClass resolves the global Mui-selected/Mui-focused classes.
+              [`&.${getTreeItemUtilityClass("selected")}`]: {
                 backgroundColor: accentedBackground,
-                "&.Mui-focused": {
+                [`&.${getTreeItemUtilityClass("focused")}`]: {
                   backgroundColor: prefersMoreContrast
                     ? accentedBackground
                     : darken(secondaryBackground, hoverDarkenCoefficient * 5),
                 },
-                "& .MuiTreeItem-label": {
+                [`& .${treeItemClasses.label}`]: {
                   color: contrastTextColor,
                   [`& .${typographyClasses.root}`]: {
                     color: contrastTextColor,
                   },
                 },
-                "& .MuiTreeItem-iconContainer": {
+                [`& .${treeItemClasses.iconContainer}`]: {
                   color: contrastTextColor,
                 },
                 "&:hover": {
@@ -1128,6 +1169,6 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
           },
         },
       },
-    }),
+    },
   );
 }

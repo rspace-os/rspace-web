@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
+import Chip, { chipClasses } from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
@@ -50,7 +50,7 @@ function createInventoryPickerSearch(): Search {
       selectionMode: "SINGLE",
       instantConfirm: false,
       requiredPermissions: ["UPDATE"],
-      alwaysFilteredOutReason: "The inventory item is already linked."
+      alwaysFilteredOutReason: "The inventory item is already linked.",
     },
   });
 }
@@ -151,27 +151,21 @@ const StoichiometryTableInventoryLinkCell = ({
     return (
       <Stack
         direction="row"
-        alignItems="center"
         spacing={0.5}
-        sx={{ height: "100%" }}
+        sx={{ alignItems: "center", height: "100%" }}
       >
         {/* Font Size for the icon is necessary as MUI overrides FA font-size */}
         <Chip
           size="small"
           variant="outlined"
           label="Link Deleted"
-          icon={
-            <FontAwesomeIcon
-              icon={faTrashAlt}
-              size="2xs"
-            />
-          }
+          icon={<FontAwesomeIcon icon={faTrashAlt} size="2xs" />}
           sx={(theme) => ({
             fontSize: theme.typography.caption.fontSize,
-            "& .MuiChip-label": {
+            [`& .${chipClasses.label}`]: {
               fontSize: "inherit",
             },
-            "& .MuiChip-icon": {
+            [`& .${chipClasses.icon}`]: {
               fontSize: "inherit",
             },
           })}
@@ -200,7 +194,11 @@ const StoichiometryTableInventoryLinkCell = ({
       showInsufficientStockWarning && !showStockDeductedIndicator;
 
     return (
-      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%' }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{ alignItems: "center", height: "100%" }}
+      >
         <RecordLink
           record={record}
           disableNavigationContext={true}
@@ -211,9 +209,7 @@ const StoichiometryTableInventoryLinkCell = ({
           <Tooltip title="Stock deducted">
             <Box
               component="span"
-              display="inline-flex"
-              alignItems="center"
-              gap={0.25}
+              sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}
             >
               <CheckCircleOutlineIcon
                 fontSize="small"
@@ -226,9 +222,7 @@ const StoichiometryTableInventoryLinkCell = ({
           <Tooltip title="Insufficient Stock">
             <Box
               component="span"
-              display="inline-flex"
-              alignItems="center"
-              gap={0.25}
+              sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}
             >
               <WarningAmberIcon
                 aria-label="Insufficient Stock"
@@ -284,6 +278,6 @@ const StoichiometryTableInventoryLinkCell = ({
       </Dialog>
     </>
   );
-}
+};
 
 export default observer(StoichiometryTableInventoryLinkCell);

@@ -8,7 +8,7 @@ const feature = test.extend<{
     "the move dialog is mounted": () => Promise<void>;
   };
   Then: {
-    "the API should be called with foldersOnly=true": () => void;
+    "the API should be called with foldersOnly=true": () => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -22,12 +22,14 @@ const feature = test.extend<{
   },
   Then: async ({ networkRequests }, use) => {
     await use({
-      "the API should be called with foldersOnly=true": () => {
-        expect(
-          networkRequests
-            .find((url) => url.searchParams.has("foldersOnly"))
-            ?.searchParams.get("foldersOnly")
-        ).toBe("true");
+      "the API should be called with foldersOnly=true": async () => {
+        await expect
+          .poll(() =>
+            networkRequests
+              .find((url) => /getUploadedFiles/.test(url.href))
+              ?.searchParams.get("foldersOnly"),
+          )
+          .toBe("true");
       },
     });
   },
@@ -108,8 +110,8 @@ feature.afterEach(({ networkRequests }) => {
 
 });
 test.describe("MoveDialog", () => {
-  feature("Should request only folders", async ({ Given, Then, page }) => {
+  feature("Should request only folders", async ({ Given, Then }) => {
     await Given["the move dialog is mounted"]();
-    Then["the API should be called with foldersOnly=true"]();
+    await Then["the API should be called with foldersOnly=true"]();
   });
 });

@@ -2,6 +2,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Menu from "@mui/material/Menu";
+import { paperClasses } from "@mui/material/Paper";
 import PubChemLogo from "../../assets/branding/pubchem/logo.svg";
 import { ACCENT_COLOR as PUBCHEM_ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { ACCENT_COLOR as GALLERY_COLOR } from "@/assets/branding/rspace/gallery";
@@ -35,9 +36,7 @@ import { filenameExceptExtension } from "@/util/files";
 import Result from "@/util/result";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
-
 const GalleryPicker = React.lazy(() => import("../../eln/gallery/picker"));
-
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
     onAddReagent: (
@@ -57,7 +56,6 @@ declare module "@mui/x-data-grid" {
     >;
   }
 }
-
 const StoichiometryTableToolbar = ({
   onAddReagent,
   onUpdateInventoryStock,
@@ -80,10 +78,13 @@ const StoichiometryTableToolbar = ({
   const inventoryUpdateDisabledTooltip = hasChanges
     ? "Save the stoichiometry table before updating inventory stock."
     : "";
-
   return (
     <>
-      <Toolbar style={{ width: "100%" }}>
+      <Toolbar
+        style={{
+          width: "100%",
+        }}
+      >
         {editable && (
           <>
             <Button
@@ -91,7 +92,9 @@ const StoichiometryTableToolbar = ({
               startIcon={<AddIcon />}
               onClick={(e) => setAddReagentMenuAnchorEl(e.currentTarget)}
               size="small"
-              sx={{ mr: 1 }}
+              sx={{
+                mr: 1,
+              }}
             >
               Add Chemical
             </Button>
@@ -100,7 +103,9 @@ const StoichiometryTableToolbar = ({
                 <Button
                   aria-label="Update Inventory Stock"
                   size="small"
-                  sx={{ mr: 1 }}
+                  sx={{
+                    mr: 1,
+                  }}
                   disabled={hasChanges}
                   onClick={() => {
                     setInventoryUpdateDialogOpen(true);
@@ -117,15 +122,17 @@ const StoichiometryTableToolbar = ({
               sx={
                 Boolean(addReagantMenuAnchorEl)
                   ? {
-                      "& .MuiPaper-root": {
+                      [`& .${paperClasses.root}`]: {
                         transform: "translate(0px, 4px) !important",
                       },
                     }
                   : {}
               }
-              MenuListProps={{
-                disablePadding: true,
-                "aria-label": "add chemical menu",
+              slotProps={{
+                list: {
+                  disablePadding: true,
+                  "aria-label": "add chemical menu",
+                },
               }}
             >
               <AccentMenuItem
@@ -145,7 +152,14 @@ const StoichiometryTableToolbar = ({
                 subheader="Import compound from Gallery"
                 backgroundColor={GALLERY_COLOR.main}
                 foregroundColor={GALLERY_COLOR.contrastText}
-                avatar={<FileIcon sx={{ width: "28px", height: "28px" }} />}
+                avatar={
+                  <FileIcon
+                    sx={{
+                      width: "28px",
+                      height: "28px",
+                    }}
+                  />
+                }
                 onClick={() => {
                   setGalleryDialogOpen(true);
                   setAddReagentMenuAnchorEl(null);
@@ -261,11 +275,12 @@ const StoichiometryTableToolbar = ({
             )}
           </>
         )}
-        <Box flexGrow={1}></Box>
-        <ColumnsPanelTrigger
-          aria-label="Columns"
-          size="small"
-        >
+        <Box
+          sx={{
+            flexGrow: 1,
+          }}
+        ></Box>
+        <ColumnsPanelTrigger aria-label="Columns" size="small">
           Columns
         </ColumnsPanelTrigger>
         <Button
@@ -306,5 +321,4 @@ const StoichiometryTableToolbar = ({
     </>
   );
 };
-
 export default StoichiometryTableToolbar;

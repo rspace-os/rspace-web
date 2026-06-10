@@ -9,7 +9,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import Typography from "@mui/material/Typography";
-import { makeStyles } from "tss-react/mui";
 import useStores from "../../../../stores/use-stores";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import Alert from "@mui/material/Alert";
@@ -17,42 +16,12 @@ import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import PrintContents, { PreviewPrintItem } from "./PrintContents";
 import { useReactToPrint } from "react-to-print";
 import docLinks from "../../../../assets/DocLinks";
-import clsx from "clsx";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import { useIsSingleColumnLayout } from "../../Layout/Layout2x1";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
-
-const useStyles = makeStyles()((theme) => ({
-  rowWrapper: {
-    display: "flex",
-    flexDirection: "row",
-    width: "100%",
-    justifyContent: "space-between",
-  },
-  columnWrapper: {
-    display: "flex",
-    flexDirection: "column-reverse",
-    alignItems: "center",
-    width: "100%",
-  },
-  fullWidth: { width: "100%" },
-  halfWidth: { width: "50%" },
-  previewWrapper: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    margin: theme.spacing(0.5),
-  },
-  centered: {
-    textAlign: "center",
-    marginBottom: theme.spacing(1),
-  },
-  topSpaced: { marginTop: theme.spacing(1) },
-  hidden: { display: "none" },
-}));
 
 export type PrinterType = "GENERIC" | "LABEL";
 export type PrintLayout = "BASIC" | "FULL";
@@ -85,12 +54,11 @@ export const PrintOptionsWrapper = ({
   setPrintOptions,
 }: OptionsWrapperArgs) => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
-  const { classes } = useStyles();
 
   return (
     <FormControl
       component="fieldset"
-      className={isSingleColumnLayout ? classes.fullWidth : classes.halfWidth}
+      sx={{ width: isSingleColumnLayout ? "100%" : "50%" }}
     >
       <Stack spacing={3}>
         <FormControl>
@@ -154,7 +122,7 @@ export const PrintOptionsWrapper = ({
             />
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
-            <Alert severity="info" className={classes.topSpaced}>
+            <Alert severity="info" sx={{ mt: 1 }}>
               The label shape should match the selected layout. Also, you might
               have problems when using Safari. Please check barcodes{" "}
               <a
@@ -217,7 +185,6 @@ function PrintDialog({
   printSize,
   closeMenu,
 }: PrintDialogArgs) {
-  const { classes } = useStyles();
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<HTMLDivElement>(null);
@@ -252,14 +219,6 @@ function PrintDialog({
     },
   });
 
-  const HelperText = () => (
-    <>
-      <Typography variant="body2" className={classes.centered}>
-        <strong>Preview Barcode Label Layout</strong>
-      </Typography>
-    </>
-  );
-
   return (
     <ContextDialog
       open={showPrintDialog}
@@ -270,21 +229,30 @@ function PrintDialog({
       <DialogTitle>Print Options</DialogTitle>
       <DialogContent>
         <Box
-          className={
-            isSingleColumnLayout ? classes.columnWrapper : classes.rowWrapper
-          }
+          sx={{
+            display: "flex",
+            flexDirection: isSingleColumnLayout ? "column-reverse" : "row",
+            alignItems: isSingleColumnLayout ? "center" : "stretch",
+            width: "100%",
+            justifyContent: "space-between",
+          }}
         >
           <PrintOptionsWrapper
             printOptions={printOptions}
             setPrintOptions={setPrintOptions}
           />
-          <div
-            className={clsx(
-              classes.previewWrapper,
-              isSingleColumnLayout ? classes.fullWidth : classes.halfWidth,
-            )}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              m: 0.5,
+              width: isSingleColumnLayout ? "100%" : "50%",
+            }}
           >
-            <HelperText />
+            <Typography variant="body2" sx={{ textAlign: "center", mb: 1 }}>
+              <strong>Preview Barcode Label Layout</strong>
+            </Typography>
             {/* we preview only one item, resulting from choice of print options */}
             <PreviewPrintItem
               index={0}
@@ -294,9 +262,9 @@ function PrintDialog({
               imageLinks={imageLinks}
               target="screen"
             />
-          </div>
+          </Box>
           {/* we need the whole component for ReactToPrint, but not visible here */}
-          <div className={classes.hidden}>
+          <Box sx={{ display: "none" }}>
             <PrintContents
               ref={componentToPrint}
               printOptions={printOptions}
@@ -308,7 +276,7 @@ function PrintDialog({
                   : "singlePrint"
               }
             />
-          </div>
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>

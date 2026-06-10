@@ -62,10 +62,10 @@ public class ApiInstrument extends ApiInstrumentEntity {
   @JsonProperty(value = "newTargetLocation", access = Access.WRITE_ONLY)
   private ApiTargetLocation newTargetLocation;
 
-  @JsonProperty(value = "parentContainers", access = Access.READ_ONLY)
+  @JsonProperty("parentContainers")
   private List<ApiContainerInfo> parentContainers = new ArrayList<>();
 
-  @JsonProperty(value = "parentLocation", access = Access.READ_ONLY)
+  @JsonProperty("parentLocation")
   private ApiContainerLocation parentLocation;
 
   @JsonProperty(value = "lastNonWorkbenchParent", access = Access.READ_ONLY)

@@ -116,7 +116,7 @@ export function HasLocationMixin<
       HasLocationUneditableFields {
       return {
         ...super.fieldValues,
-        location: this as InventoryRecord,
+        location: this,
       };
     }
 

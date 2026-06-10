@@ -355,6 +355,33 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
   }
 
   @Test
+  public void imageAndThumbnailReturn404WhenNotSet() throws Exception {
+    ApiSampleTemplate created = postValidSampleTemplate(createValidSampleTemplatePostNoFields());
+
+    mockMvc
+        .perform(
+            createBuilderForGet2(
+                API_VERSION.ONE,
+                apiKey,
+                "/sampleTemplates/{id}/image/{ts}",
+                () -> anyUser::getUsername,
+                created.getId(),
+                0L))
+        .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(
+            createBuilderForGet2(
+                API_VERSION.ONE,
+                apiKey,
+                "/sampleTemplates/{id}/thumbnail/{ts}",
+                () -> anyUser::getUsername,
+                created.getId(),
+                0L))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
   public void createUpdateSampleTemplateWithFields() throws Exception {
     ApiSampleTemplateSearchResult searchHits = listAllSampleTemplates();
     int initialCount = searchHits.getTotalHits().intValue();

@@ -13,9 +13,13 @@ export default function WarningBar(): React.ReactNode {
     <Grid
       container
       spacing={1}
-      justifyContent="flex-end"
-      alignItems="center"
-      sx={{ mt: 0.5, pr: 1, color: "warningRed" }}
+      sx={{
+        justifyContent: "flex-end",
+        alignItems: "center",
+        mt: 0.5,
+        pr: 1,
+        color: "warningRed",
+      }}
     >
       <WarningIcon />
       <Typography variant="caption">Unsaved changes</Typography>

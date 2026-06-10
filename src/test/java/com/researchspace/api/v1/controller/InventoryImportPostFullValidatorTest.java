@@ -2,8 +2,10 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportInstrumentsSettings;
 import com.researchspace.api.v1.controller.InventoryImportApiController.ApiInventoryImportSettingsPost;
 import com.researchspace.api.v1.controller.InventoryImportPostFullValidator.ApiInventoryImportPostFull;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
@@ -111,6 +113,48 @@ public class InventoryImportPostFullValidatorTest extends SpringTransactionalTes
     assertEquals(
         "errors.inventory.import.subSampleImportRequiresSamplesImport",
         e.getFieldError().getCode());
+  }
+
+  @Test
+  public void validateInstrumentImportSettings() {
+    ApiInventoryImportSettingsPost importSettings = new ApiInventoryImportSettingsPost();
+    ApiInventoryImportPostFull fullSettings = new ApiInventoryImportPostFull();
+    fullSettings.setImportSettings(importSettings);
+    fullSettings.setInstrumentsFile(dummyMultipartFile);
+
+    Map<String, String> fieldMappings = new HashMap<>();
+    fieldMappings.put("csvColumn1", "name");
+
+    // neither templateId nor templateInfo → error
+    ApiInventoryImportInstrumentsSettings instrSettings =
+        new ApiInventoryImportInstrumentsSettings();
+    instrSettings.setFieldMappings(fieldMappings);
+    importSettings.setInstrumentSettings(instrSettings);
+    Errors e = resetErrorsAndValidate(fullSettings);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("instrumentSettings.templateInfo", e.getFieldError().getField());
+    assertEquals("errors.inventory.import.templateInfo.empty", e.getFieldError().getCode());
+
+    // both templateId AND templateInfo → ambiguity error
+    instrSettings.setTemplateId(42L);
+    instrSettings.setTemplateInfo(new ApiInstrumentTemplatePost());
+    e = resetErrorsAndValidate(fullSettings);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("instrumentSettings.templateId", e.getFieldError().getField());
+    assertEquals(
+        "errors.inventory.import.instrument.templateId.and.templateInfo.conflict",
+        e.getFieldError().getCode());
+
+    // only templateId → valid
+    instrSettings.setTemplateInfo(null);
+    e = resetErrorsAndValidate(fullSettings);
+    assertEquals(0, e.getErrorCount());
+
+    // only templateInfo → valid
+    instrSettings.setTemplateId(null);
+    instrSettings.setTemplateInfo(new ApiInstrumentTemplatePost());
+    e = resetErrorsAndValidate(fullSettings);
+    assertEquals(0, e.getErrorCount());
   }
 
   private Errors resetErrorsAndValidate(ApiInventoryImportPostFull importSettingsFull) {

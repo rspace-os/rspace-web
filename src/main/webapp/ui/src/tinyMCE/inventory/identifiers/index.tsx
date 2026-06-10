@@ -170,7 +170,7 @@ class IdentifiersPlugin {
       while (true) {
         newProps = yield newProps;
         root.render(
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <Alerts>
                 <IdentifiersDialog

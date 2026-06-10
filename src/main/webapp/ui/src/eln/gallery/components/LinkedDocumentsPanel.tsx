@@ -35,14 +35,12 @@ export function LinkedDocumentsPanel({
         includeOutliers: true,
       });
     }, 10); // 10ms for react to re-render
-
   }, [linkedDocuments.documents]);
 
   return (
     <Box
       component="section"
-      sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px" }}
-      flexGrow={1}
+      sx={{ flexGrow: 1, mt: 0.5, "--DataGrid-overlayHeight": "40px" }}
     >
       <Typography variant="h4" component="h4">
         Linked Documents
@@ -70,7 +68,7 @@ export function LinkedDocumentsPanel({
                   }}
                 />
               ),
-            }
+            },
           ),
         ]}
         rows={linkedDocuments.documents}

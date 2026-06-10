@@ -10,6 +10,7 @@ import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.events.ListOfMaterialsCreationEvent;
 import com.researchspace.model.events.ListOfMaterialsDeleteEvent;
 import com.researchspace.model.events.ListOfMaterialsEditingEvent;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.StructuredDocument;
@@ -64,6 +65,57 @@ public class ListOfMaterialsAuditTrailTest {
     lom.getMaterials().get(0).setId(1L);
     lom.getMaterials().get(1).setId(2L);
     return lom;
+  }
+
+  @Test
+  public void lomCreateEventWithInstrumentIsLogged() {
+    ListOfMaterials lom = createTestLomWithSampleAndInstrument();
+    StructuredDocument anyDocument = TestFactory.createAnySD();
+
+    ListOfMaterialsCreationEvent event =
+        new ListOfMaterialsCreationEvent(lom, anyUser, anyDocument);
+    listener.listOfMaterialsCreated(event);
+    verify(auditTrail).notify(eventArgumentCaptor.capture());
+    assertEquals(
+        "Added List of Materials LM123. Added inventory items: SA11, IN42.",
+        eventArgumentCaptor.getValue().getDescription());
+
+    Mockito.verifyNoMoreInteractions(auditTrail);
+  }
+
+  private ListOfMaterials createTestLomWithSampleAndInstrument() {
+    Sample anySample = TestFactory.createBasicSampleOutsideContainer(anyUser);
+    anySample.setId(11L);
+    Instrument anyInstrument = new Instrument();
+    anyInstrument.setId(42L);
+    ListOfMaterials lom = new ListOfMaterials();
+    lom.setId(123L);
+    lom.addMaterial(anySample, null);
+    lom.addMaterial(anyInstrument, null);
+    lom.getMaterials().get(0).setId(1L);
+    lom.getMaterials().get(1).setId(2L);
+    return lom;
+  }
+
+  @Test
+  public void lomEditEventWithInstrumentIsLogged() {
+    ListOfMaterials editedLom = createTestLomWithSampleAndInstrument();
+    editedLom.getMaterials().remove(1); // edited state keeps only the sample
+    ListOfMaterials originalState = createTestLomWithSampleAndInstrument();
+    originalState.getMaterials().remove(0); // original state had only the instrument
+    StructuredDocument anyDocument = TestFactory.createAnySD();
+
+    ListOfMaterialsEditingEvent event =
+        new ListOfMaterialsEditingEvent(
+            editedLom, anyUser, anyDocument, originalState.getMaterials());
+    listener.listOfMaterialsEdited(event);
+    verify(auditTrail).notify(eventArgumentCaptor.capture());
+    assertEquals(
+        "Edited List of Materials LM123. Added inventory items: SA11. Removed inventory items:"
+            + " IN42.",
+        eventArgumentCaptor.getValue().getDescription());
+
+    Mockito.verifyNoMoreInteractions(auditTrail);
   }
 
   @Test

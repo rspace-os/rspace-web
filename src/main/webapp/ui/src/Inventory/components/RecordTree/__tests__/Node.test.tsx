@@ -42,14 +42,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
 vi.mock("../NavigateToNode", () => ({
   default: vi.fn(() => <div></div>),
 }));
-// vi.mock("../../../../theme", () => ({
-//   __esModule: true,
-//   default: materialTheme,
-//   globalStyles: () => ({
-//     greyOut: "MOCK_GREY_OUT_CLASS_NAME",
-//   }),
 
-// }));
 describe("Node", () => {
   describe("When the node in question is a container with contents, there should", () => {
     test("Be a button that navigates to the container's contents", () => {

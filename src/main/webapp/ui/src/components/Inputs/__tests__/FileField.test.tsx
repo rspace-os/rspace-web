@@ -41,5 +41,25 @@ describe("FileField", () => {
       );
     });
   });
+
+  test("renders input slot adornments passed through slotProps", () => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <FileField
+          onChange={() => {}}
+          accept="foo"
+          slotProps={{
+            input: {
+              startAdornment: <div>before</div>,
+              endAdornment: <div>after</div>,
+            },
+          }}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByText("before")).toBeInTheDocument();
+    expect(screen.getByText("after")).toBeInTheDocument();
+  });
 });
 

@@ -1,33 +1,24 @@
 "use strict";
-import React, { useEffect } from "react";
-import { makeStyles } from "tss-react/mui";
+/* global RS */
+import React, { useCallback, useEffect } from "react";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import axios from "@/common/axios";
 import LoadingCircular from "../../components/LoadingCircular";
 import Typography from "@mui/material/Typography";
+import PropTypes from "prop-types";
 
-const useStyles = makeStyles()((theme) => ({
-  settings: {
-    textAlign: "right",
-  },
-  fastaString: {
-    maxHeight: "calc(100vh - 300px)",
-    overflowY: "auto",
-    width: "auto",
-    fontFamily: "Courier New",
-  },
-}));
-
-export default function FastaView(props) {
-  const { classes } = useStyles();
+/**
+ * Displays the FASTA sequence for a SnapGene file and lets the user copy it.
+ */
+export default function FastaView({ id, setDisabled }) {
   const [loading, setLoading] = React.useState(true);
   const [sequence, setSequence] = React.useState("");
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     setLoading(true);
 
-    const url = `/molbiol/dna/fasta/${props.id}`;
+    const url = `/molbiol/dna/fasta/${id}`;
     axios
       .get(url)
       .then((response) => {
@@ -39,7 +30,7 @@ export default function FastaView(props) {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, [id]);
 
   const copyToClipboard = () => {
     const el = document.getElementById("copy-text"); // Create a <textarea> element
@@ -49,10 +40,9 @@ export default function FastaView(props) {
         : false; // Mark as false to know no selection existed before
     el.select(); // Select the <textarea> content
     try {
-      const successful = document.execCommand("copy");
-      const msg = successful ? "successful" : "unsuccessful";
+      document.execCommand("copy");
       RS.confirm("Copied to clipboard", "notice", 3000);
-    } catch (err) {
+    } catch {
       RS.confirm(
         "Couldn't copy to clipboard. Try again manually.",
         "warning",
@@ -69,17 +59,31 @@ export default function FastaView(props) {
 
   // immediately fetch the default enzyme table
   useEffect(() => {
-    fetchData();
-    props.setDisabled(true);
-  }, []);
+    setDisabled(true);
+    const timeoutId = window.setTimeout(() => {
+      fetchData();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [fetchData, setDisabled]);
 
   return (
     <>
-      <Grid item xs={8}>
+      <Grid size={8}>
         {loading && <LoadingCircular />}
         {!loading && (
           <>
-            <Typography gutterBottom className={classes.fastaString}>
+            <Typography
+              gutterBottom
+              sx={{
+                maxHeight: "calc(100vh - 300px)",
+                overflowY: "auto",
+                width: "auto",
+                fontFamily: "Courier New",
+              }}
+            >
               {sequence}
             </Typography>
 
@@ -92,7 +96,7 @@ export default function FastaView(props) {
           </>
         )}
       </Grid>
-      <Grid item xs={2} className={classes.settings}>
+      <Grid sx={{ textAlign: "right" }} size={2}>
         <Button
           onClick={copyToClipboard}
           color="primary"
@@ -105,3 +109,8 @@ export default function FastaView(props) {
     </>
   );
 }
+
+FastaView.propTypes = {
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  setDisabled: PropTypes.func.isRequired,
+};

@@ -55,7 +55,7 @@ const FieldSelectMenuItem = React.forwardRef<
         <ListItemText
           primary={label(field)}
           secondary={helpText}
-          style={{ marginTop: 2, marginBottom: 2 }}
+          sx={{ marginTop: "2px", marginBottom: "2px" }}
         />
       </MenuItem>
     );

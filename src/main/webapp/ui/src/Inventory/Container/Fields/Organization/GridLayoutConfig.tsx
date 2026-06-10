@@ -41,7 +41,11 @@ function GridLayoutConfig({
 
   return (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+      <Grid
+        size={{
+          xs: 12,
+          md: 6
+        }}>
         <FormControl label="Row Labels">
           <RadioField
             name="rowsLabelType"
@@ -51,7 +55,11 @@ function GridLayoutConfig({
           />
         </FormControl>
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid
+        size={{
+          xs: 12,
+          md: 6
+        }}>
         <FormControl label="Column Labels">
           <RadioField
             name="columnsLabelType"

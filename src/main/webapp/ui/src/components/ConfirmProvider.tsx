@@ -135,7 +135,7 @@ function ConfirmProvider({ children }: ConfirmProviderArgs): React.ReactNode {
         }}
       >
         <DialogTitle>{confirmState?.title ?? ""}</DialogTitle>
-        <DialogContent style={{ overscrollBehavior: "contain" }}>
+        <DialogContent sx={{ overscrollBehavior: "contain" }}>
           <DialogContentText>{confirmState?.message ?? ""}</DialogContentText>
         </DialogContent>
         <DialogActions>

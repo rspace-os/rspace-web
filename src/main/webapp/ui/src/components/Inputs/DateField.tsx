@@ -1,16 +1,17 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 import NoValue from "../../components/NoValue";
-import { isValidDate } from "../../util/Util";
-import TextField from "@mui/material/TextField";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { isValid, parse, parseISO } from "date-fns";
 import { enGB } from "date-fns/locale";
+
+const DATE_FORMAT = "yyyy-MM-dd";
 
 export type DateFieldArgs = {
   // required
-  value: string | null;
+  value: string | Date | null;
 
   // optional
   label?: React.ReactNode;
@@ -22,7 +23,7 @@ export type DateFieldArgs = {
   maxDate?: Date;
   disableFuture?: boolean;
   placeholder?: string;
-  datatestid?: string;
+  "data-test-id"?: string;
   variant?: "standard" | "outlined";
   id?: string;
 
@@ -45,12 +46,28 @@ function DateField({
   maxDate,
   disableFuture,
   placeholder,
-  datatestid,
+  "data-test-id": dataTestId,
   variant = "standard",
   disableWidthLimit = false,
   id,
 }: DateFieldArgs): React.ReactNode {
-  const error = !(!value || isValidDate(value));
+  const parsedValue = parseDateFieldValue(value);
+  const error = Boolean(value && !parsedValue);
+  const textFieldSlotProps = {
+    variant,
+    error,
+    helperText: error ? "Invalid date." : "",
+    style: {
+      maxWidth: disableWidthLimit ? "initial" : "10em",
+    },
+    id,
+    "data-test-id": dataTestId,
+    slotProps: {
+      htmlInput: {
+        placeholder,
+      },
+    },
+  };
 
   return disabled && !value ? (
     <NoValue label={noValueLabel ?? "None"} />
@@ -59,28 +76,14 @@ function DateField({
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
         <DatePicker
           label={label}
-          value={value}
+          value={parsedValue}
           onChange={(newValue) => {
             onChange?.({ target: { value: newValue } });
           }}
-          // @ts-expect-error It's not documents, but inputProps.placeholder does work
-          inputProps={{
-            placeholder: placeholder ?? "",
+          format={DATE_FORMAT}
+          slotProps={{
+            textField: textFieldSlotProps,
           }}
-          inputFormat="yyyy-MM-dd"
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              variant={variant}
-              error={error}
-              helperText={error ? "Invalid date." : ""}
-              style={{
-                maxWidth: disableWidthLimit ? "initial" : "10em",
-              }}
-              data-test-id={datatestid}
-              id={id}
-            />
-          )}
           disabled={disabled}
           minDate={minDate}
           maxDate={maxDate}
@@ -90,6 +93,28 @@ function DateField({
       {alert}
     </>
   );
+}
+
+function parseDateFieldValue(value: string | Date | null): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return isValid(value) ? value : null;
+  }
+
+  const parsedIsoDate = parseISO(value);
+  if (isValid(parsedIsoDate)) {
+    return parsedIsoDate;
+  }
+
+  const parsedDate = parse(value, DATE_FORMAT, new Date());
+  if (isValid(parsedDate)) {
+    return parsedDate;
+  }
+
+  return null;
 }
 
 export default observer(DateField);

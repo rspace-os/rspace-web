@@ -40,9 +40,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${netfilestores.export.enabled}")
   private String netFileStoresExportEnabled;
 
-  @Value("${offline.button.visible}")
-  private String offlineButtonVisible;
-
   @Value("${archive.folder.location}")
   private String exportFolderLocation;
 
@@ -479,14 +476,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   /* (non-Javadoc)
-   * @see com.researchspace.properties.IPropertyHolder#getOfflineButtonVisible()
-   */
-  @Override
-  public String getOfflineButtonVisible() {
-    return offlineButtonVisible;
-  }
-
-  /* (non-Javadoc)
    * @see com.researchspace.properties.IPropertyHolder#getNetFileStoresEnabled()
    */
   @Override
@@ -810,8 +799,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
         + userSignup
         + ", netFileStoresEnabled="
         + netFileStoresEnabled
-        + ", offlineButtonVisible="
-        + offlineButtonVisible
         + ", exportFolderLocation="
         + exportFolderLocation
         + ", standalone="

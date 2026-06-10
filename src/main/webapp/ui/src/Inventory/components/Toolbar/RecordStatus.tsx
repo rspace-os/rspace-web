@@ -1,34 +1,9 @@
 import React from "react";
-import { type State } from "../../../stores/definitions/InventoryRecord";
-import { match } from "../../../util/Util";
+import Box from "@mui/material/Box";
+import type { State } from "@/stores/definitions/InventoryRecord";
+import { match } from "@/util/Util";
 import { cyan } from "@mui/material/colors";
 import { useTheme } from "@mui/material/styles";
-import { makeStyles } from "tss-react/mui";
-
-const useStyles = makeStyles<{ color: string; belowContextMenu: boolean }>()(
-  (theme, { color, belowContextMenu }) => ({
-    box: {
-      height: theme.spacing(3),
-      top: belowContextMenu ? 40 : 0,
-      position: "sticky",
-      zIndex: 1000,
-      borderTop: `${theme.spacing(0.5)} solid ${color}`,
-      display: "flex",
-      justifyContent: "flex-end",
-    },
-    tab: {
-      backgroundColor: color,
-      right: theme.spacing(1),
-      color: "white",
-      padding: theme.spacing(0.5, 1.5),
-      borderBottomLeftRadius: theme.spacing(0.5),
-      borderBottomRightRadius: theme.spacing(0.5),
-      position: "absolute",
-      top: theme.spacing(-0.5),
-      fontWeight: 600,
-    },
-  })
-);
 
 type RecordStatusArgs = {
   recordState: State;
@@ -56,18 +31,38 @@ export default function RecordStatus({
     [() => deleted, theme.palette.deletedGrey],
     [() => true, "black"],
   ])();
-  const { classes } = useStyles({
-    color,
-    belowContextMenu: !areEditing && !areCreating,
-  });
+  const belowContextMenu = !areEditing && !areCreating;
 
   return areEditing || areCreating || deleted ? (
-    <div className={classes.box}>
-      <div className={classes.tab}>
+    <Box
+      sx={(muiTheme) => ({
+        height: muiTheme.spacing(3),
+        top: belowContextMenu ? 40 : 0,
+        position: "sticky",
+        zIndex: 1000,
+        borderTop: `${muiTheme.spacing(0.5)} solid ${color}`,
+        display: "flex",
+        justifyContent: "flex-end",
+      })}
+    >
+      <Box
+        sx={(muiTheme) => ({
+          backgroundColor: color,
+          right: muiTheme.spacing(1),
+          color: "white",
+          px: 1.5,
+          py: 0.5,
+          borderBottomLeftRadius: muiTheme.spacing(0.5),
+          borderBottomRightRadius: muiTheme.spacing(0.5),
+          position: "absolute",
+          top: muiTheme.spacing(-0.5),
+          fontWeight: 600,
+        })}
+      >
         {areEditing && "EDITING"}
         {areCreating && "CREATING"}
         {deleted && "IN TRASH"}
-      </div>
-    </div>
+      </Box>
+    </Box>
   ) : null;
 }

@@ -124,7 +124,7 @@ function FilesystemSelectionStep(props: {
   }, []);
 
   return (
-    <Step key="filesystemSelection" {...rest}>
+    <Step key="filesystemSelection" component="div" {...rest}>
       <StepLabel
         optional={
           <Typography variant="body2">
@@ -309,7 +309,7 @@ function FolderSelectionStep(props: {
   const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
 
   return (
-    <Step key="folderSelection" {...rest}>
+    <Step key="folderSelection" component="div" {...rest}>
       <StepLabel
         optional={
           <Typography variant="body2">
@@ -380,7 +380,7 @@ function NameStep(props: {
   const { onConfirm, onCancel, ...rest } = props;
   const [name, setName] = React.useState("");
   return (
-    <Step key="name" {...rest}>
+    <Step key="name" component="div" {...rest}>
       <StepLabel
         optional={
           <Typography variant="body2">
@@ -396,8 +396,10 @@ function NameStep(props: {
           onChange={({ target: { value } }) => {
             setName(value);
           }}
-          inputProps={{
-            "aria-label": "Filestore name",
+          slotProps={{
+            htmlInput: {
+              "aria-label": "Filestore name",
+            }
           }}
         />
         <Box sx={{ mb: 2 }}>
@@ -515,7 +517,7 @@ export default function AddFilestoreDialog({
       >
         <DialogTitle>Add a Filestore</DialogTitle>
         <DialogContent>
-          <Stepper activeStep={activeStep} orientation="vertical">
+          <Stepper activeStep={activeStep} component="div" orientation="vertical">
             <FilesystemSelectionStep
               selectedFilesystem={selectedFilesystem}
               setSelectedFilesystem={(fs) => {

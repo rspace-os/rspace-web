@@ -170,7 +170,7 @@ export function CallablePdfPreview({
                 <ZoomOutIcon />
               </IconButton>
             </ButtonGroup>
-            <Box flexGrow={1}></Box>
+            <Box sx={{ flexGrow: 1 }}></Box>
             <Button
               onClick={() => {
                 setPdfPreviewOpen(null);

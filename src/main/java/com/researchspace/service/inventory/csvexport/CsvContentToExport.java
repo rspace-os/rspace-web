@@ -18,10 +18,17 @@ public class CsvContentToExport {
   private String subSamples = "";
   private String sampleTemplates = "";
   private String instruments = "";
+  private String instrumentTemplates = "";
 
   public String getCombinedContent() {
     return Stream.of(
-            listsOfMaterials, containers, samples, subSamples, sampleTemplates, instruments)
+            listsOfMaterials,
+            containers,
+            samples,
+            subSamples,
+            sampleTemplates,
+            instruments,
+            instrumentTemplates)
         .filter(Objects::nonNull)
         .filter(Predicate.not(String::isBlank))
         .collect(Collectors.joining("\n"));
@@ -35,6 +42,7 @@ public class CsvContentToExport {
     result.put("subSamples", subSamples);
     result.put("sample_templates", sampleTemplates);
     result.put("instruments", instruments);
+    result.put("instrument_templates", instrumentTemplates);
     result.values().removeIf(String::isBlank);
     return result;
   }

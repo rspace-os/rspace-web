@@ -10,7 +10,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import TagListing from "../../components/Tags/TagListing";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import AddTag from "../../components/Tags/AddTag";
 import axios from "@/common/axios";
 import { type Tag, areSameTag } from "../../stores/definitions/Tag";
@@ -205,40 +205,36 @@ function TagDialog(): React.ReactNode {
         )}
       </DialogTitle>
       <DialogContent>
-        <Grid container direction="column" spacing={2}>
-          <Grid item>
-            <Typography variant="body2">
-              You can tag Documents, Notebooks, and Folders to categorise work
-              and make it more searchable. If you&apos;ve selected multiple
-              items, only shared tags are shown.{" "}
-              <a href={docLinks.tags} rel="noreferrer" target="_blank">
-                Read more about creating, importing, and using Tags here.
-              </a>{" "}
-            </Typography>
-          </Grid>
-          <Grid item>
-            <TagListing
-              tags={
-                savedTagsMap === null
-                  ? []
-                  : [
-                      ...commonTags.subtractWithEq(
-                        new RsSet(deletedTags),
-                        areSameTag,
-                      ),
-                      ...new RsSet(addedTags).subtractWithEq(
-                        new RsSet(deletedTags),
-                        areSameTag,
-                      ),
-                    ]
-              }
-              onDelete={(index, tag) => {
-                setDeletedTags([...deletedTags, tag]);
-                setAddedTags(addedTags.filter((aTag) => aTag !== tag));
-              }}
-              endAdornment={
-                <Grid item>
-                  <AddTag
+        <Stack spacing={2}>
+          <Typography variant="body2">
+            You can tag Documents, Notebooks, and Folders to categorise work
+            and make it more searchable. If you&apos;ve selected multiple
+            items, only shared tags are shown.{" "}
+            <a href={docLinks.tags} rel="noreferrer" target="_blank">
+              Read more about creating, importing, and using Tags here.
+            </a>{" "}
+          </Typography>
+          <TagListing
+            tags={
+              savedTagsMap === null
+                ? []
+                : [
+                    ...commonTags.subtractWithEq(
+                      new RsSet(deletedTags),
+                      areSameTag,
+                    ),
+                    ...new RsSet(addedTags).subtractWithEq(
+                      new RsSet(deletedTags),
+                      areSameTag,
+                    ),
+                  ]
+            }
+            onDelete={(index, tag) => {
+              setDeletedTags([...deletedTags, tag]);
+              setAddedTags(addedTags.filter((aTag) => aTag !== tag));
+            }}
+            endAdornment={
+              <AddTag
                     enforceOntologies={enforcedOntologies ?? undefined}
                     onSelection={(
                       tag:
@@ -294,11 +290,9 @@ function TagDialog(): React.ReactNode {
                       enforcedOntologies === null
                     }
                   />
-                </Grid>
-              }
-            />
-          </Grid>
-        </Grid>
+            }
+          />
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setSelectedIds(null)}>Cancel</Button>

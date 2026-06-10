@@ -97,7 +97,7 @@ export default function LoginStatus({
                     </TableCell>
                     <TableCell
                       align="right"
-                      style={
+                      sx={
                         fileStore.loggedAs === null
                           ? {
                               background: "#f44336",

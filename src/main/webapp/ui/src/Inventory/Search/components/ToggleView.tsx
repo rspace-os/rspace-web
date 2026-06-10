@@ -1,37 +1,29 @@
 import React from "react";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import DnsOutlinedIcon from "@mui/icons-material/DnsOutlined";
+import Box from "@mui/material/Box";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListOutlinedIcon from "@mui/icons-material/ListOutlined";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
-import { makeStyles } from "tss-react/mui";
+import StyledMenu from "@/components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import AppsOutlinedIcon from "@mui/icons-material/AppsOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DropdownButton from "../../../components/DropdownButton";
+import type { SxProps, Theme } from "@mui/material/styles";
 import {
   type SearchView,
   TYPE_LABEL,
-} from "../../../stores/definitions/Search";
+} from "@/stores/definitions/Search";
 
-const Icon = ({ type, className }: { type: SearchView; className?: string }) =>
+const Icon = ({ type, sx }: { type: SearchView; sx?: SxProps<Theme> }) =>
   ({
-    LIST: <ListOutlinedIcon className={className} />,
-    TREE: <AccountTreeOutlinedIcon className={className} />,
-    CARD: <DnsOutlinedIcon className={className} />,
-    GRID: <AppsOutlinedIcon className={className} />,
-    IMAGE: <ImageOutlinedIcon className={className} />,
+    LIST: <ListOutlinedIcon sx={sx} />,
+    TREE: <AccountTreeOutlinedIcon sx={sx} />,
+    CARD: <DnsOutlinedIcon sx={sx} />,
+    GRID: <AppsOutlinedIcon sx={sx} />,
+    IMAGE: <ImageOutlinedIcon sx={sx} />,
   })[type];
-
-const useStyles = makeStyles()((theme) => ({
-  container: {
-    alignSelf: "center",
-  },
-  icon: {
-    borderRadius: theme.spacing(1),
-    color: theme.palette.standardIcon.main,
-  },
-}));
 
 type ToggleViewArgs = {
   onChange: (newView: SearchView) => Promise<void>;
@@ -45,7 +37,6 @@ export default function ToggleView({
   views,
 }: ToggleViewArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-  const { classes } = useStyles();
 
   const handleClick = (event: { currentTarget: HTMLElement }) => {
     setAnchorEl(event.currentTarget);
@@ -61,9 +52,17 @@ export default function ToggleView({
   };
 
   return (
-    <div className={classes.container}>
+    <Box sx={{ alignSelf: "center" }}>
       <DropdownButton
-        name={<Icon type={currentView} className={classes.icon} />}
+        name={
+          <Icon
+            type={currentView}
+            sx={(theme) => ({
+              borderRadius: theme.spacing(1),
+              color: theme.palette.standardIcon.main,
+            })}
+          />
+        }
         onClick={handleClick}
         title="Change view"
       >
@@ -74,7 +73,7 @@ export default function ToggleView({
           onClose={handleClose}
         >
           {views.map((type, i) => (
-            <StyledMenuItem
+            <MenuItem
               key={i}
               onClick={() => setView(type)}
               selected={type === currentView}
@@ -84,10 +83,10 @@ export default function ToggleView({
                 <Icon type={type} />
               </ListItemIcon>
               <ListItemText primary={TYPE_LABEL[type]} />
-            </StyledMenuItem>
+            </MenuItem>
           ))}
         </StyledMenu>
       </DropdownButton>
-    </div>
+    </Box>
   );
 }

@@ -1,5 +1,4 @@
 import React from "react";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import BorderInnerIcon from "@mui/icons-material/BorderInner";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -7,36 +6,12 @@ import SearchContext from "../../../stores/contexts/Search";
 
 const DRAGGER_SIZE = 24;
 
-const useStyles = makeStyles()(() => ({
-  dragger: {
-    position: "absolute",
-    zIndex: "100000",
-    cursor: "crosshair",
-  },
-  selection: {
-    position: "absolute",
-    borderStyle: "dashed",
-    border: "1px solid grey",
-    backgroundColor: "rgba(0, 173, 239, 0.6)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "font-size 0.5s",
-    color: "rgb(255,255,255,0.7)",
-    webkitTouchCallout: "none" /* iOS Safari */,
-    webkitUserSelect: "none" /* Safari */,
-    userSelect: "none",
-    pointerEvents: "none",
-  },
-}));
-
 type DraggerArgs = {
   container: ContainerModel;
   parentRef: { current: HTMLElement | null };
 };
 
 function Dragger({ container, parentRef }: DraggerArgs): React.ReactNode {
-  const { classes } = useStyles();
   if (!container.locations)
     throw new Error("Locations of container must be known.");
   const locations = container.locations;
@@ -77,7 +52,7 @@ function Dragger({ container, parentRef }: DraggerArgs): React.ReactNode {
   return (
     <>
       <BorderInnerIcon
-        className={classes.dragger}
+        sx={{ position: "absolute", zIndex: "100000", cursor: "crosshair" }}
         style={{
           top: parent.offsetTop + container.selectionStart.y - DRAGGER_SIZE / 2,
           left:
@@ -88,7 +63,7 @@ function Dragger({ container, parentRef }: DraggerArgs): React.ReactNode {
         }}
       />
       <BorderInnerIcon
-        className={classes.dragger}
+        sx={{ position: "absolute", zIndex: "100000", cursor: "crosshair" }}
         style={{
           top: parent.offsetTop + container.selectionEnd.y - DRAGGER_SIZE / 2,
           left:
@@ -99,8 +74,20 @@ function Dragger({ container, parentRef }: DraggerArgs): React.ReactNode {
         }}
       />
       <div
-        className={classes.selection}
         style={{
+          position: "absolute",
+          borderStyle: "dashed",
+          border: "1px solid grey",
+          backgroundColor: "rgba(0, 173, 239, 0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "font-size 0.5s",
+          color: "rgb(255,255,255,0.7)",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          pointerEvents: "none",
           fontSize: Math.min(selectionHeight, selectionWidth) * 0.75,
           top:
             parent.offsetTop +

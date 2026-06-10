@@ -169,7 +169,9 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-335-remove-jove.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1062.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1063.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-dmp-assistant.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1111.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1136-remove-offline-work.xml"/>
 
 
   <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->

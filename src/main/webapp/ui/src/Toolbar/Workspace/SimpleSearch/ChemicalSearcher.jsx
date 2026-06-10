@@ -137,10 +137,11 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
       {
         headerName: "Preview",
         renderCell: (params) => (
-          <img
+          <Box
+            component="img"
             src={params.value}
             alt="Chemical Preview"
-            style={{ width: "150px", height: "150px", marginTop: "8px" }}
+            sx={{ width: "150px", height: "150px", marginTop: "8px" }}
           />
         ),
         sortable: false,
@@ -244,7 +245,9 @@ const ChemicalSearcher = ({ isOpen, onClose }) => {
         open={showSearchResults || loading || typeof errorMessage === "string"}
         fullWidth
         maxWidth="xl"
-        PaperProps={{ style: { maxHeight: "90vh", minHeight: "90vh" } }}
+        slotProps={{
+          paper: { style: { maxHeight: "90vh", minHeight: "90vh" } },
+        }}
       >
         <DialogTitle>Chemical Search</DialogTitle>
         <DialogContent>

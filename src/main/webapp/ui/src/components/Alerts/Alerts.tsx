@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import ToastMessage from "./ToastMessage";
 import React, { useMemo } from "react";
-import { makeStyles } from "tss-react/mui";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { preventEventBubbling } from "../../util/Util";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -9,25 +8,12 @@ import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 import { runInAction } from "mobx";
 import { DialogBoundary } from "../DialogBoundary";
 
-const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
-  (theme, { verySmallLayout }: { verySmallLayout: boolean }) => ({
-    snackbarsContainer: {
-      position: "fixed",
-      top: verySmallLayout ? 0 : theme.spacing(-2),
-      right: theme.spacing(1),
-      left: verySmallLayout ? theme.spacing(6.25) : "initial",
-      zIndex: 1400,
-    },
-  }),
-);
-
 type AlertsArgs = {
   children: React.ReactNode;
 };
 
 function Alerts({ children }: AlertsArgs): React.ReactNode {
   const { isViewportVerySmall } = useViewportDimensions();
-  const { classes } = useStyles({ verySmallLayout: isViewportVerySmall });
 
   // ordered from the top down
   const alerts: Array<Alert> = useLocalObservable(() => []);
@@ -60,7 +46,13 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
     <AlertContext.Provider value={contextValue}>
       <DialogBoundary>{children}</DialogBoundary>
       <Box
-        className={classes.snackbarsContainer}
+        sx={(theme) => ({
+          position: "fixed",
+          top: isViewportVerySmall ? 0 : theme.spacing(-2),
+          right: theme.spacing(1),
+          left: isViewportVerySmall ? theme.spacing(6.25) : "initial",
+          zIndex: 1400,
+        })}
         onClick={preventEventBubbling<React.MouseEvent<HTMLDivElement>>()}
         data-testid="Toasts"
         component="section"

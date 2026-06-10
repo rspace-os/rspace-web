@@ -1,4 +1,5 @@
 import { ChangeEvent, useContext, useEffect, useState } from "react";
+import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
@@ -106,14 +107,14 @@ export default function OAuthTable() {
   };
 
   return (
-    <div style={{ width: "690px", padding: "0px 15px" }}>
-      <div
+    <Box sx={{ width: "690px", padding: "0px 15px" }}>
+      <Box
         className="api-menu__header"
-        style={{ marginTop: "15px", display: "flex" }}
+        sx={{ marginTop: "15px", display: "flex" }}
       >
-        <div style={{ flexGrow: "1", lineHeight: "42px" }}>OAuth Apps</div>
+        <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>OAuth Apps</Box>
         <OAuthDialog addApp={(app: OAuthApp) => addApp(app)} />
-      </div>
+      </Box>
       <br />
       {fetchSuccess && (
         <>
@@ -155,6 +156,6 @@ export default function OAuthTable() {
       {!fetchSuccess && (
         <>There was a problem fetching your apps. Please, try again.</>
       )}
-    </div>
+    </Box>
   );
 }

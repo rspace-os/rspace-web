@@ -139,6 +139,8 @@ export type SampleAttrs = {
   sharingMode: SharingMode;
   sharedWith: Array<SharedWithGroup>;
   _links: Array<_LINK>;
+  version?: number | null;
+  historicalVersion?: boolean;
 };
 
 const DEFAULT_SAMPLE: SampleAttrs = {
@@ -1019,7 +1021,7 @@ export default class SampleModel
             );
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
-            this.subSamples[0] as SubSample,
+            this.subSamples[0],
           );
         },
       },

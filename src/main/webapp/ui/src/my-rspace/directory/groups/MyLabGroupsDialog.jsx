@@ -8,7 +8,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
-import styled from "@emotion/styled";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,19 +15,8 @@ import { faCaretLeft } from "@fortawesome/free-solid-svg-icons/faCaretLeft";
 import { faCaretRight } from "@fortawesome/free-solid-svg-icons/faCaretRight";
 import { faAngleDoubleLeft } from "@fortawesome/free-solid-svg-icons/faAngleDoubleLeft";
 import axios from "@/common/axios";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-
-const Actions = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0px 20px;
-
-  button {
-    width: 48px;
-  }
-`;
 
 const DEFAULT_STATE = {
   userList: [],
@@ -224,13 +212,6 @@ class MyLabGroupsDialog extends React.Component {
     }
   };
 
-  styles = {
-    toastSuccess: {
-      backgroundColor: "#4CAF50",
-      color: "white",
-    },
-  };
-
   render() {
     return (
       <div>
@@ -244,8 +225,8 @@ class MyLabGroupsDialog extends React.Component {
             {this.submitButtonTitle()} members
           </DialogTitle>
           <DialogContent>
-            <Grid container direction="row" alignItems="center">
-              <Grid item xs={5}>
+            <Grid container direction="row" sx={{ alignItems: "center" }}>
+              <Grid size={5}>
                 <UserList
                   searchUsers={this.searchUsers}
                   users={this.state.availableUsers}
@@ -254,9 +235,18 @@ class MyLabGroupsDialog extends React.Component {
                   listTitle="Available users"
                 />
               </Grid>
-              <Grid item xs={2}>
-                <Actions>
+              <Grid size={2}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0px 20px",
+                  }}
+                >
                   <IconButton
+                    sx={{ width: 48 }}
                     disabled={!this.state.selectedUsers.add.length}
                     onClick={this.addUsers}
                     data-test-id="button-add-selected"
@@ -264,6 +254,7 @@ class MyLabGroupsDialog extends React.Component {
                     <FontAwesomeIcon icon={faCaretRight} />
                   </IconButton>
                   <IconButton
+                    sx={{ width: 48 }}
                     disabled={!this.state.selectedUsers.remove.length}
                     onClick={this.removeUsers}
                     data-test-id="button-remove-selected"
@@ -271,15 +262,16 @@ class MyLabGroupsDialog extends React.Component {
                     <FontAwesomeIcon icon={faCaretLeft} />
                   </IconButton>
                   <IconButton
+                    sx={{ width: 48 }}
                     disabled={!this.state.chosenUsers.length}
                     onClick={this.resetUsers}
                     data-test-id="button-remove-all"
                   >
                     <FontAwesomeIcon icon={faAngleDoubleLeft} />
                   </IconButton>
-                </Actions>
+                </Box>
               </Grid>
-              <Grid item xs={5}>
+              <Grid size={5}>
                 <UserList
                   searchUsers={this.searchUsers}
                   users={this.state.chosenUsers}
@@ -320,7 +312,7 @@ class MyLabGroupsDialog extends React.Component {
           <SnackbarContent
             onClose={this.closeUsersAddedToast}
             message={this.state.usersAddedMsg}
-            style={this.styles.toastSuccess}
+            sx={{ backgroundColor: "#4CAF50", color: "white" }}
           />
         </Snackbar>
       </div>

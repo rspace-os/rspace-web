@@ -1,20 +1,13 @@
 import React from "react";
-import styled from "@emotion/styled";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
+import PropTypes from "prop-types";
 
-const SaveMenuWrapper = styled.div`
-  .save-button {
-    color: white;
-    font-size: 20px;
-    font-weight: normal;
-    border-color: white;
-    margin-right: 20px;
-  }
-`;
-
+/**
+ * Save menu for structured document editing.
+ */
 export default function CreateMenu(props) {
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -25,12 +18,19 @@ export default function CreateMenu(props) {
   }
 
   return (
-    <SaveMenuWrapper>
+    <>
       <Button
         data-test-id="notebook-save-btn"
         onClick={(e) => openMenu(e)}
         variant="outlined"
-        className="save-button editMode"
+        className="editMode"
+        sx={{
+          color: "white",
+          fontSize: 20,
+          fontWeight: "normal",
+          borderColor: "white",
+          marginRight: 5,
+        }}
       >
         Save
       </Button>
@@ -73,6 +73,10 @@ export default function CreateMenu(props) {
           </span>
         )}
       </Menu>
-    </SaveMenuWrapper>
+    </>
   );
 }
+
+CreateMenu.propTypes = {
+  canCopy: PropTypes.bool,
+};

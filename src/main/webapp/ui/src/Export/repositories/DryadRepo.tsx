@@ -57,8 +57,8 @@ export default function DryadRepo({
   authors,
 }: DryadRepoArgs): React.ReactNode {
   return (
-    <Grid container style={{ width: "100%" }}>
-      <Grid item xs={12}>
+    <Grid container sx={{ width: "100%" }}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
@@ -70,7 +70,7 @@ export default function DryadRepo({
           fullWidth
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
@@ -84,7 +84,7 @@ export default function DryadRepo({
           fullWidth
         />
       </Grid>
-      <Grid item xs={6}>
+      <Grid size={6}>
         <TextField
           error={submitAttempt && !inputValidations.subject}
           name="subject"
@@ -104,7 +104,7 @@ export default function DryadRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={6}>
+      <Grid size={6}>
         <TextField
           name="license"
           select
@@ -123,7 +123,7 @@ export default function DryadRepo({
           ))}
         </TextField>
       </Grid>
-      <Grid item xs={6}>
+      <Grid size={6}>
         {/* Granting Org */}
         <Autocomplete
           id="dryad-crossref-funders-autocomplete"

@@ -1,6 +1,7 @@
 import React from "react";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -28,7 +29,7 @@ export type PdfExportDetailsArgs = {
   exportDetails: PdfExportDetails;
   updateExportDetails: <T extends keyof PdfExportDetails>(
     key: T,
-    value: PdfExportDetails[T]
+    value: PdfExportDetails[T],
   ) => void;
 };
 
@@ -63,35 +64,32 @@ export default function PdfExport({
   updateExportDetails,
 }: PdfExportArgs): React.ReactNode {
   return (
-    <Grid container direction="column" spacing={2}>
-      <Grid item>
-        <TextField
-          variant="standard"
-          error={
-            validations.submitAttempt &&
-            !validations.inputValidations.exportName
-          }
-          id="name"
-          label="File name *"
-          helperText="Name your file"
-          value={exportName}
-          onChange={({ target: { value } }) =>
-            updateExportDetails("exportName", value)
-          }
-          margin="normal"
-          fullWidth
-          data-test-id="pdf-name"
-        />
-      </Grid>
-      <Grid item container>
-        <Grid item xs={5} mt={2}>
+    <Stack spacing={2}>
+      <TextField
+        variant="standard"
+        error={
+          validations.submitAttempt && !validations.inputValidations.exportName
+        }
+        id="name"
+        label="File name *"
+        helperText="Name your file"
+        value={exportName}
+        onChange={({ target: { value } }) =>
+          updateExportDetails("exportName", value)
+        }
+        margin="normal"
+        fullWidth
+        data-test-id="pdf-name"
+      />
+      <Grid container>
+        <Grid sx={{ mt: 2 }} size={5}>
           <InputLabel htmlFor="pageSize">Page format: </InputLabel>
           <Select
             variant="standard"
             fullWidth
             value={pageSize}
             onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value as PageSize)
+              updateExportDetails("pageSize", value)
             }
             inputProps={{ name: "pageSize", id: "pageSize" }}
             data-test-id="pdf-size"
@@ -119,15 +117,15 @@ export default function PdfExport({
             />
           )}
         </Grid>
-        <Grid item xs={2} mt={2}></Grid>
-        <Grid item xs={5} mt={2}>
+        <Grid sx={{ mt: 2 }} size={2}></Grid>
+        <Grid sx={{ mt: 2 }} size={5}>
           <InputLabel htmlFor="dateType">Date on page footer</InputLabel>
           <Select
             variant="standard"
             fullWidth
             value={dateType}
             onChange={({ target: { value } }) =>
-              updateExportDetails("dateType", value as "EXP" | "NEW" | "UPD")
+              updateExportDetails("dateType", value)
             }
             inputProps={{ name: "dateType", id: "dateType" }}
             data-test-id="date-type"
@@ -144,27 +142,27 @@ export default function PdfExport({
           </Select>
         </Grid>
       </Grid>
-      <Grid item container direction="column">
+      <Stack>
         {(Object.keys(checkboxes) as Array<keyof typeof checkboxes>).map(
           (k) => (
-            <Grid item key={k}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={rest[k]}
-                    onChange={({ target: { checked } }) =>
-                      updateExportDetails(k, checked)
-                    }
-                    color="primary"
-                    data-test-id={k}
-                  />
-                }
-                label={checkboxes[k]}
-              />
-            </Grid>
-          )
+            <FormControlLabel
+              key={k}
+              control={
+                <Switch
+                  checked={rest[k]}
+                  onChange={({ target: { checked } }) =>
+                    updateExportDetails(k, checked)
+                  }
+                  color="primary"
+                  data-test-id={k}
+                  slotProps={{ input: { role: "checkbox" } }}
+                />
+              }
+              label={checkboxes[k]}
+            />
+          ),
         )}
-      </Grid>
-    </Grid>
+      </Stack>
+    </Stack>
   );
 }

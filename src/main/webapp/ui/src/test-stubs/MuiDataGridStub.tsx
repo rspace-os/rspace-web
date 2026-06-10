@@ -1,4 +1,5 @@
 import React from "react";
+import MenuList from "@mui/material/MenuList";
 
 type GridId = string | number;
 
@@ -109,6 +110,29 @@ export const gridClasses = new Proxy(
   },
 ) as Record<string, string>;
 
+/*
+ * Mirrors MUI's generateUtilityClass: global state slots (e.g. "selected")
+ * resolve to the framework-wide `Mui-<slot>` class, everything else to
+ * `MuiDataGrid-<slot>`.
+ */
+const GLOBAL_STATE_SLOTS = new Set([
+  "active",
+  "checked",
+  "completed",
+  "disabled",
+  "error",
+  "expanded",
+  "focused",
+  "focusVisible",
+  "open",
+  "readOnly",
+  "required",
+  "selected",
+]);
+
+export const getDataGridUtilityClass = (slot: string): string =>
+  GLOBAL_STATE_SLOTS.has(slot) ? `Mui-${slot}` : `MuiDataGrid-${slot}`;
+
 export const GRID_CHECKBOX_SELECTION_COL_DEF = {
   field: "__checkbox__",
 };
@@ -126,7 +150,7 @@ export const useGridApiContext = () => {
       current: {
         exportDataAsCsv: () => {},
       },
-    } as React.MutableRefObject<{ exportDataAsCsv: () => void }>)
+    })
   );
 };
 
@@ -142,35 +166,33 @@ const ColumnsMenuContext = React.createContext<{
 
 export const GridToolbarColumnsButton = () => {
   const columnsMenu = React.useContext(ColumnsMenuContext);
-  const [open, setOpen] = React.useState(false);
 
+  // Stub renders the trigger and panel inline without an open/close toggle
+  // because the toolbar slot in real usage is re-created on each parent render,
+  // which would unmount any local state in jsdom tests.
   return (
     <div>
-      <button type="button" onClick={() => setOpen((current) => !current)}>
-        Select columns
-      </button>
-      {open ? (
-        <div role="menu">
-          <label>
-            <input type="checkbox" aria-label="Show/Hide All" defaultChecked />
-            Show/Hide All
+      <button type="button">Select columns</button>
+      <div role="menu">
+        <label>
+          <input type="checkbox" aria-label="Show/Hide All" defaultChecked />
+          Show/Hide All
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            aria-label="Checkbox selection"
+            defaultChecked
+          />
+          Checkbox selection
+        </label>
+        {(columnsMenu?.columns ?? []).map(({ label }) => (
+          <label key={label}>
+            <input type="checkbox" aria-label={label} defaultChecked />
+            {label}
           </label>
-          <label>
-            <input
-              type="checkbox"
-              aria-label="Checkbox selection"
-              defaultChecked
-            />
-            Checkbox selection
-          </label>
-          {(columnsMenu?.columns ?? []).map(({ label }) => (
-            <label key={label}>
-              <input type="checkbox" aria-label={label} defaultChecked />
-              {label}
-            </label>
-          ))}
-        </div>
-      ) : null}
+        ))}
+      </div>
     </div>
   );
 };
@@ -182,25 +204,13 @@ export const GridToolbarExportContainer = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [open, setOpen] = React.useState(false);
-
+  // Stub renders the trigger and menu items inline without an open/close toggle
+  // because the toolbar slot in real usage is re-created on each parent render,
+  // which would unmount any local state in jsdom tests.
   return (
     <div>
-      <button type="button" onClick={() => setOpen((current) => !current)}>
-        Export
-      </button>
-      {open ? (
-        <div role="menu">
-          {React.Children.map(children, (child) =>
-            React.isValidElement(child)
-              ? React.cloneElement(
-                  child as React.ReactElement<{ hideMenu?: () => void }>,
-                  { hideMenu: () => setOpen(false) },
-                )
-              : child,
-          )}
-        </div>
-      ) : null}
+      <button type="button">Export</button>
+      <MenuList>{children}</MenuList>
     </div>
   );
 };
@@ -229,7 +239,7 @@ export function DataGrid<Row>({
       current: {
         exportDataAsCsv: () => {},
       },
-    } as React.MutableRefObject<{ exportDataAsCsv: () => void }>);
+    });
 
   const selectedIds = toSelectedIds(rowSelectionModel);
   const effectiveColumnVisibility = {

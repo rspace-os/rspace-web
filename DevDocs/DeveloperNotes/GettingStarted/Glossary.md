@@ -129,11 +129,6 @@ defined with either a border or drop shadow. Popularised by [Google's Material d
 ([see Cards as they were originally designed in version 1 of Material design](https://m1.material.io/components/cards.html)),
 they have gone on to become a key part of the design language of modern Web development.
 
-### clsx
-
-[clsx](https://www.npmjs.com/package/clsx) is a utility library for constructing
-HTML class attributes with conditional logic.
-
 ### Code point
 
 A numerical value in the Unicode codespace that may or may not have an assigned

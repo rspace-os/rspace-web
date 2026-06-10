@@ -7,7 +7,7 @@ type AddButtonArgs = {
   onClick?: (event: React.MouseEvent) => void;
   title?: string;
   disabled?: boolean;
-  datatestid?: string;
+  "data-test-id"?: string;
   id?: string;
 };
 
@@ -15,7 +15,7 @@ const AddButton = ({
   onClick,
   title = "Add",
   disabled = false,
-  datatestid,
+  "data-test-id": dataTestId,
   id,
 }: AddButtonArgs): React.ReactNode => {
   return (
@@ -25,7 +25,7 @@ const AddButton = ({
         component="span" // why not leaving it a button, who knows ?
         disabled={disabled}
         onClick={onClick}
-        data-testid={datatestid}
+        data-test-id={dataTestId}
         aria-label={title}
         id={id}
       >

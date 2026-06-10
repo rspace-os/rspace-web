@@ -4,8 +4,7 @@ import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Grid from "@mui/material/Grid";
-import { withStyles } from "Styles";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
@@ -30,21 +29,27 @@ import { mapNullable } from "../../util/Util";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 
-const CustomDialog = withStyles<
-  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-    margin: fullScreen ? 0 : theme.spacing(2.625),
-    maxHeight: "unset",
-    minHeight: "unset",
-
-    // this is so that the heights of the dialog's content are constrained and scrollbars appear
-    // 24px margin above and below, 3px border above and below
-    height: fullScreen ? "100%" : "calc(100% - 48px)",
-  },
-}))(Dialog);
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            margin: fullScreen ? 0 : 2.625,
+            maxHeight: "unset",
+            minHeight: "unset",
+            // this is so that the heights of the dialog's content are constrained and scrollbars appear
+            // 24px margin above and below, 3px border above and below
+            height: fullScreen ? "100%" : "calc(100% - 48px)",
+          },
+        },
+      }}
+    />
+  );
+}
 
 export type Plan = {
   id: number;
@@ -151,7 +156,6 @@ function DMPDialogContent({
 
   useEffect(() => {
     void getDMPs("MINE");
-
   }, []);
 
   const handleImport = async () => {
@@ -207,18 +211,19 @@ function DMPDialogContent({
       />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
-        <Grid
-          container
-          direction="column"
+        <Stack
+          sx={{
+            flexWrap: "nowrap",
+            height: "calc(100% + 16px)",
+          }}
           spacing={2}
-          flexWrap="nowrap"
+
           /*
            * The height of 100% ensures that the table is scrollable
            * The extra 16px prevents excessive whitespace, more and we get double scrollbars
            */
-          height="calc(100% + 16px)"
         >
-          <Grid item>
+          <Box>
             <Typography variant="body2">
               Importing a DMP{" "}
               {mapNullable(
@@ -236,11 +241,13 @@ function DMPDialogContent({
               <Link href={docLinks.dmptool}>DMPTool integration docs</Link> for
               more.
             </Typography>
-          </Grid>
-          <Grid item>
-            <ScopeField getDMPs={getDMPs} />
-          </Grid>
-          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+          </Box>
+          <ScopeField
+            getDMPs={(scope) => {
+              void getDMPs(scope);
+            }}
+          />
+          <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<"title", Plan>("title", {
@@ -330,30 +337,26 @@ function DMPDialogContent({
                 }
               }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
-        <Grid container direction="row" spacing={1}>
-          <Grid item sx={{ ml: "auto" }}>
-            <Stack direction="row" spacing={1}>
-              <Button onClick={() => setOpen(false)} disabled={importing}>
-                {selectedPlan ? "Cancel" : "Close"}
-              </Button>
-              <ValidatingSubmitButton
-                onClick={() => {
-                  void handleImport();
-                }}
-                validationResult={
-                  !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-                }
-                loading={importing}
-              >
-                Import
-              </ValidatingSubmitButton>
-            </Stack>
-          </Grid>
-        </Grid>
+        <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+          <Button onClick={() => setOpen(false)} disabled={importing}>
+            {selectedPlan ? "Cancel" : "Close"}
+          </Button>
+          <ValidatingSubmitButton
+            onClick={() => {
+              void handleImport();
+            }}
+            validationResult={
+              !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
+            }
+            loading={importing}
+          >
+            Import
+          </ValidatingSubmitButton>
+        </Stack>
       </DialogActions>
     </>
   );

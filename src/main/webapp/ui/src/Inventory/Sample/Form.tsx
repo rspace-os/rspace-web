@@ -27,6 +27,7 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
+import HistoricalVersionAlert from "../components/HistoricalVersionAlert";
 import { type Person } from "../../stores/definitions/Person";
 import SubsampleDetails from "./Content/SubsampleDetails";
 import Typography from "@mui/material/Typography";
@@ -65,7 +66,7 @@ const OverviewSection = observer(
         )}
       </StepperPanel>
     );
-  }
+  },
 );
 
 const DetailsSection = observer(
@@ -111,7 +112,7 @@ const DetailsSection = observer(
         <Tags fieldOwner={activeResult} />
       </StepperPanel>
     );
-  }
+  },
 );
 
 const MoreFieldsSection = observer(
@@ -143,7 +144,7 @@ const MoreFieldsSection = observer(
         />
       </StepperPanel>
     );
-  }
+  },
 );
 
 function Form(): React.ReactNode {
@@ -157,6 +158,11 @@ function Form(): React.ReactNode {
 
   return (
     <Stepper
+      stickyAlert={
+        activeResult.historicalVersion ? (
+          <HistoricalVersionAlert record={activeResult} />
+        ) : null
+      }
       titleText={activeResult.name}
       resetScrollPosition={activeResult}
       factory={activeResult.factory}
@@ -222,7 +228,7 @@ function Form(): React.ReactNode {
               } ${capitaliseJustFirstChar(
                 activeResult.subSamples.length === 1
                   ? activeResult.subSampleAlias.alias
-                  : activeResult.subSampleAlias.plural
+                  : activeResult.subSampleAlias.plural,
               )}`}
               sectionName="subsamples"
               recordType="sample"

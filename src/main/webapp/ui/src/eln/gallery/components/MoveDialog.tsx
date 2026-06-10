@@ -73,7 +73,6 @@ const MoveDialog = observer(
 
     React.useEffect(() => {
       if (open) void refreshListingInsideDialog();
-
     }, [open]);
 
     const [topLevelLoading, setTopLevelLoading] = React.useState(false);
@@ -155,7 +154,7 @@ const MoveDialog = observer(
               loading={topLevelLoading}
               label="Make top-level"
             />
-            <Box flexGrow={1}></Box>
+            <Box sx={{ flexGrow: 1 }}></Box>
             <Button
               onClick={() => {
                 onClose();

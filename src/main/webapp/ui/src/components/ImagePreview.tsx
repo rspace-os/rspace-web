@@ -2,8 +2,8 @@ import React from "react";
 import "photoswipe/dist/photoswipe.css";
 import { Gallery, Item } from "react-photoswipe-gallery";
 import { type URL } from "../util/types";
-import { makeStyles } from "tss-react/mui";
 import { Global } from "@emotion/react";
+import Box from "@mui/material/Box";
 
 function escapeHtml(unsafe: string) {
   return unsafe
@@ -13,13 +13,6 @@ function escapeHtml(unsafe: string) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
-const useStyles = makeStyles()(() => ({
-  image: {
-    height: 0,
-    width: 0,
-  },
-}));
 
 /**
  * The dimensions of the image being previewed.
@@ -52,7 +45,6 @@ export default function ImagePreview({
   setSize,
   caption,
 }: ImagePreviewArgs): React.ReactNode {
-  const { classes } = useStyles();
   return (
     <>
       <Global
@@ -113,24 +105,23 @@ export default function ImagePreview({
           caption={(caption ?? []).map(escapeHtml).join("<br /><br />")}
         >
           {({ ref, open: openFn }) => {
-            const imgRef = React.useRef<HTMLImageElement>(null);
-
             return (
-              <img
-                className={classes.image}
+              <Box
+                component="img"
+                sx={{ height: 0, width: 0 }}
                 ref={(node) => {
-                  (
-                    imgRef as React.MutableRefObject<HTMLImageElement | null>
-                  ).current = node;
+                  const imageNode =
+                    node instanceof HTMLImageElement ? node : null;
                   if (typeof ref === "function") {
-                    ref(node);
+                    ref(imageNode);
                   }
                 }}
                 src={link}
-                onLoad={() => {
+                onLoad={(event: React.SyntheticEvent<HTMLImageElement>) => {
+                  const image = event.currentTarget;
                   setSize({
-                    width: imgRef.current?.naturalWidth ?? 100,
-                    height: imgRef.current?.naturalHeight ?? 100,
+                    width: image.naturalWidth || 100,
+                    height: image.naturalHeight || 100,
                   });
                   // for some unknown reason Safari needs 20ms break
                   setTimeout(openFn, 20);

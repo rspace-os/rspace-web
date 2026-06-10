@@ -44,7 +44,7 @@ window.fetch = vi.fn(() =>
     text: () => Promise.resolve(""),
   } as Response)
 
-) as Mock;
+);
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
     test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {

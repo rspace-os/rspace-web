@@ -1,13 +1,12 @@
 "use strict";
 import React from "react";
 import { Switch, Tooltip } from "@mui/material";
+import { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../../theme";
 import Button from "@mui/material/Button";
 import axios from "@/common/axios";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,19 +14,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
-
-const useStyles = makeStyles()(() => ({
-  loading: {
-    position: "absolute",
-    margin: "0 auto",
-  },
-}));
-
-const GreySwitch = withStyles({
-  switchBase: {
-    color: "#dddddd",
-  },
-})(Switch);
 
 function EnableAutoshareDialog({
   group,
@@ -38,7 +24,6 @@ function EnableAutoshareDialog({
   isSwitchDisabled,
   switchDisabledReason,
 }) {
-  const { classes } = useStyles();
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -107,12 +92,13 @@ function EnableAutoshareDialog({
       {isSwitch && (
         <Tooltip title={switchDisabledReason} aria-label={switchDisabledReason}>
           <div>
-            <GreySwitch
+            <Switch
+              sx={{ [`& .${switchClasses.switchBase}`]: { color: "#dddddd" } }}
               color="primary"
               checked={false}
               disabled={isSwitchDisabled}
               onChange={handleClickOpen}
-              inputProps={{ "aria-label": "Enable autosharing" }}
+              slotProps={{ input: { "aria-label": "Enable autosharing" } }}
             />
           </div>
         </Tooltip>
@@ -122,8 +108,9 @@ function EnableAutoshareDialog({
         <DialogContent>
           <DialogContentText>
             Autosharing work will ensure that all current and future documents
-            and notebooks for user <b>{username}</b> will be shared with group
-            <b> {group.groupDisplayName}</b> with the READ permission.
+            and notebooks for user <strong>{username}</strong> will be shared
+            with group
+            <strong> {group.groupDisplayName}</strong> with the READ permission.
             <br />
             <br />
             The EDIT permission can be granted or items can be unshared from the
@@ -144,7 +131,7 @@ function EnableAutoshareDialog({
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} style={{ color: "grey" }}>
+          <Button onClick={handleClose} sx={{ color: "grey" }}>
             Cancel
           </Button>
           <Button
@@ -154,7 +141,10 @@ function EnableAutoshareDialog({
           >
             Confirm
             {waiting && (
-              <CircularProgress size={20} className={classes.loading} />
+              <CircularProgress
+                size={20}
+                sx={{ position: "absolute", margin: "0 auto" }}
+              />
             )}
           </Button>
         </DialogActions>
@@ -163,13 +153,9 @@ function EnableAutoshareDialog({
   );
 }
 
-/*
- * This is necessary because as of MUI v5 useStyles cannot be used in the same
- * component as the root MuiThemeProvider
- */
 export default function WrappedEnableAutosharingDialog(props) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <EnableAutoshareDialog {...props} />
       </ThemeProvider>

@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Grid from "@mui/material/Grid";
-import { withStyles } from "Styles";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
@@ -27,24 +26,30 @@ import { DataGridColumn } from "../../util/table";
 import DOMPurify from "dompurify";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
-import {DswConfig} from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 
-const CustomDialog = withStyles<
-  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-    margin: fullScreen ? 0 : theme.spacing(2.625),
-    maxHeight: "unset",
-    minHeight: "unset",
-
-    // this is so that the heights of the dialog's content are constrained and scrollbars appear
-    // 24px margin above and below, 3px border above and below
-    height: fullScreen ? "100%" : "calc(100% - 48px)",
-  },
-}))(Dialog);
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            margin: fullScreen ? 0 : 2.625,
+            maxHeight: "unset",
+            minHeight: "unset",
+            // this is so that the heights of the dialog's content are constrained and scrollbars appear
+            // 24px margin above and below, 3px border above and below
+            height: fullScreen ? "100%" : "calc(100% - 48px)",
+          },
+        },
+      }}
+    />
+  );
+}
 
 export interface DswProject {
   createdAt: string;
@@ -65,7 +70,7 @@ export interface DswProjectWithOrigin extends DswProject {
 
 function DSWImportDialogContent({
   setOpen,
-    connection
+  connection,
 }: {
   setOpen: (open: boolean) => void;
   connection: DswConfig;
@@ -75,18 +80,17 @@ function DSWImportDialogContent({
   const { trackEvent } = React.useContext(AnalyticsContext);
 
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
-  const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
+  const [selectedPlan, setSelectedPlan] =
+    useState<DswProjectWithOrigin | null>();
 
   const [fetching, setFetching] = useState(false);
-  const fetchingId = useRef(0);
 
   const [importing, setImporting] = useState(false);
 
   const getDMPs = async () => {
     setFetching(true);
-    const thisId = fetchingId.current;
 
-    let allPlans : Array<DswProjectWithOrigin> = [];
+    let allPlans: Array<DswProjectWithOrigin> = [];
     try {
       const r = await axios.get<{
         success: true;
@@ -95,8 +99,7 @@ function DSWImportDialogContent({
       }>(`/apps/dsw/plans?serverAlias=${connection.DSW_ALIAS}`);
 
       if (r.data.success) {
-
-        Object.entries(r.data.data).map(([id, project]) => {
+        Object.entries(r.data.data).map(([, project]) => {
           let projectWithAlias: DswProjectWithOrigin = {
             createdAt: project.createdAt,
             description: project.description,
@@ -108,24 +111,25 @@ function DSWImportDialogContent({
             template: project.template,
             updatedAt: project.updatedAt,
             uuid: project.uuid,
-            visibility: project.visibility
+            visibility: project.visibility,
           };
           allPlans.push(projectWithAlias);
-        })
+        });
 
         setDMPs(allPlans);
-
       } else {
         setFetching(false);
-        let errorMsg = r.data && r.data.error && r.data.error.errorMessages ?
-            r.data.error.errorMessages[0] : null;
+        let errorMsg =
+          r.data && r.data.error && r.data.error.errorMessages
+            ? r.data.error.errorMessages[0]
+            : null;
         addAlert(
           mkAlert({
             title: "Unable to load projects.",
             message: (
               <>
                 {errorMsg}
-                <br/>
+                <br />
                 For more information{" "}
                 <a href={docLinks.dsw} rel="noreferrer">
                   visit our docs
@@ -169,7 +173,10 @@ function DSWImportDialogContent({
           .post<{
             success: true;
             error?: { errorMessages: string[] };
-          }>(`/apps/dsw/importPlan?serverAlias=${connection.DSW_ALIAS}&planUuid=${selectedPlan.uuid}`, {})
+          }>(
+            `/apps/dsw/importPlan?serverAlias=${connection.DSW_ALIAS}&planUuid=${selectedPlan.uuid}`,
+            {},
+          )
           .then((r) => {
             addAlert(
               mkAlert(
@@ -213,73 +220,85 @@ function DSWImportDialogContent({
       />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
-        <Grid
-          container
-          direction="column"
+        <Stack
+          sx={{
+            flexWrap: "nowrap",
+            height: "calc(100% + 16px)",
+          }}
           spacing={2}
-          flexWrap="nowrap"
+
           /*
            * The height of 100% ensures that the table is scrollable
            * The extra 16px prevents excessive whitespace, more and we get double scrollbars
            */
-          height="calc(100% + 16px)"
         >
-          <Grid item>
+          <Box>
             <Typography variant="body2">
-              Importing a project from <strong>{connection.DSW_ALIAS}</strong> will make
-              it available to view and reference as a DMP within RSpace.
+              Importing a project from <strong>{connection.DSW_ALIAS}</strong>{" "}
+              will make it available to view and reference as a DMP within
+              RSpace.
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://guide.ds-wizard.org/en/latest/">guide.ds-wizard.org/en/latest/</Link> and our{" "}
-              <Link href={docLinks.dsw}>DSW / FAIR Wizard integration docs</Link> for
-              more.
+              See{" "}
+              <Link href="https://guide.ds-wizard.org/en/latest/">
+			       https://guide.ds-wizard.org/en/latest
+			  </Link>{" "}
+              and our{" "}
+              <Link href={docLinks.dsw}>
+                DSW / FAIR Wizard integration docs
+              </Link>{" "}
+              for more.
             </Typography>
-          </Grid>
-          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+          </Box>
+          <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             <DataGridWithRadioSelection
               columns={[
-                DataGridColumn.newColumnWithFieldName<"name", DswProjectWithOrigin>("name", {
+                DataGridColumn.newColumnWithFieldName<
+                  "name",
+                  DswProjectWithOrigin
+                >("name", {
                   renderCell: (params: { row: DswProjectWithOrigin }) => {
-                    const sanitized = DOMPurify.sanitize(
-                        params.row.name,
-                    );
+                    const sanitized = DOMPurify.sanitize(params.row.name);
                     return (
-                        <span
-                            dangerouslySetInnerHTML={{
-                              __html: `${sanitized.substring(0, 200)} ${
-                                  sanitized.length > 200 ? "..." : ""
-                              }`,
-                            }}
-                        ></span>
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: `${sanitized.substring(0, 200)} ${
+                            sanitized.length > 200 ? "..." : ""
+                          }`,
+                        }}
+                      ></span>
                     );
                   },
                   headerName: "Name",
                   flex: 1,
                   sortable: true,
                 }),
-                DataGridColumn.newColumnWithFieldName<"description", DswProjectWithOrigin>(
+                DataGridColumn.newColumnWithFieldName<
                   "description",
-                  {
-                    renderCell: (params: { row: DswProjectWithOrigin }) => {
-                      const sanitized = DOMPurify.sanitize(
-                        params.row.description,
-                      );
-                      return (
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: `${sanitized.substring(0, 200)} ${
-                              sanitized.length > 200 ? "..." : ""
-                            }`,
-                          }}
-                        ></span>
-                      );
-                    },
-                    headerName: "Description",
-                    flex: 1,
-                    sortable: true,
+                  DswProjectWithOrigin
+                >("description", {
+                  renderCell: (params: { row: DswProjectWithOrigin }) => {
+                    const sanitized = DOMPurify.sanitize(
+                      params.row.description,
+                    );
+                    return (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: `${sanitized.substring(0, 200)} ${
+                            sanitized.length > 200 ? "..." : ""
+                          }`,
+                        }}
+                      ></span>
+                    );
                   },
-                ),
-                DataGridColumn.newColumnWithValueMapper<"createdAt", DswProjectWithOrigin>(
+                  headerName: "Description",
+                  flex: 1,
+                  sortable: true,
+                }),
+                DataGridColumn.newColumnWithValueMapper<
+                  "createdAt",
+                  DswProjectWithOrigin
+                >(
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
@@ -289,7 +308,10 @@ function DSWImportDialogContent({
                     sortable: true,
                   },
                 ),
-                DataGridColumn.newColumnWithValueMapper<"updatedAt", DswProjectWithOrigin>(
+                DataGridColumn.newColumnWithValueMapper<
+                  "updatedAt",
+                  DswProjectWithOrigin
+                >(
                   "updatedAt",
                   (updatedAt) => new Date(updatedAt).toLocaleString(),
                   {
@@ -333,30 +355,26 @@ function DSWImportDialogContent({
                 }
               }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
-        <Grid container direction="row" spacing={1}>
-          <Grid item sx={{ ml: "auto" }}>
-            <Stack direction="row" spacing={1}>
-              <Button onClick={() => setOpen(false)} disabled={importing}>
-                {selectedPlan ? "Cancel" : "Close"}
-              </Button>
-              <ValidatingSubmitButton
-                onClick={() => {
-                  void handleImport();
-                }}
-                validationResult={
-                  !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-                }
-                loading={importing}
-              >
-                Import
-              </ValidatingSubmitButton>
-            </Stack>
-          </Grid>
-        </Grid>
+        <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+          <Button onClick={() => setOpen(false)} disabled={importing}>
+            {selectedPlan ? "Cancel" : "Close"}
+          </Button>
+          <ValidatingSubmitButton
+            onClick={() => {
+              void handleImport();
+            }}
+            validationResult={
+              !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
+            }
+            loading={importing}
+          >
+            Import
+          </ValidatingSubmitButton>
+        </Stack>
       </DialogActions>
     </>
   );
@@ -376,7 +394,11 @@ type DSWImportDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DSWImportDialog({ open, setOpen, connection }: DSWImportDialogArgs): React.ReactNode {
+function DSWImportDialog({
+  open,
+  setOpen,
+  connection,
+}: DSWImportDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*

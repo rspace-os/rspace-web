@@ -10,6 +10,8 @@ import axios from "@/common/axios";
 import CreatableSelect from "react-select/creatable";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import EmailValidator from "email-validator";
 
 class createGroupStep2 extends React.Component {
@@ -121,22 +123,10 @@ class createGroupStep2 extends React.Component {
     this.props.changePI(this.state.radioOptions);
   }
 
-  styles = {
-    container: {
-      padding: "0 25px 10px 25px",
-    },
-    userSearchForm: {
-      width: "100%",
-    },
-    noteText: {
-      fontSize: "11px",
-    },
-  };
-
   render() {
     return (
-      <div style={this.styles.container}>
-        <StyledEngineProvider injectFirst>
+      <Box sx={{ padding: "0 25px 10px 25px" }}>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
             <h3>Select PI</h3>
             <RadioGroup
@@ -160,9 +150,13 @@ class createGroupStep2 extends React.Component {
                     Nominate a PI, make me Lab Admin, and supply users for
                     pending invitations.
                     <br />
-                    <i style={this.styles.noteText}>
+                    <Typography
+                      variant="inherit"
+                      component="em"
+                      sx={{ fontSize: "11px" }}
+                    >
                       Note: group wont be created until PI accepts invitation
-                    </i>
+                    </Typography>
                   </span>
                 }
               />
@@ -177,7 +171,7 @@ class createGroupStep2 extends React.Component {
                   data-test-id="createGroupChoosePI"
                   error
                   aria-describedby="email-error-text"
-                  style={this.styles.userSearchForm}
+                  sx={{ width: "100%" }}
                 >
                   <CreatableSelect
                     isClearable={true}
@@ -202,7 +196,7 @@ class createGroupStep2 extends React.Component {
             )}
           </ThemeProvider>
         </StyledEngineProvider>
-      </div>
+      </Box>
     );
   }
 }

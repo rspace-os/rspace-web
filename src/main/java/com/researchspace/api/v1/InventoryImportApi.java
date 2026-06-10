@@ -29,6 +29,7 @@ public interface InventoryImportApi {
    * @param samplesFile csv file with samples data
    * @param subSamplesFile csv file with subsamples data
    * @param containersFile csv file with containers data
+   * @param instrumentsFile csv file with instruments data
    * @param settings import settings
    * @param user current user
    * @return result object
@@ -38,6 +39,7 @@ public interface InventoryImportApi {
       MultipartFile containersFile,
       MultipartFile samplesFile,
       MultipartFile subSamplesFile,
+      MultipartFile instrumentsFile,
       ApiInventoryImportSettingsPost settings,
       User user)
       throws BindException;

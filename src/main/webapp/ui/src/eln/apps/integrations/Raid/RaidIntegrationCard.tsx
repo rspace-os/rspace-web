@@ -43,168 +43,174 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
     ...integrationState.credentials.authenticatedServers,
   ]);
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(
-    null
+    null,
   );
 
-  useBroadcastChannel<RaidConnectedMessage>(RAID_CONNECTION_CHANNEL, (e: MessageEvent<RaidConnectedMessage>) => {
-    if (!e.data || e.data.type !== "RAID_CONNECTED" || !e.data.alias) {
-      console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
-      return;
-    }
-
-    runInAction(() => {
-      const index =
-        authenticatedServers.findIndex(
-          (s) => s.alias === e.data.alias
-        );
-      if (index === -1) {
-        console.log(
-          "RaidIntegrationCard: Could not find server with alias",
-          e.data.alias,
-        );
+  useBroadcastChannel<RaidConnectedMessage>(
+    RAID_CONNECTION_CHANNEL,
+    (e: MessageEvent<RaidConnectedMessage>) => {
+      if (!e.data || e.data.type !== "RAID_CONNECTED" || !e.data.alias) {
+        console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
         return;
       }
 
-      authenticatedServers[index].authenticated = true;
+      runInAction(() => {
+        const index = authenticatedServers.findIndex(
+          (s) => s.alias === e.data.alias,
+        );
+        if (index === -1) {
+          console.log(
+            "RaidIntegrationCard: Could not find server with alias",
+            e.data.alias,
+          );
+          return;
+        }
 
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: `Successfully connected to ${e.data.alias} RAiD server.`,
-        })
-      );
-    });
-  });
+        authenticatedServers[index].authenticated = true;
+
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: `Successfully connected to ${e.data.alias} RAiD server.`,
+          }),
+        );
+      });
+    },
+  );
 
   const unauthenticatedServers =
     integrationState.credentials.configuredServers.filter(
-      ({ alias }) => !authenticatedServers.find((s) => s.alias === alias)
+      ({ alias }) => !authenticatedServers.find((s) => s.alias === alias),
     );
 
-  const handleDisconnect = (alias: string): FormEventHandler => async (event) => {
-    event.preventDefault();
-    try {
-      const response = await fetch(`/apps/raid/connect/${alias}`, {
+  const handleDisconnect =
+    (alias: string): FormEventHandler =>
+    async (event) => {
+      event.preventDefault();
+      try {
+        const response = await fetch(`/apps/raid/connect/${alias}`, {
           method: "DELETE",
           headers: {
             "X-Requested-With": "XMLHttpRequest",
-          }
-      })
-      if (!response.ok) {
+          },
+        });
+        if (!response.ok) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: `Could not disconnect ${alias} RAiD connection`,
+              message: `Server responded with status ${response.status}: ${response.statusText}`,
+            }),
+          );
+
+          return;
+        }
+        runInAction(() => {
+          const index = authenticatedServers.findIndex(
+            (s) => s.alias === alias,
+          );
+          authenticatedServers[index].authenticated = false;
+        });
+        addAlert(
+          mkAlert({
+            variant: "success",
+            message: "Successfully disconnected.",
+          }),
+        );
+      } catch (e) {
         addAlert(
           mkAlert({
             variant: "error",
             title: `Could not disconnect ${alias} RAiD connection`,
-            message: `Server responded with status ${response.status}: ${response.statusText}`,
+            message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
         );
-
-        return;
       }
-      runInAction(() => {
-        const index =
-          authenticatedServers.findIndex(
-            (s) => s.alias === alias
-          );
-        authenticatedServers[index].authenticated = false;
-      });
-      addAlert(
-        mkAlert({
-          variant: "success",
-          message: "Successfully disconnected.",
-        })
-      );
-    } catch (e) {
-      addAlert(
-        mkAlert({
-          variant: "error",
-          title: `Could not disconnect ${alias} RAiD connection`,
-          message: e instanceof Error ? e.message : JSON.stringify(e),
-        }),
-      );
-    }
-  }
+    };
 
-  const handleDeleteConnection = (optionsId: string, alias: string): FormEventHandler => async (event) => {
-    event.preventDefault();
-    try {
-      await deleteAppOptions("RAID", optionsId);
-      runInAction(() => {
-        const index =
-            authenticatedServers.findIndex(
-                (s) => s.alias === alias
-            );
-        authenticatedServers.splice(
-            index,
-            1
-        );
-      });
-      addAlert(
+  const handleDeleteConnection =
+    (optionsId: string, alias: string): FormEventHandler =>
+    async (event) => {
+      event.preventDefault();
+      try {
+        await deleteAppOptions("RAID", optionsId);
+        runInAction(() => {
+          const index = authenticatedServers.findIndex(
+            (s) => s.alias === alias,
+          );
+          authenticatedServers.splice(index, 1);
+        });
+        addAlert(
           mkAlert({
             variant: "success",
             message: "Successfully deleted connection.",
-          })
-      );
-    } catch (e) {
-      addAlert(
+          }),
+        );
+      } catch (e) {
+        addAlert(
           mkAlert({
             variant: "error",
             title: `Could not disconnect ${alias} RAiD connection.`,
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
-      );
-    }
-  }
+        );
+      }
+    };
 
-  const handleAddServer = (alias: string, url: string): MouseEventHandler => async () => {
-    try {
-      const newConfigs = await saveAppOptions("RAID", Optional.empty(), {
-        RAID_ALIAS: alias,
-        RAID_URL: url,
-        RAID_OAUTH_CONNECTED: false,
-      })
-      setAddMenuAnchorEl(null);
-      const optionIdsOfExistingServers = new RsSet(
-          authenticatedServers.map(
-              ({ optionsId }) => optionsId
-          )
-      );
-      const optionIdsOfNewServers = new RsSet(
-          newConfigs.credentials.authenticatedServers.map(
-              ({ optionsId }) => optionsId
-          )
-      );
-      const newOptionId = optionIdsOfNewServers.subtract(
-          optionIdsOfExistingServers
-      ).first;
-      runInAction(() => {
-        authenticatedServers.push({
-          alias,
-          url,
-          authenticated: false,
-          optionsId: newOptionId,
+  const handleAddServer =
+    (alias: string, url: string): MouseEventHandler =>
+    async () => {
+      try {
+        const newConfigs = await saveAppOptions("RAID", Optional.empty(), {
+          RAID_ALIAS: alias,
+          RAID_URL: url,
+          RAID_OAUTH_CONNECTED: false,
         });
-      });
-      addAlert(
-        mkAlert({
+        setAddMenuAnchorEl(null);
+        const optionIdsOfExistingServers = new RsSet(
+          authenticatedServers.map(({ optionsId }) => optionsId),
+        );
+        const optionIdsOfNewServers = new RsSet(
+          newConfigs.credentials.authenticatedServers.map(
+            ({ optionsId }) => optionsId,
+          ),
+        );
+        const newOptionId = optionIdsOfNewServers.subtract(
+          optionIdsOfExistingServers,
+        ).first;
+        runInAction(() => {
+          authenticatedServers.push({
+            alias,
+            url,
+            authenticated: false,
+            optionsId: newOptionId,
+          });
+        });
+        addAlert(
+          mkAlert({
             variant: "success",
-            message:
-                "Successfully added new RAiD server.",
-        })
-      );
-    } catch (e) {
-      addAlert(
+            message: "Successfully added new RAiD server.",
+          }),
+        );
+      } catch (e) {
+        addAlert(
           mkAlert({
             variant: "error",
             title: `Could not add ${alias} as a new RAiD connection.`,
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
-      );
-    }
-  }
+        );
+      }
+    };
 
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="RAiD"
         integrationState={integrationState}
@@ -217,27 +223,60 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         docLink="raid"
         setupSection={
           <>
-            <Typography variant="body1">Configure your RAiD service point to enable authentication and project association:</Typography>
+            <Typography variant="body1">
+              Configure your RAiD service point to enable authentication and
+              project association:
+            </Typography>
             <ol>
-              <li>Ask your system administrator to set up RAiD server connections. See <Link href="https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration">our documentation for system administrators</Link> for more information.</li>
-              <li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li>
-              <li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li>
+              <li>
+                Ask your system administrator to set up RAiD server connections.
+                See{" "}
+                <Link href="https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration">
+                  our documentation for system administrators
+                </Link>{" "}
+                for more information.
+              </li>
+              <li>
+                Click the <strong>Add</strong> button below and select the RAiD
+                server you would like to connect to.
+              </li>
+              <li>
+                Once the server shows up in the server list, click on the{" "}
+                <strong>Connect</strong> button and log in with your RAiD
+                credentials.
+              </li>
               <li>Start associating RAiDs with your project groups.</li>
             </ol>
-            <Typography variant="body1">Multiple service points can be added to support different RAiD registries. Each project group owner can authenticate and manage their own RAiD associations.</Typography>
+            <Typography variant="body1">
+              Multiple service points can be added to support different RAiD
+              registries. Each project group owner can authenticate and manage
+              their own RAiD associations.
+            </Typography>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
-                <Stack gap={2}>
+                <Stack sx={{ gap: 2 }}>
                   {authenticatedServers.length === 0 && (
                     <Typography variant="body2">
                       No authenticated servers.
                     </Typography>
                   )}
                   {authenticatedServers.map((server) => (
-                    <Stack direction="row" spacing={1} key={server.alias} justifyItems="center">
-                      <Stack direction="column" flexGrow={1} gap={1}>
-                        <Typography variant="body1" sx={{ fontWeight: "bold", lineHeight: 1 }}>{server.alias}</Typography>
-                        <Typography variant="caption" sx={{ lineHeight: 1 }}><Link href={server.url}>{server.url}</Link></Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      key={server.alias}
+                      sx={{ justifyItems: "center" }}
+                    >
+                      <Stack direction="column" sx={{ flexGrow: 1, gap: 1 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: "bold", lineHeight: 1 }}
+                        >
+                          {server.alias}
+                        </Typography>
+                        <Typography variant="caption" sx={{ lineHeight: 1 }}>
+                          <Link href={server.url}>{server.url}</Link>
+                        </Typography>
                       </Stack>
                       {!server.authenticated ? (
                         <form
@@ -246,9 +285,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                           target="_blank"
                           rel="opener"
                         >
-                          <Button type="submit">
-                            Connect
-                          </Button>
+                          <Button type="submit">Connect</Button>
                         </form>
                       ) : (
                         <form
@@ -258,15 +295,16 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                           target="_blank"
                           rel="opener"
                         >
-                          <Button type="submit">
-                            Disconnect
-                          </Button>
+                          <Button type="submit">Disconnect</Button>
                         </form>
                       )}
-                      <form onSubmit={handleDeleteConnection(server.optionsId, server.alias)}>
-                        <Button type="submit">
-                          Delete
-                        </Button>
+                      <form
+                        onSubmit={handleDeleteConnection(
+                          server.optionsId,
+                          server.alias,
+                        )}
+                      >
+                        <Button type="submit">Delete</Button>
                       </form>
                     </Stack>
                   ))}
@@ -287,9 +325,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                   onClose={() => setAddMenuAnchorEl(null)}
                 >
                   {unauthenticatedServers.map(({ alias, url }) => (
-                    <MenuItem
-                      key={alias}
-                      onClick={handleAddServer(alias, url)}>
+                    <MenuItem key={alias} onClick={handleAddServer(alias, url)}>
                       <ListItemText primary={alias} secondary={url} />
                     </MenuItem>
                   ))}
@@ -307,7 +343,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
       />
     </Grid>
   );
-}
+};
 
 /**
  * The card and dialog for configuring the RAiD integration

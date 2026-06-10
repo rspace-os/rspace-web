@@ -71,11 +71,17 @@ public interface InstrumentsApi {
 
   @PostMapping("/{id}/actions/duplicate")
   @ResponseStatus(HttpStatus.CREATED)
-  ApiInstrument duplicateInstrument(Long id, User user);
+  ApiInstrument duplicate(Long id, User user);
+
+  @PostMapping("/{id}/actions/updateToLatestTemplateVersion")
+  ApiInstrument updateToLatestTemplateVersion(Long id, User user);
 
   @GetMapping(value = "/{id}/revisions")
   ApiInventoryRecordRevisionList getInstrumentAllRevisions(Long id, User user);
 
   @GetMapping(value = "/{id}/revisions/{revisionId}")
   ApiInstrument getInstrumentRevision(Long id, Long revisionId, User user);
+
+  @GetMapping(value = "/{id}/versions/{version}")
+  ApiInstrument getInstrumentVersion(Long id, Long version, User user);
 }

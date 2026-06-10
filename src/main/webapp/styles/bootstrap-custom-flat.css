@@ -1081,12 +1081,12 @@
   line-height: inherit;
 }
 .bootstrap-custom-flat a {
-  color: #2196f3;
+  color: #1465b7;
   text-decoration: none;
 }
 .bootstrap-custom-flat a:focus,
 .bootstrap-custom-flat a:hover {
-  color: #0a6ebd;
+  color: #0f4c89;
   text-decoration: underline;
 }
 .bootstrap-custom-flat a:focus {
@@ -4608,7 +4608,7 @@
   padding: 6px 16px;
   line-height: 1.846;
   text-decoration: none;
-  color: #2196f3;
+  color: #1465b7;
   background-color: #fff;
   border: 1px solid #ddd;
   margin-left: -1px;
@@ -4640,7 +4640,7 @@
 .bootstrap-custom-flat .pagination > li > span:focus,
 .bootstrap-custom-flat .pagination > li > span:hover {
   z-index: 3;
-  color: #0a6ebd;
+  color: #0f4c89;
   background-color: #eee;
   border-color: #ddd;
 }

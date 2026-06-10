@@ -71,6 +71,7 @@
         <div id="clustermarket.available.description"><spring:message code="system.property.description.clustermarket.available" /></div>
         <div id="omero.available.description"><spring:message code="system.property.description.omero.available" /></div>
         <div id="dryad.available.description"><spring:message code="system.property.description.dryad.available" /></div>
+        <div id="dmpassistant.available.description"><spring:message code="system.property.description.dmpassistant.available" /></div>
         <div id="dmponline.available.description"><spring:message code="system.property.description.dmponline.available" /></div>
         <div id="dmptool.available.description"><spring:message code="system.property.description.dmptool.available" /></div>
         <div id="dsw.available.description"><spring:message code="system.property.description.dsw.available" /></div>

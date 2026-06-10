@@ -7,7 +7,7 @@ import {
 } from "@mui/material/styles";
 import { type ThemeOptions } from "@mui/material";
 import "@mui/x-data-grid/themeAugmentation";
-import { mergeThemes } from "@/util/styles";
+import { gridClasses } from "@mui/x-data-grid";
 
 export const STOICHIOMETRY_TABLE_CLASS = "stoichiometry-table";
 
@@ -29,7 +29,8 @@ export function createStoichiometryTheme(baseTheme: unknown) {
   );
 
   return createTheme(
-    mergeThemes(baseTheme as ThemeOptions, {
+    baseTheme as ThemeOptions,
+    {
       palette: {
         DataGrid: {
           bg: tableBackground,
@@ -39,22 +40,31 @@ export function createStoichiometryTheme(baseTheme: unknown) {
       } as unknown as ThemeOptions["palette"],
       components: {
         MuiButton: {
-          styleOverrides: {
-            containedPrimary: {
+          variants: [
+            {
+              props: { variant: "contained", color: "primary" },
+              style: {
               backgroundColor: lightenedPrimaryBackground,
               color: theme.palette.primary.dark,
               "&:hover": {
                 backgroundColor: lightenedPrimaryHoverBackground,
               },
+              },
             },
-            containedCallToAction: {
+            {
+              props: {
+              variant: "contained",
+              color: "callToAction" as "primary",
+              },
+              style: {
               backgroundColor: lightenedCallToActionBackground,
               color: theme.palette.callToAction.contrastText,
               "&:hover": {
                 backgroundColor: lightenedCallToActionHoverBackground,
               },
+              },
             },
-          },
+          ],
         },
         MuiDataGrid: {
           styleOverrides: {
@@ -62,23 +72,23 @@ export function createStoichiometryTheme(baseTheme: unknown) {
               [`&.${STOICHIOMETRY_TABLE_CLASS}`]: {
                 border: "none",
                 backgroundColor: tableBackground,
-                "& .MuiDataGrid-main": {
+                [`& .${gridClasses.main}`]: {
                   backgroundColor: tableBackground,
                 },
-                "& .MuiDataGrid-virtualScroller": {
+                [`& .${gridClasses.virtualScroller}`]: {
                   backgroundColor: tableBackground,
                 },
-                "& .MuiDataGrid-columnHeaders": {
+                [`& .${gridClasses.columnHeaders}`]: {
                   backgroundColor: tableBackground,
                   borderBottom: `2px solid ${theme.palette.divider}`,
                 },
-                "& .MuiDataGrid-cell": {
+                [`& .${gridClasses.cell}`]: {
                   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
                 },
-                "& .MuiDataGrid-footerContainer": {
+                [`& .${gridClasses.footerContainer}`]: {
                   backgroundColor: tableBackground,
                 },
-                "& .MuiDataGrid-row:hover": {
+                [`& .${gridClasses.row}:hover`]: {
                   backgroundColor: theme.palette.action.hover,
                 },
                 "& .stoichiometry-disabled-cell": {
@@ -93,6 +103,6 @@ export function createStoichiometryTheme(baseTheme: unknown) {
           },
         },
       },
-    }) as ThemeOptions,
+    },
   );
 }

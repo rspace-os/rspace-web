@@ -9,33 +9,42 @@ import { observer } from "mobx-react-lite";
 import RadioField, {
   type RadioOption,
 } from "../../../components/Inputs/RadioField";
-import { withStyles } from "Styles";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import { type UseState } from "../../../util/types";
 import { type UnitCategory } from "../../../stores/stores/UnitStore";
 
-const FormBoxWithLabel = withStyles<
-  { children: React.ReactNode; label: string },
-  { formLabel?: string; formControl?: string }
->((theme) => ({
-  formLabel: {
-    top: -27,
-    left: `-${theme.spacing(1)}`,
-    padding: theme.spacing(0, 0.5),
-    position: "absolute",
-    fontSize: "0.9em",
-    backgroundColor: "white",
-    fontWeight: "400 !important",
-  },
-}))(({ children, label, classes }) => (
-  <Paper variant="outlined">
-    <Box m={2}>
-      <FormControl label={label} classes={classes}>
-        {children}
-      </FormControl>
-    </Box>
-  </Paper>
-));
+function FormBoxWithLabel({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}): React.ReactNode {
+  return (
+    <Paper variant="outlined">
+      <Box sx={{ m: 2 }}>
+        <FormControl
+          label={label}
+          slotProps={{
+            label: {
+              sx: (theme) => ({
+                top: -27,
+                left: `-${theme.spacing(1)}`,
+                padding: theme.spacing(0, 0.5),
+                position: "absolute",
+                fontSize: "0.9em",
+                backgroundColor: "white",
+                fontWeight: "400 !important",
+              }),
+            },
+          }}
+        >
+          {children}
+        </FormControl>
+      </Box>
+    </Paper>
+  );
+}
 
 function QuantityUnits(): React.ReactNode {
   const {
@@ -45,7 +54,7 @@ function QuantityUnits(): React.ReactNode {
   if (!activeResult || !(activeResult instanceof TemplateModel))
     throw new Error("ActiveResult must be a Template");
   const initialCategory = unitStore.getUnit(
-    activeResult.defaultUnitId
+    activeResult.defaultUnitId,
   )?.category;
   if (
     initialCategory !== "mass" &&
@@ -112,9 +121,14 @@ function QuantityUnits(): React.ReactNode {
   const editable = activeResult.isFieldEditable("defaultUnitId");
   return (
     <InputWrapper label="Quantity Units">
-      <Box mt={2}>
+      <Box sx={{ mt: 2 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={5}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 5,
+            }}
+          >
             <FormBoxWithLabel label="Unit Type">
               <RadioField
                 value={category}
@@ -125,7 +139,12 @@ function QuantityUnits(): React.ReactNode {
               />
             </FormBoxWithLabel>
           </Grid>
-          <Grid item xs={12} sm={7}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 7,
+            }}
+          >
             <FormBoxWithLabel label="Default Scale">
               <RadioField
                 value={`${activeResult.defaultUnitId}`}

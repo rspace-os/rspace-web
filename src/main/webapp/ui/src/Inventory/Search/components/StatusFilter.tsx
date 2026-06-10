@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import ListItemText from "@mui/material/ListItemText";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import { type DeletedItems } from "../../../stores/definitions/Search";
 import SearchContext from "../../../stores/contexts/Search";
 
@@ -25,7 +26,7 @@ export default function StatusFilter({
           onClose(current);
         }}
       >
-        <StyledMenuItem
+        <MenuItem
           disabled={!search.allowedStatusFilters.has("EXCLUDE")}
           selected={current === "EXCLUDE"}
           aria-current={current === "EXCLUDE"}
@@ -35,8 +36,8 @@ export default function StatusFilter({
           data-test-id="currentStatus"
         >
           <ListItemText primary="Current" />
-        </StyledMenuItem>
-        <StyledMenuItem
+        </MenuItem>
+        <MenuItem
           disabled={!search.allowedStatusFilters.has("DELETED_ONLY")}
           selected={current === "DELETED_ONLY"}
           aria-current={current === "DELETED_ONLY"}
@@ -46,8 +47,8 @@ export default function StatusFilter({
           data-test-id="deletedStatus"
         >
           <ListItemText primary="In Trash" />
-        </StyledMenuItem>
-        <StyledMenuItem
+        </MenuItem>
+        <MenuItem
           disabled={!search.allowedStatusFilters.has("INCLUDE")}
           selected={current === "INCLUDE"}
           aria-current={current === "INCLUDE"}
@@ -57,7 +58,7 @@ export default function StatusFilter({
           data-test-id="allStatus"
         >
           <ListItemText primary="Current & In Trash" />
-        </StyledMenuItem>
+        </MenuItem>
       </StyledMenu>
     </div>
   );

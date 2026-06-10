@@ -4,12 +4,16 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import AppBar from "../components/AppBar";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import Box from "@mui/material/Box";
 import createAccentedTheme from "../accentedTheme";
-import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { DialogBoundary } from "../components/DialogBoundary";
 import Analytics from "../components/Analytics";
 import { color, currentPage } from "@/util/pageBranding";
+import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 window.addEventListener("load", () => {
   /*
@@ -27,7 +31,7 @@ window.addEventListener("load", () => {
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
 
-  const cache = createCache({
+  const cache = createMuiCssLayerCache({
     key: "css",
     prepend: true,
     container: shadow,
@@ -37,26 +41,28 @@ window.addEventListener("load", () => {
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
-        <Analytics>
-          <ErrorBoundary>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
-              <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
-                {/*
-                 * We use a DialogBoundary to keep the menu inside the shadow DOM
-                 */}
-                <DialogBoundary>
-                  <AppBar
-                    variant="page"
-                    currentPage={currentPage()}
-                    accessibilityTips={{}}
-                  />
-                </DialogBoundary>
-              </div>
-              <div style={{ height: "30px" }}></div>
-            </ThemeProvider>
-          </ErrorBoundary>
-        </Analytics>
+        <QueryClientProvider client={queryClient}>
+          <Analytics>
+            <ErrorBoundary>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+                <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                  {/*
+                   * We use a DialogBoundary to keep the menu inside the shadow DOM
+                   */}
+                  <DialogBoundary>
+                    <AppBar
+                      variant="page"
+                      currentPage={currentPage()}
+                      accessibilityTips={{}}
+                    />
+                  </DialogBoundary>
+                </Box>
+                <Box sx={{ height: "30px" }}></Box>
+              </ThemeProvider>
+            </ErrorBoundary>
+          </Analytics>
+        </QueryClientProvider>
       </CacheProvider>
     </React.StrictMode>,
   );

@@ -1,49 +1,16 @@
 import React from "react";
-import { TableContainer } from "@mui/material";
+import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
 import EnhancedTableHead, { Cell } from "../../components/EnhancedTableHead";
 import TableBody from "@mui/material/TableBody";
 import { getSorting, stableSort } from "../../util/table";
-import TableRow from "@mui/material/TableRow";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
-import { makeStyles } from "tss-react/mui";
 import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import { BookingType, Order } from "./Enums";
-import PropTypes from "prop-types";
 import { BookingAndEquipmentDetails } from "./ClustermarketData";
-
-const useStyles = makeStyles()(() => ({
-  tableContainer: {
-    marginBottom: "40px",
-  },
-  tableHead: {
-    background: "#F6F6F6",
-  },
-  tableRow: {
-    "&.Mui-selected": {
-      backgroundColor: "#e3f2fd",
-    },
-    "&.Mui-selected:hover": {
-      backgroundColor: "#e3f2fd",
-    },
-  },
-  tableFooterContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    position: "fixed",
-    left: "0",
-    bottom: "0",
-    width: "calc(100% - 16px)",
-    marginLeft: "8px",
-    backgroundColor: "#f6f6f6",
-  },
-  selectedRowCounter: {
-    paddingLeft: "16px",
-  },
-}));
-
 type HeaderCellId =
   | "bookingID"
   | "equipmentName"
@@ -54,7 +21,6 @@ type HeaderCellId =
   | "duration"
   | "bookingType"
   | "status";
-
 export default function ResultsTable({
   clustermarket_web_url,
   visibleHeaderCells,
@@ -76,57 +42,39 @@ export default function ResultsTable({
   setOrderBy: (newOrderBy: string) => void;
   selectedBookingIds: Array<string>;
   setSelectedBookingIds: (
-    newSelection: Array<BookingAndEquipmentDetails["bookingID"]>
+    newSelection: Array<BookingAndEquipmentDetails["bookingID"]>,
   ) => void;
   bookingType: string;
 }) {
-  const { classes } = useStyles();
-
   function onRowClick(
     event: unknown,
-    item_id: BookingAndEquipmentDetails["bookingID"]
+    item_id: BookingAndEquipmentDetails["bookingID"],
   ) {
-    const selectedIndex = selectedBookingIds.indexOf(item_id);
-    let newSelected: Array<BookingAndEquipmentDetails["bookingID"]> = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedBookingIds, item_id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selectedBookingIds.slice(1));
-    } else if (selectedIndex === selectedBookingIds.length - 1) {
-      newSelected = newSelected.concat(selectedBookingIds.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selectedBookingIds.slice(0, selectedIndex),
-        selectedBookingIds.slice(selectedIndex + 1)
-      );
-    }
-
+    const newSelected = selectedBookingIds.includes(item_id)
+      ? selectedBookingIds.filter((id) => id !== item_id)
+      : [...selectedBookingIds, item_id];
     setSelectedBookingIds(newSelected);
   }
-
   function handleRequestSort(
     event: React.MouseEvent<HTMLSpanElement>,
-    property: string
+    property: string,
   ) {
     const isDesc = orderBy === property && order === Order.desc;
     setOrder(isDesc ? Order.asc : Order.desc);
     setOrderBy(property);
   }
-
   const getBookingOrEquipmentID = (booking: BookingAndEquipmentDetails) => {
     if (bookingType === BookingType.EQUIPMENT) {
       return booking.equipmentID;
     }
     return booking.bookingID;
   };
-
   return (
     <>
-      <TableContainer className={classes.tableContainer}>
+      <TableContainer sx={{ mb: "40px" }}>
         <Table aria-label="booking search results">
           <EnhancedTableHead
-            headStyle={classes.tableHead}
+            headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
             order={order}
             orderBy={orderBy}
@@ -135,7 +83,7 @@ export default function ResultsTable({
             onSelectAllClick={(event) => {
               if (event.target.checked) {
                 const newSelected = results.map((booking) =>
-                  getBookingOrEquipmentID(booking)
+                  getBookingOrEquipmentID(booking),
                 );
                 // @ts-expect-error looks like a mix up of id types
                 return setSelectedBookingIds(newSelected);
@@ -151,14 +99,20 @@ export default function ResultsTable({
                 const isItemSelected =
                   selectedBookingIds.indexOf(
                     // @ts-expect-error looks like a mix up of id types
-                    getBookingOrEquipmentID(booking)
+                    getBookingOrEquipmentID(booking),
                   ) !== -1;
                 const labelId = `booking-search-results-checkbox-${index}`;
-
                 return (
                   <TableRow
                     id={labelId}
-                    className={classes.tableRow}
+                    sx={{
+                      [`&.${tableRowClasses.selected}`]: {
+                        backgroundColor: "#e3f2fd",
+                      },
+                      [`&.${tableRowClasses.selected}:hover`]: {
+                        backgroundColor: "#e3f2fd",
+                      },
+                    }}
                     hover
                     tabIndex={-1}
                     role="checkbox"
@@ -168,13 +122,17 @@ export default function ResultsTable({
                     }
                     aria-checked={isItemSelected}
                     selected={isItemSelected}
-                    key={index}
+                    key={getBookingOrEquipmentID(booking)}
                   >
                     <TableCell padding="checkbox">
                       <Checkbox
                         color="primary"
                         checked={isItemSelected}
-                        inputProps={{ "aria-labelledby": labelId }}
+                        slotProps={{
+                          input: {
+                            "aria-labelledby": labelId,
+                          },
+                        }}
                       />
                     </TableCell>
                     {visibleHeaderCells.map((cell, i) => (
@@ -217,33 +175,33 @@ export default function ResultsTable({
                     ))}
                   </TableRow>
                 );
-              }
+              },
             )}
           </TableBody>
         </Table>
       </TableContainer>
-      <div className={classes.tableFooterContainer}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "fixed",
+          left: 0,
+          bottom: 0,
+          width: "calc(100% - 16px)",
+          ml: "8px",
+          backgroundColor: "#f6f6f6",
+        }}
+      >
         <Typography
-          className={classes.selectedRowCounter}
+          sx={{ pl: "16px" }}
           component="span"
           variant="body2"
           color="textPrimary"
         >
           Selected: {selectedBookingIds.length}
         </Typography>
-      </div>
+      </Box>
     </>
   );
 }
-ResultsTable.propTypes = {
-  clustermarket_web_url: PropTypes.string,
-  visibleHeaderCells: PropTypes.array,
-  results: PropTypes.array,
-  order: PropTypes.string,
-  setOrder: PropTypes.func,
-  orderBy: PropTypes.string,
-  setOrderBy: PropTypes.func,
-  selectedBookingIds: PropTypes.array,
-  setSelectedBookingIds: PropTypes.func,
-  bookingType: PropTypes.string,
-};

@@ -38,12 +38,10 @@ export default function AccessListTable({
           <TableCell>
             <Grid
               container
-              justifyContent="space-between"
-              alignItems="center"
-              wrap="nowrap"
+              sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap" }}
             >
-              <Grid item>Group Name</Grid>
-              <Grid item>
+              <Grid>Group Name</Grid>
+              <Grid>
                 <IconButtonWithTooltip
                   title="Add a group"
                   icon={<AddIcon />}
@@ -65,10 +63,12 @@ export default function AccessListTable({
                     vertical: "top",
                     horizontal: "center",
                   }}
-                  PaperProps={{
-                    variant: "outlined",
-                    style: {
-                      minWidth: 300,
+                  slotProps={{
+                    paper: {
+                      variant: "outlined",
+                      style: {
+                        minWidth: 300,
+                      },
                     },
                   }}
                 >
@@ -80,7 +80,7 @@ export default function AccessListTable({
                     label=""
                     getOptionDisabled={(group) => {
                       return sharedWith.some(
-                        ({ group: { id } }) => group.id === id
+                        ({ group: { id } }) => group.id === id,
                       );
                     }}
                   />

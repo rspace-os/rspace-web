@@ -35,17 +35,23 @@ export default function SymbolsTab(props) {
       />
       {Object.keys(props.symbolShortcuts).map((key) => (
         <Grid container key={key}>
-          <Grid item xs={6}>
+          <Grid size={6}>
             <Typography
               variant="overline"
               display="block"
-              style={{ marginTop: "8px" }}
+              sx={{ marginTop: "8px" }}
             >
-              <b style={{ marginRight: "10px" }}>{String.fromCharCode(key)}</b>
+              <Typography
+                variant="inherit"
+                component="strong"
+                sx={{ marginRight: "10px" }}
+              >
+                {String.fromCharCode(key)}
+              </Typography>
               {label(key)}
             </Typography>
           </Grid>
-          <Grid item xs={6}>
+          <Grid size={6}>
             <TextField
               variant="standard"
               fullWidth
@@ -59,7 +65,9 @@ export default function SymbolsTab(props) {
               onKeyDown={(e) => props.detectShortcut(key, e)}
               onKeyUp={props.onKeyUp}
               margin="dense"
-              inputProps={{ style: { lineHeight: "20px" } }}
+              slotProps={{
+                htmlInput: { style: { lineHeight: "20px" } },
+              }}
             />
           </Grid>
         </Grid>

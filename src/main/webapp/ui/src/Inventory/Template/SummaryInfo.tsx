@@ -28,7 +28,7 @@ const OneItemList = ({
       <ListItemAvatar>{avatar}</ListItemAvatar>
       <ListItemText
         primary={text}
-        style={{ overflowWrap: "anywhere", maxWidth: "60%" }}
+        sx={{ overflowWrap: "anywhere", maxWidth: "60%" }}
       />
       <ListItemSecondaryAction>{action}</ListItemSecondaryAction>
     </ListItem>
@@ -70,7 +70,7 @@ function SummaryInfo({
     return <NoValue label="No Template" />;
   }
   return (
-    <Box my={1.5}>
+    <Box sx={{ my: 1.5 }}>
       <NoValue label="No Template" />
     </Box>
   );

@@ -1,5 +1,6 @@
 import React from "react";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
@@ -16,7 +17,7 @@ export type HtmlXmlExportDetailsArgs = {
   exportDetails: HtmlXmlExportDetails;
   updateExportDetails: (
     key: keyof HtmlXmlExportDetails,
-    value: HtmlXmlExportDetails[keyof HtmlXmlExportDetails]
+    value: HtmlXmlExportDetails[keyof HtmlXmlExportDetails],
   ) => void;
 };
 
@@ -34,8 +35,8 @@ export default function HtmlXmlExport({
   updateExportDetails,
 }: HtmlXmlExportArgs): React.ReactNode {
   return (
-    <Grid container direction="column" spacing={1}>
-      <Grid item>
+    <Stack spacing={1}>
+      <Box>
         <InputLabel htmlFor="maxLinkLevel">
           Should linked RSpace documents be included in export?
         </InputLabel>
@@ -64,26 +65,24 @@ export default function HtmlXmlExport({
             Include linked documents to depth infinity
           </MenuItem>
         </Select>
-      </Grid>
-      <Grid item>
-        <em>Linked folders and notebooks are never included</em>
-      </Grid>
-      <Grid item>
-        <TextField
-          variant="standard"
-          fullWidth
-          label="Export Description (optional)"
-          inputProps={{ "aria-label": "Export Description (optional)" }}
-          multiline
-          maxRows="4"
-          value={description}
-          onChange={({ target: { value } }) =>
-            updateExportDetails("description", value)
-          }
-          margin="normal"
-          data-test-id="html-xml-description"
-        />
-      </Grid>
-    </Grid>
+      </Box>
+      <em>Linked folders and notebooks are never included</em>
+      <TextField
+        variant="standard"
+        fullWidth
+        label="Export Description (optional)"
+        multiline
+        maxRows="4"
+        value={description}
+        onChange={({ target: { value } }) =>
+          updateExportDetails("description", value)
+        }
+        margin="normal"
+        data-test-id="html-xml-description"
+        slotProps={{
+          htmlInput: { "aria-label": "Export Description (optional)" },
+        }}
+      />
+    </Stack>
   );
 }

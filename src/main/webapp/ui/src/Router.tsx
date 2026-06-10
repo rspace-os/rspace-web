@@ -6,8 +6,7 @@ import StandaloneListOfMaterialsPage from "./eln-inventory-integration/Materials
 import CssBaseline from "@mui/material/CssBaseline";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
-import { Routes, Route } from "react-router";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import RouterNavigationContext from "./Inventory/components/RouterNavigationContext";
 import useStores from "./stores/use-stores";
 import ConfirmProvider from "./components/ConfirmProvider";
