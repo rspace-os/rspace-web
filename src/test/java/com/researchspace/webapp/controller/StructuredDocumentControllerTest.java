@@ -39,7 +39,6 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.MessagedServiceOperationResult;
@@ -184,6 +183,9 @@ public class StructuredDocumentControllerTest {
     assertNotNull(rc.getData());
     verify(auditTrail).notify(eq(renameAuditEvent));
     assertEquals("from: \"oldname\" to: \"newname\"", renameAuditEvent.getDescription());
+    // RSDEV-1124: the audited object must carry the new name, as the audit
+    // trail snapshots its current state for the document name column
+    assertEquals("newname", sd.getName());
   }
 
   @Test
