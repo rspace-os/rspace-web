@@ -1,6 +1,7 @@
 import React from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import NoValue from "../../components/NoValue";
+import { inputBaseClasses } from "@mui/material/InputBase";
 
 export type StringFieldArgs = {
   value: string;
@@ -50,6 +51,12 @@ export default function StringField({
       onFocus={onFocus}
       onKeyDown={onKeyDown}
       error={error}
+      sx={(theme) => ({
+        [`& .${inputBaseClasses.input}`]: {
+          color: theme.palette.text.primary,
+          WebkitTextFillColor: theme.palette.text.primary,
+        },
+      })}
       {...props}
       slotProps={slotProps}
     />
