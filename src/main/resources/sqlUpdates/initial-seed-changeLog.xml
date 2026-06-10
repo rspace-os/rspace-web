@@ -33,8 +33,14 @@
                        onErrorMessage="cloud seed already present">
             <sqlCheck expectedResult="0">SELECT COUNT(*) FROM Role_permissionStrings WHERE permissionStrings LIKE 'RECORD:SHARE:%'</sqlCheck>
         </preConditions>
-        <comment>Pre-1.98.1 cloud (Community edition) seed: a SHARE permission per role.</comment>
-        <sql>insert into Role_permissionStrings select id,'RECORD:SHARE:property_owner=${self}' from roles</sql>
+        <comment>Pre-1.98.1 cloud (Community edition) seed: a SHARE permission for the 4 roles that
+            existed when the original changeset (changeLog-0.22, 2015) ran. Inserted explicitly (not
+            "select from roles") so the later-added role -5 does NOT get it, matching main exactly.</comment>
+        <sql>insert into Role_permissionStrings (Role_id, permissionStrings) values
+            (-1,'RECORD:SHARE:property_owner=${self}'),
+            (-2,'RECORD:SHARE:property_owner=${self}'),
+            (-3,'RECORD:SHARE:property_owner=${self}'),
+            (-4,'RECORD:SHARE:property_owner=${self}')</sql>
     </changeSet>
 
 </databaseChangeLog>
