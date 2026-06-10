@@ -85,7 +85,7 @@ export default function useReferencingInventoryItems(globalId: string | null): {
   >([]);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-  async function fetchReferencingItems(): Promise<void> {
+  const fetchReferencingItems = React.useCallback(async (): Promise<void> => {
     if (!globalId) {
       setItems([]);
       setLoading(false);
@@ -146,11 +146,11 @@ export default function useReferencingInventoryItems(globalId: string | null): {
     } finally {
       setLoading(false);
     }
-  }
+  }, [globalId]);
 
   React.useEffect(() => {
     void fetchReferencingItems();
-  }, [globalId]);
+  }, [fetchReferencingItems]);
 
   return { items, loading, errorMessage };
 }

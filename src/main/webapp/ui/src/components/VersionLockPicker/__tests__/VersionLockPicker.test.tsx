@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
@@ -39,10 +39,10 @@ describe("VersionLockPicker", () => {
 
   it("renders a row for each revision and a 'latest' row", async () => {
     renderComponent({ currentSelection: LATEST_SELECTION, onChange: vi.fn() });
-    expect(await screen.findByText(/version 1/i)).toBeTruthy();
-    expect(await screen.findByText(/version 2/i)).toBeTruthy();
-    expect(await screen.findByText(/version 3/i)).toBeTruthy();
-    expect(screen.getByText(/latest/i)).toBeTruthy();
+    expect(await screen.findByText(/version 1/i)).toBeInTheDocument();
+    expect(await screen.findByText(/version 2/i)).toBeInTheDocument();
+    expect(await screen.findByText(/version 3/i)).toBeInTheDocument();
+    expect(screen.getByText(/latest/i)).toBeInTheDocument();
   });
 
   it("calls onChange with the version number when a row is selected", async () => {

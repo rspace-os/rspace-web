@@ -131,6 +131,42 @@ describe("InventoryInfoDialog", () => {
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/versions/3");
   });
 
+  it("fetches an instrument target by global id (IN prefix)", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockImplementation((url) => {
+      if (url === "instruments/43") {
+        return Promise.resolve({
+          data: {
+            id: 43,
+            globalId: "IN43",
+            type: "INSTRUMENT",
+            name: "A microscope",
+            created: "2026-05-01T10:00:00Z",
+            lastModified: "2026-05-02T10:00:00Z",
+            extraFields: [],
+            permittedActions: ["READ"],
+          },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.reject(new Error("unexpected url " + String(url)));
+    });
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="IN43" onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    const body = await screen.findByTestId("sidebar-body");
+    expect(body).toHaveAttribute("data-globalid", "IN43");
+    expect(vi.mocked(apiGet)).toHaveBeenCalledWith("instruments/43");
+  });
+
   it("shows a historic-version note (matching the ELN dialog) when versionPin is set", async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
     const apiGet = InvApiService.get;

@@ -31,7 +31,7 @@ const PREFIX_TO_PATH: Record<string, string> = {
   SA: "samples",
   SS: "subSamples",
   IC: "containers",
-  IT: "sampleTemplates",
+  IN: "instruments",
 };
 
 function recordEndpoint(

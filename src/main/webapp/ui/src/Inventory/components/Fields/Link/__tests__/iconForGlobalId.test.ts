@@ -6,6 +6,7 @@ import {
   isInventoryGlobalId,
   isElnGlobalId,
   supportsVersionPin,
+  openUrlForTarget,
 } from "../iconForGlobalId";
 
 describe("iconForInventoryGlobalId", () => {
@@ -92,5 +93,20 @@ describe("prefix helpers", () => {
     expect(supportsVersionPin("SD1")).toBe(true);
     expect(supportsVersionPin("NB1")).toBe(false);
     expect(supportsVersionPin("GL1")).toBe(false);
+  });
+});
+
+describe("openUrlForTarget", () => {
+  test("opens a Gallery file at its location in the Gallery", () => {
+    expect(openUrlForTarget("GL21", null)).toBe("/gallery/item/21");
+  });
+
+  test("keeps the /globalId route for non-Gallery targets", () => {
+    expect(openUrlForTarget("SD5", null)).toBe("/globalId/SD5");
+    expect(openUrlForTarget("SA10", null)).toBe("/globalId/SA10");
+  });
+
+  test("appends the pinned version suffix for non-Gallery targets", () => {
+    expect(openUrlForTarget("SD5", 3)).toBe("/globalId/SD5v3");
   });
 });

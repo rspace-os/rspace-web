@@ -74,7 +74,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   };
   return (
     <Card variant="outlined" aria-label={`Link field ${props.name}`}>
-      <CardActionArea onClick={props.onPeek} disabled={false}>
+      <CardActionArea onClick={props.onPeek}>
         <CardContent>
           {props.name && (
             <Typography variant="subtitle1" component="div">

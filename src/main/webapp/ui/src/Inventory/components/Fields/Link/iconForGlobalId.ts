@@ -1,6 +1,7 @@
 import { type RecordIconData } from "../../../../stores/definitions/BaseRecord";
 
 const GLOBAL_ID_PATTERN = /^([A-Z]{2})\d+(?:v\d+)?$/;
+const GLOBAL_ID_WITH_ID = /^([A-Z]{2})(\d+)(?:v\d+)?$/;
 
 const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
   SA: { iconName: "sample", recordTypeLabel: "Sample" },
@@ -64,4 +65,25 @@ export function isElnGlobalId(globalId: string): boolean {
  */
 export function supportsVersionPin(globalId: string): boolean {
   return isInventoryGlobalId(globalId) || prefixOf(globalId) === "SD";
+}
+
+/**
+ * URL to OPEN a link target in a new tab. A Gallery file (GL) opens at its
+ * location in the Gallery (/gallery/item/<id>) rather than downloading via
+ * /globalId, which is the misleading default the backend resolves to Streamfile.
+ * Every other target keeps the existing /globalId/<gid>[v<n>] behaviour, which
+ * the backend resolves per type (e.g. SD documents, inventory items). GL cannot
+ * be version-pinned (see supportsVersionPin), so the gallery route ignores
+ * versionPin by design.
+ */
+export function openUrlForTarget(
+  globalId: string,
+  versionPin: number | null,
+): string {
+  const match = GLOBAL_ID_WITH_ID.exec(globalId);
+  if (match && match[1] === "GL") {
+    return `/gallery/item/${match[2]}`;
+  }
+  const versionSuffix = versionPin != null ? `v${versionPin}` : "";
+  return `/globalId/${globalId}${versionSuffix}`;
 }

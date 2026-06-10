@@ -77,6 +77,9 @@ function ReferencingItemsTable({
           <TableCell>Name</TableCell>
           <TableCell>Global ID</TableCell>
           <TableCell>Relation</TableCell>
+          {/* Which version of THIS item the linking item points at (not a version
+              of the linking item itself). */}
+          <TableCell>Linked version</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -93,6 +96,9 @@ function ReferencingItemsTable({
               </a>
             </TableCell>
             <TableCell>{item.relationType}</TableCell>
+            <TableCell>
+              {item.versionPin != null ? `v${item.versionPin}` : "Latest"}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

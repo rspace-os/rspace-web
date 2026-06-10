@@ -12,6 +12,7 @@ import NumberField from "../../../../components/Inputs/NumberField";
 import Box from "@mui/material/Box";
 import Result from "../../../../stores/models/InventoryBaseRecord";
 import LinkField from "../Link/LinkField";
+import { openUrlForTarget } from "../Link/iconForGlobalId";
 
 type ExtraFieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, newErrorState: boolean) => void;
@@ -83,11 +84,13 @@ function ExtraFields({
                         };
                       }).link;
                       if (link?.targetGlobalId) {
-                        // open the pinned revision when one is set (e.g. SD audit view)
-                        const versionSuffix =
-                          link.versionPin != null ? `v${link.versionPin}` : "";
+                        // Gallery files open at their location in the Gallery; other
+                        // targets keep the /globalId route (honouring any pinned version).
                         window.open(
-                          `/globalId/${link.targetGlobalId}${versionSuffix}`,
+                          openUrlForTarget(
+                            link.targetGlobalId,
+                            link.versionPin
+                          ),
                           "_blank"
                         );
                       }

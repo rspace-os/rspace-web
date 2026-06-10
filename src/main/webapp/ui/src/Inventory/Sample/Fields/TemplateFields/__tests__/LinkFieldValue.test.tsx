@@ -22,15 +22,20 @@ vi.mock("@/Inventory/components/Fields/Link/LinkField", () => ({
   default: ({
     link,
     onEdit,
+    onOpen,
   }: {
     link: { relationType: string; targetGlobalId: string };
     onEdit: () => void;
+    onOpen: () => void;
   }) => (
     <div data-testid="link-field-display">
       <span>{link.relationType}</span>
       <span>{link.targetGlobalId}</span>
       <button type="button" onClick={onEdit}>
         Edit link
+      </button>
+      <button type="button" data-testid="open-target" onClick={onOpen}>
+        Open target
       </button>
     </div>
   ),
@@ -138,6 +143,28 @@ describe("LinkFieldValue", () => {
         versionPin: null,
       },
     });
+  });
+
+  it("opens a Gallery target at its location in the Gallery, not a download", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    const user = userEvent.setup();
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId: "GL21",
+        versionPin: null,
+      },
+    });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.click(screen.getByTestId("open-target"));
+    expect(openSpy).toHaveBeenCalledWith("/gallery/item/21", "_blank");
+    openSpy.mockRestore();
   });
 
   it("prevents applying a self-link", async () => {

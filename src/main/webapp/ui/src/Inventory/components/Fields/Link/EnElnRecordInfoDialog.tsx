@@ -12,7 +12,7 @@ import Box from "@mui/material/Box";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RecordTypeIcon from "@/components/RecordTypeIcon";
 import { useGetWorkspaceRecordInformationAjaxQuery } from "@/modules/workspace/queries";
-import { iconForGlobalId, prefixOf } from "./iconForGlobalId";
+import { iconForGlobalId, prefixOf, openUrlForTarget } from "./iconForGlobalId";
 import DocumentSections from "./DocumentSections";
 import GallerySections from "./GallerySections";
 
@@ -210,7 +210,7 @@ export default function EnElnRecordInfoDialog(
         <Button
           size="small"
           startIcon={<OpenInNewIcon />}
-          href={"/globalId/" + props.globalId}
+          href={openUrlForTarget(props.globalId, effectiveVersionPin)}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Open"
@@ -222,5 +222,3 @@ export default function EnElnRecordInfoDialog(
     </Dialog>
   );
 }
-
-export { numericIdOf };

@@ -12,7 +12,10 @@ import { DATACITE_RELATION_TYPES } from "../../../components/Fields/Link/datacit
 import LinkTargetBrowser from "../../../components/Fields/Link/LinkTargetBrowser";
 import ElnRecordPicker from "../../../components/Fields/Link/ElnRecordPicker";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
-import { iconForGlobalId } from "../../../components/Fields/Link/iconForGlobalId";
+import {
+  iconForGlobalId,
+  openUrlForTarget,
+} from "../../../components/Fields/Link/iconForGlobalId";
 import LinkField from "../../../components/Fields/Link/LinkField";
 
 type LinkFieldValueArgs = {
@@ -34,10 +37,13 @@ function isSelfLink(sourceGlobalId: string, targetGlobalId: string): boolean {
   );
 }
 
-/** Opens the link target in a new tab, honouring a pinned version (e.g. an SD audit view). */
+/**
+ * Opens the link target in a new tab. A Gallery file opens at its location in the
+ * Gallery; other targets keep the /globalId route, honouring a pinned version
+ * (e.g. an SD audit view).
+ */
 function openTargetInNewTab(link: FieldLink): void {
-  const versionSuffix = link.versionPin != null ? `v${link.versionPin}` : "";
-  window.open(`/globalId/${link.targetGlobalId}${versionSuffix}`, "_blank");
+  window.open(openUrlForTarget(link.targetGlobalId, link.versionPin), "_blank");
 }
 
 /**

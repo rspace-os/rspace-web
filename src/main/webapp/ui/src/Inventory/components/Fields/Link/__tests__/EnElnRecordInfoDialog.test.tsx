@@ -218,6 +218,17 @@ describe("EnElnRecordInfoDialog", () => {
     expect(openLink).toHaveAttribute("target", "_blank");
   });
 
+  it("opens a gallery target at its location in the Gallery, not a download", async () => {
+    fetchMock.mockResponse(
+      recordInfoResponse({ oid: { idString: "GL9" }, type: "Image" }),
+    );
+
+    renderDialog({ globalId: "GL9" });
+
+    const openLink = await screen.findByRole("link", { name: /^open$/i });
+    expect(openLink).toHaveAttribute("href", "/gallery/item/9");
+  });
+
   it("renders nothing when closed", () => {
     fetchMock.mockResponse(recordInfoResponse());
     const { container } = renderDialog({ open: false });

@@ -325,4 +325,56 @@ describe("LinkedDocuments", () => {
     expect(screen.getByText("IsCalibratedBy")).toBeVisible();
     expect(screen.getByText("References")).toBeVisible();
   });
+
+  test("shows which version of THIS item each referencing item links to, not as a suffix on the source Global ID", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (typeof url === "string" && url.endsWith("/referencingItems")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA10",
+                sourceName: "Unpinned source",
+                sourceType: "SAMPLE",
+                relationType: "References",
+                versionPin: null,
+              },
+              {
+                sourceGlobalId: "IC5",
+                sourceName: "Pinned source",
+                sourceType: "CONTAINER",
+                relationType: "References",
+                versionPin: 3,
+              },
+            ],
+          },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="IC1" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show Linked Documents" }),
+    );
+    // The source's Global ID is shown bare: the version pin is NOT a version of the source.
+    expect(await screen.findByText("IC5")).toBeVisible();
+    expect(screen.queryByText("IC5v3")).not.toBeInTheDocument();
+    // Each row shows, separately, which version of THIS item the source links to.
+    expect(screen.getByText("v3")).toBeVisible();
+    expect(screen.getByText("Latest")).toBeVisible();
+  });
 });

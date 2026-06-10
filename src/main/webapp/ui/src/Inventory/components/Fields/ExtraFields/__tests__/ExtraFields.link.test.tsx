@@ -21,7 +21,7 @@ vi.hoisted(() => {
 });
 
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
@@ -87,6 +87,7 @@ import ExtraFields from "../ExtraFields";
 function makeLinkField(overrides: {
   name?: string;
   versionPin?: number | null;
+  targetGlobalId?: string;
   setEditing?: (v: boolean) => void;
   setAttributesDirty?: (attrs: Record<string, unknown>) => void;
 } = {}) {
@@ -103,7 +104,7 @@ function makeLinkField(overrides: {
     newFieldRequest: false,
     link: {
       relationType: "References",
-      targetGlobalId: "SA42",
+      targetGlobalId: overrides.targetGlobalId ?? "SA42",
       versionPin: overrides.versionPin ?? null,
     },
     setEditing: overrides.setEditing ?? vi.fn(),
@@ -212,6 +213,22 @@ describe("ExtraFields - Link extra-field branch", () => {
     );
     await user.click(screen.getByTestId("onOpen"));
     expect(openSpy).toHaveBeenCalledWith("/globalId/SA42", "_blank");
+  });
+
+  it("opens a Gallery target at its location in the Gallery, not a download", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    const result = makeResult([makeLinkField({ targetGlobalId: "GL21" })]);
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <ExtraFields
+          onErrorStateChange={() => {}}
+          result={result as unknown as never}
+        />
+      </ThemeProvider>,
+    );
+    await user.click(screen.getByTestId("onOpen"));
+    expect(openSpy).toHaveBeenCalledWith("/gallery/item/21", "_blank");
   });
 
   it("enters edit mode when LinkField.onEdit fires", async () => {
