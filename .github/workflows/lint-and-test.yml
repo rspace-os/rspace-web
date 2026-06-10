@@ -164,7 +164,7 @@ jobs:
       - name: TypeScript check
         run: |
           pnpm exec tsc --version
-          pnpm run tsc --noEmit
+          pnpm run tsc
 
   vitest-tests:
     runs-on: ubuntu-latest

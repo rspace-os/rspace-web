@@ -12,8 +12,8 @@
     "tsc": "cd src/main/webapp/ui && tsc --noEmit",
     "test-ct": "cd src/main/webapp/ui && cross-env playwright test -c playwright-ct.config.ts",
     "test-ct:ui": "cd src/main/webapp/ui && cross-env playwright test -c playwright-ct.config.ts --ui",
-    "lint": "cd src/main/webapp/ui && eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "cd src/main/webapp/ui && eslint . --ext .js,.jsx,.ts,.tsx --fix"
+    "lint": "cd src/main/webapp/ui && eslint .",
+    "lint:fix": "cd src/main/webapp/ui && eslint . --fix"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.11.3",

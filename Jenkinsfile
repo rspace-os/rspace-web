@@ -127,7 +127,7 @@ pipeline {
             steps {
                 echo 'Running TypeScript check'
                 sh 'pnpm exec tsc --version'
-                sh 'pnpm run tsc --noEmit'
+                sh 'pnpm run tsc'
             }
         }
         stage('Vitest Tests (feature branch)') {

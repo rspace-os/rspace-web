@@ -6,9 +6,9 @@ is best to ensure that all of the tests continue to pass.
 
 ## Running
 
-To run on unix machines, perform the following command from the repo root:
-`pnpm run test`. On windows machines, run `pnpm run
-testw` from the repo root.
+To run the tests, perform the following command from the repo root:
+`pnpm run test`. The `cross-env` wrapper means the same command works on
+Windows, macOS, and Linux.
 
 A regex can then be appended to the command to run just the tests whose file
 name match the regex. E.g. `pnpm run test -- ContainerModel` will run all the
