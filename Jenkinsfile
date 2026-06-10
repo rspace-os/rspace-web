@@ -178,7 +178,7 @@ pipeline {
             }
             steps {
                 echo 'Running Vitest tests'
-                sh 'env COLORS=false FORCE_COLOR=false pnpm run test --maxWorkers=2'
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test -- --maxWorkers=2'
             }
             post {
                 failure {
