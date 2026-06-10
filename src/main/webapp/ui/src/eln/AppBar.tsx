@@ -11,6 +11,9 @@ import { DialogBoundary } from "../components/DialogBoundary";
 import Analytics from "../components/Analytics";
 import { color, currentPage } from "@/util/pageBranding";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 window.addEventListener("load", () => {
   /*
@@ -38,26 +41,28 @@ window.addEventListener("load", () => {
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
-        <Analytics>
-          <ErrorBoundary>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
-              <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
-                {/*
-                 * We use a DialogBoundary to keep the menu inside the shadow DOM
-                 */}
-                <DialogBoundary>
-                  <AppBar
-                    variant="page"
-                    currentPage={currentPage()}
-                    accessibilityTips={{}}
-                  />
-                </DialogBoundary>
-              </Box>
-              <Box sx={{ height: "30px" }}></Box>
-            </ThemeProvider>
-          </ErrorBoundary>
-        </Analytics>
+        <QueryClientProvider client={queryClient}>
+          <Analytics>
+            <ErrorBoundary>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+                <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                  {/*
+                   * We use a DialogBoundary to keep the menu inside the shadow DOM
+                   */}
+                  <DialogBoundary>
+                    <AppBar
+                      variant="page"
+                      currentPage={currentPage()}
+                      accessibilityTips={{}}
+                    />
+                  </DialogBoundary>
+                </Box>
+                <Box sx={{ height: "30px" }}></Box>
+              </ThemeProvider>
+            </ErrorBoundary>
+          </Analytics>
+        </QueryClientProvider>
       </CacheProvider>
     </React.StrictMode>,
   );

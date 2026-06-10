@@ -13,6 +13,9 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("about-page");
@@ -38,30 +41,32 @@ window.addEventListener("load", () => {
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
-        <Analytics>
-          <ErrorBoundary>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
-              <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
-                <DialogBoundary>
-                  <Container maxWidth="sm">
-                    <Box sx={{ py: 4 }}>
-                      <Typography
-                        variant="h4"
-                        component="h1"
-                        align="center"
-                        gutterBottom
-                      >
-                        About RSpace
-                      </Typography>
-                      <AboutRSpaceContent />
-                    </Box>
-                  </Container>
-                </DialogBoundary>
-              </Box>
-            </ThemeProvider>
-          </ErrorBoundary>
-        </Analytics>
+        <QueryClientProvider client={queryClient}>
+          <Analytics>
+            <ErrorBoundary>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
+                <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                  <DialogBoundary>
+                    <Container maxWidth="sm">
+                      <Box sx={{ py: 4 }}>
+                        <Typography
+                          variant="h4"
+                          component="h1"
+                          align="center"
+                          gutterBottom
+                        >
+                          About RSpace
+                        </Typography>
+                        <AboutRSpaceContent />
+                      </Box>
+                    </Container>
+                  </DialogBoundary>
+                </Box>
+              </ThemeProvider>
+            </ErrorBoundary>
+          </Analytics>
+        </QueryClientProvider>
       </CacheProvider>
     </React.StrictMode>,
   );
