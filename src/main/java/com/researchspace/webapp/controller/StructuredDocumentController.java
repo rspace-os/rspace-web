@@ -213,7 +213,11 @@ public class StructuredDocumentController extends BaseController {
             importer
                 .get()
                 .create(
-                    mf.getInputStream(), user, originalParentFolder, null, mf.getOriginalFilename());
+                    mf.getInputStream(),
+                    user,
+                    originalParentFolder,
+                    null,
+                    mf.getOriginalFilename());
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
           if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
