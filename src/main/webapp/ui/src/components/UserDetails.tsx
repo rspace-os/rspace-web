@@ -107,12 +107,13 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   };
 
   /*
-   * Links share the buttons' `primary` colour and keep it when visited, rather
-   * than falling back to the browser's default blue/purple link colours.
+   * Links and buttons share a single accent colour and keep it when visited,
+   * rather than falling back to the browser's default blue/purple link colours.
    */
+  const accentColor = "#1465b7";
   const linkSx = {
-    color: "primary.main",
-    "&:visited": { color: "primary.main" },
+    color: accentColor,
+    "&:visited": { color: accentColor },
   };
 
   const listLabgroups = user?.groups.map((group) => (
@@ -240,13 +241,13 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               {messagingAvailable && user.username && (
                 <Button
                   size="small"
-                  color="primary"
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     sendMessage();
                   }}
                   href="#"
+                  sx={{ color: accentColor }}
                 >
                   Send a message
                 </Button>
@@ -254,10 +255,10 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               <Button
                 component="a"
                 size="small"
-                color="primary"
                 href={`/userform?userId=${props.userId}`}
                 sx={{
                   cursor: "pointer",
+                  color: accentColor,
                 }}
               >
                 Open profile
