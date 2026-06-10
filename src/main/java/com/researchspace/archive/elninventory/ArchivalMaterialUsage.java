@@ -20,10 +20,11 @@ import lombok.ToString;
 public class ArchivalMaterialUsage {
 
   @XmlElement(required = true)
-  private Integer schemaVersion = 1;
+  private Integer schemaVersion = 2;
 
   private Long invRecId;
   private String invRecType;
+  private String globalId;
   private String igsn;
   private BigDecimal usageValue;
   private Integer usageUnitId;
@@ -32,6 +33,7 @@ public class ArchivalMaterialUsage {
   public ArchivalMaterialUsage(MaterialUsage mu) {
     setInvRecId(mu.getInventoryRecord().getId());
     setInvRecType(mu.getInventoryRecord().getType().name());
+    setGlobalId(mu.getInventoryRecord().getGlobalIdentifier());
     if (mu.getInventoryRecord().getActiveIdentifiers() != null
         && !mu.getInventoryRecord().getActiveIdentifiers().isEmpty()) {
       setIgsn(
