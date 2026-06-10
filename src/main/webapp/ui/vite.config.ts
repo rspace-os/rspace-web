@@ -178,8 +178,14 @@ export default defineConfig(async ({ mode }) => {
     base: "/ui/dist/",
     define: {
       global: "globalThis",
-      // Cache-busting token for the lazily-loaded, self-hosted TinyMCE assets.
+      // Cache-busting token + base URL for the lazily-loaded, self-hosted
+      // TinyMCE assets. The base differs between the app build ("/ui/dist/")
+      // and the Playwright component-test build ("/", see
+      // playwright-ct.config.ts), so it is injected rather than hard-coded.
       __TINYMCE_VERSION__: JSON.stringify(tinymceVersion),
+      // Full directory URL the TinyMCE assets are served from (the
+      // rspace:tinymce-assets plugin serves /ui/dist/tinymce/*).
+      __TINYMCE_BASE__: JSON.stringify("/ui/dist/tinymce/"),
     },
     plugins,
     resolve: {

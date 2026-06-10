@@ -19,6 +19,13 @@ declare global {
    * the lazily-loaded TinyMCE assets in StyledTinyMceEditor.tsx.
    */
   const __TINYMCE_VERSION__: string;
+
+  /**
+   * The full directory URL the self-hosted TinyMCE assets are served from,
+   * injected at build time (the app build uses "/ui/dist/tinymce/", the
+   * Playwright component-test build uses "/"). Always ends in a slash.
+   */
+  const __TINYMCE_BASE__: string;
 }
 
 export {};
