@@ -79,7 +79,9 @@
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
-        <version>1.14.7</version>
+        <!-- Keep >= the version Hibernate ORM ships (6.4.4 ships 1.14.11); pinned here for
+             dependencyConvergence between Hibernate and Mockito -->
+        <version>1.14.11</version>
       </dependency>
       <dependency>
         <groupId>jakarta.activation</groupId>
