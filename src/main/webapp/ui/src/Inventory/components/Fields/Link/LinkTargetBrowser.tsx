@@ -37,6 +37,7 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
           "SAMPLE",
           "SUBSAMPLE",
           "CONTAINER",
+          "TEMPLATE",
         ]),
         selectionMode: "SINGLE",
       },
@@ -49,7 +50,12 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
 
   const handleAddition = (records: Array<InventoryRecord>) => {
     const [first] = records;
-    if (!first || !first.globalId) return;
+    if (!first || !first.globalId) {
+      // the picker's Cancel button reports through onAddition([]) when the
+      // search uses instantConfirm (the default), so an empty pick is a cancel
+      props.onCancel();
+      return;
+    }
     props.onPick({
       globalId: first.globalId,
       name: first.name ?? "",

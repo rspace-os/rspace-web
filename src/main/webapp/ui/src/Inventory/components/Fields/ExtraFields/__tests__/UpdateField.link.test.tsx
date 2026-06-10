@@ -15,6 +15,14 @@ vi.mock("../../Link/ElnRecordPicker", () => ({
     open ? <div data-testid="eln-record-picker" /> : null,
 }));
 
+// Typed targets are existence-checked against the server on Apply; default to "exists".
+const { mockCheckLinkTargetExists } = vi.hoisted(() => ({
+  mockCheckLinkTargetExists: vi.fn(() => Promise.resolve(true)),
+}));
+vi.mock("../../Link/linkTargetExists", () => ({
+  checkLinkTargetExists: mockCheckLinkTargetExists,
+}));
+
 import UpdateField from "../UpdateField";
 import { type ExtraField } from "../../../../../stores/definitions/ExtraField";
 import { type InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
@@ -322,6 +330,141 @@ describe("UpdateField — Field Type select includes Link", () => {
         },
       },
     ]);
+  });
+
+  it("rejects applying a typed target that does not exist on the server", async () => {
+    mockCheckLinkTargetExists.mockResolvedValueOnce(false);
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /field name/i }),
+      "Linked sample",
+    );
+    await selectFieldType("Link");
+    await user.type(
+      screen.getByRole("combobox", { name: /relation type/i }),
+      "References",
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "SA99999",
+    );
+
+    await user.click(screen.getByRole("button", { name: /update field/i }));
+
+    expect(
+      await screen.findByText(
+        /SA99999 does not exist, or you do not have permission to view it/i,
+      ),
+    ).toBeInTheDocument();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const updateExtraField = record.updateExtraField;
+    expect(vi.mocked(updateExtraField)).not.toHaveBeenCalled();
+  });
+
+  it("clears the existence error once the target is edited", async () => {
+    mockCheckLinkTargetExists.mockResolvedValueOnce(false);
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /field name/i }),
+      "Linked sample",
+    );
+    await selectFieldType("Link");
+    await user.type(
+      screen.getByRole("combobox", { name: /relation type/i }),
+      "References",
+    );
+    const targetInput = screen.getByRole("textbox", {
+      name: /target global id/i,
+    });
+    await user.type(targetInput, "SA99999");
+    await user.click(screen.getByRole("button", { name: /update field/i }));
+    await screen.findByText(/does not exist/i);
+
+    await user.type(targetInput, "9");
+
+    expect(screen.queryByText(/does not exist/i)).not.toBeInTheDocument();
+  });
+
+  it("flags the model when an existing link's target is removed, so Save is blocked instead of silently reverting", async () => {
+    const extraField = makeExtraField({
+      id: 1,
+      name: "Existing",
+      type: "Link",
+      initial: false,
+      newFieldRequest: false,
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA42",
+        versionPin: null,
+      },
+    });
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.clear(
+      screen.getByRole("textbox", { name: /target global id/i }),
+    );
+
+    // the model is flagged so the record-level Save reports the missing target
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const setInvalidInput = extraField.setInvalidInput;
+    expect(vi.mocked(setInvalidInput)).toHaveBeenLastCalledWith(true);
+    // and the target field itself explains what is wrong
+    expect(
+      screen.getByText(/target global id is required/i),
+    ).toBeInTheDocument();
+  });
+
+  it("clears the invalid flag when the edit is cancelled", async () => {
+    const extraField = makeExtraField({
+      id: 1,
+      name: "Existing",
+      type: "Link",
+      initial: false,
+      newFieldRequest: false,
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA42",
+        versionPin: null,
+      },
+    });
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.clear(
+      screen.getByRole("textbox", { name: /target global id/i }),
+    );
+    await user.click(screen.getByRole("button", { name: /cancel update/i }));
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const setInvalidInput = extraField.setInvalidInput;
+    expect(vi.mocked(setInvalidInput)).toHaveBeenLastCalledWith(false);
   });
 
   it("disables Apply when self-link is selected", async () => {

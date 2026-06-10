@@ -269,6 +269,14 @@ public class ApiInventoryEntityField extends ApiField {
   private boolean applyContentChangesToDbField(InventoryEntityField dbField) {
     boolean contentChanged = false;
 
+    // a link field's value lives in its InventoryLink (applied through the
+    // service-layer InventoryLinkManager), not in the data column; pushing the
+    // client's (empty) content into setFieldData would trip the mandatory-field
+    // check for link fields populated by a template's "update all samples"
+    if (dbField instanceof InventoryLinkField) {
+      return false;
+    }
+
     // for choice/radio the content comes/goes through selectedOptions
     boolean isOptionsField = dbField.isOptionsStoringField();
 

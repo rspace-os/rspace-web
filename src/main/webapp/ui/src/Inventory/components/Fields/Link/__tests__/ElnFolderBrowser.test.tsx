@@ -35,6 +35,10 @@ function wireFolderTree() {
     if (id === undefined) records = ROOTS;
     else if (id === 100)
       records = [{ id: 301, globalId: "SD301", name: "Sub doc", type: "DOCUMENT" }];
+    else if (id === 200)
+      records = [
+        { id: 201, globalId: "SD201", name: "NB entry", type: "DOCUMENT" },
+      ];
     return Promise.resolve({
       totalHits: records.length,
       pageNumber: 0,
@@ -44,11 +48,13 @@ function wireFolderTree() {
 }
 
 function renderBrowser(
-  onPick: (s: { globalId: string; name: string; type: string }) => void,
+  onSelectionChange: (
+    s: { globalId: string; name: string; type: string } | null,
+  ) => void,
 ): void {
   render(
     <ThemeProvider theme={materialTheme}>
-      <ElnFolderBrowser onPick={onPick} />
+      <ElnFolderBrowser onSelectionChange={onSelectionChange} />
     </ThemeProvider>,
   );
 }
@@ -84,47 +90,64 @@ describe("ElnFolderBrowser", () => {
     ).toBeInTheDocument();
   });
 
-  it("picks a document when its label is clicked", async () => {
-    const onPick = vi.fn();
-    renderBrowser(onPick);
+  it("reports a document selection when its label is clicked", async () => {
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
     const user = userEvent.setup();
     await user.click(await screen.findByText(/protocol doc/i));
-    expect(onPick).toHaveBeenCalledWith({
+    expect(onSelectionChange).toHaveBeenCalledWith({
       globalId: "SD300",
       name: "Protocol doc",
       type: "DOCUMENT",
     });
   });
 
-  it("picks a notebook when its label is clicked", async () => {
-    const onPick = vi.fn();
-    renderBrowser(onPick);
+  it("reports a notebook selection when its label is clicked", async () => {
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
     const user = userEvent.setup();
     await user.click(await screen.findByText(/lab nb/i));
-    expect(onPick).toHaveBeenCalledWith({
+    expect(onSelectionChange).toHaveBeenCalledWith({
       globalId: "NB200",
       name: "Lab NB",
       type: "NOTEBOOK",
     });
   });
 
-  it("picks a Gallery file when its label is clicked", async () => {
-    const onPick = vi.fn();
-    renderBrowser(onPick);
+  it("reveals a notebook's contents on click and lets an entry be selected", async () => {
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
+    const user = userEvent.setup();
+
+    // clicking the notebook selects it and expands it to reveal its entries
+    await user.click(await screen.findByText(/lab nb/i));
+    const entry = await screen.findByText(/nb entry/i);
+
+    await user.click(entry);
+    expect(onSelectionChange).toHaveBeenLastCalledWith({
+      globalId: "SD201",
+      name: "NB entry",
+      type: "DOCUMENT",
+    });
+  });
+
+  it("reports a Gallery file selection when its label is clicked", async () => {
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
     const user = userEvent.setup();
     await user.click(await screen.findByText(/lemmings\.gif/i));
-    expect(onPick).toHaveBeenCalledWith({
+    expect(onSelectionChange).toHaveBeenCalledWith({
       globalId: "GL400",
       name: "lemmings.gif",
       type: "MEDIA",
     });
   });
 
-  it("does not pick a folder (navigate-only)", async () => {
-    const onPick = vi.fn();
-    renderBrowser(onPick);
+  it("reports no selection for a folder (navigate-only)", async () => {
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
     const user = userEvent.setup();
     await user.click(await screen.findByText("Projects"));
-    expect(onPick).not.toHaveBeenCalled();
+    expect(onSelectionChange).toHaveBeenCalledWith(null);
   });
 });

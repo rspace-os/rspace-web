@@ -113,6 +113,10 @@ export default class ExtraFieldModel implements ExtraField {
       return IsValid();
     }
     if (this.type === "Link") {
+      if (this.invalidInput)
+        return IsInvalid(
+          `The link field "${this.name}" needs its Target Global ID set. Set a target or cancel the edit.`
+        );
       if (!this.link || !this.link.relationType || !this.link.targetGlobalId) {
         return IsInvalid("Link fields require a relation type and target.");
       }

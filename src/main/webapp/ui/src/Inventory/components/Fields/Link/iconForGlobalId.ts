@@ -8,6 +8,7 @@ const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
   SS: { iconName: "subsample", recordTypeLabel: "Subsample" },
   IC: { iconName: "container", recordTypeLabel: "Container" },
   IN: { iconName: "container", recordTypeLabel: "Instrument" },
+  IT: { iconName: "template", recordTypeLabel: "Sample template" },
 };
 
 // RecordTypeIcon supports "document" and "gallery" but has no dedicated notebook

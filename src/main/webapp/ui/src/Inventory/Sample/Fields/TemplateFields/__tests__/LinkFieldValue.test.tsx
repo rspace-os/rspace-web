@@ -16,6 +16,13 @@ vi.mock("@/Inventory/components/Fields/Link/ElnRecordPicker", () => ({
 }));
 // RecordTypeIcon needs app context to resolve its icon; irrelevant to this component's logic.
 vi.mock("@/components/RecordTypeIcon", () => ({ default: () => null }));
+// Typed targets are existence-checked against the server on Apply; default to "exists".
+const { mockCheckLinkTargetExists } = vi.hoisted(() => ({
+  mockCheckLinkTargetExists: vi.fn(() => Promise.resolve(true)),
+}));
+vi.mock("@/Inventory/components/Fields/Link/linkTargetExists", () => ({
+  checkLinkTargetExists: mockCheckLinkTargetExists,
+}));
 // LinkField has its own tests; stub it so we can assert it is used for the committed-link display
 // (and drive its "Edit" affordance) without pulling in its info/version dialog chain.
 vi.mock("@/Inventory/components/Fields/Link/LinkField", () => ({
@@ -165,6 +172,129 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByTestId("open-target"));
     expect(openSpy).toHaveBeenCalledWith("/gallery/item/21", "_blank");
     openSpy.mockRestore();
+  });
+
+  it("lets a target Global ID be typed directly", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    const field = linkField({ setAttributesDirty });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "SS33",
+    );
+    await user.click(screen.getByRole("button", { name: /open/i }));
+    await user.click(screen.getByRole("option", { name: "References" }));
+    await user.click(screen.getByRole("button", { name: /apply link/i }));
+
+    expect(setAttributesDirty).toHaveBeenCalledWith({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SS33",
+        versionPin: null,
+      },
+    });
+  });
+
+  it("rejects a typed target with an unsupported prefix", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    const field = linkField({ setAttributesDirty });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "XX5",
+    );
+    await user.click(screen.getByRole("button", { name: /open/i }));
+    await user.click(screen.getByRole("option", { name: "References" }));
+
+    expect(
+      screen.getByText(
+        /target must be an inventory item or an eln document, notebook or gallery file/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /apply link/i })).toBeDisabled();
+    expect(setAttributesDirty).not.toHaveBeenCalled();
+  });
+
+  it("flags the field model while link edits are unapplied so record save is blocked", async () => {
+    const user = userEvent.setup();
+    const setError = vi.fn();
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA20",
+        versionPin: null,
+      },
+      setError,
+    });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+    // remove the target: the staged state now diverges from the committed link
+    await user.click(screen.getByTestId("CancelIcon"));
+
+    expect(setError).toHaveBeenLastCalledWith(true);
+
+    // discarding restores the committed link and clears the flag
+    await user.click(screen.getByRole("button", { name: /discard link/i }));
+    expect(setError).toHaveBeenLastCalledWith(false);
+  });
+
+  it("shows None in view mode when the field has no link", () => {
+    renderField({
+      field: linkField(),
+      sourceGlobalId: "SA1",
+      disabled: true,
+      onChange: () => {},
+    });
+
+    expect(screen.getByText("None")).toBeInTheDocument();
+  });
+
+  it("rejects applying a typed target that does not exist on the server", async () => {
+    mockCheckLinkTargetExists.mockResolvedValueOnce(false);
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    const field = linkField({ setAttributesDirty });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "SS9999",
+    );
+    await user.click(screen.getByRole("button", { name: /open/i }));
+    await user.click(screen.getByRole("option", { name: "References" }));
+    await user.click(screen.getByRole("button", { name: /apply link/i }));
+
+    expect(
+      await screen.findByText(
+        /SS9999 does not exist, or you do not have permission to view it/i,
+      ),
+    ).toBeInTheDocument();
+    expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 
   it("prevents applying a self-link", async () => {

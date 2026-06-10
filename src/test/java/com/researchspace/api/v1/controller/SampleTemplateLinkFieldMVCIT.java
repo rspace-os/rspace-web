@@ -96,7 +96,54 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
         IllegalArgumentException.class, () -> sampleApiManager.updateApiSample(update, anyUser));
   }
 
+  @Test
+  public void mandatoryLinkFieldFilledViaApiPutDoesNotTripMandatoryContentCheck() throws Exception {
+    // a sample created from a template with a mandatory link field starts with the
+    // link unfilled (the same state "update all samples" leaves pre-existing samples in)
+    ApiSampleTemplate savedTemplate = createTemplateWithLinkField(true);
+    ApiSampleWithFullSubSamples apiSample =
+        new ApiSampleWithFullSubSamples("sample with mandatory link field");
+    apiSample.setTemplateId(savedTemplate.getId());
+    ApiSampleWithFullSubSamples created = sampleApiManager.createNewApiSample(apiSample, anyUser);
+    ApiSample fetched = sampleApiManager.getApiSampleById(created.getId(), anyUser);
+    Long linkFieldId = findLinkField(fetched.getFields()).getId();
+
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+
+    // the UI ships the field with empty content alongside the filled link payload; the
+    // content-apply path must leave link fields alone instead of failing the mandatory
+    // content check with "[] is invalid for field type Link" (RSDEV-1131 bug)
+    String updateJson =
+        "{\"fields\":[{"
+            + "\"id\":"
+            + linkFieldId
+            + ","
+            + "\"type\":\"link\","
+            + "\"content\":\"\","
+            + "\"link\":{\"relationType\":\"References\",\"targetGlobalId\":\""
+            + target.getGlobalId()
+            + "\",\"versionPin\":null}"
+            + "}]}";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/samples/" + created.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiSampleWithFullSubSamples updated =
+        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+    ApiInventoryEntityField updatedField = findLinkField(updated.getFields());
+    assertNotNull(updatedField.getLink(), "the mandatory link should now be filled");
+    assertEquals(target.getGlobalId(), updatedField.getLink().getTargetGlobalId());
+  }
+
   private ApiSampleTemplate createTemplateWithLinkField() throws Exception {
+    return createTemplateWithLinkField(false);
+  }
+
+  private ApiSampleTemplate createTemplateWithLinkField(boolean mandatory) throws Exception {
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
     templatePost.setName("template with link field");
     templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
@@ -104,6 +151,7 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     ApiInventoryEntityField linkField = new ApiInventoryEntityField();
     linkField.setName("Related items");
     linkField.setType(ApiFieldType.LINK);
+    linkField.setMandatory(mandatory);
     linkField.setAllowedRelationTypes(List.of("References", "IsDerivedFrom"));
     templatePost.setFields(List.of(linkField));
 

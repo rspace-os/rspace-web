@@ -5,10 +5,17 @@ import { render, screen } from "@/__tests__/customQueries";
 import LinkTargetBrowser from "../LinkTargetBrowser";
 
 // Search pulls in the store/fetcher chain at construction; stub it out (this is a thin wrapper).
+const { searchConstructorArgs } = vi.hoisted(() => ({
+  searchConstructorArgs: [] as Array<unknown>,
+}));
 vi.mock("@/stores/models/Search", () => ({
   default: class {
     fetcher = { performInitialSearch: vi.fn(() => Promise.resolve()) };
     uiConfig = { selectionMode: "SINGLE" };
+
+    constructor(args: unknown) {
+      searchConstructorArgs.push(args);
+    }
   },
 }));
 vi.mock("@/stores/models/Factory/AlwaysNewFactory", () => ({ default: class {} }));
@@ -32,6 +39,9 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
         }
       >
         pick SA42
+      </button>
+      <button type="button" onClick={() => props.onAddition([])}>
+        cancel picker
       </button>
     </div>
   ),
@@ -59,5 +69,26 @@ describe("LinkTargetBrowser", () => {
       globalId: "SA42",
       name: "Sample 42",
     });
+  });
+
+  it("lets sample templates be browsed as link targets", () => {
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    const args = searchConstructorArgs.at(-1) as {
+      uiConfig: { allowedTypeFilters: Set<string> };
+    };
+    expect([...args.uiConfig.allowedTypeFilters]).toContain("TEMPLATE");
+  });
+
+  it("treats an empty addition as cancel so the Cancel button closes the dialog", async () => {
+    // Picker's Cancel routes through onAddition([]) when the search uses
+    // instantConfirm (the default), so an empty pick must close the dialog
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={onCancel} />);
+
+    await user.click(screen.getByRole("button", { name: /cancel picker/i }));
+
+    expect(onCancel).toHaveBeenCalled();
   });
 });

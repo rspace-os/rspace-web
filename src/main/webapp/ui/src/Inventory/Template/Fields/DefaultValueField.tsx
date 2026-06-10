@@ -56,6 +56,11 @@ function DefaultValueField({
           disabled={!editing}
           options={[...DATACITE_RELATION_TYPES]}
           value={field.allowedRelationTypes}
+          // already-chosen types are greyed out rather than toggled off; they
+          // are removed via their chip's delete icon instead
+          getOptionDisabled={(option) =>
+            field.allowedRelationTypes.includes(option)
+          }
           onChange={(_event, value) =>
             field.setAttributesDirty({ allowedRelationTypes: value })
           }

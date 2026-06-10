@@ -11,9 +11,9 @@ import org.springframework.validation.Errors;
 /**
  * Validates an incoming {@link ApiInventoryLink} payload independent of database state. Checks
  * relationType against the DataCite vocabulary, syntactic GlobalID parse, that the target prefix is
- * a supported link target (Inventory items or ELN documents, notebooks and gallery files), and
- * forbids self-links. Existence and read-permission checks live in the manager layer, where the
- * acting user is available.
+ * a supported link target (Inventory items including sample templates, or ELN documents, notebooks
+ * and gallery files), and forbids self-links. Existence and read-permission checks live in the
+ * manager layer, where the acting user is available.
  */
 public class InventoryLinkValidator {
 
@@ -23,6 +23,7 @@ public class InventoryLinkValidator {
           GlobalIdPrefix.SS,
           GlobalIdPrefix.IC,
           GlobalIdPrefix.IN,
+          GlobalIdPrefix.IT,
           GlobalIdPrefix.SD,
           GlobalIdPrefix.NB,
           GlobalIdPrefix.GL);

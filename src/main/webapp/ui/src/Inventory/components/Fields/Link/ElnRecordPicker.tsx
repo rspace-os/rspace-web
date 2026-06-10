@@ -21,13 +21,22 @@ export interface ElnRecordPickerProps {
 /**
  * Dialog for picking an ELN link target (document, notebook or Gallery file) by browsing the
  * workspace/Gallery folder tree. Opened from a "Browse ELN" affordance, so it drops straight into
- * the folder picker with no search/browse mode choice. The tree surfaces documents, notebooks and
- * Gallery files, so every linkable ELN target is reachable here. Decoupled from TinyMCE and MobX:
- * it returns the chosen target via onPick so it can be reused outside the Inventory dialog.
+ * the folder picker with no search/browse mode choice. Clicking a tree node only selects it (and
+ * expands folders/notebooks), so notebooks can be browsed into; the selection is confirmed with
+ * the explicit Choose button, which reports the target via onPick. Decoupled from TinyMCE and
+ * MobX so it can be reused outside the Inventory dialog.
  */
 export default function ElnRecordPicker(
   props: ElnRecordPickerProps,
 ): React.ReactElement {
+  const [selection, setSelection] =
+    React.useState<ElnRecordPickerResult | null>(null);
+
+  // a reopened dialog must not retain (and offer to Choose) a stale selection
+  React.useEffect(() => {
+    if (props.open) setSelection(null);
+  }, [props.open]);
+
   return (
     <Dialog
       open={props.open}
@@ -38,9 +47,20 @@ export default function ElnRecordPicker(
     >
       <DialogTitle>Browse ELN</DialogTitle>
       <DialogContent dividers sx={{ minHeight: "40vh" }}>
-        <ElnFolderBrowser onPick={props.onPick} />
+        <ElnFolderBrowser onSelectionChange={setSelection} />
       </DialogContent>
       <DialogActions>
+        <Button
+          variant="contained"
+          color="callToAction"
+          disableElevation
+          disabled={selection === null}
+          onClick={() => {
+            if (selection) props.onPick(selection);
+          }}
+        >
+          Choose
+        </Button>
         <Button onClick={props.onCancel}>Cancel</Button>
       </DialogActions>
     </Dialog>

@@ -25,18 +25,8 @@ import LinkTargetBrowser from "../Link/LinkTargetBrowser";
 import ElnRecordPicker from "../Link/ElnRecordPicker";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import { iconForGlobalId } from "../Link/iconForGlobalId";
-
-// Inventory items (SA/SS/IC/IN) plus ELN documents (SD), notebooks (NB) and gallery files (GL).
-const ALLOWED_TARGET_PREFIXES = new Set([
-  "SA",
-  "SS",
-  "IC",
-  "IN",
-  "SD",
-  "NB",
-  "GL",
-]);
-const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v(\d+))?$/;
+import { validateTarget } from "../Link/linkTarget";
+import { checkLinkTargetExists } from "../Link/linkTargetExists";
 
 type UpdateFieldArgs = {
   extraField: ExtraField;
@@ -74,32 +64,6 @@ function linkStateFromExtraField(extraField: ExtraField): LinkState {
     : emptyLinkState();
 }
 
-function isSelfLink(sourceGlobalId: string, targetGlobalId: string): boolean {
-  const source = GLOBAL_ID_PATTERN.exec(sourceGlobalId);
-  const target = GLOBAL_ID_PATTERN.exec(targetGlobalId);
-  return Boolean(
-    source && target && source[1] === target[1] && source[2] === target[2],
-  );
-}
-
-/** Validates only the target Global ID; relation-type validity is reported on its own field. */
-function validateTarget(
-  targetGlobalId: string,
-  sourceGlobalId: string,
-): { ok: boolean; reason: string } {
-  const match = GLOBAL_ID_PATTERN.exec(targetGlobalId);
-  if (!match) return { ok: false, reason: "Target Global ID is required" };
-  if (!ALLOWED_TARGET_PREFIXES.has(match[1]))
-    return {
-      ok: false,
-      reason:
-        "Target must be an Inventory item or an ELN document, notebook or gallery file",
-    };
-  if (isSelfLink(sourceGlobalId, targetGlobalId))
-    return { ok: false, reason: "An item cannot link to itself" };
-  return { ok: true, reason: "" };
-}
-
 export default function UpdateField({
   extraField,
   index,
@@ -113,6 +77,11 @@ export default function UpdateField({
   const [linkState, setLinkState] = useState<LinkState>(emptyLinkState());
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnBrowserOpen, setElnBrowserOpen] = useState(false);
+  // set when Apply finds the typed target does not resolve on the server
+  const [targetExistenceError, setTargetExistenceError] = useState<
+    string | null
+  >(null);
+  const [checkingTarget, setCheckingTarget] = useState(false);
 
   useEffect(() => {
     if (extraField) {
@@ -161,6 +130,12 @@ export default function UpdateField({
     isLink &&
     !relationValid &&
     (linkState.relationType !== "" || linkState.targetGlobalId !== "");
+  // the target error shows for any non-empty invalid target, and also when an
+  // existing link's target has been removed ("Target Global ID is required")
+  const showTargetError =
+    isLink &&
+    !targetValidity.ok &&
+    (linkState.targetGlobalId !== "" || !extraField.initial);
 
   const initialLink = linkStateFromExtraField(extraField);
   const linkChanged =
@@ -169,8 +144,21 @@ export default function UpdateField({
       linkState.targetGlobalId !== initialLink.targetGlobalId ||
       linkState.versionPin !== initialLink.versionPin);
 
+  // Surface an invalid in-progress edit of an existing link (e.g. a removed
+  // target) on the model, so the record-level Save is blocked with an error
+  // instead of silently reverting to the stored link. New fields are covered
+  // by the live model sync above plus the model's own link validation. Only
+  // Link fields are touched: Number fields manage invalidInput themselves.
+  const dirtyAndInvalid = !extraField.initial && isLink && linkChanged && !linkValid;
+  useEffect(() => {
+    if (extraField.type !== "Link") return;
+    extraField.setInvalidInput(dirtyAndInvalid);
+  }, [dirtyAndInvalid, extraField]);
+
   const canSubmit =
     !errorMessage &&
+    !targetExistenceError &&
+    !checkingTarget &&
     fieldState.name !== "" &&
     fieldState.type !== "" &&
     (fieldState.type !== "Link" || linkValid) &&
@@ -224,6 +212,7 @@ export default function UpdateField({
   };
 
   const handleBrowserPick = (target: { globalId: string; name: string }) => {
+    setTargetExistenceError(null);
     setLinkState({
       ...linkState,
       targetGlobalId: target.globalId,
@@ -237,6 +226,7 @@ export default function UpdateField({
     name: string;
     type: string;
   }) => {
+    setTargetExistenceError(null);
     setLinkState({
       ...linkState,
       targetGlobalId: target.globalId,
@@ -245,8 +235,22 @@ export default function UpdateField({
     setElnBrowserOpen(false);
   };
 
-  const update = () => {
+  const update = async () => {
     if (fieldState.type === "Link") {
+      // a structurally-valid Global ID must also resolve to a real, readable
+      // record; check (re)targeted links against the server before committing
+      if (linkState.targetGlobalId !== initialLink.targetGlobalId) {
+        setCheckingTarget(true);
+        const exists = await checkLinkTargetExists(linkState.targetGlobalId);
+        setCheckingTarget(false);
+        if (!exists) {
+          setTargetExistenceError(
+            `${linkState.targetGlobalId} does not exist, or you do not have permission to view it.`,
+          );
+          return;
+        }
+      }
+      extraField.setInvalidInput(false);
       record.updateExtraField(extraField.name, {
         name: fieldState.name,
         type: fieldState.type,
@@ -265,6 +269,7 @@ export default function UpdateField({
   };
 
   const discardChanges = () => {
+    extraField.setInvalidInput(false);
     record.updateExtraField(
       extraField.name,
       pick("name", "type")(extraField) as {
@@ -378,13 +383,14 @@ export default function UpdateField({
                             ? `${linkState.targetGlobalId} — ${linkState.targetName}`
                             : linkState.targetGlobalId
                         }
-                        onDelete={() =>
+                        onDelete={() => {
+                          setTargetExistenceError(null);
                           setLinkState({
                             ...linkState,
                             targetGlobalId: "",
                             targetName: "",
-                          })
-                        }
+                          });
+                        }}
                         data-test-id="LinkTarget-globalId"
                       />
                     );
@@ -410,22 +416,24 @@ export default function UpdateField({
               <TextField
                 label="Target Global ID"
                 value={linkState.targetGlobalId}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setTargetExistenceError(null);
                   setLinkState({
                     ...linkState,
                     targetGlobalId: e.target.value,
                     targetName: "",
-                  })
-                }
+                  });
+                }}
                 fullWidth
                 size="small"
                 variant="standard"
                 helperText={
-                  !targetValidity.ok && linkState.targetGlobalId !== ""
+                  targetExistenceError ??
+                  (showTargetError
                     ? targetValidity.reason
-                    : "Paste a Global ID, or use Browse Inventory above."
+                    : "Paste a Global ID, or use Browse Inventory above.")
                 }
-                error={!targetValidity.ok && linkState.targetGlobalId !== ""}
+                error={Boolean(targetExistenceError) || showTargetError}
               />
             </Box>
           </Grid>
@@ -438,7 +446,9 @@ export default function UpdateField({
           disableElevation
           variant="contained"
           aria-label="Update field"
-          onClick={update}
+          onClick={() => {
+            void update();
+          }}
           disabled={!canSubmit}
           data-test-id={"ApplyOrUpdateButton"}
         >

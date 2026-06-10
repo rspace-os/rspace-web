@@ -272,6 +272,10 @@ export default class FieldModel implements Field {
       return IsInvalid(
         `The mandatory custom field "${this.name}" must have a valid value.`
       );
+    if (this.type === "link" && this.error)
+      return IsInvalid(
+        `Apply or discard the link changes in "${this.name}" before saving.`
+      );
     if (this.error)
       return IsInvalid(
         `There is an error with the custom field, "${this.name}".`
@@ -346,7 +350,6 @@ export default class FieldModel implements Field {
     const keys = [
       "id",
       "name",
-      hasOptions(ret.type) ? "selectedOptions" : "content",
       "type",
       "definition",
       "newFieldRequest",
@@ -355,8 +358,14 @@ export default class FieldModel implements Field {
       "columnIndex",
       "mandatory",
     ];
-    // link fields carry their permitted relation-type whitelist and the chosen link value
-    if (ret.type === "link") keys.push("allowedRelationTypes", "link");
+    if (ret.type === "link") {
+      // link fields carry their permitted relation-type whitelist and the
+      // chosen link value; their data column is unused, so no content is sent
+      // (the backend's mandatory check rejects empty content)
+      keys.push("allowedRelationTypes", "link");
+    } else {
+      keys.push(hasOptions(ret.type) ? "selectedOptions" : "content");
+    }
     return pick(...keys)(ret) as object;
   }
 }

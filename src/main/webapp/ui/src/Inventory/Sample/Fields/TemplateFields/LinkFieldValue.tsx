@@ -6,6 +6,7 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
 import FormHelperText from "@mui/material/FormHelperText";
 import { type Field, type FieldLink } from "../../../../stores/definitions/Field";
 import { DATACITE_RELATION_TYPES } from "../../../components/Fields/Link/dataciteRelationTypes";
@@ -17,6 +18,8 @@ import {
   openUrlForTarget,
 } from "../../../components/Fields/Link/iconForGlobalId";
 import LinkField from "../../../components/Fields/Link/LinkField";
+import { validateTarget } from "../../../components/Fields/Link/linkTarget";
+import { checkLinkTargetExists } from "../../../components/Fields/Link/linkTargetExists";
 
 type LinkFieldValueArgs = {
   field: Field;
@@ -25,17 +28,6 @@ type LinkFieldValueArgs = {
   disabled: boolean;
   onChange: () => void;
 };
-
-const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v\d+)?$/;
-
-/** True when target points at the same item as source, ignoring any version suffix. */
-function isSelfLink(sourceGlobalId: string, targetGlobalId: string): boolean {
-  const source = GLOBAL_ID_PATTERN.exec(sourceGlobalId);
-  const target = GLOBAL_ID_PATTERN.exec(targetGlobalId);
-  return Boolean(
-    source && target && source[1] === target[1] && source[2] === target[2],
-  );
-}
 
 /**
  * Opens the link target in a new tab. A Gallery file opens at its location in the
@@ -68,6 +60,11 @@ function LinkFieldValue({
   const [editing, setEditing] = useState(!hasLink);
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnOpen, setElnOpen] = useState(false);
+  // set when Apply finds the typed target does not resolve on the server
+  const [targetExistenceError, setTargetExistenceError] = useState<
+    string | null
+  >(null);
+  const [checkingTarget, setCheckingTarget] = useState(false);
 
   // staged (uncommitted) edits; committed to the field model only on Apply
   const [stagedRelationType, setStagedRelationType] = useState<string>(
@@ -77,33 +74,54 @@ function LinkFieldValue({
     committedTargetGlobalId,
   );
 
+  const setStagedTarget = (targetGlobalId: string): void => {
+    setTargetExistenceError(null);
+    setStagedTargetGlobalId(targetGlobalId);
+  };
+
   // re-sync staged state when the committed link changes (record switch, post-save round-trip)
   useEffect(() => {
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
   }, [committedRelationType, committedTargetGlobalId]);
 
+  const changed =
+    stagedRelationType !== committedRelationType ||
+    stagedTargetGlobalId !== committedTargetGlobalId;
+
+  // surface unapplied editor state on the field model so the record-level Save
+  // is blocked (with a clear message) instead of silently dropping the staged
+  // edit and saving the previous link
+  useEffect(() => {
+    field.setError(changed);
+  }, [changed, field]);
+
   const relationOptions =
     field.allowedRelationTypes.length > 0
       ? field.allowedRelationTypes
       : [...DATACITE_RELATION_TYPES];
 
-  const changed =
-    stagedRelationType !== committedRelationType ||
-    stagedTargetGlobalId !== committedTargetGlobalId;
   const bothEmpty = stagedRelationType === "" && stagedTargetGlobalId === "";
   const bothSet = stagedRelationType !== "" && stagedTargetGlobalId !== "";
-  const selfLinked = bothSet && isSelfLink(sourceGlobalId, stagedTargetGlobalId);
-  // a stageable value is either fully cleared (removing the link) or a complete, non-self link
-  const canApply = changed && (bothEmpty || (bothSet && !selfLinked));
+  // typed targets are validated like the extra-field editor: parseable, a
+  // supported prefix, and not a self-link
+  const targetValidity =
+    stagedTargetGlobalId === ""
+      ? { ok: true, reason: "" }
+      : validateTarget(stagedTargetGlobalId, sourceGlobalId);
+  // a stageable value is either fully cleared (removing the link) or a complete, valid link
+  const canApply =
+    changed &&
+    !checkingTarget &&
+    !targetExistenceError &&
+    (bothEmpty || (bothSet && targetValidity.ok));
 
-  const validationMessage = selfLinked
-    ? "An item cannot link to itself."
-    : changed && !bothEmpty && !bothSet
+  const validationMessage =
+    changed && !bothEmpty && !bothSet
       ? "Select both a relationship type and a target before applying."
       : "";
 
-  const apply = (): void => {
+  const apply = async (): Promise<void> => {
     const nextLink: FieldLink | null = bothEmpty
       ? null
       : {
@@ -111,6 +129,19 @@ function LinkFieldValue({
           targetGlobalId: stagedTargetGlobalId,
           versionPin: field.link?.versionPin ?? null,
         };
+    // a structurally-valid Global ID must also resolve to a real, readable
+    // record; check (re)targeted links against the server before committing
+    if (nextLink && nextLink.targetGlobalId !== committedTargetGlobalId) {
+      setCheckingTarget(true);
+      const exists = await checkLinkTargetExists(nextLink.targetGlobalId);
+      setCheckingTarget(false);
+      if (!exists) {
+        setTargetExistenceError(
+          `${nextLink.targetGlobalId} does not exist, or you do not have permission to view it.`,
+        );
+        return;
+      }
+    }
     field.setAttributesDirty({ link: nextLink });
     field.setError(false);
     setEditing(false);
@@ -118,6 +149,7 @@ function LinkFieldValue({
   };
 
   const discard = (): void => {
+    setTargetExistenceError(null);
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
     if (hasLink) {
@@ -146,9 +178,14 @@ function LinkFieldValue({
     );
   }
 
-  // View mode with no link to show or edit.
+  // View mode with no link to show or edit: show an explicit placeholder
+  // rather than headers with blank space beneath them.
   if (disabled) {
-    return null;
+    return (
+      <Typography variant="body2" color="text.secondary">
+        None
+      </Typography>
+    );
   }
 
   return (
@@ -186,7 +223,7 @@ function LinkFieldValue({
                     ) : undefined
                   }
                   label={stagedTargetGlobalId}
-                  onDelete={() => setStagedTargetGlobalId("")}
+                  onDelete={() => setStagedTarget("")}
                   data-test-id="LinkTarget-globalId"
                 />
               );
@@ -209,6 +246,23 @@ function LinkFieldValue({
           Browse ELN
         </Button>
       </Stack>
+      <MuiTextField
+        label="Target Global ID"
+        value={stagedTargetGlobalId}
+        onChange={(e) => setStagedTarget(e.target.value)}
+        fullWidth
+        size="small"
+        variant="standard"
+        sx={{ mt: 1 }}
+        helperText={
+          targetExistenceError ??
+          (!targetValidity.ok
+            ? targetValidity.reason
+            : "Paste a Global ID, or use the Browse buttons above.")
+        }
+        error={Boolean(targetExistenceError) || !targetValidity.ok}
+        inputProps={{ "aria-label": "Target Global ID" }}
+      />
       {validationMessage && (
         <FormHelperText error>{validationMessage}</FormHelperText>
       )}
@@ -218,7 +272,9 @@ function LinkFieldValue({
           disableElevation
           variant="contained"
           aria-label="Apply link"
-          onClick={apply}
+          onClick={() => {
+            void apply();
+          }}
           disabled={!canApply}
           data-test-id="ApplyLinkButton"
         >
@@ -238,7 +294,7 @@ function LinkFieldValue({
         open={browserOpen}
         onCancel={() => setBrowserOpen(false)}
         onPick={(target) => {
-          setStagedTargetGlobalId(target.globalId);
+          setStagedTarget(target.globalId);
           setBrowserOpen(false);
         }}
       />
@@ -246,7 +302,7 @@ function LinkFieldValue({
         open={elnOpen}
         onCancel={() => setElnOpen(false)}
         onPick={(target) => {
-          setStagedTargetGlobalId(target.globalId);
+          setStagedTarget(target.globalId);
           setElnOpen(false);
         }}
       />

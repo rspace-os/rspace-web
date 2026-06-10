@@ -29,6 +29,13 @@ describe("iconForInventoryGlobalId", () => {
     });
   });
 
+  test("maps sample templates to the template icon", () => {
+    expect(iconForInventoryGlobalId("IT3")).toEqual({
+      iconName: "template",
+      recordTypeLabel: "Sample template",
+    });
+  });
+
   test("returns null for ELN and unknown prefixes and malformed ids", () => {
     expect(iconForInventoryGlobalId("SD1")).toBeNull();
     expect(iconForInventoryGlobalId("")).toBeNull();

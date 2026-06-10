@@ -90,6 +90,15 @@ class InventoryLinkValidatorTest {
   }
 
   @Test
+  void acceptsSampleTemplateTarget() {
+    ApiInventoryLink link = buildLink("References", "IT12");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertFalse(errors.hasErrors(), "expected IT (sample template) prefix to be accepted");
+  }
+
+  @Test
   void acceptsElnTargetPrefixes() {
     for (String prefix : new String[] {"SD", "NB", "GL"}) {
       ApiInventoryLink link = buildLink("References", prefix + "1");

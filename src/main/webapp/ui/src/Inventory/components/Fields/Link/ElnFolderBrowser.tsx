@@ -227,15 +227,18 @@ function TreeNodeContent({
 /**
  * A folder-tree browser for picking an ELN link target. Folders and notebooks can
  * be expanded to navigate; documents, notebooks and Gallery files can be selected as
- * the target. Clicking a node's expand chevron only navigates, while clicking its
- * label selects it, so a notebook can be both opened and chosen. Reuses the workspace
- * folder-tree data layer ({@link useFolders}), which also surfaces the Gallery, so
- * gallery files can be picked here as well as via search.
+ * the target. Clicking a node both selects it and (for folders and notebooks)
+ * expands it, so a notebook can be opened to reach its entries and still be chosen
+ * itself. Selection alone does not confirm the pick: the browser only reports the
+ * current selection ({@code null} for navigate-only folders) and the host dialog
+ * confirms it with an explicit Choose action. Reuses the workspace folder-tree data
+ * layer ({@link useFolders}), which also surfaces the Gallery, so gallery files can
+ * be picked here as well as via search.
  */
 export default function ElnFolderBrowser({
-  onPick,
+  onSelectionChange,
 }: {
-  onPick: (selection: ElnTreeSelection) => void;
+  onSelectionChange: (selection: ElnTreeSelection | null) => void;
 }): React.ReactElement {
   const { getFolderTree } = useFolders();
   const [roots, setRoots] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
@@ -298,13 +301,11 @@ export default function ElnFolderBrowser({
         selectedItems={selected}
         onSelectedItemsChange={(_event, node) => {
           setSelected(node);
-          if (node && isPickable(node)) {
-            onPick({
-              globalId: node.globalId,
-              name: node.name,
-              type: node.type,
-            });
-          }
+          onSelectionChange(
+            node && isPickable(node)
+              ? { globalId: node.globalId, name: node.name, type: node.type }
+              : null,
+          );
         }}
       >
         {roots.map((node) => (
