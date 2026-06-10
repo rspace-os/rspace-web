@@ -17,3 +17,9 @@ pre-commit:
         if [ -n "$spotless_files" ]; then
           ./mvnw -q spotless:check -DspotlessFiles="$spotless_files"
         fi
+    # Type-check the frontend when any staged TS/TSX file changes. tsc is a
+    # whole-project check, so we run the full `tsc --noEmit` rather than a
+    # per-file subset.
+    tsc:
+      glob: "src/main/webapp/ui/**/*.{ts,tsx}"
+      run: pnpm run tsc
