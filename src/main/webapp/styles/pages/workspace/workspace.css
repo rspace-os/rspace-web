@@ -9,6 +9,10 @@ a.templateInfo {
   font-size: 85%;
   color: blue; }
 
+a.workspace-link,
+a.workspace-link:visited {
+  color: #1465b7; }
+
 #search {
   float: right;
   width: 35% !important; }
