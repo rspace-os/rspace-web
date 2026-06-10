@@ -259,7 +259,7 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-${{ matrix.browser }}.json
         run: |
           rm -rf src/main/webapp/ui/playwright/.cache
-          pnpm run test-ct --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          pnpm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
 
       - name: Summarize Playwright report
         if: always()
