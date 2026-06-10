@@ -149,8 +149,7 @@ pipeline {
                 echo 'Running Vitest tests'
                 sh 'git fetch origin main:main || true'
                 // In Jenkins we limit this to 2 to not overwhelm the CI machine
-                sh 'env COLORS=false FORCE_COLOR=false pnpm run test --maxWorkers 2 --changed main'
-            }
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test -- --maxWorkers 2 --changed main'
             post {
                 failure {
                     notify currentBuild.result
