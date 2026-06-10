@@ -9,7 +9,7 @@ pre-commit:
     # Guard against an empty list (drop blank lines) so we never fall back to
     # `-DspotlessFiles=".*"`, which would match every file in the repo.
     spotless:
-      glob: "*.java"
+      glob: "**/*.java"
       run: |
         spotless_files=$(printf '%s\n' {staged_files} \
           | sed '/^$/d; s#^#.*#' \
