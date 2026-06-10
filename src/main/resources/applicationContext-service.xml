@@ -31,15 +31,13 @@
         <aop:advisor id="searchManagerTx" advice-ref="txAdvice" pointcut="execution(* *..search.SearchManager.*(..))" order="2"/>
         <aop:advisor id="validatorTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Validator.*(..))" order="2"/>
         <aop:advisor id="recordAdapterTx" advice-ref="txAdvice" pointcut="execution(* *..BaseRecordAdapter.*(..))" order="2"/>
-        <!-- Component-scanned service-layer beans not matching *Manager patterns:
-             @Transactional annotation processing via <tx:annotation-driven> is not reliably
-             applied in this hybrid XML+Java-config context. Add explicit AOP coverage. -->
-        <aop:advisor id="contentInitializerTx" advice-ref="txAdvice" pointcut="execution(* *..service.IContentInitializer.*(..))" order="2"/>
-        <aop:advisor id="shareApiTx" advice-ref="txAdvice" pointcut="execution(* *..service.ShareApiService.*(..))" order="2"/>
-        <aop:advisor id="contentUpdaterTx" advice-ref="txAdvice" pointcut="execution(* *..service.impl.UserContentUpdater.*(..))" order="2"/>
+        <!-- IApplicationInitialisor beans are a mixed hierarchy where several implementations
+             carry no @Transactional, so the initialisor family is advised here explicitly.
+             Every other component-scanned service bean not matching the *Manager pointcuts
+             uses @Transactional via <tx:annotation-driven> below; do NOT also add an advisor
+             for such beans - a second (read-write, order=2) interceptor would wrap every call
+             and override any readOnly attribute on the annotations. -->
         <aop:advisor id="appInitialisorTx" advice-ref="txAdvice" pointcut="execution(* *..service.IApplicationInitialisor.*(..))" order="2"/>
-        <aop:advisor id="archiveExportPlannerTx" advice-ref="txAdvice" pointcut="execution(* *..service.archive.export.ArchiveExportPlanner.*(..))" order="2"/>
-        <aop:advisor id="internalFileStoreTx" advice-ref="txAdvice" pointcut="execution(* *..files.service.InternalFileStore.*(..))" order="2"/>
     </aop:config>
 
     <!-- Enable @AspectJ support -->
