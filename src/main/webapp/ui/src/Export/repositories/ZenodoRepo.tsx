@@ -81,12 +81,11 @@ export default function ZenodoRepo({
         value: "DUMMY_VALUE",
       },
     });
-
   }, []);
 
   return (
-    <Grid container style={{ width: "100%" }}>
-      <Grid item xs={12}>
+    <Grid container sx={{ width: "100%" }}>
+      <Grid size={12}>
         <TextField
           name="title"
           error={submitAttempt && !inputValidations.title}
@@ -99,7 +98,7 @@ export default function ZenodoRepo({
           value={title}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
           label="Description *"
@@ -114,7 +113,7 @@ export default function ZenodoRepo({
           value={description}
         />
       </Grid>
-      <Grid item xs={12} mt={1}>
+      <Grid sx={{ mt: 1 }} size={12}>
         <Tags
           fieldOwner={{
             fieldValues: { tags },

@@ -171,7 +171,7 @@ describe("KetcherTinyMce accessibility", () => {
 
     // Extract the onUnmount callback passed to KetcherTinyMce.
     // Tree: ThemeProvider > Analytics > Alerts > KetcherTinyMce
-    const themeProvider = rootRenderCalls[0]!.node as React.ReactElement;
+    const themeProvider = rootRenderCalls[0].node as React.ReactElement;
     const analytics = themeProvider.props.children as React.ReactElement;
     const alerts = analytics.props.children as React.ReactElement;
     const ketcherEl = alerts.props.children as React.ReactElement;
@@ -183,7 +183,7 @@ describe("KetcherTinyMce accessibility", () => {
     onUnmount();
 
     // The mock root's unmount should have been called.
-    const firstRoot = mockCreateRoot.mock.results[0]!.value as {
+    const firstRoot = mockCreateRoot.mock.results[0].value as {
       unmount: ReturnType<typeof vi.fn>;
     };
     expect(firstRoot.unmount).toHaveBeenCalledOnce();

@@ -14,7 +14,7 @@ export type InputWrapperArgs = {
   actions?: React.ReactNode;
   inline?: boolean;
   explanation?: React.ReactNode;
-  dataTestId?: string;
+  "data-test-id"?: string;
   required?: boolean;
   flexWrap?: "nowrap" | "wrap" | "wrap-reverse" | "initial" | "inherit";
 };
@@ -30,7 +30,7 @@ function InputWrapper({
   actions = <div></div>,
   inline = false,
   explanation,
-  dataTestId,
+  "data-test-id": dataTestId,
   required,
   flexWrap,
 }: InputWrapperArgs): React.ReactNode {
@@ -52,7 +52,7 @@ function InputWrapper({
       label={label}
       inline={inline}
       actions={actions}
-      dataTestId={dataTestId}
+      data-test-id={dataTestId}
       required={required}
       error={error}
       explanation={explanation}

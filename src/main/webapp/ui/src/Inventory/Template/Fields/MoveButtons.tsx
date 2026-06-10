@@ -1,4 +1,3 @@
-import { makeStyles } from "tss-react/mui";
 import React, { type ReactNode } from "react";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -14,16 +13,6 @@ type MoveButtonsArgs = {
   onClick: (number: number) => void;
 };
 
-const useStyles = makeStyles()((theme) => ({
-  moveButtonGroup: {
-    width: "100%",
-  },
-  moveButton: {
-    flexGrow: 1,
-    color: theme.palette.primary.main,
-  },
-}));
-
 type CustomButtonArgs = {
   label: string;
   onClick: () => void;
@@ -31,12 +20,14 @@ type CustomButtonArgs = {
 };
 
 function CustomButton({ label, onClick, icon }: CustomButtonArgs) {
-  const { classes } = useStyles();
   return (
     <Tooltip key={label} title={label} enterDelay={200}>
       <ToggleButton
         onClick={onClick}
-        className={classes.moveButton}
+        sx={(theme) => ({
+          flexGrow: 1,
+          color: theme.palette.primary.main,
+        })}
         value={label}
       >
         {icon}
@@ -49,11 +40,9 @@ export default function MoveButtons({
   index,
   onClick,
 }: MoveButtonsArgs): ReactNode {
-  const { classes } = useStyles();
-
   return (
     <InputWrapper label="Move">
-      <ToggleButtonGroup className={classes.moveButtonGroup}>
+      <ToggleButtonGroup sx={{ width: "100%" }}>
         <CustomButton
           label="To Top"
           onClick={() => onClick(0)}

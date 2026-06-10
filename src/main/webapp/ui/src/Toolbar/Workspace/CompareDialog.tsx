@@ -8,20 +8,20 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
   DataGrid,
-  GridToolbarContainer,
+  Toolbar as DataGridToolbar,
   GridToolbarExportContainer,
-  GridToolbarColumnsButton,
+  ColumnsPanelTrigger,
   type GridRenderCellParams,
   useGridApiContext,
   GridRowSelectionModel,
 } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
 import createAccentedTheme from "../../accentedTheme";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import MenuItem from "@mui/material/MenuItem";
 import { doNotAwait } from "../../util/Util";
 import { getByKey } from "../../util/optional";
@@ -73,18 +73,6 @@ type Document = {
   tags: string;
 };
 
-const StyledGridOverlay = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "100%",
-  backgroundColor: "rgba(18, 18, 18, 0.9)",
-  ...theme.applyStyles("light", {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-  }),
-}));
-
 function CircularProgressWithLabel(props: { value: number }) {
   return (
     <Box sx={{ position: "relative", display: "inline-flex" }}>
@@ -116,10 +104,22 @@ function CustomLoadingOverlay({
   documentCount: number;
 }) {
   return (
-    <StyledGridOverlay>
+    <Box
+      sx={(theme) => ({
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        backgroundColor: "rgba(18, 18, 18, 0.9)",
+        ...theme.applyStyles("light", {
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+        }),
+      })}
+    >
       <CircularProgressWithLabel value={(loadedCount / documentCount) * 100} />
       <Box sx={{ mt: 2 }}>Reading documents…</Box>
-    </StyledGridOverlay>
+    </Box>
   );
 }
 
@@ -153,7 +153,7 @@ const ExportMenuItem = ({
   </MenuItem>
 );
 
-const Toolbar = ({
+const CompareToolbar = ({
   rowSelectionModel,
   setColumnsMenuAnchorEl,
 }: {
@@ -172,7 +172,7 @@ const Toolbar = ({
    * than having to hook into the logic that triggers the opening of the
    * columns menu in both places, we just set the `anchorEl` pre-emptively.
    */
-  const columnMenuRef = React.useRef<HTMLElement>();
+  const columnMenuRef = React.useRef<HTMLElement | undefined>(undefined);
   React.useEffect(() => {
     if (columnMenuRef.current) setColumnsMenuAnchorEl(columnMenuRef.current);
   }, [setColumnsMenuAnchorEl]);
@@ -184,9 +184,9 @@ const Toolbar = ({
   };
 
   return (
-    <GridToolbarContainer sx={{ width: "100%" }}>
-      <Box flexGrow={1}></Box>
-      <GridToolbarColumnsButton
+    <DataGridToolbar style={{ width: "100%" }}>
+      <Box sx={{ flexGrow: 1 }}></Box>
+      <ColumnsPanelTrigger
         ref={(node) => {
           if (node) columnMenuRef.current = node;
         }}
@@ -199,10 +199,11 @@ const Toolbar = ({
             return Promise.resolve();
           }}
         >
-          Export {rowSelectionModel.ids.size > 0 ? "selected" : "all"} rows to CSV
+          Export {rowSelectionModel.ids.size > 0 ? "selected" : "all"} rows to
+          CSV
         </ExportMenuItem>
       </GridToolbarExportContainer>
-    </GridToolbarContainer>
+    </DataGridToolbar>
   );
 };
 
@@ -217,13 +218,33 @@ function CompareDialog(): React.ReactNode {
   });
   const [rowSelectionModel, setRowSelectionModel] =
     React.useState<GridRowSelectionModel>({
-      type: 'include',
+      type: "include",
       ids: new Set([]),
     });
   const [documentCount, setDocumentCount] = React.useState(0);
   const [loadedCount, setLoadedCount] = React.useState(0);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
     React.useState<HTMLElement | null>(null);
+
+  const ToolbarSlot = React.useCallback(
+    () => (
+      <CompareToolbar
+        rowSelectionModel={rowSelectionModel}
+        setColumnsMenuAnchorEl={setColumnsMenuAnchorEl}
+      />
+    ),
+    [rowSelectionModel, setColumnsMenuAnchorEl],
+  );
+
+  const LoadingOverlaySlot = React.useCallback(
+    () => (
+      <CustomLoadingOverlay
+        loadedCount={loadedCount}
+        documentCount={documentCount}
+      />
+    ),
+    [loadedCount, documentCount],
+  );
 
   const fieldColumns: ReadonlyArray<[number, string]> = React.useMemo(() => {
     const cols: Array<[number, string]> = [];
@@ -403,17 +424,15 @@ function CompareDialog(): React.ReactNode {
     >
       <DialogTitle>Export Documents to CSV</DialogTitle>
       <DialogContent>
-        <Grid container direction="column" spacing={2}>
-          <Grid item>
-            <Typography variant="body2">
-              Select the documents you want to combine into a single CSV file.
-              Documents with identical structures will be automatically aligned,
-              including form data and content. If documents have different
-              structures, additional columns will be created to accommodate all
-              information.
-            </Typography>
-          </Grid>
-          <Grid item sx={{ width: "100%" }}>
+        <Stack spacing={2}>
+          <Typography variant="body2">
+            Select the documents you want to combine into a single CSV file.
+            Documents with identical structures will be automatically aligned,
+            including form data and content. If documents have different
+            structures, additional columns will be created to accommodate all
+            information.
+          </Typography>
+          <Box sx={{ width: "100%" }}>
             <DataGrid
               aria-label="documents"
               autoHeight
@@ -447,29 +466,18 @@ function CompareDialog(): React.ReactNode {
               }}
               loading={loadedCount < documentCount}
               slots={{
-                // @ts-expect-error The type of toolbar does not account for the slotProps that also get passed
-                toolbar: Toolbar,
-                // @ts-expect-error The type of loadingOverlay does not account for the slotProps that also get passed
-                loadingOverlay: CustomLoadingOverlay,
+                toolbar: ToolbarSlot,
+                loadingOverlay: LoadingOverlaySlot,
               }}
               slotProps={{
-                toolbar: {
-                  // @ts-expect-error Needed by <Toolbar>
-                  rowSelectionModel,
-                  setColumnsMenuAnchorEl,
-                },
-                loadingOverlay: {
-                  // @ts-expect-error The type of loadingOverlay does not account for the slotProps that also get passed
-                  loadedCount,
-                  documentCount,
-                },
                 panel: {
                   target: columnsMenuAnchorEl,
                 },
               }}
-              showToolbar />
-          </Grid>
-        </Grid>
+              showToolbar
+            />
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button

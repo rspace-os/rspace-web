@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import Button from "@mui/material/Button";
+import Button, { buttonClasses } from "@mui/material/Button";
 import { type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { useTheme, darken, lighten } from "@mui/material/styles";
@@ -122,7 +122,6 @@ const UploadNewVersionMenuItem = ({
     input?.addEventListener("cancel", onError);
     return () => input?.removeEventListener("cancel", onError);
   }, [newVersionInputRef, onError]);
-
   const uploadNewVersionAllowed = computed((): Result<null> => {
     return selection
       .asSet()
@@ -132,7 +131,6 @@ const UploadNewVersionMenuItem = ({
       )
       .flatMap((file) => file.canUploadNewVersion);
   });
-
   return (
     <>
       <AccentMenuItem
@@ -196,14 +194,15 @@ const UploadNewVersionMenuItem = ({
               const newFile = ArrayUtils.head([...files])
                 .mapError(() => new Error("No files selected"))
                 .elseThrow();
-
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
                 .then(() => {
                   onSuccess();
                   trackEvent(
                     "user:uploads_new_version:file:gallery",
                     Optional.fromNullable(file.version)
-                      .map((v) => ({ version: v + 1 }))
+                      .map((v) => ({
+                        version: v + 1,
+                      }))
                       .orElse({}),
                   );
                 })
@@ -216,7 +215,6 @@ const UploadNewVersionMenuItem = ({
     </>
   );
 };
-
 const RenameDialog = ({
   open,
   onClose,
@@ -247,7 +245,12 @@ const RenameDialog = ({
       >
         <DialogTitle>Rename</DialogTitle>
         <DialogContent>
-          <DialogContentText variant="body2" sx={{ mb: 2 }}>
+          <DialogContentText
+            variant="body2"
+            sx={{
+              mb: 2,
+            }}
+          >
             Please give a new name for <strong>{file.name}</strong>
           </DialogContentText>
           <TextField
@@ -286,13 +289,11 @@ const RenameDialog = ({
     </Dialog>
   );
 };
-
 type ActionsMenuArgs = {
   refreshListing: () => Promise<void>;
   section: GallerySection | null;
   folderId: FetchingData.Fetched<Id>;
 };
-
 function ActionsMenu({
   refreshListing,
   section,
@@ -339,22 +340,29 @@ function ActionsMenu({
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(
     null,
   );
-
   const openAllowed = computed(() => {
     return selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .flatMapDiscarding((f) => f.canOpen);
   });
-
   const editingAllowed = computed(() =>
     selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
       .flatMap<
-        | { key: "image"; downloadHref: () => Promise<URL> }
-        | { key: "collabora"; url: string }
-        | { key: "officeonline"; url: string }
+        | {
+            key: "image";
+            downloadHref: () => Promise<URL>;
+          }
+        | {
+            key: "collabora";
+            url: string;
+          }
+        | {
+            key: "officeonline";
+            url: string;
+          }
       >((file) => {
         if (file.isImage && typeof file.downloadHref !== "undefined")
           return Result.Ok({
@@ -368,9 +376,18 @@ function ActionsMenu({
           }))
           .orElseTry(() =>
             canEditWithOfficeOnline(file).map<
-              | { key: "image"; downloadHref: () => Promise<URL> }
-              | { key: "collabora"; url: string }
-              | { key: "officeonline"; url: string }
+              | {
+                  key: "image";
+                  downloadHref: () => Promise<URL>;
+                }
+              | {
+                  key: "collabora";
+                  url: string;
+                }
+              | {
+                  key: "officeonline";
+                  url: string;
+                }
             >((url) => ({
               key: "officeonline" as const,
               url,
@@ -379,7 +396,6 @@ function ActionsMenu({
           .mapError(() => new Error("Cannot edit this item."));
       }),
   );
-
   const viewHidden = computed(() =>
     selection
       .asSet()
@@ -387,7 +403,6 @@ function ActionsMenu({
       .map((file) => file.canOpen.isOk)
       .orElse(false),
   );
-
   const viewAllowed = computed(() =>
     selection
       .asSet()
@@ -432,7 +447,6 @@ function ActionsMenu({
           ),
       ),
   );
-
   const duplicateAllowed = computed((): Result<null> => {
     if (selection.size > 50)
       return Result.Error([
@@ -442,7 +456,6 @@ function ActionsMenu({
       () => null,
     );
   });
-
   const deleteAllowed = computed((): Result<null> => {
     if (selection.size > 50)
       return Result.Error([
@@ -452,14 +465,12 @@ function ActionsMenu({
       () => null,
     );
   });
-
   const renameAllowed = computed((): Result<null> => {
     return selection
       .asSet()
       .only.toResult(() => new Error("Only one item may be renamed at once."))
       .flatMap((file) => file.canRename);
   });
-
   const moveToIrodsAllowed = computed((): Result<null> => {
     return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(
       () => null,
@@ -507,7 +518,6 @@ function ActionsMenu({
       () => null,
     );
   });
-
   const getShareDialogSelection = (): Result<{
     globalIds: ReadonlyArray<string>;
     names: ReadonlyArray<string>;
@@ -523,10 +533,11 @@ function ActionsMenu({
       ]);
     }
     if (selection.isEmpty)
-      return Result.Error([new Error("At least one snippet must be selected.")]);
+      return Result.Error([
+        new Error("At least one snippet must be selected."),
+      ]);
     if (selection.asSet().some((f) => !f.isSnippet))
       return Result.Error([new Error("Only snippets can be shared.")]);
-
     const selectedFiles = selection.asSet().toArray();
     const globalIds = selectedFiles
       .map((file) => file.globalId)
@@ -548,7 +559,6 @@ function ActionsMenu({
       if (!currentFolder) {
         continue;
       }
-
       if (currentFolder.isSharedFolder) {
         /*
          * This is a workaround as we don't currently expose granular permissions
@@ -563,17 +573,14 @@ function ActionsMenu({
         }
       }
     }
-
     return Result.Ok({
       globalIds,
       names: selectedFiles.map(({ name }) => name),
     });
   };
-
   const shareAllowed = computed((): Result<null> => {
     return getShareDialogSelection().map(() => null);
   });
-
   const downloadAllowed = computed((): Result<null> => {
     if (selection.asSet().some((f) => f.isFolder))
       return Result.Error([new Error("Cannot download folders.")]);
@@ -581,7 +588,6 @@ function ActionsMenu({
       return Result.Error([new Error("Cannot download snippets.")]);
     return Result.Ok(null);
   });
-
   const moveAllowed = computed((): Result<null> => {
     if (selection.size > 50)
       return Result.Error([
@@ -591,7 +597,6 @@ function ActionsMenu({
       () => null,
     );
   });
-
   const logOutAllowed = computed((): Result<Filestore> => {
     return selection
       .asSet()
@@ -606,7 +611,6 @@ function ActionsMenu({
       );
   });
   const { logout } = useFilestoresEndpoint();
-
   return (
     <>
       <Button
@@ -619,6 +623,12 @@ function ActionsMenu({
         startIcon={<ChecklistIcon />}
         onClick={(e) => {
           setActionsMenuAnchorEl(e.currentTarget);
+        }}
+        sx={{
+          [`&.${buttonClasses.disabled}`]: {
+            backgroundColor: theme.palette.action.disabledBackground,
+            color: theme.palette.action.disabled,
+          },
         }}
       >
         Actions
@@ -639,19 +649,11 @@ function ActionsMenu({
                   : {}),
               },
             },
+            list: {
+              disablePadding: true,
+              "aria-label": "actions",
+            },
           }}
-          MenuListProps={{
-            disablePadding: true,
-            "aria-label": "actions",
-          }}
-          /*
-           * We don't use `keepMounted` here as otherwise every time the user
-           * changes the selection the menu would have to re-render. The response
-           * time for the UI to update after a selection change is already pretty
-           * long (>250ms) as the listing and info panel have to be completely
-           * re-rendered and so keeping the menu out of the DOM whenever possible
-           * helps in keeping the user interface as responsive as possible.
-           */
         >
           {openAllowed
             .get()

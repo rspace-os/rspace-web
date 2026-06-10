@@ -30,10 +30,12 @@ export default function UriField({
       value={value}
       onChange={onChange}
       name={name}
-      inputProps={{
-        inputMode: "url",
-      }}
       id={id}
+      slotProps={{
+        htmlInput: {
+          inputMode: "url",
+        }
+      }}
     />
   );
 }

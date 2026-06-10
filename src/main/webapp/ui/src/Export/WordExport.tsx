@@ -46,7 +46,7 @@ export default function WordExport({
   const pageSizeId = useId();
   return (
     <Grid container spacing={1}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           variant="standard"
           fullWidth
@@ -63,15 +63,15 @@ export default function WordExport({
           data-test-id="word-title"
         />
       </Grid>
-      <Grid item container>
-        <Grid item xs={5}>
+      <Grid container>
+        <Grid size={5}>
           <InputLabel htmlFor={pageSizeId}>Page format: </InputLabel>
           <Select
             variant="standard"
             fullWidth
             value={pageSize}
             onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value as PageSize)
+              updateExportDetails("pageSize", value)
             }
             inputProps={{ id: pageSizeId }}
             data-test-id="word-size"

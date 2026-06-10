@@ -1,37 +1,16 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControlLabel, {
+  formControlLabelClasses,
+} from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import RemoveButton from "../../components/RemoveButton";
-import clsx from "clsx";
 import NoValue from "../../components/NoValue";
-import { withStyles } from "Styles";
 import Typography from "@mui/material/Typography";
-
-const useStyles = makeStyles()((theme) => ({
-  row: { display: "flex", flexDirection: "row", alignItems: "center" },
-  spacedAroundRow: {
-    justifyContent: "space-around",
-  },
-  spacedBetweenRow: {
-    justifyContent: "space-between",
-  },
-  radio: { padding: theme.spacing(0.5) },
-  formControlLabel: {
-    marginRight: theme.spacing(0),
-    overflowWrap: "anywhere",
-  },
-  smallerLabel: { fontSize: "13px" },
-  primary: { color: theme.palette.primary.main },
-  standard: { color: theme.palette.standardIcon.main },
-  extraSpacingBetweenOptions: {
-    marginBottom: theme.spacing(2),
-  },
-}));
+import Box from "@mui/material/Box";
 
 export type RadioOption<OptionValue extends string> = {
   label: React.ReactNode;
@@ -77,8 +56,6 @@ function RadioField<OptionValue extends string>({
   row = false,
   smallText = false,
 }: RadioFieldArgs<OptionValue>): React.ReactNode {
-  const { classes } = useStyles();
-
   const updateSelected = (newValue: OptionValue | null) => {
     onChange({ target: { value: newValue, name } });
   };
@@ -109,24 +86,32 @@ function RadioField<OptionValue extends string>({
           },
           i
         ) => (
-          <div
+          <Box
             key={i}
-            className={clsx(
-              classes.row,
-              !option.editing && classes.spacedBetweenRow,
-              typeof option.label !== "string" &&
-                classes.extraSpacingBetweenOptions
-            )}
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: !option.editing ? "space-between" : undefined,
+              marginBottom: typeof option.label !== "string" ? "16px" : undefined,
+            }}
           >
             <FormControlLabel
-              classes={{
-                root: classes.formControlLabel,
-                label: clsx(smallText && classes.smallerLabel),
+              sx={{
+                mr: 0,
+                overflowWrap: "anywhere",
+                ...(smallText
+                  ? {
+                      [`& .${formControlLabelClasses.label}`]: {
+                        fontSize: "13px",
+                      },
+                    }
+                  : {}),
               }}
               value={option.value}
               control={
                 <Radio
-                  className={clsx(row && classes.radio)}
+                  sx={row ? { p: 0.5 } : undefined}
                   color="primary"
                   disabled={disabled || !option.value}
                   onClick={() =>
@@ -179,29 +164,31 @@ function RadioField<OptionValue extends string>({
                     ? "Option value cannot be empty"
                     : null
                 }
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <RemoveButton
-                        onClick={() => {
-                          if (value === option.value) handleRemoveOption();
-                          onOptionRemove(i);
-                        }}
-                        title="Delete New Option"
-                      />
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <RemoveButton
+                          onClick={() => {
+                            if (value === option.value) handleRemoveOption();
+                            onOptionRemove(i);
+                          }}
+                          title="Delete New Option"
+                        />
+                      </InputAdornment>
+                    ),
+                  }
                 }}
               />
             )}
-          </div>
+          </Box>
         )
       )
     );
   };
   return (
     <RadioGroup
-      className={clsx(row && classes.spacedAroundRow)}
+      sx={row ? { justifyContent: "space-around" } : undefined}
       name={name}
       aria-label={name}
       value={value || null} // null prevents un/controlled component error msg
@@ -226,24 +213,22 @@ type OptionHeadingArgs = {
   children: React.ReactNode;
 };
 
-export const OptionHeading = withStyles<OptionHeadingArgs, { root: string }>(
-  () => ({
-    root: {
-      letterSpacing: 0,
-    },
-  })
-)(Typography);
+export function OptionHeading({ children }: OptionHeadingArgs): React.ReactNode {
+  return <Typography sx={{ letterSpacing: 0 }}>{children}</Typography>;
+}
 
 type OptionExplanationArgs = {
   children: React.ReactNode;
   "data-testid"?: string;
 };
 
-export const OptionExplanation = withStyles<
-  OptionExplanationArgs,
-  { root: string }
->(() => ({
-  root: {
-    fontSize: "0.825em",
-  },
-}))((props) => <Typography {...props} variant="body2" />);
+export function OptionExplanation({
+  children,
+  ...rest
+}: OptionExplanationArgs): React.ReactNode {
+  return (
+    <Typography variant="body2" sx={{ fontSize: "0.825em" }} {...rest}>
+      {children}
+    </Typography>
+  );
+}

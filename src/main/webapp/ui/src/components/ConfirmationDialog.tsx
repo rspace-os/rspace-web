@@ -83,7 +83,7 @@ export function ConfirmationDialog({
           <DialogTitle id={formTitle}>
             <>{title}</>
           </DialogTitle>
-          <DialogContent style={{ overscrollBehavior: "contain" }}>
+          <DialogContent sx={{ overscrollBehavior: "contain" }}>
             {typeof consequences === "string" ? (
               <Typography
                 variant="subtitle1"
@@ -109,8 +109,10 @@ export function ConfirmationDialog({
                       setError(null);
                     }
                   }}
-                  inputProps={{ "aria-label": confirmTextLabel }}
                   variant="standard"
+                  slotProps={{
+                    htmlInput: { "aria-label": confirmTextLabel }
+                  }}
                 />
                 <FormHelperText id="component-error-text">
                   {error}
@@ -145,7 +147,7 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
   };
 
   root.render(
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <ConfirmationDialog
           {...payload}

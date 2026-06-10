@@ -49,7 +49,7 @@ function OverviewSection({
         alt={`What the ${setOfSubSamples.size} subsamples look like`}
       />
       {setOfSubSamples.isFieldEditable("image") && (
-        <Box mt={1}>
+        <Box sx={{ mt: 1 }}>
           <Alert severity="info">
             Please note, on slower network connections uploading large images
             may trigger an error.
@@ -118,7 +118,7 @@ function BatchForm({ records }: BatchFormArgs): ReactNode {
   const { searchStore } = useStores();
 
   const [setOfSubSamples, setSetOfSubSamples] = useState(
-    new SubSampleCollection(records)
+    new SubSampleCollection(records),
   );
   useEffect(() => {
     setSetOfSubSamples(new SubSampleCollection(records));

@@ -7,13 +7,11 @@ import {
   ReadOnlyStoichiometryTableStory,
   StoichiometryTableWithDataStory,
 } from "./StoichiometryTable.story";
+import { gridClasses } from "@mui/x-data-grid";
 
 import * as Jwt from "jsonwebtoken";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
+test.setTimeout(20 * 1000);
 
 async function getColumnFieldByHeader(table: Locator, headerText: string) {
   const allHeaders = table.getByRole("columnheader");
@@ -90,7 +88,7 @@ async function editNumericCell({
   await targetCell.press("Enter");
 
   const input = page.locator(
-    '.MuiDataGrid-cell--editing input, .MuiDataGrid-cell--editing textarea',
+    `.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`,
   );
   await input.waitFor({ state: "visible" });
   await input.fill(value);
@@ -123,6 +121,12 @@ function getInsufficientStockIcon(container: Locator): Locator {
 type MockRouteResponse = {
   status?: number;
   body: unknown;
+};
+
+type StoichiometryMocks = {
+  response: ReturnType<typeof createMockStoichiometryResponse>;
+  subSampleResponses: Map<number, MockRouteResponse>;
+  inventorySubSampleRequestCount: number;
 };
 
 function createMockStoichiometryResponse() {
@@ -300,9 +304,50 @@ function createMockStoichiometryResponse() {
   };
 }
 
-let mockStoichiometryResponse = createMockStoichiometryResponse();
-let mockSubSampleResponses = new Map<number, MockRouteResponse>();
-let inventorySubSampleRequestCount = 0;
+function createDefaultSubSampleResponses() {
+  return new Map<number, MockRouteResponse>([
+    [
+      123,
+      {
+        body: {
+          id: 123,
+          globalId: "SS123",
+          quantity: {
+            numericValue: 4,
+            unitId: 7,
+          },
+        },
+      },
+    ],
+    [
+      124,
+      {
+        body: {
+          id: 124,
+          globalId: "SS124",
+          quantity: {
+            numericValue: 10,
+            unitId: 7,
+          },
+        },
+      },
+    ],
+    [
+      125,
+      {
+        body: {
+          id: 125,
+          globalId: "SS125",
+          quantity: {
+            numericValue: 25,
+            unitId: 3,
+          },
+        },
+      },
+    ],
+  ]);
+}
+
 const feature = test.extend<{
   Given: {
     "the table is loaded with data": () => Promise<void>;
@@ -447,6 +492,7 @@ const feature = test.extend<{
       value: string;
     }) => Promise<void>;
   };
+  stoichiometryMocks: StoichiometryMocks;
 }>({
   Given: async ({ mount }, use) => {
     await use({
@@ -843,60 +889,24 @@ const feature = test.extend<{
       },
     });
   },
+  stoichiometryMocks: async ({}, use) => {
+    await use({
+      response: createMockStoichiometryResponse(),
+      subSampleResponses: createDefaultSubSampleResponses(),
+      inventorySubSampleRequestCount: 0,
+    });
+  },
 
 });
-feature.beforeEach(async ({ router }) => {
-  mockStoichiometryResponse = createMockStoichiometryResponse();
-  mockSubSampleResponses = new Map<number, MockRouteResponse>([
-    [
-      123,
-      {
-        body: {
-          id: 123,
-          globalId: "SS123",
-          quantity: {
-            numericValue: 4,
-            unitId: 7,
-          },
-        },
-      },
-    ],
-    [
-      124,
-      {
-        body: {
-          id: 124,
-          globalId: "SS124",
-          quantity: {
-            numericValue: 10,
-            unitId: 7,
-          },
-        },
-      },
-    ],
-    [
-      125,
-      {
-        body: {
-          id: 125,
-          globalId: "SS125",
-          quantity: {
-            numericValue: 25,
-            unitId: 3,
-          },
-        },
-      },
-    ],
-  ]);
-  inventorySubSampleRequestCount = 0;
-  await router.route("/api/v1/stoichiometry*", (route) => {
-    return fulfillJson(route, mockStoichiometryResponse);
+feature.beforeEach(async ({ page, stoichiometryMocks }) => {
+  await page.route("/api/v1/stoichiometry*", (route) => {
+    return fulfillJson(route, stoichiometryMocks.response);
 
   });
-  await router.route("/api/inventory/v1/subSamples/*", (route) => {
-    inventorySubSampleRequestCount += 1;
+  await page.route("/api/inventory/v1/subSamples/*", (route) => {
+    stoichiometryMocks.inventorySubSampleRequestCount += 1;
     const id = Number(route.request().url().split("/").pop());
-    const mockResponse = mockSubSampleResponses.get(id);
+    const mockResponse = stoichiometryMocks.subSampleResponses.get(id);
 
     if (!mockResponse) {
       return fulfillJson(route, { message: "Not Found" }, 404);
@@ -904,7 +914,7 @@ feature.beforeEach(async ({ router }) => {
 
     return fulfillJson(route, mockResponse.body, mockResponse.status ?? 200);
   });
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+  await page.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
       iat: new Date().getTime(),
@@ -917,7 +927,7 @@ feature.beforeEach(async ({ router }) => {
     });
 
   });
-  await router.route("/api/v1/stoichiometry/molecule/info", (route) => {
+  await page.route("/api/v1/stoichiometry/molecule/info", (route) => {
     const requestBody = route.request().postDataJSON() as unknown;
     const smiles =
       typeof requestBody === "object" &&
@@ -950,7 +960,7 @@ feature.beforeEach(async ({ router }) => {
     return fulfillJson(route, mockInfo);
 
   });
-  await router.route("/api/v1/pubchem/search", (route) => {
+  await page.route("/api/v1/pubchem/search", (route) => {
     return fulfillJson(route, [
       {
         name: "Caffeine",
@@ -964,7 +974,7 @@ feature.beforeEach(async ({ router }) => {
     ]);
 
   });
-  await router.route("/gallery/getUploadedFiles*", (route) => {
+  await page.route("/gallery/getUploadedFiles*", (route) => {
     const mockGalleryResponse = {
       data: {
         items: {
@@ -1215,8 +1225,8 @@ test.describe("Stoichiometry Table", () => {
   );
   feature(
     "The inventory stock update dialog warns when stock has already been deducted while still allowing reselection",
-    async ({ Given, Once, When, page }) => {
-      const cyclopentane = mockStoichiometryResponse.molecules.find(
+    async ({ Given, Once, When, page, stoichiometryMocks }) => {
+      const cyclopentane = stoichiometryMocks.response.molecules.find(
         ({ name }) => name === "Cyclopentane",
       );
       if (!cyclopentane?.inventoryLink) {
@@ -1247,8 +1257,8 @@ test.describe("Stoichiometry Table", () => {
   );
   feature(
     "The inventory stock update dialog disables molecules when fetching linked stock fails",
-    async ({ Given, Once, When, page }) => {
-      mockSubSampleResponses.set(124, {
+    async ({ Given, Once, When, page, stoichiometryMocks }) => {
+      stoichiometryMocks.subSampleResponses.set(124, {
         status: 404,
         body: { message: "Not Found" },
       });
@@ -1604,7 +1614,7 @@ test.describe("Stoichiometry Table", () => {
         await benzeneMassCell.click();
         await benzeneMassCell.press("Enter");
         let input = page.locator(
-          '.MuiDataGrid-cell--editing input, .MuiDataGrid-cell--editing textarea',
+          `.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`,
         );
         await input.waitFor({ state: "visible" });
         await input.fill("15");
@@ -1780,8 +1790,8 @@ test.describe("Stoichiometry Table", () => {
     );
     feature(
       "Does not show an insufficient stock warning when fetching linked stock fails",
-      async ({ Given, Once, page }) => {
-        mockSubSampleResponses.set(123, {
+      async ({ Given, Once, page, stoichiometryMocks }) => {
+        stoichiometryMocks.subSampleResponses.set(123, {
           status: 404,
           body: { message: "Not Found" },
         });
@@ -1802,7 +1812,7 @@ test.describe("Stoichiometry Table", () => {
     );
     feature(
       "Does not show an insufficient stock warning in read-only mode",
-      async ({ mount, Once, page }) => {
+      async ({ mount, Once, page, stoichiometryMocks }) => {
         await mount(<ReadOnlyStoichiometryTableStory />);
         await Once["the table has loaded"]();
 
@@ -1815,7 +1825,7 @@ test.describe("Stoichiometry Table", () => {
         await expect(
           getInsufficientStockIcon(inventoryLinkCell),
         ).toHaveCount(0);
-        expect(inventorySubSampleRequestCount).toBe(0);
+        expect(stoichiometryMocks.inventorySubSampleRequestCount).toBe(0);
       },
     );
   });

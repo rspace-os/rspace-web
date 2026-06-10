@@ -9,9 +9,8 @@ import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
-import { withStyles } from "../../util/styles";
-import clsx from "clsx";
 import NoActiveResultPlaceholder from "./components/NoActiveResultPlaceholder";
+import PermalinkNotFound from "./PermalinkNotFound";
 import ContainerBatchForm from "../Container/BatchForm";
 import SampleBatchForm from "../Sample/BatchForm";
 import SubSampleBatchForm from "../Subsample/BatchForm";
@@ -23,7 +22,6 @@ import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSectio
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import { UserCancelledAction } from "../../util/error";
 import { useLandmark } from "../../components/LandmarksContext";
-import styled from "@mui/material/styles/styled";
 import Box from "@mui/material/Box";
 
 const border = (
@@ -39,52 +37,47 @@ const border = (
   return `${width}px solid ${color}`;
 };
 
-const BorderContainer = styled(
-  React.forwardRef(
-    (
-      {
-        recordType,
-        children,
-        ...props
-      }: {
-        recordType: RecordType | "mixed" | null;
-        children: React.ReactNode;
-      },
-      ref,
-    ) => (
-      <Box {...props} ref={ref}>
-        {children}
-      </Box>
-    ),
-  ),
-)<{
-  recordType: RecordType | "mixed" | null;
-  children: ReactNode;
-  role?: string;
-  "aria-label"?: string;
-}>(({ theme, recordType }) => {
+const BorderContainer = React.forwardRef<
+  HTMLDivElement,
+  {
+    recordType: RecordType | "mixed" | null;
+    children: ReactNode;
+    role?: string;
+    "aria-label"?: string;
+    "data-testid"?: string;
+  }
+>(({ recordType, children, ...props }, ref) => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
-  return {
-    backgroundColor: theme.palette.background.alt,
-    position: "relative",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    borderLeft: border(theme, isSingleColumnLayout, recordType),
-    ...(isSingleColumnLayout && {
-      borderRight: border(theme, true, recordType),
-      borderTopRightRadius: theme.spacing(1),
-      borderTopLeftRadius: theme.spacing(1),
-    }),
-    ...(!isSingleColumnLayout && {
-      background:
-        recordType && recordType !== "mixed"
-          ? `linear-gradient(${theme.palette.record[recordType].lighter} 30%, #fff 31%)`
-          : "initial",
-    }),
-  };
+  return (
+    <Box
+      {...props}
+      ref={ref}
+      sx={(theme) => ({
+        backgroundColor: theme.palette.background.alt,
+        position: "relative",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderLeft: border(theme, isSingleColumnLayout, recordType),
+        ...(isSingleColumnLayout && {
+          borderRight: border(theme, true, recordType),
+          borderTopRightRadius: theme.spacing(1),
+          borderTopLeftRadius: theme.spacing(1),
+        }),
+        ...(!isSingleColumnLayout && {
+          background:
+            recordType && recordType !== "mixed"
+              ? `linear-gradient(${theme.palette.record[recordType].lighter} 30%, #fff 31%)`
+              : "initial",
+        }),
+      })}
+    >
+      {children}
+    </Box>
+  );
 });
+BorderContainer.displayName = "BorderContainer";
 
 function RightPanelView(): ReactNode {
   const { searchStore, uiStore } = useStores();
@@ -135,6 +128,10 @@ function RightPanelView(): ReactNode {
       return (
         <MixedBatchForm records={search.batchEditingRecordsByType.records} />
       );
+
+    // a permalink (possibly versioned) pointed at something that doesn't exist
+    if (search.fetcher.permalinkNotFound)
+      return <PermalinkNotFound permalink={search.fetcher.permalinkNotFound} />;
 
     // if we're not loading then show placeholder
     if (!search.fetcher.loading) return <NoActiveResultPlaceholder />;

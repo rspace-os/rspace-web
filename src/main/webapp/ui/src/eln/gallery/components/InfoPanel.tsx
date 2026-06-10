@@ -1,7 +1,6 @@
 import React from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-import { styled } from "@mui/material/styles";
 import { type GalleryFile, Description } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import Button from "@mui/material/Button";
@@ -9,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
+import { type SxProps, type Theme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import CardContent from "@mui/material/CardContent";
@@ -22,7 +22,6 @@ import { useGalleryActions } from "../useGalleryActions";
 import ImagePreview, {
   type PreviewSize,
 } from "../../../components/ImagePreview";
-import clsx from "clsx";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
 import usePrimaryAction from "../primaryActionHooks";
@@ -44,12 +43,6 @@ import Chip from "@mui/material/Chip";
  */
 export const CLOSED_MOBILE_INFO_PANEL_HEIGHT = 80;
 
-/*
- * To reduce the amount of visual noise, some components have a minimal stying
- * mode. This class is used to conditionally apply those styles.
- */
-const MINIMAL_STYLING_CLASS = "minimal-styling";
-
 /**
  * The info panel, be it the right column on desktop or the floating panel on
  * mobile, presents the user with a primary action that can be performed on the
@@ -69,7 +62,7 @@ const ActionButton = ({
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   label: string;
   disabled?: boolean;
-  sx: { borderRadius: number; px: number; py: number };
+  sx?: SxProps<Theme>;
 }): React.ReactNode => {
   return (
     <Button
@@ -98,64 +91,6 @@ const ActionButton = ({
   );
 };
 
-const CustomSwipeableDrawer: typeof SwipeableDrawer = styled(SwipeableDrawer)(
-  () => ({
-    zIndex: 1400, // higher than the dialog when Gallery is inside a picker
-    [`& .${paperClasses.root}`]: {
-      /*
-       * When open, the floating info panel takes up 90% of the height of
-       * viewport, leaving just a small section at the top unobscured so that
-       * the panel feels temporary and not modal. This height style is the
-       * height of the info panel, minus the region at the top with the border
-       * radii that triggers the open and closing and is therefore 0px when the
-       * panel is closed.
-       */
-      height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
-      overflow: "visible",
-    },
-  }),
-);
-
-/**
- * This components wraps all of the content inside of the floating info panel,
- * adjusting the positioning of the content so that the title and action button
- * are shown even when the panel is closed.
- */
-const MobileInfoPanelContent: React.ComponentType<{
-  children: React.ReactNode;
-}> = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
-  height: "100%",
-  visibility: "visible",
-  right: 0,
-  left: 0,
-  backgroundColor: "white",
-  borderTopLeftRadius: theme.spacing(2),
-  borderTopRightRadius: theme.spacing(2),
-  boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
-}));
-
-/**
- * This button serves two purposes:
- *
- *  1. On touch devices, it provides a visual indicator that the panel can be
- *     swiped up and down to open and close, respectively.
- *
- *  2. On non-touch devices with small viewports, it provides a button that the
- *     user can tap to trigger the opening/closing of the floating panel.
- *
- */
-const Puller = styled("button")(() => ({
-  width: 30,
-  height: 6,
-  backgroundColor: grey[300],
-  borderRadius: 3,
-  position: "absolute",
-  top: 8,
-  left: "calc(50% - 15px)",
-}));
-
 /**
  * In addition to simply stating the name of the selected file, this text field
  * allows users to rename the file in place. At a glance it looks just like the
@@ -174,13 +109,11 @@ const Puller = styled("button")(() => ({
  * @param file      The selected file that is being shown in the info panel
  * @param className Ignore; it is provided by the `styled` HOC.
  */
-const NameFieldForLargeViewports = styled(
-  observer(({ file, className }: { file: GalleryFile; className?: string }) => {
+const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) => {
     const { trackEvent } = React.useContext(AnalyticsContext);
     const { rename } = useGalleryActions();
     const [name, setName] = React.useState(file.name);
     const textField = React.useRef<HTMLInputElement | null>(null);
-
     function handleSubmit() {
       void rename(file, name).then(() => {
         textField.current?.blur();
@@ -188,9 +121,13 @@ const NameFieldForLargeViewports = styled(
         trackEvent("user:renames:file:gallery");
       });
     }
-
     return (
-      <Stack sx={{ pr: 0.25, pl: 0.75 }}>
+      <Stack
+        sx={{
+          pr: 0.25,
+          pl: 0.75,
+        }}
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -210,11 +147,41 @@ const NameFieldForLargeViewports = styled(
             }
             fullWidth
             size="small"
-            className={clsx(className, name !== file.name && "modified")}
-            inputProps={{
-              "aria-label": "Name",
-              ref: textField,
-            }}
+            sx={(theme) => ({
+              ...(name !== file.name
+                ? {
+                    [`& .${outlinedInputClasses.root}`]: {
+                      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                      [`& .${outlinedInputClasses.notchedOutline}`]: {
+                        border: "none",
+                      },
+                    },
+                  }
+                : {
+                    [`& .${outlinedInputClasses.notchedOutline}`]: {
+                      border: "none",
+                    },
+                  }),
+              [`& .${outlinedInputClasses.root}`]: {
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "1.4rem",
+                marginTop: theme.spacing(0.5),
+                marginBottom: theme.spacing(0.5),
+                transition: "all .3s ease-in-out",
+                "&:hover, &:focus-within": {
+                  backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                  [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    border: "none !important",
+                  },
+                },
+              },
+              [`& .${outlinedInputClasses.multiline}`]: {
+                paddingTop: theme.spacing(0.25),
+                paddingBottom: theme.spacing(0.25),
+                paddingLeft: theme.spacing(0.25),
+              },
+            })}
             onFocus={() => {
               if (name === file.name)
                 setName(filenameExceptExtension(file.name));
@@ -238,6 +205,12 @@ const NameFieldForLargeViewports = styled(
                 handleSubmit();
               }
             }}
+            slotProps={{
+              htmlInput: {
+                "aria-label": "Name",
+                ref: textField,
+              },
+            }}
           />
           <Collapse
             in={name !== file.name}
@@ -247,13 +220,21 @@ const NameFieldForLargeViewports = styled(
                 : 200
             }
           >
-            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{
+                justifyContent: "flex-end",
+              }}
+            >
               <Button
                 size="small"
                 onClick={() => {
                   setName(file.name);
                 }}
-                sx={{ px: 0.75 }}
+                sx={{
+                  px: 0.75,
+                }}
               >
                 Cancel
               </Button>
@@ -262,7 +243,9 @@ const NameFieldForLargeViewports = styled(
                 variant="contained"
                 color="callToAction"
                 type="submit"
-                sx={{ px: 0.75 }}
+                sx={{
+                  px: 0.75,
+                }}
               >
                 Save
               </Button>
@@ -271,41 +254,7 @@ const NameFieldForLargeViewports = styled(
         </form>
       </Stack>
     );
-  }),
-)(({ theme }) => ({
-  "&.modified": {
-    [`& .${outlinedInputClasses.root}`]: {
-      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-      [`& .${outlinedInputClasses.notchedOutline}`]: {
-        border: "none",
-      },
-    },
-  },
-  "&:not(.modified)": {
-    [`& .${outlinedInputClasses.notchedOutline}`]: {
-      border: "none",
-    },
-  },
-  [`& .${outlinedInputClasses.root}`]: {
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "1.4rem", // to be the same height as the adjacent button
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    transition: "all .3s ease-in-out",
-    "&:hover, &:focus-within": {
-      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-      [`& .${outlinedInputClasses.notchedOutline}`]: {
-        border: "none !important",
-      },
-    },
-  },
-  [`& .${outlinedInputClasses.multiline}`]: {
-    paddingTop: theme.spacing(0.25),
-    paddingBottom: theme.spacing(0.25),
-    paddingLeft: theme.spacing(0.25),
-  },
-}));
+  });
 
 /*
  * With this component, the user can edit the description of the passed file.
@@ -335,28 +284,22 @@ const NameFieldForLargeViewports = styled(
  *                       borders always being shown.
  * @param className      Ignore; it is provided by the `styled` HOC.
  */
-const DescriptionField = styled(
-  observer(
-    ({
-      file,
-      description: initialDescription,
-      minimalStyling = false,
-      className,
-    }: {
-      file: GalleryFile;
-      description: string;
-      minimalStyling?: boolean;
-      className?: string;
-    }) => {
+const DescriptionField = observer(
+  ({
+    file,
+    description: initialDescription,
+    minimalStyling = false,
+  }: {
+    file: GalleryFile;
+    description: string;
+    minimalStyling?: boolean;
+  }) => {
       const { changeDescription } = useGalleryActions();
-
       const [description, setDescription] =
         React.useState<string>(initialDescription);
-
       const prefersMoreContrast = window.matchMedia(
         "(prefers-contrast: more)",
       ).matches;
-
       return (
         <Stack>
           <TextField
@@ -364,11 +307,58 @@ const DescriptionField = styled(
             placeholder="No description"
             fullWidth
             size="small"
-            className={clsx(
-              className,
-              minimalStyling && !prefersMoreContrast && MINIMAL_STYLING_CLASS,
-              description !== initialDescription && "modified",
-            )}
+            sx={(theme) => ({
+              width: '100%',
+              [`& .${outlinedInputClasses.root}`]: {
+                borderRadius: "4px",
+                fontSize: "0.9rem",
+                marginTop: theme.spacing(0.5),
+                marginBottom: theme.spacing(0.5),
+                backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+              },
+              [`& .${outlinedInputClasses.input}`]: {
+                paddingLeft: theme.spacing(1),
+              },
+              ...(minimalStyling && !prefersMoreContrast
+                ? {
+                    ...(description !== initialDescription
+                      ? {
+                          [`& .${outlinedInputClasses.root}`]: {
+                            backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                            [`& .${outlinedInputClasses.notchedOutline}`]: {
+                              border: "none",
+                            },
+                          },
+                        }
+                      : {
+                          [`& .${outlinedInputClasses.root}`]: {
+                            backgroundColor: "unset",
+                            [`& .${outlinedInputClasses.notchedOutline}`]: {
+                              border: "none",
+                            },
+                          },
+                        }),
+                    [`& .${outlinedInputClasses.root}`]: {
+                      border: "none",
+                      borderRadius: "4px",
+                      marginTop: theme.spacing(0.5),
+                      marginBottom: theme.spacing(0.5),
+                      transition: "all .3s ease-in-out",
+                      "&:hover, &:focus-within": {
+                        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                        [`& .${outlinedInputClasses.notchedOutline}`]: {
+                          border: "none !important",
+                        },
+                      },
+                    },
+                    [`& .${outlinedInputClasses.multiline}`]: {
+                      paddingTop: theme.spacing(0.25),
+                      paddingBottom: theme.spacing(0.25),
+                      paddingLeft: theme.spacing(0.25),
+                    },
+                  }
+                : {}),
+            })}
             onChange={({ target: { value } }) => setDescription(value)}
             multiline
             onKeyDown={(e) => {
@@ -387,7 +377,13 @@ const DescriptionField = styled(
                 : 200
             }
           >
-            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{
+                justifyContent: "flex-end",
+              }}
+            >
               <Button
                 size="small"
                 onClick={() => {
@@ -414,56 +410,7 @@ const DescriptionField = styled(
         </Stack>
       );
     },
-  ),
-)(({ theme }) => ({
-  [`& .${outlinedInputClasses.root}`]: {
-    borderRadius: "4px",
-    fontSize: "0.9rem",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-  },
-  [`& .${outlinedInputClasses.input}`]: {
-    paddingLeft: theme.spacing(1),
-  },
-  [`&.${MINIMAL_STYLING_CLASS}`]: {
-    "&.modified": {
-      [`& .${outlinedInputClasses.root}`]: {
-        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-        [`& .${outlinedInputClasses.notchedOutline}`]: {
-          border: "none",
-        },
-      },
-    },
-    "&:not(.modified)": {
-      [`& .${outlinedInputClasses.root}`]: {
-        backgroundColor: "unset",
-        [`& .${outlinedInputClasses.notchedOutline}`]: {
-          border: "none",
-        },
-      },
-    },
-    [`& .${outlinedInputClasses.root}`]: {
-      border: "none",
-      borderRadius: "4px",
-      marginTop: theme.spacing(0.5),
-      marginBottom: theme.spacing(0.5),
-      transition: "all .3s ease-in-out",
-      "&:hover, &:focus-within": {
-        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-        [`& .${outlinedInputClasses.notchedOutline}`]: {
-          border: "none !important",
-        },
-      },
-    },
-    [`& .${outlinedInputClasses.multiline}`]: {
-      paddingTop: theme.spacing(0.25),
-      paddingBottom: theme.spacing(0.25),
-      paddingLeft: theme.spacing(0.25),
-    },
-  },
-}));
-
+  );
 const formatDmpSource = (source: string): string => {
   switch (source) {
     case "UNKNOWN":
@@ -480,7 +427,6 @@ const formatDmpSource = (source: string): string => {
       return source;
   }
 };
-
 const InfoPanelContent = observer(
   ({
     file,
@@ -490,7 +436,11 @@ const InfoPanelContent = observer(
     smallViewport?: boolean;
   }): React.ReactNode => {
     return (
-      <Stack sx={{ height: "100%" }}>
+      <Stack
+        sx={{
+          height: "100%",
+        }}
+      >
         <DescriptionList
           content={[
             ...(typeof file.globalId === "string"
@@ -544,7 +494,12 @@ const InfoPanelContent = observer(
         {(file.metadata.doiLink ||
           file.metadata.dmpLink ||
           file.metadata.dmpSource) && (
-          <Box component="section" sx={{ mt: 0.5 }}>
+          <Box
+            component="section"
+            sx={{
+              mt: 0.5,
+            }}
+          >
             <Typography variant="h4" component="h4">
               DMP Details
             </Typography>
@@ -607,7 +562,12 @@ const InfoPanelContent = observer(
             />
           </Box>
         )}
-        <Box component="section" sx={{ mt: 0.5 }}>
+        <Box
+          component="section"
+          sx={{
+            mt: 0.5,
+          }}
+        >
           <Typography variant="h4" component="h4">
             Details
           </Typography>
@@ -668,7 +628,6 @@ const InfoPanelContent = observer(
     );
   },
 );
-
 const InfoPanelMultipleContent = (): React.ReactNode => {
   const selection = useGallerySelection();
   const sortedByCreated = selection
@@ -699,7 +658,10 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
         ...Result.lift2<
           Date,
           Date,
-          Array<{ label: string; value: React.ReactNode }>
+          Array<{
+            label: string;
+            value: React.ReactNode;
+          }>
         >((oldestDate, newestDate) => [
           {
             label: "Created",
@@ -717,7 +679,10 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
         ...Result.lift2<
           Date,
           Date,
-          Array<{ label: string; value: React.ReactNode }>
+          Array<{
+            label: string;
+            value: React.ReactNode;
+          }>
         >((oldestDate, newestDate) => [
           {
             label: "Modified",
@@ -736,27 +701,6 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
     />
   );
 };
-
-const AsposePreviewButton = ({ file }: { file: GalleryFile }) => {
-  const { openAsposePreview, loading } = useAsposePreview();
-  return (
-    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
-      <ActionButton
-        disabled={loading}
-        onClick={() => {
-          void openAsposePreview(file);
-        }}
-        label={loading ? "Loading" : "View"}
-        sx={{
-          borderRadius: 1,
-          px: 1.125,
-          py: 0.25,
-        }}
-      />
-    </Grid>
-  );
-};
-
 /**
  * On larger viewports, the info panel is shown in the right column of the
  * gallery. This component is responsible for rendering the metadata of the
@@ -769,25 +713,30 @@ export function InfoPanelForLargeViewports() {
   const { openPdfPreview } = usePdfPreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openSnippetPreview } = useSnippetPreview();
+  const { openAsposePreview, loading: asposeLoading } = useAsposePreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
-
   return (
     <>
       <Grid
         container
         direction="row"
         spacing={0.5}
-        alignItems="flex-start"
-        flexWrap="nowrap"
         sx={{
+          alignItems: "flex-start",
+          flexWrap: "nowrap",
           marginLeft: "-10px",
           marginTop: "-8px",
           width: "calc(100% + 9px)",
         }}
       >
-        <Grid item sx={{ flexShrink: 1, flexGrow: 1 }}>
+        <Grid
+          sx={{
+            flexShrink: 1,
+            flexGrow: 1,
+          }}
+        >
           {selection
             .asSet()
             .only.toResult(() => new Error("Empty or multiple selected"))
@@ -825,23 +774,26 @@ export function InfoPanelForLargeViewports() {
               .map((action) => {
                 if (action.tag === "open")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           openFolder(file);
                         }}
                         label="Open"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
                   );
                 if (action.tag === "image")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           void action.downloadHref().then((url) => {
@@ -852,16 +804,21 @@ export function InfoPanelForLargeViewports() {
                         }}
                         label="View"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: '100%',
+                          marginTop: '8px'
                         }}
                       />
                     </Grid>
                   );
                 if (action.tag === "collabora")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      sx={{
+                        mt: 0.5,
+                        mb: 0.25,
+                      }}
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           window.open(action.url);
@@ -869,16 +826,21 @@ export function InfoPanelForLargeViewports() {
                         }}
                         label="Edit"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
                   );
                 if (action.tag === "officeonline")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      sx={{
+                        mt: 0.5,
+                        mb: 0.25,
+                      }}
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           window.open(action.url);
@@ -886,16 +848,21 @@ export function InfoPanelForLargeViewports() {
                         }}
                         label="Edit"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
                   );
                 if (action.tag === "pdf")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      sx={{
+                        mt: 0.5,
+                        mb: 0.25,
+                      }}
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           void action.downloadHref().then((href) => {
@@ -904,43 +871,66 @@ export function InfoPanelForLargeViewports() {
                         }}
                         label="View"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
                   );
                 if (action.tag === "aspose")
-                  return <AsposePreviewButton key={null} file={file} />;
+                  return (
+                    <Grid key={null}>
+                      <ActionButton
+                        disabled={asposeLoading}
+                        onClick={() => {
+                          void openAsposePreview(file);
+                        }}
+                        label={asposeLoading ? "Loading" : "View"}
+                        sx={{
+                          height: "100%",
+                          marginTop: "8px",
+                        }}
+                      />
+                    </Grid>
+                  );
                 if (action.tag === "snapgene")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      sx={{
+                        mt: 0.5,
+                        mb: 0.25,
+                      }}
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           void openSnapGenePreview(file);
                         }}
                         label="View"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
                   );
                 if (action.tag === "snippet")
                   return (
-                    <Grid item sx={{ mt: 0.5, mb: 0.25 }} key={null}>
+                    <Grid
+                      sx={{
+                        mt: 0.5,
+                        mb: 0.25,
+                      }}
+                      key={null}
+                    >
                       <ActionButton
                         onClick={() => {
                           void openSnippetPreview(file);
                         }}
                         label="View"
                         sx={{
-                          borderRadius: 1,
-                          px: 1.125,
-                          py: 0.25,
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
@@ -950,7 +940,12 @@ export function InfoPanelForLargeViewports() {
               .orElseGet((errors) => {
                 console.info("Could not provide view", errors);
                 return (
-                  <Grid item sx={{ mt: 0.5, mb: 0.25 }}>
+                  <Grid
+                    sx={{
+                      mt: 0.5,
+                      mb: 0.25,
+                    }}
+                  >
                     <ActionButton
                       onClick={() => {
                         // do nothing
@@ -958,9 +953,8 @@ export function InfoPanelForLargeViewports() {
                       disabled
                       label="View"
                       sx={{
-                        borderRadius: 1,
-                        px: 1.125,
-                        py: 0.25,
+                        height: "100%",
+                        marginTop: "8px",
                       }}
                     />
                   </Grid>
@@ -972,13 +966,25 @@ export function InfoPanelForLargeViewports() {
       {selection
         .asSet()
         .only.map((f) => (
-          <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+          <CardContent
+            sx={{
+              p: 1,
+              pr: 0.5,
+            }}
+            key={null}
+          >
             <InfoPanelContent file={f} />
           </CardContent>
         ))
         .orElse(null)}
       {selection.size > 1 && (
-        <CardContent sx={{ p: 1, pr: 0.5 }} key={null}>
+        <CardContent
+          sx={{
+            p: 1,
+            pr: 0.5,
+          }}
+          key={null}
+        >
           <InfoPanelMultipleContent />
         </CardContent>
       )}
@@ -1008,20 +1014,22 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
   const mobileInfoPanelId = React.useId();
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
-
   return (
-    <CustomSwipeableDrawer
+    <SwipeableDrawer
       key={null}
       anchor="bottom"
       open={mobileInfoPanelOpen}
       sx={{
-        display: { xs: "block", md: "none" },
-        touchAction: "none",
-      }}
-      SwipeAreaProps={{
-        sx: {
-          display: { xs: "block", md: "none" },
+        zIndex: 1400,
+        [`& .${paperClasses.root}`]: {
+          height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
+          overflow: "visible",
         },
+        display: {
+          xs: "block",
+          md: "none",
+        },
+        touchAction: "none",
       }}
       onClose={() => {
         setMobileInfoPanelOpen(false);
@@ -1040,16 +1048,51 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
         if ((event.target as HTMLElement | null)?.id === "open") return false;
         return true;
       }}
+      slotProps={{
+        swipeArea: {
+          sx: {
+            display: {
+              xs: "block",
+              md: "none",
+            },
+          },
+        },
+      }}
     >
-      <MobileInfoPanelContent>
+      {/*
+       * Wraps all of the floating info panel's content, positioning it so the
+       * title and action button remain visible even when the panel is closed.
+       */}
+      <Box
+        sx={(theme) => ({
+          position: "absolute",
+          top: -CLOSED_MOBILE_INFO_PANEL_HEIGHT,
+          height: "100%",
+          visibility: "visible",
+          right: 0,
+          left: 0,
+          backgroundColor: "white",
+          borderTopLeftRadius: theme.spacing(2),
+          borderTopRightRadius: theme.spacing(2),
+          boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",
+        })}
+      >
         <Stack
           spacing={1}
-          height="100%"
+          sx={{
+            height: "100%",
+          }}
           role="region"
           aria-label="info panel"
           id={mobileInfoPanelId}
         >
-          <Puller
+          {/*
+            * Drawer "puller": on touch devices a visual indicator that the
+            * panel can be swiped open/closed, on non-touch small viewports a
+            * tap target that toggles the floating panel.
+            */}
+          <Box
+            component="button"
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
             onKeyDown={(e) => {
               if (e.key === " ") setMobileInfoPanelOpen(!mobileInfoPanelOpen);
@@ -1058,16 +1101,34 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
             tabIndex={0}
             aria-controls={mobileInfoPanelId}
             aria-expanded={mobileInfoPanelOpen ? "true" : "false"}
+            sx={{
+              width: 30,
+              height: 6,
+              backgroundColor: grey[300],
+              borderRadius: 3,
+              position: "absolute",
+              top: 8,
+              left: "calc(50% - 15px)",
+            }}
           />
           <CardContent>
             <Grid
               container
               direction="row"
               spacing={2}
-              flexWrap="nowrap"
-              sx={{ mb: 2, minHeight: "54px" }}
+              sx={{
+                flexWrap: "nowrap",
+                mb: 2,
+                minHeight: "54px",
+              }}
             >
-              <Grid item sx={{ flexShrink: 1, flexGrow: 1, mt: 0.5 }}>
+              <Grid
+                sx={{
+                  flexShrink: 1,
+                  flexGrow: 1,
+                  mt: 0.5,
+                }}
+              >
                 <Typography
                   variant="h3"
                   sx={{
@@ -1081,7 +1142,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
               </Grid>
               {file.canOpen
                 .map(() => (
-                  <Grid item key={null}>
+                  <Grid key={null}>
                     <ActionButton
                       label="Open"
                       sx={{
@@ -1099,7 +1160,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
                 ))
                 .orElse(null)}
               {file.isImage && file.downloadHref && (
-                <Grid item>
+                <Grid>
                   <ActionButton
                     onClick={() => {
                       if (file.downloadHref)
@@ -1135,7 +1196,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
               .orElse(null)}
           </CardContent>
         </Stack>
-      </MobileInfoPanelContent>
-    </CustomSwipeableDrawer>
+      </Box>
+    </SwipeableDrawer>
   );
 };

@@ -13,6 +13,7 @@ import EnzymeTable from "./EnzymeTable";
 import FastaView from "./FastaView";
 import OrfTable from "./OrfTable";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 
 function a11yProps(index) {
   return {
@@ -59,7 +60,7 @@ export default function SnapGeneDialog(props) {
       <DialogTitle id="form-dialog-title">SnapGene</DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
-          <Grid item xs={2}>
+          <Grid size={2}>
             <Tabs
               orientation="vertical"
               variant="scrollable"
@@ -146,5 +147,9 @@ function renderDialog(target_id) {
   $(document.body).append("<span class='snapgene-dialog'></span>");
   const container = $(".snapgene-dialog")[0];
   const root = createRoot(container);
-  root.render(<SnapGeneDialog id={target_id} />);
+  root.render(
+    <MuiCssLayerProvider>
+      <SnapGeneDialog id={target_id} />
+    </MuiCssLayerProvider>,
+  );
 }

@@ -2,11 +2,11 @@ import React, { useCallback, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ChemCard from "./ChemCard";
-import styled from "@emotion/styled";
 import { createRoot, type Root } from "react-dom/client";
 import materialTheme from "../theme";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { paperClasses } from "@mui/material/Paper";
 
 interface SidebarItem extends Record<string, string | undefined> {
   id: string;
@@ -22,17 +22,6 @@ type TinyMCEEditor = {
 };
 
 const sidebarRoots = new WeakMap<HTMLElement, Root>();
-
-const SidebarWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  .MuiPaper-root {
-    overflow: visible;
-  }
-`;
 
 function isElementNode(node: EventTarget | Node | null): node is Element {
   return (
@@ -197,7 +186,17 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   }
 
   return (
-    <SidebarWrapper>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        overflowX: "hidden",
+        [`& .${paperClasses.root}`]: {
+          overflow: "visible",
+        },
+      }}
+    >
       {items.length > 1 && (
         <Box sx={{ textAlign: "right" }}>
           <Button sx={{ p: "10px" }} onClick={closeAll}>
@@ -210,17 +209,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
           <ChemCard key={item.id} onClose={removeItem} item={item} idx={idx} />
         ) : null,
       )}
-    </SidebarWrapper>
-  );
-}
-
-function SidebarInfoEntrypoint(props: SidebarInfoProps) {
-  return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={materialTheme}>
-        <SidebarInfo {...props} />
-      </ThemeProvider>
-    </StyledEngineProvider>
+    </Box>
   );
 }
 
@@ -240,7 +229,13 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
 
   const root = sidebarRoots.get(container) ?? createRoot(container);
   sidebarRoots.set(container, root);
-  root.render(<SidebarInfoEntrypoint iframe={iframe} />);
+  root.render(
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <SidebarInfo iframe={iframe} />
+      </ThemeProvider>
+    </StyledEngineProvider>,
+  );
 });
 
 function watchEditor(

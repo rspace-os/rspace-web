@@ -292,6 +292,19 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     return processGenericResults(q.getResultList());
   }
 
+  @Override
+  public <T> List<AuditedEntity<T>> getRevisionsForInventoryRecordVersion(
+      Class<T> cls, Long recordId, Number version) {
+    AuditReader ar = getAuditReader();
+    AuditQuery q =
+        ar.createQuery()
+            .forRevisionsOfEntity(cls, false, false)
+            .add(AuditEntity.id().eq(recordId))
+            .add(AuditEntity.property("version").eq(version))
+            .addOrder(AuditEntity.revisionNumber().desc());
+    return processGenericResults(q.getResultList());
+  }
+
   private List<AuditedRecord> logAndReturnEmptyList(Exception e) {
     log.error(
         "Problem handling search criteria; returning empty result list. " + e.getMessage(), e);

@@ -2,15 +2,14 @@ import NumberedLocation from "../NumberedLocation";
 import LocationModel from "../../../../../stores/models/LocationModel";
 import Draggable from "../../../../../components/Draggable";
 import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 import React, { useLayoutEffect, useState, useRef } from "react";
 import useStores from "../../../../../stores/use-stores";
-import { makeStyles } from "tss-react/mui";
 import { clamp } from "../../../../../util/Util";
 import { observer } from "mobx-react-lite";
-import { type UseState, type Point } from "../../../../../util/types";
+import { type Point } from "../../../../../util/types";
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import { type Location } from "../../../../../stores/definitions/Container";
-import { pick } from "../../../../../util/unsafeUtils";
 
 export type TappedLocationData = {
   location: Location;
@@ -58,13 +57,13 @@ const LocationMarker = ({
       parent={img}
       onChange={onChange}
       onClick={() => {
-        const imgPos = pick("left", "top")(img.getBoundingClientRect());
+        const { left, top } = img.getBoundingClientRect();
         const tappedLocationData = {
           location,
           number,
           point: {
-            left: point.x + imgPos.left,
-            top: point.y + imgPos.top,
+            left: point.x + left,
+            top: point.y + top,
           },
         };
         onClick(tappedLocationData);
@@ -81,26 +80,6 @@ const LocationMarker = ({
     </Draggable>
   );
 };
-
-const useStyles = makeStyles<{ editable: boolean }>()(
-  (theme, { editable }) => ({
-    rounded: {
-      padding: 0,
-      width: "auto",
-      height: "auto",
-      maxWidth: "100%",
-      userSelect: "none",
-    },
-    imageContainer: {
-      position: "relative",
-      marginTop: 15,
-      cursor: editable ? "crosshair" : "default",
-    },
-    detailsPopupContent: {
-      padding: "0 !important",
-    },
-  })
-);
 
 type ContentImageArgs = {
   editable?: boolean;
@@ -119,7 +98,6 @@ function ContentImage({
   const activeResult = searchStore.activeResult;
   if (!activeResult || !(activeResult instanceof ContainerModel))
     throw new Error("ActiveResult must be a Container");
-  const { classes } = useStyles({ editable });
   const [img, setImg] = useState<HTMLElement | null>(null);
   const [tappedLocation, setTappedLocation] =
     useState<TappedLocationData | null>(null);
@@ -137,15 +115,10 @@ function ContentImage({
   } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
-      setImageDimensions(
-        pick(
-          "width",
-          "height",
-          "left",
-          "top"
-        )(entries[0].target.getBoundingClientRect())
-      );
-    })
+      const { width, height, left, top } =
+        entries[0].target.getBoundingClientRect();
+      setImageDimensions({ width, height, left, top });
+    }),
   );
   const imgRef = useRef<HTMLElement | null>(null);
 
@@ -172,10 +145,7 @@ function ContentImage({
       return;
     }
 
-    const imgTopLeftCornerRelativeToViewport = pick(
-      "x",
-      "y"
-    )((event.target as HTMLElement).getBoundingClientRect());
+    const { x, y } = event.currentTarget.getBoundingClientRect();
     const tappedLocationRelativeToViewport = {
       x: event.clientX,
       y: event.clientY,
@@ -184,16 +154,14 @@ function ContentImage({
     const { width: imageWidth, height: imageHeight } = imageDimensions;
     const newPoint = {
       x: clamp(
-        tappedLocationRelativeToViewport.x -
-          imgTopLeftCornerRelativeToViewport.x,
+        tappedLocationRelativeToViewport.x - x,
         iconDimension / 2,
-        imageWidth - iconDimension / 2
+        imageWidth - iconDimension / 2,
       ),
       y: clamp(
-        tappedLocationRelativeToViewport.y -
-          imgTopLeftCornerRelativeToViewport.y,
+        tappedLocationRelativeToViewport.y - y,
         iconDimension,
-        imageHeight
+        imageHeight,
       ),
     };
     const newLocation = new LocationModel({
@@ -220,10 +188,10 @@ function ContentImage({
       if (!imageDimensions) throw new Error("Image dimensions are not known");
       const { width: imageWidth, height: imageHeight } = imageDimensions;
       location.coordX = Math.round(
-        ((x + locationMarkerOffset.x) * 1000) / imageWidth
+        ((x + locationMarkerOffset.x) * 1000) / imageWidth,
       );
       location.coordY = Math.round(
-        ((y + locationMarkerOffset.y) * 1000) / imageHeight
+        ((y + locationMarkerOffset.y) * 1000) / imageHeight,
       );
 
       locations[indexInSorted] = location;
@@ -238,7 +206,7 @@ function ContentImage({
       width: imageWidth,
       height: imageHeight,
     }: { width: number; height: number },
-    location: Location
+    location: Location,
   ) => {
     return {
       location,
@@ -251,11 +219,24 @@ function ContentImage({
 
   return (
     Boolean(activeResult.locationsImage) && (
-      <Grid container justifyContent="center" alignItems="center">
-        <Grid item className={classes.imageContainer}>
-          <img
+      <Grid container sx={{ justifyContent: "center", alignItems: "center" }}>
+        <Grid
+          sx={{
+            position: "relative",
+            mt: "15px",
+            cursor: editable ? "crosshair" : "default",
+          }}
+        >
+          <Box
+            component="img"
             src={activeResult.locationsImage || ""}
-            className={classes.rounded}
+            sx={{
+              padding: 0,
+              width: "auto",
+              height: "auto",
+              maxWidth: "100%",
+              userSelect: "none",
+            }}
             onLoad={({ target }) => setImg(target as HTMLElement)}
             onClick={newMarker}
             ref={imgRef as React.RefObject<HTMLImageElement>}
@@ -274,7 +255,7 @@ function ContentImage({
                     location: Location;
                     point: { x: number; y: number };
                   },
-                  index: number
+                  index: number,
                 ) => (
                   <LocationMarker
                     number={index + 1}
@@ -290,7 +271,7 @@ function ContentImage({
                     editable={editable}
                     selected={tappedLocation?.number === index + 1}
                   />
-                )
+                ),
               )}
         </Grid>
       </Grid>

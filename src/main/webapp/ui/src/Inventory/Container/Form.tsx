@@ -23,6 +23,7 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
+import HistoricalVersionAlert from "../components/HistoricalVersionAlert";
 import { type Person } from "../../stores/definitions/Person";
 
 const OverviewSection = observer(
@@ -59,7 +60,7 @@ const OverviewSection = observer(
         )}
       </StepperPanel>
     );
-  }
+  },
 );
 
 const DetailsSection = observer(
@@ -91,7 +92,7 @@ const DetailsSection = observer(
         <TagsField fieldOwner={activeResult} />
       </StepperPanel>
     );
-  }
+  },
 );
 
 const ExtaFieldSection = observer(
@@ -116,7 +117,7 @@ const ExtaFieldSection = observer(
         />
       </StepperPanel>
     );
-  }
+  },
 );
 
 function Form(): ReactNode {
@@ -130,6 +131,11 @@ function Form(): ReactNode {
 
   return (
     <Stepper
+      stickyAlert={
+        activeResult.historicalVersion ? (
+          <HistoricalVersionAlert record={activeResult} />
+        ) : null
+      }
       titleText={activeResult.name}
       resetScrollPosition={activeResult}
       factory={activeResult.factory}
@@ -180,7 +186,8 @@ function Form(): ReactNode {
             <AccessPermissions fieldOwner={activeResult} />
           </StepperPanel>
           <ExtaFieldSection activeResult={activeResult} />
-          {activeResult.state === "preview" ? (
+          {activeResult.state === "preview" &&
+          !activeResult.historicalVersion ? (
             <StepperPanel
               title="Locations and Content"
               sectionName="locationsAndContent"

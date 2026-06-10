@@ -4,6 +4,7 @@ import materialTheme from "../theme";
 import FolderTree from "./FolderTree";
 import { type FolderTreeNode } from "../hooks/api/useFolders";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 /**
@@ -41,7 +42,7 @@ export function SimpleFolderTreeExample() {
         <Typography variant="h4" gutterBottom>
           Folder Tree
         </Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Stack direction="row" spacing={2}>
           <Box sx={{ width: 300, border: 1, borderColor: "grey.300", p: 1 }}>
             <FolderTree onFolderSelect={setSelectedFolder} />
           </Box>
@@ -66,7 +67,7 @@ export function SimpleFolderTreeExample() {
               <Typography color="text.secondary">No folder selected</Typography>
             )}
           </Box>
-        </Box>
+        </Stack>
       </Box>
     </ThemeProvider>
   );

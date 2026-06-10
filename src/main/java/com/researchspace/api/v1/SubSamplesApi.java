@@ -86,4 +86,7 @@ public interface SubSamplesApi {
 
   @GetMapping(value = "/{id}/revisions/{revisionId}")
   ApiSubSample getSubSampleRevision(Long id, Long revisionId, User user);
+
+  @GetMapping(value = "/{id}/versions/{version}")
+  ApiSubSample getSubSampleVersion(Long id, Long version, User user);
 }

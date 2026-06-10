@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -43,6 +44,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
   private @Autowired SubSampleDao subSampleDao;
   private @Autowired InventoryMoveHelper moveHelper;
+  private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   private @Autowired @Lazy SampleApiManager sampleApiMgr;
 
@@ -112,6 +114,30 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   }
 
   @Override
+  public ApiSubSample getApiSubSampleVersion(Long subSampleId, Long version, User user) {
+    // Intentionally no explicit read-permission assert: like the live getApiSubSampleById read,
+    // access control is enforced downstream by setOtherFieldsForOutgoingApiInventoryRecord, which
+    // reduces the response to a public-view whitelist for a user without read permission. Do not
+    // drop that reduction in a refactor or this would leak full historical data. (The sibling
+    // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
+    // exposed either way, only the HTTP status differs.)
+    SubSample currentSubSample = getIfExists(subSampleId);
+    if (version.equals(currentSubSample.getVersion())) {
+      return getApiSubSampleById(subSampleId, user);
+    }
+    // joins this transaction (REQUIRED propagation), so currentSubSample stays
+    // session-attached; historical reads intentionally publish no InventoryAccessEvent,
+    // matching the template-version precedent
+    ApiSubSample apiSubSampleVersion =
+        inventoryAuditMgr.getApiSubSampleVersion(currentSubSample, version);
+    if (apiSubSampleVersion != null) {
+      // permissions are evaluated against the live subsample, as for a regular retrieval
+      setOtherFieldsForOutgoingApiInventoryRecord(apiSubSampleVersion, currentSubSample, user);
+    }
+    return apiSubSampleVersion;
+  }
+
+  @Override
   public SubSample getIfExists(Long id) {
     boolean exists = subSampleDao.exists(id);
     if (!exists) {
@@ -152,6 +178,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               user);
 
       if (contentChanged) {
+        // only content edits bump the user-facing version; moves, notes and usage don't
+        dbSubSample.increaseVersion();
         registerSubSampleModification(user, dbSubSample);
       }
       if (moveSuccessful) {

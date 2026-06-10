@@ -290,7 +290,7 @@ export const readFileAsBinaryString = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error as DOMException);
+    reader.onerror = () => reject(reader.error);
     reader.readAsBinaryString(file);
   });
 };
@@ -320,10 +320,7 @@ export const isUrl = (str: string): boolean => {
  * template, or subsample.
  */
 export const isInventoryPermalink = (str: string): boolean => {
-  return (
-    isUrl(str) &&
-    /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str)
-  );
+  return (isUrl(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str));
 };
 
 /**

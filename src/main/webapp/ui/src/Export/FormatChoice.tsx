@@ -5,6 +5,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
 import { type ExportSelection } from "./common";
 import { type Validator } from "../util/Validator";
@@ -20,6 +21,15 @@ import {
 } from "../components/Inputs/RadioField";
 
 export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
+
+type RepoOption = {
+  _label?: string;
+  metadataLanguages?: Repo["metadataLanguages"];
+};
+
+type RepoUiConfig = Omit<Repo, "repoCfg"> & {
+  options: Record<string, RepoOption>;
+};
 
 const WORD_ERRORS = [
   "Word export is only available for a single document, and you have selected more than one.",
@@ -69,10 +79,7 @@ function FormatChoice({
     const url = "/repository/ajax/repo/uiConfig";
 
     axios
-      .get<
-        | Array<Omit<Repo, "repoCfg"> & { options: object }>
-        | { exceptionMessage: string }
-      >(url)
+      .get<Array<RepoUiConfig> | { exceptionMessage: string }>(url)
       .then((response) => {
         const repos = response.data;
         if (!Array.isArray(repos)) throw new Error(repos.exceptionMessage);
@@ -85,43 +92,52 @@ function FormatChoice({
           return;
         }
         setMsgBlockingRepoChoice(Optional.empty());
-        exportConfigUpdate(
-          "repoData",
-          repos.flatMap((repo) => {
-            if (repo.repoName === "app.dataverse") {
-              /*
-               * On the apps page, users can configure multiple dataverses, so
-               * here we process that so each dataverse config is treated as a
-               * separate repository. The `keys` for each option is the string
-               * of a integer, and so too is `repoCfg`, but that is not really
-               * an important detail.
-               */
-              const keys = Object.keys(repo.options);
-              if (keys.length) {
-                return keys.map(
-                  (k) =>
-                    ({
-                      ...repo,
-                      repoCfg: k,
-                      //@ts-expect-error Options is poorly typed
-                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                      label: repo.options[k]._label,
-                      //@ts-expect-error Options is poorly typed
-                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                      metadataLanguages: repo.options[k].metadataLanguages,
-                    }) as Repo,
-                );
-              }
-              return [];
-            }
+
+        const normalizedRepos = repos.flatMap<Repo>((repo) => {
+          const baseRepo = {
+            repoName: repo.repoName,
+            displayName: repo.displayName,
+            subjects: repo.subjects,
+            license: repo.license,
+            linkedDMPs: repo.linkedDMPs,
+          };
+
+          if (repo.repoName === "app.dataverse") {
             /*
-             * On the apps page, users can only configure a just one
-             * destination for each of the other repository services so we
-             * just copy the object from the API
+             * On the apps page, users can configure multiple dataverses, so
+             * here we process that so each dataverse config is treated as a
+             * separate repository. The `keys` for each option is the string
+             * of a integer, and so too is `repoCfg`, but that is not really
+             * an important detail.
              */
-            return [{ repoCfg: -1, ...repo }];
-          }),
-        );
+            const keys = Object.keys(repo.options);
+            if (keys.length) {
+              return keys.map<Repo>((k) => ({
+                ...baseRepo,
+                repoCfg: k,
+                label: repo.options[k]?._label,
+                metadataLanguages: repo.options[k]?.metadataLanguages,
+              }));
+            }
+            return [];
+          }
+
+          /*
+           * On the apps page, users can only configure a just one
+           * destination for each of the other repository services so we
+           * just copy the object from the API
+           */
+          return [
+            {
+              ...baseRepo,
+              repoCfg: -1,
+              label: repo.label,
+              metadataLanguages: repo.metadataLanguages,
+            },
+          ];
+        });
+
+        exportConfigUpdate("repoData", normalizedRepos);
       })
       .catch(() => {
         setMsgBlockingRepoChoice(
@@ -315,9 +331,10 @@ function FormatChoice({
           )}
         </Stack>
       </RadioGroup>
-
-      <h3 style={{ marginTop: "20px" }}>Choose additional destinations</h3>
-      <Grid item xs={12}>
+      <Typography variant="h6" component="h3" sx={{ marginTop: "20px" }}>
+        Choose additional destinations
+      </Typography>
+      <Grid size={12}>
         <FormControlLabel
           control={
             <Switch
@@ -329,6 +346,7 @@ function FormatChoice({
               color="primary"
               disabled={msgBlockingRepoChoice.isPresent()}
               data-test-id="repo"
+              slotProps={{ input: { role: "checkbox" } }}
             />
           }
           label={msgBlockingRepoChoice.orElse("Export to a repository")}
@@ -338,7 +356,7 @@ function FormatChoice({
         (archiveType === "html" ||
           archiveType === "xml" ||
           archiveType === "eln") && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <h3>Filestores</h3>
             <FormControlLabel
               control={
@@ -351,6 +369,7 @@ function FormatChoice({
                   value="fileStores"
                   color="primary"
                   data-test-id="filestores"
+                  slotProps={{ input: { role: "checkbox" } }}
                 />
               }
               label="Include filestore links"
@@ -358,7 +377,7 @@ function FormatChoice({
           </Grid>
         )}
       {(archiveType === "xml" || archiveType === "eln") && (
-        <Grid item xs={12}>
+        <Grid size={12}>
           <h3>Revisions</h3>
           <FormControlLabel
             control={
@@ -370,6 +389,7 @@ function FormatChoice({
                 value="allVersions"
                 color="primary"
                 data-test-id="allVersions"
+                slotProps={{ input: { role: "checkbox" } }}
               />
             }
             label="Check to include all previous versions of your documents, or leave unchecked for only current version"

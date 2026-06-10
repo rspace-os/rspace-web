@@ -640,6 +640,8 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, updatedContainer.getExtraFields().size());
     assertEquals(1, updatedContainer.getBarcodes().size());
     assertEquals(0, updatedContainer.getLocations().size());
+    // the content update bumps the user-facing version
+    assertEquals(2L, updatedContainer.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
@@ -945,6 +947,8 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         moveContainerIntoListContainer(subContainer.getId(), listContainer.getId(), testUser);
     expectedMovedEventsCount++;
     assertEquals(listContainer.getId(), updatedSubContainer.getParentContainer().getId());
+    // a move-only update does not bump the user-facing version
+    assertEquals(1L, updatedSubContainer.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(expectedMovedEventsCount))
         .publishEvent(Mockito.any(InventoryMoveEvent.class));
 

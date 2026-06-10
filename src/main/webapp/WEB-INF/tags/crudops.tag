@@ -76,15 +76,6 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
     </li>
   </rst:hasDeploymentProperty>
   
-  <rst:hasDeploymentProperty name="offlineButtonVisible" value="true">
-    <li class="crudopsAction copyIcon" id="startOfflineWork">
-      <a href="#">Offline</a>
-    </li>
-    <li class="crudopsAction copyIcon" id="endOfflineWork">
-      <a href="#">End Offline</a>
-    </li>
-  </rst:hasDeploymentProperty>
-
   <c:if test="${not empty extMessaging}">
       <script src="<rst:assetUrl value='/scripts/pages/messaging/extMessagingCreation.js'/>"></script>
       <c:forEach items="${extMessaging}" var="extMessageTarget">

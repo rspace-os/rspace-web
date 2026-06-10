@@ -460,10 +460,8 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
     <Grid container spacing={1}>
       <Grid
         container
-        item
-        xs={12}
-        justifyContent="flex-start"
-        alignItems="center"
+        sx={{ justifyContent: "flex-start", alignItems: "center" }}
+        size={12}
       >
         <FilterButton showFilter={showFilter} setShowFilter={setShowFilter} />
         <ColumnVisibilitySettingsButton
@@ -473,7 +471,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
       </Grid>
       {showFilter && (
         <>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Filter
               filter={filter}
               setFilter={setFilter}
@@ -489,7 +487,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
         </>
       )}
       {showSettings && (
-        <Grid item xs={12}>
+        <Grid size={12}>
           <ColumnVisibilitySettings
             visibleColumnIds={visibleColumnIds}
             setVisibleColumnIds={setVisibleColumnIds}
@@ -497,7 +495,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
           />
         </Grid>
       )}
-      <Grid item xs={12}>
+      <Grid size={12}>
         <ResultsTable
           page={page}
           onPageChange={handleChangePage}
@@ -514,7 +512,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
           count={count}
         />
       </Grid>
-      <Grid item xs={12} align="center">
+      <Grid sx={{ textAlign: "center" }} size={12}>
         {!fetchDone && <CircularProgress />}
       </Grid>
     </Grid>
@@ -626,7 +624,7 @@ class PyratPlugin {
       while (true) {
         const newProps = yield;
         root.render(
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <PyratDialog
                 editor={editor}

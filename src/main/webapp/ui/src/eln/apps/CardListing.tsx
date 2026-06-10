@@ -12,6 +12,7 @@ import Chemistry from "./integrations/Chemistry";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
 import DigitalCommonsData from "./integrations/DigitalCommonsData";
+import DMPAssistant from "./integrations/DMPAssistant";
 import DMPonline from "./integrations/DMPonline";
 import DMPTool from "./integrations/DMPTool";
 import Dropbox from "./integrations/Dropbox";
@@ -117,6 +118,15 @@ function CardListing({
     [update, integrationStates.DIGITALCOMMONSDATA],
   );
 
+  const dmpassistantUpdate = React.useCallback(
+    (newState: IntegrationStates["DMPASSISTANT"]) => {
+      void runInAction(async () => {
+        integrationStates.DMPASSISTANT = await update("DMPASSISTANT", newState);
+      });
+    },
+    [update, integrationStates.DMPASSISTANT],
+  );
+
   const dmponlineUpdate = React.useCallback(
     (newState: IntegrationStates["DMPONLINE"]) => {
       void runInAction(async () => {
@@ -154,12 +164,12 @@ function CardListing({
   );
 
   const dswUpdate = React.useCallback(
-      (newState: IntegrationStates["DSW"]) => {
-        void runInAction(async () => {
-          integrationStates.DSW = await update("DSW", newState);
-        });
-      },
-      [update, integrationStates.DSW],
+    (newState: IntegrationStates["DSW"]) => {
+      void runInAction(async () => {
+        integrationStates.DSW = await update("DSW", newState);
+      });
+    },
+    [update, integrationStates.DSW],
   );
 
   const egnyteUpdate = React.useCallback(
@@ -204,7 +214,7 @@ function CardListing({
         integrationStates.GALAXY = await update("GALAXY", newState);
       });
     },
-    [update, integrationStates.GALAXY]
+    [update, integrationStates.GALAXY],
   );
 
   const githubUpdate = React.useCallback(
@@ -338,7 +348,7 @@ function CardListing({
    * product/service over the company that provides it.
    */
   return (
-    <Grid container spacing={3} alignItems="stretch">
+    <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
       {integrationStates.ARGOS.mode === mode && (
         <Argos
           integrationState={integrationStates.ARGOS}
@@ -375,6 +385,12 @@ function CardListing({
           update={digitalCommonsDataUpdate}
         />
       )}
+      {integrationStates.DMPASSISTANT.mode === mode && (
+        <DMPAssistant
+          integrationState={integrationStates.DMPASSISTANT}
+          update={dmpassistantUpdate}
+        />
+      )}
       {integrationStates.DMPONLINE.mode === mode && (
         <DMPonline
           integrationState={integrationStates.DMPONLINE}
@@ -400,10 +416,7 @@ function CardListing({
         />
       )}
       {integrationStates.DSW.mode === mode && (
-          <DSW
-              integrationState={integrationStates.DSW}
-              update={dswUpdate}
-          />
+        <DSW integrationState={integrationStates.DSW} update={dswUpdate} />
       )}
       {integrationStates.EGNYTE.mode === mode && (
         <Egnyte

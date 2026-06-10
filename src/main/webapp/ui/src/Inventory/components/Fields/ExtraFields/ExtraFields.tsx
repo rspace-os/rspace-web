@@ -4,7 +4,6 @@ import NewField from "./NewField";
 import UpdateField from "./UpdateField";
 import CloseIcon from "@mui/icons-material/Close";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { makeStyles } from "tss-react/mui";
 import NoValue from "../../../../components/NoValue";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import FormField from "../../../components/Inputs/FormField";
@@ -12,17 +11,6 @@ import TextField from "../../../../components/Inputs/TextField";
 import NumberField from "../../../../components/Inputs/NumberField";
 import Box from "@mui/material/Box";
 import Result from "../../../../stores/models/InventoryBaseRecord";
-
-const useStyles = makeStyles()((theme) => ({
-  actionsWrapper: {
-    paddingBottom: theme.spacing(0.5),
-    textAlign: "right",
-  },
-  textSpacer: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(1),
-  },
-}));
 
 type ExtraFieldsArgs = {
   onErrorStateChange: (fieldIdentifier: string, newErrorState: boolean) => void;
@@ -33,8 +21,6 @@ function ExtraFields({
   onErrorStateChange,
   result,
 }: ExtraFieldsArgs): React.ReactNode {
-  const { classes } = useStyles();
-
   const EachField = observer(
     ({ editable }: { editable: boolean }): React.ReactNode => {
       const extraFieldsDisabled = !editable;
@@ -52,8 +38,8 @@ function ExtraFields({
                   renderInput={(props) => (
                     <>
                       {extraFieldsDisabled ? null : (
-                        <div
-                          style={{
+                        <Box
+                          sx={{
                             position: "absolute",
                             top: 0,
                             right: 0,
@@ -71,17 +57,19 @@ function ExtraFields({
                             onClick={() =>
                               result.removeExtraField(
                                 ef.id,
-                                result.extraFields.indexOf(ef)
+                                result.extraFields.indexOf(ef),
                               )
                             }
                             icon={<CloseIcon fontSize="small" />}
                           />
-                        </div>
+                        </Box>
                       )}
                       <NumberField
                         {...props}
-                        inputProps={{
-                          step: "any",
+                        slotProps={{
+                          htmlInput: {
+                            step: "any",
+                          },
                         }}
                         onChange={(e) => {
                           console.debug(e);
@@ -90,7 +78,7 @@ function ExtraFields({
                           ef.setAttributesDirty({ content: target.value });
                           onErrorStateChange(
                             `extra_${ef.name}`,
-                            ef.invalidInput
+                            ef.invalidInput,
                           );
                         }}
                       />
@@ -109,8 +97,8 @@ function ExtraFields({
                   renderInput={({ error: _error, id: _id, ...props }) => (
                     <>
                       {extraFieldsDisabled ? null : (
-                        <div
-                          style={{
+                        <Box
+                          sx={{
                             position: "absolute",
                             top: 0,
                             right: 0,
@@ -128,21 +116,21 @@ function ExtraFields({
                             onClick={() =>
                               result.removeExtraField(
                                 ef.id,
-                                result.extraFields.indexOf(ef)
+                                result.extraFields.indexOf(ef),
                               )
                             }
                             icon={<CloseIcon fontSize="small" />}
                           />
-                        </div>
+                        </Box>
                       )}
-                      <Box mt={1}>
+                      <Box sx={{ mt: 1 }}>
                         <TextField
                           {...props}
                           onChange={({ target }) => {
                             ef.setAttributesDirty({ content: target.value });
                             onErrorStateChange(
                               `extra_${ef.name}`,
-                              ef.content.length > 250 || ef.invalidInput
+                              ef.content.length > 250 || ef.invalidInput,
                             );
                           }}
                         />
@@ -158,7 +146,7 @@ function ExtraFields({
           )}
         </div>
       ));
-    }
+    },
   );
 
   const editable = result.isFieldEditable("extraFields");
@@ -168,9 +156,9 @@ function ExtraFields({
       {extraFields.length > 0 ? (
         <EachField editable={editable} />
       ) : (
-        <div className={classes.textSpacer}>
+        <Box sx={{ mt: 2, mb: 1 }}>
           <NoValue label="No more fields" />
-        </div>
+        </Box>
       )}
       {editable && <NewField record={result} />}
     </>

@@ -140,6 +140,8 @@ export type ContainerAttrs = {
   sharingMode: SharingMode;
   sharedWith: Array<SharedWithGroup>;
   _links: Array<_LINK>;
+  version?: number | null;
+  historicalVersion?: boolean;
 };
 
 const DEFAULT_CONTAINER: ContainerAttrs = {
@@ -301,13 +303,13 @@ export default class ContainerModel
   populateFromJson(
     factory: Factory,
     passedParams: object,
-    defaultParams: object = {}
+    defaultParams: object = {},
   ) {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = {
       ...DEFAULT_CONTAINER,
       ...passedParams,
-    } as ContainerAttrs;
+    };
     this.canStoreContainers = params.canStoreContainers;
     this.canStoreSamples = params.canStoreSamples;
     this.quantity = params.quantity;
@@ -351,7 +353,7 @@ export default class ContainerModel
         ? factory.newRecord(
             l.content as unknown as Record<string, string> & {
               globalId: GlobalId;
-            }
+            },
           )
         : null;
       content?.populateFromJson(factory, l.content, null);
@@ -362,7 +364,7 @@ export default class ContainerModel
       });
     });
     this.contentSearch.cacheFetcher.setResults(
-      ArrayUtils.filterNull(locations.map((l) => l.content))
+      ArrayUtils.filterNull(locations.map((l) => l.content)),
     );
     this.initializedLocations = false;
     if (this.cType === "LIST") this.locations = locations;
@@ -379,11 +381,11 @@ export default class ContainerModel
             coordY,
             content: null,
             parentContainer: this,
-          })
+          }),
       ).flat();
     if (this.locations) {
       this.unchangedLocationsIds = Object.freeze(
-        ArrayUtils.filterNull(this.locations.map((l) => l.id))
+        ArrayUtils.filterNull(this.locations.map((l) => l.id)),
       );
       this.initializedLocations = true;
     }
@@ -415,7 +417,7 @@ export default class ContainerModel
     const selectedResults = new RsSet(getRootStore().moveStore.selectedResults);
     const gIdsOfItemsBeingMoved = selectedResults.map((rec) => rec.globalId);
     const gIdsOfContentOfLocations = new RsSet(this.locations).map((l) =>
-      l.content === null ? null : l.content.globalId
+      l.content === null ? null : l.content.globalId,
     );
     const gIdsOfItemsBeingMovedThatAreYetToBePlaced =
       gIdsOfItemsBeingMoved.subtract(gIdsOfContentOfLocations);
@@ -451,7 +453,7 @@ export default class ContainerModel
     const allParentContainers = this.allParentContainers;
     const moveStore = getRootStore().moveStore;
     const selectedIds = new RsSet(
-      moveStore.selectedResults.map((r) => r.globalId)
+      moveStore.selectedResults.map((r) => r.globalId),
     );
     const parentAndThisIds = new RsSet([
       ...allParentContainers.map((c) => c.globalId),
@@ -480,7 +482,7 @@ export default class ContainerModel
   get availableLocations(): Permissioned<number> {
     return mapPermissioned(
       this.contentCount,
-      (contentCount) => this.locationsCount - contentCount
+      (contentCount) => this.locationsCount - contentCount,
     );
   }
 
@@ -523,7 +525,7 @@ export default class ContainerModel
     if (this.gridLayout.rowsNumber === "") return [];
     return layoutToLabels(
       this.gridLayout.rowsLabelType,
-      this.gridLayout.rowsNumber
+      this.gridLayout.rowsNumber,
     );
   }
 
@@ -535,7 +537,7 @@ export default class ContainerModel
     if (this.gridLayout.columnsNumber === "") return [];
     return layoutToLabels(
       this.gridLayout.columnsLabelType,
-      this.gridLayout.columnsNumber
+      this.gridLayout.columnsNumber,
     );
   }
 
@@ -543,7 +545,7 @@ export default class ContainerModel
     const locations = this.locations;
     if (!locations) return null;
     const existingLocations = locations.filter(
-      (l) => Boolean(l.id) && l instanceof LocationModel
+      (l) => Boolean(l.id) && l instanceof LocationModel,
     );
     const newLocations = locations.filter((l) => !l.id);
     return [
@@ -574,7 +576,7 @@ export default class ContainerModel
 
     const existingLocationIds = existingLocations.map((l) => l.id);
     const deletedLocationIds = this.unchangedLocationsIds.filter(
-      (id) => !existingLocationIds.includes(id)
+      (id) => !existingLocationIds.includes(id),
     );
 
     return [
@@ -611,7 +613,7 @@ export default class ContainerModel
         .map((siblingSampleId, i) => [
           siblingSampleId,
           selectColor(i, groups.size),
-        ])
+        ]),
     );
     return this.siblingColorCache.get(sampleId);
   }
@@ -680,7 +682,7 @@ export default class ContainerModel
     silent: boolean = false,
     queryParameters: URLSearchParams = new URLSearchParams({
       includeContent: "true",
-    })
+    }),
   ) {
     if (this.isWorkbench) {
       this.setLoading(false);
@@ -709,7 +711,7 @@ export default class ContainerModel
 
   findLocation(col: number, row: number): Location | undefined {
     return this.locations?.find(
-      (loc) => loc.coordX === col && loc.coordY === row
+      (loc) => loc.coordX === col && loc.coordY === row,
     );
   }
 
@@ -746,7 +748,7 @@ export default class ContainerModel
       top: number;
       right: number;
       bottom: number;
-    } = { left: 0, top: 0, right: 0, bottom: 0 }
+    } = { left: 0, top: 0, right: 0, bottom: 0 },
   ) {
     if (event.button === 2) return;
     if (event.currentTarget instanceof Element) {
@@ -769,7 +771,7 @@ export default class ContainerModel
       top: number;
       right: number;
       bottom: number;
-    } = { left: 0, top: 0, right: 0, bottom: 0 }
+    } = { left: 0, top: 0, right: 0, bottom: 0 },
   ) {
     // currentTarget is either Table or TableContainer
     if (event.currentTarget instanceof Element) {
@@ -797,12 +799,12 @@ export default class ContainerModel
           padding.left + horzScroll,
           widthOfSelectableArea +
             horzScroll -
-            (DRAGGER_SIZE / 2 + padding.right)
+            (DRAGGER_SIZE / 2 + padding.right),
         ),
         y: clamp(
           event.pageY - vertScroll - topPosOfSelectableArea,
           padding.top,
-          heightOfSelectableArea - (DRAGGER_SIZE / 2 + padding.bottom)
+          heightOfSelectableArea - (DRAGGER_SIZE / 2 + padding.bottom),
         ),
       };
     }
@@ -976,7 +978,7 @@ export default class ContainerModel
     const validateCanStore = () => {
       if (this.canStoreContainers || this.canStoreSamples) return IsValid();
       return IsInvalid(
-        "Must be permitted to contain either containers or subsamples."
+        "Must be permitted to contain either containers or subsamples.",
       );
     };
 
@@ -1045,7 +1047,7 @@ export default class ContainerModel
       {
         contents: this,
         location: this,
-      }
+      },
     );
   }
 
@@ -1083,7 +1085,7 @@ export default class ContainerModel
   refreshAssociatedSearch() {
     if (this.id !== null) {
       void this.contentSearch.setSearchView(
-        cTypeToDefaultSearchView(this.cType)
+        cTypeToDefaultSearchView(this.cType),
       );
       void this.contentSearch.fetcher.performInitialSearch(null);
     }

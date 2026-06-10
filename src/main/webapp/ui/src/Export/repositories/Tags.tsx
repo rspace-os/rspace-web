@@ -105,7 +105,7 @@ function Tags<
               : {})}
             endAdornment={
               fieldOwner.isFieldEditable("tags") && (
-                <Grid item>
+                <Grid>
                   <AddTag<{
                     enforce: true;
                     tag: {

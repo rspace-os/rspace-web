@@ -5,6 +5,7 @@ import { produce } from "immer";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
@@ -147,12 +148,19 @@ class WorkspaceToolbar extends React.Component {
   };
 
   handleOpen = (idx, event) => {
+    // Capture the anchor element synchronously, because by the time the
+    // setState updater runs, React may have nulled out `event.currentTarget`
+    // (it is only valid during the synchronous event handler). If we read it
+    // inside the updater we can end up with a null anchor, which causes the
+    // Menu to render in the top-left corner of the viewport rather than next
+    // to the button that opened it.
+    const anchor = event.currentTarget;
     this.setState((prevState) => ({
       open: produce(prevState.open, (draft) => {
         draft[idx] = true;
       }),
       anchorEl: produce(prevState.anchorEl, (draft) => {
-        draft[idx] = event.currentTarget;
+        draft[idx] = anchor;
       }),
     }));
   };
@@ -286,14 +294,23 @@ class WorkspaceToolbar extends React.Component {
 
   content = () => {
     return (
-      <span style={{ display: "flex", width: "100%" }}>
+      <Box
+        component="span"
+        sx={{
+          display: "flex",
+          width: "100%",
+          // Query container so the Create button's font-size (clamp with cqi)
+          // tracks the toolbar's available width.
+          containerType: "inline-size",
+        }}
+      >
         <CreateMenu
           pioEnabled={this.state.pioEnabled}
           evernoteEnabled={this.state.evernoteEnabled}
           asposeEnabled={this.state.asposeEnabled}
         />
         {!this.state.hideIcons && (
-          <span style={{ display: "flex" }}>
+          <Box component="span" sx={{ display: "flex" }}>
             <SocialActions
               onCreateRequest={this.props.eventHandlers.onCreateRequest}
             />
@@ -307,15 +324,15 @@ class WorkspaceToolbar extends React.Component {
                 <FontAwesomeIcon icon={faCalendarAlt} />
               </IconButton>
             </Tooltip>
-          </span>
+          </Box>
         )}
-        <span
-          style={{
+        <Box
+          component="span"
+          sx={{
             borderRight: "1px solid transparent",
-            margin: "0px 10px",
             height: "100%",
           }}
-        ></span>
+        ></Box>
         <Tooltip title="View mode" enterDelay={300}>
           <IconButton
             data-test-id="toolbar-views"
@@ -363,7 +380,7 @@ class WorkspaceToolbar extends React.Component {
         </Menu>
         {this.state.treeView && <TreeSort />}
         {!this.state.treeView && (
-          <span style={{ display: "flex", flexGrow: "1" }}>
+          <Box component="span" sx={{ display: "flex", flexGrow: "1" }}>
             <Tooltip title="View mode" enterDelay={300}>
               <IconButton
                 data-test-id="toolbar-views-2"
@@ -425,13 +442,13 @@ class WorkspaceToolbar extends React.Component {
                 <FontAwesomeIcon icon={faUsers} />
               </IconButton>
             </Tooltip>
-            <span
-              style={{
+            <Box
+              component="span"
+              sx={{
                 borderRight: "1px solid transparent",
-                margin: "0px 10px",
                 height: "100%",
               }}
-            ></span>
+            ></Box>
             <Tooltip title="Favorites" enterDelay={300}>
               <IconButton
                 onClick={() => {
@@ -477,8 +494,9 @@ class WorkspaceToolbar extends React.Component {
                 aria-label="Templates"
               >
                 <FontAwesomeIcon icon={faFolder} />
-                <span
-                  style={{
+                <Box
+                  component="span"
+                  sx={{
                     position: "absolute",
                     color: "#00adef",
                     fontSize: "13px",
@@ -487,7 +505,7 @@ class WorkspaceToolbar extends React.Component {
                   }}
                 >
                   T
-                </span>
+                </Box>
               </IconButton>
             </Tooltip>
             <Tooltip title="Ontology files" enterDelay={300}>
@@ -503,8 +521,9 @@ class WorkspaceToolbar extends React.Component {
                 aria-label="Ontology files"
               >
                 <FontAwesomeIcon icon={faFolder} />
-                <span
-                  style={{
+                <Box
+                  component="span"
+                  sx={{
                     position: "absolute",
                     color: "#00adef",
                     fontSize: "13px",
@@ -513,31 +532,32 @@ class WorkspaceToolbar extends React.Component {
                   }}
                 >
                   O
-                </span>
+                </Box>
               </IconButton>
             </Tooltip>
-            <span
-              style={{
+            <Box
+              component="span"
+              sx={{
                 borderRight: "1px solid transparent",
                 margin: "0px 10px",
                 height: "100%",
               }}
-            ></span>
+            ></Box>
             <SimpleSearch
               ref={this.simpleSearch}
               toggleAdvanced={this.toggleAdvanced}
               advancedOpen={this.state.advancedOpen}
               hideIcons={this.handleHideIcons}
             />
-          </span>
+          </Box>
         )}
-      </span>
+      </Box>
     );
   };
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />

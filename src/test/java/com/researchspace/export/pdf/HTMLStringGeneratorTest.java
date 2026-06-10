@@ -21,6 +21,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsElement;
@@ -240,6 +241,29 @@ public class HTMLStringGeneratorTest {
     assertTrue(documentAsHtml, documentAsHtml.contains("SAMPLE"));
     assertTrue(documentAsHtml, documentAsHtml.contains("SUBSAMPLE"));
     assertFalse(documentAsHtml, documentAsHtml.contains("CONTAINER"));
+  }
+
+  @Test
+  public void testIncludeInstrumentInListOfMaterials() {
+    // a document whose list of materials references an instrument (RSDEV-1032) must render the
+    // instrument's name, identifier and a link to the RSpace entity in PDF/Word exports
+    StructuredDocument anyDoc = createAnySDWithText("any");
+    anyDoc.setId(1L);
+    ListOfMaterials lom = new ListOfMaterials();
+    lom.setName("instrument lom");
+    Instrument instrument = new Instrument();
+    instrument.setId(42L);
+    instrument.setName("Confocal Microscope");
+    lom.addMaterial(instrument, null); // instruments have no usage quantity
+    anyDoc.getFields().get(0).addListOfMaterials(lom);
+
+    ExportProcessorInput input = htmlGenerator.extractHtmlStr(anyDoc, cfg);
+    String documentAsHtml = input.getDocumentAsHtml();
+
+    assertTrue(documentAsHtml, documentAsHtml.contains("instrument lom"));
+    assertTrue(documentAsHtml, documentAsHtml.contains("INSTRUMENT"));
+    assertTrue(documentAsHtml, documentAsHtml.contains("Confocal Microscope"));
+    assertTrue(documentAsHtml, documentAsHtml.contains("http://test.com/globalId/IN42"));
   }
 
   @Test

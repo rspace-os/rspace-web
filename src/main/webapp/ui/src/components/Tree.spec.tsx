@@ -194,12 +194,12 @@ const feature = test.extend<{
       "tree item {string} should be selected": async (itemName: string) => {
         await expect(
           page.getByRole("treeitem", { name: itemName }),
-        ).toHaveAttribute("aria-selected", "true");
+        ).toHaveAttribute("aria-checked", "true");
       },
       "tree item {string} should not be selected": async (itemName: string) => {
         await expect(
           page.getByRole("treeitem", { name: itemName }),
-        ).toHaveAttribute("aria-selected", "false");
+        ).toHaveAttribute("aria-checked", "false");
       },
       "tree item {string} should be expanded": async (itemName: string) => {
         await expect(
@@ -222,7 +222,7 @@ const feature = test.extend<{
       },
       "no tree items should be selected": async () => {
         const selectedItems = page.locator(
-          '[role="treeitem"][aria-selected="true"]',
+          '[role="treeitem"][aria-checked="true"]',
         );
         await expect(selectedItems).toHaveCount(0);
       },

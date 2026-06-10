@@ -98,31 +98,33 @@ function Name<
           disabled={disabled}
           onChange={handleChange}
           data-testid="NameField"
-          InputProps={{
-            endAdornment: !disabled ? (
-              <InputAdornment position="end">
-                <Box sx={{ mx: 1 }}>
-                  Suffix:&nbsp;
-                  <Select
-                    variant="standard"
-                    value={fieldOwner.fieldValues.name.suffix}
-                    onChange={handleChangeSuffix}
-                  >
-                    <MenuItem value="NONE">None</MenuItem>
-                    <MenuItem value="INDEX_NUMBER">
-                      Numerical Index: 1, 2, 3...
-                    </MenuItem>
-                    <MenuItem
-                      disabled={!allowAlphabeticalSuffix}
-                      value="INDEX_LETTER"
+          slotProps={{
+            input: {
+              endAdornment: !disabled ? (
+                <InputAdornment position="end">
+                  <Box sx={{ mx: 1 }}>
+                    Suffix:&nbsp;
+                    <Select
+                      variant="standard"
+                      value={fieldOwner.fieldValues.name.suffix}
+                      onChange={handleChangeSuffix}
                     >
-                      Alphabetical Index: A, B, C...
-                    </MenuItem>
-                    <MenuItem value="CREATED">Date of Creation</MenuItem>
-                  </Select>
-                </Box>
-              </InputAdornment>
-            ) : null,
+                      <MenuItem value="NONE">None</MenuItem>
+                      <MenuItem value="INDEX_NUMBER">
+                        Numerical Index: 1, 2, 3...
+                      </MenuItem>
+                      <MenuItem
+                        disabled={!allowAlphabeticalSuffix}
+                        value="INDEX_LETTER"
+                      >
+                        Alphabetical Index: A, B, C...
+                      </MenuItem>
+                      <MenuItem value="CREATED">Date of Creation</MenuItem>
+                    </Select>
+                  </Box>
+                </InputAdornment>
+              ) : null,
+            },
           }}
         />
       )}

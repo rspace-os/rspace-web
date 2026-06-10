@@ -17,8 +17,8 @@ function SearchDisplayControls({
   const { search } = useContext(SearchContext);
 
   return (
-    <Grid container spacing={1} direction="row" wrap="nowrap">
-      <Grid item>
+    <Grid container spacing={1} direction="row" sx={{ flexWrap: "nowrap" }}>
+      <Grid>
         <Box>
           <ToggleView
             onChange={(viewType) => search.setSearchView(viewType)}
@@ -27,7 +27,7 @@ function SearchDisplayControls({
           />
         </Box>
       </Grid>
-      <Grid item>
+      <Grid>
         <Box>
           <SortControls />
         </Box>

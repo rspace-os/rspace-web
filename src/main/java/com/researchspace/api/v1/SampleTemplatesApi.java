@@ -8,6 +8,7 @@ import com.researchspace.api.v1.controller.InventoryApiPaginationCriteria;
 import com.researchspace.api.v1.controller.InventoryApiSearchConfig;
 import com.researchspace.api.v1.model.ApiFormSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -57,6 +58,9 @@ public interface SampleTemplatesApi {
 
   @GetMapping(value = "/{id}/versions/{version}")
   ApiSampleTemplate getSampleTemplateVersionById(Long id, Long version, User user);
+
+  @GetMapping(value = "/{id}/revisions")
+  ApiInventoryRecordRevisionList getSampleTemplateAllRevisions(Long id, User user);
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)

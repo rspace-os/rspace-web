@@ -1,10 +1,16 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { TestFolderTreeExample } from "./FolderTree.story";
-import { type emptyObject } from "../util/types";
-import { type RouterFixture } from "@playwright/experimental-ct-core";
+import type { emptyObject } from "../util/types";
+import { clickWhenInViewport } from "@/__tests__/playwright/viewport";
 
 import * as Jwt from "jsonwebtoken";
+
+type CreateFolderRequest = {
+  name: string;
+  parentFolderId: number;
+};
+
 const feature = test.extend<{
   Given: {
     "the FolderTree component is rendered with mocked API responses": () => Promise<void>;
@@ -61,11 +67,11 @@ const feature = test.extend<{
     "a validation error should be displayed": () => Promise<void>;
   };
 }>({
-  Given: async ({ mount, router }, use) => {
+  Given: async ({ mount, page }, use) => {
     await use({
       "the FolderTree component is rendered with mocked API responses":
         async () => {
-          await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+          await page.route("/userform/ajax/inventoryOauthToken", (route) => {
             const payload = {
               iss: "http://localhost:8080",
               iat: new Date().getTime(),
@@ -81,7 +87,7 @@ const feature = test.extend<{
               }),
             });
           });
-          await router.route("/api/v1/userDetails/whoami", async (route) => {
+          await page.route("/api/v1/userDetails/whoami", async (route) => {
             await route.fulfill({
               status: 200,
               contentType: "application/json",
@@ -94,7 +100,7 @@ const feature = test.extend<{
               }),
             });
           });
-          await router.route("**/api/v1/folders/tree**", async (route) => {
+          await page.route("**/api/v1/folders/tree?*", async (route) => {
             const url = new URL(route.request().url());
 
             const typesToInclude = url.searchParams.get("typesToInclude");
@@ -188,9 +194,8 @@ const feature = test.extend<{
                 }),
               });
             }
-
           });
-          await router.route("**/api/v1/folders/tree/100**", async (route) => {
+          await page.route("**/api/v1/folders/tree/100**", async (route) => {
             const url = new URL(route.request().url());
             const pageNumber = parseInt(
               url.searchParams.get("pageNumber") || "0",
@@ -265,9 +270,10 @@ const feature = test.extend<{
             }
 
           });
-          await router.route("**/api/v1/folders", async (route) => {
+          await page.route("**/api/v1/folders", async (route) => {
             if (route.request().method() === "POST") {
-              const requestBody = await route.request().postDataJSON();
+              const requestBody =
+                (await route.request().postDataJSON()) as CreateFolderRequest;
               const newFolderId = 999;
               await route.fulfill({
                 status: 200,
@@ -318,7 +324,7 @@ const feature = test.extend<{
         const loadMoreButton = page.getByRole("button", {
           name: "Load More",
         });
-        await loadMoreButton.first().click();
+        await clickWhenInViewport(loadMoreButton.first());
       },
       "the user hovers over a folder": async ({ folderName }) => {
         const treeItem = page.getByRole("treeitem", {
@@ -378,7 +384,7 @@ const feature = test.extend<{
         const treeItem = page.getByRole("treeitem", {
           name: new RegExp(folderName),
         });
-        await expect(treeItem).toHaveAttribute("aria-selected", "true");
+        await expect(treeItem).toHaveAttribute("aria-checked", "true");
       },
       "the selected folder details should be displayed": async ({
         folderName,
@@ -434,7 +440,7 @@ const feature = test.extend<{
         const newFolder = page.getByRole("treeitem", {
           name: new RegExp(folderName),
         });
-        await expect(newFolder).toHaveAttribute("aria-selected", "true");
+        await expect(newFolder).toHaveAttribute("aria-checked", "true");
       },
       "a validation error should be displayed": async () => {
         const errorAlert = page.getByLabel("Warning");

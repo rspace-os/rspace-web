@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
       frontend_tests:
@@ -41,7 +40,6 @@ permissions:
 env:
   RS_FILE_BASE: /tmp/${{ github.ref_name }}-filestore
   CI: "true"
-  NODE_OPTIONS: "--conditions=require"
 
 jobs:
 #  initialize:

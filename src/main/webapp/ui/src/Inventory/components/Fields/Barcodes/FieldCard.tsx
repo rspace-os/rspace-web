@@ -10,7 +10,6 @@ import Badge from "@mui/material/Badge";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
-import { withStyles } from "Styles";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -39,37 +38,31 @@ import Grid from "@mui/material/Grid";
 import { barcodeFormatAsString } from "../../../../util/barcode";
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
-
-const CustomCardHeader = withStyles<
-  React.ComponentProps<typeof CardHeader>,
-  { root: string; action: string }
->((theme) => ({
-  root: {
-    padding: theme.spacing(0, 0, 0, 1.5),
-  },
-  action: {
-    margin: 0,
-  },
-}))(CardHeader);
-
-const DescriptionWrapper = withStyles<
-  { children: ReactNode; isDeleted: boolean },
-  { root: string }
->((theme, { isDeleted }) => ({
-  root: {
-    textDecorationLine: isDeleted ? "line-through" : "none",
-    wordBreak: "break-all",
-  },
-}))(({ classes, children }) => (
-  <span className={classes.root}>{children}</span>
-));
-
+function DescriptionWrapper({
+  children,
+  isDeleted,
+}: {
+  children: ReactNode;
+  isDeleted: boolean;
+}): ReactNode {
+  return (
+    <Box
+      component="span"
+      sx={{
+        textDecorationLine: isDeleted ? "line-through" : "none",
+        wordBreak: "break-all",
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
 const CollapseContents = observer(
   <
     Fields extends {
       barcodes: Array<BarcodeRecord>;
     },
-    FieldOwner extends HasEditableFields<Fields>
+    FieldOwner extends HasEditableFields<Fields>,
   >({
     fieldOwner,
     editable,
@@ -83,33 +76,35 @@ const CollapseContents = observer(
     const barcodes = fieldOwner.fieldValues.barcodes;
     const imgUrlsAvailable =
       Boolean(connectedItem) && barcodes.every((b) => b.imageUrl);
-
     const remove = (b: BarcodeRecord) => {
       const index = barcodes.indexOf(b);
       const deleted = b.deletedCopy();
       if (!deleted) {
         const newBarcodes = ArrayUtils.splice(barcodes, index, 1);
-        fieldOwner.setFieldsDirty({ barcodes: newBarcodes });
+        fieldOwner.setFieldsDirty({
+          barcodes: newBarcodes,
+        });
       } else {
         const newBarcodes = ArrayUtils.splice(barcodes, index, 1, deleted);
-        fieldOwner.setFieldsDirty({ barcodes: newBarcodes });
+        fieldOwner.setFieldsDirty({
+          barcodes: newBarcodes,
+        });
       }
     };
     const changeDescription = (b: BarcodeRecord, value: string) => {
       b.setDescription(value);
       fieldOwner.setFieldsDirty({});
     };
-
-    const [size, setSize] = useState<{ width: number; height: number } | null>(
-      null
-    );
+    const [size, setSize] = useState<{
+      width: number;
+      height: number;
+    } | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [itemsToPrint, setItemsToPrint] = useState<
       Array<[BarcodeRecord, InventoryRecord]>
     >([]);
     const [previewImages, setPreviewImages] = useState<Array<string>>([]);
     const [showPrintDialog, setShowPrintDialog] = useState(false);
-
     const handlePrintOne = async (barcode: BarcodeRecord): Promise<void> => {
       try {
         if (!connectedItem) throw new Error("Printing not supported");
@@ -125,13 +120,12 @@ const CollapseContents = observer(
             message: e instanceof Error ? e.message : String(e),
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
       } finally {
         setShowPrintDialog(true);
       }
     };
-
     const handlePrintAll = async (): Promise<void> => {
       try {
         if (!connectedItem) throw new Error("Printing not supported");
@@ -148,13 +142,12 @@ const CollapseContents = observer(
             message: e instanceof Error ? e.message : String(e),
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
       } finally {
         setShowPrintDialog(true);
       }
     };
-
     const handlePreview = async (barcode: BarcodeRecord): Promise<void> => {
       if (barcode.imageUrl) {
         try {
@@ -167,15 +160,18 @@ const CollapseContents = observer(
               title: "Unable to retrieve barcode image.",
               message: e instanceof Error ? e.message : String(e),
               variant: "error",
-            })
+            }),
           );
         }
       }
     };
-
     return (
       <>
-        <Box mt={1}>
+        <Box
+          sx={{
+            mt: 1,
+          }}
+        >
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -215,8 +211,8 @@ const CollapseContents = observer(
                       </DescriptionWrapper>
                     </TableCell>
                     <TableCell width={1}>
-                      <Grid container direction="row" spacing={1} wrap="nowrap">
-                        <Grid item>
+                      <Grid container direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
+                        <Grid>
                           <IconButtonWithTooltip
                             size="small"
                             color="primary"
@@ -236,7 +232,7 @@ const CollapseContents = observer(
                             onClick={doNotAwait(() => handlePrintOne(b))}
                           />
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <IconButtonWithTooltip
                             size="small"
                             color="primary"
@@ -252,7 +248,7 @@ const CollapseContents = observer(
                             onClick={doNotAwait(() => handlePreview(b))}
                           />
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           <DeleteButton
                             onClick={() => remove(b)}
                             disabled={!editable || !b.isDeletable}
@@ -291,7 +287,14 @@ const CollapseContents = observer(
                         disabled={!imgUrlsAvailable}
                         onClick={doNotAwait(() => handlePrintAll())}
                       />
-                      <span style={{ marginLeft: "8px" }}>Print All</span>
+                      <Box
+                        component="span"
+                        sx={{
+                          marginLeft: "8px",
+                        }}
+                      >
+                        Print All
+                      </Box>
                     </TableCell>
                   </TableRow>
                 )}
@@ -329,38 +332,13 @@ const CollapseContents = observer(
           )}
       </>
     );
-  }
+  },
 );
-
-const ToggleButton = ({
-  barcodeCount,
-  open,
-  setOpen,
-}: {
-  barcodeCount: number;
-  open: boolean;
-  setOpen: (value: boolean) => void;
-}) => (
-  <CustomTooltip
-    title={match<void, string>([
-      [() => barcodeCount === 0, "No current barcodes"],
-      [() => open, "Hide barcodes listing"],
-      [() => true, "Show barcodes listing"],
-    ])()}
-  >
-    <IconButton onClick={() => setOpen(!open)} disabled={barcodeCount === 0}>
-      <Badge color="primary" badgeContent={barcodeCount}>
-        <ExpandCollapseIcon open={open} />
-      </Badge>
-    </IconButton>
-  </CustomTooltip>
-);
-
 function FieldCard<
   Fields extends {
     barcodes: Array<BarcodeRecord>;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   factory,
@@ -373,20 +351,23 @@ function FieldCard<
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<EventTarget | null>(null);
   const { uiStore } = useStores();
-
   const editable = fieldOwner.isFieldEditable("barcodes");
-
   const barcodes = fieldOwner.fieldValues.barcodes;
   useEffect(() => {
     setOpen(barcodes.length > 0);
   }, [barcodes]);
-
   return (
     <Card variant="outlined">
       {(typeof connectedItem === "undefined" || connectedItem.canEdit) && (
-        <CustomCardHeader
+        <CardHeader
+          sx={{ p: "0 0 0 12px" }}
+          slotProps={{
+            action: { sx: { m: 0 } },
+            subheader: {
+              variant: "body2",
+            },
+          }}
           subheader="Scan an existing barcode and associate it with this item."
-          subheaderTypographyProps={{ variant: "body2" }}
           action={
             <>
               <AddButton
@@ -410,10 +391,12 @@ function FieldCard<
                   vertical: "center",
                   horizontal: "right",
                 }}
-                PaperProps={{
-                  variant: "outlined",
-                  style: {
-                    minWidth: 300,
+                slotProps={{
+                  paper: {
+                    variant: "outlined",
+                    style: {
+                      minWidth: 300,
+                    },
                   },
                 }}
               >
@@ -428,7 +411,7 @@ function FieldCard<
                           title: "Unsupported barcode",
                           message: "Data is too long.",
                           variant: "error",
-                        })
+                        }),
                       );
                       return;
                     }
@@ -438,9 +421,7 @@ function FieldCard<
                         factory.newBarcode({
                           data: barcode.rawValue,
                           newBarcodeRequest: true,
-                          description: `Scanned ${barcodeFormatAsString(
-                            barcode.format
-                          )}: ${barcode.rawValue}`,
+                          description: `Scanned ${barcodeFormatAsString(barcode.format)}: ${barcode.rawValue}`,
                         }),
                       ],
                     });
@@ -448,11 +429,22 @@ function FieldCard<
                   buttonPrefix="Save"
                 />
               </Popover>
-              <ToggleButton
-                barcodeCount={barcodes.length}
-                open={open}
-                setOpen={setOpen}
-              />
+              <CustomTooltip
+                title={match<void, string>([
+                  [() => barcodes.length === 0, "No current barcodes"],
+                  [() => open, "Hide barcodes listing"],
+                  [() => true, "Show barcodes listing"],
+                ])()}
+              >
+                <IconButton
+                  onClick={() => setOpen(!open)}
+                  disabled={barcodes.length === 0}
+                >
+                  <Badge color="primary" badgeContent={barcodes.length}>
+                    <ExpandCollapseIcon open={open} />
+                  </Badge>
+                </IconButton>
+              </CustomTooltip>
             </>
           }
         />
@@ -467,5 +459,4 @@ function FieldCard<
     </Card>
   );
 }
-
 export default FieldCard;

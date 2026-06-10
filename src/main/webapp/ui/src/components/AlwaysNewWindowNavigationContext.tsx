@@ -35,13 +35,13 @@ export default function AlwaysNewWindowNavigationContext({
       value={{
         useNavigate,
         useLocation: () =>
-          ({
+          (({
             hash: "",
             pathname: "",
             search: "",
             state: {},
-            key: "",
-          }) as Location,
+            key: ""
+          }) as Location),
       }}
     >
       {children}

@@ -11,24 +11,29 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
 import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { type Record } from "../../stores/definitions/Record";
-import { withStyles } from "Styles";
 import ContainerModel from "../../stores/models/ContainerModel";
 import { doNotAwait } from "../../util/Util";
 import NavigateContext from "../../stores/contexts/Navigate";
 
-const OpenButton = withStyles<
-  React.ComponentProps<typeof Button> & { icon?: React.ReactNode },
-  { root: string }
->(() => ({
-  root: {
-    cursor: "default",
-  },
-}))(({ icon, ...rest }) => (
-  <Button color="primary" variant="text" disableElevation {...rest}>
-    {icon}
-    Open
-  </Button>
-));
+function OpenButton({
+  icon,
+  ...rest
+}: React.ComponentProps<typeof Button> & {
+  icon?: React.ReactNode;
+}): React.ReactNode {
+  return (
+    <Button
+      color="primary"
+      variant="text"
+      disableElevation
+      sx={{ cursor: "default" }}
+      {...rest}
+    >
+      {icon}
+      Open
+    </Button>
+  );
+}
 
 type InfoCardArgs = {
   record: Record;
@@ -87,7 +92,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
          */
         e.stopPropagation();
       }}
-      style={{
+      sx={{
         maxWidth: 500,
         /*
          * This stops the text content of the card from becoming selected when
@@ -103,13 +108,13 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
       <CardHeader
         title={record.name}
         subheader={record.cardTypeLabel}
-        style={{ paddingBottom: "4px" }}
+        sx={{ paddingBottom: "4px" }}
       />
-      <CardContent style={{ overflowY: "auto" }}>
+      <CardContent sx={{ overflowY: "auto" }}>
         <RecordDetails record={record} hideName />
       </CardContent>
       {record instanceof InventoryBaseRecord && (
-        <CardActions style={{ justifyContent: "flex-end" }}>
+        <CardActions sx={{ justifyContent: "flex-end" }}>
           {moveStore.isMoving ? (
             moveActions(record)
           ) : (

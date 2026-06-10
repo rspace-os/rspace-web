@@ -6,6 +6,7 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
+import MenuList from "@mui/material/MenuList";
 import ContextMenuAction from "../ContextMenuAction";
 
 import fc from "fast-check";
@@ -28,15 +29,17 @@ describe("ContextMenuAction", () => {
     const onKeyDown = vi.fn();
     render(
       <OuterComponent onKeyDown={onKeyDown}>
-        <ContextMenuAction
-          as="menuitem"
-          onClick={() => {}}
-          icon={<></>}
-          label="Foo"
-          disabledHelp=""
-        >
-          <InnerComponent />
-        </ContextMenuAction>
+        <MenuList>
+          <ContextMenuAction
+            as="menuitem"
+            onClick={() => {}}
+            icon={<></>}
+            label="Foo"
+            disabledHelp=""
+          >
+            <InnerComponent />
+          </ContextMenuAction>
+        </MenuList>
       </OuterComponent>
 
     );
@@ -52,13 +55,15 @@ describe("ContextMenuAction", () => {
         fc.property(fc.string(), (disabledHelp) => {
           cleanup();
           render(
-            <ContextMenuAction
-              as="menuitem"
-              icon={<></>}
-              disabledHelp={disabledHelp}
-              label="Foo"
-              onClick={() => {}}
-            />
+            <MenuList>
+              <ContextMenuAction
+                as="menuitem"
+                icon={<></>}
+                disabledHelp={disabledHelp}
+                label="Foo"
+                onClick={() => {}}
+              />
+            </MenuList>
           );
           expect(
             screen.getByRole("menuitem", { name: /^Foo/ })
@@ -68,4 +73,3 @@ describe("ContextMenuAction", () => {
     });
   });
 });
-

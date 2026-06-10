@@ -8,6 +8,7 @@ import {
   type OptionsId,
 } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import { Optional } from "../../../util/optional";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -61,31 +62,6 @@ type NewConfig = {
   DATAVERSE_ALIAS: string;
 };
 
-const AddButton = ({
-  newConfig,
-  setNewConfig,
-}: {
-  newConfig: NewConfig | null;
-  setNewConfig: (newConfig: NewConfig) => void;
-}) => {
-  return (
-    <Button
-      disabled={Boolean(newConfig)}
-      onClick={() => {
-        setNewConfig(
-          observable({
-            DATAVERSE_ALIAS: "",
-            DATAVERSE_APIKEY: "",
-            DATAVERSE_URL: "",
-          })
-        );
-      }}
-    >
-      Add
-    </Button>
-  );
-};
-
 const DialogContent = observer(
   ({
     configs,
@@ -123,14 +99,14 @@ const DialogContent = observer(
             DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
             DATAVERSE_URL: config.DATAVERSE_URL,
             DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
-          }
+          },
         );
         runInAction(() => {
           integrationState.credentials = newState.credentials;
           ArrayUtils.all(newState.credentials)
             .map((newCreds) => {
               const indexOfNewConfig = newCreds.findIndex(
-                (c) => c.optionsId === config.optionsId
+                (c) => c.optionsId === config.optionsId,
               );
               if (indexOfNewConfig === -1)
                 throw new Error("Save completed but cannot show results.");
@@ -141,7 +117,7 @@ const DialogContent = observer(
                 observable({
                   ...newCreds[indexOfNewConfig],
                   dirty: false,
-                })
+                }),
               );
             })
             .orElseGet(() => {
@@ -152,7 +128,7 @@ const DialogContent = observer(
           mkAlert({
             variant: "success",
             message: "Successfully saved Dataverse details.",
-          })
+          }),
         );
       } catch (e) {
         if (e instanceof Error)
@@ -161,7 +137,7 @@ const DialogContent = observer(
               variant: "error",
               title: "Error saving Dataverse configuration.",
               message: e.message,
-            })
+            }),
           );
       }
     }
@@ -176,19 +152,19 @@ const DialogContent = observer(
         runInAction(() => {
           integrationState.credentials = newState.credentials;
           const optionIdsOfExistingConfigs = new RsSet(
-            copyOfState.credentials.map(({ optionsId }) => optionsId)
+            copyOfState.credentials.map(({ optionsId }) => optionsId),
           );
           try {
             const newlySavedConfig = new RsSet(newState.credentials)
               .mapOptional((x) => x)
               .subtractMap(
                 ({ optionsId }) => optionsId,
-                optionIdsOfExistingConfigs
+                optionIdsOfExistingConfigs,
               ).first;
             copyOfState.credentials.push(
-              observable({ ...newlySavedConfig, dirty: false })
+              observable({ ...newlySavedConfig, dirty: false }),
             );
-          } catch (e) {
+          } catch {
             throw new Error("Save completed but cannot show results.");
           }
         });
@@ -197,7 +173,7 @@ const DialogContent = observer(
           mkAlert({
             variant: "success",
             message: "Successfully saved Dataverse details",
-          })
+          }),
         );
       } catch (e) {
         if (e instanceof Error)
@@ -206,272 +182,250 @@ const DialogContent = observer(
               variant: "error",
               title: "Could not save Dataverse details",
               message: e.message,
-            })
+            }),
           );
       }
     }
 
     return (
-      <>
-        <Grid container direction="column" spacing={1} sx={{ mt: 1 }}>
-          <Grid item container direction="column" spacing={1}>
-            {observableConfigs.map((config, i) => (
-              <Grid item key={i}>
-                <Card variant="outlined">
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void saveExistingConfig(config, i);
-                    }}
-                    aria-label={`Configured Dataverse with name ${config.DATAVERSE_ALIAS}`}
+      <Stack spacing={1} sx={{ mt: 1 }}>
+        <Stack spacing={1}>
+          {observableConfigs.map((config, i) => (
+            <Card key={i} variant="outlined">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void saveExistingConfig(config, i);
+                }}
+                aria-label={`Configured Dataverse with name ${config.DATAVERSE_ALIAS}`}
+              >
+                <CardContent>
+                  <Stack spacing={2}>
+                    <TextField
+                      fullWidth
+                      value={config.DATAVERSE_ALIAS}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          config.DATAVERSE_ALIAS = value;
+                          config.dirty = true;
+                        });
+                      }}
+                      label="Dataverse Name"
+                      error={config.DATAVERSE_ALIAS === ""}
+                      helperText={
+                        config.DATAVERSE_ALIAS === "" && "Name is required."
+                      }
+                    />
+                    <TextField
+                      fullWidth
+                      value={config.DATAVERSE_URL}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          config.DATAVERSE_URL = value;
+                          config.dirty = true;
+                        });
+                      }}
+                      label="Server URL"
+                      error={config.DATAVERSE_URL === ""}
+                      helperText={
+                        config.DATAVERSE_URL === "" && "URL is required."
+                      }
+                    />
+                    <TextField
+                      fullWidth
+                      value={config.DATAVERSE_APIKEY}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          config.DATAVERSE_APIKEY = value;
+                          config.dirty = true;
+                        });
+                      }}
+                      type="password"
+                      label="API key"
+                      error={config.DATAVERSE_APIKEY === ""}
+                      helperText={
+                        config.DATAVERSE_APIKEY === "" && "API key is required."
+                      }
+                    />
+                  </Stack>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    onClick={doNotAwait(async () => {
+                      try {
+                        await deleteAppOptions("DATAVERSE", config.optionsId);
+                        runInAction(() => {
+                          const deletedIndex = observableConfigs.findIndex(
+                            (c) => c === config,
+                          );
+                          observableConfigs.splice(deletedIndex, 1);
+                          integrationState.credentials.splice(deletedIndex, 1);
+                        });
+                        addAlert(
+                          mkAlert({
+                            variant: "success",
+                            message: "Successfully deleted configuration.",
+                          }),
+                        );
+                      } catch (e) {
+                        if (e instanceof Error)
+                          addAlert(
+                            mkAlert({
+                              variant: "error",
+                              title: "Could not delete configuration.",
+                              message: e.message,
+                            }),
+                          );
+                      }
+                    })}
                   >
-                    <CardContent>
-                      <Grid container direction="column" spacing={2}>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            value={config.DATAVERSE_ALIAS}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                config.DATAVERSE_ALIAS = value;
-                                config.dirty = true;
-                              });
-                            }}
-                            label="Dataverse Name"
-                            error={config.DATAVERSE_ALIAS === ""}
-                            helperText={
-                              config.DATAVERSE_ALIAS === "" &&
-                              "Name is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            value={config.DATAVERSE_URL}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                config.DATAVERSE_URL = value;
-                                config.dirty = true;
-                              });
-                            }}
-                            label="Server URL"
-                            error={config.DATAVERSE_URL === ""}
-                            helperText={
-                              config.DATAVERSE_URL === "" && "URL is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            value={config.DATAVERSE_APIKEY}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                config.DATAVERSE_APIKEY = value;
-                                config.dirty = true;
-                              });
-                            }}
-                            type="password"
-                            label="API key"
-                            error={config.DATAVERSE_APIKEY === ""}
-                            helperText={
-                              config.DATAVERSE_APIKEY === "" &&
-                              "API key is required."
-                            }
-                          />
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        onClick={doNotAwait(async () => {
-                          try {
-                            await deleteAppOptions(
-                              "DATAVERSE",
-                              config.optionsId
-                            );
-                            runInAction(() => {
-                              const deletedIndex = observableConfigs.findIndex(
-                                (c) => c === config
-                              );
-                              observableConfigs.splice(deletedIndex, 1);
-                              integrationState.credentials.splice(
-                                deletedIndex,
-                                1
-                              );
-                            });
-                            addAlert(
-                              mkAlert({
-                                variant: "success",
-                                message: "Successfully deleted configuration.",
-                              })
-                            );
-                          } catch (e) {
-                            if (e instanceof Error)
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Could not delete configuration.",
-                                  message: e.message,
-                                })
-                              );
-                          }
-                        })}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        disabled={config.dirty}
-                        onClick={doNotAwait(async () => {
-                          try {
-                            await test(config.optionsId);
-                            addAlert(
-                              mkAlert({
-                                variant: "success",
-                                message: "Connection details are valid.",
-                              })
-                            );
-                          } catch (e) {
-                            if (e instanceof Error)
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Connection details are not valid.",
-                                  message: e.message,
-                                })
-                              );
-                          }
-                        })}
-                      >
-                        Test
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={
-                          config.DATAVERSE_ALIAS === "" ||
-                          config.DATAVERSE_URL === "" ||
-                          config.DATAVERSE_APIKEY === ""
-                        }
-                      >
-                        Save
-                      </Button>
-                    </CardActions>
-                  </form>
-                </Card>
-              </Grid>
-            ))}
-            {newConfig && (
-              <Grid item key={null}>
-                <Card variant="outlined">
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void saveNewConfig(newConfig);
+                    Delete
+                  </Button>
+                  <Button
+                    disabled={config.dirty}
+                    onClick={doNotAwait(async () => {
+                      try {
+                        await test(config.optionsId);
+                        addAlert(
+                          mkAlert({
+                            variant: "success",
+                            message: "Connection details are valid.",
+                          }),
+                        );
+                      } catch (e) {
+                        if (e instanceof Error)
+                          addAlert(
+                            mkAlert({
+                              variant: "error",
+                              title: "Connection details are not valid.",
+                              message: e.message,
+                            }),
+                          );
+                      }
+                    })}
+                  >
+                    Test
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      config.DATAVERSE_ALIAS === "" ||
+                      config.DATAVERSE_URL === "" ||
+                      config.DATAVERSE_APIKEY === ""
+                    }
+                  >
+                    Save
+                  </Button>
+                </CardActions>
+              </form>
+            </Card>
+          ))}
+          {newConfig && (
+            <Card variant="outlined">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void saveNewConfig(newConfig);
+                }}
+              >
+                <CardContent>
+                  <Stack spacing={2}>
+                    <TextField
+                      fullWidth
+                      value={newConfig.DATAVERSE_ALIAS}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          newConfig.DATAVERSE_ALIAS = value;
+                        });
+                      }}
+                      label="Dataverse Name"
+                      error={newConfig.DATAVERSE_ALIAS === ""}
+                      helperText={
+                        newConfig.DATAVERSE_ALIAS === "" && "Name is required."
+                      }
+                    />
+                    <TextField
+                      fullWidth
+                      value={newConfig.DATAVERSE_URL}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          newConfig.DATAVERSE_URL = value;
+                        });
+                      }}
+                      label="Server URL"
+                      error={newConfig.DATAVERSE_URL === ""}
+                      helperText={
+                        newConfig.DATAVERSE_URL === "" && "URL is required."
+                      }
+                    />
+                    <TextField
+                      fullWidth
+                      value={newConfig.DATAVERSE_APIKEY}
+                      onChange={({ target: { value } }) => {
+                        runInAction(() => {
+                          newConfig.DATAVERSE_APIKEY = value;
+                        });
+                      }}
+                      type="password"
+                      label="API key"
+                      error={newConfig.DATAVERSE_APIKEY === ""}
+                      helperText={
+                        newConfig.DATAVERSE_APIKEY === "" && "API key is required."
+                      }
+                    />
+                  </Stack>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setNewConfig(null);
                     }}
                   >
-                    <CardContent>
-                      <Grid container direction="column" spacing={2}>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            value={newConfig.DATAVERSE_ALIAS}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                newConfig.DATAVERSE_ALIAS = value;
-                              });
-                            }}
-                            label="Dataverse Name"
-                            error={newConfig.DATAVERSE_ALIAS === ""}
-                            helperText={
-                              newConfig.DATAVERSE_ALIAS === "" &&
-                              "Name is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            value={newConfig.DATAVERSE_URL}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                newConfig.DATAVERSE_URL = value;
-                              });
-                            }}
-                            label="Server URL"
-                            error={newConfig.DATAVERSE_URL === ""}
-                            helperText={
-                              newConfig.DATAVERSE_URL === "" &&
-                              "URL is required."
-                            }
-                          />
-                        </Grid>
-                        <Grid item>
-                          <TextField
-                            fullWidth
-                            value={newConfig.DATAVERSE_APIKEY}
-                            onChange={({ target: { value } }) => {
-                              runInAction(() => {
-                                newConfig.DATAVERSE_APIKEY = value;
-                              });
-                            }}
-                            type="password"
-                            label="API key"
-                            error={newConfig.DATAVERSE_APIKEY === ""}
-                            helperText={
-                              newConfig.DATAVERSE_APIKEY === "" &&
-                              "API key is required."
-                            }
-                          />
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          setNewConfig(null);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        // always disabled because it cannot be tested until saved
-                        disabled
-                        onClick={() => {}}
-                      >
-                        Test
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        type="submit"
-                        disabled={
-                          newConfig.DATAVERSE_ALIAS === "" ||
-                          newConfig.DATAVERSE_URL === "" ||
-                          newConfig.DATAVERSE_APIKEY === ""
-                        }
-                      >
-                        Save
-                      </Button>
-                    </CardActions>
-                  </form>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
-          <Grid item>
-            <Grid container direction="row" spacing={1}>
-              <Grid item>
-                <AddButton newConfig={newConfig} setNewConfig={setNewConfig} />
-              </Grid>
-              <Grid item></Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-      </>
+                    Delete
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    // always disabled because it cannot be tested until saved
+                    disabled
+                    onClick={() => {}}
+                  >
+                    Test
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    type="submit"
+                    disabled={
+                      newConfig.DATAVERSE_ALIAS === "" ||
+                      newConfig.DATAVERSE_URL === "" ||
+                      newConfig.DATAVERSE_APIKEY === ""
+                    }
+                  >
+                    Save
+                  </Button>
+                </CardActions>
+              </form>
+            </Card>
+          )}
+        </Stack>
+        <Button
+          sx={{ width: "fit-content" }}
+          disabled={Boolean(newConfig)}
+          onClick={() => {
+            setNewConfig(
+              observable({
+                DATAVERSE_ALIAS: "",
+                DATAVERSE_APIKEY: "",
+                DATAVERSE_URL: "",
+              }),
+            );
+          }}
+        >
+          Add
+        </Button>
+      </Stack>
     );
-  }
+  },
 );
 
 type DataverseArgs = {
@@ -494,7 +448,13 @@ function Dataverse({
   update,
 }: DataverseArgs): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Dataverse"
         explanatoryText="Explore, analyse, and share data through an open-source research data repository software."
@@ -533,7 +493,7 @@ function Dataverse({
                 />
               ))
               .orElse(
-                <>There was an error getting the configured Dataverses.</>
+                <>There was an error getting the configured Dataverses.</>,
               )}
           </>
         }

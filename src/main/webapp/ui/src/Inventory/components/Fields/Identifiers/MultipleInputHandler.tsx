@@ -19,6 +19,7 @@ import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+import Typography from "@mui/material/Typography";
 import { capitaliseJustFirstChar } from "../../../../util/Util";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 
@@ -85,7 +86,7 @@ const MultipleInputHandler = ({
   const handleUpdateValue = (
     index: number,
     key: string,
-    newValue: string | Date
+    newValue: string | Date,
   ): void => {
     runInAction(() => {
       // @ts-expect-error - field.value is an array
@@ -104,7 +105,6 @@ const MultipleInputHandler = ({
       return (
         <>
           <Grid
-            item
             sx={{
               flexGrow: 1,
               mb: 0.5,
@@ -124,17 +124,15 @@ const MultipleInputHandler = ({
                     onChange={({ target: { value } }) => {
                       if (value) handleUpdateValue(i, "value", value);
                     }}
-                    // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                    datatestid={`IdentifierRecommendedField-${field.key}-${i}`}
+                    data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
                   />
                 ) : (
                   <TextField
-                    style={{
+                    sx={{
                       marginBottom:
                         // @ts-expect-error - subFields accepts field.value[i]
                         subFields(field.value[i]).length > 0 ? "10px" : "0px",
                     }}
-                    InputLabelProps={{ shrink: true }}
                     size="small"
                     variant="standard"
                     fullWidth
@@ -153,9 +151,12 @@ const MultipleInputHandler = ({
                       editable && isEmpty(String(v.value))
                         ? "Enter a value (or remove entry)"
                         : editable && isDuplicate(String(v.value))
-                        ? "This value is a duplicate. Please enter a unique one."
-                        : null
+                          ? "This value is a duplicate. Please enter a unique one."
+                          : null
                     }
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                    }}
                   />
                 )}
                 {
@@ -174,13 +175,15 @@ const MultipleInputHandler = ({
                         <Grid
                           container
                           direction="row"
-                          justifyContent="space-between"
                           spacing={1}
-                          sx={{ width: "95%", m: 1 }}
+                          sx={{
+                            justifyContent: "space-between",
+                            width: "95%",
+                            m: 1,
+                          }}
                         >
-                          <Grid item sx={{ flexGrow: 1 }}>
+                          <Grid sx={{ flexGrow: 1 }}>
                             <TextField
-                              InputLabelProps={{ shrink: true }}
                               size="small"
                               variant="standard"
                               fullWidth
@@ -206,6 +209,9 @@ const MultipleInputHandler = ({
                                   ? "A value is required"
                                   : null
                               }
+                              slotProps={{
+                                inputLabel: { shrink: true },
+                              }}
                             />
                           </Grid>
                         </Grid>
@@ -215,7 +221,7 @@ const MultipleInputHandler = ({
               </FormControl>
             ) : (
               <>
-                <Grid item>
+                <Grid>
                   {v.value instanceof Date
                     ? v.value.toISOString().split("T")[0]
                     : String(v.value)}
@@ -232,7 +238,7 @@ const MultipleInputHandler = ({
                         spacing={1}
                         sx={{ margin: "8px" }}
                       >
-                        <Grid item sx={{ minWidth: "150px" }}>
+                        <Grid sx={{ minWidth: "150px" }}>
                           <>
                             {
                               RECOMMENDED_FIELDS_LABELS[
@@ -242,11 +248,17 @@ const MultipleInputHandler = ({
                             :
                           </>
                         </Grid>
-                        <Grid item>
+                        <Grid>
                           {sf.value ? (
                             <>{String(sf.value)}</>
                           ) : (
-                            <em style={{ color: "#949494" }}>None</em>
+                            <Typography
+                              variant="inherit"
+                              component="em"
+                              sx={{ color: "#949494" }}
+                            >
+                              None
+                            </Typography>
                           )}
                         </Grid>
                       </Grid>
@@ -256,7 +268,7 @@ const MultipleInputHandler = ({
             )}
           </Grid>
           {field.options && (
-            <Grid item sx={{ minWidth: "135px" }}>
+            <Grid sx={{ minWidth: "135px" }}>
               {editable ? (
                 <FormControl>
                   <Select
@@ -294,7 +306,7 @@ const MultipleInputHandler = ({
           )}
         </>
       );
-    }
+    },
   );
 
   return (
@@ -318,11 +330,14 @@ const MultipleInputHandler = ({
           <Grid
             container
             direction="row"
-            justifyContent="space-between"
             spacing={1}
-            sx={{ width: "100%", m: 0.5 }}
+            sx={{
+              justifyContent: "space-between",
+              flexWrap: "nowrap",
+              width: "100%",
+              m: 0.5,
+            }}
             key={i}
-            wrap="nowrap"
           >
             {field.key === "Geolocations" ? (
               <GeoLocationField
@@ -337,7 +352,7 @@ const MultipleInputHandler = ({
               // @ts-expect-error - v is a field
               <RecommendedField v={v} i={i} />
             )}
-            <Grid item sx={{ marginRight: "6px" }}>
+            <Grid sx={{ marginRight: "6px" }}>
               <RemoveButton
                 disabled={!editable}
                 title={
@@ -356,5 +371,5 @@ const MultipleInputHandler = ({
 };
 
 export default observer(
-  MultipleInputHandler
+  MultipleInputHandler,
 ) as ComponentType<MultipleInputArgs>;

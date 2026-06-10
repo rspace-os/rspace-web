@@ -74,7 +74,7 @@ export default function FileStoreLogin({
   return (
     <div>
       <Grid container>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormControl error aria-describedby="name-error-text">
             <TextField
               variant="standard"
@@ -91,7 +91,7 @@ export default function FileStoreLogin({
             )}
           </FormControl>
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormControl error aria-describedby="password-error-text">
             <TextField
               variant="standard"

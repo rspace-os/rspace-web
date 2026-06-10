@@ -104,6 +104,14 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
   ApiSample getApiSampleById(Long id, User user);
 
   /**
+   * Returns the sample as it was at the given user-facing version, with outgoing fields (permitted
+   * actions etc.) populated against the live sample. The current version is served as a regular
+   * live retrieval; older versions resolve to a read-only historical snapshot. Returns null if the
+   * version does not exist.
+   */
+  ApiSample getApiSampleVersion(Long sampleId, Long version, User user);
+
+  /**
    * Return subsamples of a sample when searched by the UI.
    *
    * @return Sample with a given id with initialized subsample list

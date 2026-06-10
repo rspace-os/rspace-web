@@ -18,13 +18,14 @@ import React, {
   type ReactElement,
 } from "react";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import { observer } from "mobx-react-lite";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, type Theme } from "@mui/material/styles";
 import materialTheme from "../../theme";
-import clsx from "clsx";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import axios from "@/common/axios";
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
 import { capitaliseJustFirstChar } from "../../util/Util";
@@ -54,92 +55,49 @@ import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import IdentifierModel from "../../stores/models/IdentifierModel";
 import { truncateIsoTimestamp } from "../../stores/definitions/Units";
 
-const useStyles = makeStyles()((theme) => ({
-  styledDescriptionList: {
-    fontSize: "0.85rem",
-    margin: theme.spacing(1, 0),
-    "& dt": {
-      color: theme.palette.text.secondary,
-      fontWeight: "600",
-    },
-    "& dd": {
-      margin: 0,
-      marginTop: theme.spacing(0.5),
-    },
-  },
-  pageWrapper: { fontFamily: "Arial" },
-  header: {
-    backgroundColor: "#e3f0ff",
-    borderBottom: "2px solid black",
-  },
-  idWrapper: {
-    width: "auto",
-    backgroundColor: "#e3f0ff",
-    margin: theme.spacing(3, 2, 0, 2),
-    padding: theme.spacing(0, 1, 1, 0),
-    borderRadius: theme.spacing(0.75),
-    border: `2px solid black`,
-  },
-  block: {
-    width: "100%",
-    padding: theme.spacing(0.5, 2, 0.5, 2),
-    alignItems: "flex-start",
-  },
-  bottomBordered: {
-    paddingBottom: theme.spacing(1),
-    borderBottom: `1px dotted ${theme.palette.lightestGrey}`,
-  },
-  place: {
-    width: "100%",
-    padding: theme.spacing(0.5, 2, 0.5, 0),
-    alignItems: "flex-start",
-  },
-  logo: {
-    backgroundColor: "#fff",
-    margin: theme.spacing(0.5, 2, 0.5, 0.5),
-    padding: theme.spacing(0.5),
-    borderRadius: theme.spacing(0.75),
-    border: `2px solid #eee`,
-  },
-  igsnLogo: {
-    padding: theme.spacing(0, 0.5),
-    width: "70px",
-  },
-  institutionLogo: {
-    maxHeight: "78px",
-    maxWidth: "255px",
-  },
-  primary: { color: theme.palette.primary.main },
-  grey: { color: theme.palette.lightestGrey },
-  ac: { alignItems: "center" },
-  key: { width: "230px", fontWeight: "bold" },
-  keyWithMargin: { margin: theme.spacing(1), fontWeight: "bold" },
-  bottomSpaced: { marginBottom: theme.spacing(1) },
-}));
+const STYLED_DL_SX = (theme: Theme) => ({
+  fontSize: "0.85rem",
+  margin: theme.spacing(1, 0),
+  "& dt": { color: theme.palette.text.secondary, fontWeight: "600" },
+  "& dd": { margin: 0, marginTop: theme.spacing(0.5) },
+});
+
+const ROW_SX = (theme: Theme) => ({
+  width: "100%",
+  padding: theme.spacing(0.5, 2, 0.5, 2),
+  alignItems: "flex-start",
+});
+
+const COLUMN_SX = (theme: Theme) => ({
+  ...ROW_SX(theme),
+  flexDirection: "column" as const,
+});
+
+const LABEL_SX = { width: "230px", fontWeight: "bold" as const };
 
 type DividedPairArgs = {
   children: [
     ReactElement<"dt">,
     ReactElement<"dd">,
     ReactElement<"dt">,
-    ReactElement<"dd">
+    ReactElement<"dd">,
   ];
 };
 
 function DividedPair({ children }: DividedPairArgs) {
   return (
     <Grid container direction="row" spacing={1} sx={{ mb: 1 }}>
-      <Grid item xs={1}></Grid>
-      <Grid item>
+      <Grid size={1}></Grid>
+      <Grid>
         <span>
           {children[0]}
           {children[1]}
         </span>
       </Grid>
-      <Grid item>
+      <Grid>
         <Divider orientation="vertical" role="presentation" />
       </Grid>
-      <Grid item>
+      <Grid>
         <span>
           {children[2]}
           {children[3]}
@@ -219,8 +177,6 @@ export const IdentifierDataGrid = ({
   record,
   identifier,
 }: IdentifierDataGridArgs): ReactNode => {
-  const { classes } = useStyles();
-
   const institutionName: string = identifier.publisher.split(" (")[0];
 
   const anyRecommendedGiven: boolean = [
@@ -232,26 +188,44 @@ export const IdentifierDataGrid = ({
   ].some((r) => Array.isArray(r) && r.length > 0); // groups could be returned as null
 
   return (
-    <Grid container className={classes.pageWrapper}>
+    <Grid container sx={{ fontFamily: "Arial" }}>
       <VisuallyHiddenHeading variant="h1">
         {identifier.title}
       </VisuallyHiddenHeading>
       <Grid
         aria-hidden={true}
         container
-        className={clsx(classes.block, classes.header)}
+        sx={(theme) => ({
+          ...ROW_SX(theme),
+          backgroundColor: "#e3f0ff",
+          borderBottom: "2px solid black",
+        })}
         spacing={0}
       >
-        <Grid item className={classes.logo}>
+        <Grid
+          sx={(theme) => ({
+            backgroundColor: "#fff",
+            margin: theme.spacing(0.5, 2, 0.5, 0.5),
+            padding: theme.spacing(0.5),
+            borderRadius: theme.spacing(0.75),
+            border: "2px solid #eee",
+          })}
+        >
           <img
             src={INSTITUTION_LOGO_ADDRESS}
             alt="Institution Logo"
             title="Institution Logo"
-            className={classes.institutionLogo}
+            style={{ maxHeight: "78px", maxWidth: "255px" }}
           />
         </Grid>
         <Grid>
-          <h3 className={classes.primary}>RSpace Public Pages</h3>
+          <Typography
+            component="h3"
+            variant="h6"
+            sx={(theme) => ({ color: theme.palette.primary.main })}
+          >
+            RSpace Public Pages
+          </Typography>
           <h2>{institutionName}</h2>
         </Grid>
       </Grid>
@@ -259,35 +233,38 @@ export const IdentifierDataGrid = ({
         container
         aria-hidden={true}
         direction="row"
-        className={clsx(classes.block, classes.idWrapper)}
+        sx={(theme) => ({
+          width: "auto",
+          alignItems: "flex-start",
+          backgroundColor: "#e3f0ff",
+          margin: theme.spacing(3, 2, 0, 2),
+          padding: theme.spacing(0, 1, 1, 0),
+          borderRadius: theme.spacing(0.75),
+          border: "2px solid black",
+        })}
         spacing={2}
       >
-        <Grid item>
-          <Grid container direction="column" spacing={0.25}>
-            <Grid item>
-              <h3>{identifier.title}</h3>
-            </Grid>
-            <Grid item>
-              <Typography variant="body1">
-                {identifier.publicUrl ? (
-                  <a href={identifier.publicUrl} title="Item landing page">
-                    {identifier.doi}
-                  </a>
-                ) : (
-                  <>{identifier.doi}</>
-                )}
-              </Typography>
-            </Grid>
-          </Grid>
+        <Grid>
+          <Stack spacing={0.25}>
+            <h3>{identifier.title}</h3>
+            <Typography variant="body1">
+              {identifier.publicUrl ? (
+                <a href={identifier.publicUrl} title="Item landing page">
+                  {identifier.doi}
+                </a>
+              ) : (
+                <>{identifier.doi}</>
+              )}
+            </Typography>
+          </Stack>
         </Grid>
-        <Grid item>
+        <Grid>
           <Grid
             container
-            direction="column"
+            sx={{ flexDirection: "column", alignItems: "center" }}
             spacing={0.5}
-            className={classes.ac}
           >
-            <Grid item>
+            <Grid>
               <a
                 href={IGSN_BASE_URL}
                 title="IGSN Homepage"
@@ -298,11 +275,11 @@ export const IdentifierDataGrid = ({
                   src={IGSNlogo}
                   alt="IGSN Logo"
                   title="IGSN Logo"
-                  className={classes.igsnLogo}
+                  style={{ padding: "0 4px", width: "70px" }}
                 />
               </a>
             </Grid>
-            <Grid item>
+            <Grid>
               <Typography variant="caption">
                 {identifier.resourceTypeGeneral === "PhysicalObject"
                   ? "Physical Object"
@@ -312,22 +289,18 @@ export const IdentifierDataGrid = ({
           </Grid>
         </Grid>
       </Grid>
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid>
           <h2>General</h2>
         </Grid>
       </Grid>
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item className={classes.key}>
-          Name:
-        </Grid>
-        <Grid item>{identifier.title}</Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Name:</Grid>
+        <Grid>{identifier.title}</Grid>
       </Grid>
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item className={classes.key}>
-          IGSN ID:{" "}
-        </Grid>
-        <Grid item data-testid="identifier-public-url">
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>IGSN ID: </Grid>
+        <Grid data-testid="identifier-public-url">
           {identifier.publicUrl ? (
             <a href={identifier.publicUrl} title="DOI - address">
               {identifier.publicUrl}
@@ -337,34 +310,26 @@ export const IdentifierDataGrid = ({
           )}
         </Grid>
       </Grid>
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item className={classes.key}>
-          Resource Type:
-        </Grid>
-        <Grid item data-testid="identifier-resource-type">
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Resource Type:</Grid>
+        <Grid data-testid="identifier-resource-type">
           {identifier.resourceType}
         </Grid>
       </Grid>
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item className={classes.key}>
-          Creator:{" "}
-        </Grid>
-        <Grid item>{identifier.creatorName}</Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Creator: </Grid>
+        <Grid>{identifier.creatorName}</Grid>
       </Grid>
       {identifier.creatorAffiliation && (
-        <Grid container direction="row" className={classes.block} spacing={1}>
-          <Grid item className={classes.key}>
-            Creator Affiliation:{" "}
-          </Grid>
-          <Grid item>{identifier.creatorAffiliation}</Grid>
+        <Grid container direction="row" sx={ROW_SX} spacing={1}>
+          <Grid sx={LABEL_SX}>Creator Affiliation: </Grid>
+          <Grid>{identifier.creatorAffiliation}</Grid>
         </Grid>
       )}
       {identifier.creatorAffiliationIdentifier && (
-        <Grid container direction="row" className={classes.block} spacing={1}>
-          <Grid item className={classes.key}>
-            Creator Affiliation Identifier:{" "}
-          </Grid>
-          <Grid item>
+        <Grid container direction="row" sx={ROW_SX} spacing={1}>
+          <Grid sx={LABEL_SX}>Creator Affiliation Identifier: </Grid>
+          <Grid>
             <a
               target="_blank"
               rel="noreferrer"
@@ -375,22 +340,18 @@ export const IdentifierDataGrid = ({
           </Grid>
         </Grid>
       )}
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item className={classes.key}>
-          Organisation:{" "}
-        </Grid>
-        <Grid item>{identifier.publisher}</Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Organisation: </Grid>
+        <Grid>{identifier.publisher}</Grid>
       </Grid>
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item className={classes.key}>
-          Publication Year:{" "}
-        </Grid>
-        <Grid item>{identifier.publicationYear}</Grid>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid sx={LABEL_SX}>Publication Year: </Grid>
+        <Grid>{identifier.publicationYear}</Grid>
       </Grid>
       {anyRecommendedGiven && (
         <>
-          <Grid container direction="row" className={classes.block} spacing={1}>
-            <Grid item>
+          <Grid container direction="row" sx={ROW_SX} spacing={1}>
+            <Grid>
               <h2>Optional Fields</h2>
             </Grid>
           </Grid>
@@ -398,37 +359,40 @@ export const IdentifierDataGrid = ({
             identifier.subjects.length > 0 && (
               <Grid
                 container
-                direction="column"
-                className={classes.block}
+                sx={COLUMN_SX}
                 spacing={1}
                 role="group"
                 aria-label="subjects"
               >
-                <Grid item>
+                <Grid>
                   <h3>Subjects</h3>
                 </Grid>
                 {identifier.subjects.map((s) => (
-                  <Grid item className={classes.block} key={s.value}>
-                    <Grid item sx={{ margin: "8px" }}>
-                      {s.value}
-                    </Grid>
+                  <Grid sx={ROW_SX} key={s.value}>
+                    <Grid sx={{ margin: "8px" }}>{s.value}</Grid>
                     {subFields(s).length > 0 &&
                       subFields(s).map((sf) => (
                         <Grid
                           container
                           direction="row"
-                          className={classes.block}
+                          sx={ROW_SX}
                           spacing={1}
                           key={sf.key}
                         >
-                          <Grid item className={classes.key}>
+                          <Grid sx={LABEL_SX}>
                             {RECOMMENDED_FIELDS_LABELS[sf.key]}
                           </Grid>
-                          <Grid item>
+                          <Grid>
                             {sf.value ? (
                               <>{sf.value}</>
                             ) : (
-                              <em className={classes.grey}>None</em>
+                              <Typography
+                                variant="inherit"
+                                component="em"
+                                sx={{ color: "#949494" }}
+                              >
+                                None
+                              </Typography>
                             )}
                           </Grid>
                         </Grid>
@@ -441,27 +405,26 @@ export const IdentifierDataGrid = ({
             identifier.descriptions.length > 0 && (
               <Grid
                 container
-                direction="column"
-                className={classes.block}
+                sx={COLUMN_SX}
                 spacing={1}
                 role="group"
                 aria-label="descriptions"
               >
-                <Grid item>
+                <Grid>
                   <h3>Descriptions</h3>
                 </Grid>
                 {identifier.descriptions.map((d) => (
                   <Grid
                     container
                     direction="row"
-                    className={classes.block}
+                    sx={ROW_SX}
                     spacing={1}
                     key={d.value}
                   >
-                    <Grid item className={classes.key}>
+                    <Grid sx={LABEL_SX}>
                       {capitaliseJustFirstChar(d.type.toLowerCase())}
                     </Grid>
-                    <Grid item>{d.value}</Grid>
+                    <Grid>{d.value}</Grid>
                   </Grid>
                 ))}
               </Grid>
@@ -470,39 +433,36 @@ export const IdentifierDataGrid = ({
             identifier.alternateIdentifiers.length > 0 && (
               <Grid
                 container
-                direction="column"
-                className={classes.block}
+                sx={COLUMN_SX}
                 spacing={1}
                 role="group"
                 aria-label="alternate-identifiers"
               >
-                <Grid item>
+                <Grid>
                   <h3>Alternate Identifiers</h3>
                 </Grid>
                 {identifier.alternateIdentifiers.map((id) => (
                   <Grid
                     container
                     direction="row"
-                    className={classes.block}
+                    sx={ROW_SX}
                     spacing={1}
                     key={id.value}
                   >
-                    <Grid item sx={{ marginBottom: "8px" }}>
-                      {id.value}
-                    </Grid>
+                    <Grid sx={{ marginBottom: "8px" }}>{id.value}</Grid>
                     {subFields(id).length > 0 &&
                       subFields(id).map((sf) => (
                         <Grid
                           container
                           direction="row"
-                          className={classes.block}
+                          sx={ROW_SX}
                           spacing={1}
                           key={sf.key}
                         >
-                          <Grid item className={classes.key}>
+                          <Grid sx={LABEL_SX}>
                             {RECOMMENDED_FIELDS_LABELS[sf.key]}
                           </Grid>
-                          <Grid item>
+                          <Grid>
                             {sf.value ? <>{sf.value}</> : <em>None</em>}
                           </Grid>
                         </Grid>
@@ -514,29 +474,28 @@ export const IdentifierDataGrid = ({
           {Array.isArray(identifier.dates) && identifier.dates.length > 0 && (
             <Grid
               container
-              direction="column"
-              className={classes.block}
+              sx={COLUMN_SX}
               spacing={1}
               role="group"
               aria-label="dates"
             >
-              <Grid item>
+              <Grid>
                 <h3>Dates</h3>
               </Grid>
               {identifier.dates.map((d, i) => (
                 <Grid
                   container
                   direction="row"
-                  className={classes.block}
+                  sx={ROW_SX}
                   spacing={1}
                   key={d.value.toString() + "-" + i}
                 >
-                  <Grid item className={classes.key}>
+                  <Grid sx={LABEL_SX}>
                     {capitaliseJustFirstChar(d.type.toLowerCase())}
                   </Grid>
-                  <Grid item>
+                  <Grid>
                     {truncateIsoTimestamp(d.value, "date").orElse(
-                      "Invalid date"
+                      "Invalid date",
                     )}
                   </Grid>
                 </Grid>
@@ -555,7 +514,7 @@ export const IdentifierDataGrid = ({
                   aria-label="geoLocations"
                 >
                   {identifier.geoLocations.map((gl, i) => (
-                    <Grid item key={i}>
+                    <Grid key={i}>
                       <Card variant="outlined">
                         <CardMedia>
                           <MapViewer
@@ -570,14 +529,14 @@ export const IdentifierDataGrid = ({
                               <Typography component="h4" variant="h6">
                                 Point
                               </Typography>
-                              <dl className={classes.styledDescriptionList}>
+                              <Box component="dl" sx={STYLED_DL_SX}>
                                 <DividedPair>
                                   <dt>Latitude</dt>
                                   <dd>{gl.geoLocationPoint.pointLatitude}˚</dd>
                                   <dt>Longitude</dt>
                                   <dd>{gl.geoLocationPoint.pointLongitude}˚</dd>
                                 </DividedPair>
-                              </dl>
+                              </Box>
                             </>
                           )}
                           {gl.geoLocationPlace && (
@@ -585,17 +544,17 @@ export const IdentifierDataGrid = ({
                               <Typography component="h4" variant="h6">
                                 Place
                               </Typography>
-                              <dl className={classes.styledDescriptionList}>
+                              <Box component="dl" sx={STYLED_DL_SX}>
                                 <Grid container direction="row" spacing={1}>
-                                  <Grid item xs={1}></Grid>
-                                  <Grid item xs={11}>
+                                  <Grid size={1}></Grid>
+                                  <Grid size={11}>
                                     <span>
                                       <dt>Description</dt>
                                       <dd>{gl.geoLocationPlace}</dd>
                                     </span>
                                   </Grid>
                                 </Grid>
-                              </dl>
+                              </Box>
                             </>
                           )}
                           {glBoxComplete(gl.geoLocationBox) && (
@@ -603,7 +562,7 @@ export const IdentifierDataGrid = ({
                               <Typography component="h4" variant="h6">
                                 Box
                               </Typography>
-                              <dl className={classes.styledDescriptionList}>
+                              <Box component="dl" sx={STYLED_DL_SX}>
                                 {/* width style is used to align vertical dividers */}
                                 <DividedPair>
                                   <dt style={{ minWidth: "140px" }}>
@@ -629,7 +588,7 @@ export const IdentifierDataGrid = ({
                                     {gl.geoLocationBox.eastBoundLongitude}˚
                                   </dd>
                                 </DividedPair>
-                              </dl>
+                              </Box>
                             </>
                           )}
                           {gl.geoLocationPolygon.isValid && (
@@ -637,7 +596,7 @@ export const IdentifierDataGrid = ({
                               <Typography component="h4" variant="h6">
                                 Polygon
                               </Typography>
-                              <dl className={classes.styledDescriptionList}>
+                              <Box component="dl" sx={STYLED_DL_SX}>
                                 {gl.geoLocationPolygon.mapPoints(
                                   (point: PolygonPoint, index: number) => (
                                     <DividedPair key={index}>
@@ -646,17 +605,17 @@ export const IdentifierDataGrid = ({
                                       <dt>Point {index + 1} Longitude</dt>
                                       <dd>{point.pointLongitude}˚</dd>
                                     </DividedPair>
-                                  )
+                                  ),
                                 )}
-                              </dl>
+                              </Box>
                               {glPointComplete(
-                                gl.geoLocationInPolygonPoint
+                                gl.geoLocationInPolygonPoint,
                               ) && (
                                 <>
                                   <Typography component="h4" variant="h6">
                                     In Polygon Point
                                   </Typography>
-                                  <dl className={classes.styledDescriptionList}>
+                                  <Box component="dl" sx={STYLED_DL_SX}>
                                     <DividedPair>
                                       <dt>Latitude</dt>
                                       <dd>
@@ -675,7 +634,7 @@ export const IdentifierDataGrid = ({
                                         ˚
                                       </dd>
                                     </DividedPair>
-                                  </dl>
+                                  </Box>
                                 </>
                               )}
                             </>
@@ -691,18 +650,13 @@ export const IdentifierDataGrid = ({
       )}
       {identifier.customFieldsOnPublicPage && (
         <>
-          <Grid container direction="row" className={classes.block} spacing={1}>
-            <Grid item>
+          <Grid container direction="row" sx={ROW_SX} spacing={1}>
+            <Grid>
               <h2>Inventory</h2>
             </Grid>
           </Grid>
-          <Grid
-            container
-            direction="column"
-            className={classes.block}
-            spacing={2}
-          >
-            <Grid item>
+          <Grid container sx={COLUMN_SX} spacing={2}>
+            <Grid>
               <Description
                 fieldOwner={{
                   isFieldEditable: () => false,
@@ -717,7 +671,7 @@ export const IdentifierDataGrid = ({
                 onErrorStateChange={() => {}}
               />
             </Grid>
-            <Grid item>
+            <Grid>
               <Tags
                 fieldOwner={{
                   isFieldEditable: () => false,
@@ -732,7 +686,7 @@ export const IdentifierDataGrid = ({
               />
             </Grid>
             {typeof record.fields !== "undefined" && (
-              <Grid item>
+              <Grid>
                 <Typography variant="h6" component="h3">
                   Custom Fields
                 </Typography>
@@ -760,7 +714,7 @@ export const IdentifierDataGrid = ({
                               "uri",
                               "time",
                               "reference",
-                            ].includes(f.type)
+                            ].includes(f.type),
                           )
                           .map((f) => (
                             <TableRow key={f.id}>
@@ -780,7 +734,7 @@ export const IdentifierDataGrid = ({
               </Grid>
             )}
             {typeof record.extraFields !== "undefined" && (
-              <Grid item>
+              <Grid>
                 <Typography variant="h6" component="h3">
                   Extra Fields
                 </Typography>
@@ -812,18 +766,21 @@ export const IdentifierDataGrid = ({
           </Grid>
         </>
       )}
-      <Grid container direction="row" className={classes.block} spacing={1}>
-        <Grid item>
+      <Grid container direction="row" sx={ROW_SX} spacing={1}>
+        <Grid>
           <h2>Other Information</h2>
         </Grid>
       </Grid>
       <Grid
         container
         direction="row"
-        className={clsx(classes.block, classes.bottomSpaced)}
+        sx={(theme) => ({
+          ...ROW_SX(theme),
+          marginBottom: theme.spacing(1),
+        })}
         spacing={1}
       >
-        <Grid item>
+        <Grid>
           If you wish to obtain more information about this item, please contact
           the research data management department at {institutionName}.
           <br />
@@ -888,7 +845,7 @@ const IdentifierPublicPage = ({
         setPublicData({
           ...data,
           identifiers: data.identifiers.map(
-            (x) => new IdentifierModel(x, publicId)
+            (x) => new IdentifierModel(x, publicId),
           ),
           tags: data.tags.map((tag) => ({
             value: decodeTagString(tag.value),
@@ -948,7 +905,11 @@ window.addEventListener("load", (_e) => {
   const rsPublicId = location.pathname.split("/")[3];
   if (domContainer) {
     const root = createRoot(domContainer);
-    root.render(<IdentifierPublicPage publicId={rsPublicId} />);
+    root.render(
+      <MuiCssLayerProvider>
+        <IdentifierPublicPage publicId={rsPublicId} />
+      </MuiCssLayerProvider>,
+    );
   }
 });
 

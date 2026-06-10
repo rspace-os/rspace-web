@@ -3,8 +3,7 @@ import Button from "@mui/material/Button";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Grid from "@mui/material/Grid";
-import { withStyles } from "Styles";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import Typography from "@mui/material/Typography";
@@ -38,26 +37,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import AppBar from "../../components/AppBar";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
-
-const CustomTablePagination = withStyles<
-  React.ComponentProps<typeof TablePagination> & { component?: string },
-  { root: string }
->(() => ({
-  root: {
-    overflow: "unset",
-  },
-}))((props) => (
-  <nav>
-    <TablePagination
-      labelRowsPerPage=""
-      component="div"
-      {...props}
-      backIconButtonProps={{ size: "small" }}
-      nextIconButtonProps={{ size: "small" }}
-    />
-  </nav>
-));
-
 const Panel = ({
   anchorEl,
   children,
@@ -81,11 +60,13 @@ const Panel = ({
       vertical: "top",
       horizontal: "center",
     }}
-    PaperProps={{
-      variant: "outlined",
-      elevation: 0,
-      style: {
-        minWidth: 300,
+    slotProps={{
+      paper: {
+        variant: "outlined",
+        elevation: 0,
+        style: {
+          minWidth: 300,
+        },
       },
     }}
   >
@@ -100,93 +81,60 @@ const Panel = ({
     </form>
   </Popover>
 );
-
-const CustomStringField = ({
-  onChange,
-  value,
-  autoFocus = false,
-  fullWidth = false,
-}: {
-  onChange: (newValue: string) => void;
-  value: string;
-  autoFocus?: boolean;
-  fullWidth?: boolean;
-}) => (
-  <StringField
-    value={value}
-    onChange={({ target: { value: newValue } }) => onChange(newValue)}
-
-    autoFocus={autoFocus}
-    fullWidth={fullWidth}
-  />
-);
-
 type SearchControlArgs = {
   name: string;
   value: string | null;
   onChange: (newValue: string) => void;
   onSubmit: () => void;
 };
-
 const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-
   return (
-    <Grid item>
-      <DropdownButton
-        name={name}
-        onClick={(e) => {
-          setAnchorEl(e.currentTarget);
-        }}
+    <DropdownButton
+      name={name}
+      onClick={(e) => {
+        setAnchorEl(e.currentTarget);
+      }}
+    >
+      <Panel
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        onSubmit={() => onSubmit()}
       >
-        <Panel
-          anchorEl={anchorEl}
-          onClose={() => setAnchorEl(null)}
-          onSubmit={() => onSubmit()}
-        >
-          <CustomStringField
-            value={value ?? ""}
-            onChange={(newValue) => onChange(newValue)}
-
-            autoFocus={true}
-            fullWidth={true}
-          />
-        </Panel>
-      </DropdownButton>
-    </Grid>
+        <StringField
+          value={value ?? ""}
+          onChange={({ target: { value: newValue } }) => onChange(newValue)}
+          autoFocus={true}
+          fullWidth={true}
+        />
+      </Panel>
+    </DropdownButton>
   );
 };
-
 type ChipArgs = {
   name: string;
   value: string | null;
   onDelete: () => void;
 };
-
-const CustomChip = withStyles<ChipArgs, { label: string; root: string }>(
-  () => ({
-    label: {
-      letterSpacing: "0.02em",
-      padding: "4px 12px",
-    },
-    root: {
-      maxWidth: "100%",
-    },
-  }),
-)(({ name, value, onDelete, classes }) => {
+function CustomChip({ name, value, onDelete }: ChipArgs): React.ReactNode {
   if (!value) return null;
   return (
-    <Grid item>
-      <Chip
-        size="small"
-        label={`${name}: ${value}`}
-        onDelete={onDelete}
-        classes={classes}
-      />
-    </Grid>
+    <Chip
+      size="small"
+      label={`${name}: ${value}`}
+      onDelete={onDelete}
+      sx={{ maxWidth: "100%" }}
+      slotProps={{
+        label: {
+          sx: {
+            letterSpacing: "0.02em",
+            padding: "4px 12px",
+          },
+        },
+      }}
+    />
   );
-});
-
+}
 type SearchControlsArgs = {
   setDMPs: (dmps: Array<PlanSummary>) => void;
   fetching: boolean;
@@ -196,7 +144,6 @@ type SearchControlsArgs = {
   pageSize: number;
   setPage: (page: number) => void;
 };
-
 const SearchControls = ({
   setDMPs,
   fetching,
@@ -229,7 +176,6 @@ const SearchControls = ({
     setSearchParameters(newSearchParameters);
     setPage(0);
   };
-
   const getDMPs = async (
     newSearchParameters: Omit<SearchParameters, "page" | "pageSize">,
   ) => {
@@ -258,16 +204,12 @@ const SearchControls = ({
       setFetching(false);
     }
   };
-
   useEffect(() => {
     void getDMPs(searchParameters);
   }, [page, pageSize]);
-
   return (
-    <Grid container direction="column" spacing={1}>
-      <Grid
-        item
-        container
+    <Stack spacing={1}>
+      <Stack
         direction="row"
         spacing={1}
         role="group"
@@ -321,99 +263,105 @@ const SearchControls = ({
             void getDMPs(newSearchParametes);
           }}
         />
-      </Grid>
-      <Grid item>
-        <Grid container direction="row" spacing={1} alignItems="end">
-          <Search
-            name="Label"
-            value={searchParameters.like}
-            onChange={(like) =>
-              setSearchParameters({
-                ...searchParameters,
-                like,
-              })
-            }
-            onSubmit={() => {
-              setPage(0);
-              void getDMPs(searchParameters);
-            }}
-          />
-          <Search
-            name="Grant"
-            value={searchParameters.grantsLike}
-            onChange={(grantsLike) =>
-              modifySearchParameters({
-                ...searchParameters,
-                grantsLike,
-              })
-            }
-            onSubmit={() => {
-              setPage(0);
-              void getDMPs(searchParameters);
-            }}
-          />
-          <Search
-            name="Funder"
-            value={searchParameters.fundersLike}
-            onChange={(fundersLike) =>
-              modifySearchParameters({
-                ...searchParameters,
-                fundersLike,
-              })
-            }
-            onSubmit={() => {
-              setPage(0);
-              void getDMPs(searchParameters);
-            }}
-          />
-          <Search
-            name="Collaborators"
-            value={searchParameters.collaboratorsLike}
-            onChange={(collaboratorsLike) =>
-              setSearchParameters({
-                ...searchParameters,
-                collaboratorsLike,
-              })
-            }
-            onSubmit={() => {
-              setPage(0);
-              void getDMPs(searchParameters);
-            }}
-          />
-          <Grid item>
-            <SubmitSpinnerButton
-              onClick={() => {
-                void getDMPs(searchParameters);
-              }}
-              disabled={fetching}
-              loading={fetching}
-              label="Refresh"
-              type="submit"
-              size="small"
-            />
-          </Grid>
-        </Grid>
-      </Grid>
-    </Grid>
+      </Stack>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "end",
+        }}
+      >
+        <Search
+          name="Label"
+          value={searchParameters.like}
+          onChange={(like) =>
+            setSearchParameters({
+              ...searchParameters,
+              like,
+            })
+          }
+          onSubmit={() => {
+            setPage(0);
+            void getDMPs(searchParameters);
+          }}
+        />
+        <Search
+          name="Grant"
+          value={searchParameters.grantsLike}
+          onChange={(grantsLike) =>
+            modifySearchParameters({
+              ...searchParameters,
+              grantsLike,
+            })
+          }
+          onSubmit={() => {
+            setPage(0);
+            void getDMPs(searchParameters);
+          }}
+        />
+        <Search
+          name="Funder"
+          value={searchParameters.fundersLike}
+          onChange={(fundersLike) =>
+            modifySearchParameters({
+              ...searchParameters,
+              fundersLike,
+            })
+          }
+          onSubmit={() => {
+            setPage(0);
+            void getDMPs(searchParameters);
+          }}
+        />
+        <Search
+          name="Collaborators"
+          value={searchParameters.collaboratorsLike}
+          onChange={(collaboratorsLike) =>
+            setSearchParameters({
+              ...searchParameters,
+              collaboratorsLike,
+            })
+          }
+          onSubmit={() => {
+            setPage(0);
+            void getDMPs(searchParameters);
+          }}
+        />
+        <SubmitSpinnerButton
+          onClick={() => {
+            void getDMPs(searchParameters);
+          }}
+          disabled={fetching}
+          loading={fetching}
+          label="Refresh"
+          type="submit"
+          size="small"
+        />
+      </Stack>
+    </Stack>
   );
 };
-
-const CustomDialog = withStyles<
-  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-    margin: fullScreen ? 0 : theme.spacing(2.625),
-    maxHeight: "unset",
-    minHeight: "unset",
-
-    // this is so that the hights of the dialog's content of constrained and scrollbars appear
-    // 24px margin above and below, 3px border above and below
-    height: fullScreen ? "100%" : "calc(100% - 48px)",
-  },
-}))(Dialog);
-
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            margin: fullScreen ? 0 : 2.625,
+            maxHeight: "unset",
+            minHeight: "unset",
+            // this is so that the heights of the dialog's content are constrained and scrollbars appear
+            // 24px margin above and below, 3px border above and below
+            height: fullScreen ? "100%" : "calc(100% - 48px)",
+          },
+        },
+      }}
+    />
+  );
+}
 function DMPDialogContent({
   setOpen,
 }: {
@@ -421,16 +369,13 @@ function DMPDialogContent({
 }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
-
   const [DMPs, setDMPs] = useState<Array<PlanSummary>>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
   const [pageSize, setPageSize]: UseState<number> = useState(10);
   const [page, setPage]: UseState<number> = useState(0);
-
   const [fetching, setFetching] = useState(false);
   const [importing, setImporting] = useState(false);
-
   const handleImport = async () => {
     if (!selectedPlan) throw new Error("No plan is selected.");
     const selectedPlanId: string = `${selectedPlan.id}`;
@@ -465,7 +410,6 @@ function DMPDialogContent({
       setImporting(false);
     }
   };
-
   return (
     <>
       <AppBar
@@ -481,15 +425,16 @@ function DMPDialogContent({
       />
       <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
       <DialogContent>
-        <Grid
-          container
-          direction="column"
+        <Stack
+          sx={{
+            flexWrap: "nowrap",
+            height: "calc(100% + 16px)",
+          }}
           spacing={2}
-          flexWrap="nowrap"
+
           // this is so that just the table is scrollable
-          height="calc(100% + 16px)"
         >
-          <Grid item>
+          <Box>
             <Typography variant="body2">
               Importing a DMP from <strong>argos.openaire.eu</strong> will make
               it available to view and reference within RSpace.
@@ -500,19 +445,22 @@ function DMPDialogContent({
               and our <Link href={docLinks.argos}>Argos integration docs</Link>{" "}
               for more.
             </Typography>
-          </Grid>
-          <Grid item>
-            <SearchControls
-              setDMPs={setDMPs}
-              fetching={fetching}
-              setFetching={setFetching}
-              setTotalCount={setTotalCount}
-              page={page}
-              pageSize={pageSize}
-              setPage={setPage}
-            />
-          </Grid>
-          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+          </Box>
+          <SearchControls
+            setDMPs={setDMPs}
+            fetching={fetching}
+            setFetching={setFetching}
+            setTotalCount={setTotalCount}
+            page={page}
+            pageSize={pageSize}
+            setPage={setPage}
+          />
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+            }}
+          >
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<"label", PlanSummary>(
@@ -598,25 +546,19 @@ function DMPDialogContent({
                 }
               }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
-        <Grid container direction="row" spacing={1}>
-          <Grid item>
-            <CustomTablePagination
+        <Stack direction="row" spacing={1} sx={{ width: "100%" }}>
+          <nav>
+            <TablePagination
+              sx={{ overflow: "unset" }}
               count={totalCount}
               rowsPerPageOptions={paginationOptions(totalCount)}
               labelRowsPerPage=""
               component="div"
               rowsPerPage={Math.min(pageSize, totalCount)}
-              SelectProps={{
-                renderValue: (value: unknown): React.ReactNode => {
-                  if (typeof value !== "number")
-                    throw new Error("Invalid value");
-                  return value < totalCount ? value : `${value} (All)`;
-                },
-              }}
               page={page}
               onPageChange={(_: unknown, newPage: number) => {
                 setPage(newPage);
@@ -625,32 +567,46 @@ function DMPDialogContent({
                 setPageSize(parseInt(e.target.value, 10));
                 setPage(0);
               }}
+              slotProps={{
+                actions: {
+                  previousButton: {
+                    size: "small",
+                  },
+                  nextButton: {
+                    size: "small",
+                  },
+                },
+                select: {
+                  renderValue: (value: unknown): React.ReactNode => {
+                    if (typeof value !== "number")
+                      throw new Error("Invalid value");
+                    return value < totalCount ? value : `${value} (All)`;
+                  },
+                },
+              }}
             />
-          </Grid>
-          <Grid item sx={{ ml: "auto" }}>
-            <Stack direction="row" spacing={1}>
-              <Button onClick={() => setOpen(false)} disabled={importing}>
-                {selectedPlan ? "Cancel" : "Close"}
-              </Button>
-              <ValidatingSubmitButton
-                onClick={() => {
-                  void handleImport();
-                }}
-                validationResult={
-                  !selectedPlan ? IsInvalid("No DMP selected.") : IsValid()
-                }
-                loading={importing}
-              >
-                Import
-              </ValidatingSubmitButton>
-            </Stack>
-          </Grid>
-        </Grid>
+          </nav>
+          <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+            <Button onClick={() => setOpen(false)} disabled={importing}>
+              {selectedPlan ? "Cancel" : "Close"}
+            </Button>
+            <ValidatingSubmitButton
+              onClick={() => {
+                void handleImport();
+              }}
+              validationResult={
+                !selectedPlan ? IsInvalid("No DMP selected.") : IsValid()
+              }
+              loading={importing}
+            >
+              Import
+            </ValidatingSubmitButton>
+          </Stack>
+        </Stack>
       </DialogActions>
     </>
   );
 }
-
 type DMPDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -694,5 +650,4 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
     </ThemeProvider>
   );
 }
-
 export default observer(DMPDialog);

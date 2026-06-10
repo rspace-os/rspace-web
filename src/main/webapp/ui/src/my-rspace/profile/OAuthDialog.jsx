@@ -134,7 +134,7 @@ export default function OAuthDialog(props) {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <Tooltip title="Add a new app" enterDelay={100}>
           <IconButton color="inherit" onClick={handleClickOpen}>
@@ -152,7 +152,9 @@ export default function OAuthDialog(props) {
               {created && (
                 <>
                   Please write down the client secret.{" "}
-                  <b>It will not be available once you close this window.</b>
+                  <strong>
+                    It will not be available once you close this window.
+                  </strong>
                 </>
               )}
             </DialogContentText>
@@ -166,24 +168,28 @@ export default function OAuthDialog(props) {
                   autoFocus
                   id="name"
                   placeholder="App name"
-                  inputProps={{ "aria-label": "App name" }}
                   type="text"
                   fullWidth
                   value={appName}
                   onChange={handleChange}
+                  slotProps={{
+                    htmlInput: { "aria-label": "App name" },
+                  }}
                 />
               </form>
             )}
             {created && (
               <Grid container>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     inputRef={clientIdRef}
                     label="Client ID"
                     variant="filled"
                     value={clientId}
-                    style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
-                    inputProps={{ "aria-label": "Client ID" }}
+                    sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
+                    slotProps={{
+                      htmlInput: { "aria-label": "Client ID" },
+                    }}
                   />
                   <Tooltip title="Copy" enterDelay={100}>
                     <IconButton
@@ -194,14 +200,16 @@ export default function OAuthDialog(props) {
                     </IconButton>
                   </Tooltip>
                 </Grid>
-                <Grid item xs={12} style={{ marginTop: "10px" }}>
+                <Grid sx={{ marginTop: "10px" }} size={12}>
                   <TextField
                     inputRef={clientSecretRef}
                     label="Client Secret"
                     variant="filled"
                     value={unhashedClientSecret}
-                    style={{ marginRight: "10px", width: "calc(100% - 55px)" }}
-                    inputProps={{ "aria-label": "Client secret" }}
+                    sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
+                    slotProps={{
+                      htmlInput: { "aria-label": "Client secret" },
+                    }}
                   />
                   <Tooltip title="Copy" enterDelay={100}>
                     <IconButton
@@ -216,7 +224,7 @@ export default function OAuthDialog(props) {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleClose} style={{ color: "grey" }}>
+            <Button onClick={handleClose} sx={{ color: "grey" }}>
               {created ? "Close" : "Cancel"}
             </Button>
             {!created && (

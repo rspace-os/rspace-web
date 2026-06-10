@@ -30,10 +30,10 @@ type FactoryOverrides = {
 export const mockFactory = (overrides?: FactoryOverrides): Factory => {
   const f = (): Factory => ({
     newRecord: vi.fn(),
-    newPerson: vi.fn().mockReturnValue({} as PersonModel),
-    newBarcode: vi.fn().mockReturnValue({} as BarcodeRecord),
-    newIdentifier: vi.fn().mockReturnValue({} as Identifier),
-    newDocument: vi.fn().mockReturnValue({} as Document),
+    newPerson: vi.fn().mockReturnValue({}),
+    newBarcode: vi.fn().mockReturnValue({}),
+    newIdentifier: vi.fn().mockReturnValue({}),
+    newDocument: vi.fn().mockReturnValue({}),
     newFactory: vi.fn().mockImplementation(f),
     ...overrides,
   });

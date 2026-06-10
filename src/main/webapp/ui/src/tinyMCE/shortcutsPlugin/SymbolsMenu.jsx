@@ -35,7 +35,7 @@ export default function SymbolsMenu(props) {
 
   return (
     <Paper
-      style={{
+      sx={{
         border: "1px solid rgb(240,240,240)",
         margin: "0px 0px 15px 0px",
         width: "100%",
@@ -43,7 +43,7 @@ export default function SymbolsMenu(props) {
       elevation={0}
     >
       <Grid container spacing={2}>
-        <Grid item xs={3}>
+        <Grid size={3}>
           <Tabs
             orientation="vertical"
             variant="scrollable"
@@ -55,12 +55,12 @@ export default function SymbolsMenu(props) {
             ))}
           </Tabs>
         </Grid>
-        <Grid item xs={9}>
+        <Grid size={9}>
           {symbols().map((symbol) => (
             <Tooltip title={symbol[1]} aria-label={symbol[1]} key={symbol[0]}>
               <Button
                 onClick={() => props.onNewShortcut(symbol)}
-                style={{ fontSize: "18px", minWidth: "45px" }}
+                sx={{ fontSize: "18px", minWidth: "45px" }}
               >
                 {String.fromCharCode(symbol[0])}
               </Button>

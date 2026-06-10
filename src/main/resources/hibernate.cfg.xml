@@ -98,7 +98,6 @@
         <mapping class="com.researchspace.model.UserProfile"/>
         <mapping class="com.researchspace.model.Community"/>
         <mapping class="com.researchspace.model.Thumbnail"/>
-        <mapping class="com.researchspace.offline.model.OfflineRecordUser"/>
         <mapping class="com.researchspace.model.ArchiveVersionToAppVersion"/>
         <mapping class="com.researchspace.model.record.FormUserMenu"/>
         <mapping class="com.researchspace.model.UserKeyPair"/>

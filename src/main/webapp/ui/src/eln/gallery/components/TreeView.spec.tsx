@@ -126,7 +126,7 @@ const feature = test.extend<{
         const fileName = getFileNameByType(fileType);
         await expect(
           page.getByRole("treeitem", { name: new RegExp(fileName) }),
-        ).toHaveAttribute("aria-selected", "true");
+        ).toHaveAttribute("aria-checked", "true");
       },
       "the {fileType} should have focus": async ({ fileType }) => {
         const focusedElement = page.locator(":focus");
@@ -134,7 +134,7 @@ const feature = test.extend<{
       },
       "multiple files should be selected": async () => {
         // Multi-selection may not be implemented yet, so just verify selection works
-        const selectedItems = page.getByRole("treeitem", { selected: true });
+        const selectedItems = page.locator('[role="treeitem"][aria-checked="true"]');
         const count = await selectedItems.count();
         expect(count).toBeGreaterThanOrEqual(1);
       },

@@ -2,6 +2,7 @@ import { observer } from "mobx-react-lite";
 import { observable } from "mobx";
 import React, { useState, useContext, useEffect } from "react";
 import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
 import {
   useIntegrationsEndpoint,
   type IntegrationStates,
@@ -27,17 +28,41 @@ import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 
 function LoadingSkeleton() {
   return (
-    <Grid container spacing={2} alignItems="stretch">
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
-      <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+      <Grid
+        sx={{ display: "flex" }}
+        size={{
+          sm: 6,
+          xs: 12,
+        }}
+      >
         <Skeleton variant="rounded" width="100%" height={125} />
       </Grid>
     </Grid>
@@ -61,11 +86,67 @@ function ErrorMessage() {
   );
 }
 
+type AppsSectionArgs = {
+  id: string;
+  title: string;
+  description: React.ReactNode;
+  mode: React.ComponentProps<typeof CardListing>["mode"];
+  allStates: FetchingData.Fetched<IntegrationStates>;
+};
+
+function AppsSection({
+  id,
+  title,
+  description,
+  mode,
+  allStates,
+}: AppsSectionArgs): React.ReactNode {
+  return (
+    <Box component="section" aria-labelledby={id}>
+      <Box sx={{ mb: 2 }}>
+        <Divider>
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{
+              p: 1,
+              mb: 1,
+              ...(id === "third-party-rspace-integrations"
+                ? {
+                    whiteSpace: {
+                      xs: "break-spaces",
+                      md: "unset",
+                    },
+                  }
+                : {}),
+            }}
+            id={id}
+          >
+            {title}
+          </Typography>
+        </Divider>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          {description}
+        </Typography>
+      </Box>
+      <Box sx={{ mt: 0.5 }}>
+        {FetchingData.match(allStates, {
+          success: (integrationStates) => (
+            <CardListing mode={mode} integrationStates={integrationStates} />
+          ),
+          loading: () => <LoadingSkeleton />,
+          error: () => <ErrorMessage />,
+        })}
+      </Box>
+    </Box>
+  );
+}
+
 function App(): React.ReactNode {
   const { allIntegrations } = useIntegrationsEndpoint();
   const { trackEvent, isAvailable: analyticsIsAvailable } =
     useContext(AnalyticsContext);
-  const [lastDialogOpened, setLastDialogOpened] = useState<string | null>(null);
+  const [, setLastDialogOpened] = useState<string | null>(null);
 
   const [allStates, setAllStates] = useState<
     FetchingData.Fetched<IntegrationStates>
@@ -78,14 +159,14 @@ function App(): React.ReactNode {
           observable({
             tag: "success",
             value: mapObject((k, v) => observable(v), await allIntegrations()),
-          }) as FetchingData.Fetched<IntegrationStates>
+          }) as FetchingData.Fetched<IntegrationStates>,
         );
       } catch (e) {
         if (e instanceof Error)
           setAllStates(observable({ tag: "error", error: e.message }));
       }
     }),
-    []
+    [],
   );
 
   return (
@@ -104,7 +185,7 @@ function App(): React.ReactNode {
                         if (typeof integrationName === "string") {
                           setLastDialogOpened(integrationName);
                         }
-                      }
+                      },
                     );
                   }
                 } else {
@@ -122,182 +203,85 @@ function App(): React.ReactNode {
                 supports2xZoom: true,
               }}
             />
-            <Grid container direction="row" spacing={1}>
-              <Grid item xs={1} md={2}></Grid>
-              <Grid item xs={10} md={8}>
-                <main>
-                  <Box sx={{ mt: 4 }}>
-                    <Typography variant="h1">Apps</Typography>
-                    <Grid container spacing={2} direction="column">
-                      <Grid item sx={{ mb: 1 }}>
-                        <Typography variant="body1">
-                          RSpace provides integrations with various third-party
-                          apps that enable extra features. Apps need to be
-                          enabled to work, and some require authentication.{" "}
-                          <Link
-                            href={docLinks.appsIntroduction}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            See Apps Introduction to learn more.
-                          </Link>
-                        </Typography>
-                      </Grid>
-                      <Grid item sx={{ mb: 6 }}>
-                        <section aria-labelledby="enabled">
-                          <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
-                              <Divider>
-                                <Typography
-                                  variant="h5"
-                                  component="h2"
-                                  sx={{ p: 1, mb: 1 }}
-                                  id="enabled"
-                                >
-                                  Enabled
-                                </Typography>
-                              </Divider>
-                              <Typography variant="body1" sx={{ mb: 2 }}>
-                                The following Apps are enabled on this account.
-                                Click on an App card to modify or disable the
-                                integration.
-                              </Typography>
-                            </Grid>
-                            <Grid item mt={0.5} xs={12}>
-                              {FetchingData.match(allStates, {
-                                success: (integrationStates) => (
-                                  <CardListing
-                                    mode="ENABLED"
-                                    integrationStates={integrationStates}
-                                  />
-                                ),
-                                loading: () => <LoadingSkeleton />,
-                                error: () => <ErrorMessage />,
-                              })}
-                            </Grid>
-                          </Grid>
-                        </section>
-                      </Grid>
-                      <Grid item sx={{ mb: 6 }}>
-                        <section aria-labelledby="disabled">
-                          <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
-                              <Divider>
-                                <Typography
-                                  variant="h5"
-                                  component="h2"
-                                  sx={{ p: 1, mb: 1 }}
-                                  id="disabled"
-                                >
-                                  Disabled
-                                </Typography>
-                              </Divider>
-                              <Typography variant="body1" sx={{ mb: 2 }}>
-                                The following Apps are not currently enabled on
-                                this account. Click on an App card for setup
-                                instructions on how to enable the integration.
-                              </Typography>
-                            </Grid>
-                            <Grid item mt={0.5} xs={12}>
-                              {FetchingData.match(allStates, {
-                                success: (integrationStates) => (
-                                  <CardListing
-                                    mode="DISABLED"
-                                    integrationStates={integrationStates}
-                                  />
-                                ),
-                                loading: () => <LoadingSkeleton />,
-                                error: () => <ErrorMessage />,
-                              })}
-                            </Grid>
-                          </Grid>
-                        </section>
-                      </Grid>
-                      <Grid item sx={{ mb: 6 }}>
-                        <section aria-labelledby="unavailable">
-                          <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
-                              <Divider>
-                                <Typography
-                                  variant="h5"
-                                  component="h2"
-                                  sx={{ p: 1, mb: 1 }}
-                                  id="unavailable"
-                                >
-                                  Unavailable
-                                </Typography>
-                              </Divider>
-                              <Typography variant="body1" sx={{ mb: 2 }}>
-                                The following Apps need to be enabled by your
-                                System Administrator before they can be used;
-                                please get in touch with them directly to set
-                                this up.
-                              </Typography>
-                            </Grid>
-                            <Grid item mt={0.5} xs={12}>
-                              {FetchingData.match(allStates, {
-                                success: (integrationStates) => (
-                                  <CardListing
-                                    mode="UNAVAILABLE"
-                                    integrationStates={integrationStates}
-                                  />
-                                ),
-                                loading: () => <LoadingSkeleton />,
-                                error: () => <ErrorMessage />,
-                              })}
-                            </Grid>
-                          </Grid>
-                        </section>
-                      </Grid>
-                      <Grid item sx={{ mb: 6 }}>
-                        <section aria-labelledby="third-party-rspace-integrations">
-                          <Grid container>
-                            <Grid item width={"100%"} sx={{ mb: 2 }}>
-                              <Divider>
-                                <Typography
-                                  variant="h5"
-                                  component="h2"
-                                  sx={{
-                                    p: 1,
-                                    mb: 1,
-                                    whiteSpace: {
-                                      xs: "break-spaces",
-                                      md: "unset",
-                                    },
-                                  }}
-                                  id="third-party-rspace-integrations"
-                                >
-                                  Third-party RSpace Integrations
-                                </Typography>
-                              </Divider>
-                              <Typography variant="body1" sx={{ mb: 2 }}>
-                                These RSpace applications have been built by
-                                partners or other external software developers.
-                                Note, ResearchSpace does not provide direct
-                                support for these integrations.
-                              </Typography>
-                            </Grid>
-                            <Grid item mt={0.5} xs={12}>
-                              {FetchingData.match(allStates, {
-                                success: (integrationStates) => (
-                                  <CardListing
-                                    mode="EXTERNAL"
-                                    integrationStates={integrationStates}
-                                  />
-                                ),
-                                loading: () => <LoadingSkeleton />,
-                                error: () => <ErrorMessage />,
-                              })}
-                            </Grid>
-                          </Grid>
-                        </section>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                </main>
-              </Grid>
-              <Grid item xs={1} md={2}></Grid>
-            </Grid>
+            <Box
+              component="main"
+              sx={{
+                width: {
+                  xs: "83.333333%",
+                  md: "66.666667%",
+                },
+                mx: "auto",
+              }}
+            >
+              <Box sx={{ my: 4 }}>
+                <Typography variant="h1">Apps</Typography>
+                <Typography variant="body1">
+                  RSpace provides integrations with various third-party apps
+                  that enable extra features. Apps need to be enabled to work,
+                  and some require authentication.{" "}
+                  <Link
+                    href={docLinks.appsIntroduction}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    See Apps Introduction to learn more.
+                  </Link>
+                </Typography>
+                <Stack spacing={6} sx={{ mt: 1 }}>
+                  <AppsSection
+                    id="enabled"
+                    title="Enabled"
+                    description={
+                      <>
+                        The following Apps are enabled on this account. Click on
+                        an App card to modify or disable the integration.
+                      </>
+                    }
+                    mode="ENABLED"
+                    allStates={allStates}
+                  />
+                  <AppsSection
+                    id="disabled"
+                    title="Disabled"
+                    description={
+                      <>
+                        The following Apps are not currently enabled on this
+                        account. Click on an App card for setup instructions on
+                        how to enable the integration.
+                      </>
+                    }
+                    mode="DISABLED"
+                    allStates={allStates}
+                  />
+                  <AppsSection
+                    id="unavailable"
+                    title="Unavailable"
+                    description={
+                      <>
+                        The following Apps need to be enabled by your System
+                        Administrator before they can be used; please get in
+                        touch with them directly to set this up.
+                      </>
+                    }
+                    mode="UNAVAILABLE"
+                    allStates={allStates}
+                  />
+                  <AppsSection
+                    id="third-party-rspace-integrations"
+                    title="Third-party RSpace Integrations"
+                    description={
+                      <>
+                        These RSpace applications have been built by partners or
+                        other external software developers. Note, ResearchSpace
+                        does not provide direct support for these integrations.
+                      </>
+                    }
+                    mode="EXTERNAL"
+                    allStates={allStates}
+                  />
+                </Stack>
+              </Box>
+            </Box>
           </AnalyticsContext.Provider>
         </DialogBoundary>
       </ThemeProvider>

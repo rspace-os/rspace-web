@@ -1,6 +1,6 @@
 import React from "react";
-import { makeStyles } from "tss-react/mui";
 import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { type Container } from "@/stores/definitions/Container";
 import { ContentSummary } from "@/stores/definitions/container/types";
@@ -9,15 +9,6 @@ type CountChipArgs = {
   type: string;
   record: Container;
 };
-
-const useStyles = makeStyles()((theme) => ({
-  root: {
-    marginLeft: theme.spacing(0.5),
-  },
-  icon: {
-    marginLeft: `${theme.spacing(1)} !important`,
-  },
-}));
 
 function getCount(type: string, cs: ContentSummary): number {
   if (type === "container") return cs.containerCount;
@@ -28,24 +19,23 @@ function getCount(type: string, cs: ContentSummary): number {
 }
 
 const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
-  const { classes } = useStyles();
   if (!record.contentSummary.isAccessible) return null;
   const count = getCount(type, record.contentSummary.value);
 
   return (
     <Chip
-      className={classes.root}
+      sx={{ ml: 0.5 }}
       label={count}
       size="small"
       icon={
-        <span className={classes.icon}>
+        <Box component="span" sx={(theme) => ({ ml: `${theme.spacing(1)} !important` })}>
           <RecordTypeIcon
             record={{
               recordTypeLabel: type.toUpperCase(),
               iconName: type === "container" ? "container" : "sample",
             }}
           />
-        </span>
+        </Box>
       }
       variant="outlined"
     />

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-@JsonIgnoreProperties({"knowledgeModelPackage", "permissions"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DSWProject {
   @JsonProperty private String createdAt;
   @JsonProperty private String description;

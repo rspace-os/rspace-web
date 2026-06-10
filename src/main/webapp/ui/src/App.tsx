@@ -10,6 +10,9 @@ import Analytics from "./components/Analytics";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
 import createAccentedTheme from "./accentedTheme";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 function App(): React.ReactNode {
   const { authStore, peopleStore, unitStore } = useStores();
@@ -37,11 +40,13 @@ function App(): React.ReactNode {
       peopleStore.currentUser ? (
         <>
           <GoogleLoginProvider />
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
-              <Analytics>
-                <Router />
-              </Analytics>
+              <QueryClientProvider client={queryClient}>
+                <Analytics>
+                  <Router />
+                </Analytics>
+              </QueryClientProvider>
             </ThemeProvider>
           </StyledEngineProvider>
         </>

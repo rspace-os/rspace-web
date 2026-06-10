@@ -146,12 +146,10 @@ import com.researchspace.service.audit.search.AuditTrailHandler;
 import com.researchspace.service.audit.search.AuditTrailHandlerImpl;
 import com.researchspace.service.audit.search.BasicLogQuerySearcher;
 import com.researchspace.service.audit.search.IAuditFileSearch;
-import com.researchspace.service.audit.search.IAuditSearchResultPostProcessor;
 import com.researchspace.service.audit.search.ILogResourceTracker;
 import com.researchspace.service.audit.search.LogFileTracker;
 import com.researchspace.service.audit.search.LogLineContentProvider;
 import com.researchspace.service.audit.search.LogLineContentProviderImpl;
-import com.researchspace.service.audit.search.UpdateRecordNamePostProcessor;
 import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.service.aws.impl.S3ExportUtilitiesImpl;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
@@ -753,14 +751,6 @@ public abstract class BaseConfig {
     } else {
       return new DefaultPostUserCreate();
     }
-  }
-
-  /**
-   * @return
-   */
-  @Bean
-  IAuditSearchResultPostProcessor auditSearchResultPostProcessor() {
-    return new UpdateRecordNamePostProcessor();
   }
 
   @Bean("compositeFileStore")

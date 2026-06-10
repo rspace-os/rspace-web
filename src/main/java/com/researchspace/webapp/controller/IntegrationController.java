@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.ARGOS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
@@ -137,6 +138,7 @@ public class IntegrationController extends BaseController {
     rc.put(RAID_APP_NAME, integrationsHandler.getIntegration(user, RAID_APP_NAME));
     rc.put(DMPTOOL_APP_NAME, integrationsHandler.getIntegration(user, DMPTOOL_APP_NAME));
     rc.put(DMPONLINE_APP_NAME, integrationsHandler.getIntegration(user, DMPONLINE_APP_NAME));
+    rc.put(DMPASSISTANT_APP_NAME, integrationsHandler.getIntegration(user, DMPASSISTANT_APP_NAME));
     rc.put(
         CLUSTERMARKET_APP_NAME, integrationsHandler.getIntegration(user, CLUSTERMARKET_APP_NAME));
     rc.put(DRYAD_APP_NAME, integrationsHandler.getIntegration(user, DRYAD_APP_NAME));

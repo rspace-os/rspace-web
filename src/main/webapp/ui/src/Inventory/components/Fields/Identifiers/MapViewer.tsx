@@ -21,7 +21,6 @@ import {
   type GeoLocationPolygon,
   type PolygonPoint,
 } from "../../../../stores/definitions/GeoLocation";
-
 type MapViewerArgs = {
   point: PolygonPoint;
   box: GeoLocationBox;
@@ -50,11 +49,9 @@ export default function MapViewer({
   polygon,
 }: MapViewerArgs): React.ReactNode {
   const theme = useTheme();
-
   const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
   const [showBox, setShowBox] = useState<boolean>(boxComplete(box));
   const [showPolygon, setShowPolygon] = useState<boolean>(polygon.isValid);
-
   const {
     eastBoundLongitude,
     northBoundLatitude,
@@ -62,11 +59,26 @@ export default function MapViewer({
     westBoundLongitude,
   } = box;
   const boxToPolygon = [
-    { latitude: northBoundLatitude, longitude: westBoundLongitude },
-    { latitude: northBoundLatitude, longitude: eastBoundLongitude },
-    { latitude: southBoundLatitude, longitude: eastBoundLongitude },
-    { latitude: southBoundLatitude, longitude: westBoundLongitude },
-    { latitude: northBoundLatitude, longitude: westBoundLongitude },
+    {
+      latitude: northBoundLatitude,
+      longitude: westBoundLongitude,
+    },
+    {
+      latitude: northBoundLatitude,
+      longitude: eastBoundLongitude,
+    },
+    {
+      latitude: southBoundLatitude,
+      longitude: eastBoundLongitude,
+    },
+    {
+      latitude: southBoundLatitude,
+      longitude: westBoundLongitude,
+    },
+    {
+      latitude: northBoundLatitude,
+      longitude: westBoundLongitude,
+    },
   ];
 
   /*
@@ -102,7 +114,6 @@ export default function MapViewer({
     latitudeDataPoints++;
   }
   latitudeCenter /= latitudeDataPoints;
-
   let longitudeCenter = 0;
   let longitudeDataPoints = 0;
   if (pointComplete(point)) {
@@ -130,14 +141,15 @@ export default function MapViewer({
     longitudeDataPoints++;
   }
   longitudeCenter /= longitudeDataPoints;
-
   return (
     <>
       <MapContainer
         center={[latitudeCenter || 0, longitudeCenter || 0]}
         zoom={15}
         scrollWheelZoom={false}
-        style={{ height: "200px" }}
+        style={{
+          height: "200px",
+        }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -187,15 +199,21 @@ export default function MapViewer({
               ({ pointLatitude: lat, pointLongitude: long }) => [
                 parseFloat(lat),
                 parseFloat(long),
-              ]
+              ],
             )}
           />
         )}
       </MapContainer>
-
       <FormGroup>
-        <Grid container direction="row" spacing={2} sx={{ px: 2 }}>
-          <Grid item>
+        <Grid
+          container
+          direction="row"
+          spacing={2}
+          sx={{
+            px: 2,
+          }}
+        >
+          <Grid>
             <FormControlLabel
               control={
                 <Switch
@@ -203,13 +221,17 @@ export default function MapViewer({
                   checked={showPoint}
                   disabled={!pointComplete(point)}
                   onChange={() => setShowPoint(!showPoint)}
-                  inputProps={{ "aria-label": "show GL Point" }}
+                  slotProps={{
+                    input: {
+                      "aria-label": "show GL Point",
+                    },
+                  }}
                 />
               }
               label="Point"
             />
           </Grid>
-          <Grid item>
+          <Grid>
             <FormControlLabel
               control={
                 <Switch
@@ -217,13 +239,17 @@ export default function MapViewer({
                   checked={showBox}
                   disabled={!boxComplete(box)}
                   onChange={() => setShowBox(!showBox)}
-                  inputProps={{ "aria-label": "show GL box" }}
+                  slotProps={{
+                    input: {
+                      "aria-label": "show GL box",
+                    },
+                  }}
                 />
               }
               label="Box"
             />
           </Grid>
-          <Grid item>
+          <Grid>
             <FormControlLabel
               control={
                 <Switch
@@ -231,7 +257,11 @@ export default function MapViewer({
                   checked={showPolygon}
                   disabled={!polygon.isValid}
                   onChange={() => setShowPolygon(!showPolygon)}
-                  inputProps={{ "aria-label": "show GL Polygon" }}
+                  slotProps={{
+                    input: {
+                      "aria-label": "show GL Polygon",
+                    },
+                  }}
                 />
               }
               label="Polygon"

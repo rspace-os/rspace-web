@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog } from "../../components/DialogBoundary";
+import { Dialog } from "@/components/DialogBoundary";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
@@ -18,7 +18,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import CardActions from "@mui/material/CardActions";
-import Checkbox from "@mui/material/Checkbox";
+import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
 import ValidatingSubmitButton, {
   IsValid,
   IsInvalid,
@@ -26,24 +26,26 @@ import ValidatingSubmitButton, {
 import useChemicalImport, {
   type ChemicalCompound,
 } from "@/hooks/api/useChemicalImport";
-import { type Theme, alpha } from "@mui/material/styles";
-import styled from "@emotion/styled";
+import { alpha } from "@mui/material/styles";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import CardActionArea from "@mui/material/CardActionArea";
 import AppBar from "../../components/AppBar";
 import docLinks from "../../assets/DocLinks";
-
 function Dl({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     <Typography
       component="dl"
-      sx={{ display: "grid", gridTemplateColumns: "auto 1fr", mt: 1, mb: 0 }}
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        mt: 1,
+        mb: 0,
+      }}
     >
       {children}
     </Typography>
   );
 }
-
 function Dt({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     <Typography
@@ -61,132 +63,134 @@ function Dt({ children }: { children: React.ReactNode }): React.ReactNode {
     </Typography>
   );
 }
-
 function Dd({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     <Typography
       component="dd"
-      sx={{ lineHeight: 1.8, fontSize: "0.8rem" }}
+      sx={{
+        lineHeight: 1.8,
+        fontSize: "0.8rem",
+      }}
       role="definition"
     >
       {children}
     </Typography>
   );
 }
-
 type CompoundCardProps = {
   selected: boolean;
   compound: ChemicalCompound;
   onSelected: (compound: ChemicalCompound, selected: boolean) => void;
-  className?: string;
 };
 
-type StyledProps = {
-  selected: boolean;
-  theme?: Theme;
-};
-
-const CompoundCard = styled(
-  ({ selected, compound, onSelected, className }: CompoundCardProps) => {
-    const nameId = React.useId();
-    return (
-      <Card className={className} aria-labelledby={nameId} role="region">
-        <CardActionArea
-          onClick={() => onSelected(compound, !selected)}
-          sx={{ display: "flex", alignItems: "stretch" }}
-        >
-          <Box>
-            <Checkbox
-              checked={selected}
-              inputProps={{
+function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): React.ReactNode {
+  const nameId = React.useId();
+  return (
+    <Card
+      aria-labelledby={nameId}
+      role="region"
+      sx={(theme) => ({
+        border: `2px solid ${selected ? theme.palette.callToAction.main : theme.palette.primary.main}`,
+        backgroundColor: selected
+          ? `${alpha(theme.palette.callToAction.background, 0.15)}`
+          : "initial",
+        boxShadow: selected
+          ? "none"
+          : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
+        "&:hover": {
+          border: window.matchMedia("(prefers-contrast: more)").matches
+            ? "2px solid black !important"
+            : `2px solid ${theme.palette.callToAction.main} !important`,
+          backgroundColor: `${alpha(theme.palette.callToAction.background, 0.05)} !important`,
+        },
+        [`& .${checkboxClasses.root}`]: {
+          color: selected
+            ? theme.palette.callToAction.main
+            : theme.palette.primary.main,
+        },
+      })}
+    >
+      <CardActionArea
+        onClick={() => onSelected(compound, !selected)}
+        sx={{
+          display: "flex",
+          alignItems: "stretch",
+        }}
+      >
+        <Box>
+          <Checkbox
+            checked={selected}
+            onChange={(e) => onSelected(compound, e.target.checked)}
+            slotProps={{
+              input: {
                 "aria-label": "Select compound",
-              }}
-              onChange={(e) => onSelected(compound, e.target.checked)}
-            />
-          </Box>
-          <Box
+              },
+            }}
+          />
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            flexGrow: 1,
+          }}
+        >
+          <CardContent
             sx={{
-              display: "flex",
-              flexDirection: "column",
-              flexGrow: 1,
+              flex: "1 0 auto",
+              pt: 1,
+              pl: 0.5,
             }}
           >
-            <CardContent sx={{ flex: "1 0 auto", pt: 1, pl: 0.5 }}>
-              <Typography component="div" variant="h6" id={nameId}>
-                {compound.name}
-              </Typography>
-              <Dl>
-                <Dt>PubChem ID</Dt>
-                <Dd>{compound.pubchemId}</Dd>
-                {compound.cas !== "" && (
-                  <>
-                    <Dt>CAS Number</Dt>
-                    <Dd>{compound.cas}</Dd>
-                  </>
-                )}
-                <Dt>Formula</Dt>
-                <Dd>{compound.formula}</Dd>
-              </Dl>
-            </CardContent>
-            <CardActions sx={{ pl: 0 }}>
-              <Link
-                href={compound.pubchemUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              >
-                View on PubChem
-              </Link>
-            </CardActions>
-          </Box>
-          <CardMedia
-            component="img"
+            <Typography component="div" variant="h6" id={nameId}>
+              {compound.name}
+            </Typography>
+            <Dl>
+              <Dt>PubChem ID</Dt>
+              <Dd>{compound.pubchemId}</Dd>
+              {compound.cas !== "" && (
+                <>
+                  <Dt>CAS Number</Dt>
+                  <Dd>{compound.cas}</Dd>
+                </>
+              )}
+              <Dt>Formula</Dt>
+              <Dd>{compound.formula}</Dd>
+            </Dl>
+          </CardContent>
+          <CardActions
             sx={{
-              width: 151,
-              m: 1,
-              borderRadius: "3px",
-              objectFit: "scale-down",
-              alignSelf: "flex-start",
+              pl: 0,
             }}
-            image={compound.pngImage}
-            alt={`Chemical structure of ${compound.name}`}
-          />
-        </CardActionArea>
-      </Card>
-    );
-  },
-)(({ selected, theme }: StyledProps) => {
-  if (!theme) return {};
-
-  return {
-    border: `2px solid ${
-      selected ? theme.palette.callToAction.main : theme.palette.primary.main
-    }`,
-    backgroundColor: selected
-      ? `${alpha(theme.palette.callToAction.background, 0.15)}`
-      : "initial",
-    boxShadow: selected
-      ? "none"
-      : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
-    "&:hover": {
-      border: window.matchMedia("(prefers-contrast: more)").matches
-        ? "2px solid black !important"
-        : `2px solid ${theme.palette.callToAction.main} !important`,
-      backgroundColor: `${alpha(
-        theme.palette.callToAction.background,
-        0.05,
-      )} !important`,
-    },
-    "& .MuiCheckbox-root": {
-      color: selected
-        ? theme.palette.callToAction.main
-        : theme.palette.primary.main,
-    },
-  };
-});
-
+          >
+            <Link
+              href={compound.pubchemUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              View on PubChem
+            </Link>
+          </CardActions>
+        </Box>
+        <CardMedia
+          component="img"
+          sx={{
+            width: 151,
+            m: 1,
+            borderRadius: "3px",
+            objectFit: "scale-down",
+            alignSelf: "flex-start",
+          }}
+          image={compound.pngImage}
+          alt={`Chemical structure of ${compound.name}`}
+        />
+      </CardActionArea>
+    </Card>
+  );
+}
 export interface CompoundSearchDialogProps {
   open: boolean;
   onClose: () => void;
@@ -224,32 +228,28 @@ export default function CompoundSearchDialog({
   >({});
   const [hasSearched, setHasSearched] = React.useState(false);
   const [displayedSearchTerm, setDisplayedSearchTerm] = React.useState("");
-
   const validationResult = React.useMemo(() => {
-    return Object.values(selectedCompounds).some((isSelected) => isSelected)
+    return Object.values(selectedCompounds).some(Boolean)
       ? IsValid()
       : IsInvalid("Please select at least one compound.");
   }, [selectedCompounds]);
-
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    void search({ searchTerm, searchType }).then((newResults) => {
+    void search({
+      searchTerm,
+      searchType,
+    }).then((newResults) => {
       setResults(newResults);
+      // Auto-select when there's exactly one result.
+      setSelectedCompounds(
+        Object.fromEntries(
+          newResults.map((c) => [c.pubchemId, newResults.length === 1]),
+        ),
+      );
       setHasSearched(true);
       setDisplayedSearchTerm(searchTerm);
     });
   }
-
-  React.useEffect(() => {
-    if (open) {
-      setSelectedCompounds(
-        Object.fromEntries(
-          results.map((c) => [c.pubchemId, results.length === 1]),
-        ),
-      );
-    }
-  }, [open, results]);
-
   React.useEffect(() => {
     if (!open) {
       setSearchTerm("");
@@ -260,7 +260,6 @@ export default function CompoundSearchDialog({
       setDisplayedSearchTerm("");
     }
   }, [open]);
-
   function handleCompoundSelection(
     compound: ChemicalCompound,
     checked: boolean,
@@ -277,18 +276,10 @@ export default function CompoundSearchDialog({
       });
     }
   }
-
   function handleSubmit() {
-    // Get the selected compounds
-    const selected = Object.entries(selectedCompounds)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([id]) => results.find((r) => r.pubchemId === id))
-      .filter(Boolean) as ChemicalCompound[];
-
-    onCompoundsSelected(selected);
+    onCompoundsSelected(results.filter((r) => selectedCompounds[r.pubchemId]));
     onClose();
   }
-
   return (
     <Dialog
       open={open}
@@ -302,7 +293,12 @@ export default function CompoundSearchDialog({
         {title}
       </DialogTitle>
       <DialogContent>
-        <Stack spacing={2} flexWrap="nowrap">
+        <Stack
+          spacing={2}
+          sx={{
+            flexWrap: "nowrap",
+          }}
+        >
           {showPubChemInfo && (
             <Box>
               <Typography variant="body2">
@@ -322,7 +318,11 @@ export default function CompoundSearchDialog({
           )}
           <form onSubmit={handleSearch}>
             <Grid container spacing={1} direction="row">
-              <Grid item flexGrow={1}>
+              <Grid
+                sx={{
+                  flexGrow: 1,
+                }}
+              >
                 <TextField
                   value={searchTerm}
                   onChange={(e) => {
@@ -338,38 +338,38 @@ export default function CompoundSearchDialog({
                       ? "Enter a compound name or CAS number"
                       : "Enter a SMILES string"
                   }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FormControl variant="standard" size="small">
-                          <Select
-                            inputProps={{
-                              "aria-label": "Search type",
-                              name: "search-type",
-                            }}
-                            value={searchType}
-                            onChange={(e) =>
-                              setSearchType(e.target.value as "NAME" | "SMILES")
-                            }
-                            sx={{
-                              "&::before, &::after": {
-                                display: "none",
-                              },
-                              ":hover": {
-                                backgroundColor: "rgba(0, 0, 0, 0.05)",
-                              },
-                            }}
-                          >
-                            <MenuItem value="NAME">Name/CAS</MenuItem>
-                            <MenuItem value="SMILES">SMILES</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <FormControl variant="standard" size="small">
+                            <Select
+                              inputProps={{
+                                "aria-label": "Search type",
+                                name: "search-type",
+                              }}
+                              value={searchType}
+                              onChange={(e) => setSearchType(e.target.value)}
+                              sx={{
+                                "&::before, &::after": {
+                                  display: "none",
+                                },
+                                ":hover": {
+                                  backgroundColor: "rgba(0, 0, 0, 0.05)",
+                                },
+                              }}
+                            >
+                              <MenuItem value="NAME">Name/CAS</MenuItem>
+                              <MenuItem value="SMILES">SMILES</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               </Grid>
-              <Grid item>
+              <Grid>
                 <Button type="submit">Search</Button>
               </Grid>
             </Grid>
@@ -380,7 +380,7 @@ export default function CompoundSearchDialog({
             </Typography>
             <Grid container spacing={2}>
               {!hasSearched && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
                     Enter a search term and click Search to find chemical
                     compounds.
@@ -388,7 +388,7 @@ export default function CompoundSearchDialog({
                 </Grid>
               )}
               {hasSearched && results.length === 0 && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
                     No compounds found for "{displayedSearchTerm}". Try a
                     different search term.
@@ -396,7 +396,7 @@ export default function CompoundSearchDialog({
                 </Grid>
               )}
               {results.map((compound) => (
-                <Grid item xs={12} key={compound.pubchemId}>
+                <Grid key={compound.pubchemId} size={12}>
                   <CompoundCard
                     selected={Boolean(selectedCompounds[compound.pubchemId])}
                     compound={compound}

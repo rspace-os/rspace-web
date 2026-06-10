@@ -1,22 +1,12 @@
 import React from "react";
-import { withStyles } from "Styles";
-import { type emptyObject } from "../../../../util/types";
 
-const SampleTemplate = withStyles<emptyObject, { svg: string }>(() => ({
-  svg: {
-    height: 83,
-    opacity: 0.7,
-    position: "absolute",
-    bottom: -44,
-    width: 83,
-    right: 0,
-  },
-}))(({ classes }) => (
+function SampleTemplate(): React.ReactNode {
+  return (
   <svg
     version="1.1"
     x="0px"
     y="0px"
-    className={classes.svg}
+    style={{ height: 83, opacity: 0.7, position: "absolute", bottom: -44, width: 83 }}
     width="200px"
     height="200px"
     viewBox="0 0 200 200"
@@ -86,7 +76,7 @@ const SampleTemplate = withStyles<emptyObject, { svg: string }>(() => ({
       />
     </g>
   </svg>
-));
+  );
+}
 
-SampleTemplate.displayName = "SampleTemplate";
 export default SampleTemplate;

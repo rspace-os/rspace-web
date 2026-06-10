@@ -88,4 +88,7 @@ public interface SamplesApi {
 
   @GetMapping(value = "/{id}/revisions/{revisionId}")
   ApiSample getSampleRevision(Long id, Long revisionId, User user);
+
+  @GetMapping(value = "/{id}/versions/{version}")
+  ApiSample getSampleVersion(Long id, Long version, User user);
 }

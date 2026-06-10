@@ -18,11 +18,11 @@ const mockedUseCommonGroupsShareListingQuery = vi.fn<
 const makeQueryResult = (
   overrides: Partial<CommonGroupsQueryResult> = {},
 ): CommonGroupsQueryResult =>
-  ({
+  (({
     data: undefined,
     error: null,
-    ...overrides,
-  }) as CommonGroupsQueryResult;
+    ...overrides
+  }) as CommonGroupsQueryResult);
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),

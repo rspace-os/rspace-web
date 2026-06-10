@@ -27,7 +27,6 @@ public class AuditTrailHandlerImplTest {
   @Mock IAuditTrailSearch logSearcher;
   @Mock ISearchResults<User> searchResults;
   private @Mock AuditTrailService auditService;
-  private @Mock IAuditSearchResultPostProcessor postProcessor;
   @InjectMocks AuditTrailHandlerImpl impl;
 
   @Before

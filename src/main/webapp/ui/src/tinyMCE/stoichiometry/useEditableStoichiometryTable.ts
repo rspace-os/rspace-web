@@ -95,7 +95,7 @@ function toStoichiometryRequest(
         return {
           ...base,
           id: m.id,
-        } as ExistingMoleculeUpdate;
+        };
       }
 
       if (!base.smiles) {
@@ -105,7 +105,7 @@ function toStoichiometryRequest(
         throw new Error("New reagents must have a name");
       }
 
-      return base as NewMolecule;
+      return base;
     }),
   };
 }

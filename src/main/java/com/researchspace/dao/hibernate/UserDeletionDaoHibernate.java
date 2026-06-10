@@ -61,7 +61,6 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     table2UserIdColumn.put("GroupMessageOrRequest", ORIGINATOR_ID);
     table2UserIdColumn.put("MessageOrRequest", ORIGINATOR_ID);
     table2UserIdColumn.put("Notification", ORIGINATOR_ID);
-    table2UserIdColumn.put("OfflineRecordUser", USER_ID);
     table2UserIdColumn.put("NfsFileStore", USER_ID);
     table2UserIdColumn.put("user_role", USER_ID);
     table2UserIdColumn.put("TokenBasedVerification", USER_ID);

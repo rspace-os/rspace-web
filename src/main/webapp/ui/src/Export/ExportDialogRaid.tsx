@@ -6,10 +6,10 @@ import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";
 import Alert from "@mui/material/Alert";
 import Switch from "@mui/material/Switch";
+import type { SwitchProps } from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import React from "react";
 import { DEFAULT_STATE } from "@/Export/constants";
-import { SwitchBaseProps } from "@mui/material/internal/SwitchBase";
 import AlertTitle from "@mui/material/AlertTitle";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
@@ -67,7 +67,7 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
     }
   }
 
-  const handleSwitchChange: SwitchBaseProps['onChange'] = ({ target: { checked } }) => {
+  const handleSwitchChange: SwitchProps["onChange"] = ({ target: { checked } }) => {
     const newRepoConfig: (typeof DEFAULT_STATE)["repositoryConfig"] = {
       ...state.repositoryConfig,
       exportToRaid: checked,
@@ -112,6 +112,7 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
                 color="primary"
                 disabled={!raidExportStatus.isEligible}
                 data-test-id="repo"
+                slotProps={{ input: { role: "checkbox" } }}
               />
             }
             label={"Report to RAiD"}

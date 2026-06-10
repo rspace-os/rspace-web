@@ -76,8 +76,7 @@ function setUpCrudOps(args) {
   registerDeleteRecordsHandler(onDelete);
 
   registerFavoritesRecordsHandler();
-  registerViewRevisionsHandler(); 
-  registerOfflineWorkHandler();
+  registerViewRevisionsHandler();
   registerExternalMessagesHandler();
 
   setUpExportDialogs();
@@ -150,40 +149,6 @@ function registerViewRevisionsHandler() {
   });
 }
 
-function registerOfflineWorkHandler() {
-  $('body').on('click', '#startOfflineWork,#endOfflineWork', function (e) {
-    e.preventDefault();
-    var selectedIds = [];
-    getSelectedIdsAndNames(selectedIds, []);
-
-    var url;
-    if (e.target.id == "startOfflineWork") {
-      RS.blockPage("Marking for offline work...");
-      url = createURL("/offlineWork/selectForOffline");
-    } else {
-      RS.blockPage("Ending offline work...");
-      url = createURL("/offlineWork/removeFromOffline");
-    }
-    var jqxhr = $.post(url, { recordIds: selectedIds },
-        function (result) {
-          RS.unblockPage();
-          RS.trackEvent("user:toggle_offline:documents:workspace", {
-            count: selectedIds.length,
-            setTo: e.target.id === "startOfflineWork" ? "offline" : "online"
-          });
-          $.get(createURL('/workspace/ajax/view/' + workspaceSettings.parentFolderId),
-              function (result) {
-                defaultRefresh(result);
-              }
-          );
-        }
-    );
-    jqxhr.fail(function () {
-      RS.ajaxFailed("Offline marking", true, jqxhr);
-    });
-  });
-}
-
 function registerExternalMessagesHandler() {
   if (typeof initialiseExtMessageChannelListButtonAndDialog === "function") {
     initialiseExtMessageChannelListButtonAndDialog(function () {
@@ -246,12 +211,6 @@ function calculateOptionDisplay(chbox$) {
   var countFavorites = chboxTDs$.find("input[name='favoriteStatus'][value='FAVORITE']").size();
   $('#addToFavorites').toggle(countNoFavorites > 0 && countFavorites === 0);
   $('#removeFromFavorites').toggle(countFavorites > 0 && countNoFavorites === 0);
-
-  var cantOffline = chboxTDs$.find("input[name='offlineStatus'][value='NOT_APPLICABLE']").size() > 0;
-  var startOfflineWork = chboxTDs$.find("input[name='offlineStatus'][value='NOT_OFFLINE']").size() > 0 ||
-      chboxTDs$.find("input[name='offlineStatus'][value='OTHER_EDIT']").size() > 0;
-  $('#startOfflineWork').toggle(!cantOffline && startOfflineWork);
-  $('#endOfflineWork').toggle(!cantOffline && !startOfflineWork);
 }
 
 function depositDataShare(fname) {

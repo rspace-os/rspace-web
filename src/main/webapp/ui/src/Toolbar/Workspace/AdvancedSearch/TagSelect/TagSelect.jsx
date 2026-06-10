@@ -1,97 +1,22 @@
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
 import Select from "react-select";
-import { emphasize, useTheme } from "@mui/material/styles";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
-import MenuItem from "@mui/material/MenuItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { buttonBaseClasses } from "@mui/material/ButtonBase";
+import { chipClasses } from "@mui/material/Chip";
 import PropTypes from "prop-types";
-import styled from "@emotion/styled";
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-grow: 1;
-  .css-1pcexqc-container {
-    flex-grow: 1;
-    align-items: center;
-    justify-content: center;
-  }
-  .myReactSelect .Select-arrow-zone {
-    display: none;
-  }
-  .advanced-search {
-    .search-input .MuiInputBase-input {
-      height: 32px;
-    }
-    .dropdown-item {
-      margin: 0px;
-      width: 100%;
-    }
-  }
-  .simple-search {
-    .search-input {
-      margin-top: 3px;
-      min-height: 36px;
-    }
-  }
-
-  .MuiButtonBase-root:not(.MuiChip-root) {
-    width: fit-content !important;
-    font-size: 15px;
-    margin-left: 10px;
-  }
-`;
-
-const useStyles = makeStyles()((theme) => ({
-  input: {
-    display: "flex",
-    padding: 0,
-    height: "100%",
-  },
-  valueContainer: {
-    display: "flex",
-    flexWrap: "wrap",
-    flex: 1,
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  chip: {
-    margin: theme.spacing(0.5, 0.25),
-  },
-  chipFocused: {
-    backgroundColor: emphasize(
-      theme.palette.type === "light"
-        ? theme.palette.grey[300]
-        : theme.palette.grey[700],
-      0.08,
-    ),
-  },
-  noOptionsMessage: {
-    padding: theme.spacing(1, 2),
-  },
-  placeholder: {
-    position: "absolute",
-    left: 2,
-    bottom: 6,
-    fontSize: 16,
-  },
-  paper: {
-    position: "absolute",
-    zIndex: 1,
-    width: "fit-content !important",
-    marginTop: theme.spacing(1),
-    left: 0,
-    right: 0,
-  },
-}));
 
 function NoOptionsMessage(props) {
   return (
     <Typography
       color="textSecondary"
-      className={props.selectProps.classes.noOptionsMessage}
+      sx={{ p: "8px 16px" }}
       {...props.innerProps}
     >
       {props.children}
@@ -105,9 +30,11 @@ NoOptionsMessage.propTypes = {
   selectProps: PropTypes.object.isRequired,
 };
 
-function inputComponent({ inputRef, ...props }) {
-  return <div ref={inputRef} {...props} />;
-}
+const inputComponent = React.forwardRef(({ inputRef, ...props }, ref) => (
+  <div ref={inputRef || ref} {...props} />
+));
+
+inputComponent.displayName = "TagSelectInput";
 
 inputComponent.propTypes = {
   inputRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
@@ -118,7 +45,7 @@ function Control(props) {
     children,
     innerProps,
     innerRef,
-    selectProps: { classes, TextFieldProps },
+    selectProps: { TextFieldProps },
   } = props;
 
   return (
@@ -127,16 +54,18 @@ function Control(props) {
       data-test-id={props.selectProps.testId}
       className="search-input"
       fullWidth
-      InputProps={{
-        inputComponent,
-        inputProps: {
-          className: classes.input,
-          ref: innerRef,
-          children,
-          ...innerProps,
+      {...TextFieldProps}
+      slotProps={{
+        input: {
+          inputComponent,
+          inputProps: {
+            style: { display: "flex", padding: 0, height: "100%" },
+            ref: innerRef,
+            children,
+            ...innerProps,
+          },
         },
       }}
-      {...TextFieldProps}
     />
   );
 }
@@ -150,17 +79,17 @@ Control.propTypes = {
 
 function Option(props) {
   return (
-    <MenuItem
+    <ListItemButton
       data-test-id={`a-search-tag-option-${props.children}`}
       className="dropdown-item"
       ref={props.innerRef}
       selected={props.isFocused}
       component="div"
-      style={{ fontWeight: props.isSelected ? 500 : 400 }}
+      sx={{ fontWeight: props.isSelected ? 500 : 400 }}
       {...props.innerProps}
     >
       {props.children}
-    </MenuItem>
+    </ListItemButton>
   );
 }
 
@@ -172,29 +101,19 @@ Option.propTypes = {
   isSelected: PropTypes.bool,
 };
 
-function Placeholder(props) {
-  return (
-    <Typography
-      color="textSecondary"
-      className={props.selectProps.classes.placeholder}
-      {...props.innerProps}
-    >
-      {props.children}
-    </Typography>
-  );
-}
-
-Placeholder.propTypes = {
-  children: PropTypes.node,
-  innerProps: PropTypes.object,
-  selectProps: PropTypes.object.isRequired,
-};
-
 function ValueContainer(props) {
   return (
-    <div className={props.selectProps.classes.valueContainer}>
+    <Box
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        flex: 1,
+        alignItems: "center",
+        overflow: "hidden",
+      }}
+    >
       {props.children}
-    </div>
+    </Box>
   );
 }
 
@@ -218,7 +137,14 @@ function Menu(props) {
   return (
     <Paper
       square
-      className={props.selectProps.classes.paper}
+      sx={{
+        position: "absolute",
+        zIndex: 1,
+        width: "fit-content !important",
+        mt: 1,
+        left: 0,
+        right: 0,
+      }}
       {...props.innerProps}
     >
       {props.children}
@@ -242,8 +168,22 @@ const components = {
   DropdownIndicator: null,
 };
 
+const RSPACE_ONTOLOGY_URL_DELIMITER = "__RSP_EXTONT_URL_DELIM__";
+
+const replaceCommaDelimiterInTag = (tag) =>
+  tag.replaceAll("__rspactags_comma__", ",");
+
+const replaceForwardSlashInTag = (tag) =>
+  tag.replaceAll("/", "__rspactags_forsl__");
+
+const parseDelimitedTags = (tag) =>
+  tag.includes(RSPACE_ONTOLOGY_URL_DELIMITER)
+    ? replaceCommaDelimiterInTag(
+        tag.split(RSPACE_ONTOLOGY_URL_DELIMITER)[0].trim(),
+      )
+    : tag;
+
 export default function TagSelect(props) {
-  const { classes } = useStyles();
   const theme = useTheme();
   const [multi, setMulti] = React.useState(null);
   const [suggestions, setSuggestions] = React.useState([]);
@@ -254,6 +194,10 @@ export default function TagSelect(props) {
   }
 
   const selectStyles = {
+    container: (base) => ({
+      ...base,
+      width: "100%",
+    }),
     input: (base) => ({
       ...base,
       color: theme.palette.text.primary,
@@ -265,49 +209,55 @@ export default function TagSelect(props) {
       const result = await axios(
         "/workspace/editor/structuredDocument/userTags",
       );
-      const RSPACE_ONTOLOGY_URL_DELIMITER = "__RSP_EXTONT_URL_DELIM__";
-      const parseDelimitedTags = (tag) => {
-        if (tag.includes(RSPACE_ONTOLOGY_URL_DELIMITER)) {
-          return replaceCommaDelimiterInTag(
-            tag.split(RSPACE_ONTOLOGY_URL_DELIMITER)[0].trim(),
-          );
-        }
-        return tag;
-      };
-      const replaceForwardSlashInTag = (tag) => {
-        tag = tag.replaceAll("/", "__rspactags_forsl__");
-        return tag;
-      };
-      const replaceCommaDelimiterInTag = (tag) => {
-        tag = tag.replaceAll("__rspactags_comma__", ",");
-        return tag;
-      };
 
-      const tags = result.data.data.map((suggestion) => ({
-        value: replaceForwardSlashInTag(parseDelimitedTags(suggestion)),
-        label: parseDelimitedTags(suggestion),
-      }));
-
+      const tags = result.data.data.map((suggestion) => {
+        const label = parseDelimitedTags(suggestion);
+        return { value: replaceForwardSlashInTag(label), label };
+      });
       setSuggestions(tags);
 
       if (props.selected) {
-        const selected = props.selected.split("<<>>");
-        const local_selected = [];
-        selected.map((s) => {
-          const idx = tags.findIndex((r) => r.label == s);
-          local_selected.push(tags[idx]);
-        });
-        handleChangeMulti(local_selected);
+        const localSelected = props.selected
+          .split("<<>>")
+          .map((s) => tags.find((r) => r.label === s));
+        handleChangeMulti(localSelected);
       }
     };
     fetchData();
   }, []);
 
   return (
-    <Wrapper>
+    <Box
+      sx={{
+        display: "flex",
+        flexGrow: 1,
+        "& .myReactSelect .Select-arrow-zone": {
+          display: "none",
+        },
+        "& .advanced-search": {
+          [`& .search-input .${inputBaseClasses.input}`]: {
+            height: 32,
+          },
+          "& .dropdown-item": {
+            margin: 0,
+            width: "100%",
+          },
+        },
+        "& .simple-search": {
+          "& .search-input": {
+            marginTop: "3px",
+            minHeight: "36px",
+          },
+        },
+        [`& .${buttonBaseClasses.root}:not(.${chipClasses.root})`]: {
+          width: "fit-content !important",
+          fontSize: 15,
+          marginLeft: "10px",
+        },
+      }}
+    >
       <Select
         className={props.advanced ? "advanced-search" : "simple-search"}
-        classes={classes}
         styles={selectStyles}
         options={suggestions}
         components={components}
@@ -317,6 +267,6 @@ export default function TagSelect(props) {
         placeholder={props.error || "Select tag(s)"}
         testId={props.testId}
       />
-    </Wrapper>
+    </Box>
   );
 }

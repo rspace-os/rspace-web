@@ -5,37 +5,22 @@ import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
 import SelectedFileInfo from "./SelectedFileInfo";
 import { readFileAsBinaryString } from "../../util/Util";
 import InputBase from "@mui/material/InputBase";
 import BigIconButton from "../BigIconButton";
 import Grid from "@mui/material/Grid";
 
-const useStyles = makeStyles()((theme) => ({
-  root: {
-    "& > *": {
-      margin: theme.spacing(1),
-    },
-  },
-  input: {
-    display: "none",
-  },
-  alert: {
-    marginTop: theme.spacing(1),
-  },
-  visibleInput: {
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-}));
-
-type ButtonThatTriggersInvisibleInputArgs = {
-  buttonLabel: string;
-  InputProps: {
+type FileFieldSlotProps = {
+  input?: {
     startAdornment?: React.ReactNode;
     endAdornment?: React.ReactNode;
   };
+};
+
+type ButtonThatTriggersInvisibleInputArgs = {
+  buttonLabel: string;
+  slotProps?: FileFieldSlotProps;
   disabled?: boolean;
   id: string;
   icon: React.ReactNode;
@@ -50,7 +35,7 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
   (
     {
       buttonLabel,
-      InputProps,
+      slotProps,
       disabled,
       id,
       icon,
@@ -60,8 +45,8 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
     ref,
   ) => (
     <Grid container spacing={1} {...containerProps}>
-      {InputProps.startAdornment}
-      <Grid item flexGrow={1}>
+      {slotProps?.input?.startAdornment}
+      <Grid sx={{ flexGrow: 1 }}>
         <label htmlFor={id} ref={ref}>
           {/* These buttons are rendered as HTMLSpanElements so that
            * tapping them results in the click event bubbling up to the
@@ -91,7 +76,7 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
           )}
         </label>
       </Grid>
-      {InputProps.endAdornment}
+      {slotProps?.input?.endAdornment}
     </Grid>
   ),
 );
@@ -106,12 +91,8 @@ export type FileFieldArgs = {
 
   // optional
   id?: string;
-  InputProps?: {
-    startAdornment?: React.ReactNode;
-    endAdornment?: React.ReactNode;
-  };
   buttonLabel?: string;
-  datatestid?: string;
+  "data-test-id"?: string;
   disabled?: boolean;
   error?: boolean;
   icon?: React.ReactNode;
@@ -123,12 +104,13 @@ export type FileFieldArgs = {
   warningAlert?: string;
   explanatoryText?: string;
   containerProps?: React.ComponentProps<typeof Grid>;
+  slotProps?: FileFieldSlotProps;
 
   /*
    * This overrides the default button that triggers the opening of the
    * operating system's file picker. If it is set, then some of the props
    * listed above are ignored:
-   *   - InputProps
+   *   - slotProps
    *   - buttonLabel
    *   - icon
    *   - warningAlert
@@ -144,7 +126,6 @@ function FileField({
   onChange,
   name,
   accept,
-  InputProps = {},
   id: passedId,
   buttonLabel = "Upload",
   icon = <PublishOutlinedIcon />,
@@ -152,15 +133,15 @@ function FileField({
   showSelectedFilename = false,
   loading = false,
   error = false,
-  datatestid,
+  "data-test-id": dataTestId,
   triggerButton,
   loadedFile,
   explanatoryText,
   containerProps,
+  slotProps,
 }: FileFieldArgs): React.ReactNode {
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
-  const { classes } = useStyles();
 
   const [failedToLoad, setFailedToLoad] = useState(false);
 
@@ -195,23 +176,24 @@ function FileField({
     <>
       <input
         accept={accept}
-        className={classes.input}
+        style={{ display: "none" }}
         id={id}
         name={name}
         onChange={handleChange}
         type="file"
         value={value}
-        data-test-id={datatestid}
+        data-test-id={dataTestId}
         disabled={disabled}
       />
       {triggerButton?.({ id }) ?? (
         <FormControl sx={{ width: "100%" }}>
           <InputBase
             type="file"
-            inputProps={{
-              accept,
+            slotProps={{
+              input: {
+                accept,
+              },
             }}
-
             inputComponent={forwardRef(function FileInputTrigger(
               _,
               ref: React.ForwardedRef<HTMLLabelElement>,
@@ -220,7 +202,7 @@ function FileField({
                 <ButtonThatTriggersInvisibleInput
                   disabled={disabled}
                   buttonLabel={buttonLabel}
-                  InputProps={InputProps}
+                  slotProps={slotProps}
                   id={id}
                   icon={icon}
                   ref={ref}
@@ -231,13 +213,16 @@ function FileField({
             })}
             error={failedToLoad}
             disabled={disabled}
-            className={classes.visibleInput}
+            sx={{
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
           />
           {failedToLoad && (
             <FormHelperText error={failedToLoad}>{helperText}</FormHelperText>
           )}
           {warningAlert && (
-            <Alert severity="warning" className={classes.alert}>
+            <Alert severity="warning" sx={{ mt: 1 }}>
               {warningAlert}
             </Alert>
           )}

@@ -136,7 +136,7 @@ class DispatcherServletInitializerTest {
     verify(ctx).addServlet(eq("dispatcher"), any(DispatcherServlet.class));
     verify(dynamic).setLoadOnStartup(1);
     verify(dynamic).setAsyncSupported(true);
-    verify(dynamic).addMapping("/app/*", "/offline/*");
+    verify(dynamic).addMapping("/app/*");
 
     ArgumentCaptor<MultipartConfigElement> multipart =
         ArgumentCaptor.forClass(MultipartConfigElement.class);

@@ -81,4 +81,7 @@ public interface InstrumentsApi {
 
   @GetMapping(value = "/{id}/revisions/{revisionId}")
   ApiInstrument getInstrumentRevision(Long id, Long revisionId, User user);
+
+  @GetMapping(value = "/{id}/versions/{version}")
+  ApiInstrument getInstrumentVersion(Long id, Long version, User user);
 }

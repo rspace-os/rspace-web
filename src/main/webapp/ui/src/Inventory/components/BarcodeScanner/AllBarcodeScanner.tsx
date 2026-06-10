@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import useStores from "../../../stores/use-stores";
 import { mkAlert } from "../../../stores/contexts/Alert";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import Alert from "@mui/material/Alert";
 import BarcodeScannerSkeleton, {
   type BarcodeInput,
 } from "./BarcodeScannerSkeleton";
@@ -152,11 +152,11 @@ export default function AllBarcodeScanner({
       loading={loading}
       warning={
         error ? (
-          <HelpTextAlert
-            severity="warning"
-            condition={!loading}
-            text="Could not access camera, please enter code below."
-          />
+          !loading && (
+            <Alert severity="warning">
+              {"Could not access camera, please enter code below."}
+            </Alert>
+          )
         ) : null
       }
       error={error}

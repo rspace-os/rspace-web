@@ -20,7 +20,7 @@ export default function SimpleSearchScopeDialog(props) {
         </DialogContentText>
         {props.selectedRecords.map((r) => (
           <Chip
-            style={{ marginRight: "10px" }}
+            sx={{ marginRight: "10px" }}
             key={r}
             icon={
               <FontAwesomeIcon icon={faFolder} style={{ padding: "10px" }} />
@@ -34,7 +34,7 @@ export default function SimpleSearchScopeDialog(props) {
             }
           />
         ))}
-        <DialogContentText style={{ marginTop: "1.5em" }}>
+        <DialogContentText sx={{ marginTop: "1.5em" }}>
           Click "Within selected" if you wish to search within the specified
           records, or "Search everywhere" otherwise.
         </DialogContentText>

@@ -7,19 +7,7 @@
  */
 import React from "react";
 import Tooltip from "@mui/material/Tooltip";
-import { makeStyles } from "tss-react/mui";
-import clsx from "clsx";
-
-const useStyles = makeStyles()((theme) => ({
-  tooltip: {
-    fontSize: theme.typography.pxToRem(12),
-    zIndex: 3000,
-  },
-  block: {
-    display: "block",
-    height: 24,
-  },
-}));
+import Box from "@mui/material/Box";
 
 type CustomTooltipArgs = {
   title: string,
@@ -38,19 +26,25 @@ export default function CustomTooltip({
   ["aria-hidden"]: ariaHidden,
   ["aria-label"]: ariaLabel,
 }: CustomTooltipArgs): React.ReactNode {
-  const { classes } = useStyles();
-
   return (
     <Tooltip
       aria-hidden={ariaHidden}
       aria-label={ariaLabel ?? title}
       title={title}
       enterDelay={enterDelay}
-      classes={{ tooltip: classes.tooltip }}
-      className={clsx(block && classes.block)}
+      slotProps={{
+        tooltip: {
+          sx: (theme) => ({
+            fontSize: theme.typography.pxToRem(12),
+            zIndex: 3000,
+          }),
+        },
+      }}
       role="tooltip"
     >
-      <span>{children}</span>
+      <Box component="span" sx={block ? { display: "block", height: 24 } : undefined}>
+        {children}
+      </Box>
     </Tooltip>
   );
 }

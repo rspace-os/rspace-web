@@ -368,9 +368,24 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
     sampleApiMgr.assertUserCanReadSample(id, user);
     ApiSample sample = inventoryAuditMgr.getApiSampleRevision(id, revisionId);
-    if (sample != null) {
-      buildAndAddInventoryRecordLinks(sample);
+    if (sample == null) {
+      throw new NotFoundException(createNotFoundMessage("Sample revision", revisionId));
     }
+    buildAndAddInventoryRecordLinks(sample);
+    return sample;
+  }
+
+  @Override
+  public ApiSample getSampleVersion(
+      @PathVariable Long id,
+      @PathVariable Long version,
+      @RequestAttribute(name = "user") User user) {
+
+    ApiSample sample = sampleApiMgr.getApiSampleVersion(id, version, user);
+    if (sample == null) {
+      throw new NotFoundException(createNotFoundMessage("Sample version", version));
+    }
+    buildAndAddInventoryRecordLinks(sample);
     return sample;
   }
 }

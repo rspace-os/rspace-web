@@ -30,7 +30,7 @@ const ConnectedAppsTableRow = ({
           <IconButton
             color="inherit"
             onClick={() => setOpen(true)}
-            style={{ width: "42px" }}
+            sx={{ width: "42px" }}
           >
             <FontAwesomeIcon icon={faUnlink} size="xs" />
           </IconButton>

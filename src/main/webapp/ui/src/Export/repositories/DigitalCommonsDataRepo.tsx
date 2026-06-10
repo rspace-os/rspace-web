@@ -84,8 +84,8 @@ export default function DigitalCommonsDataRepo({
   }, []);
 
   return (
-    <Grid container style={{ width: "100%" }}>
-      <Grid item xs={12}>
+    <Grid container sx={{ width: "100%" }}>
+      <Grid size={12}>
         <TextField
           name="title"
           error={submitAttempt && !inputValidations.title}
@@ -98,7 +98,7 @@ export default function DigitalCommonsDataRepo({
           value={title}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
           label="Description *"

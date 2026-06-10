@@ -57,7 +57,7 @@ public class DispatcherServletInitializer implements ServletContextListener {
     ServletRegistration.Dynamic dispatcher = ctx.addServlet("dispatcher", new DispatcherServlet());
     dispatcher.setLoadOnStartup(1);
     dispatcher.setAsyncSupported(true);
-    dispatcher.addMapping("/app/*", "/offline/*");
+    dispatcher.addMapping("/app/*");
     dispatcher.setMultipartConfig(new MultipartConfigElement("", maxFileSize, maxRequestSize, 0));
 
     log.info("Registered DispatcherServlet with multipart max-file-size={} bytes", maxFileSize);

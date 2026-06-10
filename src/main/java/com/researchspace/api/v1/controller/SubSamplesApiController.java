@@ -238,9 +238,24 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
 
     subSampleApiMgr.assertUserCanReadSubSample(id, user);
     ApiSubSample subSample = inventoryAuditMgr.getApiSubSampleRevision(id, revisionId);
-    if (subSample != null) {
-      buildAndAddInventoryRecordLinks(subSample);
+    if (subSample == null) {
+      throw new NotFoundException(createNotFoundMessage("SubSample revision", revisionId));
     }
+    buildAndAddInventoryRecordLinks(subSample);
+    return subSample;
+  }
+
+  @Override
+  public ApiSubSample getSubSampleVersion(
+      @PathVariable Long id,
+      @PathVariable Long version,
+      @RequestAttribute(name = "user") User user) {
+
+    ApiSubSample subSample = subSampleApiMgr.getApiSubSampleVersion(id, version, user);
+    if (subSample == null) {
+      throw new NotFoundException(createNotFoundMessage("SubSample version", version));
+    }
+    buildAndAddInventoryRecordLinks(subSample);
     return subSample;
   }
 }

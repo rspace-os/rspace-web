@@ -136,7 +136,7 @@ const feature = test.extend<{
       },
       "{CSV} should have the same number of columns as are available to view, except for 'Full Name'":
         async ({ csv }) => {
-          await page.getByRole("button", { name: /Select columns/ }).click();
+          await page.getByRole("button", { name: /Columns/ }).click();
           const numberOfColumns = await page
             .getByRole("checkbox", {
               name: /^(?!Select all rows$|Select row$|Checkbox selection$|Show\/Hide All$|Full Name$).*$/,
@@ -252,7 +252,7 @@ test.beforeEach(async ({ page, router }) => {
 test.describe("Table Listing", () => {
   feature(
     "Usage should be in a human-readable format",
-    async ({ Given, When, Then }) => {
+    async ({ Given, Then }) => {
       await Given["the sysadmin is on the users page"]();
       await Then["the usage should be shown in human-readable format"]();
     },

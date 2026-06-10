@@ -12,29 +12,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
 import GroupIcon from "@mui/icons-material/Group";
-import { makeStyles } from "tss-react/mui";
 import useGroups, { type GroupDetail } from "../hooks/api/useGroups";
-
-const useStyles = makeStyles()((theme) => ({
-  paper: {
-    padding: theme.spacing(0),
-  },
-  cardContent: {
-    padding: "0",
-  },
-  chip: {
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    backgroundColor: theme.palette.grey[300],
-    height: theme.spacing(3),
-    color: theme.palette.grey[800],
-    fontWeight: theme.typography.fontWeightRegular,
-    cursor: "default",
-  },
-  openGroup: {
-    cursor: "pointer",
-  },
-}));
 
 type GroupDetailsArgs = {
   groupId: number;
@@ -43,7 +21,6 @@ type GroupDetailsArgs = {
 };
 
 export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
-  const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
   const [groupData, setGroupData] = React.useState<GroupDetail | null>(null);
   const [fetched, setFetched] = React.useState(false);
@@ -88,7 +65,14 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
         label={props.groupName}
         data-test-id={`group-activator-${props.groupId}`}
         onClick={handlePopoverOpen}
-        className={classes.chip}
+        sx={(theme) => ({
+          my: 0.5,
+          backgroundColor: theme.palette.grey[300],
+          height: theme.spacing(3),
+          color: theme.palette.grey[800],
+          fontWeight: theme.typography.fontWeightRegular,
+          cursor: "default",
+        })}
       />
       <Popover
         open={Boolean(anchorEl) && fetched}
@@ -103,9 +87,7 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
           vertical: props.position[0] === "top" ? "bottom" : "top",
           horizontal: props.position[1] === "right" ? "left" : "right",
         }}
-        classes={{
-          paper: classes.paper,
-        }}
+        slotProps={{ paper: { sx: { p: 0 } } }}
       >
         <Card data-test-id={`group-card-${props.groupId}`}>
           <CardHeader
@@ -117,7 +99,7 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
             title={displayData.name}
             subheader={displayData.type.replace("_", " ")}
           />
-          <CardContent className={classes.cardContent}>
+          <CardContent sx={{ p: 0 }}>
             <Table>
               <TableBody>
                 <TableRow data-test-id="row-members">
@@ -157,7 +139,7 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
               color="primary"
               href={`/groups/view/${props.groupId}`}
               data-test-id="open-group"
-              className={classes.openGroup}
+              sx={{ cursor: "pointer" }}
             >
               View Group
             </Button>

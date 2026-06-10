@@ -28,7 +28,7 @@ if (!window.___RaidConnectionsInitialised) {
 
   const root = createRoot(domContainer);
   root.render(
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <QueryClientProvider client={queryClient}>
           <RaidConnections groupId={groupId} />

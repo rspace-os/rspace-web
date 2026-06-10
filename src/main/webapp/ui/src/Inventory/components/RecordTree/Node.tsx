@@ -2,40 +2,17 @@ import React, { useEffect, useContext } from "react";
 import { Observer } from "mobx-react-lite";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { makeStyles } from "tss-react/mui";
 import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import CardHeader from "@mui/material/CardHeader";
+import { cardHeaderClasses } from "@mui/material/CardHeader";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import NameWithBadge from "../NameWithBadge";
 import { match } from "../../../util/Util";
 import NavigateToNode from "./NavigateToNode";
 import SearchContext from "../../../stores/contexts/Search";
-import { globalStyles } from "../../../theme";
-import clsx from "clsx";
+import { useTheme } from "@mui/material/styles";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-
-const useStyles = makeStyles()((theme) => ({
-  treeItem: {
-    transition: theme.transitions.filterToggle,
-  },
-  treeItemContent: {
-    cursor: "default",
-  },
-  avatar: {
-    backgroundColor: "white",
-    color: "black",
-  },
-  image: {
-    width: theme.spacing(5),
-    maxHeight: "44px",
-  },
-  cardHeader: {
-    padding: theme.spacing(0.5),
-    "& .MuiCardHeader-action": {
-      marginTop: "0 !important",
-      marginRight: "0 !important",
-    },
-  },
-}));
 
 type TreeNodeArgs = {
   node: InventoryRecord;
@@ -43,8 +20,7 @@ type TreeNodeArgs = {
 
 export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
-  const { classes } = useStyles();
-  const { classes: globalClasses } = globalStyles();
+  const theme = useTheme();
 
   useEffect(() => {
     if (!node.infoLoaded) node.loadChildren();
@@ -64,8 +40,9 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
     match<void, React.ReactNode>([
       [
         () => Boolean(node.thumbnail),
-        <img
-          className={classes.image}
+        <Box
+          component="img"
+          sx={{ width: theme.spacing(5), maxHeight: "44px" }}
           src={node.thumbnail || ""}
           alt="Record thumbnail"
           key={2}
@@ -78,9 +55,11 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
     <Observer>
       {() => (
         <TreeItem
-          className={classes.treeItem}
-          classes={{
-            content: classes.treeItemContent,
+          sx={{
+            transition: theme.transitions.filterToggle,
+            [`& .${treeItemClasses.content}`]: {
+              cursor: "default",
+            },
           }}
           itemId={node.globalId || ""}
           label={
@@ -89,16 +68,20 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
                 node.canNavigateToChildren && <NavigateToNode node={node} />
               }
               avatar={
-                <Avatar className={classes.avatar} variant="rounded">
+                <Avatar sx={{ backgroundColor: "white", color: "black" }} variant="rounded">
                   {nodeAvatar()}
                 </Avatar>
               }
               title={<NameWithBadge record={node} />}
-              className={clsx(
-                classes.cardHeader,
-                // TODO: requiredPermissions tooltips are not supported in tree view yet.
-                search.alwaysFilterOut(node) && globalClasses.greyOut
-              )}
+              // TODO: requiredPermissions tooltips are not supported in tree view yet.
+              sx={{
+                p: 0.5,
+                [`& .${cardHeaderClasses.action}`]: {
+                  marginTop: "0 !important",
+                  marginRight: "0 !important",
+                },
+                ...(search.alwaysFilterOut(node) ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 } : {}),
+              }}
               data-testid={`recordTreeNode_${node.globalId ?? "NEW"}`}
             />
           }

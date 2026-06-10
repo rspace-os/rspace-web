@@ -5,30 +5,9 @@ import { type ElnDocumentId } from "@/stores/models/MaterialsModel";
 import { observer } from "mobx-react-lite";
 import Collapse from "@mui/material/Collapse";
 import NoValue from "../../components/NoValue";
-import RsSet from "../../util/set";
-import { type InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import Analytics from "@/components/Analytics";
-
-type ListingContentsProps = {
-  setOfRecords: RsSet<InventoryRecord>;
-  loading: boolean;
-};
-
-function ListingContents({ setOfRecords, loading }: ListingContentsProps) {
-  if (loading) return <NoValue label="Loading" />;
-  if (setOfRecords.size === 0)
-    return <>The document has no connected Inventory items.</>;
-  return (
-    <>
-      {setOfRecords.map(({ name, globalId, permalinkURL }) => (
-        <li key={globalId}>
-          <a href={permalinkURL || ""}>{name}</a>
-        </li>
-      ))}
-    </>
-  );
-}
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 
 type AssociatedInventoryRecordsArgs = {
   elnDocumentId: ElnDocumentId;
@@ -93,10 +72,19 @@ const AssociatedInventoryRecords = observer(
         </button>
         <Collapse in={open}>
           <ul>
-            <ListingContents
-              setOfRecords={materialsStore.allInvRecordsFromAllDocumentLists}
-              loading={materialsStore.loading}
-            />
+            {materialsStore.loading ? (
+              <NoValue label="Loading" />
+            ) : materialsStore.allInvRecordsFromAllDocumentLists.size === 0 ? (
+              <>The document has no connected Inventory items.</>
+            ) : (
+              materialsStore.allInvRecordsFromAllDocumentLists.map(
+                ({ name, globalId, permalinkURL }) => (
+                  <li key={globalId}>
+                    <a href={permalinkURL || ""}>{name}</a>
+                  </li>
+                ),
+              )
+            )}
           </ul>
         </Collapse>
       </>
@@ -109,9 +97,11 @@ if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
     <Analytics>
-      <AssociatedInventoryRecords
-        elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
-      />
+      <MuiCssLayerProvider>
+        <AssociatedInventoryRecords
+          elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)}
+        />
+      </MuiCssLayerProvider>
     </Analytics>,
   );
 }

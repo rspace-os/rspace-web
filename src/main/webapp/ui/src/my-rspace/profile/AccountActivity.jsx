@@ -3,6 +3,7 @@ import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -49,9 +50,9 @@ export default function AccountActivity(props) {
   };
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <div style={{ width: "690px", padding: "0px 15px" }}>
+        <Box sx={{ width: "690px", padding: "0px 15px" }}>
           {!fetched && (
             <Button color="primary" onClick={loadUserActivity}>
               Show account activity
@@ -59,9 +60,9 @@ export default function AccountActivity(props) {
           )}
           {fetched && (
             <>
-              <div className="api-menu__header" style={{ marginTop: "15px" }}>
+              <Box className="api-menu__header" sx={{ marginTop: "15px" }}>
                 User's account activity
-              </div>
+              </Box>
               <br />
               <Table>
                 <EnhancedTableHead
@@ -97,7 +98,7 @@ export default function AccountActivity(props) {
               </Table>
             </>
           )}
-        </div>
+        </Box>
       </ThemeProvider>
     </StyledEngineProvider>
   );

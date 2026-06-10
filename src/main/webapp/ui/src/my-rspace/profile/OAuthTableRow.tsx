@@ -30,7 +30,7 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp, onDeleteApp: (clie
             <IconButton
               color="inherit"
               onClick={() => setOpen(true)}
-              style={{ width: "42px" }}
+              sx={{ width: "42px" }}
             >
               <FontAwesomeIcon icon={faTrashAlt} size="xs" />
             </IconButton>

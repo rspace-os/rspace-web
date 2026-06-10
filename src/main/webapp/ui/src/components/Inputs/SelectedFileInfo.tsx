@@ -1,46 +1,35 @@
 import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 import React from "react";
-import clsx from "clsx";
 import { match } from "../../util/Util";
-import { withStyles } from "Styles";
+import { useTheme } from "@mui/material/styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 
-const StatusChip = withStyles<
-  { error: boolean; selectedFilename: string | null; loading: boolean },
-  { root: string; label: string; avatar: string }
->((theme, { loading, error, selectedFilename }) => ({
-  root: {
-    height: 20,
-    letterSpacing: "0.04em",
-    color: match<void, string>([
-      [() => loading, theme.palette.text.secondary],
-      [() => error, theme.palette.primary.contrastText],
-      [() => Boolean(selectedFilename), theme.palette.primary.contrastText],
-      [() => true, theme.palette.text.secondary],
-    ])(),
-    backgroundColor: match<void, string>([
-      [() => loading, "#e0e0e0"],
-      [() => error, theme.palette.error.main],
-      [() => Boolean(selectedFilename), theme.palette.success.main],
-      [() => true, "#e0e0e0"],
-    ])(),
-    transition: "background-color 0s",
-  },
-  label: {
-    paddingLeft: loading ? 3 : 10,
-    paddingRight: loading ? 3 : 10,
-    fontSize: loading ? "1.25em" : "inherit",
-  },
-  avatar: {
-    width: "18px !important",
-    height: "18px !important",
-    marginLeft: "2px !important",
-    color: `${theme.palette.primary.contrastText} !important`,
-  },
-}))(({ classes, error, loading, selectedFilename }) => {
+function StatusChip({
+  error,
+  loading,
+  selectedFilename,
+}: {
+  error: boolean;
+  selectedFilename: string | null;
+  loading: boolean;
+}): React.ReactNode {
+  const theme = useTheme();
+  const color = match<void, string>([
+    [() => loading, theme.palette.text.secondary],
+    [() => error, theme.palette.primary.contrastText],
+    [() => Boolean(selectedFilename), theme.palette.primary.contrastText],
+    [() => true, theme.palette.text.secondary],
+  ])();
+  const backgroundColor = match<void, string>([
+    [() => loading, "#e0e0e0"],
+    [() => error, theme.palette.error.main],
+    [() => Boolean(selectedFilename), theme.palette.success.main],
+    [() => true, "#e0e0e0"],
+  ])();
   const spinnerIcon = <FontAwesomeIcon icon={faSpinner} spin size="sm" />;
   const label = match<void, React.ReactNode>([
     [() => loading, spinnerIcon],
@@ -48,19 +37,44 @@ const StatusChip = withStyles<
     [() => Boolean(selectedFilename), selectedFilename],
     [() => true, "None"],
   ])();
+  const iconStyle = {
+    width: 18,
+    height: 18,
+    marginLeft: "2px",
+    color: theme.palette.primary.contrastText,
+  };
   const avatar = match<void, React.ReactElement | null>([
     [() => loading, null],
-    [() => error, <ErrorIcon key="erroricon" className={classes.avatar} />],
+    [() => error, <ErrorIcon key="erroricon" sx={iconStyle} />],
     [
       () => Boolean(selectedFilename),
-      <CheckCircleIcon key="checkicon" className={classes.avatar} />,
+      <CheckCircleIcon key="checkicon" sx={iconStyle} />,
     ],
     [() => true, null],
   ])();
   return (
-    <Chip classes={classes} label={label} {...(avatar ? { avatar } : {})} />
+    <Chip
+      label={label}
+      {...(avatar ? { avatar } : {})}
+      sx={{
+        height: 20,
+        letterSpacing: "0.04em",
+        color,
+        backgroundColor,
+        transition: "background-color 0s",
+      }}
+      slotProps={{
+        label: {
+          sx: {
+            pl: loading ? "3px" : "10px",
+            pr: loading ? "3px" : "10px",
+            fontSize: loading ? "1.25em" : "inherit",
+          },
+        },
+      }}
+    />
   );
-});
+}
 
 type SelectedFileInfoArgs = {
   selectedFilename: string | null;
@@ -68,33 +82,30 @@ type SelectedFileInfoArgs = {
   loading: boolean;
 };
 
-const SelectedFileInfo = withStyles<
-  SelectedFileInfoArgs,
-  { details: string; detailsLabel: string; filename: string }
->((theme) => ({
-  details: {
-    display: "flex",
-    alignItems: "center",
-    padding: theme.spacing(0.5, 2),
-  },
-  detailsLabel: {
-    color: theme.palette.text.secondary,
-  },
-  filename: {
-    marginLeft: theme.spacing(1),
-  },
-}))(({ selectedFilename, classes, error, loading }) => (
-  <div className={classes.details}>
-    <dt className={classes.detailsLabel}>File selected:</dt>
-    <dd className={clsx(classes.filename)}>
-      <StatusChip
-        selectedFilename={selectedFilename}
-        error={error}
-        loading={loading}
-      />
-    </dd>
-  </div>
-));
+function SelectedFileInfo({
+  selectedFilename,
+  error,
+  loading,
+}: SelectedFileInfoArgs): React.ReactNode {
+  const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        padding: theme.spacing(0.5, 2),
+      }}
+    >
+      <Box component="dt" sx={{ color: theme.palette.text.secondary }}>File selected:</Box>
+      <Box component="dd" sx={{ marginLeft: theme.spacing(1) }}>
+        <StatusChip
+          selectedFilename={selectedFilename}
+          error={error}
+          loading={loading}
+        />
+      </Box>
+    </Box>
+  );
+}
 
-SelectedFileInfo.displayName = "SelectedFileInfo ";
 export default SelectedFileInfo;

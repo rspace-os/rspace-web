@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
@@ -47,7 +48,7 @@ class StructuredDocumentToolbar extends React.Component {
   content = () => {
     return (
       <>
-        <span style={{ display: "flex", width: "100%" }}>
+        <Box component="span" sx={{ display: "flex", width: "100%" }}>
           <Tooltip title="Close" enterDelay={300}>
             <IconButton
               data-test-id="structured-document-back"
@@ -57,39 +58,41 @@ class StructuredDocumentToolbar extends React.Component {
               <FontAwesomeIcon icon={faTimes} />
             </IconButton>
           </Tooltip>
-          <span
+          <Box
+            component="span"
             className="editMode"
-            style={{
+            sx={{
               borderRight: "1px solid transparent",
               margin: "0px 10px",
               height: "100%",
             }}
-          ></span>
+          ></Box>
           <SaveMenu canCopy={this.state.canCopy} />
           <Button
             id="cancel"
             className="editMode"
             data-test-id="notebooktoolbar-cancel"
-            style={{ color: "white" }}
+            sx={{ color: "white" }}
           >
             Cancel
           </Button>
           {!this.state.emptyDocrevision && (
             <span>
-              <span
+              <Box
+                component="span"
                 className="templateActionDiv"
-                style={{
+                sx={{
                   borderRight: "1px solid transparent",
                   margin: "0px 10px",
                   height: "100%",
                 }}
-              ></span>
+              ></Box>
               {this.state.isTemplate && (
                 <Button
                   id="createDocFromTemplate"
                   className="templateActionDiv"
                   data-test-id="notebooktoolbar-createDocFromTemplate"
-                  style={{ color: "white" }}
+                  sx={{ color: "white" }}
                 >
                   CREATE DOCUMENT
                 </Button>
@@ -99,18 +102,19 @@ class StructuredDocumentToolbar extends React.Component {
                   id="saveAsTemplateBtn"
                   className="templateActionDiv"
                   data-test-id="notebooktoolbar-saveAsTemplateBtn"
-                  style={{ color: "white" }}
+                  sx={{ color: "white" }}
                 >
                   SAVE AS TEMPLATE
                 </Button>
               )}
-              <span
-                style={{
+              <Box
+                component="span"
+                sx={{
                   borderRight: "1px solid transparent",
                   margin: "0px 10px",
                   height: "100%",
                 }}
-              ></span>
+              ></Box>
               {this.state.canDelete && (
                 <Tooltip title="Delete" enterDelay={300}>
                   <IconButton
@@ -180,13 +184,14 @@ class StructuredDocumentToolbar extends React.Component {
               {(this.state.canDelete ||
                 this.state.canWitness ||
                 this.state.canSign) && (
-                <span
-                  style={{
+                <Box
+                  component="span"
+                  sx={{
                     borderRight: "1px solid transparent",
                     margin: "0px 10px",
                     height: "100%",
                   }}
-                ></span>
+                ></Box>
               )}
               <Tooltip title="Export" enterDelay={300}>
                 <IconButton
@@ -209,21 +214,23 @@ class StructuredDocumentToolbar extends React.Component {
                     "user:print:document:document_editor",
                   );
                 }}
-                dataTestId="notebooktoolbar-print"
+                data-test-id="notebooktoolbar-print"
               />
-              <span
-                style={{
+              <Box
+                component="span"
+                sx={{
                   borderRight: "1px solid transparent",
                   margin: "0px 10px",
                   height: "100%",
                 }}
-              ></span>
+              ></Box>
             </span>
           )}
           {this.state.emptyDocrevision && (
-            <span
+            <Box
+              component="span"
               data-test-id="notebooktoolbar-docversion"
-              style={{
+              sx={{
                 fontSize: "15px",
                 alignItems: "center",
                 display: "flex",
@@ -233,14 +240,14 @@ class StructuredDocumentToolbar extends React.Component {
             >
               Displaying version {this.state.version} of the document - this is
               locked for editing.
-            </span>
+            </Box>
           )}
           <SocialActions
             onCreateRequest={this.props.eventHandlers.onCreateRequest}
             showExternal={true}
-            style={{ flexGrow: "1", justifyContent: "flex-end" }}
+            sx={{ flexGrow: "1", justifyContent: "flex-end" }}
           />
-        </span>
+        </Box>
         <ShareDialog />
       </>
     );
@@ -264,7 +271,7 @@ class StructuredDocumentToolbar extends React.Component {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst>
+      <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />

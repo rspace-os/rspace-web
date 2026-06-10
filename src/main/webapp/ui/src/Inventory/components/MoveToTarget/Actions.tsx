@@ -1,8 +1,9 @@
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
 import Stepper from "./Stepper";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import TopLevelButton from "./TopLevelButton";
@@ -26,7 +27,7 @@ const MoveSubmitButton = observer(
         label="Move"
       />
     );
-  }
+  },
 );
 
 const CancelButton = observer(({ onClick }: { onClick: () => void }) => {
@@ -76,7 +77,7 @@ function Actions({
   return !isSingleColumnLayout ? (
     <>
       <TopLevelButton onClose={handleClose} />
-      <div style={{ flexGrow: 1 }}></div>
+      <Box sx={{ flexGrow: 1 }} />
       <CancelButton onClick={handleClose} />
       <MoveSubmitButton
         handleSubmit={handleMove}
@@ -84,25 +85,19 @@ function Actions({
       />
     </>
   ) : (
-    <Grid container direction="column" spacing={1}>
-      {activeStep === "left" && (
-        <Grid item>
-          <TopLevelButton onClose={handleClose} />
-        </Grid>
-      )}
-      <Grid>
-        <Stepper
-          handleBack={handleBack}
-          handleNext={handleNext}
-          handleCancel={handleClose}
-          activeStep={activeStep === "left" ? 0 : 1}
-          onMove={handleMove}
-          disabled={!isSelectionValid()}
-          stepsCount={2}
-          loading={moveStore.loading}
-        />
-      </Grid>
-    </Grid>
+    <Stack spacing={1}>
+      {activeStep === "left" && <TopLevelButton onClose={handleClose} />}
+      <Stepper
+        handleBack={handleBack}
+        handleNext={handleNext}
+        handleCancel={handleClose}
+        activeStep={activeStep === "left" ? 0 : 1}
+        onMove={handleMove}
+        disabled={!isSelectionValid()}
+        stepsCount={2}
+        loading={moveStore.loading}
+      />
+    </Stack>
   );
 }
 export default observer(Actions);

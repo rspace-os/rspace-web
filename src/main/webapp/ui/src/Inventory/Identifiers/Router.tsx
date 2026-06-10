@@ -1,6 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router";
-import { Navigate } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import IGSNs from "./IGSN";
 import PageNotFoundScreen from "../components/Layout/PageNotFoundScreen";
 import NavigationContext from "./NavigationContext";

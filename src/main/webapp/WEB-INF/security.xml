@@ -62,8 +62,6 @@
                 /system/** = anyRole[ROLE_SYSADMIN,ROLE_ADMIN]
 
                 /community/admin/** = anyRole[ROLE_SYSADMIN,ROLE_ADMIN]
-                /offline/mobile/status = anon
-                /offline/** = authcBasic, ssl[8443]
                 /organisation/** = anon
 
                 /api/** = noSessionCreation, ssl[8443]

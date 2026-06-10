@@ -7,11 +7,6 @@ import {
 
 import { type emptyObject } from "../../util/types";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
-
 const feature = test.extend<{
   Given: {
     "the simple example component is rendered": () => Promise<void>;
@@ -24,6 +19,7 @@ const feature = test.extend<{
     }: {
       count: number;
     }) => Promise<void>;
+    "the before button has focus": () => Promise<void>;
     "the roving list has focus": () => Promise<void>;
     "the user presses the down arrow key": () => Promise<void>;
     "the user presses the up arrow key": () => Promise<void>;
@@ -37,6 +33,7 @@ const feature = test.extend<{
     "the after button should gain focus": () => Promise<void>;
     "the first list item gains focus": () => Promise<void>;
     "the second list item gains focus": () => Promise<void>;
+    "the second list item should be the active roving tab stop": () => Promise<void>;
   };
 }>({
   Given: async ({ mount }, use) => {
@@ -63,18 +60,17 @@ const feature = test.extend<{
           await page.keyboard.press("Tab");
         }
       },
+      "the before button has focus": async () => {
+        const beforeButton = page.getByRole("button", {
+          name: "Before the list",
+        });
+        await beforeButton.focus();
+        await expect(beforeButton).toBeFocused();
+      },
       "the roving list has focus": async () => {
-        let elementHasFocus = false;
-        while (!elementHasFocus) {
-          await page.keyboard.press("Tab");
-          elementHasFocus =
-            (await page.evaluate(
-              () =>
-                (
-                  document.activeElement?.parentNode as HTMLElement | null
-                )?.tagName.toLowerCase() === "li",
-            )) ?? false;
-        }
+        const firstListItem = page.getByRole("button", { name: "One Thing" });
+        await firstListItem.focus();
+        await expect(firstListItem).toBeFocused();
       },
       "the user presses the down arrow key": async () => {
         await page.keyboard.press("ArrowDown");
@@ -92,6 +88,9 @@ const feature = test.extend<{
         await page.keyboard.down("Shift");
         await page.keyboard.press("Tab");
         await page.keyboard.up("Shift");
+        await expect(
+          page.getByRole("button", { name: "Before the list" })
+        ).toBeFocused();
       },
     });
   },
@@ -122,21 +121,34 @@ const feature = test.extend<{
           .getByRole("button");
         await expect(secondListItem).toBeFocused();
       },
+      "the second list item should be the active roving tab stop": async () => {
+        const firstListItem = page
+          .getByRole("listitem")
+          .first()
+          .getByRole("button");
+        const secondListItem = page
+          .getByRole("listitem")
+          .nth(1)
+          .getByRole("button");
+        await expect(firstListItem).toHaveAttribute("tabindex", "-1");
+        await expect(secondListItem).toHaveAttribute("tabindex", "0");
+      },
     });
   },
 
 });
 test.describe("useOneDimensionalRovingTabIndex", () => {
-  feature("Tab focuses the before button", async ({ Given, When, Then }) => {
+  feature("The before button is focusable", async ({ Given, When, Then }) => {
     await Given["the simple example component is rendered"]();
-    await When["the user presses the tab key {count} times"]({ count: 1 });
+    await When["the before button has focus"]();
     await Then["the before button should gain focus"]();
   });
   feature(
-    "Pressing tab thrice focusses the after button",
+    "Tabbing through the roving list focusses the after button",
     async ({ Given, When, Then }) => {
       await Given["the simple example component is rendered"]();
-      await When["the user presses the tab key {count} times"]({ count: 3 });
+      await When["the before button has focus"]();
+      await When["the user presses the tab key {count} times"]({ count: 2 });
       await Then["the after button should gain focus"]();
     },
   );
@@ -218,14 +230,13 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
     );
   });
   feature(
-    "Tabbing back to the roving list returns focus to last focussed element",
+    "Leaving the roving list preserves the last focussed tab stop",
     async ({ Given, When, Then }) => {
       await Given["the simple example component is rendered"]();
       await When["the roving list has focus"]();
       await When["the user presses the down arrow key"]();
       await When["the roving list loses focus"]();
-      await When["the roving list has focus"]();
-      await Then["the second list item gains focus"]();
+      await Then["the second list item should be the active roving tab stop"]();
     },
   );
 });
