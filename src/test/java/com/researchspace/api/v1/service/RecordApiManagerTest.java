@@ -25,6 +25,7 @@ import com.researchspace.service.WorkspaceService;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -154,7 +155,14 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
     assertEquals("myTag2", updatedDoc2.getDocTag());
     assertEquals("content2", updatedDoc2.getFields().get(0).getFieldData());
     assertEquals(4L, updatedDoc2.getUserVersion().getVersion().longValue());
-    verify(auditTrailService).notify(any(RenameAuditEvent.class));
+    ArgumentCaptor<RenameAuditEvent> renameEventCaptor =
+        ArgumentCaptor.forClass(RenameAuditEvent.class);
+    verify(auditTrailService).notify(renameEventCaptor.capture());
+    // RSDEV-1124: the audited object must carry the new name, as the audit
+    // trail snapshots its current state for the document name column
+    StructuredDocument auditedDoc =
+        (StructuredDocument) renameEventCaptor.getValue().getAuditedObject();
+    assertEquals("myName2", auditedDoc.getName());
 
     // create another doc with name, tag and fields
     Long basicDocId = recordApiMgr.createNewDocument(apiDoc, basicDocForm, testUser);
