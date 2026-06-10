@@ -28,9 +28,12 @@ public class InventoryLinkValidator {
           GlobalIdPrefix.GL);
 
   /**
-   * Validates the supplied link. Errors are recorded under {@code link.*} sub-paths of the passed
-   * Errors object. {@code sourceGlobalId} (the GlobalID of the parent item the link is being
-   * attached to) is used to detect self-links.
+   * Validates the supplied link. Errors are rejected as {@code relationType} / {@code
+   * targetGlobalId} field codes relative to whatever nested path the passed {@link Errors} object
+   * is currently positioned at. This validator does not push a {@code link} path itself: callers
+   * that want the errors to surface under {@code link.*} must {@code pushNestedPath("link")} on the
+   * Errors object before calling (as {@code ApiExtraFieldsHelper} does). {@code sourceGlobalId}
+   * (the GlobalID of the parent item the link is being attached to) is used to detect self-links.
    */
   public void validate(ApiInventoryLink link, String sourceGlobalId, Errors errors) {
     if (link == null) {

@@ -1495,16 +1495,31 @@ export default class InventoryBaseRecord
         content: typeChanged ? "" : field.content,
       };
       if (updatedField.type === "Link") {
-        attrs.link = updatedField.link ?? null;
+        // Only overwrite the link when the caller actually supplies one. Omitting
+        // it (a rename-only edit, or discardChanges restoring name/type) must
+        // preserve the existing link rather than wipe it, since setAttributes
+        // merges via Object.assign.
+        if (updatedField.link !== undefined) {
+          attrs.link = updatedField.link;
+        }
       } else if (typeChanged) {
         attrs.link = null;
       }
       const justNameAndType = pick("name", "type");
+      const existingLink = field.link;
+      const incomingLink = updatedField.link;
+      const linkUnchanged =
+        updatedField.type !== "Link" ||
+        incomingLink === undefined ||
+        (existingLink !== null &&
+          existingLink.relationType === incomingLink.relationType &&
+          existingLink.targetGlobalId === incomingLink.targetGlobalId &&
+          (existingLink.versionPin ?? null) === (incomingLink.versionPin ?? null));
       const areEqual =
         sameKeysAndValues(
           justNameAndType(field),
           justNameAndType(updatedField),
-        ) && updatedField.type !== "Link";
+        ) && linkUnchanged;
       if (areEqual) {
         field.setAttributes(attrs);
       } else {

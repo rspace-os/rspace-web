@@ -39,6 +39,12 @@ export interface ExtraField {
   initial: boolean;
 
   /*
+   * For Link-typed fields, the inventory/ELN link payload; null for non-Link
+   * fields (and for a Link field that has not yet been given a target).
+   */
+  readonly link: ExtraInventoryLink | null;
+
+  /*
    * When set, subsequent API calls to store modifications MUST ensure that the
    * extra field is deleted.
    */

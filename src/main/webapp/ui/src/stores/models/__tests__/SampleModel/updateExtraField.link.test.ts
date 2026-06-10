@@ -90,6 +90,47 @@ describe("InventoryBaseRecord.updateExtraField with a link payload", () => {
     expect(ef.link.relationType).toBe("IsCalibratedBy");
   });
 
+  test("preserves the existing link when a Link update omits the link payload", () => {
+    // Reproduces the discardChanges/partial-update path: the caller passes only
+    // name + type (no link), which must NOT wipe the field's existing link.
+    const sample = seedLinkField(5);
+    sample.updateExtraField("linked sample", {
+      name: "linked sample",
+      type: "Link",
+    });
+    const ef = sample.extraFields[0] as typeof sample.extraFields[0] & {
+      link: {
+        relationType: string;
+        targetGlobalId: string;
+        versionPin: number | null;
+      } | null;
+    };
+    expect(ef.link).not.toBeNull();
+    expect(ef.link?.relationType).toBe("References");
+    expect(ef.link?.targetGlobalId).toBe("SA42");
+    expect(ef.link?.versionPin).toBe(5);
+  });
+
+  test("does not dirty the field when an identical Link update is applied", () => {
+    const sample = seedLinkField(3);
+    const ef = sample.extraFields[0];
+    const dirtySpy = vi.spyOn(ef, "setAttributesDirty");
+    sample.updateExtraField("linked sample", {
+      name: "linked sample",
+      type: "Link",
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA42",
+        versionPin: 3,
+      },
+    });
+    expect(dirtySpy).not.toHaveBeenCalled();
+    const updated = ef as typeof ef & {
+      link: { versionPin: number | null } | null;
+    };
+    expect(updated.link?.versionPin).toBe(3);
+  });
+
   test("ignores link payload when the new type is not Link", () => {
     const sample = seedLinkField(7);
     sample.updateExtraField("linked sample", {
