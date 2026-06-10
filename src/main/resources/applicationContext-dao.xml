@@ -31,17 +31,16 @@
     			hibernate.cache.jakarta.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
     			hibernate.cache.jcache.config_uri=classpath:ehcache.xml
 			hibernate.search.indexing.plan.synchronization.strategy=sync
-    			<!-- RSDEV-444 (B1): preserve the Hibernate 5 per-entity TABLE-generator layout.
-    			     Hibernate 6's enhanced TableGenerator otherwise defaults bare
-    			     @GeneratedValue(strategy=TABLE) entities to a single shared "default" segment row,
-    			     whereas existing databases (and the two explicitly-pinned hierarchies) use one
-    			     hibernate_sequences row per entity table. Setting this true makes Hibernate 6 keep
-    			     using the per-entity (table-named) segment rows, matching the existing data.
-    			     changeLog-rsdev-444.xml then re-seeds those rows above each table's MAX(id).
-    			     NOTE: this must be confirmed on a populated DB (see the B1 verification steps in
-    			     investigations/RSDEV-444-spring6-review.md); the migration also seeds a "default"
-    			     insurance row so the fallback path cannot collide if this setting is ever not honoured. -->
-    			hibernate.id.generator.prefer_entity_table_as_segment_value=true
+    			<!-- RSDEV-444 (B1): id generation for bare @GeneratedValue(strategy=TABLE) entities.
+    			     Hibernate 6's enhanced TableGenerator allocates ids for all such entities from a
+    			     single shared "default" row in hibernate_sequences (verified on a populated DB,
+    			     2026-06-06; prefer_entity_table_as_segment_value is a generator-local parameter,
+    			     not a hibernate.* setting, so it cannot be enabled here). The legacy per-entity
+    			     rows remain in use only by the two explicit @TableGenerator hierarchies
+    			     (AbstractUserOrGroupImpl, Communication). changeLog-rsdev-444.xml seeds the
+    			     "default" row above the global MAX(id) and re-seeds the per-entity rows, so no
+    			     allocation path can collide with pre-upgrade ids. See B1/B1a in
+    			     investigations/RSDEV-444-spring6-review.md. -->
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->

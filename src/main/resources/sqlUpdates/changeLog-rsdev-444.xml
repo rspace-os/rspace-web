@@ -46,20 +46,20 @@
                                             CreateGroupMessageOrRequest, ShareRecordMessageOrRequest
             These two carry an explicit @TableGenerator(allocationSize=1) in rspace-core-model.
 
-            Finally a "default" insurance row is seeded above the global MAX(id). Hibernate 6 falls back to a
-            single shared "default" segment for bare TABLE entities when
-            hibernate.id.generator.prefer_entity_table_as_segment_value is not honoured; seeding it means even
-            that fallback path cannot collide. With the setting on (see applicationContext-dao.xml) Hibernate
-            reads the per-entity rows instead and the "default" row is simply unused.
+            Finally a "default" row is seeded above the global MAX(id). This row is the one Hibernate 6
+            actually allocates from for every bare @GeneratedValue(strategy=TABLE) entity (verified on a
+            populated DB, 2026-06-06): prefer_entity_table_as_segment_value is a TableGenerator-local config
+            parameter, not a global hibernate.* setting, so bare TABLE entities consolidate onto the shared
+            "default" segment. The per-entity re-seeds above are belt-and-braces for the legacy rows (only the
+            two explicit @TableGenerator hierarchies still read theirs); collision safety rests on this row.
 
             Margin: next_val = MAX(id) + 51 clears a full default allocation block (allocationSize 50) plus one,
             which is safe for the pooled, pooled-lo and no-op optimizers alike. It is idempotent: re-running
             never lowers an existing value, and empty tables (MAX 0) are left for Hibernate to create lazily.
 
-            VERIFY ON A POPULATED DB before merge (see investigations/RSDEV-444-spring6-review.md, B1): apply
-            this changeset, boot the Hibernate 6 app, insert one of every TABLE entity, then confirm no NEW row
-            appeared in hibernate_sequences (a new row signals a segment-name mismatch) and that no insert
-            collided.
+            VERIFIED on populated DBs 2026-06-06 and 2026-06-09 (see investigations/RSDEV-444-spring6-review.md,
+            B1/B1a): changeset applied, all segments reseeded above MAX(id), live inserts allocated from the
+            "default" segment above the global max with no collision and no unexpected new rows.
         </comment>
         <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
         <sql splitStatements="false" stripComments="false"><![CDATA[

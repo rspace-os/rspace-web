@@ -27,9 +27,6 @@
     			hibernate.cache.use_second_level_cache=false
     			hibernate.cache.region.factory_class=org.hibernate.cache.internal.NoCachingRegionFactory
 			hibernate.search.indexing.plan.synchronization.strategy=sync
-    			<!-- RSDEV-444 (B1): keep per-entity TABLE-generator segments, matching production.
-    			     See the note in src/main/resources/applicationContext-dao.xml. -->
-    			hibernate.id.generator.prefer_entity_table_as_segment_value=true
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->
