@@ -162,6 +162,81 @@ describe("UpdateField — Field Type select includes Link", () => {
     ]);
   });
 
+  it("syncs the in-progress link into the model so Save persists it without Apply", async () => {
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /field name/i }),
+      "Linked sample",
+    );
+    await selectFieldType("Link");
+    await user.type(
+      screen.getByRole("combobox", { name: /relation type/i }),
+      "References",
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "SA99",
+    );
+
+    // No Apply click: the editor must have already pushed the full link into the
+    // model so the record-level Save validates and persists it. Without this the
+    // model keeps its empty initial state and Save reports the field name as empty.
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const setAttributesDirty = extraField.setAttributesDirty;
+    expect(vi.mocked(setAttributesDirty).mock.calls.at(-1)).toEqual([
+      {
+        name: "Linked sample",
+        type: "Link",
+        link: {
+          relationType: "References",
+          targetGlobalId: "SA99",
+          versionPin: null,
+        },
+      },
+    ]);
+  });
+
+  it("does not sync edits to the model for an existing field (commit-on-Apply preserved)", async () => {
+    const extraField = makeExtraField({
+      id: 1,
+      name: "Existing",
+      type: "Link",
+      initial: false,
+      newFieldRequest: false,
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA42",
+        versionPin: null,
+      },
+    });
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "0",
+    );
+
+    // An existing field must not be mutated until the user presses Update, so
+    // that Cancel can revert. The live-sync is scoped to brand-new fields only.
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const setAttributesDirty = extraField.setAttributesDirty;
+    expect(vi.mocked(setAttributesDirty)).not.toHaveBeenCalled();
+  });
+
   it("shows the relation-type error on the relation field, not the target field", async () => {
     const extraField = makeExtraField();
     const record = makeRecord();

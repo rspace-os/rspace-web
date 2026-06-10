@@ -124,6 +124,30 @@ export default function UpdateField({
     }
   }, [extraField]);
 
+  // While a brand-new field is being created, keep the model in step with the
+  // editor so the record-level Save validates and persists exactly what the
+  // user has entered, even if they have not pressed Apply. Without this, the
+  // model keeps its empty initial state until Apply, so Save always reports
+  // "Names of extra fields cannot be empty" regardless of what is typed.
+  // Existing-field edits deliberately keep their commit-on-Apply semantics so
+  // that Cancel can still revert to the stored values.
+  useEffect(() => {
+    if (!extraField.initial || fieldState.type === "") return;
+    extraField.setAttributesDirty(
+      fieldState.type === "Link"
+        ? {
+            name: fieldState.name,
+            type: fieldState.type,
+            link: {
+              relationType: linkState.relationType,
+              targetGlobalId: linkState.targetGlobalId,
+              versionPin: linkState.versionPin,
+            },
+          }
+        : { name: fieldState.name, type: fieldState.type, link: null },
+    );
+  }, [fieldState, linkState, extraField]);
+
   const sourceGlobalId = record.globalId ?? "";
   const isLink = fieldState.type === "Link";
   const relationValid =
