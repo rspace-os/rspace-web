@@ -47,6 +47,10 @@ pipeline {
         AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
         APP_VERSION = readMavenPom().getVersion()
 
+        // Give corepack a writable, persistent home. The default (~/.cache/node/corepack)
+        // is not always writable on Jenkins agents, which breaks `corepack prepare`.
+        COREPACK_HOME = "${JENKINS_HOME}"
+
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
     }
 
