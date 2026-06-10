@@ -13,6 +13,9 @@ import Analytics from "../../components/Analytics";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("about-page");
@@ -38,25 +41,27 @@ window.addEventListener("load", () => {
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
-        <Analytics>
-          <ErrorBoundary>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
-              <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
-                <DialogBoundary>
-                  <Container maxWidth="sm">
-                    <Box py={4}>
-                      <Typography variant="h4" component="h1" align="center" gutterBottom>
-                        About RSpace
-                      </Typography>
-                      <AboutRSpaceContent />
-                    </Box>
-                  </Container>
-                </DialogBoundary>
-              </div>
-            </ThemeProvider>
-          </ErrorBoundary>
-        </Analytics>
+        <QueryClientProvider client={queryClient}>
+          <Analytics>
+            <ErrorBoundary>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
+                <div style={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                  <DialogBoundary>
+                    <Container maxWidth="sm">
+                      <Box py={4}>
+                        <Typography variant="h4" component="h1" align="center" gutterBottom>
+                          About RSpace
+                        </Typography>
+                        <AboutRSpaceContent />
+                      </Box>
+                    </Container>
+                  </DialogBoundary>
+                </div>
+              </ThemeProvider>
+            </ErrorBoundary>
+          </Analytics>
+        </QueryClientProvider>
       </CacheProvider>
     </React.StrictMode>
   );
