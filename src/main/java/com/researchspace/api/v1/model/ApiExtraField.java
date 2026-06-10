@@ -150,8 +150,11 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
 
   /**
    * Applies relationType / versionPin changes from the incoming API payload onto the existing
-   * persisted InventoryLink. The link's target is treated as immutable for an existing link: a
-   * retarget should go through the create-new + delete-old path, not a silent rewrite.
+   * persisted InventoryLink. Target (and pin) changes that need validation and audit-revision
+   * capture are applied in the service layer instead (ApiExtraFieldsHelper's
+   * applyExistingLinkFieldChanges, which can reach the InventoryLinkManager), so by the time this
+   * runs a retargeted link already carries its new target and this only reconciles the remaining
+   * relationType / versionPin fields.
    */
   private boolean applyLinkPayload(ExtraLinkField dbField) {
     InventoryLink dbLink = dbField.getLink();

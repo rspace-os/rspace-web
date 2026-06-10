@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { isAction } from "mobx";
 // SampleModel must load before the ExtraFieldModel -> RootStore import chain,
 // otherwise the TemplateModel/SampleModel module cycle hits an uninitialised
 // SAMPLE_FIELDS during module evaluation
@@ -66,5 +67,17 @@ describe("ExtraFieldModel link validation", () => {
   it("is invalid when the link has no target at all", () => {
     const field = makeLinkField(null);
     expect(field.isValid.isOk).toBe(false);
+  });
+});
+
+describe("ExtraFieldModel actions", () => {
+  it("mutates observable state only through MobX actions", () => {
+    // setInvalidInput and setEditing modify observed observables; if they are
+    // not actions, MobX strict mode logs an error on every editor interaction
+    const field = makeLinkField(null);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- isAction inspects the function itself
+    const { setInvalidInput, setEditing } = field;
+    expect(isAction(setInvalidInput)).toBe(true);
+    expect(isAction(setEditing)).toBe(true);
   });
 });

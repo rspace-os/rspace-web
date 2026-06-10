@@ -18,6 +18,7 @@ import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IRecordFactory;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -117,7 +118,7 @@ public class ApiExtraFieldsHelper implements Validator {
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         null, incomingFields);
-    boolean changed = false;
+    boolean changed = applyExistingLinkFieldChanges(incomingFields, dbFields, user);
     if (!CollectionUtils.isEmpty(incomingFields)) {
       for (ApiExtraField apiField : incomingFields) {
         if (apiField.isNewFieldRequest()) {
@@ -145,6 +146,50 @@ public class ApiExtraFieldsHelper implements Validator {
     }
     if (changed) {
       parentInvRec.refreshActiveExtraFields();
+    }
+    return changed;
+  }
+
+  /**
+   * Applies target and version-pin changes to existing Link extra-fields. The DTO apply loop
+   * ({@code ApiExtraField#applyChangesToDatabaseExtraField}) cannot reach the service-layer {@link
+   * InventoryLinkManager}, so a retargeted link would otherwise be silently dropped and the
+   * previous target returned on save. Changes go through {@link InventoryLinkManager#updateLink},
+   * which validates the new target (existence + readability) and recaptures the pinned audit
+   * revision; an extra-field whose link is still unset gains its first link via {@link
+   * InventoryLinkManager#createLink}. Relation-type-only changes are left to the DTO apply loop.
+   */
+  boolean applyExistingLinkFieldChanges(
+      List<ApiExtraField> incomingFields, List<ExtraField> dbFields, User user) {
+    if (CollectionUtils.isEmpty(incomingFields)) {
+      return false;
+    }
+    boolean changed = false;
+    for (ApiExtraField apiField : incomingFields) {
+      if (apiField.isNewFieldRequest()
+          || apiField.isDeleteFieldRequest()
+          || apiField.getId() == null) {
+        continue;
+      }
+      ApiInventoryLink apiLink = apiField.getLink();
+      if (apiLink == null || StringUtils.isBlank(apiLink.getTargetGlobalId())) {
+        continue;
+      }
+      Optional<ExtraField> dbFieldOpt =
+          dbFields.stream().filter(f -> apiField.getId().equals(f.getId())).findFirst();
+      if (!dbFieldOpt.isPresent() || !(dbFieldOpt.get() instanceof ExtraLinkField)) {
+        continue;
+      }
+      ExtraLinkField dbLinkField = (ExtraLinkField) dbFieldOpt.get();
+      InventoryLink dbLink = dbLinkField.getLink();
+      if (dbLink == null) {
+        dbLinkField.setLink(inventoryLinkManager.createLink(apiLink, user));
+        changed = true;
+      } else if (!apiLink.getTargetGlobalId().equals(dbLink.getTargetGlobalId())
+          || !Objects.equals(apiLink.getVersionPin(), dbLink.getVersionPin())) {
+        inventoryLinkManager.updateLink(dbLink, apiLink, user);
+        changed = true;
+      }
     }
     return changed;
   }

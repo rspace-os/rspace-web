@@ -60,6 +60,8 @@ export default class ExtraFieldModel implements ExtraField {
       link: observable,
       setAttributesDirty: action,
       setAttributes: action,
+      setEditing: action,
+      setInvalidInput: action,
       isValid: computed,
       hasContent: computed,
     });

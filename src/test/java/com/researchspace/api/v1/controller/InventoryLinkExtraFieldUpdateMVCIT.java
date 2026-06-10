@@ -130,6 +130,58 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
   }
 
   @Test
+  public void updatesTargetOnExistingLinkExtraField() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(user);
+    ApiSampleWithFullSubSamples firstTarget = createBasicSampleForUser(user);
+    ApiSampleWithFullSubSamples secondTarget = createBasicSampleForUser(user);
+
+    String createJson =
+        buildLinkExtraFieldCreate(firstTarget.getGlobalId(), "References", /* versionPin */ null);
+    MvcResult createResult =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/samples/" + source.getId(), user, createJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    Long extraFieldId =
+        findLinkExtraField(getFromJsonResponseBody(createResult, ApiSampleWithFullSubSamples.class))
+            .getId();
+
+    // retarget the existing link to a different record; previously this was
+    // silently ignored and the response (and any later GET) kept the old target
+    String updateJson =
+        buildLinkExtraFieldUpdate(
+            extraFieldId, secondTarget.getGlobalId(), "References", /* versionPin */ null);
+    MvcResult updateResult =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/samples/" + source.getId(), user, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSampleWithFullSubSamples updated =
+        getFromJsonResponseBody(updateResult, ApiSampleWithFullSubSamples.class);
+    assertEquals(
+        secondTarget.getGlobalId(), findLinkExtraField(updated).getLink().getTargetGlobalId());
+
+    // a fresh GET also sees the new target
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/samples/{id}", user, source.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSampleWithFullSubSamples fetched =
+        getFromJsonResponseBody(getResult, ApiSampleWithFullSubSamples.class);
+    assertEquals(
+        secondTarget.getGlobalId(), findLinkExtraField(fetched).getLink().getTargetGlobalId());
+  }
+
+  @Test
   public void updatesRelationTypeOnExistingLinkExtraField() throws Exception {
     User user = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(user);
