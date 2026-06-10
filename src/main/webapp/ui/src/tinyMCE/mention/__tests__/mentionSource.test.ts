@@ -163,6 +163,20 @@ describe("RSDEV-992 stale lookup responses are discarded", () => {
   });
 });
 
+describe("RSDEV-992 results are sorted", () => {
+  it("sorts the unordered server response by display name before rendering", () => {
+    const { mentions, getCalls } = load("@ro");
+    const process = vi.fn();
+    mentions.source("", process, "@");
+    getCalls[0].respond({ data: [aUser("rocco"), aUser("rob"), aUser("roberta")] });
+    expect((process.mock.calls[0][0] as Array<{ name: string }>).map((u) => u.name)).toEqual([
+      "rob User <rob>",
+      "roberta User <roberta>",
+      "rocco User <rocco>",
+    ]);
+  });
+});
+
 describe("RSDEV-992 highlighter", () => {
   it("is a no-op for an empty query instead of wrapping every character", () => {
     const { mentions } = load(null);

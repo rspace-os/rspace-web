@@ -309,6 +309,11 @@ var tinymcesetup = {
 				for (var i = 0; i < data.length; i++) {
 					data[i].name = data[i].firstName + " " + data[i].lastName + " <" + data[i].username + ">";
 				}
+				// RSDEV-992: the server returns an unordered set; sort so the list is scannable
+				// and narrowing as you type is visible
+				data.sort(function (a, b) {
+					return a.name.localeCompare(b.name);
+				});
 				process(data);
 			});
 			get_users.fail(function () {
