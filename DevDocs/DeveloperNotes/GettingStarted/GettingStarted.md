@@ -109,9 +109,9 @@ mvn clean package -DgenerateReactDist -DskipTests=true \
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
-which installs Node/npm locally, runs `npm ci`, and runs the Vite production build,
-bundling the resulting `dist/` files into the WAR. Without this flag the frontend is
-not built.
+which installs Node/pnpm locally, runs `pnpm install --frozen-lockfile`, and runs the
+Vite production build, bundling the resulting `dist/` files into the WAR. Without this
+flag the frontend is not built.
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  

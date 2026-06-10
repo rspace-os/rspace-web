@@ -91,7 +91,7 @@ mvn clean package -DgenerateReactDist -DskipTests=true
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` profile that
-runs `npm ci` and the Vite production build and bundles `dist/` into the WAR. It is
+runs `pnpm install --frozen-lockfile` and the Vite production build and bundles `dist/` into the WAR. It is
 opt-in: omit it and `mvn compile`/`test`/`package` skip the frontend build entirely
 (useful for fast backend-only builds, but the resulting WAR has no frontend).
 

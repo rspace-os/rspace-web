@@ -130,19 +130,6 @@ pipeline {
                 sh 'pnpm run tsc --noEmit'
             }
         }
-        stage('Dependency Cruiser') {
-            when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-        }
         stage('Vitest Tests (feature branch)') {
             when {
                 not {

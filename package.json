@@ -12,7 +12,6 @@
     "tsc": "cd src/main/webapp/ui && tsc --noEmit",
     "test-ct": "cd src/main/webapp/ui && cross-env playwright test -c playwright-ct.config.ts",
     "test-ct:ui": "cd src/main/webapp/ui && cross-env playwright test -c playwright-ct.config.ts --ui",
-    "depcruise": "cd src/main/webapp/ui && dependency-cruiser src",
     "lint": "cd src/main/webapp/ui && eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "cd src/main/webapp/ui && eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
@@ -53,7 +52,6 @@
     "browserslist-to-esbuild": "2.1.1",
     "cross-env": "10.1.0",
     "csstype": "3.2.3",
-    "dependency-cruiser": "17.4.0",
     "eslint": "9.39.4",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-jest-dom": "5.5.0",

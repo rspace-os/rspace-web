@@ -12,10 +12,6 @@ list of bundles and their purposes.
 The root [package.json](../../../package.json) defines the dependencies and
 scripts for development, testing, and building the application.
 
-The [dependency cruiser config](./dependency-cruiser.js) defines rules for
-how the codebase should be organised, ensuring that where code is shared between
-different parts of the application it is done so in a controlled manner.
-
 ## Architecture
 
 The codebase has evolved over time, and as such contains a mix of architectural

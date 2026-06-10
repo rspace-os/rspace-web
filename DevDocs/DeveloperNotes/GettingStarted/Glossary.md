@@ -240,12 +240,6 @@ data will be prepared for archiving and preservation.
 [DataGrid](https://mui.com/x/react-data-grid/) is a complex react component
 provided by MUI for displaying tabular data.
 
-### Dependency Cruiser
-
-[Dependency Cruiser](https://github.com/sverweij/dependency-cruiser) is an
-open-source tool for performing static analysis on a JavaScript project to
-validate and report on the dependencies between modules.
-
 ### Dialog
 
 > A dialog is a window overlaid on either the primary window or another dialog
