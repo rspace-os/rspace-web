@@ -1,0 +1,40 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- RSDEV-416: seed data that pre-1.98.1 changesets used to insert, consolidated here as end-state.
+         The baseline (rs-dbbaseline-utf8.sql) is pure DDL; this changelog loads all seed on top, run
+         first (before post-1.98.1 changesets). Each changeset MARK_RANs on existing DBs (via precondition)
+         so data is not re-inserted on upgrades; on a fresh DB the tables are empty so the seed loads. -->
+
+    <changeSet id="rsdev-416-seed-run" author="matthias">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="run seed already present"
+                       onErrorMessage="run seed already present">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM roles</sqlCheck>
+        </preConditions>
+        <comment>Pre-1.98.1 run / no-context seed: roles, permissions, system properties, app configs, the Organisation reference list, sysadmin/system users, default file store, batch sequences.</comment>
+        <sqlFile path="initial-seed-run.sql" relativeToChangelogFile="true"
+                 splitStatements="true" stripComments="true" endDelimiter=";"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-seed-dev-test" author="matthias" context="dev-test">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="dev-test seed already present"
+                       onErrorMessage="dev-test seed already present">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM User WHERE username='user1a'</sqlCheck>
+        </preConditions>
+        <comment>Pre-1.98.1 dev-test seed: test users (user1a-user9i), their api keys, role assignments, dev file stores.</comment>
+        <sqlFile path="initial-seed-devtest.sql" relativeToChangelogFile="true"
+                 splitStatements="true" stripComments="true" endDelimiter=";"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-seed-cloud" author="matthias" context="cloud">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="cloud seed already present"
+                       onErrorMessage="cloud seed already present">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM Role_permissionStrings WHERE permissionStrings LIKE 'RECORD:SHARE:%'</sqlCheck>
+        </preConditions>
+        <comment>Pre-1.98.1 cloud (Community edition) seed: a SHARE permission per role.</comment>
+        <sql>insert into Role_permissionStrings select id,'RECORD:SHARE:property_owner=${self}' from roles</sql>
+    </changeSet>
+
+</databaseChangeLog>
