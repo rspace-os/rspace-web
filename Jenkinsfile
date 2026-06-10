@@ -47,9 +47,14 @@ pipeline {
         AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
         APP_VERSION = readMavenPom().getVersion()
 
-        // Give corepack a writable, persistent home. The default (~/.cache/node/corepack)
-        // is not always writable on Jenkins agents, which breaks `corepack prepare`.
+        // Give corepack a writable, persistent home for its download cache. The
+        // default (~/.cache/node/corepack) is not always writable on Jenkins agents.
         COREPACK_HOME = "${JENKINS_HOME}"
+        // `corepack enable` installs the pnpm/yarn shims next to the node binary
+        // (e.g. /usr/local/bin), which the Jenkins user cannot write to (EACCES).
+        // Install them into a writable dir under JENKINS_HOME and put it on PATH
+        // so every `sh` step resolves `pnpm` from there.
+        PATH = "${JENKINS_HOME}/corepack-bin:${PATH}"
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
     }
@@ -117,7 +122,8 @@ pipeline {
             steps {
                 echo 'Installing pnpm packages'
                 sh 'node -v'
-                sh 'corepack enable'
+                sh 'mkdir -p "$JENKINS_HOME/corepack-bin"'
+                sh 'corepack enable --install-directory "$JENKINS_HOME/corepack-bin"'
                 sh 'corepack prepare pnpm@11.3.0 --activate'
                 sh 'pnpm -v'
                 sh 'pnpm install --frozen-lockfile'
