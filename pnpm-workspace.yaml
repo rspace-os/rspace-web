@@ -26,4 +26,4 @@ peerDependencyRules:
     # This comes from `@playwright/experimental-ct`
     '@vitejs/plugin-react>vite': 8.0.13
     # @sa11y/vitest pulls vitest@3.2.4, which wants the matching UI package.
-    'vitest>@vitest/ui': 4.1.7
+    'vitest>@vitest/ui': 4.1.6
