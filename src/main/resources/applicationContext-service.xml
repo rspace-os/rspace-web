@@ -31,13 +31,27 @@
         <aop:advisor id="searchManagerTx" advice-ref="txAdvice" pointcut="execution(* *..search.SearchManager.*(..))" order="2"/>
         <aop:advisor id="validatorTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Validator.*(..))" order="2"/>
         <aop:advisor id="recordAdapterTx" advice-ref="txAdvice" pointcut="execution(* *..BaseRecordAdapter.*(..))" order="2"/>
-        <!-- IApplicationInitialisor beans are a mixed hierarchy where several implementations
-             carry no @Transactional, so the initialisor family is advised here explicitly.
-             Every other component-scanned service bean not matching the *Manager pointcuts
-             uses @Transactional via <tx:annotation-driven> below; do NOT also add an advisor
-             for such beans - a second (read-write, order=2) interceptor would wrap every call
-             and override any readOnly attribute on the annotations. -->
+        <!-- Component-scanned service-layer beans not matching *Manager patterns need
+             explicit advisors here; class-level @Transactional alone is NOT reliable for
+             them. Mechanism: shiroFilter (ShiroFilterFactoryBean, security.xml) is a
+             BeanPostProcessor, so it is created during BPP registration and its
+             securityManager reference eagerly instantiates the realm's entire service-bean
+             dependency graph (~200 beans) before context refresh completes. While that
+             happens, the <tx:annotation-driven> advisor (internalTransactionAdvisor) is
+             itself still mid-creation, and Spring's advisor retrieval SKIPS in-creation
+             advisors ("Skipping currently created advisor" at TRACE). Every @Transactional
+             bean in that window is therefore proxied permanently WITHOUT transaction
+             advice. The plain XML advisors below finish creating instantly, so they still
+             apply inside the window. See SHIRO-829 and RSDEV-444 review finding M1: do not
+             remove these in favour of @Transactional without verifying the bean is created
+             after context refresh (transactional tests cannot catch this; the test context
+             uses applicationContext-test-service.xml and never loads security.xml). -->
+        <aop:advisor id="contentInitializerTx" advice-ref="txAdvice" pointcut="execution(* *..service.IContentInitializer.*(..))" order="2"/>
+        <aop:advisor id="shareApiTx" advice-ref="txAdvice" pointcut="execution(* *..service.ShareApiService.*(..))" order="2"/>
+        <aop:advisor id="contentUpdaterTx" advice-ref="txAdvice" pointcut="execution(* *..service.impl.UserContentUpdater.*(..))" order="2"/>
         <aop:advisor id="appInitialisorTx" advice-ref="txAdvice" pointcut="execution(* *..service.IApplicationInitialisor.*(..))" order="2"/>
+        <aop:advisor id="archiveExportPlannerTx" advice-ref="txAdvice" pointcut="execution(* *..service.archive.export.ArchiveExportPlanner.*(..))" order="2"/>
+        <aop:advisor id="internalFileStoreTx" advice-ref="txAdvice" pointcut="execution(* *..files.service.InternalFileStore.*(..))" order="2"/>
     </aop:config>
 
     <!-- Enable @AspectJ support -->

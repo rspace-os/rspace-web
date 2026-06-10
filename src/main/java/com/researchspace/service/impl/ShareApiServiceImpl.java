@@ -56,7 +56,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
-@Transactional
 public class ShareApiServiceImpl extends BaseApiController implements ShareApiService {
 
   private static final Logger log = LoggerFactory.getLogger(ShareApiServiceImpl.class);
@@ -152,6 +151,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
+  @Transactional
   public void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException {
     Long id = permissionUpdate.getShareId();
     assertUserHasSharePermission(id, user);
