@@ -20,9 +20,17 @@
  * requests made and the data passed to the plugin's `process` callback.
  */
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
+
+// Resolve from this file's location rather than process.cwd(): the jsdom test
+// environment polyfills `process` (vite-plugin-node-polyfills), so
+// `process.cwd()` returns "/" instead of the ui directory. Do not use the
+// `new URL("...", import.meta.url)` form - Vite rewrites that pattern into a
+// non-file asset URL.
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type ServerUser = { firstName: string; lastName: string; username: string };
 type SuccessCb = (data: { data: Array<ServerUser> | null }) => void;
@@ -64,7 +72,10 @@ function load(autocompleteText: string | null): { mentions: Mentions; getCalls: 
   };
 
   const src = readFileSync(
-    resolve(process.cwd(), "../scripts/pages/workspace/editor/tinymce5_configuration.js"),
+    resolve(
+      __dirname,
+      "../../../../../scripts/pages/workspace/editor/tinymce5_configuration.js",
+    ),
     "utf8",
   );
   runInNewContext(src, sandbox);
