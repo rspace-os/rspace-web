@@ -395,16 +395,15 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
 
     MvcResult result2 =
         mockMvc
-                    .perform(
-                        post("/userform/ajax/editProfile")
-                            .param("firstNameInput", "")
-                            .param("surnameInput", "")
-                            .principal(new MockPrincipal(user.getUsername())))
-                    .andExpect(status().isOk())
-                    .andReturn();
+            .perform(
+                post("/userform/ajax/editProfile")
+                    .param("firstNameInput", "")
+                    .param("surnameInput", "")
+                    .principal(new MockPrincipal(user.getUsername())))
+            .andExpect(status().isOk())
+            .andReturn();
     Map resp2 = parseJSONObjectFromResponseStream(result2);
     assertNull(resp2.get("data"));
-
   }
 
   private ResultActions postProfileUpdate(User user, String newfirstNAme, String newLastNAme)

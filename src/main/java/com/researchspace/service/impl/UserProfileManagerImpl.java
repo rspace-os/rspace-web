@@ -55,7 +55,6 @@ public class UserProfileManagerImpl implements UserProfileManager {
           externalIdResolver.isIdentifierSchemeAvailable(u, IdentifierScheme.ORCID);
       pul.setUserInfo(u.toPublicInfo());
       pul.setGroups(u.getGroups());
-      pul.setShortProfileText(getUserProfile(u).getShortProfileText());
       if (listOrcidIds) {
         Optional<ExternalId> exId =
             externalIdResolver.getExternalIdForUser(u, IdentifierScheme.ORCID);

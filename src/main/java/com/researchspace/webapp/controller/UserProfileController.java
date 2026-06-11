@@ -391,10 +391,10 @@ public class UserProfileController extends BaseController {
           errors, FIRST_NAME, ERRORS_REQUIRED, new Object[] {"First name"});
       ValidationUtils.rejectIfEmpty(
           errors, "lastName", ERRORS_REQUIRED, new Object[] {"Last name"});
-      if (u.getFirstName().length() > UserProfile.MAX_FIELD_LENG) {
+      if (u.getFirstName().length() > User.DEFAULT_MAXFIELD_LEN) {
         errors.rejectValue(FIRST_NAME, ERRORS_MAXLENGTH, new String[] {FIRST_NAME, "255"}, "");
       }
-      if (u.getLastName().length() > UserProfile.MAX_FIELD_LENG) {
+      if (u.getLastName().length() > User.DEFAULT_MAXFIELD_LEN) {
         errors.rejectValue("lastName", ERRORS_MAXLENGTH, new String[] {FIRST_NAME, "255"}, "");
       }
       if (properties.isCloud()) {
