@@ -15,11 +15,13 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
 
 /** Handles API actions around Inventory Sample. */
-public interface SampleApiManager extends InventoryApiManager<Sample> {
+public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
 
   /**
    * Get All not-deleted samples that user can see. Optionally limit to samples belonging to
@@ -52,40 +54,40 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
   boolean exists(long id);
 
   /**
-   * Returns the sample, if it exists and user has read permission
+   * Returns the sample (or sample template), if it exists and user has read permission
    *
    * @param id
    * @param user
-   * @return the loaded sample.
+   * @return the loaded sample (or sample template).
    */
-  Sample assertUserCanReadSample(Long id, User user);
+  SampleEntity assertUserCanReadSample(Long id, User user);
 
   /**
-   * Returns Sample entity if it exists and user has edit permission
+   * Returns sample (or sample template) entity if it exists and user has edit permission
    *
    * @param id
    * @param user
    * @return
    */
-  Sample assertUserCanEditSample(Long id, User user);
+  SampleEntity assertUserCanEditSample(Long id, User user);
 
   /**
-   * Retuns Sample entity if it exists and user can delete/restore it
+   * Returns sample (or sample template) entity if it exists and user can delete/restore it
    *
    * @param id
    * @param user
    * @return
    */
-  Sample assertUserCanDeleteSample(Long id, User user);
+  SampleEntity assertUserCanDeleteSample(Long id, User user);
 
   /**
-   * Returns Sample entity if it exists and user has transfer permission
+   * Returns sample (or sample template) entity if it exists and user has transfer permission
    *
    * @param id
    * @param user
    * @return
    */
-  Sample assertUserCanTransferSample(Long id, User user);
+  SampleEntity assertUserCanTransferSample(Long id, User user);
 
   /** Checks if sample with given name exists for the user */
   boolean nameExistsForUser(String sampleName, User user);
@@ -125,10 +127,10 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
       User user);
 
   /**
-   * @return Sample with a given id with uninitialized subsample list
+   * @return sample (or sample template) with a given id with uninitialized subsample list
    * @throws NotFoundException if Sample with a given id doesn't exist
    */
-  Sample getSampleById(Long id, User user);
+  SampleEntity getSampleById(Long id, User user);
 
   /**
    * @return updated sample
@@ -140,7 +142,7 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
    */
   ApiSample changeApiSampleOwner(ApiSampleInfo apiSample, User user);
 
-  void saveDbSampleUpdate(Sample dbSample, User user);
+  void saveDbSampleUpdate(SampleEntity dbSample, User user);
 
   /**
    * Marks sample as deleted - it will no longer be included in standard listings. Also marks all
@@ -191,7 +193,7 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
    * particular owner.
    */
   ApiSampleTemplateSearchResult getTemplatesForUser(
-      PaginationCriteria<Sample> pgCrit,
+      PaginationCriteria<SampleTemplate> pgCrit,
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       User user);
@@ -202,9 +204,9 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
    * @param user
    * @return
    */
-  List<Sample> getAllTemplates(User user);
+  List<SampleTemplate> getAllTemplates(User user);
 
-  Sample getSampleTemplateByIdWithPopulatedFields(Long id, User user);
+  SampleTemplate getSampleTemplateByIdWithPopulatedFields(Long id, User user);
 
   ApiSampleTemplate getApiSampleTemplateById(Long id, User user);
 
@@ -229,5 +231,5 @@ public interface SampleApiManager extends InventoryApiManager<Sample> {
    */
   ApiSample updateSampleToLatestTemplateVersion(Long sampleId, User user);
 
-  Sample saveIconId(Sample sample, Long iconId);
+  SampleEntity saveIconId(SampleEntity sample, Long iconId);
 }

@@ -15,7 +15,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.ACLPropagationPolicy;
@@ -99,9 +99,11 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
 
   @Override
   protected void addCustomSampleTemplates(User u) {
-    PaginationCriteria<Sample> pg = PaginationCriteria.createDefaultForClass(Sample.class);
+    PaginationCriteria<SampleTemplate> pg =
+        PaginationCriteria.createDefaultForClass(SampleTemplate.class);
     pg.setGetAllResults();
-    List<Sample> sampleTemplates = sampleDao.getTemplatesForUser(pg, null, null, u).getResults();
+    List<SampleTemplate> sampleTemplates =
+        sampleTemplateDao.getTemplatesForUser(pg, null, null, u).getResults();
     boolean t1Created =
         sampleTemplates.stream()
             .filter(t -> t.getName().equals(COMPLEX_SAMPLE_TEMPLATE_NAME))
@@ -121,8 +123,9 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
   }
 
   private void createComplexSampleTemplate(User u, String name) {
-    Sample complexTemplate = recordFactory.createComplexSampleTemplate(name, "for testing", u);
-    complexTemplate = sampleDao.persistSampleTemplate(complexTemplate);
+    SampleTemplate complexTemplate =
+        recordFactory.createComplexSampleTemplate(name, "for testing", u);
+    complexTemplate = sampleTemplateDao.persistSampleTemplate(complexTemplate);
     try {
       createAndSaveIconEntity("Experiment32.png", complexTemplate);
       createAndSavePreviewImage("Experiment 88.png", u, complexTemplate);
@@ -238,18 +241,21 @@ public class ContentInitializerForDevRunManager extends AbstractContentInitializ
   private void initialiseInventoryWithExampleRecords(User u) {
 
     // create standalone complex sample
-    PaginationCriteria<Sample> allTemplatesPagCrit =
-        PaginationCriteria.createDefaultForClass(Sample.class);
+    PaginationCriteria<SampleTemplate> allTemplatesPagCrit =
+        PaginationCriteria.createDefaultForClass(SampleTemplate.class);
     allTemplatesPagCrit.setResultsPerPage(Integer.MAX_VALUE);
-    Optional<Sample> complexTemplateOpt =
-        sampleDao.getTemplatesForUser(allTemplatesPagCrit, null, null, u).getResults().stream()
+    Optional<SampleTemplate> complexTemplateOpt =
+        sampleTemplateDao
+            .getTemplatesForUser(allTemplatesPagCrit, null, null, u)
+            .getResults()
+            .stream()
             .filter(st -> st.getName().contentEquals(COMPLEX_SAMPLE_TEMPLATE_NAME))
             .findFirst();
 
     if (complexTemplateOpt.isEmpty()) {
       throw new IllegalStateException("complex sample template not found for user " + u.getId());
     }
-    Sample complexSampleTemplate = complexTemplateOpt.get();
+    SampleTemplate complexSampleTemplate = complexTemplateOpt.get();
     ApiSampleWithFullSubSamples complexSample = new ApiSampleWithFullSubSamples();
     complexSample.setName(EXAMPLE_COMPLEX_SAMPLE_NAME);
     complexSample.setTemplateId(complexSampleTemplate.getId());

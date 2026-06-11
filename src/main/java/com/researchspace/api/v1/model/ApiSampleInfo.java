@@ -11,6 +11,7 @@ import com.researchspace.api.v1.controller.BaseApiInventoryController;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.core.util.jsonserialisers.LocalDateSerialiser;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.ValidTemperature;
 import java.math.BigDecimal;
@@ -119,7 +120,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     setType(ApiInventoryRecordType.SAMPLE);
   }
 
-  public ApiSampleInfo(Sample sample) {
+  public ApiSampleInfo(SampleEntity sample) {
     super(sample);
 
     if (sample.getQuantityInfo() != null) {
@@ -134,11 +135,17 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
         new ApiSubSampleAlias(sample.getSubSampleAlias(), sample.getSubSampleAliasPlural()));
     setSubSamplesCount(sample.getActiveSubSamplesCount());
     setTemplate(sample.isTemplate());
-    // may be null if the sample isn't created from a template.
-    if (sample.getSTemplate() != null) {
-      setTemplateId(sample.getSTemplate().getId());
-      setTemplateVersion(sample.getSTemplateLinkedVersion());
-      setTemplateImageAvailable(sample.getSTemplate().getImageFileProperty() != null);
+    // unwrap lazy proxies typed to the abstract SampleEntity root, which never satisfy
+    // instanceof checks against the concrete subclasses (e.g. Envers revision reads)
+    SampleEntity unproxiedSample = unproxy(sample);
+    if (unproxiedSample instanceof Sample) {
+      Sample nonTemplateSample = (Sample) unproxiedSample;
+      // may be null if the sample isn't created from a template.
+      if (nonTemplateSample.getSTemplate() != null) {
+        setTemplateId(nonTemplateSample.getSTemplate().getId());
+        setTemplateVersion(nonTemplateSample.getSTemplateLinkedVersion());
+        setTemplateImageAvailable(nonTemplateSample.getSTemplate().getImageFileProperty() != null);
+      }
     }
     if (sample.getStorageTempMin() != null) {
       setStorageTempMin(new ApiQuantityInfo(sample.getStorageTempMin()));
@@ -151,7 +158,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     setVersion(sample.getVersion());
   }
 
-  protected boolean applyChangesToDatabaseSample(Sample sample) {
+  protected boolean applyChangesToDatabaseSample(SampleEntity sample) {
     boolean contentChanged = super.applyChangesToDatabaseInventoryRecord(sample);
 
     if (storageTempMin != null

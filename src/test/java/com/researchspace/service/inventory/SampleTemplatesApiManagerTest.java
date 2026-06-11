@@ -29,8 +29,8 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -46,7 +46,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
 
   @Before
   public void setUp() {
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
 
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
@@ -55,8 +55,8 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
 
   @Test
   public void checkTemplateFiltering_rsinv131() {
-    PaginationCriteria<Sample> defaultPgCrit =
-        PaginationCriteria.createDefaultForClass(Sample.class);
+    PaginationCriteria<SampleTemplate> defaultPgCrit =
+        PaginationCriteria.createDefaultForClass(SampleTemplate.class);
     defaultPgCrit.setSortOrder(SortOrder.ASC);
     User firstUser = createInitAndLoginAnyUser();
     ApiSampleTemplateSearchResult initialTemplates =
@@ -107,8 +107,8 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     Group groupB = createGroup("groupB", pi2);
     addUsersToGroup(pi2, groupB, user3, user4);
 
-    PaginationCriteria<Sample> defaultPgCrit =
-        PaginationCriteria.createDefaultForClass(Sample.class);
+    PaginationCriteria<SampleTemplate> defaultPgCrit =
+        PaginationCriteria.createDefaultForClass(SampleTemplate.class);
     defaultPgCrit.setSortOrder(SortOrder.ASC);
     ApiSampleTemplateSearchResult initialTemplates =
         sampleApiMgr.getTemplatesForUser(defaultPgCrit, null, null, user1);
@@ -128,7 +128,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, user1Template.getSharedWith().size());
 
     // verify permissions,
-    Sample createdTemplate =
+    SampleTemplate createdTemplate =
         sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(user1Template.getId(), user1);
     assertTrue(
         invPermissionUtils.canUserEditInventoryRecord(
@@ -602,6 +602,27 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     testTemplate.setName("updated name 2");
     updatedTemplate = sampleApiMgr.updateApiSampleTemplate(testTemplate, testUser);
     assertEquals("updated name 2", updatedTemplate.getName());
+  }
+
+  @Test
+  public void saveIconIdPersistsOnSampleTemplate() {
+    ApiSampleTemplatePost sampleTemplatePost = getTemplatePostForTestTemplateWithTextField();
+    ApiSampleTemplate createdTemplate =
+        sampleApiMgr.createSampleTemplate(sampleTemplatePost, testUser);
+    SampleTemplate template =
+        sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(createdTemplate.getId(), testUser);
+    assertEquals(Long.valueOf(-1L), template.getIconId()); // default icon id
+
+    // RSDEV-1065 regression guard: saveIconId's DML must target SampleEntity; an update
+    // scoped to the Sample subclass would silently no-op for template rows
+    sampleApiMgr.saveIconId(template, 12345L);
+
+    // bulk DML bypasses the session cache, so clear it before re-reading persisted state
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    SampleTemplate reloadedTemplate =
+        sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(createdTemplate.getId(), testUser);
+    assertEquals(Long.valueOf(12345L), reloadedTemplate.getIconId());
   }
 
   @NotNull

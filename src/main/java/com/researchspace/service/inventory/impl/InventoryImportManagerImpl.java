@@ -36,7 +36,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -548,7 +548,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
     }
     if (sampleGlobalId != null) {
       try {
-        Sample sample = sampleManager.getSampleById(sampleGlobalId.getDbId(), user);
+        SampleEntity sample = sampleManager.getSampleById(sampleGlobalId.getDbId(), user);
         invPermissions.assertUserCanEditInventoryRecord(sample, user);
 
         if (sample.getQuantityInfo() != null) {

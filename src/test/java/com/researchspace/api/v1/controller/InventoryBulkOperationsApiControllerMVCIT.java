@@ -46,7 +46,10 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
 
     ApiSampleWithFullSubSamples sample = createComplexSampleForUser(anyUser);
     ApiSampleTemplate template = createBasicSampleTemplate(anyUser);
+    // Sample and SampleTemplate are separate entities sharing the legacy "Sample" table; count
+    // each so the duplicate of the sample and of the template are both asserted to persist
     final long initialSampleCont = getCountOfEntityTable("Sample");
+    final long initialTemplateCount = getCountOfEntityTable("SampleTemplate");
 
     String duplicateSampleAndTemplateJSON =
         String.format(
@@ -67,7 +70,8 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(
         ApiInventoryRecordType.SAMPLE_TEMPLATE,
         bulkOpResult.getResults().get(1).getRecord().getType());
-    assertEquals(initialSampleCont + 2, getCountOfEntityTable("Sample"));
+    assertEquals(initialSampleCont + 1, getCountOfEntityTable("Sample"));
+    assertEquals(initialTemplateCount + 1, getCountOfEntityTable("SampleTemplate"));
   }
 
   @Test

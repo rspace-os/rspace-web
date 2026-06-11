@@ -38,7 +38,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("uniqApi"));
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
