@@ -19,9 +19,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Resolves a link target across modules: Inventory items via {@link InventoryPermissionUtils}, ELN
- * items (documents, notebooks, folders, gallery files) via {@link BaseRecordManager}. Any failure
- * to resolve a record (not found, not readable, unsupported prefix) is reported as "not readable"
- * rather than propagated, so the caller can reject the link uniformly.
+ * items (documents, notebooks, gallery files) via {@link BaseRecordManager}. The supported prefixes
+ * mirror {@link com.researchspace.service.inventory.InventoryLinkValidator}'s allowed target kinds.
+ * Any failure to resolve a record (not found, not readable, unsupported prefix) is reported as "not
+ * readable" rather than propagated, so the caller can reject the link uniformly.
  */
 @Component("linkTargetResolver")
 public class LinkTargetResolverImpl implements LinkTargetResolver {
@@ -35,7 +36,7 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
           GlobalIdPrefix.IT);
 
   private static final Set<GlobalIdPrefix> ELN_BASE_RECORD_PREFIXES =
-      EnumSet.of(GlobalIdPrefix.SD, GlobalIdPrefix.NB, GlobalIdPrefix.FL, GlobalIdPrefix.GL);
+      EnumSet.of(GlobalIdPrefix.SD, GlobalIdPrefix.NB, GlobalIdPrefix.GL);
 
   @Autowired private InventoryPermissionUtils inventoryPermissionUtils;
   @Autowired private BaseRecordManager baseRecordManager;

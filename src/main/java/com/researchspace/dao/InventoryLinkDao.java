@@ -9,8 +9,6 @@ import java.util.List;
 /** DAO for the InventoryLink table backing Inventory Link extra-fields. */
 public interface InventoryLinkDao extends GenericDao<InventoryLink, Long> {
 
-  /** Returns all non-deleted links whose target equals the given GlobalID (ignoring version). */
-
   /**
    * Returns the ExtraLinkField rows whose link points at the supplied target record, matched by
    * (prefix, database id) so that version-pinned links (e.g. {@code SD123v5}) still surface on the

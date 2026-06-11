@@ -132,6 +132,17 @@ class LinkTargetResolverImplTest {
   }
 
   @Test
+  void folderTargetResolvesFalseWithoutQuerying() {
+    // FL is not an allowed link target kind (InventoryLinkValidator rejects it),
+    // so the resolver must not treat readable folders as resolvable: doing so
+    // would let the referencing-items endpoint return an empty list instead of
+    // the uniform not-found error, disclosing folder readability via a
+    // side-channel
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("FL3"), user));
+    verify(baseRecordManager, never()).getByGlobalIdsAndReadPermission(any(), eq(user));
+  }
+
+  @Test
   void nullTargetResolvesFalse() {
     assertFalse(resolver.targetExistsAndIsReadable(null, user));
   }

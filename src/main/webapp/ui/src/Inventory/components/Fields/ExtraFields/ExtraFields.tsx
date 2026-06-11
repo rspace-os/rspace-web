@@ -69,40 +69,52 @@ function ExtraFields({
                       />
                     </div>
                   )}
-                  <LinkField
-                    name={ef.name}
-                    link={
-                      (ef as typeof ef & {
-                        link: {
-                          relationType: string;
-                          targetGlobalId: string;
-                          versionPin: number | null;
-                        };
-                      }).link
-                    }
-                    targetDeleted={false}
-                    editable={editable}
-                    onOpen={() => {
-                      const link = (ef as typeof ef & {
-                        link: {
-                          targetGlobalId: string;
-                          versionPin: number | null;
-                        };
-                      }).link;
-                      if (link?.targetGlobalId) {
-                        // Gallery files open at their location in the Gallery; other
-                        // targets keep the /globalId route (honouring any pinned version).
-                        window.open(
-                          openUrlForTarget(
-                            link.targetGlobalId,
-                            link.versionPin
-                          ),
-                          "_blank"
-                        );
+                  {(ef as typeof ef & {
+                    link: {
+                      relationType: string;
+                      targetGlobalId: string;
+                      versionPin: number | null;
+                    } | null;
+                  }).link?.targetGlobalId ? (
+                    <LinkField
+                      name={ef.name}
+                      link={
+                        (ef as typeof ef & {
+                          link: {
+                            relationType: string;
+                            targetGlobalId: string;
+                            versionPin: number | null;
+                          };
+                        }).link
                       }
-                    }}
-                    onEdit={() => ef.setEditing(true)}
-                  />
+                      targetDeleted={false}
+                      editable={editable}
+                      onOpen={() => {
+                        const link = (ef as typeof ef & {
+                          link: {
+                            targetGlobalId: string;
+                            versionPin: number | null;
+                          };
+                        }).link;
+                        if (link?.targetGlobalId) {
+                          // Gallery files open at their location in the Gallery; other
+                          // targets keep the /globalId route (honouring any pinned version).
+                          window.open(
+                            openUrlForTarget(
+                              link.targetGlobalId,
+                              link.versionPin
+                            ),
+                            "_blank"
+                          );
+                        }
+                      }}
+                      onEdit={() => ef.setEditing(true)}
+                    />
+                  ) : (
+                    // a Link row can exist before its link payload does; the
+                    // settings affordance above still lets the user set one
+                    <NoValue label="No link set" />
+                  )}
                 </Box>
               ) : ef.type === "Number" ? (
                 <FormField

@@ -80,6 +80,10 @@ export function openUrlForTarget(
   if (match && match[1] === "GL") {
     return `/gallery/item/${match[2]}`;
   }
+  // rebuild from the parsed base id: rows written before the backend
+  // normalised stored ids can already carry a "vN" suffix, which must not be
+  // doubly encoded (e.g. /globalId/SS42v7v7)
+  const base = match ? `${match[1]}${match[2]}` : globalId;
   const versionSuffix = versionPin != null ? `v${versionPin}` : "";
-  return `/globalId/${globalId}${versionSuffix}`;
+  return `/globalId/${base}${versionSuffix}`;
 }

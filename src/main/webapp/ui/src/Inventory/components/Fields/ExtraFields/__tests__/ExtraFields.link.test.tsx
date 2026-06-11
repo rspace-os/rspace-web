@@ -136,6 +136,23 @@ describe("ExtraFields - Link extra-field branch", () => {
     expect(cards[1]).toHaveAttribute("data-version-pin", "3");
   });
 
+  it("renders a placeholder instead of crashing when a Link field has no link payload", () => {
+    // an ExtraLinkField row can exist before its InventoryLink is populated;
+    // passing that null into LinkField would crash on render
+    const field = { ...makeLinkField({}), link: null };
+    const result = makeResult([field as unknown as ReturnType<typeof makeLinkField>]);
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <ExtraFields
+          onErrorStateChange={() => {}}
+          result={result as unknown as never}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.queryByTestId("link-field")).not.toBeInTheDocument();
+    expect(screen.getByText(/no link set/i)).toBeInTheDocument();
+  });
+
   it("does not change the model from the view card: pins are edited in the editor", async () => {
     // the version pin is staged in the link editor (opened via Edit) and
     // committed on Update, like every other link property; the view card has

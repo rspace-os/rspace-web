@@ -109,4 +109,14 @@ describe("openUrlForTarget", () => {
   test("appends the pinned version suffix for non-Gallery targets", () => {
     expect(openUrlForTarget("SD5", 3)).toBe("/globalId/SD5v3");
   });
+
+  test("does not double-encode the version when a legacy id already carries a suffix", () => {
+    // rows written before the backend normalised stored ids can hold e.g.
+    // "SS42v7" alongside versionPin 7; the URL must not become /globalId/SS42v7v7
+    expect(openUrlForTarget("SS42v7", 7)).toBe("/globalId/SS42v7");
+  });
+
+  test("strips a legacy suffix when the link is unpinned", () => {
+    expect(openUrlForTarget("SS42v7", null)).toBe("/globalId/SS42");
+  });
 });
