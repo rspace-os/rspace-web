@@ -555,7 +555,7 @@ All of these options have sensible defaults.
 * **rs.postsignon.emailtoadmin.template** Only applicable if  `authorised.signup` is true. Path to a Velocity template of email that will be sent to admins on a user signing up.
 * **rs.postsignon.genericAccountAuthorisation** Only applicable if  `authorised.signup` is true. Path to a custom Velocity template of an email sent to users, if their signup request is approved.
 * **email.signup.authoriser.emails** Only applicable if  `authorised.signup` is true. A comma separated list of email addresses
-* **liquibase.context** If your installation needs to have  specific data pre-loaded into the database, you may need to set this property.
+* **liquibase.context** Controls which database changesets are applied. Enterprise/on-prem installations use `run` (the default). You normally do not need to change this unless ResearchSpace advises pre-loading installation-specific data.
 * **licenseserver.poll.cron** Crontab value defining how often to poll license server for updates. Default is every 30 minutes.
 
 ### Using an external file store

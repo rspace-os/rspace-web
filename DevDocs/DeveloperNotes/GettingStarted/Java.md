@@ -112,8 +112,9 @@ which can be used when testing database updates.
 
 ### Making changes to the database schema during development
 
-See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.txt` for
-documentation on this.
+See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md` for
+documentation on this, including the database update process and how the
+`run` / `dev-test` / `cloud` contexts are used.
 
 ### Coding standards
 

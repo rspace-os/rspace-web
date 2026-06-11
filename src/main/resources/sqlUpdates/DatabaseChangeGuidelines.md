@@ -46,12 +46,24 @@ There are various naming conventions, please [IntegrationAndAppNotes](integratio
 - when adding/modifying audit table columns, remember that they don't generally have not-null constraints (apart from id/REV columns).
 - If you are adding such constraint make sure you know the consequences, and double check if constraint is actually applied on your local database when testing.
 
-### Have you set a context? Values are:
-- no value. Will run on all databases in all environments. E.g. static  reference data
-- Suitable for adding lookup static data to all test/dev/production databases. E.g., permissions.
-  - `run` for general schema changes - adding/removing columns/ tables /keys
-  - `dev-test` change should only be applied on local dev environment, or during unit test runs - e.g., loading up test data.
-  - `cloud` change should only be applied for Community version.
+### Have you set a context?
+
+RSpace is launched with one of three `liquibase.context` strings, set per deployment:
+
+| Deployment              | `liquibase.context` | Where set                                  |
+|-------------------------|---------------------|--------------------------------------------|
+| Production / Enterprise | `run`               | `deployments/defaultDeployment.properties` |
+| Local dev & test runs   | `run,dev-test`      | `deployments/dev/deployment.properties`    |
+| Community / cloud       | `run,cloud`         | the cloud deployment's external properties |
+
+A changeset runs when its `context` matches the launch string (OR-ed; blank always matches):
+
+- **`run`** — runs everywhere; the default, use it for schema changes (columns, tables, keys).
+- **`dev-test`** — only under `run,dev-test`; test/sample data that must never reach production.
+- **`cloud`** — only under `run,cloud`; the Community/cloud build.
+
+Always tag new changesets `run` / `dev-test` / `cloud` — don't leave the context blank. (Some
+older seed/reference changesets have no context; that behaves like `run` across these strings.)
 
 ###  Should the new data be included in RSpace exports?
 
@@ -103,7 +115,7 @@ the database already exists, the new changesets will be applied on top of it.
 When adding a new liquibase changeset:
 
 * Add a comment describing what the change is.
-* For schema changes, add `context=run` attribute - this enables the change to be applied only at runtime.
+* For schema changes, add the `context="run"` attribute (see "Have you set a context?" above for what the contexts mean and why `run` is the default).
 * If you're creating a table make sure you applied steps described at the beginning of this doc (set engine to InnoDB / update RealTransactionSpringTestBase / review need for AUD table)
 * (for Windows users only) double check that names are properly capitalized, as MySQL is case-sensitive on Unix-based systems 
 
