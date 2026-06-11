@@ -9,5 +9,10 @@
 CREATE DATABASE IF NOT EXISTS rspace CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE USER IF NOT EXISTS 'rspacedbuser'@'%' IDENTIFIED BY 'rspacedbpwd';
-GRANT ALL PRIVILEGES ON *.* TO 'rspacedbuser'@'%' WITH GRANT OPTION;
+-- Full control of the app database, plus the global CREATE/DROP that the
+-- drop-recreate-db build step needs to drop and recreate `rspace`. Deliberately
+-- NOT `ALL PRIVILEGES ON *.*` / `WITH GRANT OPTION`: even locally there is no
+-- reason for the app account to be a server superuser.
+GRANT ALL PRIVILEGES ON rspace.* TO 'rspacedbuser'@'%';
+GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
 FLUSH PRIVILEGES;

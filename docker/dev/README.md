@@ -73,8 +73,10 @@ Notes:
 - A `docker/dev/.gitattributes` forces LF line endings, so the scripts work even
   if the repo is cloned with Windows defaults — but cloning *inside* WSL2 is
   still recommended (it also avoids the `/mnt/c` performance trap above).
-- File watching already uses polling (`VITE_USE_POLLING=true`), which is what
-  makes HMR reliable across the WSL2/Windows boundary.
+- File-watch polling defaults by platform: on in macOS/Windows shells, off on
+  Linux (WSL2 counts as Linux — with the repo on the WSL2 filesystem, native
+  file events reach the container, and polling would only burn CPU). If HMR
+  misses changes, set `VITE_USE_POLLING=true` in `docker/dev/.env`.
 - Give the WSL2 VM enough memory (Docker Desktop → Resources, or a `.wslconfig`
   with e.g. `memory=8GB`); the backend defaults to a 2 GB JVM heap.
 
@@ -109,7 +111,7 @@ Subsequent `up`s reuse the existing database and are much faster.
 ## Everyday commands
 
 ```bash
-./docker/dev/rspace-dev up [--fresh]   # start (──fresh recreates the DB)
+./docker/dev/rspace-dev up [--fresh]   # start (--fresh recreates the DB)
 ./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp

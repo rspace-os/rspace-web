@@ -45,7 +45,9 @@ fi
 # the read end, at which point both rendezvous and the script continues.
 rm -f "${FIFO}"
 mkfifo "${FIFO}"
-( exec sleep infinity > "${FIFO}" ) &
+# (A plain loop rather than `sleep infinity`, which is GNU-coreutils-only and
+# would break if MAVEN_IMAGE is overridden to a BusyBox/Alpine-based image.)
+( exec > "${FIFO}"; while :; do sleep 3600; done ) &
 
 # Remote JVM debugging (JDWP) for IDEs such as IntelliJ's "Remote JVM Debug".
 # jetty:run runs in this Maven JVM, so putting the agent on MAVEN_OPTS debugs the
