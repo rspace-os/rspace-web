@@ -41,7 +41,11 @@ type Mentions = {
   highlighter: (this: { query: string }, text: string) => string;
 };
 
-type Span = { textContent: string };
+type DomNode = {
+  textContent: string;
+  nextSibling: DomNode | null;
+  contains: (n: unknown) => boolean;
+};
 type LoadOptions = {
   /** the active session's span (caret inside it); null = no span in the document */
   activeText: string | null;
@@ -49,9 +53,17 @@ type LoadOptions = {
   staleTexts?: string[];
   /** simulate the caret having escaped the span (selection cannot resolve it) */
   caretOutside?: boolean;
+  /**
+   * text nodes following the active span (engines where typed characters land
+   * after the span); the caret sits in the LAST one at `caretOffset` (default: its end)
+   */
+  trailingTexts?: string[];
+  caretOffset?: number;
 };
 
-/** Loads the config into a sandbox modelling the editor body and caret. */
+const mkNode = (textContent: string): DomNode => ({ textContent, nextSibling: null, contains: () => false });
+
+/** Loads the config into a sandbox modelling the editor body, spans, siblings and caret. */
 function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls: GetCall[] } {
   const o: LoadOptions = typeof opts === "object" && opts !== null ? opts : { activeText: opts };
   const getCalls: GetCall[] = [];
@@ -69,9 +81,17 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
     };
   };
 
-  const active: Span | null = o.activeText !== null ? { textContent: o.activeText } : null;
+  const active: DomNode | null = o.activeText !== null ? mkNode(o.activeText) : null;
+  const trailing = (o.trailingTexts ?? []).map(mkNode);
+  if (active) {
+    let prev: DomNode = active;
+    for (const t of trailing) {
+      prev.nextSibling = t;
+      prev = t;
+    }
+  }
   // document order: stale debris first, active session last
-  const spans: Span[] = [...(o.staleTexts ?? []).map((t) => ({ textContent: t })), ...(active ? [active] : [])];
+  const spans: DomNode[] = [...(o.staleTexts ?? []).map(mkNode), ...(active ? [active] : [])];
 
   const editorBody = {
     querySelector: (sel: string) => (sel === "#autocomplete" ? (spans[0] ?? null) : null),
@@ -80,11 +100,18 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
   const caretNode = {
     closest: (sel: string) => (sel === "#autocomplete" && !o.caretOutside ? active : null),
   };
+  const caretContainer = trailing.length > 0 ? trailing[trailing.length - 1] : null;
+  const rng = caretContainer
+    ? { startContainer: caretContainer, startOffset: o.caretOffset ?? caretContainer.textContent.length }
+    : { startContainer: caretNode, startOffset: 0 };
 
   const sandbox: Record<string, unknown> = {
     tinymce: {
       PluginManager: { add: () => {} },
-      activeEditor: { getBody: () => editorBody, selection: { getNode: () => caretNode } },
+      activeEditor: {
+        getBody: () => editorBody,
+        selection: { getNode: () => caretNode, getRng: () => rng },
+      },
     },
     $: jq,
     window: {},
@@ -157,6 +184,40 @@ describe("RSDEV-992 mention source uses the typed text as the search term", () =
     const { mentions, getCalls } = load({ activeText: "@perf02", staleTexts: ["@perf"], caretOutside: true });
     mentions.source("", vi.fn(), "@");
     expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("collects typed text from siblings after the span when the caret escapes it", () => {
+    // some engines normalise the caret out of the span, so typed characters land in a
+    // following text node: <span id=autocomplete>@\ufeff</span>"perf02|"
+    const { mentions, getCalls } = load({
+      activeText: "@\ufeff",
+      caretOutside: true,
+      trailingTexts: ["perf02"],
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("collects sibling text only up to the caret, not pre-existing trailing text", () => {
+    // mention typed mid-sentence: <span>@</span>"perf02| tomorrow" with the caret after "perf02"
+    const { mentions, getCalls } = load({
+      activeText: "@",
+      caretOutside: true,
+      trailingTexts: ["perf02 tomorrow"],
+      caretOffset: 6,
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("does not append trailing siblings when the caret is still inside the span", () => {
+    // normal layout: typed text inside the span, pre-existing sentence text after it
+    const { mentions, getCalls } = load({
+      activeText: "@ro",
+      trailingTexts: [" see you tomorrow"],
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("ro");
   });
 });
 

@@ -280,10 +280,12 @@ var tinymcesetup = {
 				// or reloads can leave stale #autocomplete spans earlier in the document, and
 				// document-order querySelector would read those instead of the typed text.
 				var autocomplete = null;
+				var caretInSpan = false;
 				if (ed) {
 					var selNode = ed.selection && ed.selection.getNode();
 					if (selNode && selNode.closest) {
 						autocomplete = selNode.closest('#autocomplete');
+						caretInSpan = !!autocomplete;
 					}
 					if (!autocomplete) {
 						var spans = ed.getBody().querySelectorAll('#autocomplete');
@@ -291,8 +293,24 @@ var tinymcesetup = {
 					}
 				}
 				if (autocomplete) {
+					var typed = autocomplete.textContent || "";
+					// In some engines the caret escapes the span and typed characters land in
+					// text nodes AFTER it; collect following-sibling text up to the caret.
+					if (!caretInSpan) {
+						var rng = ed.selection && ed.selection.getRng ? ed.selection.getRng() : null;
+						for (var node = autocomplete.nextSibling; node; node = node.nextSibling) {
+							if (rng && node === rng.startContainer) {
+								typed += (node.textContent || "").substring(0, rng.startOffset);
+								break;
+							}
+							typed += node.textContent || "";
+							if (rng && node.contains && node.contains(rng.startContainer)) {
+								break;
+							}
+						}
+					}
 					// strip the zero-width no-break space left by the plugin's dummy caret span
-					var typed = (autocomplete.textContent || "").replace(/\ufeff/g, "").trim();
+					typed = typed.replace(/\ufeff/g, "").trim();
 					if (delimiter && typed.indexOf(delimiter) === 0) {
 						typed = typed.substring(delimiter.length);
 					}
