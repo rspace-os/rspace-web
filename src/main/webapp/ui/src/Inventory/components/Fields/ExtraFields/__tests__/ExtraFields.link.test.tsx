@@ -48,7 +48,6 @@ vi.mock("../../Link/LinkField", () => ({
     link: { targetGlobalId: string; versionPin: number | null };
     onOpen: () => void;
     onEdit: () => void;
-    onVersionPinChange: (v: number | null) => void;
   }) => (
     <div
       data-testid="link-field"
@@ -63,20 +62,6 @@ vi.mock("../../Link/LinkField", () => ({
       </button>
       <button type="button" onClick={props.onEdit} data-testid="onEdit">
         edit
-      </button>
-      <button
-        type="button"
-        onClick={() => props.onVersionPinChange(5)}
-        data-testid="onVersionPinChange-5"
-      >
-        pin 5
-      </button>
-      <button
-        type="button"
-        onClick={() => props.onVersionPinChange(null)}
-        data-testid="onVersionPinChange-null"
-      >
-        unpin
       </button>
     </div>
   ),
@@ -151,10 +136,14 @@ describe("ExtraFields - Link extra-field branch", () => {
     expect(cards[1]).toHaveAttribute("data-version-pin", "3");
   });
 
-  it("propagates onVersionPinChange to the extra-field, merging into the existing link", async () => {
+  it("does not change the model from the view card: pins are edited in the editor", async () => {
+    // the version pin is staged in the link editor (opened via Edit) and
+    // committed on Update, like every other link property; the view card has
+    // no direct pin-mutation path any more
     const setAttributesDirty = vi.fn();
+    const setEditing = vi.fn();
     const result = makeResult([
-      makeLinkField({ setAttributesDirty, versionPin: null }),
+      makeLinkField({ setAttributesDirty, setEditing, versionPin: 7 }),
     ]);
     const user = userEvent.setup();
     render(
@@ -165,38 +154,11 @@ describe("ExtraFields - Link extra-field branch", () => {
         />
       </ThemeProvider>,
     );
-    await user.click(screen.getByTestId("onVersionPinChange-5"));
-    expect(setAttributesDirty).toHaveBeenCalledWith({
-      link: {
-        relationType: "References",
-        targetGlobalId: "SA42",
-        versionPin: 5,
-      },
-    });
-  });
 
-  it("clears versionPin via onVersionPinChange(null), preserving relation and target", async () => {
-    const setAttributesDirty = vi.fn();
-    const result = makeResult([
-      makeLinkField({ setAttributesDirty, versionPin: 7 }),
-    ]);
-    const user = userEvent.setup();
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <ExtraFields
-          onErrorStateChange={() => {}}
-          result={result as unknown as never}
-        />
-      </ThemeProvider>,
-    );
-    await user.click(screen.getByTestId("onVersionPinChange-null"));
-    expect(setAttributesDirty).toHaveBeenCalledWith({
-      link: {
-        relationType: "References",
-        targetGlobalId: "SA42",
-        versionPin: null,
-      },
-    });
+    await user.click(screen.getByTestId("onEdit"));
+
+    expect(setEditing).toHaveBeenCalledWith(true);
+    expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 
   it("opens the target in a new tab when LinkField.onOpen fires", async () => {

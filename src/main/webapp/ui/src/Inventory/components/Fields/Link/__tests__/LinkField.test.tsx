@@ -43,42 +43,6 @@ vi.mock("../EnElnRecordInfoDialog", () => ({
     ) : null,
 }));
 
-vi.mock("../VersionLockDialog", () => ({
-  default: ({
-    open,
-    globalId,
-    currentVersionPin,
-    onConfirm,
-  }: {
-    open: boolean;
-    globalId: string;
-    currentVersionPin: number | null;
-    onConfirm: (v: number | null) => void;
-  }) =>
-    open ? (
-      <div
-        data-testid="version-lock-dialog"
-        data-globalid={globalId}
-        data-current-pin={currentVersionPin == null ? "" : String(currentVersionPin)}
-      >
-        <button
-          type="button"
-          data-testid="version-lock-dialog-confirm-7"
-          onClick={() => onConfirm(7)}
-        >
-          confirm 7
-        </button>
-        <button
-          type="button"
-          data-testid="version-lock-dialog-confirm-latest"
-          onClick={() => onConfirm(null)}
-        >
-          confirm latest
-        </button>
-      </div>
-    ) : null,
-}));
-
 import LinkField from "../LinkField";
 
 const baseLink = {
@@ -143,64 +107,23 @@ describe("LinkField", () => {
     expect(screen.queryByRole("button", { name: /open in inventory/i })).not.toBeInTheDocument();
   });
 
-  it("opens the VersionLockDialog when the clock icon is clicked", async () => {
-    const user = userEvent.setup();
+  it("greys out the clock in view mode: pin changes happen in the link editor", () => {
+    // the version pin is edited like every other link property: click Edit,
+    // change it in the editor, and commit with Update. The view-mode clock is
+    // a disabled affordance only.
     renderField({ editable: true });
 
-    const clockBtn = screen.getByRole("button", {
-      name: /pin version for sa42/i,
-    });
-    await user.click(clockBtn);
-
-    const dialog = screen.getByTestId("version-lock-dialog");
-    expect(dialog).toHaveAttribute("data-globalid", "SA42");
-    expect(dialog).toHaveAttribute("data-current-pin", "");
+    expect(
+      screen.getByRole("button", { name: /pin version for sa42/i }),
+    ).toBeDisabled();
   });
 
-  it("calls onVersionPinChange with the picked version when the dialog confirms", async () => {
-    const onVersionPinChange = vi.fn();
-    const user = userEvent.setup();
-    renderField({ editable: true, onVersionPinChange });
+  it("hides the clock entirely when the record is not editable", () => {
+    renderField({ editable: false });
 
-    await user.click(
-      screen.getByRole("button", { name: /pin version for sa42/i }),
-    );
-    await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
-
-    expect(onVersionPinChange).toHaveBeenCalledWith(7);
-  });
-
-  it("calls onVersionPinChange with null when the dialog confirms latest", async () => {
-    const onVersionPinChange = vi.fn();
-    const user = userEvent.setup();
-    renderField({
-      editable: true,
-      onVersionPinChange,
-      link: { ...baseLink, versionPin: 4 },
-    });
-
-    await user.click(
-      screen.getByRole("button", { name: /pin version for sa42/i }),
-    );
-    await user.click(screen.getByTestId("version-lock-dialog-confirm-latest"));
-
-    expect(onVersionPinChange).toHaveBeenCalledWith(null);
-  });
-
-  it("passes the current versionPin to the dialog when one is set", async () => {
-    const user = userEvent.setup();
-    renderField({
-      editable: true,
-      link: { ...baseLink, versionPin: 7 },
-    });
-
-    await user.click(
-      screen.getByRole("button", { name: /pin version for sa42/i }),
-    );
-    expect(screen.getByTestId("version-lock-dialog")).toHaveAttribute(
-      "data-current-pin",
-      "7",
-    );
+    expect(
+      screen.queryByRole("button", { name: /pin version for sa42/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("enables Open for a pinned inventory target and navigates to the versioned viewer", async () => {

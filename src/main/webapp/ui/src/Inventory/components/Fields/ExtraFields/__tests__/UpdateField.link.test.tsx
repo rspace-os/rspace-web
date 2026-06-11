@@ -23,6 +23,38 @@ vi.mock("../../Link/linkTargetExists", () => ({
   checkLinkTargetExists: mockCheckLinkTargetExists,
 }));
 
+// The real dialog fetches revision history; stub it with confirm buttons.
+vi.mock("../../Link/VersionLockDialog", () => ({
+  default: ({
+    open,
+    globalId,
+    currentVersionPin,
+    onConfirm,
+  }: {
+    open: boolean;
+    globalId: string;
+    currentVersionPin: number | null;
+    onConfirm: (v: number | null) => void;
+  }) =>
+    open ? (
+      <div
+        data-testid="version-lock-dialog"
+        data-globalid={globalId}
+        data-current-pin={
+          currentVersionPin == null ? "" : String(currentVersionPin)
+        }
+      >
+        <button
+          type="button"
+          data-testid="version-lock-dialog-confirm-7"
+          onClick={() => onConfirm(7)}
+        >
+          confirm 7
+        </button>
+      </div>
+    ) : null,
+}));
+
 import UpdateField from "../UpdateField";
 import { type ExtraField } from "../../../../../stores/definitions/ExtraField";
 import { type InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
@@ -484,6 +516,95 @@ describe("UpdateField — Field Type select includes Link", () => {
 
     expect(
       screen.getByRole("button", { name: /update field/i }),
+    ).toBeDisabled();
+  });
+});
+
+describe("UpdateField — version pin is edited in the editor and committed on Update", () => {
+  afterEach(cleanup);
+
+  function renderExistingLinkField(targetGlobalId = "SA42") {
+    const extraField = makeExtraField({
+      id: 1,
+      name: "Linked sample",
+      type: "Link",
+      initial: false,
+      newFieldRequest: false,
+      link: {
+        relationType: "References",
+        targetGlobalId,
+        versionPin: null,
+      },
+    });
+    const record = makeRecord();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+    return { extraField, record };
+  }
+
+  it("stages a pin chosen via the clock and only commits it on Update", async () => {
+    const { record } = renderExistingLinkField();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole("button", { name: /pin version for sa42/i }),
+    );
+    expect(screen.getByTestId("version-lock-dialog")).toHaveAttribute(
+      "data-globalid",
+      "SA42",
+    );
+    await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
+
+    // staged in the editor, not yet committed
+    expect(screen.getByText(/pinned to v7/i)).toBeInTheDocument();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const updateExtraField = record.updateExtraField;
+    expect(vi.mocked(updateExtraField)).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /update field/i }));
+
+    expect(vi.mocked(updateExtraField).mock.calls.at(-1)).toEqual([
+      "Linked sample",
+      {
+        name: "Linked sample",
+        type: "Link",
+        link: {
+          relationType: "References",
+          targetGlobalId: "SA42",
+          versionPin: 7,
+        },
+      },
+    ]);
+  });
+
+  it("resets the staged pin when the target is changed", async () => {
+    renderExistingLinkField();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole("button", { name: /pin version for sa42/i }),
+    );
+    await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
+    expect(screen.getByText(/pinned to v7/i)).toBeInTheDocument();
+
+    // a pin belongs to a specific target, so retargeting reverts to Latest
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "9",
+    );
+
+    expect(screen.queryByText(/pinned to v7/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^latest$/i)).toBeInTheDocument();
+  });
+
+  it("greys the clock for targets that cannot be version-pinned", () => {
+    renderExistingLinkField("GL5");
+
+    expect(
+      screen.getByRole("button", { name: /pin version for gl5/i }),
     ).toBeDisabled();
   });
 });

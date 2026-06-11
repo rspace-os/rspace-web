@@ -4,10 +4,12 @@ import Autocomplete from "@mui/material/Autocomplete";
 import MuiTextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import FormHelperText from "@mui/material/FormHelperText";
+import HistoryIcon from "@mui/icons-material/History";
 import { type Field, type FieldLink } from "../../../../stores/definitions/Field";
 import { DATACITE_RELATION_TYPES } from "../../../components/Fields/Link/dataciteRelationTypes";
 import LinkTargetBrowser from "../../../components/Fields/Link/LinkTargetBrowser";
@@ -16,10 +18,12 @@ import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import {
   iconForGlobalId,
   openUrlForTarget,
+  supportsVersionPin,
 } from "../../../components/Fields/Link/iconForGlobalId";
 import LinkField from "../../../components/Fields/Link/LinkField";
 import { validateTarget } from "../../../components/Fields/Link/linkTarget";
 import { checkLinkTargetExists } from "../../../components/Fields/Link/linkTargetExists";
+import VersionLockDialog from "../../../components/Fields/Link/VersionLockDialog";
 
 type LinkFieldValueArgs = {
   field: Field;
@@ -54,12 +58,14 @@ function LinkFieldValue({
 }: LinkFieldValueArgs): React.ReactNode {
   const committedRelationType = field.link?.relationType ?? "";
   const committedTargetGlobalId = field.link?.targetGlobalId ?? "";
+  const committedVersionPin = field.link?.versionPin ?? null;
   const hasLink = committedTargetGlobalId !== "";
 
   // Show the display card for an existing link; drop straight into the editor for an empty field.
   const [editing, setEditing] = useState(!hasLink);
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnOpen, setElnOpen] = useState(false);
+  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   // set when Apply finds the typed target does not resolve on the server
   const [targetExistenceError, setTargetExistenceError] = useState<
     string | null
@@ -73,21 +79,30 @@ function LinkFieldValue({
   const [stagedTargetGlobalId, setStagedTargetGlobalId] = useState<string>(
     committedTargetGlobalId,
   );
+  const [stagedVersionPin, setStagedVersionPin] = useState<number | null>(
+    committedVersionPin,
+  );
 
   const setStagedTarget = (targetGlobalId: string): void => {
     setTargetExistenceError(null);
     setStagedTargetGlobalId(targetGlobalId);
+    // a version pin belongs to a specific target, so retargeting reverts to Latest
+    if (targetGlobalId !== stagedTargetGlobalId) {
+      setStagedVersionPin(null);
+    }
   };
 
   // re-sync staged state when the committed link changes (record switch, post-save round-trip)
   useEffect(() => {
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
-  }, [committedRelationType, committedTargetGlobalId]);
+    setStagedVersionPin(committedVersionPin);
+  }, [committedRelationType, committedTargetGlobalId, committedVersionPin]);
 
   const changed =
     stagedRelationType !== committedRelationType ||
-    stagedTargetGlobalId !== committedTargetGlobalId;
+    stagedTargetGlobalId !== committedTargetGlobalId ||
+    stagedVersionPin !== committedVersionPin;
 
   // surface unapplied editor state on the field model so the record-level Save
   // is blocked (with a clear message) instead of silently dropping the staged
@@ -127,7 +142,7 @@ function LinkFieldValue({
       : {
           relationType: stagedRelationType,
           targetGlobalId: stagedTargetGlobalId,
-          versionPin: field.link?.versionPin ?? null,
+          versionPin: stagedVersionPin,
         };
     // a structurally-valid Global ID must also resolve to a real, readable
     // record; check (re)targeted links against the server before committing
@@ -152,6 +167,7 @@ function LinkFieldValue({
     setTargetExistenceError(null);
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
+    setStagedVersionPin(committedVersionPin);
     if (hasLink) {
       setEditing(false);
     }
@@ -170,10 +186,6 @@ function LinkFieldValue({
         onPeek={() => undefined}
         onOpen={() => openTargetInNewTab(committedLink)}
         onEdit={() => setEditing(true)}
-        onVersionPinChange={(versionPin) => {
-          field.setAttributesDirty({ link: { ...committedLink, versionPin } });
-          onChange();
-        }}
       />
     );
   }
@@ -266,6 +278,34 @@ function LinkFieldValue({
       {validationMessage && (
         <FormHelperText error>{validationMessage}</FormHelperText>
       )}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+        <Chip
+          size="small"
+          variant="outlined"
+          label={
+            stagedVersionPin != null
+              ? `Pinned to v${stagedVersionPin}`
+              : "Latest"
+          }
+          data-test-id="LinkEditor-version"
+        />
+        <IconButton
+          size="small"
+          aria-label={
+            stagedTargetGlobalId
+              ? `Pin version for ${stagedTargetGlobalId}`
+              : "Pin version"
+          }
+          disabled={
+            stagedTargetGlobalId === "" ||
+            !targetValidity.ok ||
+            !supportsVersionPin(stagedTargetGlobalId)
+          }
+          onClick={() => setVersionDialogOpen(true)}
+        >
+          <HistoryIcon fontSize="small" />
+        </IconButton>
+      </Stack>
       <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
         <Button
           color="callToAction"
@@ -305,6 +345,18 @@ function LinkFieldValue({
           setStagedTarget(target.globalId);
           setElnOpen(false);
         }}
+      />
+
+      <VersionLockDialog
+        open={versionDialogOpen}
+        globalId={stagedTargetGlobalId}
+        currentVersionPin={stagedVersionPin}
+        onConfirm={(versionPin) => {
+          setVersionDialogOpen(false);
+          // staged like every other link property; committed on Apply
+          setStagedVersionPin(versionPin);
+        }}
+        onCancel={() => setVersionDialogOpen(false)}
       />
     </Box>
   );

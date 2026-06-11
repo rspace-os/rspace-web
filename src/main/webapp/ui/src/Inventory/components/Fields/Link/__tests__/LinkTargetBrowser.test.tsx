@@ -80,9 +80,21 @@ describe("LinkTargetBrowser", () => {
     expect([...args.uiConfig.allowedTypeFilters]).toContain("TEMPLATE");
   });
 
+  it("requires an explicit Choose click instead of confirming on row click", () => {
+    // mirrors Browse ELN: clicking a result only selects it; the picker's
+    // Choose button (enabled once something is selected) confirms the pick.
+    // instantConfirm would instead fire onPick the moment a row is clicked.
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    const args = searchConstructorArgs.at(-1) as {
+      uiConfig: { instantConfirm?: boolean };
+    };
+    expect(args.uiConfig.instantConfirm).toBe(false);
+  });
+
   it("treats an empty addition as cancel so the Cancel button closes the dialog", async () => {
-    // Picker's Cancel routes through onAddition([]) when the search uses
-    // instantConfirm (the default), so an empty pick must close the dialog
+    // defensive: the Choose button is disabled while nothing is selected, but
+    // an empty confirmation must still close rather than commit an empty pick
     const onCancel = vi.fn();
     const user = userEvent.setup();
     render(<LinkTargetBrowser open onPick={() => {}} onCancel={onCancel} />);

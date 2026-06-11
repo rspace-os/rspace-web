@@ -23,6 +23,29 @@ const { mockCheckLinkTargetExists } = vi.hoisted(() => ({
 vi.mock("@/Inventory/components/Fields/Link/linkTargetExists", () => ({
   checkLinkTargetExists: mockCheckLinkTargetExists,
 }));
+// The real dialog fetches revision history; stub it with a confirm button.
+vi.mock("@/Inventory/components/Fields/Link/VersionLockDialog", () => ({
+  default: ({
+    open,
+    globalId,
+    onConfirm,
+  }: {
+    open: boolean;
+    globalId: string;
+    onConfirm: (v: number | null) => void;
+  }) =>
+    open ? (
+      <div data-testid="version-lock-dialog" data-globalid={globalId}>
+        <button
+          type="button"
+          data-testid="version-lock-dialog-confirm-7"
+          onClick={() => onConfirm(7)}
+        >
+          confirm 7
+        </button>
+      </div>
+    ) : null,
+}));
 // LinkField has its own tests; stub it so we can assert it is used for the committed-link display
 // (and drive its "Edit" affordance) without pulling in its info/version dialog chain.
 vi.mock("@/Inventory/components/Fields/Link/LinkField", () => ({
@@ -325,5 +348,76 @@ describe("LinkFieldValue", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /apply link/i })).toBeDisabled();
     expect(setAttributesDirty).not.toHaveBeenCalled();
+  });
+});
+
+describe("LinkFieldValue version pin is edited in the editor and committed on Apply", () => {
+  function renderCommitted(targetGlobalId = "SA20") {
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId,
+        versionPin: null,
+      },
+    });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+    return { field };
+  }
+
+  it("stages a pin chosen via the clock and only commits it on Apply", async () => {
+    const user = userEvent.setup();
+    const { field } = renderCommitted();
+
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+    await user.click(
+      screen.getByRole("button", { name: /pin version for sa20/i }),
+    );
+    expect(screen.getByTestId("version-lock-dialog")).toHaveAttribute(
+      "data-globalid",
+      "SA20",
+    );
+    await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
+
+    // staged in the editor, not yet committed
+    expect(screen.getByText(/pinned to v7/i)).toBeInTheDocument();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const setAttributesDirty = field.setAttributesDirty;
+    expect(vi.mocked(setAttributesDirty)).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /apply link/i }));
+
+    expect(vi.mocked(setAttributesDirty)).toHaveBeenCalledWith({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA20",
+        versionPin: 7,
+      },
+    });
+  });
+
+  it("resets the staged pin when the target is changed", async () => {
+    const user = userEvent.setup();
+    renderCommitted();
+
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+    await user.click(
+      screen.getByRole("button", { name: /pin version for sa20/i }),
+    );
+    await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
+    expect(screen.getByText(/pinned to v7/i)).toBeInTheDocument();
+
+    // a pin belongs to a specific target, so retargeting reverts to Latest
+    await user.type(
+      screen.getByRole("textbox", { name: /target global id/i }),
+      "9",
+    );
+
+    expect(screen.queryByText(/pinned to v7/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^latest$/i)).toBeInTheDocument();
   });
 });

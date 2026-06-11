@@ -40,6 +40,9 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
           "TEMPLATE",
         ]),
         selectionMode: "SINGLE",
+        // mirror Browse ELN: clicking a result only selects it, and the
+        // picker's Choose button (enabled once a row is selected) confirms
+        instantConfirm: false,
       },
     }),
   );
@@ -51,8 +54,8 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
   const handleAddition = (records: Array<InventoryRecord>) => {
     const [first] = records;
     if (!first || !first.globalId) {
-      // the picker's Cancel button reports through onAddition([]) when the
-      // search uses instantConfirm (the default), so an empty pick is a cancel
+      // defensive: Choose is disabled while nothing is selected, but an empty
+      // confirmation must close the dialog rather than commit an empty pick
       props.onCancel();
       return;
     }
@@ -79,10 +82,8 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
             onAddition={handleAddition}
             onCancel={props.onCancel}
             showActions
-            // clear the picker's active result after each pick/cancel so reopening the
-            // dialog starts fresh; otherwise the reused Search model re-emits the prior
-            // selection (instantConfirm + SINGLE auto-confirm), re-populating the target
-            // and immediately closing the dialog
+            // clear the picker's active result after each pick/cancel so reopening
+            // the dialog starts fresh rather than with the prior selection
             resetActiveResultOnClose
           />
         </AlwaysNewWindowNavigationContext>

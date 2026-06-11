@@ -103,18 +103,6 @@ function ExtraFields({
                       }
                     }}
                     onEdit={() => ef.setEditing(true)}
-                    onVersionPinChange={(versionPin) => {
-                      const currentLink = (ef as typeof ef & {
-                        link: {
-                          relationType: string;
-                          targetGlobalId: string;
-                          versionPin: number | null;
-                        };
-                      }).link;
-                      ef.setAttributesDirty({
-                        link: { ...currentLink, versionPin },
-                      });
-                    }}
                   />
                 </Box>
               ) : ef.type === "Number" ? (

@@ -21,7 +21,6 @@ import {
 } from "./iconForGlobalId";
 import InventoryInfoDialog from "./InventoryInfoDialog";
 import EnElnRecordInfoDialog from "./EnElnRecordInfoDialog";
-import VersionLockDialog from "./VersionLockDialog";
 
 // Read-only versioned viewer route added in RSDEV-1141 (matches MoreInfoSidebar/VersionHistory's
 // `/inventory/{recordType}/{id}?version=N`). Keyed by inventory Global ID prefix.
@@ -43,8 +42,6 @@ export interface LinkFieldProps {
   onPeek: () => void;
   onOpen: () => void;
   onEdit: () => void;
-  /** Optional. When provided and editable=true, the clock icon is enabled. */
-  onVersionPinChange?: (versionPin: number | null) => void;
 }
 
 export default function LinkField(props: LinkFieldProps): React.ReactElement {
@@ -54,7 +51,6 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
   const openLabel = targetIsInventory ? "Open in Inventory" : "Open";
   const [infoOpen, setInfoOpen] = useState(false);
-  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
 
   const handleOpen = () => {
     // A version-pinned inventory target opens the read-only versioned viewer (RSDEV-1141)
@@ -108,13 +104,13 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               <InfoOutlinedIcon fontSize="small" />
             </IconButton>
             {props.editable && supportsVersionPin(props.link.targetGlobalId) && (
+              // a disabled affordance only: like the other link properties,
+              // the pin is changed in the link editor (Edit) and committed
+              // with Update, not directly from the view card
               <IconButton
                 size="small"
                 aria-label={`Pin version for ${props.link.targetGlobalId}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setVersionDialogOpen(true);
-                }}
+                disabled
               >
                 <HistoryIcon fontSize="small" />
               </IconButton>
@@ -173,16 +169,6 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           onClose={() => setInfoOpen(false)}
         />
       )}
-      <VersionLockDialog
-        open={versionDialogOpen}
-        globalId={props.link.targetGlobalId}
-        currentVersionPin={props.link.versionPin}
-        onConfirm={(versionPin) => {
-          setVersionDialogOpen(false);
-          props.onVersionPinChange?.(versionPin);
-        }}
-        onCancel={() => setVersionDialogOpen(false)}
-      />
     </Card>
   );
 }

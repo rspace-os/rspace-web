@@ -8,7 +8,9 @@ import Button from "@mui/material/Button";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import HistoryIcon from "@mui/icons-material/History";
 import { match } from "../../../../util/Util";
 import {
   type ExtraField,
@@ -24,9 +26,10 @@ import {
 import LinkTargetBrowser from "../Link/LinkTargetBrowser";
 import ElnRecordPicker from "../Link/ElnRecordPicker";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
-import { iconForGlobalId } from "../Link/iconForGlobalId";
+import { iconForGlobalId, supportsVersionPin } from "../Link/iconForGlobalId";
 import { validateTarget } from "../Link/linkTarget";
 import { checkLinkTargetExists } from "../Link/linkTargetExists";
+import VersionLockDialog from "../Link/VersionLockDialog";
 
 type UpdateFieldArgs = {
   extraField: ExtraField;
@@ -77,6 +80,7 @@ export default function UpdateField({
   const [linkState, setLinkState] = useState<LinkState>(emptyLinkState());
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnBrowserOpen, setElnBrowserOpen] = useState(false);
+  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   // set when Apply finds the typed target does not resolve on the server
   const [targetExistenceError, setTargetExistenceError] = useState<
     string | null
@@ -211,12 +215,17 @@ export default function UpdateField({
     }
   };
 
+  // a version pin belongs to a specific target, so retargeting reverts to Latest
+  const versionPinFor = (targetGlobalId: string): number | null =>
+    targetGlobalId === linkState.targetGlobalId ? linkState.versionPin : null;
+
   const handleBrowserPick = (target: { globalId: string; name: string }) => {
     setTargetExistenceError(null);
     setLinkState({
       ...linkState,
       targetGlobalId: target.globalId,
       targetName: target.name,
+      versionPin: versionPinFor(target.globalId),
     });
     setBrowserOpen(false);
   };
@@ -231,6 +240,7 @@ export default function UpdateField({
       ...linkState,
       targetGlobalId: target.globalId,
       targetName: target.name,
+      versionPin: versionPinFor(target.globalId),
     });
     setElnBrowserOpen(false);
   };
@@ -389,6 +399,7 @@ export default function UpdateField({
                             ...linkState,
                             targetGlobalId: "",
                             targetName: "",
+                            versionPin: null,
                           });
                         }}
                         data-test-id="LinkTarget-globalId"
@@ -422,6 +433,7 @@ export default function UpdateField({
                     ...linkState,
                     targetGlobalId: e.target.value,
                     targetName: "",
+                    versionPin: versionPinFor(e.target.value),
                   });
                 }}
                 fullWidth
@@ -435,6 +447,39 @@ export default function UpdateField({
                 }
                 error={Boolean(targetExistenceError) || showTargetError}
               />
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ mt: 1 }}
+              >
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={
+                    linkState.versionPin != null
+                      ? `Pinned to v${linkState.versionPin}`
+                      : "Latest"
+                  }
+                  data-test-id="LinkEditor-version"
+                />
+                <IconButton
+                  size="small"
+                  aria-label={
+                    linkState.targetGlobalId
+                      ? `Pin version for ${linkState.targetGlobalId}`
+                      : "Pin version"
+                  }
+                  disabled={
+                    linkState.targetGlobalId === "" ||
+                    !targetValidity.ok ||
+                    !supportsVersionPin(linkState.targetGlobalId)
+                  }
+                  onClick={() => setVersionDialogOpen(true)}
+                >
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+              </Stack>
             </Box>
           </Grid>
         </>
@@ -480,6 +525,18 @@ export default function UpdateField({
         open={elnBrowserOpen}
         onCancel={() => setElnBrowserOpen(false)}
         onPick={handleElnPick}
+      />
+
+      <VersionLockDialog
+        open={versionDialogOpen}
+        globalId={linkState.targetGlobalId}
+        currentVersionPin={linkState.versionPin}
+        onConfirm={(versionPin) => {
+          setVersionDialogOpen(false);
+          // staged like every other link property; committed on Update
+          setLinkState({ ...linkState, versionPin });
+        }}
+        onCancel={() => setVersionDialogOpen(false)}
       />
     </Grid>
   );
