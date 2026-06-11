@@ -142,7 +142,11 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
 
     await user.click(screen.getByRole("button", { name: "Select columns" }));
-    expect(screen.getByRole("menu")).toBeVisible();
+    // The columns menu is identified by its distinctive "Show/Hide All" toggle;
+    // the toolbar renders more than one role="menu", so scope to this control.
+    expect(
+      screen.getByRole("checkbox", { name: "Show/Hide All" })
+    ).toBeVisible();
   });
 
   test("There should be a menu for exporting the IGSN table to CSV", async () => {
@@ -150,7 +154,11 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
 
     await user.click(screen.getByRole("button", { name: "Export" }));
-    expect(screen.getByRole("menu")).toBeVisible();
+    // Scope to the export menu's distinctive item rather than role="menu", since
+    // the toolbar renders more than one menu.
+    expect(
+      screen.getByRole("menuitem", { name: /Export to CSV/i })
+    ).toBeVisible();
   });
 
   test("Filtering by state makes API call with state parameter", async () => {

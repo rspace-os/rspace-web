@@ -240,7 +240,7 @@ describe("FolderTree", () => {
     await user.click(getTreeItemContent(/Research Projects/));
 
     // the folder should be selected
-    expect(researchProjects).toHaveAttribute("aria-selected", "true");
+    expect(researchProjects).toHaveAttribute("aria-checked", "true");
 
     // the selected folder details should be displayed
     expect(await screen.findByTestId("selected-folder")).toBeVisible();
@@ -372,7 +372,7 @@ describe("FolderTree", () => {
       name: /New Test Folder/,
     });
     const newFolder = matches.find(
-      (item) => item.getAttribute("aria-selected") === "true",
+      (item) => item.getAttribute("aria-checked") === "true",
     );
     expect(newFolder).toBeDefined();
     expect(newFolder).toBeVisible();

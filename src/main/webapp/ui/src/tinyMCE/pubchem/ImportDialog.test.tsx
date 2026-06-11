@@ -82,9 +82,12 @@ function stubEndpoints() {
 
 async function performSearch(user: ReturnType<typeof userEvent.setup>, term: string) {
   const searchInput = screen.getByRole("textbox");
+  // Paste the whole term in one step. This controlled MUI input shares its form
+  // with a Select adornment, so pasting is more reliable here than per-key typing.
   await user.clear(searchInput);
-  await user.type(searchInput, term);
-  await user.type(searchInput, "{Enter}");
+  await user.click(searchInput);
+  await user.paste(term);
+  await user.click(screen.getByRole("button", { name: "Search" }));
 }
 
 describe("ImportDialog", () => {

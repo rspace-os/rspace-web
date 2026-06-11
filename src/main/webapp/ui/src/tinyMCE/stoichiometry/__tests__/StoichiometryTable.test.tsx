@@ -510,8 +510,15 @@ describe("StoichiometryTable", () => {
         }),
       );
 
+      // The Gallery picker is a React.lazy import with a large dependency
+      // graph; allow extra time for the chunk to load and render before the
+      // dialog appears (the sibling PubChem/SMILES dialogs are not lazy).
       expect(
-        await screen.findByRole("dialog", { name: /Gallery Picker/i }),
+        await screen.findByRole(
+          "dialog",
+          { name: /Gallery Picker/i },
+          { timeout: 10000 },
+        ),
       ).toBeVisible();
     });
 

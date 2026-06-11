@@ -145,7 +145,7 @@ describe("TreeView", () => {
 
       await waitFor(() => {
         expect(treeItemByType("image")).toHaveAttribute(
-          "aria-selected",
+          "aria-checked",
           "true",
         );
       });
@@ -193,7 +193,7 @@ describe("TreeView", () => {
 
       await waitFor(() => {
         expect(treeItemByType("image")).toHaveAttribute(
-          "aria-selected",
+          "aria-checked",
           "true",
         );
       });
@@ -215,7 +215,7 @@ describe("TreeView", () => {
       await waitFor(() => {
         const selectedItems = screen
           .getAllByRole("treeitem")
-          .filter((item) => item.getAttribute("aria-selected") === "true");
+          .filter((item) => item.getAttribute("aria-checked") === "true");
         expect(selectedItems.length).toBeGreaterThanOrEqual(1);
       });
     });
