@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { makeStyles } from "tss-react/mui";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -13,23 +12,6 @@ import { stableSort } from "../../util/table";
 import Grid from "@mui/material/Grid";
 import DateField2 from "../../components/Inputs/DateField";
 import { truncateIsoTimestamp } from "../../stores/definitions/Units";
-
-const useStyles = makeStyles()(() => ({
-  button: {
-    marginTop: "0.4em",
-    marginBottom: "0.7em",
-    boxShadow: "none",
-    "&:hover": {
-      boxShadow: "none",
-    },
-    "&:focus": {
-      boxShadow: "none",
-    },
-  },
-  buttonMargin: {
-    marginLeft: "0.65em",
-  },
-}));
 
 export default function Filter({
   filter,
@@ -45,7 +27,6 @@ export default function Filter({
   // options, triggering this event.
   onOptionsFilterChange,
 }) {
-  const { classes } = useStyles();
   const [valid, setValid] = React.useState({});
 
   useEffect(resetValidity, []);
@@ -203,11 +184,11 @@ export default function Filter({
   return (
     <>
       <Grid container direction="row" spacing={1}>
-        <Grid item xs={2}>
+        <Grid size={2}>
           <SelectField name="animal_type" config={filterSpecial.animal_type} />
         </Grid>
 
-        <Grid item xs={2}>
+        <Grid size={2}>
           <SelectField
             multiple={true}
             name="animal_state"
@@ -215,29 +196,29 @@ export default function Filter({
           />
         </Grid>
 
-        <Grid item xs={2}>
+        <Grid size={2}>
           <SelectField name="sex" config={filterSpecial.sex} />
         </Grid>
 
-        <Grid item xs={2}>
+        <Grid size={2}>
           <DateField
             name="birth_date_from"
             config={filterSpecial.birth_date_from}
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={2}>
           <DateField
             name="birth_date_to"
             config={filterSpecial.birth_date_to}
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={2}>
           <DateField
             name="sacrifice_date_from"
             config={filterSpecial.sacrifice_date_from}
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={2}>
           <DateField
             name="sacrifice_date_to"
             config={filterSpecial.sacrifice_date_to}
@@ -245,29 +226,29 @@ export default function Filter({
         </Grid>
 
         {Object.entries(filter).map(([key, config]) => (
-          <Grid item xs={2} key={key}>
+          <Grid key={key} size={2}>
             <TextField
-              className={classes.input}
               label={config.label}
               variant="outlined"
               value={config.value}
-              inputProps={
-                config.type === "number" ? { inputMode: "numeric" } : {}
-              }
               error={!valid[key]}
               helperText={!valid[key] ? "Should be an integer" : null}
               onChange={(event) => handleFilterChange(event, key, config)}
               fullWidth
+              slotProps={{
+                htmlInput:
+                  config.type === "number" ? { inputMode: "numeric" } : {},
+              }}
             />
           </Grid>
         ))}
 
-        <Grid item xs={2}>
+        <Grid size={2}>
           <SelectField name="building_id" config={filterSpecial.building_id} />
         </Grid>
 
         {Object.entries(filterMultiReq).map(([key, config]) => (
-          <Grid item key={key} xs={2}>
+          <Grid key={key} size={2}>
             <FormControl fullWidth>
               <Autocomplete
                 options={stableSort(Object.values(config.enumObj), (a, b) =>
@@ -284,7 +265,6 @@ export default function Filter({
                   if (typeof option === "string") return option; // this is for when nothing is selected
                   return option.label;
                 }}
-                className={classes.input}
                 label={config.label}
                 loading={Object.values(config.enumObj).length === 0}
                 margin="dense"
@@ -312,7 +292,17 @@ export default function Filter({
       <Button
         variant="contained"
         endIcon={<ClearIcon />}
-        className={classes.button}
+        sx={{
+          mt: "0.4em",
+          mb: "0.7em",
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+          },
+          "&:focus": {
+            boxShadow: "none",
+          },
+        }}
         onClick={handleClear}
       >
         Clear
@@ -321,7 +311,18 @@ export default function Filter({
         variant="contained"
         color="primary"
         endIcon={<FilterListIcon />}
-        className={`${classes.button} ${classes.buttonMargin}`}
+        sx={{
+          mt: "0.4em",
+          mb: "0.7em",
+          ml: "0.65em",
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+          },
+          "&:focus": {
+            boxShadow: "none",
+          },
+        }}
         onClick={() => setFilterCounter(filterCounter + 1)}
       >
         Filter

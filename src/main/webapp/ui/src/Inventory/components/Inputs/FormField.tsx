@@ -1,9 +1,12 @@
 import React from "react";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { selectClasses } from "@mui/material/Select";
+import { formLabelClasses } from "@mui/material/FormLabel";
 import BaseFormField, {
   type FormFieldArgs as BaseFormFieldArgs,
 } from "../../../components/Inputs/FormField";
-import { makeStyles } from "tss-react/mui";
-import clsx from "clsx";
 
 /**
  * When not disabled and not batch editing, all of the behaviour of the more
@@ -11,34 +14,33 @@ import clsx from "clsx";
  */
 export type FormFieldArgs<T> = BaseFormFieldArgs<T>;
 
-/**
- * Do note that when Inventory form fields are disabled they are shown in
- * black, not a grey colour, as disabled form fields are used to render the
- * preview mode of the main UI.
+/*
+ * Inventory form fields are shown in black when disabled (rather than the
+ * standard grey) because disabled fields are used to render the read-only
+ * preview mode, not an inaccessible state.
  */
-const useStyles = makeStyles()(() => ({
-  formControl: {
-    "& .MuiInputBase-root.Mui-disabled, & .MuiFormControlLabel-label.Mui-disabled":
-      {
-        color: "black !important",
-        "& input": {
-          WebkitTextFillColor: "unset",
-        },
-        "& .MuiSvgIcon-root.MuiSelect-icon": {
-          display: "none",
-        },
+export const INVENTORY_FORM_FIELD_SX = {
+  [`& .${inputBaseClasses.root}.${inputBaseClasses.disabled}, & .${formControlLabelClasses.label}.${formControlLabelClasses.disabled}`]:
+    {
+      color: "black !important",
+      "& input": {
+        color: "unset",
       },
-    "& .MuiSelect-root.MuiSelect-select.MuiSelect-outlined": {
+      [`& .${svgIconClasses.root}.${selectClasses.icon}`]: {
+        display: "none",
+      },
+    },
+  [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]:
+    {
       padding: "11px 10px 10px 10px",
     },
-    "& .Mui-disabled::before": {
-      borderBottom: "0px !important",
-    },
-    "& > .MuiFormLabel-root": {
-      textTransform: "uppercase",
-    }
+  [`& .${inputBaseClasses.disabled}::before`]: {
+    borderBottom: "0px !important",
   },
-}));
+  [`& > .${formLabelClasses.root}`]: {
+    textTransform: "uppercase",
+  },
+} as const;
 
 /**
  * This component renders form fields specifically used by the main Inventory
@@ -55,11 +57,5 @@ const useStyles = makeStyles()(() => ({
  * than having to enter a completely separate edit mode.
  */
 export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
-  const { classes } = useStyles();
-  return (
-    <BaseFormField
-      {...props}
-      className={clsx(props.className, classes.formControl)}
-    />
-  );
+  return <BaseFormField {...props} sx={INVENTORY_FORM_FIELD_SX} />;
 }

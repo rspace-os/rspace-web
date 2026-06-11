@@ -1,8 +1,7 @@
 import React from "react";
-import { clamp } from "../util/Util";
-import { makeStyles } from "tss-react/mui";
+import { clamp } from "@/util/Util";
 import { observer } from "mobx-react-lite";
-import { type Point } from "../util/types";
+import type { Point } from "@/util/types";
 
 const getParentDiv = (node: Element): HTMLElement => {
   const div = node.closest("div");
@@ -21,18 +20,6 @@ type DraggableArgs = {
   onDragEnd: () => void;
 };
 
-const useStyles = makeStyles<{ draggable: boolean; position: Point }>()(
-  (theme, { draggable, position }) => ({
-    container: {
-      position: "absolute",
-      left: position.x,
-      top: position.y,
-      touchAction: "none",
-      cursor: draggable ? "move" : "default",
-    },
-  })
-);
-
 /*
  * General purpose wrapper for draggable components.
  * Parent must have CSS property "display: relative"
@@ -49,7 +36,6 @@ function Draggable({
 }: DraggableArgs): React.ReactNode {
   const [dragging, setDragging] = React.useState(false);
   const [position, setPosition] = React.useState(initial);
-  const { classes } = useStyles({ position, draggable });
 
   // wherever the user clicks inside this component, that precise point should
   // be the handle i.e. there shouldn't be a jolt where a corner becomes the anchor
@@ -164,7 +150,13 @@ function Draggable({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
-      className={classes.container}
+      style={{
+        position: "absolute",
+        left: position.x,
+        top: position.y,
+        touchAction: "none",
+        cursor: draggable ? "move" : "default",
+      }}
     >
       {children}
     </div>

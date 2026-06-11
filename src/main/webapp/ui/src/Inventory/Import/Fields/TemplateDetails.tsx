@@ -1,7 +1,7 @@
 import useStores from "../../../stores/use-stores";
 import * as Parsers from "../../../util/parsers";
 import SummaryInfo from "../../Template/SummaryInfo";
-import HelpTextAlert from "../../../components/HelpTextAlert";
+import Alert from "@mui/material/Alert";
 import TemplateName from "./TemplateName";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -38,9 +38,9 @@ function TemplateDetails(): ReactNode {
         control={<Radio color="primary" />}
         label="Create new template."
       />
-      <Box ml={4} mb={4} mt={1}>
+      <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
-          <FormGroup style={{ maxWidth: 660 }}>
+          <FormGroup sx={{ maxWidth: 660 }}>
             <TemplateName
               disabled={importStore.importData?.createNewTemplate === false}
             />
@@ -52,9 +52,9 @@ function TemplateDetails(): ReactNode {
         control={<Radio color="primary" />}
         label="Choose existing template."
       />
-      <Box ml={4}>
+      <Box sx={{ ml: 4 }}>
         <SummaryInfo template={importStore.importData?.template ?? null} />
-        <Box mb={1}>
+        <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
         <TemplatePicker
@@ -64,14 +64,12 @@ function TemplateDetails(): ReactNode {
             importStore.importData?.setDefaultUnitId(t.defaultUnitId);
           }}
         />
-        <HelpTextAlert
-          text="Select a template from which these imported samples will be created."
-          condition={
-            !importStore.importData?.createNewTemplate &&
-            !importStore.importData?.template
-          }
-          severity="info"
-        />
+        {!importStore.importData?.createNewTemplate &&
+        !importStore.importData?.template ? (
+          <Alert severity="info">
+            {"Select a template from which these imported samples will be created."}
+          </Alert>
+        ) : null}
       </Box>
     </RadioGroup>
   );

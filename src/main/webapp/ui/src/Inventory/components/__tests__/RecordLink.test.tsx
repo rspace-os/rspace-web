@@ -9,6 +9,7 @@ import {
 } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { storesContext } from "@/stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
+import { chipClasses } from "@mui/material/Chip";
 import materialTheme from "../../../theme";
 import NavigateContext from "../../../stores/contexts/Navigate";
 
@@ -107,7 +108,9 @@ describe("RecordLink", () => {
     } as typeof container;
     renderRecordLink(recordWithoutPermalink);
 
-    const chipRoot = screen.getByText("A list container").closest(".MuiChip-root");
+    const chipRoot = screen
+      .getByText("A list container")
+      .closest(`.${chipClasses.root}`);
     expect(chipRoot).not.toHaveStyle({ cursor: "pointer" });
   });
 

@@ -10,7 +10,7 @@ export default function ColumnVisibilitySettingsButton({
   return (
     <>
       <Typography
-        style={{ marginLeft: "15px" }}
+        sx={{ marginLeft: "15px" }}
         component="span"
         variant="body1"
         color="textPrimary"

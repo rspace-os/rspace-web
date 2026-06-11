@@ -9,6 +9,9 @@ import materialTheme, { COLORS } from "../../theme";
 import Analytics from "../../components/Analytics";
 import CssBaseline from "@mui/material/CssBaseline";
 import { hslToHex } from "../../util/colors";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
@@ -18,7 +21,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <StyledEngineProvider injectFirst>
+        <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider
             theme={{
               ...materialTheme,
@@ -71,13 +74,15 @@ window.addEventListener("load", () => {
             }}
           >
             <CssBaseline />
-            <Analytics>
-              <ErrorBoundary>
-                <Alerts>
-                  <App />
-                </Alerts>
-              </ErrorBoundary>
-            </Analytics>
+            <QueryClientProvider client={queryClient}>
+              <Analytics>
+                <ErrorBoundary>
+                  <Alerts>
+                    <App />
+                  </Alerts>
+                </ErrorBoundary>
+              </Analytics>
+            </QueryClientProvider>
           </ThemeProvider>
         </StyledEngineProvider>
       </React.StrictMode>

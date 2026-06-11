@@ -10,7 +10,6 @@ import FieldTypeMenu from "./FieldTypeMenu";
 import UploadFormControl from "./FormControl";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TableCell from "./TableCell";
 import TableRow from "@mui/material/TableRow";
@@ -23,36 +22,8 @@ import {
 import { FIELD_DATA } from "../../../stores/models/FieldTypes";
 import { toTitleCase, match } from "../../../util/Util";
 import { observer } from "mobx-react-lite";
-import { withStyles } from "../../../util/styles";
-import { makeStyles } from "tss-react/mui";
+import { useTheme } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
-
-const useStyles = makeStyles()(() => ({
-  fieldIconButton: {
-    padding: 0,
-  },
-  fieldSelect: {
-    width: "100%",
-  },
-  extendedSection: {
-    paddingTop: 0,
-    paddingBottom: 0,
-  },
-  extendedSectionCell: {
-    padding: 0,
-  },
-}));
-
-const CustomTableRow = withStyles<
-  React.ComponentProps<typeof TableRow> & { open: boolean },
-  { root: string }
->((theme, { open }) => ({
-  root: {
-    "&:hover": {
-      backgroundColor: open ? "initial" : theme.palette.hover.tableRow,
-    },
-  },
-}))(TableRow);
 
 type ColumnFieldMapRowArgs = {
   columnFieldMap: ColumnFieldMap;
@@ -61,7 +32,7 @@ type ColumnFieldMapRowArgs = {
 
 function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
   const [open, setOpen] = useState(false);
-  const { classes } = useStyles();
+  const theme = useTheme();
 
   const renderClosedFieldSelectLabel = (fieldSymbolKey: string) =>
     match<string, string>([
@@ -82,7 +53,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
     const field = Symbol.for(value);
     columnFieldMap.updateField(field);
     columnFieldMap.setChosenFieldType(
-      getTypeOfField(field) ?? columnFieldMap.fieldType
+      getTypeOfField(field) ?? columnFieldMap.fieldType,
     );
     setOpen(field === Fields.custom);
     // handle auto-un/selection
@@ -94,7 +65,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
 
   return (
     <>
-      <CustomTableRow open={open}>
+      <TableRow sx={{ "&:hover": { backgroundColor: open ? "initial" : theme.palette.hover.tableRow } }}>
         <TableCell padding="checkbox">
           <Checkbox
             checked={columnFieldMap.selected}
@@ -118,14 +89,14 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
           )}
         </TableCell>
         <TableCell width={1}>
-          <IconButton disabled className={classes.fieldIconButton}>
+          <IconButton disabled sx={{ p: 0 }}>
             {FIELD_DATA[columnFieldMap.chosenFieldType].icon}
           </IconButton>
         </TableCell>
         <TableCell nopadding={true} padding="none" align="left" width="30%">
           <Select
             variant="standard"
-            className={classes.fieldSelect}
+            sx={{ width: "100%" }}
             name="field"
             value={Symbol.keyFor(columnFieldMap.field)}
             onChange={onTypeChange}
@@ -138,7 +109,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
                 field={f}
                 currentField={columnFieldMap.field}
                 typeIsCompatibleWithField={columnFieldMap.isCompatibleWithField(
-                  f
+                  f,
                 )}
               />
             ))}
@@ -162,24 +133,32 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
             </IconButton>
           </CustomTooltip>
         </TableCell>
-      </CustomTableRow>
+      </TableRow>
       {!existingTemplate && (
-        <TableRow className={classes.extendedSection}>
-          <TableCell
-            borderless={!open}
-            colSpan={5}
-            className={classes.extendedSectionCell}
-          >
+        <TableRow>
+          <TableCell borderless={!open} colSpan={5} sx={{ p: 0 }}>
             <Collapse in={open} unmountOnExit>
               <Grid container direction="row" spacing={0}>
-                <Grid item xs={12} sm={4} md={5}>
-                  <Box p={1}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 4,
+                    md: 5,
+                  }}
+                >
+                  <Box sx={{ p: 1 }}>
                     <UploadFormControl label="Custom Field Name" error={false}>
                       <FieldNameStringField columnFieldMap={columnFieldMap} />
                     </UploadFormControl>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={8} md={7}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 8,
+                    md: 7,
+                  }}
+                >
                   <FieldTypeMenu columnFieldMap={columnFieldMap} />
                 </Grid>
               </Grid>

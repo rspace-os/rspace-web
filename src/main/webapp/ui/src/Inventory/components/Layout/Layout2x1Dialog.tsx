@@ -5,61 +5,28 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import React from "react";
 import useStores from "../../../stores/use-stores";
-import { withStyles } from "Styles";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
-import clsx from "clsx";
 import { useIsSingleColumnLayout } from "./Layout2x1";
 
 // Full height and full width
-const AlmostFullscreenDialog = withStyles<
-  { children: React.ReactNode } & React.ComponentProps<typeof Dialog>,
-  { root: string; paper: string }
->(() => ({
-  root: {
-    userSelect: "none",
-  },
-  paper: {
-    height: "100%",
-  },
-}))(({ children, ...props }) => (
-  <Dialog {...props} maxWidth="xl" fullWidth>
-    {children}
-  </Dialog>
-));
-
-const useStyles = makeStyles<{ isSingleColumnLayout: boolean }>()(
-  (theme, { isSingleColumnLayout }) => ({
-    content: {
-      padding: "0 !important",
-      overflowX: "hidden",
-      /*
-       * This is so that absolutely positioned elments inside the dialog
-       * automatically move as the dialog content is scrolled
-       */
-      position: "relative",
-      border: "none",
-    },
-    container: {
-      justifyContent: "space-between",
-      gap: theme.spacing(1),
-      flexWrap: "nowrap",
-      paddingLeft: theme.spacing(1),
-      paddingRight: theme.spacing(1),
-    },
-    leftPane: {
-      maxWidth: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
-      flexBasis: `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`,
-    },
-    rightPane: {
-      maxWidth: `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`,
-      flexBasis: `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`,
-    },
-    hide: {
-      display: "none",
-    },
-  }),
-);
+function AlmostFullscreenDialog({
+  children,
+  ...props
+}: { children: React.ReactNode } & React.ComponentProps<
+  typeof Dialog
+>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      maxWidth="xl"
+      fullWidth
+      sx={{ userSelect: "none" }}
+      slotProps={{ paper: { sx: { height: "100%" } } }}
+    >
+      {children}
+    </Dialog>
+  );
+}
 
 type Layout2x1DialogArgs = {
   open: boolean;
@@ -73,9 +40,8 @@ type Layout2x1DialogArgs = {
 function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
-  const { classes } = useStyles({
-    isSingleColumnLayout,
-  });
+  const leftPaneWidth = `${((isSingleColumnLayout ? 12 : 5) / 12) * 100}%`;
+  const rightPaneWidth = `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`;
 
   return (
     <AlmostFullscreenDialog
@@ -87,27 +53,49 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
         typeof props.dialogTitle !== "undefined" && (
           <DialogTitle>{props.dialogTitle}</DialogTitle>
         )}
-      <DialogContent dividers className={classes.content}>
-        <Grid container className={classes.container}>
+      <DialogContent
+        dividers
+        sx={{
+          p: "0 !important",
+          overflowX: "hidden",
+          /*
+           * This is so that absolutely positioned elments inside the dialog
+           * automatically move as the dialog content is scrolled
+           */
+          position: "relative",
+          border: "none",
+        }}
+      >
+        <Grid
+          container
+          sx={{
+            justifyContent: "space-between",
+            gap: 1,
+            flexWrap: "nowrap",
+            px: 1,
+          }}
+        >
           <Grid
-            item
-            className={clsx(
-              classes.leftPane,
-              isSingleColumnLayout &&
-                !(uiStore.dialogVisiblePanel === "left") &&
-                classes.hide,
-            )}
+            sx={{
+              maxWidth: leftPaneWidth,
+              flexBasis: leftPaneWidth,
+              ...(isSingleColumnLayout &&
+              !(uiStore.dialogVisiblePanel === "left")
+                ? { display: "none" }
+                : {}),
+            }}
           >
             {props.colLeft}
           </Grid>
           <Grid
-            item
-            className={clsx(
-              classes.rightPane,
-              isSingleColumnLayout &&
-                !(uiStore.dialogVisiblePanel === "right") &&
-                classes.hide,
-            )}
+            sx={{
+              maxWidth: rightPaneWidth,
+              flexBasis: rightPaneWidth,
+              ...(isSingleColumnLayout &&
+              !(uiStore.dialogVisiblePanel === "right")
+                ? { display: "none" }
+                : {}),
+            }}
           >
             {props.colRight}
           </Grid>

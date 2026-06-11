@@ -2,6 +2,7 @@ import { test, describe, expect } from 'vitest';
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { Heading, HeadingContext } from "../DynamicHeadingLevel";
+import { typographyClasses } from "@mui/material/Typography";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 describe("DynamicHeadingLevel", () => {
@@ -111,7 +112,7 @@ describe("DynamicHeadingLevel", () => {
     );
     expect(
       screen.getByRole("heading", { name: /Test/, level: 2 }).className
-    ).toMatch(/MuiTypography-h5/);
+    ).toMatch(typographyClasses.h5);
 
   });
   test("Variant should default to the level.", () => {
@@ -125,6 +126,6 @@ describe("DynamicHeadingLevel", () => {
     );
     expect(
       screen.getByRole("heading", { name: /Test/, level: 3 }).className
-    ).toMatch(/MuiTypography-h3/);
+    ).toMatch(typographyClasses.h3);
   });
 });

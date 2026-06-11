@@ -3,7 +3,7 @@ import SkipToContentMenu from "../../components/SkipToContentMenu";
 import { LandmarksProvider } from "../../components/LandmarksContext";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider, styled, lighten } from "@mui/material/styles";
+import { ThemeProvider, lighten } from "@mui/material/styles";
 import createAccentedTheme from "../../accentedTheme";
 import {
   SELECTED_OR_FOCUS_BLUE,
@@ -28,8 +28,7 @@ import Alerts from "../../components/Alerts/Alerts";
 import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
 import { GallerySelection, useGallerySelection } from "./useGallerySelection";
-import { BrowserRouter, Navigate } from "react-router-dom";
-import { Routes, Route, useParams } from "react-router";
+import { BrowserRouter, Navigate, Routes, Route, useParams } from "react-router-dom";
 import useUiPreference, {
   PREFERENCES,
   UiPreferences,
@@ -71,32 +70,31 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
  */
 const EMPTY_PATH = Object.freeze([]) as ReadonlyArray<GalleryFile>;
 
-const WholePage = styled(
-  ({
-    listingOf,
-    setSelectedSection,
-    setPath,
-    autoSelect,
-    title,
+const WholePage = ({
+  listingOf,
+  setSelectedSection,
+  setPath,
+  autoSelect,
+  title,
+}: {
+  listingOf:
+    | {
+        tag: "section";
+        section: GallerySection;
+        path: ReadonlyArray<GalleryFile>;
+      }
+    | { tag: "folder"; folderId: number };
+  setSelectedSection: ({ mediaType }: { mediaType: GallerySection }) => void;
+  setPath: (path: ReadonlyArray<GalleryFile>) => void;
+  autoSelect?: ReadonlyArray<number>;
+  title: ({
+    path,
+    section,
   }: {
-    listingOf:
-      | {
-          tag: "section";
-          section: GallerySection;
-          path: ReadonlyArray<GalleryFile>;
-        }
-      | { tag: "folder"; folderId: number };
-    setSelectedSection: ({ mediaType }: { mediaType: GallerySection }) => void;
-    setPath: (path: ReadonlyArray<GalleryFile>) => void;
-    autoSelect?: ReadonlyArray<number>;
-    title: ({
-      path,
-      section,
-    }: {
-      path: ReadonlyArray<GalleryFile>;
-      section: GallerySection;
-    }) => string;
-  }) => {
+    path: ReadonlyArray<GalleryFile>;
+    section: GallerySection;
+  }) => string;
+}) => {
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
       PREFERENCES.GALLERY_SORT_BY,
@@ -181,7 +179,22 @@ const WholePage = styled(
     }, [listingOf, path]);
 
     return (
-      <>
+      <Box
+        sx={{
+          "@keyframes drop": {
+            "0%": {
+              borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+            },
+            "50%": {
+              borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.8),
+            },
+            "100%": {
+              borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+            },
+          },
+          height: "100%",
+        }}
+      >
         <CallableImagePreview>
           <CallablePdfPreview>
             <CallableAsposePreview>
@@ -302,22 +315,9 @@ const WholePage = styled(
             </CallableAsposePreview>
           </CallablePdfPreview>
         </CallableImagePreview>
-      </>
+      </Box>
     );
-  },
-)(() => ({
-  "@keyframes drop": {
-    "0%": {
-      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
-    },
-    "50%": {
-      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.8),
-    },
-    "100%": {
-      borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
-    },
-  },
-}));
+  };
 
 /**
  * This component is responsible for rendering the gallery when no folder is
@@ -478,7 +478,7 @@ const queryClient = new QueryClient();
 
 export function Gallery() {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>

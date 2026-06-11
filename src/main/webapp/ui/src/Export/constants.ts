@@ -34,7 +34,7 @@ export const DEFAULT_STATE = {
     maxFileSizeInMB: 50 as number | string,
   },
   exportDetails: {
-    archiveType: "" as ArchiveType | "",
+    archiveType: "",
     repository: false,
     fileStores: false,
     allVersions: false,

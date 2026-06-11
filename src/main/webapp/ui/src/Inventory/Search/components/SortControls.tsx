@@ -2,30 +2,24 @@ import React, { useContext, useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
 import { match, toTitleCase } from "../../../util/Util";
 import SvgIcon from "@mui/material/SvgIcon";
-import { StyledMenu, StyledMenuItem } from "../../../components/StyledMenu";
+import StyledMenu from "../../../components/StyledMenu";
+import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
-import { makeStyles } from "tss-react/mui";
 import SearchContext from "../../../stores/contexts/Search";
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
 import DropdownButton from "../../../components/DropdownButton";
 import { type SortProperty } from "../../components/Tables/SortableProperty";
 
-const useStyles = makeStyles<{ disabled: boolean }>()(
-  (theme, { disabled }) => ({
-    icon: {
-      borderRadius: theme.spacing(1),
-      color: disabled ? "inherit" : theme.palette.standardIcon.main,
-    },
-  }),
-);
-
-const SortAZIcon = ({ className }: { className?: string }) => (
+const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
   <SvgIcon
     focusable="false"
     viewBox="0 0 50 50"
     role="presentation"
-    className={className}
+    sx={(theme) => ({
+      borderRadius: theme.spacing(1),
+      color: disabled ? "inherit" : theme.palette.standardIcon.main,
+    })}
   >
     <g>
       <path
@@ -77,11 +71,10 @@ function SortControls(): React.ReactNode {
 
   const disabled =
     search.searchView === "IMAGE" || search.searchView === "GRID";
-  const { classes } = useStyles({ disabled });
   return (
     <>
       <DropdownButton
-        name={<SortAZIcon className={classes.icon} />}
+        name={<SortAZIcon disabled={disabled} />}
         onClick={handleClick}
         disabled={disabled}
         title={
@@ -98,7 +91,7 @@ function SortControls(): React.ReactNode {
         >
           {sortProperties.map(({ key, label, adjustColumn }) => {
             return (
-              <StyledMenuItem
+              <MenuItem
                 key={key}
                 onClick={() =>
                   setOrder({
@@ -111,7 +104,7 @@ function SortControls(): React.ReactNode {
                 aria-current={search.fetcher.isCurrentSort(key)}
               >
                 <ListItemText primary={menuItemLabel(key, label)} />
-              </StyledMenuItem>
+              </MenuItem>
             );
           })}
         </StyledMenu>

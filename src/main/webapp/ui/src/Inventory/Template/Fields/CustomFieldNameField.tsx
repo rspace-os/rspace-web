@@ -66,7 +66,7 @@ function NameField({
     <Typography
       variant="h6"
       component="h6"
-      style={{ overflowWrap: "anywhere" }}
+      sx={{ overflowWrap: "anywhere" }}
       id={id}
     >
       {field.name}

@@ -9,8 +9,7 @@ import React from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Grid";
-
+import Stack from "@mui/material/Stack";
 const Title = observer(() => {
   const { moveStore, peopleStore } = useStores();
   const activeResult = moveStore.activeResult;
@@ -30,7 +29,6 @@ const Title = observer(() => {
   }
   return <NameWithBadge record={activeResult} />;
 });
-
 const Content = observer(() => {
   const { moveStore } = useStores();
   const activeResult = moveStore.activeResult;
@@ -42,20 +40,19 @@ const Content = observer(() => {
         differentSearchForSettingActiveResult: activeResult.contentSearch,
       }}
     >
-      <Grid container direction="column" spacing={1} wrap="nowrap">
-        <Grid item>
-          <MoveInstructions />
-        </Grid>
-        <Grid item>
-          <SearchView contextMenuId={menuIDs.NONE} />
-        </Grid>
-      </Grid>
+      <Stack
+        sx={{
+          flexWrap: "nowrap",
+        }}
+        spacing={1}
+      >
+        <MoveInstructions />
+        <SearchView contextMenuId={menuIDs.NONE} />
+      </Stack>
     </SearchContext.Provider>
   ) : null;
 });
-
 type RightPanelArgs = Record<string, never>;
-
 function RightPanel() {
   return (
     <Card elevation={0}>
@@ -65,17 +62,24 @@ function RightPanel() {
             Selected Destination: <Title />
           </>
         }
-        sx={{ py: 1 }}
-        titleTypographyProps={{
-          variant: "h6",
-          component: "h3",
+        sx={{
+          py: 1,
+        }}
+        slotProps={{
+          title: {
+            variant: "h6",
+            component: "h3",
+          },
         }}
       />
-      <CardContent sx={{ pt: 0 }}>
+      <CardContent
+        sx={{
+          pt: 0,
+        }}
+      >
         <Content />
       </CardContent>
     </Card>
   );
 }
-
 export default observer(RightPanel);

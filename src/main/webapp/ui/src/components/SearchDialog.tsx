@@ -8,11 +8,12 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 import docLinks from "../assets/DocLinks";
-import { withStyles } from "Styles";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 type TextAreaDialogArgs = {
   query: string;
@@ -20,16 +21,6 @@ type TextAreaDialogArgs = {
   setQuery: (event: { target: { value: string } }) => void;
   visible: boolean;
 };
-
-const Samp = withStyles<{ children: React.ReactNode }, { root: string }>(
-  (theme) => ({
-    root: {
-      backgroundColor: "#eee",
-      borderRadius: 3,
-      padding: theme.spacing(0.125, 0.25),
-    },
-  }),
-)(({ classes, children }) => <samp className={classes.root}>{children}</samp>);
 
 export default function TextAreaDialog({
   onSubmit,
@@ -54,28 +45,32 @@ export default function TextAreaDialog({
       <Dialog open={dialogOpen} onClose={onClose}>
         <DialogTitle>Search query</DialogTitle>
         <DialogContent>
-          <Grid container direction="column" spacing={2}>
-            <Grid item>
-              <TextField
-                onChange={setQuery}
-                onKeyPress={(e) => {
-                  /*
-                   * Prevent the enter key because whilst we are giving more
-                   * vertical space for the text to wrap, the search query must
-                   * still be a single line of text.
-                   */
-                  if (e.key === "Enter") e.preventDefault();
-                }}
-                value={query}
-                multiline
-                fullWidth
-                rows={6}
-              />
-            </Grid>
-            <Grid item>
+          <Stack spacing={2}>
+            <TextField
+              onChange={setQuery}
+              onKeyPress={(e) => {
+                /*
+                 * Prevent the enter key because whilst we are giving more
+                 * vertical space for the text to wrap, the search query must
+                 * still be a single line of text.
+                 */
+                if (e.key === "Enter") e.preventDefault();
+              }}
+              value={query}
+              multiline
+              fullWidth
+              rows={6}
+            />
+            <Box>
               <DialogContentText>
                 Tip: Create powerful Lucene queries by prefixing your query with{" "}
-                <Samp>l:</Samp>
+                <Typography
+                  variant="inherit"
+                  component="samp"
+                  sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
+                >
+                  l:
+                </Typography>
               </DialogContentText>
               <DialogContentText>
                 For more information, see{" "}
@@ -96,8 +91,8 @@ export default function TextAreaDialog({
                 </a>
                 .
               </DialogContentText>
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setQuery({ target: { value: "" } })}>

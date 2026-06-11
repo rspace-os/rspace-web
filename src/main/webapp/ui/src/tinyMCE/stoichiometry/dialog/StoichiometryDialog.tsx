@@ -196,8 +196,8 @@ export default function StoichiometryDialog({
   return (
     <Dialog
       open={actuallyOpen}
-      disableEscapeKeyDown={isRequestInFlight}
       onClose={(_event, _reason) => {
+        if (isRequestInFlight) return;
         if (currentStoichiometry !== null) {
           void tableCloseHandlerRef.current?.();
           return;
@@ -222,11 +222,13 @@ export default function StoichiometryDialog({
         <>
           <DialogContent>
             <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              gap={2}
-              py={4}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+                py: 4,
+              }}
             >
               <Typography variant="body1" align="center">
                 Click the button below to calculate the stoichiometry data for
@@ -266,13 +268,15 @@ export default function StoichiometryDialog({
             <>
               <DialogContent>
                 <Box
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="center"
-                  alignItems="center"
-                  minHeight={100}
-                  my={2}
-                  gap={1}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 100,
+                    my: 2,
+                    gap: 1,
+                  }}
                 >
                   <CircularProgress
                     size={24}

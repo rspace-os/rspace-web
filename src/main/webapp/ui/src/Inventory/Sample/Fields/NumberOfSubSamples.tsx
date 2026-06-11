@@ -9,16 +9,8 @@ import RadioField, {
   OptionHeading,
   OptionExplanation,
 } from "../../../components/Inputs/RadioField";
-import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
 import { textFieldClasses } from "@mui/material/TextField";
-
-const NestedFormField = styled(FormField<string>)(({ theme }) => ({
-  marginTop: "0 !important",
-  marginLeft: `${theme.spacing(4)} !important`,
-  [`& .${textFieldClasses.root}`]: {
-    maxWidth: `min(100px, calc(100% - ${theme.spacing(4)}))`,
-  },
-}));
 
 const MIN = 2;
 const MAX = 100;
@@ -133,29 +125,41 @@ function NumberOfSubSamples({
         )}
       />
       {type === "MANY" && (
-        <NestedFormField
-          helperText={errorMessage}
-          explanation={
-            fixedNumberOfSubSamples
-              ? "You can create and move additional subsamples into the container once the sample is created."
-              : ""
-          }
-          label={`Number of ${sample.subSampleAlias.plural}`}
-          error={!valid}
-          value={count}
-          disabled={fixedNumberOfSubSamples}
-          renderInput={(props) => (
-            <NumberField
-              {...props}
-              onChange={handleChange}
-              inputProps={{
-                min: MIN,
-                max: MAX,
-                step: 1,
-              }}
-            />
-          )}
-        />
+        <Box
+          sx={(theme) => ({
+            marginTop: "0 !important",
+            marginLeft: `${theme.spacing(4)} !important`,
+            [`& .${textFieldClasses.root}`]: {
+              maxWidth: `min(100px, calc(100% - ${theme.spacing(4)}))`,
+            },
+          })}
+        >
+          <FormField
+            helperText={errorMessage}
+            explanation={
+              fixedNumberOfSubSamples
+                ? "You can create and move additional subsamples into the container once the sample is created."
+                : ""
+            }
+            label={`Number of ${sample.subSampleAlias.plural}`}
+            error={!valid}
+            value={count}
+            disabled={fixedNumberOfSubSamples}
+            renderInput={(props) => (
+              <NumberField
+                {...props}
+                onChange={handleChange}
+                slotProps={{
+                  htmlInput: {
+                    min: MIN,
+                    max: MAX,
+                    step: 1,
+                  },
+                }}
+              />
+            )}
+          />
+        </Box>
       )}
     </>
   );

@@ -7,6 +7,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@mui/material/styles";
+import { buttonClasses } from "@mui/material/Button";
 import materialTheme from "@/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsDisassociateButton from "../RaidConnectionsDisassociateButton";
@@ -112,7 +113,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
 
       const button = screen.getByRole("button", { name: /disassociate/i });
-      expect(button).toHaveClass("MuiButton-colorError");
+      expect(button).toHaveClass(buttonClasses.colorError);
     });
 
     it("Should not show dialog initially", () => {

@@ -211,24 +211,24 @@ function AttachmentTableRow<
         <NameWithBadge record={attachment} />
       </TableCell>
       <TableCell width={1}>
-        <Grid container direction="row" spacing={1} wrap="nowrap">
-          <Grid item>
+        <Grid container direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
+          <Grid>
             <Preview attachment={attachment} />
           </Grid>
-          <Grid item>
+          <Grid>
             <ChemicalPreview attachment={attachment} />
           </Grid>
-          <Grid item>
+          <Grid>
             <SetAsPreviewImage
               attachment={attachment}
               disabled={!editable || !attachment.previewSupported}
               fieldOwner={fieldOwner}
             />
           </Grid>
-          <Grid item>
+          <Grid>
             <Download attachment={attachment} />
           </Grid>
-          <Grid item>
+          <Grid>
             <DeleteButton
               onClick={() => {
                 attachment.remove();

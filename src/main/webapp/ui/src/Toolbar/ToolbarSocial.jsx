@@ -1,18 +1,19 @@
+/* global MSTEAMS, SLACK */
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Badge from "@mui/material/Badge";
+import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell } from "@fortawesome/free-solid-svg-icons/faBell";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons/faEnvelope";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons/faPaperPlane";
 
-const SocialActionsWrapper = styled.div`
-  display: flex;
-`;
-
+/**
+ * Toolbar actions for messages and notifications.
+ */
 export default function ToolbarSocial(props) {
   const [notificationCount, setNotificationCount] = React.useState(0);
   const [messageCount, setMessageCount] = React.useState(0);
@@ -24,18 +25,20 @@ export default function ToolbarSocial(props) {
         setNotificationCount(response.data.data.notificationCount);
         setMessageCount(response.data.data.messageCount);
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
     };
     getNotifications();
     // update notifications and messages every 10s
-    setInterval(() => {
+    const intervalId = setInterval(() => {
       getNotifications();
     }, 10 * 1000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
-    <SocialActionsWrapper style={props.style}>
+    <Box sx={{ display: "flex", ...props.sx }}>
       <Tooltip title="Notifications" enterDelay={300}>
         <IconButton
           id="openNotificationDlgLink"
@@ -76,12 +79,17 @@ export default function ToolbarSocial(props) {
           <IconButton
             color="inherit"
             data-test-id="toolbar-send-message-slack"
-            style={{ backgroundColor: "white" }}
+            sx={{ backgroundColor: "white" }}
             className="createExtMessage"
             data-app="SLACK"
             aria-label="Send a message on Slack"
           >
-            <img src="/images/icons/slack.png" style={{ width: "24px" }} />
+            <Box
+              component="img"
+              src="/images/icons/slack.png"
+              alt="Slack"
+              sx={{ width: "24px" }}
+            />
           </IconButton>
         </Tooltip>
       )}
@@ -89,18 +97,26 @@ export default function ToolbarSocial(props) {
         <Tooltip title="Send message on MicrosoftTeams" enterDelay={300}>
           <IconButton
             data-test-id="toolbar-send-message-teams"
-            style={{ backgroundColor: "white" }}
+            sx={{ backgroundColor: "white" }}
             className="createExtMessage"
             data-app="MSTEAMS"
             aria-label="Send message on MicrosoftTeams"
           >
-            <img
+            <Box
+              component="img"
               src="/images/icons/microsoftteams.png"
-              style={{ width: "24px" }}
+              alt="Microsoft Teams"
+              sx={{ width: "24px" }}
             />
           </IconButton>
         </Tooltip>
       )}
-    </SocialActionsWrapper>
+    </Box>
   );
 }
+
+ToolbarSocial.propTypes = {
+  onCreateRequest: PropTypes.func,
+  showExternal: PropTypes.bool,
+  sx: PropTypes.object,
+};

@@ -21,7 +21,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import EmailValidator from "email-validator";
 import FormHelperText from "@mui/material/FormHelperText";
-import styled from "@emotion/styled";
 import axios from "@/common/axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons/faUserPlus";
@@ -228,10 +227,10 @@ export default function ExportRepoUser({
   };
 
   return (
-    <Grid container item>
-      <Grid item xs={12} sx={{ mt: 2.5 }}>
-        <AddUsers>
-          <div className="child1">
+    <Grid container>
+      <Grid sx={{ mt: 2.5 }} size={12}>
+        <Grid container sx={{ display: "flex" }}>
+          <Grid sx={{ flexGrow: 1 }}>
             <FormLabel
               error={
                 exportDialogSubmitAttempt &&
@@ -249,13 +248,13 @@ export default function ExportRepoUser({
             >
               Add author(s) AND contact(s) to your repository export.
             </FormHelperText>
-          </div>
-          <Tooltip title="Add author/contact" className="child2">
+          </Grid>
+          <Tooltip title="Add author/contact" sx={{ flexGrow: 0, width: "auto" }}>
             <IconButton onClick={() => setOpen(true)} data-test-id="add-user">
               <FontAwesomeIcon icon={faUserPlus} />
             </IconButton>
           </Tooltip>
-        </AddUsers>
+        </Grid>
       </Grid>
       <AdditionalUserDialog
         open={open}
@@ -265,7 +264,7 @@ export default function ExportRepoUser({
           updatePeople([...people, person]);
         }}
       />
-      <Grid item xs={12}>
+      <Grid size={12}>
         <List>
           {people.map((option, index) => (
             <ListItem key={option.email + option.type}>
@@ -295,13 +294,3 @@ export default function ExportRepoUser({
   );
 }
 
-const AddUsers = styled.div`
-  display: flex;
-  .child1 {
-    flex-grow: 1;
-  }
-  .child2 {
-    flex-grow: 0;
-    width: auto;
-  }
-`;

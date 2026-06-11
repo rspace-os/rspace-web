@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import LoadingFade from "../components/LoadingFade";
 import axios from "@/common/axios";
@@ -121,7 +121,7 @@ export default function ExportFileStore({
       maxArchiveSizeBytes: 0,
       scanResultsTotalFileSize: 0,
       currentlyAllowedArchiveSizeBytes: 0,
-    })
+    }),
   );
 
   const confirm = useConfirm();
@@ -136,7 +136,7 @@ export default function ExportFileStore({
           !(await confirm(
             "",
             "You are not logged into all required File Systems and some filestore links won't be exported. Do you want to proceed without logging in?",
-            "Yes, proceed"
+            "Yes, proceed",
           ))
         )
           return false;
@@ -147,7 +147,7 @@ export default function ExportFileStore({
           !(await confirm(
             "",
             "You have not performed links availability scan. We strongly recommend running it, as it will report any potential problems with accessing filestore link. Do you want to proceed without running the scan?",
-            "Yes, proceed"
+            "Yes, proceed",
           ))
         )
           return false;
@@ -182,7 +182,7 @@ export default function ExportFileStore({
             )}
           </>,
           "OK",
-          ""
+          "",
         );
         return false;
       }
@@ -205,7 +205,7 @@ export default function ExportFileStore({
       setFileSystems(fileSystems);
 
       const newTotalFilesFound = sum(
-        fileSystems.map((fs) => fs.foundNfsLinks.length)
+        fileSystems.map((fs) => fs.foundNfsLinks.length),
       );
       setTotalFilesFound(newTotalFilesFound);
 
@@ -230,8 +230,8 @@ export default function ExportFileStore({
     const omittedCount = sum(
       fileSystems.map(
         // checkedNfsLinkMessages will contain an error message for each link that is to be omitted
-        (fileSystem) => Object.keys(fileSystem.checkedNfsLinkMessages).length
-      )
+        (fileSystem) => Object.keys(fileSystem.checkedNfsLinkMessages).length,
+      ),
     );
 
     const isFile = (link: MixedLink): link is FileLink => link.type === "file";
@@ -242,34 +242,34 @@ export default function ExportFileStore({
     const links: RsSet<{ fs: FileSystem; link: MixedLink }> = flattenWithUnion(
       fileSystems.map((fs) =>
         new RsSet(fs.checkedNfsLinks).mapOptional((link) =>
-          link ? Optional.present({ fs, link }) : Optional.empty()
-        )
-      )
+          link ? Optional.present({ fs, link }) : Optional.empty(),
+        ),
+      ),
     );
 
     const includedLinks: RsSet<MixedLink> = links
       .filter(
         // again, checkedNfsLinkMessages contains an error for each omitted link
-        ({ fs, link }) => !fs.checkedNfsLinkMessages[link.fileSystemFullPath]
+        ({ fs, link }) => !fs.checkedNfsLinkMessages[link.fileSystemFullPath],
       )
       .map(({ link }) => link);
 
     const rootFileLinks: RsSet<FileLink> = includedLinks.mapOptional((link) =>
-      isFile(link) ? Optional.present(link) : Optional.empty()
+      isFile(link) ? Optional.present(link) : Optional.empty(),
     );
     const rootFolderLinks: RsSet<FolderLink> = includedLinks.mapOptional(
-      (link) => (isFolder(link) ? Optional.present(link) : Optional.empty())
+      (link) => (isFolder(link) ? Optional.present(link) : Optional.empty()),
     );
 
     const linksToFilesInsideAFolder: RsSet<FileLink> = flattenWithUnion(
       rootFolderLinks.map((link) =>
         new RsSet(link.content).mapOptional((link) =>
-          isFile(link) ? Optional.present(link) : Optional.empty()
-        )
-      )
+          isFile(link) ? Optional.present(link) : Optional.empty(),
+        ),
+      ),
     );
     const fileLinks: RsSet<FileLink> = rootFileLinks.union(
-      linksToFilesInsideAFolder
+      linksToFilesInsideAFolder,
     );
 
     setScanResultsOmittedCount(omittedCount);
@@ -277,7 +277,7 @@ export default function ExportFileStore({
     setScanResultsTotalFileSize(sum(fileLinks.map((link) => link.size)));
     runInAction(() => {
       validationData.scanResultsTotalFileSize = sum(
-        fileLinks.map((link) => link.size)
+        fileLinks.map((link) => link.size),
       );
     });
   };
@@ -314,78 +314,66 @@ export default function ExportFileStore({
   }, []);
 
   return (
-    <Grid container spacing={1} direction="column">
+    <Stack spacing={1}>
       {/* whilst loading, showing loading animation */}
       {loadingQuickPlan && (
-        <Grid item>
-          <Card sx={{ p: 1 }}>
-            <LoadingFade loading={true} />
-          </Card>
-        </Grid>
+        <Card sx={{ p: 1 }}>
+          <LoadingFade loading={true} />
+        </Card>
       )}
 
       {/* if the user intended for there to be some links to filestores in
        * their selection, but we didn't find any then a warning it shown.
        */}
       {!loadingQuickPlan && totalFilesFound === 0 && (
-        <Grid item>
-          <Card sx={{ p: 1 }}>
-            <div>
-              <h4>No filestore links found in exported content.</h4>
-              <h4>
-                If that&apos;s unexpected, you should check your export
-                selection.
-              </h4>
-              <h4>Otherwise you can proceed with the export.</h4>
-            </div>
-          </Card>
-        </Grid>
+        <Card sx={{ p: 1 }}>
+          <div>
+            <h4>No filestore links found in exported content.</h4>
+            <h4>
+              If that&apos;s unexpected, you should check your export
+              selection.
+            </h4>
+            <h4>Otherwise you can proceed with the export.</h4>
+          </div>
+        </Card>
       )}
 
       {!loadingQuickPlan && totalFilesFound > 0 && (
         <>
-          <Grid item>
-            <FoundLinksListing
-              filesCount={totalFilesFound}
-              fileSystems={fileSystems}
-            />
-          </Grid>
+          <FoundLinksListing
+            filesCount={totalFilesFound}
+            fileSystems={fileSystems}
+          />
 
-          <Grid item>
-            <LoginStatus
-              fileSystems={fileSystems}
-              fileStoreCheck={doNotAwait(fileStoreCheck)}
-            />
-          </Grid>
+          <LoginStatus
+            fileSystems={fileSystems}
+            fileStoreCheck={doNotAwait(fileStoreCheck)}
+          />
 
-          <Grid item>
-            <FileFilters
-              maxFileSizeInMB={maxFileSizeInMB}
-              setMaxFileSizeInMB={(max) => {
-                setMaxFileSizeInMB(max);
-                updateFilters("maxFileSizeInMB", max);
-              }}
-              excludedFileExtensions={excludedFileExtensions}
-              setExcludedFileExtensions={(ext) => {
-                setExcludedFileExtensions(ext);
-                updateFilters("excludedFileExtensions", ext);
-              }}
-            />
-          </Grid>
+          <FileFilters
+            maxFileSizeInMB={maxFileSizeInMB}
+            setMaxFileSizeInMB={(max) => {
+              setMaxFileSizeInMB(max);
+              updateFilters("maxFileSizeInMB", max);
+            }}
+            excludedFileExtensions={excludedFileExtensions}
+            setExcludedFileExtensions={(ext) => {
+              setExcludedFileExtensions(ext);
+              updateFilters("excludedFileExtensions", ext);
+            }}
+          />
 
-          <Grid item>
-            <LinkAvailabilityScan
-              scanResultsPresent={scanResultsPresent}
-              scanResultsAvailableCount={scanResultsAvailableCount}
-              scanResultsTotalFileSize={scanResultsTotalFileSize}
-              scanResultsOmittedCount={scanResultsOmittedCount}
-              fileStoreScan={doNotAwait(fileStoreScan)}
-              loadingScanResults={loadingFullPlan}
-              checkedFileSystems={checkedFileSystems}
-            />
-          </Grid>
+          <LinkAvailabilityScan
+            scanResultsPresent={scanResultsPresent}
+            scanResultsAvailableCount={scanResultsAvailableCount}
+            scanResultsTotalFileSize={scanResultsTotalFileSize}
+            scanResultsOmittedCount={scanResultsOmittedCount}
+            fileStoreScan={doNotAwait(fileStoreScan)}
+            loadingScanResults={loadingFullPlan}
+            checkedFileSystems={checkedFileSystems}
+          />
         </>
       )}
-    </Grid>
+    </Stack>
   );
 }

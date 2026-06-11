@@ -2,12 +2,12 @@ import React from "react";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import Portal from "@mui/material/Portal";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-import { withStyles } from "Styles";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import {
   DataGrid,
@@ -15,7 +15,6 @@ import {
   GridToolbarColumnsButton,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
-import { makeStyles } from "tss-react/mui";
 import { ThemeProvider } from "@mui/material/styles";
 import Link from "@mui/material/Link";
 import Checkbox from "@mui/material/Checkbox";
@@ -39,30 +38,28 @@ import ValidatingSubmitButton, {
 import { DataGridColumn } from "../../util/table";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 
-const useStyles = makeStyles<{ listing: FetchingData.Fetched<unknown> }>()(
-  (theme, props) => ({
-    table: {
-      display: FetchingData.match(props.listing, {
-        loading: () => "none",
-        error: () => "none",
-        success: () => "flex",
-      }),
-    },
-  }),
-);
-
-const CustomDialog = withStyles<
-  { fullScreen: boolean } & React.ComponentProps<typeof Dialog>,
-  { paper?: string }
->((theme, { fullScreen }) => ({
-  paper: {
-    overflow: "hidden",
-    margin: fullScreen ? 0 : theme.spacing(2.625),
-    maxHeight: "unset",
-    minHeight: "unset",
-    height: fullScreen ? "100%" : "calc(100% - 48px)",
-  },
-}))(Dialog);
+function CustomDialog({
+  fullScreen,
+  ...props
+}: React.ComponentProps<typeof Dialog>): React.ReactNode {
+  return (
+    <Dialog
+      {...props}
+      fullScreen={fullScreen}
+      slotProps={{
+        paper: {
+          sx: {
+            overflow: "hidden",
+            margin: fullScreen ? 0 : 2.625,
+            maxHeight: "unset",
+            minHeight: "unset",
+            height: fullScreen ? "100%" : "calc(100% - 48px)",
+          },
+        },
+      }}
+    />
+  );
+}
 
 const DMPDialogContent = ({
   setOpen,
@@ -78,7 +75,6 @@ const DMPDialogContent = ({
   const { firstPage } = useDmpAssistantEndpoint();
   const [listing, setListing] =
     React.useState<FetchingData.Fetched<DmpListing>>(firstPage);
-  const { classes } = useStyles({ listing });
 
   React.useEffect(() => {
     setListing(firstPage);
@@ -169,7 +165,9 @@ const DMPDialogContent = ({
           indeterminate={someOnPageSelected}
           onChange={toggleSelectAllOnPage}
           disabled={pageIds.length === 0}
-          inputProps={{ "aria-label": "Select all DMPs on this page" }}
+          slotProps={{
+            input: { "aria-label": "Select all DMPs on this page" },
+          }}
         />
       ),
       renderCell: (params: GridRenderCellParams<DmpSummary>) => (
@@ -178,7 +176,7 @@ const DMPDialogContent = ({
           checked={selectedDmpIds.has(String(params.id))}
           onChange={() => toggleDmpSelection(String(params.id))}
           onClick={(e) => e.stopPropagation()}
-          inputProps={{ "aria-label": `Select ${params.row.title}` }}
+          slotProps={{ input: { "aria-label": `Select ${params.row.title}` } }}
         />
       ),
     },
@@ -227,14 +225,14 @@ const DMPDialogContent = ({
       />
       <DialogTitle variant="h3">Import DMPs into the Gallery</DialogTitle>
       <DialogContent>
-        <Grid
-          container
-          direction="column"
+        <Stack
           spacing={2}
-          flexWrap="nowrap"
-          height="calc(100% + 16px)"
+          sx={{
+            flexWrap: "nowrap",
+            height: "calc(100% + 16px)",
+          }}
         >
-          <Grid item>
+          <Box>
             <Typography variant="body2">
               Importing DMPs from <strong>dmp-pgd.ca</strong> will make them
               available to view and reference within RSpace. Select one or more
@@ -247,8 +245,8 @@ const DMPDialogContent = ({
               </Link>{" "}
               for more.
             </Typography>
-          </Grid>
-          <Grid item sx={{ overflowY: "auto" }} flexGrow={1}>
+          </Box>
+          <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
               loading: () => (
                 <Typography variant="body2">
@@ -323,7 +321,13 @@ const DMPDialogContent = ({
                   </GridToolbarContainer>
                 ),
               }}
-              className={classes.table}
+              sx={{
+                display: FetchingData.match(listing, {
+                  loading: () => "none",
+                  error: () => "none",
+                  success: () => "flex",
+                }),
+              }}
               getRowHeight={() => "auto"}
               {...FetchingData.match(listing, {
                 loading: () => ({ "aria-hidden": true }),
@@ -331,8 +335,8 @@ const DMPDialogContent = ({
                 success: () => ({}),
               })}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Close</Button>

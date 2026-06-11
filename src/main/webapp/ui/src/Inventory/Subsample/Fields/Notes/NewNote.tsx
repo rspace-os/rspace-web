@@ -114,8 +114,7 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
       />
       <Stack
         direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
+        sx={{ justifyContent: "space-between", alignItems: "flex-start" }}
       >
         <Typography variant="caption">
           Please note that once created, notes can be neither edited nor

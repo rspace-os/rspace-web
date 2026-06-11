@@ -13,7 +13,6 @@ import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
 import ViewHeadlineIcon from "@mui/icons-material/ViewHeadline";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import useStores from "../../../stores/use-stores";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -33,39 +32,6 @@ export const IMAGE_VIEW = 2;
 
 export const LOCATION_TAPPED_EVENT = "locationTapped";
 
-const useStyles = makeStyles()(() => ({
-  fullHeight: {
-    height: "auto",
-    alignSelf: "stretch",
-  },
-  divider: {
-    height: "100%",
-  },
-  content: {
-    padding: 0,
-  },
-  imagePane: {
-    padding: "16px 24px",
-  },
-  infoPane: {
-    padding: 16,
-    backgroundColor: "#f5f5f5",
-  },
-  toggle: {
-    backgroundColor: "#f5f5f5",
-  },
-  dialog: {
-    userSelect: "none",
-  },
-  scrollPane: {
-    height: "calc(100vh - 182px)",
-    overflow: "auto",
-  },
-  cardContainer: {
-    marginBottom: 10,
-    flexWrap: "unset",
-  },
-}));
 
 type LocationsImageMarkersDialogArgs = {
   open: boolean;
@@ -76,7 +42,6 @@ function LocationsImageMarkersDialog({
   open,
   close,
 }: LocationsImageMarkersDialogArgs): React.ReactNode {
-  const { classes } = useStyles();
   const { searchStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const activeResult = searchStore.activeResult;
@@ -150,10 +115,10 @@ function LocationsImageMarkersDialog({
     useEffect(() => {
       const c = cardParent.current;
       if (c) {
-        c.addEventListener(LOCATION_TAPPED_EVENT, l as EventListener);
+        c.addEventListener(LOCATION_TAPPED_EVENT, l);
       }
       return () =>
-        c?.removeEventListener(LOCATION_TAPPED_EVENT, l as EventListener);
+        c?.removeEventListener(LOCATION_TAPPED_EVENT, l);
     });
 
     return (
@@ -173,8 +138,8 @@ function LocationsImageMarkersDialog({
 
   const colRight = () => (
     <TitledBox>
-      <Grid container direction="column">
-        <Grid item>
+      <Grid container sx={{ flexDirection: "column" }}>
+        <Grid>
           <DialogContentText>
             Tap on the image to add a location marker.
             <br />
@@ -182,7 +147,7 @@ function LocationsImageMarkersDialog({
             location.
           </DialogContentText>
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <ContentImage
             editable
             onLocationTap={onLocationTap}
@@ -226,7 +191,7 @@ function LocationsImageMarkersDialog({
             )}
           </Tabs>
           {rightView === COMPACT_VIEW && (
-            <Box ref={tableParent} pr={1}>
+            <Box ref={tableParent} sx={{ pr: 1 }}>
               <LocationsTable
                 locations={activeResult.sortedLocations ?? []}
                 onRemove={deleteLocation}
@@ -239,11 +204,11 @@ function LocationsImageMarkersDialog({
             </Box>
           )}
           {rightView === DETAILED_VIEW && (
-            <Box pr={1}>
+            <Box sx={{ pr: 1 }}>
               <List
                 component="div"
                 ref={cardParent}
-                className={classes.cardContainer}
+                sx={{ mb: 1.25, flexWrap: "unset" }}
               >
                 {noMarkersWarning()}
                 {(activeResult.sortedLocations ?? []).map(

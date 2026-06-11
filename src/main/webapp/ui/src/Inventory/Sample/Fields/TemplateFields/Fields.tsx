@@ -162,8 +162,10 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                   (field.mandatory && !field.hasContent) || field.error,
                 );
               }}
-              inputProps={{
-                step: "any",
+              slotProps={{
+                htmlInput: {
+                  step: "any",
+                },
               }}
             />
           )}

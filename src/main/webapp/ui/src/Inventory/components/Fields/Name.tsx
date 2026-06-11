@@ -54,7 +54,7 @@ function Name<
   const labelId = React.useId();
   if (!fieldOwner.isFieldEditable("name")) {
     const globalId = record ? (
-      <Box ml={1} component="span">
+      <Box sx={{ ml: 1 }} component="span">
         <GlobalId record={record} />
       </Box>
     ) : null;
@@ -69,10 +69,10 @@ function Name<
         <Heading sx={{ mt: 0 }} id={labelId}>
           Name
         </Heading>
-        <div style={{ wordBreak: "break-all" }}>
+        <Box sx={{ wordBreak: "break-all" }}>
           {fieldOwner.fieldValues.name}
           {globalId}
-        </div>
+        </Box>
       </FormControl>
     );
   }

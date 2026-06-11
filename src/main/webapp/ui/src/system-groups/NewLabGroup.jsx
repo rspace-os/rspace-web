@@ -135,12 +135,12 @@ export default function NewLabGroup() {
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <form noValidate autoComplete="off">
           <Grid container>
-            <Grid item xs={12} md={6}>
-              <Grid container justifyContent="center">
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Grid container sx={{ justifyContent: "center" }}>
                 <TextField
                   variant="standard"
                   required
@@ -155,7 +155,7 @@ export default function NewLabGroup() {
                 />
               </Grid>
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Stack spacing={2}>
                 <Typography variant="subtitle1" gutterBottom color={"inherit"}>
                   Select a group type*
@@ -184,11 +184,11 @@ export default function NewLabGroup() {
                 )}
               </Stack>
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               {values.groupType === LAB_GROUP && (
                 <Grid container>
                   <Typography
-                    style={{ margin: "20px 0px 10px 0px" }}
+                    sx={{ margin: "20px 0px 10px 0px" }}
                     variant="subtitle1"
                     gutterBottom
                     color={values.pisError ? "error" : "inherit"}
@@ -207,7 +207,7 @@ export default function NewLabGroup() {
               {values.groupType === PROJECT_GROUP && (
                 <Grid container>
                   <Typography
-                    style={{ margin: "20px 0px 10px 0px" }}
+                    sx={{ margin: "20px 0px 10px 0px" }}
                     variant="subtitle1"
                     gutterBottom
                     color={values.groupOwnerError ? "error" : "inherit"}
@@ -223,17 +223,23 @@ export default function NewLabGroup() {
                 </Grid>
               )}
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               {values.groupType && (
                 <Grid container>
                   <Typography
-                    style={{ margin: "20px 0px 10px 0px" }}
+                    sx={{ margin: "20px 0px 10px 0px" }}
                     variant="subtitle1"
                     gutterBottom
                     color="inherit"
                   >
                     Select group members{" "}
-                    <span style={{ color: "grey" }}>(optional)</span>
+                    <Typography
+                      variant="inherit"
+                      component="span"
+                      sx={{ color: "grey" }}
+                    >
+                      (optional)
+                    </Typography>
                   </Typography>
                   <UserSelect
                     users={users}
@@ -244,8 +250,8 @@ export default function NewLabGroup() {
                 </Grid>
               )}
             </Grid>
-            <Grid item xs={12} style={{ margin: "20px 0px 40px 0px" }}>
-              <Grid container justifyContent="flex-end">
+            <Grid size={12} sx={{ margin: "20px 0px 40px 0px" }}>
+              <Grid container sx={{ justifyContent: "flex-end" }}>
                 <Button
                   variant="contained"
                   color="primary"

@@ -9,6 +9,8 @@ import { observer } from "mobx-react-lite";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
@@ -20,7 +22,6 @@ import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
-import { withStyles } from "Styles";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import AmberNumberField from "./AmberNumberField";
@@ -34,22 +35,29 @@ import { runInAction } from "mobx";
  */
 const LazyMapViewer = lazy(() => import("./MapViewer"));
 
-const CustomFieldset = withStyles<{ children: ReactNode }, { root: string }>(
-  (theme) => ({
-    root: {
-      border: theme.borders.card,
-      margin: 0,
-      borderRadius: theme.spacing(0.5),
-      padding: theme.spacing(2),
-      paddingTop: 0,
-      "& > legend": {
-        padding: theme.spacing(0.25, 1),
-      },
-    },
-  })
-)(({ classes, children }) => (
-  <fieldset className={classes.root}>{children}</fieldset>
-));
+function CustomFieldset({
+  children,
+}: {
+  children: React.ReactNode;
+}): ReactNode {
+  return (
+    <Box
+      component="fieldset"
+      sx={(theme) => ({
+        border: theme.borders.card,
+        margin: 0,
+        borderRadius: theme.spacing(0.5),
+        padding: theme.spacing(2),
+        paddingTop: 0,
+        "& > legend": {
+          padding: theme.spacing(0.25, 1),
+        },
+      })}
+    >
+      {children}
+    </Box>
+  );
+}
 
 export const COORD_RANGE_X = { min: -180, max: 180 };
 export const isOutOfRangeX = (v: number): boolean =>
@@ -97,7 +105,7 @@ const GeoLocationField = ({
   geoLocation,
   i,
   editable,
-  handleUpdateValue,
+  handleUpdateValue: _handleUpdateValue,
   doUpdateIdentifiers,
 }: GeoLocationFieldArgs) => {
   const PointLatitudeEditor = observer((): ReactNode => {
@@ -105,15 +113,16 @@ const GeoLocationField = ({
     return (
       <InputWrapper label="Latitude">
         <AmberNumberField
-          inputProps={{
-            ...COORD_RANGE_Y,
+          slotProps={{
+            htmlInput: {
+              ...COORD_RANGE_Y,
+            },
           }}
           placeholder="e.g. 51.478"
           size="small"
           variant="standard"
           fullWidth
-          // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-          datatestid={`IdentifierRecommendedField-${"geolocation-point-latitude"}-${i}`}
+          data-test-id={`IdentifierRecommendedField-${"geolocation-point-latitude"}-${i}`}
           disabled={false}
           value={geoLocationPoint.pointLatitude}
           onChange={({ target: { value } }) => {
@@ -147,15 +156,16 @@ const GeoLocationField = ({
     return (
       <InputWrapper label="Longitude">
         <AmberNumberField
-          inputProps={{
-            ...COORD_RANGE_X,
+          slotProps={{
+            htmlInput: {
+              ...COORD_RANGE_X,
+            },
           }}
           placeholder="e.g. 0.0"
           size="small"
           variant="standard"
           fullWidth
-          // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-          datatestid={`IdentifierRecommendedField-${"geolocation-point-longitude"}-${i}`}
+          data-test-id={`IdentifierRecommendedField-${"geolocation-point-longitude"}-${i}`}
           disabled={false}
           value={geoLocationPoint.pointLongitude}
           onChange={({ target: { value } }) => {
@@ -186,14 +196,14 @@ const GeoLocationField = ({
 
   const PointEditor = observer((): ReactNode => {
     return (
-      <Grid item>
+      <Grid>
         <CustomFieldset>
           <legend>Point</legend>
           <Grid container direction="row" spacing={1}>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <PointLatitudeEditor />
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <PointLongitudeEditor />
             </Grid>
           </Grid>
@@ -205,7 +215,7 @@ const GeoLocationField = ({
   const PlaceEditor = observer((): ReactNode => {
     const { geoLocationPlace } = geoLocation;
     return (
-      <Grid item>
+      <Grid>
         <CustomFieldset>
           <legend>Place</legend>
           <InputWrapper label="Description">
@@ -214,8 +224,11 @@ const GeoLocationField = ({
               placeholder="e.g. Royal Observatory, Greenwich"
               variant="standard"
               fullWidth
-              // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-              datatestid={`IdentifierRecommendedField-${"geolocation-place"}-${i}`}
+              slotProps={{
+                htmlInput: {
+                  "data-test-id": `IdentifierRecommendedField-${"geolocation-place"}-${i}`,
+                },
+              }}
               disabled={false}
               value={geoLocationPlace}
               onChange={({ target: { value } }) => {
@@ -238,18 +251,17 @@ const GeoLocationField = ({
   const BoxEditor = observer((): ReactNode => {
     const { geoLocationBox } = geoLocation;
     return (
-      <Grid item>
+      <Grid>
         <CustomFieldset>
           <legend>Box</legend>
           <Grid container direction="row" spacing={1}>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <InputWrapper label="North Latitude">
                 <AmberNumberField
-                  inputProps={COORD_RANGE_Y}
+                  slotProps={{ htmlInput: COORD_RANGE_Y }}
                   size="small"
                   variant="standard"
-                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-northbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-northbound"}-${i}`}
                   value={geoLocationBox.northBoundLatitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -275,14 +287,13 @@ const GeoLocationField = ({
                 />
               </InputWrapper>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <InputWrapper label="West Longitude">
                 <AmberNumberField
-                  inputProps={COORD_RANGE_X}
+                  slotProps={{ htmlInput: COORD_RANGE_X }}
                   size="small"
                   variant="standard"
-                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-westbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-westbound"}-${i}`}
                   value={geoLocationBox.westBoundLongitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -308,14 +319,13 @@ const GeoLocationField = ({
                 />
               </InputWrapper>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <InputWrapper label="South Latitude">
                 <AmberNumberField
-                  inputProps={COORD_RANGE_Y}
+                  slotProps={{ htmlInput: COORD_RANGE_Y }}
                   size="small"
                   variant="standard"
-                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-southbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-southbound"}-${i}`}
                   value={geoLocationBox.southBoundLatitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -341,14 +351,13 @@ const GeoLocationField = ({
                 />
               </InputWrapper>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <InputWrapper label="East Longitude">
                 <AmberNumberField
-                  inputProps={COORD_RANGE_X}
+                  slotProps={{ htmlInput: COORD_RANGE_X }}
                   size="small"
                   variant="standard"
-                  // @ts-ignore - using datatestid instead of data-testid to maintain backward compatibility
-                  datatestid={`IdentifierRecommendedField-${"geolocation-box-eastbound"}-${i}`}
+                  data-test-id={`IdentifierRecommendedField-${"geolocation-box-eastbound"}-${i}`}
                   value={geoLocationBox.eastBoundLongitude}
                   onChange={({ target: { value } }) => {
                     runInAction(() => {
@@ -388,10 +397,10 @@ const GeoLocationField = ({
     }): ReactNode => {
       const { polygonEmpty } = geoLocation;
       return (
-        <Grid item onClick={() => setOpenPolygonDialog(true)}>
+        <Grid onClick={() => setOpenPolygonDialog(true)}>
           <CustomFieldset>
             <legend>Polygon</legend>
-            <Grid container direction="row" alignItems="center">
+            <Grid container direction="row" sx={{ alignItems: "center" }}>
               <IconButton
                 title={"Open Polygon Dialog"}
                 onClick={() => setOpenPolygonDialog(true)}
@@ -410,7 +419,7 @@ const GeoLocationField = ({
           </CustomFieldset>
         </Grid>
       );
-    }
+    },
   );
 
   const GeoLocationEditor = observer(
@@ -428,17 +437,17 @@ const GeoLocationField = ({
               partially.
             </Alert>
             <FormControl sx={{ width: "100%" }}>
-              <Grid container direction="column" spacing={1}>
+              <Stack spacing={1}>
                 <PointEditor />
                 <PlaceEditor />
                 <BoxEditor />
                 <PolygonBlock setOpenPolygonDialog={setOpenPolygonDialog} />
-              </Grid>
+              </Stack>
             </FormControl>
           </CardContent>
         </Card>
       );
-    }
+    },
   );
 
   const GeoLocationPreview = observer(
@@ -475,135 +484,142 @@ const GeoLocationField = ({
           </CardMedia>
           <Divider orientation="horizontal" variant="middle" />
           <CardContent sx={{ pt: 1 }}>
-            <Grid container direction="column" spacing={1}>
-              <Grid item>
-                <fieldset
-                  style={{
-                    border: "1px solid rgba(0, 0, 0, 0.12)",
-                    margin: 0,
-                    borderRadius: "4px",
-                    padding: 16,
-                    paddingTop: 0,
-                  }}
-                >
-                  <legend style={{ padding: "2px 8px" }}>Point</legend>
-                  <Grid container direction="row" spacing={1}>
-                    <Grid item xs={6}>
-                      <InputWrapper label="Latitude">
-                        {geoLocationPoint.pointLatitude
-                          ? String(geoLocationPoint.pointLatitude) + "˚"
-                          : "-"}
-                      </InputWrapper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <InputWrapper label="Longitude">
-                        {geoLocationPoint.pointLongitude
-                          ? String(geoLocationPoint.pointLongitude) + "˚"
-                          : "-"}
-                      </InputWrapper>
-                    </Grid>
+            <Stack spacing={1}>
+              <Box
+                component="fieldset"
+                sx={{
+                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  margin: 0,
+                  borderRadius: "4px",
+                  padding: "16px",
+                  paddingTop: 0,
+                }}
+              >
+                <Box component="legend" sx={{ padding: "2px 8px" }}>
+                  Point
+                </Box>
+                <Grid container direction="row" spacing={1}>
+                  <Grid size={6}>
+                    <InputWrapper label="Latitude">
+                      {geoLocationPoint.pointLatitude
+                        ? String(geoLocationPoint.pointLatitude) + "˚"
+                        : "-"}
+                    </InputWrapper>
                   </Grid>
-                </fieldset>
-              </Grid>
-              <Grid item>
-                <fieldset
-                  style={{
-                    border: "1px solid rgba(0, 0, 0, 0.12)",
-                    margin: 0,
-                    borderRadius: "4px",
-                    padding: 16,
-                    paddingTop: 0,
-                  }}
-                >
-                  <legend style={{ padding: "2px 8px" }}>Place</legend>
-                  <InputWrapper label="Description">
-                    {geoLocationPlace ? (
-                      geoLocationPlace
-                    ) : (
-                      <em style={{ color: "#949494" }}>None</em>
-                    )}
-                  </InputWrapper>
-                </fieldset>
-              </Grid>
-              <Grid item>
-                <fieldset
-                  style={{
-                    border: "1px solid rgba(0, 0, 0, 0.12)",
-                    margin: 0,
-                    borderRadius: "4px",
-                    padding: 16,
-                    paddingTop: 0,
-                  }}
-                >
-                  <legend style={{ padding: "2px 8px" }}>Box</legend>
-                  <Grid container direction="row" spacing={1}>
-                    <Grid item xs={6}>
-                      <InputWrapper label="North Latitude">
-                        {geoLocationBox.northBoundLatitude
-                          ? String(geoLocationBox.northBoundLatitude) + "˚"
-                          : "-"}
-                      </InputWrapper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <InputWrapper label="West Longitude">
-                        {geoLocationBox.westBoundLongitude
-                          ? String(geoLocationBox.westBoundLongitude) + "˚"
-                          : "-"}
-                      </InputWrapper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <InputWrapper label="South Latitude">
-                        {geoLocationBox.southBoundLatitude
-                          ? String(geoLocationBox.southBoundLatitude) + "˚"
-                          : "-"}
-                      </InputWrapper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <InputWrapper label="East Longitude">
-                        {geoLocationBox.eastBoundLongitude
-                          ? String(geoLocationBox.eastBoundLongitude) + "˚"
-                          : "-"}
-                      </InputWrapper>
-                    </Grid>
+                  <Grid size={6}>
+                    <InputWrapper label="Longitude">
+                      {geoLocationPoint.pointLongitude
+                        ? String(geoLocationPoint.pointLongitude) + "˚"
+                        : "-"}
+                    </InputWrapper>
                   </Grid>
-                </fieldset>
-              </Grid>
-              <Grid item>
-                <CustomFieldset>
-                  <legend>Polygon</legend>
-                  <Grid container direction="row">
-                    {!polygonEmpty && (
-                      <Button
-                        onClick={() => setOpenPolygonDialog(true)}
-                        color="callToAction"
-                        variant="outlined"
-                      >
-                        View Polygon
-                      </Button>
-                    )}
-                    <Typography component="span" variant="body2" sx={{ m: 1 }}>
-                      {polygonEmpty
-                        ? "To create a Polygon, press Edit first."
-                        : "To modify it, press Edit first."}
+                </Grid>
+              </Box>
+              <Box
+                component="fieldset"
+                sx={{
+                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  margin: 0,
+                  borderRadius: "4px",
+                  padding: "16px",
+                  paddingTop: 0,
+                }}
+              >
+                <Box component="legend" sx={{ padding: "2px 8px" }}>
+                  Place
+                </Box>
+                <InputWrapper label="Description">
+                  {geoLocationPlace ? (
+                    geoLocationPlace
+                  ) : (
+                    <Typography
+                      variant="inherit"
+                      component="em"
+                      sx={{ color: "#949494" }}
+                    >
+                      None
                     </Typography>
+                  )}
+                </InputWrapper>
+              </Box>
+              <Box
+                component="fieldset"
+                sx={{
+                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  margin: 0,
+                  borderRadius: "4px",
+                  padding: "16px",
+                  paddingTop: 0,
+                }}
+              >
+                <Box component="legend" sx={{ padding: "2px 8px" }}>
+                  Box
+                </Box>
+                <Grid container direction="row" spacing={1}>
+                  <Grid size={6}>
+                    <InputWrapper label="North Latitude">
+                      {geoLocationBox.northBoundLatitude
+                        ? String(geoLocationBox.northBoundLatitude) + "˚"
+                        : "-"}
+                    </InputWrapper>
                   </Grid>
-                  <PolygonStateAlert
-                    polygonEmpty={polygonEmpty}
-                    polygonComplete={geoLocation.geoLocationPolygon.isValid}
-                    textMessages={POLYGON_FIELD_MESSAGES}
-                  />
-                </CustomFieldset>
-              </Grid>
-            </Grid>
+                  <Grid size={6}>
+                    <InputWrapper label="West Longitude">
+                      {geoLocationBox.westBoundLongitude
+                        ? String(geoLocationBox.westBoundLongitude) + "˚"
+                        : "-"}
+                    </InputWrapper>
+                  </Grid>
+                  <Grid size={6}>
+                    <InputWrapper label="South Latitude">
+                      {geoLocationBox.southBoundLatitude
+                        ? String(geoLocationBox.southBoundLatitude) + "˚"
+                        : "-"}
+                    </InputWrapper>
+                  </Grid>
+                  <Grid size={6}>
+                    <InputWrapper label="East Longitude">
+                      {geoLocationBox.eastBoundLongitude
+                        ? String(geoLocationBox.eastBoundLongitude) + "˚"
+                        : "-"}
+                    </InputWrapper>
+                  </Grid>
+                </Grid>
+              </Box>
+              <CustomFieldset>
+                <legend>Polygon</legend>
+                <Stack direction="row">
+                  {!polygonEmpty && (
+                    <Button
+                      onClick={() => setOpenPolygonDialog(true)}
+                      color="callToAction"
+                      variant="outlined"
+                    >
+                      View Polygon
+                    </Button>
+                  )}
+                  <Typography component="span" variant="body2" sx={{ m: 1 }}>
+                    {polygonEmpty
+                      ? "To create a Polygon, press Edit first."
+                      : "To modify it, press Edit first."}
+                  </Typography>
+                </Stack>
+                <PolygonStateAlert
+                  polygonEmpty={polygonEmpty}
+                  polygonComplete={geoLocation.geoLocationPolygon.isValid}
+                  textMessages={POLYGON_FIELD_MESSAGES}
+                />
+              </CustomFieldset>
+            </Stack>
           </CardContent>
         </Card>
       );
-    }
+    },
   );
 
   const [openPolygonDialog, setOpenPolygonDialog] = useState<boolean>(false);
   return (
-    <Grid item sx={{ flexGrow: 1 }}>
+    <Grid sx={{ flexGrow: 1 }}>
       {editable ? (
         <GeoLocationEditor setOpenPolygonDialog={setOpenPolygonDialog} />
       ) : (
@@ -623,5 +639,5 @@ const GeoLocationField = ({
 };
 
 export default observer(
-  GeoLocationField
+  GeoLocationField,
 ) as ComponentType<GeoLocationFieldArgs>;

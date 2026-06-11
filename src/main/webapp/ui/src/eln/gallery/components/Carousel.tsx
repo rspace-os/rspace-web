@@ -2,7 +2,8 @@ import React from "react";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { Optional } from "../../../util/optional";
 import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import { useGallerySelection } from "../useGallerySelection";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
@@ -21,7 +22,7 @@ import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
 import { take, incrementForever } from "../../../util/iterators";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import * as ArrayUtils from "../../../util/ArrayUtils";
@@ -29,25 +30,12 @@ import * as Parsers from "../../../util/parsers";
 import axios from "@/common/axios";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { styled } from "@mui/material/styles";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
 import { useFolderOpen } from "./OpenFolderProvider";
 import { doNotAwait } from "../../../util/Util";
 import { type URL as Url } from "../../../util/types";
-
-/*
- * When a drag is in progress, this cursor style applied.
- * Note that is relies on an undocumented implementation detail of the Pdf
- * renderer so may not be entirely stable. If this class no longer applied then
- * a default pointer will be shown when the drag operation is in progress.
- */
-const StyledDocument = styled(Document)(() => ({
-  "& .textLayer .endOfContent": {
-    cursor: "grabbing",
-  },
-}));
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -78,11 +66,11 @@ const PreviewWrapper = ({
   children: React.ReactNode;
   visible: boolean;
 }) => {
+  const { openFolder } = useFolderOpen();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
   const { openAsposePreview } = useAsposePreview();
   const { openSnapGenePreview } = useSnapGenePreview();
-  const { openFolder } = useFolderOpen();
   const { openSnippetPreview } = useSnippetPreview();
   const primaryAction = usePrimaryAction();
   const [scrollPos, setScrollPos] = React.useState<null | {
@@ -101,10 +89,10 @@ const PreviewWrapper = ({
   }
 
   return (
-    <div
+    <Box
       role="button"
       tabIndex={0}
-      style={{
+      sx={{
         borderRadius: "3px",
         border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
         position: "relative",
@@ -216,7 +204,7 @@ const PreviewWrapper = ({
       }}
     >
       {children}
-    </div>
+    </Box>
   );
 };
 
@@ -325,7 +313,6 @@ const Preview = ({
           }
         }),
       );
-
   }, []);
 
   function onDocumentLoadSuccess({
@@ -362,10 +349,11 @@ const Preview = ({
   if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
-        <img
+        <Box
+          component="img"
           alt={`Preview of ${file.name}`}
           src={imageSrc}
-          style={{
+          sx={{
             maxHeight: "100%",
             maxWidth: "100%",
             transform: `scale(${zoom})`,
@@ -384,15 +372,23 @@ const Preview = ({
   if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
-        <StyledDocument file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
-          {[...take(incrementForever(), numPages)].map((index) => (
-            <Page
-              key={`page_${index + 1}`}
-              pageNumber={index + 1}
-              scale={zoom}
-            />
-          ))}
-        </StyledDocument>
+        <Box
+          sx={{
+            "& .textLayer .endOfContent": {
+              cursor: "grabbing",
+            },
+          }}
+        >
+          <Document file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
+            {[...take(incrementForever(), numPages)].map((index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                scale={zoom}
+              />
+            ))}
+          </Document>
+        </Box>
       </PreviewWrapper>
     );
 
@@ -438,7 +434,6 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       setVisibleIndex(0);
       selection.append(listing.list[0]);
     }
-
   }, [listing]);
 
   function incrementVisibleIndex() {
@@ -478,7 +473,6 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
     };
     window.addEventListener("keydown", f);
     return () => window.removeEventListener("keydown", f);
-
   }, [visibleIndex, listing]);
 
   if (listing.tag === "empty")
@@ -490,10 +484,9 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       </PlaceholderLabel>
     );
   return (
-    <Grid
-      container
-      direction="column"
+    <Stack
       sx={{
+        flexWrap: "nowrap",
         /*
          * it looks better if the preview panel's bottom border lines up with
          * the bottom of the InfoPanel divider
@@ -501,22 +494,19 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         height: "calc(100% + 8px)",
       }}
       spacing={1}
-      flexWrap="nowrap"
       role="region"
       aria-label="Carousel view of files"
     >
-      <Grid item container direction="row" spacing={1}>
-        <Grid item>
-          <Button
-            onClick={() => {
-              decrementVisibleIndex();
-            }}
-            disabled={visibleIndex === 0}
-            startIcon={<ArrowBackIcon />}
-          >
-            Previous
-          </Button>
-        </Grid>
+      <Stack direction="row" spacing={1}>
+        <Button
+          onClick={() => {
+            decrementVisibleIndex();
+          }}
+          disabled={visibleIndex === 0}
+          startIcon={<ArrowBackIcon />}
+        >
+          Previous
+        </Button>
         <Typography
           role="status"
           aria-label="Current file index"
@@ -529,79 +519,74 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         >
           {visibleIndex + 1} / {listing.totalHits}
         </Typography>
-        <Grid item flexGrow={1}></Grid>
-        <Grid item>
-          <ButtonGroup
-            variant="outlined"
-            sx={{
-              border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
-              borderRadius: "8px",
-            }}
-          >
-            <IconButton
-              onClick={() => {
-                setZoom((z) => z * ZOOM_SCALE_FACTOR);
-              }}
-              aria-label="zoom in"
-              size="small"
-            >
-              <ZoomInIcon />
-            </IconButton>
-            <Divider
-              orientation="vertical"
-              sx={{
-                height: "26px",
-                marginTop: "4px",
-                borderRightWidth: "1px",
-              }}
-            />
-            <IconButton
-              onClick={() => {
-                setZoom(1);
-              }}
-              disabled={zoom === 1}
-              aria-label="reset zoom"
-              size="small"
-            >
-              <ResetZoomIcon />
-            </IconButton>
-            <Divider
-              orientation="vertical"
-              sx={{
-                height: "26px",
-                marginTop: "4px",
-                borderRightWidth: "1px",
-              }}
-            />
-            <IconButton
-              onClick={() => {
-                setZoom((z) => z / ZOOM_SCALE_FACTOR);
-              }}
-              disabled={zoom === 1}
-              aria-label="zoom out"
-              size="small"
-            >
-              <ZoomOutIcon />
-            </IconButton>
-          </ButtonGroup>
-        </Grid>
-        <Grid item flexGrow={1}></Grid>
-        <Grid item>
-          <Button
+        <Box sx={{ flexGrow: 1 }} />
+        <ButtonGroup
+          variant="outlined"
+          sx={{
+            border: `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
+            borderRadius: "8px",
+          }}
+        >
+          <IconButton
             onClick={() => {
-              incrementVisibleIndex();
+              setZoom((z) => z * ZOOM_SCALE_FACTOR);
             }}
-            disabled={visibleIndex === listing.list.length - 1}
-            endIcon={<ArrowForwardIcon />}
+            aria-label="zoom in"
+            size="small"
           >
-            Next
-          </Button>
-        </Grid>
-      </Grid>
-      <Grid
-        item
-        flexGrow={1}
+            <ZoomInIcon />
+          </IconButton>
+          <Divider
+            orientation="vertical"
+            sx={{
+              height: "26px",
+              marginTop: "4px",
+              borderRightWidth: "1px",
+            }}
+          />
+          <IconButton
+            onClick={() => {
+              setZoom(1);
+            }}
+            disabled={zoom === 1}
+            aria-label="reset zoom"
+            size="small"
+          >
+            <ResetZoomIcon />
+          </IconButton>
+          <Divider
+            orientation="vertical"
+            sx={{
+              height: "26px",
+              marginTop: "4px",
+              borderRightWidth: "1px",
+            }}
+          />
+          <IconButton
+            onClick={() => {
+              setZoom((z) => z / ZOOM_SCALE_FACTOR);
+            }}
+            disabled={zoom === 1}
+            aria-label="zoom out"
+            size="small"
+          >
+            <ZoomOutIcon />
+          </IconButton>
+        </ButtonGroup>
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          onClick={() => {
+            incrementVisibleIndex();
+          }}
+          disabled={visibleIndex === listing.list.length - 1}
+          endIcon={<ArrowForwardIcon />}
+        >
+          Next
+        </Button>
+      </Stack>
+      <Box
         sx={{
+          flexGrow: 1,
           /*
            * This minHeight is necessary to ensure that the image and wrapping
            * div shrink so that they don't cause scrollbars. Once the user
@@ -623,7 +608,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             key={f.key}
           />
         ))}
-      </Grid>
-    </Grid>
+      </Box>
+    </Stack>
   );
 }

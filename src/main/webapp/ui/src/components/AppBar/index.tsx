@@ -39,7 +39,7 @@ import SidebarToggle from "./SidebarToggle";
 import Link from "@mui/material/Link";
 import Avatar from "@mui/material/Avatar";
 import SvgIcon from "@mui/material/SvgIcon";
-import { styled, useTheme, darken, lighten } from "@mui/material/styles";
+import { useTheme, darken, lighten } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import HelpLinkIcon from "../HelpLinkIcon";
 import docLinks from "../../assets/DocLinks";
@@ -58,14 +58,13 @@ import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
 import useSessionStorage from "../../hooks/browser/useSessionStorage";
 import useWebSocketNotifications from "../../hooks/websockets/useWebSocketNotifications";
-import Badge from "@mui/material/Badge";
+import Badge, { badgeClasses } from "@mui/material/Badge";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import useWhoAmI from "../../hooks/api/useWhoAmI";
 import { Person } from "@/stores/definitions/Person";
 import AboutRSpaceDialog from "./AboutRSpaceDialog";
 import InfoIcon from "@mui/icons-material/Info";
-
 declare global {
   interface Window {
     gapi?: {
@@ -77,27 +76,27 @@ declare global {
     };
   }
 }
-
-const AdjustedBadge = styled(Badge)({
-  "& .MuiBadge-badge": {
-    transform: "translate(17%, -19%)",
-  },
-});
-
 const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
   const { notificationCount, messageCount, specialMessageCount } =
     useWebSocketNotifications(`${currentUser.id}`);
   return (
     <Box
-      ml={1}
+      sx={{
+        ml: 1,
+      }}
       role="status"
       aria-live="polite"
       aria-relevant="text"
       aria-label="notifications and messages"
     >
-      <AdjustedBadge
+      <Badge
         badgeContent={notificationCount + messageCount + specialMessageCount}
         color="error"
+        sx={{
+          [`& .${badgeClasses.badge}`]: {
+            transform: "translate(17%, -19%)",
+          },
+        }}
       >
         <IconButtonWithTooltip
           size="small"
@@ -115,11 +114,10 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
           }
           title="Notifications"
         />
-      </AdjustedBadge>
+      </Badge>
     </Box>
   );
 };
-
 const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const popoverId = React.useId();
@@ -132,21 +130,22 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
    * reference to this wrapper div.
    */
   const ref = React.useRef<HTMLDivElement>(null);
-
   return (
     <div ref={ref}>
       <IconButton
         onClick={(e) => {
           setAnchorEl(e.currentTarget);
         }}
-        aria-label={`A scheduled maintenance window begins ${getRelativeTime(
-          startDate,
-        )}.`}
+        aria-label={`A scheduled maintenance window begins ${getRelativeTime(startDate)}.`}
         aria-controls={popoverId}
         aria-haspopup="dialog"
         color="error"
       >
-        <MaintenanceIcon sx={{ color: "inherit !important" }} />
+        <MaintenanceIcon
+          sx={{
+            color: "inherit !important",
+          }}
+        />
       </IconButton>
       <Popover
         container={ref.current}
@@ -162,7 +161,11 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
           horizontal: "left",
         }}
       >
-        <Typography sx={{ p: 2 }}>
+        <Typography
+          sx={{
+            p: 2,
+          }}
+        >
           {/*
            * We show a relative time here rather than an absolute time to avoid
            * the need to take into account the user's timezone.
@@ -173,28 +176,29 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
     </div>
   );
 };
-
-const StyledAvatar: React.FC<
-  { size?: "small" } & React.ComponentProps<typeof Avatar>
-> = styled(Avatar)(({ size }: { size?: "small" }) => ({
-  /*
-   * This pink colour is taken from the RSpace logo, a
-   * colour that we don't otherwise use in the product. The
-   * pair of colours do not quite have sufficient contrast
-   * to meet the WCAG standard, but this is only for
-   * aesthetic purposes.
-   */
-  color: "#fce8f0",
-  backgroundColor: "#ed1064",
-
-  ...(size === "small"
-    ? {
-        height: "24px",
-        width: "24px",
-        fontSize: "0.8em",
-      }
-    : {}),
-}));
+const StyledAvatar = ({
+  size,
+  sx,
+  ...props
+}: {
+  size?: "small";
+} & React.ComponentPropsWithoutRef<typeof Avatar>): React.ReactNode => (
+  <Avatar
+    {...props}
+    sx={{
+      color: "#fce8f0",
+      backgroundColor: "#ed1064",
+      ...(size === "small"
+        ? {
+            height: "24px",
+            width: "24px",
+            fontSize: "0.8em",
+          }
+        : {}),
+      ...sx,
+    }}
+  />
+);
 
 /**
  * This image is used to indicate the current user
@@ -220,17 +224,37 @@ const DynamicAvatar = ({
     success: ({ operatedAs, userDetails: { profileImgSrc, fullName } }) => {
       if (operatedAs) {
         if (size === "small")
-          return <OperateAsIcon sx={{ color: "red !important" }} />;
+          return (
+            <OperateAsIcon
+              sx={{
+                color: "red !important",
+              }}
+            />
+          );
         return (
-          <Avatar sx={{ backgroundColor: "white", color: "red" }}>
-            <OperateAsIcon sx={{ width: "2em", height: "2em" }} />
+          <Avatar
+            sx={{
+              backgroundColor: "white",
+              color: "red",
+            }}
+          >
+            <OperateAsIcon
+              sx={{
+                width: "2em",
+                height: "2em",
+              }}
+            />
           </Avatar>
         );
       }
       return (
         <StyledAvatar
           size={size}
-          {...(profileImgSrc !== null ? { src: profileImgSrc } : {})}
+          {...(profileImgSrc !== null
+            ? {
+                src: profileImgSrc,
+              }
+            : {})}
         >
           {fullName[0]}
         </StyledAvatar>
@@ -238,32 +262,23 @@ const DynamicAvatar = ({
     },
   });
 };
-
-const OrcidIcon = styled(({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    version="1.1"
-    viewBox="0 0 50 50"
-    className={className}
-  >
+const OrcidIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
     <g>
       <g id="Layer_1">
         <g>
           <path
-            className="greenElements"
+            fill="#a6ce39"
             d="M49.3,25c0,13.4-10.9,24.3-24.3,24.3S.7,38.4.7,25,11.6.7,25,.7s24.3,10.9,24.3,24.3Z"
           />
           <g>
+            <path fill="#fff" d="M17.1,36.1h-2.9V15.7h2.9v20.3Z" />
             <path
-              className="whiteElements"
-              d="M17.1,36.1h-2.9V15.7h2.9v20.3Z"
-            />
-            <path
-              className="whiteElements"
+              fill="#fff"
               d="M21.4,15.7h7.9c7.5,0,10.8,5.4,10.8,10.2s-4.1,10.2-10.8,10.2h-7.9s0-20.4,0-20.4ZM24.3,33.4h4.7c6.6,0,8.1-5,8.1-7.5,0-4.1-2.6-7.5-8.3-7.5h-4.5v15.1h0Z"
             />
             <path
-              className="whiteElements"
+              fill="#fff"
               d="M17.5,11.5c0,1-.9,1.9-1.9,1.9s-1.9-.9-1.9-1.9.9-1.9,1.9-1.9c1.1,0,1.9.9,1.9,1.9Z"
             />
           </g>
@@ -271,15 +286,7 @@ const OrcidIcon = styled(({ className }: { className?: string }) => (
       </g>
     </g>
   </svg>
-))(() => ({
-  "& .greenElements": {
-    fill: "#a6ce39",
-  },
-  "& .whiteElements": {
-    fill: "#fff",
-  },
-}));
-
+);
 type GalleryAppBarArgs = {
   /**
    * The app bar is used across the top of the pages that consistitute most of
@@ -329,7 +336,6 @@ type GalleryAppBarArgs = {
     title: string;
   };
 };
-
 function GalleryAppBar({
   variant,
   currentPage,
@@ -350,9 +356,7 @@ function GalleryAppBar({
   const [aboutDialogOpen, setAboutDialogOpen] = React.useState(false);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
-
   const fetchedCurrentUser = useWhoAmI();
-
   const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
     "brandingHref",
     null,
@@ -362,7 +366,6 @@ function GalleryAppBar({
       setBrandingHref(bannerImgSrc);
     });
   }, [uiNavigationData]);
-
   const { showInventory, showSystem, showMyLabGroups } =
     FetchingData.getSuccessValue(uiNavigationData)
       .map(({ visibleTabs: { inventory, system, myLabGroups } }) => ({
@@ -386,7 +389,6 @@ function GalleryAppBar({
     "System",
     "My RSpace",
   ].includes(currentPage);
-
   return (
     <AppBar
       position="relative"
@@ -395,8 +397,8 @@ function GalleryAppBar({
       <Toolbar variant="dense">
         {variant === "page" && !isViewportSmall && (
           <>
-            <div
-              style={{
+            <Box
+              sx={{
                 height: "40px",
                 backgroundColor: "white",
                 width: "4px",
@@ -404,7 +406,7 @@ function GalleryAppBar({
                 marginLeft: "4px",
                 marginRight: "-1px",
               }}
-            ></div>
+            ></Box>
             <svg width="0" height="0" viewBox="0 0 3.9 40">
               <defs>
                 <clipPath id={leftClipId}>
@@ -430,7 +432,14 @@ function GalleryAppBar({
         >
           {sidebarToggle}
           {variant === "page" && !isViewportSmall && (
-            <Box height="36px" sx={{ ml: 0.5, py: 0.25, position: "relative" }}>
+            <Box
+              sx={{
+                height: "36px",
+                ml: 0.5,
+                py: 0.25,
+                position: "relative",
+              }}
+            >
               {Result.fromNullable(
                 brandingHref,
                 new Error("branding not cached"),
@@ -445,7 +454,9 @@ function GalleryAppBar({
                     key="branding small"
                     src={href}
                     alt="branding"
-                    style={{ height: "100%" }}
+                    style={{
+                      height: "100%",
+                    }}
                   />
                 ))
                 .orElse(null)}
@@ -454,15 +465,15 @@ function GalleryAppBar({
         </Box>
         {variant === "page" && !isViewportSmall && (
           <>
-            <div
-              style={{
+            <Box
+              sx={{
                 height: "40px",
                 backgroundColor: "white",
                 width: "12px",
                 clipPath: `url(#${rightClipId})`,
                 marginLeft: "-1px",
               }}
-            ></div>
+            ></Box>
             <svg width="0" height="0">
               <defs>
                 <clipPath id={rightClipId}>
@@ -481,7 +492,11 @@ function GalleryAppBar({
           </VisuallyHiddenHeading>
         )}
         {variant === "dialog" && (
-          <Box sx={{ ml: 0.5 }}>
+          <Box
+            sx={{
+              ml: 0.5,
+            }}
+          >
             <Typography variant="h6" noWrap component="h2">
               {currentPage}
             </Typography>
@@ -491,7 +506,9 @@ function GalleryAppBar({
           <Stack
             direction="row"
             spacing={2}
-            sx={{ mx: 1 }}
+            sx={{
+              mx: 1,
+            }}
             component="nav"
             aria-label="main links"
           >
@@ -542,7 +559,9 @@ function GalleryAppBar({
               component="nav"
               aria-label="Main Navigation"
               disablePadding
-              sx={{ ml: 1 }}
+              sx={{
+                ml: 1,
+              }}
             >
               <ListItemButton
                 dense
@@ -571,10 +590,6 @@ function GalleryAppBar({
               anchorEl={appMenuAnchorEl}
               open={Boolean(appMenuAnchorEl)}
               onClose={handleAppMenuClose}
-              MenuListProps={{
-                "aria-labelledby": "app-menu-button",
-                disablePadding: true,
-              }}
               anchorOrigin={{
                 vertical: "bottom",
                 horizontal: "left",
@@ -592,6 +607,12 @@ function GalleryAppBar({
                    */
                   boxShadow:
                     "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                },
+              }}
+              slotProps={{
+                list: {
+                  "aria-labelledby": "app-menu-button",
+                  disablePadding: true,
                 },
               }}
             >
@@ -664,7 +685,11 @@ function GalleryAppBar({
             </Menu>
           </>
         )}
-        <Box flexGrow={1}></Box>
+        <Box
+          sx={{
+            flexGrow: 1,
+          }}
+        ></Box>
         {FetchingData.getSuccessValue(uiNavigationData)
           .map(({ nextMaintenance }) => nextMaintenance)
           .flatMap(Parsers.isNotNull)
@@ -682,7 +707,11 @@ function GalleryAppBar({
                 />
               ))
               .orElse(null)}
-            <Box ml={1}>
+            <Box
+              sx={{
+                ml: 1,
+              }}
+            >
               <IconButtonWithTooltip
                 size="small"
                 disabled={FetchingData.isLoading(uiNavigationData)}
@@ -712,11 +741,6 @@ function GalleryAppBar({
                 onClose={() => {
                   setAccountMenuAnchorEl(null);
                 }}
-                MenuListProps={{
-                  "aria-labelledby": "account-menu-button",
-                  disablePadding: true,
-                  sx: { pt: 0.5 },
-                }}
                 anchorOrigin={{
                   vertical: "bottom",
                   horizontal: "right",
@@ -736,6 +760,15 @@ function GalleryAppBar({
                       "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
                   },
                 }}
+                slotProps={{
+                  list: {
+                    "aria-labelledby": "account-menu-button",
+                    disablePadding: true,
+                    sx: {
+                      pt: 0.5,
+                    },
+                  },
+                }}
               >
                 {FetchingData.match(uiNavigationData, {
                   loading: () => null,
@@ -748,13 +781,26 @@ function GalleryAppBar({
                     </ListItem>
                   ),
                   success: ({ userDetails }) => (
-                    <ListItem key="user details" sx={{ py: 0 }}>
-                      <ListItemIcon sx={{ alignSelf: "flex-start", mt: 1 }}>
+                    <ListItem
+                      key="user details"
+                      sx={{
+                        py: 0,
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          alignSelf: "flex-start",
+                          mt: 1,
+                        }}
+                      >
                         <DynamicAvatar uiNavigationData={uiNavigationData} />
                       </ListItemIcon>
                       <Stack>
                         <ListItemText
-                          sx={{ mt: 0.5 }}
+                          sx={{
+                            mt: 0.5,
+                            ml: 1.6,
+                          }}
                           primary={
                             <>
                               {FetchingData.getSuccessValue(uiNavigationData)
@@ -778,24 +824,8 @@ function GalleryAppBar({
                              * The styling of this component is dictated by the ORCID display guidelines
                              * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
                              */
-                            sx={{ mt: -0.5 }}
-                            primaryTypographyProps={{
-                              sx: {
-                                fontFamily:
-                                  userDetails.orcidId === null
-                                    ? "inherit"
-                                    : "monospace",
-                                lineHeight:
-                                  userDetails.orcidId === null
-                                    ? "unset"
-                                    : "1em",
-                                fontSize: "0.8em",
-                                alignItems: "center",
-                                textDecoration:
-                                  userDetails.orcidId === null
-                                    ? "none"
-                                    : "underline",
-                              },
+                            sx={{
+                              mt: -0.5,
                             }}
                             primary={
                               userDetails.orcidId === null ? (
@@ -807,7 +837,9 @@ function GalleryAppBar({
                                 <Stack
                                   direction="row"
                                   spacing={0.5}
-                                  alignItems="center"
+                                  sx={{
+                                    alignItems: "center",
+                                  }}
                                 >
                                   <SvgIcon>
                                     <OrcidIcon />
@@ -816,6 +848,26 @@ function GalleryAppBar({
                                 </Stack>
                               )
                             }
+                            slotProps={{
+                              primary: {
+                                sx: {
+                                  fontFamily:
+                                    userDetails.orcidId === null
+                                      ? "inherit"
+                                      : "monospace",
+                                  lineHeight:
+                                    userDetails.orcidId === null
+                                      ? "unset"
+                                      : "1em",
+                                  fontSize: "0.8em",
+                                  alignItems: "center",
+                                  textDecoration:
+                                    userDetails.orcidId === null
+                                      ? "none"
+                                      : "underline",
+                                },
+                              },
+                            }}
                           />
                         )}
                       </Stack>
@@ -927,7 +979,6 @@ function GalleryAppBar({
                         } else {
                           console.log("No GAPI defined");
                         }
-
                         setAccountMenuAnchorEl(null);
                         window.location.href = "/logout";
                       }}
@@ -937,12 +988,19 @@ function GalleryAppBar({
                   .map(({ bannerImgSrc }) => (
                     <ListItem
                       key="branding large"
-                      sx={{ py: 0, mb: 1, justifyContent: "flex-end" }}
+                      sx={{
+                        py: 0,
+                        mb: 1,
+                        justifyContent: "flex-end",
+                      }}
                     >
                       <img
                         src={bannerImgSrc}
                         alt="branding"
-                        style={{ maxWidth: "120px", display: "block" }}
+                        style={{
+                          maxWidth: "120px",
+                          display: "block",
+                        }}
                       />
                     </ListItem>
                   ))
@@ -956,13 +1014,25 @@ function GalleryAppBar({
           </>
         )}
         {variant === "dialog" && (
-          <Box sx={{ ml: 1 }}>
+          <Box
+            sx={{
+              ml: 1,
+            }}
+          >
             <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
           </Box>
         )}
-        <Box ml={1}>
+        <Box
+          sx={{
+            ml: 1,
+          }}
+        >
           {helpPage ? (
-            <Box sx={{ transform: "translateY(2px)" }}>
+            <Box
+              sx={{
+                transform: "translateY(2px)",
+              }}
+            >
               <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
             </Box>
           ) : (

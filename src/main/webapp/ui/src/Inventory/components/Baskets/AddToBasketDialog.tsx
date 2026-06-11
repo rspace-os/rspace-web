@@ -10,7 +10,7 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -61,7 +61,7 @@ function AddToBasketDialog({
   }, [newBasketName]);
 
   const itemIds: Array<GlobalId> = selectedResults.map((r) =>
-    getSavedGlobalId(r)
+    getSavedGlobalId(r),
   );
   const selectedCount = selectedResults.length;
   const itemString = selectedCount > 1 ? "Items" : "Item";
@@ -93,66 +93,63 @@ function AddToBasketDialog({
     >
       <DialogTitle>{`Adding ${itemString} to Basket`}</DialogTitle>
       <DialogContent>
-        <Grid container direction="column" spacing={2}>
-          <Grid item>
-            <FormControl component="fieldset" fullWidth sx={{ mt: 1 }}>
-              <InputLabel id={basketSelectorLabel}>Choose a Basket</InputLabel>
-              <Select
-                labelId={basketSelectorLabel}
-                value={`${targetBasket.id ?? undefined}`}
-                onChange={(event: SelectChangeEvent<string>) => {
-                  const selectedBasket = targetBaskets.find(
-                    (b) => `${b.id}` === event.target.value
-                  );
-                  if (selectedBasket) {
-                    setTargetBasket(selectedBasket);
-                  }
-                }}
-                label="Choose a Basket"
-                size="small"
-              >
-                {targetBaskets.map((basket) => (
-                  <MenuItem key={basket.id} value={`${basket.id}`}>
-                    {basket.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+        <Stack spacing={2}>
+          <FormControl component="fieldset" fullWidth sx={{ mt: 1 }}>
+            <InputLabel id={basketSelectorLabel}>Choose a Basket</InputLabel>
+            <Select
+              labelId={basketSelectorLabel}
+              value={`${targetBasket.id ?? undefined}`}
+              onChange={(event: SelectChangeEvent<string>) => {
+                const selectedBasket = targetBaskets.find(
+                  (b) => `${b.id}` === event.target.value,
+                );
+                if (selectedBasket) {
+                  setTargetBasket(selectedBasket);
+                }
+              }}
+              label="Choose a Basket"
+              size="small"
+            >
+              {targetBaskets.map((basket) => (
+                <MenuItem key={basket.id} value={`${basket.id}`}>
+                  {basket.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           {!targetBasket.id && (
-            <Grid item>
-              <FormControl component="fieldset" fullWidth>
-                <TextField
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  size="small"
-                  label="Custom Name (optional)"
-                  fullWidth
-                  disabled={Boolean(targetBasket.id)}
-                  error={error}
-                  id="basketNameField" // for a11y
-                  value={newBasketName}
-                  placeholder="Enter custom name for new Basket"
-                  helperText={
-                    error && !noDuplicates()
-                      ? "This name is already used for another Basket."
-                      : error && !validLength()
+            <FormControl component="fieldset" fullWidth>
+              <TextField
+                size="small"
+                label="Custom Name (optional)"
+                fullWidth
+                disabled={Boolean(targetBasket.id)}
+                error={error}
+                // for a11y
+                id="basketNameField"
+                value={newBasketName}
+                placeholder="Enter custom name for new Basket"
+                helperText={
+                  error && !noDuplicates()
+                    ? "This name is already used for another Basket."
+                    : error && !validLength()
                       ? "The name should be no longer than 32 characters."
                       : "You can assign a unique name to the new Basket."
-                  }
-                  onChange={({ target }) => setNewBasketName(target.value)}
-                  variant="standard"
-                />
-              </FormControl>
-            </Grid>
+                }
+                onChange={({ target }) => setNewBasketName(target.value)}
+                variant="standard"
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                }}
+              />
+            </FormControl>
           )}
-          <Grid item>
-            <Alert severity="info">
-              {`This action will not change the location of the ${itemString}.`}
-            </Alert>
-          </Grid>
-        </Grid>
+          <Alert severity="info">
+            {`This action will not change the location of the ${itemString}.`}
+          </Alert>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>

@@ -4,26 +4,10 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../theme";
 import Paper from "@mui/material/Paper";
 import InputBase from "@mui/material/InputBase";
-import { makeStyles } from "tss-react/mui";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 import { createRoot } from "react-dom/client";
-
-const useStyles = makeStyles()((theme) => ({
-  paper: {
-    boxShadow: "none",
-  },
-  input: {
-    paddingLeft: theme.spacing(1),
-    flexGrow: 1,
-  },
-  form: {
-    display: "flex",
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-}));
+import Box from "@mui/material/Box";
 
 function BaseSearch(props: {
   onSubmit?: string | (() => void);
@@ -31,7 +15,6 @@ function BaseSearch(props: {
   elId: string;
   placeholder: string;
 }) {
-  const { classes } = useStyles();
   const [search, setSearch] = React.useState("");
 
   const submitSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -59,23 +42,31 @@ function BaseSearch(props: {
 
   return (
     <Paper
-      className={classes.paper}
+      sx={{ boxShadow: "none" }}
       variant={props.variant}
       data-test-id="base-search-content"
     >
-      <form
+      <Box
+        component="form"
         onSubmit={submitSearch}
-        className={classes.form}
+        sx={{
+          display: "flex",
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
         data-test-id="base-search-form"
       >
         <InputBase
           id={props.elId}
           data-test-id="base-search-input"
           placeholder={props.placeholder || "Search..."}
-          inputProps={{ "aria-label": props.placeholder || "Search" }}
+          slotProps={{
+            input: { "aria-label": props.placeholder || "Search" },
+          }}
           value={search}
           onChange={handleChange}
-          className={classes.input}
+          sx={{ pl: 1, flexGrow: 1 }}
         />
         <IconButton
           id={`${props.elId}-submit`}
@@ -85,7 +76,7 @@ function BaseSearch(props: {
         >
           <SearchIcon />
         </IconButton>
-      </form>
+      </Box>
     </Paper>
   );
 }
@@ -98,7 +89,7 @@ export default function WrappedBaseSearch(
   props: React.ComponentProps<typeof BaseSearch>
 ) {
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <BaseSearch {...props} />
       </ThemeProvider>
@@ -111,17 +102,19 @@ function renderElements() {
     const domContainers = document.getElementsByClassName("base-search");
     if (domContainers.length) {
       [].map.call(domContainers, (container) => {
+        const htmlContainer = container as HTMLElement;
+        const { dataset } = htmlContainer;
+        const variant =
+          dataset.variant === "outlined" || dataset.variant === "elevation"
+            ? dataset.variant
+            : undefined;
         const root = createRoot(container);
         root.render(
           <WrappedBaseSearch
-            // @ts-expect-error the container will have data attributes
-            placeholder={container.dataset.placeholder}
-            // @ts-expect-error the container will have data attributes
-            onSubmit={container.dataset.onsubmit}
-            // @ts-expect-error the container will have data attributes
-            elId={container.dataset.elid}
-            // @ts-expect-error the container will have data attributes
-            variant={container.dataset.variant}
+            placeholder={dataset.placeholder ?? "Search..."}
+            onSubmit={dataset.onsubmit}
+            elId={dataset.elid ?? "base-search"}
+            variant={variant}
           />
         );
       });

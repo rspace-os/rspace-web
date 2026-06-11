@@ -10,7 +10,8 @@ import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
-import useApplicationVersion from "../../hooks/api/useApplicationVersion";
+import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
+import ErrorBoundary from "../ErrorBoundary";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,42 +23,51 @@ interface AboutRSpaceDialogProps {
   onClose: () => void;
 }
 
+/**
+ * Renders the running application version. Suspends while it loads, so it must
+ * be wrapped in a `<Suspense>` boundary, and throws on failure, so it must be
+ * wrapped in an error boundary.
+ */
+function ApplicationVersion(): React.ReactElement {
+  const { data: version } = useApplicationVersionQuery();
+  return (
+    <Typography variant="h6" gutterBottom>
+      {version}
+    </Typography>
+  );
+}
+
 export function AboutRSpaceContent(): React.ReactElement {
   const deploymentDescription = useDeploymentProperty("deployment.description");
   const helpEmail = useDeploymentProperty("deployment.helpEmail");
-  const version = useApplicationVersion();
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+    <Stack sx={{ py: 2, alignItems: "center" }}>
       <Box
-        width={80}
-        height={80}
-        mb={2}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
+        sx={{
+          width: 80,
+          height: 80,
+          mb: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <img src={RSpaceLogo} alt="RSpace Logo" />{" "}
       </Box>
 
       <Box sx={{ mb: 3 }}>
-        {FetchingData.match(version, {
-          loading: () => (
-            <Typography variant="h6" gutterBottom color="textSecondary">
-              Loading version...
-            </Typography>
-          ),
-          error: () => (
-            <Typography variant="h6" gutterBottom color="error">
-              Version unavailable
-            </Typography>
-          ),
-          success: (versionString) => (
-            <Typography variant="h6" gutterBottom>
-              {versionString}
-            </Typography>
-          ),
-        })}
+        <ErrorBoundary message="Version unavailable">
+          <React.Suspense
+            fallback={
+              <Typography variant="h6" gutterBottom color="textSecondary">
+                Loading version...
+              </Typography>
+            }
+          >
+            <ApplicationVersion />
+          </React.Suspense>
+        </ErrorBoundary>
       </Box>
 
       {FetchingData.match(deploymentDescription, {
@@ -122,9 +132,9 @@ export function AboutRSpaceContent(): React.ReactElement {
         © 2026 ResearchSpace
       </Typography>
 
-      <Box mt={2} mb={3}>
+      <Box sx={{ mt: 2, mb: 3 }}>
         <Typography variant="body2">
-          <Stack spacing={2} direction="row" alignItems="center">
+          <Stack spacing={2} direction="row" sx={{ alignItems: "center" }}>
             <Link
               href="https://researchspace.com"
               target="_blank"
@@ -145,7 +155,7 @@ export function AboutRSpaceContent(): React.ReactElement {
           </Stack>
         </Typography>
       </Box>
-    </Box>
+    </Stack>
   );
 }
 

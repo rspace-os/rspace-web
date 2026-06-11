@@ -47,7 +47,7 @@ function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
         alt={`What the ${collection.size} samples look like`}
       />
       {collection.isFieldEditable("image") && (
-        <Box mt={1}>
+        <Box sx={{ mt: 1 }}>
           <Alert severity="info">
             Please note, on slower network connections uploading large images
             may trigger an error.

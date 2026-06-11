@@ -64,7 +64,12 @@ function ProtocolsIO({
   }, []);
 
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12
+      }}>
       <IntegrationCard
         name="protocols.io"
         integrationState={integrationState}

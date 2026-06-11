@@ -7,7 +7,7 @@ export default function FilterButton({ showFilter, setShowFilter }) {
   return (
     <>
       <Typography
-        style={{ marginLeft: "15px" }}
+        sx={{ marginLeft: "15px" }}
         component="span"
         variant="body1"
         color="textPrimary"

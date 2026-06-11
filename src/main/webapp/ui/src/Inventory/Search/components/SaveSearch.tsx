@@ -1,23 +1,19 @@
 import BookmarkBorderOutlinedIcon from "@mui/icons-material/BookmarkBorderOutlined";
 import React, { useContext, useState } from "react";
 import useStores from "../../../stores/use-stores";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../stores/contexts/Search";
 import NameDialog from "./NameDialog";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import type { SxProps, Theme } from "@mui/material/styles";
 
-const useStyles = makeStyles()((theme) => ({
-  button: {
-    padding: theme.spacing(0.5),
-    margin: theme.spacing(-0.5, 0.125, -0.5, -0.5),
-  },
-}));
+type SaveSearchArgs = {
+  sx?: SxProps<Theme>;
+};
 
-function SaveSearch(): React.ReactNode {
+function SaveSearch({ sx }: SaveSearchArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { searchStore } = useStores();
-  const { classes } = useStyles();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -41,8 +37,8 @@ function SaveSearch(): React.ReactNode {
           size="small"
           data-test-id="save-search"
           onClick={handleOpen}
-          className={classes.button}
           icon={<BookmarkBorderOutlinedIcon fontSize="small" />}
+          sx={sx}
         />
       ) : null}
       <NameDialog

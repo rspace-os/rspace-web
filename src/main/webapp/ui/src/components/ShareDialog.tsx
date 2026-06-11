@@ -20,7 +20,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
+import Autocomplete, {
+  type AutocompleteRenderInputParams,
+} from "@mui/material/Autocomplete";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -663,7 +665,7 @@ export function ShareDialog({
         )}
       </DialogTitle>
       <DialogContent>
-        <Box mb={3} mt={0.75}>
+        <Box sx={{ mb: 3, mt: 0.75 }}>
           <VisuallyHiddenHeading variant="h3">
             Add users or groups to share with
           </VisuallyHiddenHeading>
@@ -726,8 +728,7 @@ export function ShareDialog({
                         alreadyShared.shareId.toString(),
                         {
                           id: sharedFolderId,
-                          name:
-                            groupFolderNames.get(newValue.id) || "",
+                          name: groupFolderNames.get(newValue.id) || "",
                         },
                       );
                       setShareFolderChanges(currentFolderChanges);
@@ -786,53 +787,67 @@ export function ShareDialog({
               }
             }}
             getOptionDisabled={(option) => option.isDisabled}
-            renderOption={(props, option) => (
-              <Box
-                component="li"
-                {...props}
-                sx={{
-                  opacity: option.isDisabled ? 0.5 : 1,
-                  cursor: option.isDisabled ? "not-allowed" : "pointer",
-                }}
-              >
-                <Box sx={{ width: "100%" }}>
-                  <Typography variant="body2" fontWeight="medium">
-                    {option.optionType === "GROUP"
-                      ? option.name
-                      : `${option.firstName} ${option.lastName}`}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {option.isDisabled
-                      ? `All of the ${pluralName} have already been shared with ${
-                          option.optionType === "GROUP"
-                            ? option.name
-                            : `${option.firstName} ${option.lastName}`
-                        }`
-                      : option.optionType === "GROUP"
-                        ? `${option.type} • ${option.members?.length || 0} members`
-                        : `User • ${option.username} • ${option.email}`}
-                  </Typography>
+            renderOption={(props, option) => {
+              const { key, ...optionProps } = props;
+
+              return (
+                <Box
+                  component="li"
+                  key={key}
+                  {...optionProps}
+                  sx={{
+                    opacity: option.isDisabled ? 0.5 : 1,
+                    cursor: option.isDisabled ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <Box sx={{ width: "100%" }}>
+                    <Typography variant="body2" sx={{ fontWeight: "medium" }}>
+                      {option.optionType === "GROUP"
+                        ? option.name
+                        : `${option.firstName} ${option.lastName}`}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.isDisabled
+                        ? `All of the ${pluralName} have already been shared with ${
+                            option.optionType === "GROUP"
+                              ? option.name
+                              : `${option.firstName} ${option.lastName}`
+                          }`
+                        : option.optionType === "GROUP"
+                          ? `${option.type} • ${option.members?.length || 0} members`
+                          : `User • ${option.username} • ${option.email}`}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Add RSpace users or groups"
-                placeholder="Type to filter groups and users..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {optionsLoading ? (
-                        <CircularProgress color="inherit" size={20} />
-                      ) : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
+              );
+            }}
+            renderInput={(params: AutocompleteRenderInputParams) => {
+              const { slotProps, ...textFieldProps } = params;
+              const { input: inputSlotProps, ...otherSlotProps } = slotProps;
+
+              return (
+                <TextField
+                  {...textFieldProps}
+                  label="Add RSpace users or groups"
+                  placeholder="Type to filter groups and users..."
+                  size="small"
+                  slotProps={{
+                    ...otherSlotProps,
+                    input: {
+                      ...inputSlotProps,
+                      endAdornment: (
+                        <>
+                          {optionsLoading ? (
+                            <CircularProgress color="inherit" size={20} />
+                          ) : null}
+                          {inputSlotProps.endAdornment}
+                        </>
+                      ),
+                    },
+                  }}
+                />
+              );
+            }}
             noOptionsText="No matches found. You can only share with groups you are in, and users in groups you are in."
             fullWidth
             clearOnBlur
@@ -849,10 +864,12 @@ export function ShareDialog({
 
         {loading ? (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight="200px"
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "200px",
+            }}
           >
             <CircularProgress />
           </Box>
@@ -877,7 +894,7 @@ export function ShareDialog({
                             <Typography
                               variant="body2"
                               color="text.secondary"
-                              style={{ fontStyle: "italic" }}
+                              sx={{ fontStyle: "italic" }}
                             >
                               This {singularName} is not directly shared with
                               anyone.
@@ -951,7 +968,7 @@ export function ShareDialog({
                                                 throw new Error("Impossible");
                                               handlePermissionChange(
                                                 share.shareId.toString(),
-                                                newValue as Permission,
+                                                newValue,
                                               );
                                             }}
                                             size="small"
@@ -978,7 +995,8 @@ export function ShareDialog({
                                           <>
                                             {shareFolderChanges.get(
                                               share.shareId.toString(),
-                                            )?.name || getParentFolderName(share)}
+                                            )?.name ||
+                                              getParentFolderName(share)}
                                             <Button
                                               size="small"
                                               sx={{ ml: 1 }}
@@ -1030,12 +1048,10 @@ export function ShareDialog({
                                       }}
                                     >
                                       <TableCell>
-                                        <Box
-                                          sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                          }}
+                                        <Stack
+                                          direction="row"
+                                          spacing={1}
+                                          sx={{ alignItems: "center" }}
                                         >
                                           {newShare.recipientType === "USER" ? (
                                             <Typography variant="body2">
@@ -1050,7 +1066,7 @@ export function ShareDialog({
                                               {newShare.recipientName}
                                             </Typography>
                                           )}
-                                        </Box>
+                                        </Stack>
                                       </TableCell>
                                       <TableCell>
                                         <Chip
@@ -1087,7 +1103,7 @@ export function ShareDialog({
                                               handleNewSharePermissionChange(
                                                 globalId,
                                                 newShare.id,
-                                                newValue as Permission,
+                                                newValue,
                                               );
                                             }}
                                             size="small"
@@ -1131,7 +1147,8 @@ export function ShareDialog({
                                                   );
                                                 const group = groups.find(
                                                   (g) =>
-                                                    g.id === newShare.recipientId,
+                                                    g.id ===
+                                                    newShare.recipientId,
                                                 );
                                                 const sharedFolderId = group
                                                   ? getGroupFolderId(
@@ -1322,19 +1339,22 @@ export function ShareDialog({
 
                         return Array.from(uniqueShares.values()).map(
                           ({ share, documentCount }) => (
-                            <Box
+                            <Stack
+                              direction="row"
+                              spacing={2}
                               key={`${share.recipientType}-${share.recipientId}`}
                               sx={{
-                                display: "flex",
                                 alignItems: "center",
-                                gap: 2,
                                 p: 2,
                                 borderRadius: 1,
                                 backgroundColor: "action.hover",
                               }}
                             >
                               <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="body2" fontWeight="medium">
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: "medium" }}
+                                >
                                   {share.recipientName}
                                 </Typography>
                                 <Typography
@@ -1374,7 +1394,8 @@ export function ShareDialog({
                                   }}
                                   value={share.permission}
                                   onChange={(e) => {
-                                    const newPermission = e.target.value;
+                                    const newPermission = e.target
+                                      .value as string;
                                     if (newPermission === "UNSHARE") {
                                       // Remove this share from all documents
                                       const updatedNewShares = new Map(
@@ -1472,7 +1493,7 @@ export function ShareDialog({
                                   Change Folder
                                 </Button>
                               )}
-                            </Box>
+                            </Stack>
                           ),
                         );
                       })()}
@@ -1502,8 +1523,7 @@ export function ShareDialog({
             globalIds.forEach((globalId) => {
               const docShares = updatedNewShares.get(globalId) || [];
               const updatedDocShares = docShares.map((share) =>
-                share.recipientType === "GROUP" &&
-                share.recipientId === groupId
+                share.recipientType === "GROUP" && share.recipientId === groupId
                   ? {
                       ...share,
                       locationName: folder.name,
@@ -1519,7 +1539,9 @@ export function ShareDialog({
             const { globalId } = selectedShareForFolderChange;
             const updatedNewShares = new Map(newShares);
             const docNewShares = updatedNewShares.get(globalId) || [];
-            const isNewShare = docNewShares.some((share) => share.id === shareId);
+            const isNewShare = docNewShares.some(
+              (share) => share.id === shareId,
+            );
 
             if (isNewShare) {
               // Handle new shares

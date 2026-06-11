@@ -60,7 +60,7 @@ const DmpSelector = observer(
   }: {
     state: { selectedPlans: Array<DMPUserInternalId>; linkDMP: boolean };
     handleSwitch: (
-      foo: "linkDMP"
+      foo: "linkDMP",
     ) => (event: { target: { checked: boolean } }) => void;
     repo: Repo;
   }) => {
@@ -75,15 +75,15 @@ const DmpSelector = observer(
     const removeSelectedPlan = (id: DMPUserInternalId) => {
       runInAction(() => {
         state.selectedPlans = state.selectedPlans.filter(
-          (planId) => planId !== id
+          (planId) => planId !== id,
         );
       });
     };
 
     return mapNullable(
       (dmps) => (
-        <Grid container style={{ width: "100%" }}>
-          <Grid item xs={12}>
+        <Grid container sx={{ width: "100%" }}>
+          <Grid size={12}>
             <FormControlLabel
               control={
                 <Switch
@@ -92,12 +92,13 @@ const DmpSelector = observer(
                   value="link DMP"
                   color="primary"
                   data-test-id="link DMP"
+                  slotProps={{ input: { role: "checkbox" } }}
                 />
               }
               label={"Associate export with a Data Management Plans (DMPs)"}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Collapse in={state.linkDMP} component="div" collapsedSize={0}>
               <>
                 <DMPTableSmall
@@ -117,9 +118,9 @@ const DmpSelector = observer(
           </Grid>
         </Grid>
       ),
-      repo.linkedDMPs
+      repo.linkedDMPs,
     );
-  }
+  },
 );
 
 function ExportRepo({
@@ -132,9 +133,7 @@ function ExportRepo({
 }: ExportRepoArgs): React.ReactNode {
   const [state] = useState(
     observable({
-      inputValidations: STANDARD_VALIDATIONS as
-        | typeof STANDARD_VALIDATIONS
-        | typeof DRYAD_VALIDATIONS,
+      inputValidations: STANDARD_VALIDATIONS,
       submitAttempt: false,
       repoChoice: repoDetails.repoChoice,
       title: repoDetails.meta.title,
@@ -144,7 +143,7 @@ function ExportRepo({
       publish: repoDetails.meta.publish,
       authors: repoDetails.meta.authors,
       contacts: repoDetails.meta.contacts,
-      otherProperties: {} as Record<string, string>,
+      otherProperties: {},
       linkDMP: false,
       selectedPlans: [] as Array<DMPUserInternalId>,
       crossrefFunders: [] as Array<{ name: string }>,
@@ -152,7 +151,7 @@ function ExportRepo({
       tags: [] as Array<Tag>,
       metadataLanguage: "",
       exportToRaid: upstreamState.repositoryConfig.exportToRaid,
-    })
+    }),
   );
   const [fetchingTags, setFetchingTags] = useState(false);
 
@@ -174,7 +173,11 @@ function ExportRepo({
 
       if (repo.repoName === "app.dryad") {
         validations = { ...DRYAD_VALIDATIONS };
-        if (Object.keys(state.otherProperties.funder).length !== 0)
+        if (
+          "funder" in state.otherProperties &&
+          typeof state.otherProperties.funder === "string" &&
+          state.otherProperties.funder.length !== 0
+        )
           validations.crossrefFunder = true;
       }
 
@@ -195,7 +198,7 @@ function ExportRepo({
         [
           ...Object.values(validations),
           !(repo.repoName === "app.zenodo" && state.selectedPlans.length > 1),
-        ].every((b) => b)
+        ].every((b) => b),
       );
     });
   }, []);
@@ -252,7 +255,7 @@ function ExportRepo({
 
   const handleSwitch =
     <Key extends keyof typeof state>(
-      name: Key
+      name: Key,
     ): ((event: { target: { checked: boolean } }) => void) =>
     (event) => {
       runInAction(() => {
@@ -301,7 +304,7 @@ function ExportRepo({
   const handleFetchCrossrefFunder = (
     event: React.SyntheticEvent<Element, Event>,
     searchTerm: string,
-    reason: AutocompleteInputChangeReason
+    reason: AutocompleteInputChangeReason,
   ) => {
     if (searchTerm && searchTerm.length > 2 && reason === "input") {
       void fetchCrossrefFunders(searchTerm);
@@ -311,8 +314,12 @@ function ExportRepo({
   const repo: Repo = repoList[state.repoChoice];
 
   return (
-    <Grid container direction="column" spacing={1} style={{ width: "100%" }}>
-      <Grid item xs={12}>
+    <Grid
+      container
+      sx={{ flexDirection: "column", width: "100%" }}
+      spacing={1}
+    >
+      <Grid size={12}>
         <FormControl component="fieldset">
           <FormLabel component="legend">
             Please choose one of your configured repositories to submit your
@@ -332,9 +339,10 @@ function ExportRepo({
                   control={
                     <Radio
                       color="primary"
-                      inputProps={{
-                        // @ts-expect-error Extra props are just passed through to the underlying DOM element
-                        "data-testid": `radio-button-${r.repoName}`,
+                      slotProps={{
+                        input: {
+                          "data-testid": `radio-button-${r.repoName}`,
+                        } as Record<string, unknown>,
                       }}
                     />
                   }
@@ -346,10 +354,10 @@ function ExportRepo({
           </RadioGroup>
         </FormControl>
       </Grid>
-      <Grid item>
+      <Grid>
         <Divider orientation="horizontal" />
       </Grid>
-      <Grid item>
+      <Grid>
         {repo.repoName === "app.dryad" && (
           <>
             <DmpSelector

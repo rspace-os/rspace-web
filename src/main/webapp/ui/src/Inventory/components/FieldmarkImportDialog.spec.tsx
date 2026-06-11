@@ -2,14 +2,16 @@ import { test, expect } from "@playwright/experimental-ct-react";
 import React from "react";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import AxeBuilder from "@axe-core/playwright";
+import { gridClasses } from "@mui/x-data-grid";
 import * as Jwt from "jsonwebtoken";
+import {
+  clickWhenInViewport,
+  moveToastStackIntoViewport,
+} from "@/__tests__/playwright/viewport";
 
 import { sleep } from "@/util/Util";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
+const importNotebookEndpoint = "/api/inventory/v1/import/fieldmark/notebook";
 
 const feature = test.extend<{
   Given: {
@@ -29,9 +31,9 @@ const feature = test.extend<{
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
     "the notebooks should be displayed in the table": () => Promise<void>;
-    "an import request should be made to the server with the correct notebook ID": () => void;
-    "an import request should be made without an identifier column": () => void;
-    "an import request should be made with the selected identifier column": () => void;
+    "an import request should be made to the server with the correct notebook ID": () => Promise<void>;
+    "an import request should be made without an identifier column": () => Promise<void>;
+    "an import request should be made with the selected identifier column": () => Promise<void>;
     "an importing alert should be visible": () => Promise<void>;
     "a success alert should be visible": () => Promise<void>;
     "the import button should show loading state": () => Promise<void>;
@@ -41,7 +43,7 @@ const feature = test.extend<{
   };
   networkRequests: Array<{ url: URL; postData: string | null }>;
 }>({
-  Given: async ({ mount, page }, use) => {
+  Given: async ({ mount }, use) => {
     await use({
       "the fieldmark import dialog is mounted": async () => {
         await mount(<FieldmarkImportDialogStory />);
@@ -49,6 +51,37 @@ const feature = test.extend<{
     });
   },
   When: async ({ page }, use) => {
+    const selectNotebook = async (name: string) => {
+      const radio = page.getByRole("radio", {
+        name: `Select notebook: ${name}`,
+      });
+      await radio.click();
+      await expect(radio).toBeChecked();
+    };
+    const clickImport = async () => {
+      /*
+       * Selecting a notebook kicks off an async fetch of IGSN candidate fields
+       * which shows a loading indicator and then mounts/unmounts the IGSN field
+       * selector, resizing the (centred) dialog and shifting the Import button.
+       * Selecting an IGSN field also leaves a closing menu whose backdrop can
+       * intercept clicks. On WebKit, clicking while the button is moving or
+       * covered silently misses, so the import request never fires and
+       * waitForRequest times out. Wait for both to settle before clicking.
+       */
+      await expect(
+        page.getByText(/Loading available IGSN ID fields/),
+      ).toBeHidden();
+      await expect(page.getByRole("listbox")).toBeHidden();
+      const importButton = page.getByRole("button", { name: "Import" });
+      await expect(importButton).toBeEnabled();
+      await Promise.all([
+        page.waitForRequest(
+          (request) =>
+            new URL(request.url()).pathname === importNotebookEndpoint,
+        ),
+        importButton.click(),
+      ]);
+    };
     await use({
       "the dialog is in the DOM": async () => {
         const dialog = page.getByRole("dialog", { includeHidden: true });
@@ -58,75 +91,56 @@ const feature = test.extend<{
         const dialog = page.getByRole("dialog");
 
         await expect(dialog).toBeVisible();
-        // Wait for the DataGrid to appear
         const dataGrid = page.getByRole("grid");
         await expect(dataGrid).toBeVisible();
-      },
-      "the user selects a notebook and clicks import": async () => {
         await page
           .getByRole("radio", { name: "Select notebook: Test Notebook 1" })
-          .click();
-        await page.getByRole("button", { name: "Import" }).click();
+          .waitFor();
+      },
+      "the user selects a notebook and clicks import": async () => {
+        await selectNotebook("Test Notebook 1");
+        await clickImport();
       },
       "the user selects a notebook with no identifier columns and clicks import":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook No Identifiers",
-            })
-            .click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await selectNotebook("Notebook No Identifiers");
+          await clickImport();
         },
       "the user selects a notebook with identifier columns, selects an identifier column, and clicks import":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook With Identifiers",
-            })
-            .click();
+          await selectNotebook("Notebook With Identifiers");
           const identifierSelect = page.getByRole("combobox", {
             name: "IGSN ID field",
           });
+          await identifierSelect.waitFor();
           await identifierSelect.click();
           await page.getByRole("option", { name: "sample_id" }).click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await clickImport();
         },
       "the user selects a notebook and clicks import for alert testing":
         async () => {
-          await page
-            .getByRole("radio", { name: "Select notebook: Test Notebook 1" })
-            .click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await selectNotebook("Test Notebook 1");
+          await clickImport();
         },
       "the user selects a notebook that will trigger IGSN error": async () => {
-        await page
-          .getByRole("radio", {
-            name: "Select notebook: Notebook IGSN Error",
-          })
-          .click();
+        await selectNotebook("Notebook IGSN Error");
       },
       "the user selects a notebook with identifier columns and clicks import without selecting identifier":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook With Identifiers",
-            })
-            .click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await selectNotebook("Notebook With Identifiers");
+          await page.getByRole("combobox", { name: "IGSN ID field" }).waitFor();
+          await clickImport();
         },
       "the user selects a notebook that will trigger detailed import error":
         async () => {
-          await page
-            .getByRole("radio", {
-              name: "Select notebook: Notebook Detailed Error",
-            })
-            .click();
+          await selectNotebook("Notebook Detailed Error");
           const identifierSelect = page.getByRole("combobox", {
             name: "IGSN ID field",
           });
+          await identifierSelect.waitFor();
           await identifierSelect.click();
           await page.getByRole("option", { name: "identifier_field" }).click();
-          await page.getByRole("button", { name: "Import" }).click();
+          await clickImport();
         },
     });
   },
@@ -147,15 +161,18 @@ const feature = test.extend<{
              * 3. Content not in landmarks is expected in component testing context
              * 4. DataGrids are not supposed to have ProgressBars, but this is a MUI issue
              */
+            const requiredChildrenValues = v.nodes[0]?.any[0]?.data as
+              | { values?: string }
+              | undefined;
             return (
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
               v.id !== "region" &&
               !(
                 v.id === "aria-required-children" &&
-                v.nodes[0]?.target[0] === ".MuiDataGrid-main" &&
-                (v.nodes[0]?.any[0]?.data?.values === "[role=progressbar]" ||
-                  v.nodes[0]?.any[0]?.data?.values === "[role=presentation]")
+                v.nodes[0]?.target[0] === `.${gridClasses.main}` &&
+                (requiredChildrenValues?.values === "[role=progressbar]" ||
+                  requiredChildrenValues?.values === "[role=presentation]")
               )
             );
           }),
@@ -179,7 +196,6 @@ const feature = test.extend<{
         ).toBeVisible();
         await expect(
           page.getByRole("gridcell", { name: "published" }),
-
         ).toBeVisible();
         await expect(
           page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }),
@@ -199,39 +215,49 @@ const feature = test.extend<{
         ).toBeVisible();
       },
       "an import request should be made to the server with the correct notebook ID":
-        () => {
-          const importRequest = networkRequests.find(
-            (request) =>
-              request.url.pathname ===
-                "/api/inventory/v1/import/fieldmark/notebook" &&
-              request.postData?.includes('"notebookId":"test-project-1"'),
-          );
-          expect(importRequest).toBeDefined();
+        async () => {
+          await expect
+            .poll(() =>
+              networkRequests.some(
+                (request) =>
+                  request.url.pathname ===
+                    "/api/inventory/v1/import/fieldmark/notebook" &&
+                  request.postData?.includes('"notebookId":"test-project-1"'),
+              ),
+            )
+            .toBe(true);
         },
-      "an import request should be made without an identifier column": () => {
-        const importRequest = networkRequests.find(
-          (request) =>
-            request.url.pathname ===
-              "/api/inventory/v1/import/fieldmark/notebook" &&
-            request.postData?.includes(
-              '"notebookId":"test-project-no-identifiers"',
-            ) &&
-            !request.postData?.includes('"identifierColumn"'),
-        );
-        expect(importRequest).toBeDefined();
-      },
+      "an import request should be made without an identifier column":
+        async () => {
+          await expect
+            .poll(() =>
+              networkRequests.some(
+                (request) =>
+                  request.url.pathname ===
+                    "/api/inventory/v1/import/fieldmark/notebook" &&
+                  request.postData?.includes(
+                    '"notebookId":"test-project-no-identifiers"',
+                  ) &&
+                  !request.postData?.includes('"identifier"'),
+              ),
+            )
+            .toBe(true);
+        },
       "an import request should be made with the selected identifier column":
-        () => {
-          const importRequest = networkRequests.find(
-            (request) =>
-              request.url.pathname ===
-                "/api/inventory/v1/import/fieldmark/notebook" &&
-              request.postData?.includes(
-                '"notebookId":"test-project-with-identifiers"',
-              ) &&
-              request.postData?.includes('"identifier":"sample_id"'),
-          );
-          expect(importRequest).toBeDefined();
+        async () => {
+          await expect
+            .poll(() =>
+              networkRequests.some(
+                (request) =>
+                  request.url.pathname ===
+                    "/api/inventory/v1/import/fieldmark/notebook" &&
+                  request.postData?.includes(
+                    '"notebookId":"test-project-with-identifiers"',
+                  ) &&
+                  request.postData?.includes('"identifier":"sample_id"'),
+              ),
+            )
+            .toBe(true);
         },
       "an importing alert should be visible": async () => {
         const alert = page
@@ -247,9 +273,12 @@ const feature = test.extend<{
           .filter({ hasText: "Successfully imported notebook" });
         await expect(alert).toBeVisible();
         await expect(alert).toContainText("Successfully imported notebook");
-        await alert
-          .getByRole("button", { name: "1 sub-messages. Toggle to show" })
-          .click();
+        const expandButton = alert.getByRole("button", {
+          name: "1 sub-messages. Toggle to show",
+        });
+        await clickWhenInViewport(expandButton, {
+          beforeWaiting: moveToastStackIntoViewport,
+        });
         const subMessage = alert
           .getByRole("alert")
           .filter({ hasText: "Test Container from Test Notebook 1" });
@@ -293,10 +322,12 @@ const feature = test.extend<{
 
         await expect(alert).toContainText("Could not import notebook.");
         // Click the toggle button to expand the sub-messages with detailed errors
-        await alert
-          .getByRole("button", { name: "2 sub-messages. Toggle to show" })
-
-          .click();
+        const expandButton = alert.getByRole("button", {
+          name: "2 sub-messages. Toggle to show",
+        });
+        await clickWhenInViewport(expandButton, {
+          beforeWaiting: moveToastStackIntoViewport,
+        });
         // Verify each detailed error message is shown in the dropdown
         const firstErrorMessage = alert.getByRole("alert").filter({
           hasText:
@@ -315,16 +346,22 @@ const feature = test.extend<{
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
-feature.beforeEach(async ({ router, page, networkRequests }) => {
+feature.beforeEach(async ({ page, networkRequests }) => {
+  /*
+   * Emulate reduced motion so the theme renders dialog and menu transitions
+   * instantly (transitionDuration becomes 0). This keeps the Import button
+   * from animating into place, which on WebKit can otherwise cause clicks to
+   * land before the button has settled.
+   */
+  await page.emulateMedia({ reducedMotion: "reduce" });
   page.on("request", (request) => {
     networkRequests.push({
       url: new URL(request.url()),
       postData: request.postData(),
     });
   });
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+  await page.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
       iat: new Date().getTime(),
@@ -340,7 +377,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-  await router.route("/api/v1/userDetails/uiNavigationData", async (route) => {
+  await page.route("/api/v1/userDetails/uiNavigationData", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -366,7 +403,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-  await router.route("/api/v1/userDetails/whoami", async (route) => {
+  await page.route("/api/v1/userDetails/whoami", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -377,7 +414,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       }),
     });
   });
-  await router.route("/api/inventory/v1/fieldmark/notebooks", async (route) => {
+  await page.route("/api/inventory/v1/fieldmark/notebooks", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -445,8 +482,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       ]),
     });
   });
-  await router.route(
-    "/api/inventory/v1/import/fieldmark/notebook",
+  await page.route(
+    "**/api/inventory/v1/import/fieldmark/notebook",
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -458,7 +495,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-  await router.route(
+  await page.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-1",
     async (route) => {
       await route.fulfill({
@@ -468,7 +505,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-  await router.route(
+  await page.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-2",
     async (route) => {
       await route.fulfill({
@@ -478,7 +515,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-  await router.route(
+  await page.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-no-identifiers",
     async (route) => {
       await route.fulfill({
@@ -488,7 +525,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-  await router.route(
+  await page.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-with-identifiers",
     async (route) => {
       await route.fulfill({
@@ -498,7 +535,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-  await router.route(
+  await page.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-igsn-error",
     async (route) => {
       await route.fulfill({
@@ -516,7 +553,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-  await router.route(
+  await page.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-detailed-error",
     async (route) => {
       await route.fulfill({
@@ -526,22 +563,19 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       });
     },
   );
-
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-
 });
 test.describe("FieldmarkImportDialog", () => {
   test.describe("accessibility", () => {
     feature(
       "should not have any accessibility issues when open",
-      async ({ Given, When, Then }) => {
+      async ({ Given, Then }) => {
         await Given["the fieldmark import dialog is mounted"]();
         await Then["there shouldn't be any axe violations"]();
       },
     );
-
   });
   test.describe("notebook fetching", () => {
     feature(
@@ -552,7 +586,6 @@ test.describe("FieldmarkImportDialog", () => {
         await Then["the notebooks should be displayed in the table"]();
       },
     );
-
   });
   test.describe("notebook import", () => {
     feature(
@@ -561,11 +594,10 @@ test.describe("FieldmarkImportDialog", () => {
         await Given["the fieldmark import dialog is mounted"]();
         await When["the notebooks have been fetched"]();
         await When["the user selects a notebook and clicks import"]();
-        Then[
+        await Then[
           "an import request should be made to the server with the correct notebook ID"
         ]();
       },
-
     );
     feature(
       "should make an import request without identifier column when notebook has no identifier columns",
@@ -575,9 +607,10 @@ test.describe("FieldmarkImportDialog", () => {
         await When[
           "the user selects a notebook with no identifier columns and clicks import"
         ]();
-        Then["an import request should be made without an identifier column"]();
+        await Then[
+          "an import request should be made without an identifier column"
+        ]();
       },
-
     );
     feature(
       "should make an import request with selected identifier column when notebook has identifier columns",
@@ -587,17 +620,16 @@ test.describe("FieldmarkImportDialog", () => {
         await When[
           "the user selects a notebook with identifier columns, selects an identifier column, and clicks import"
         ]();
-        Then[
+        await Then[
           "an import request should be made with the selected identifier column"
         ]();
       },
-
     );
     feature(
       "should show importing alert during import process",
-      async ({ Given, When, Then, router }) => {
-        await router.route(
-          "/api/inventory/v1/import/fieldmark/notebook",
+      async ({ Given, When, Then, page }) => {
+        await page.route(
+          "**/api/inventory/v1/import/fieldmark/notebook",
           async (route) => {
             // Add a longer delay to ensure importing alert is visible long enough for tests
             await sleep(2500);
@@ -618,7 +650,6 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["an importing alert should be visible"]();
       },
-
     );
     feature(
       "should show success alert after import completes",
@@ -630,13 +661,12 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["a success alert should be visible"]();
       },
-
     );
     feature(
       "should show loading state on import button during import",
-      async ({ Given, When, Then, router }) => {
-        await router.route(
-          "/api/inventory/v1/import/fieldmark/notebook",
+      async ({ Given, When, Then, page }) => {
+        await page.route(
+          "**/api/inventory/v1/import/fieldmark/notebook",
           async (route) => {
             // Add a longer delay to ensure importing alert is visible long enough for tests
             await sleep(2500);
@@ -657,7 +687,6 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["the import button should show loading state"]();
       },
-
     );
     feature(
       "should display IGSN message when igsnCandidateFields endpoint returns IGSN error",
@@ -669,13 +698,12 @@ test.describe("FieldmarkImportDialog", () => {
         ]();
         await Then["the IGSN message should be displayed"]();
       },
-
     );
     feature(
       "should hide identifier parsing UI during import when identifier field is unselected",
-      async ({ Given, When, Then, router }) => {
-        await router.route(
-          "/api/inventory/v1/import/fieldmark/notebook",
+      async ({ Given, When, Then, page }) => {
+        await page.route(
+          "**/api/inventory/v1/import/fieldmark/notebook",
           async (route) => {
             await sleep(2500);
             await route.fulfill({
@@ -697,13 +725,12 @@ test.describe("FieldmarkImportDialog", () => {
           "the identifier parsing UI should be hidden during import"
         ]();
       },
-
     );
     feature(
       "should show detailed error message when import fails with validation errors",
-      async ({ Given, When, Then, router }) => {
-        await router.route(
-          "/api/inventory/v1/import/fieldmark/notebook",
+      async ({ Given, When, Then, page }) => {
+        await page.route(
+          "**/api/inventory/v1/import/fieldmark/notebook",
           async (route) => {
             const request = route.request();
 

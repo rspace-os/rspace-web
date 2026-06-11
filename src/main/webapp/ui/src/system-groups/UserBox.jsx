@@ -1,6 +1,6 @@
 "use strict";
 import React, { useEffect } from "react";
-import styled from "@emotion/styled";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Snackbar from "@mui/material/Snackbar";
@@ -10,40 +10,6 @@ import { faCaretRight } from "@fortawesome/free-solid-svg-icons/faCaretRight";
 import { faAngleDoubleLeft } from "@fortawesome/free-solid-svg-icons/faAngleDoubleLeft";
 
 import UserList from "./UserList";
-
-const Wrapper = styled.div`
-  padding: 10px;
-  border-radius: 4px;
-  display: flex;
-  width: 100%;
-  background-color: rgb(245, 245, 245) !important;
-  .grow {
-    flex-grow: 1;
-  }
-  select {
-    min-height: 300px;
-    border: 1px solid rgb(255, 255, 255);
-  }
-  a {
-    color: inherit;
-  }
-  a:hover {
-    color: #1465b7 !important;
-    font-weight: 500;
-  }
-`;
-
-const Actions = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0px 20px;
-
-  button {
-    width: 48px;
-  }
-`;
 
 export default function main(props) {
   const [usersLeft, setUsersLeft] = React.useState([]);
@@ -84,7 +50,7 @@ export default function main(props) {
     if (props.maxSelected && props.maxSelected < selected.length) {
       setSnackbarMessage(
         <span>
-          Please, select only <b>one</b> PI
+          Please, select only <strong>one</strong> PI
         </span>,
       );
       setSnackbar(true);
@@ -126,15 +92,32 @@ export default function main(props) {
   }, [props.users]);
 
   return (
-    <Wrapper>
+    <Box
+      sx={{
+        padding: "10px",
+        borderRadius: "4px",
+        display: "flex",
+        width: "100%",
+        backgroundColor: "rgb(245, 245, 245) !important",
+      }}
+    >
       <UserList
         users={usersLeft}
         selected={selectedLeft}
         onSelect={(username) => handleSelect(username, "left")}
         listTitle={props.labelLeft}
       />
-      <Actions>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0px 20px",
+        }}
+      >
         <IconButton
+          sx={{ width: 48 }}
           disabled={selectedLeft.length == 0}
           onClick={addUsers}
           data-test-id={`add-${props.labelRight.split(" ").join("-")}`}
@@ -142,6 +125,7 @@ export default function main(props) {
           <FontAwesomeIcon icon={faCaretRight} />
         </IconButton>
         <IconButton
+          sx={{ width: 48 }}
           disabled={selectedRight.length == 0}
           onClick={removeUsers}
           data-test-id={`remove-${props.labelRight.split(" ").join("-")}`}
@@ -149,13 +133,14 @@ export default function main(props) {
           <FontAwesomeIcon icon={faCaretLeft} />
         </IconButton>
         <IconButton
+          sx={{ width: 48 }}
           disabled={usersRight.length == 0}
           onClick={resetColumns}
           data-test-id={`remove-all-${props.labelRight.split(" ").join("-")}`}
         >
           <FontAwesomeIcon icon={faAngleDoubleLeft} />
         </IconButton>
-      </Actions>
+      </Box>
       <UserList
         users={usersRight}
         selected={selectedRight}
@@ -185,6 +170,6 @@ export default function main(props) {
           </IconButton>,
         ]}
       />
-    </Wrapper>
+    </Box>
   );
 }

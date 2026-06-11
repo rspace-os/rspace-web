@@ -11,11 +11,6 @@ import fs from "fs/promises";
 
 import * as Jwt from "jsonwebtoken";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
-
 const feature = test.extend<{
   Given: {
     "the researcher is viewing the IGSN table": () => Promise<void>;
@@ -25,6 +20,7 @@ const feature = test.extend<{
   };
   Once: {
     "the table has loaded": () => Promise<void>;
+    "the empty table has loaded": () => Promise<void>;
   };
   When: {
     "a CSV export is downloaded": () => Promise<Download>;
@@ -58,12 +54,12 @@ const feature = test.extend<{
       csv: Download;
       count: number;
     }) => Promise<void>;
-    "there should be a network request with state set to 'draft'": () => void;
-    "there should be a network request with isAssociated set to 'false'": () => void;
+    "there should be a network request with state set to 'draft'": () => Promise<void>;
+    "there should be a network request with isAssociated set to 'false'": () => Promise<void>;
     "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": () => Promise<void>;
     "the Linked Item column should contains links": () => Promise<void>;
     "a search box should be shown in the toolbar": () => Promise<void>;
-    "there should be a network request with searchTerm set to 'test'": () => void;
+    "there should be a network request with searchTerm set to 'test'": () => Promise<void>;
     "the toolbar controls should be in the order: search, scan, then filters": () => Promise<void>;
     "the search box should have the placeholder 'Search IGSN IDs...'": () => Promise<void>;
   };
@@ -103,10 +99,11 @@ const feature = test.extend<{
       "the table has loaded": async () => {
         await page.waitForFunction(() => {
           const rows = document.querySelectorAll('[role="row"]').length;
-          const noIgsnMessage =
-            document.body.textContent?.includes("No IGSN IDs");
-          return rows > 1 || noIgsnMessage; // (1 is for the header row) or empty state message
+          return rows > 1; // 1 is the header row
         });
+      },
+      "the empty table has loaded": async () => {
+        await expect(page.getByRole("grid").getByText("No IGSN IDs")).toBeVisible();
       },
     });
   },
@@ -155,12 +152,14 @@ const feature = test.extend<{
           const row = page
             .getByRole("row", { name: /10.82316\/khma-em96/ })
             .first();
-          const checkbox = row.getByRole("checkbox").first();
-          const checkboxCount = await checkbox.count();
-          if (checkboxCount > 0) {
-            await checkbox.click();
-          } else {
-            await row.getByRole("radio").first().click();
+          await expect(row).toBeVisible();
+          const selectionControl = row
+            .locator('input[type="checkbox"], input[type="radio"]')
+            .first();
+          await expect(selectionControl).toBeVisible();
+          await selectionControl.click();
+          if ((await selectionControl.count()) === 0) {
+            throw new Error("No row selection control was rendered");
           }
         },
       "the researcher selects {count} IGSNs": async ({
@@ -185,11 +184,11 @@ const feature = test.extend<{
       },
       "the default columns should be Select, DOI, State, and Linked Item":
         async () => {
-          const headers = await page
-            .getByRole("columnheader")
-            .allTextContents();
-          expect(headers).toEqual(["", "DOI", "State", "Linked Item"]);
-          // the empty string at the beginning is the checkbox column
+          const headers = page.getByRole("columnheader");
+          await expect(headers).toHaveCount(4);
+          await expect(headers.nth(1)).toHaveText("DOI");
+          await expect(headers.nth(2)).toHaveText("State");
+          await expect(headers.nth(3)).toHaveText("Linked Item");
         },
       "there should be four rows": async () => {
         const rows = await page.getByRole("row").count();
@@ -218,31 +217,36 @@ const feature = test.extend<{
         const lines = fileContents.split("\n");
         expect(lines.length).toBe(count + 1);
       },
-      "there should be a network request with state set to 'draft'": () => {
-        expect(
-          networkRequests
-            .find((url) => url.searchParams.has("state"))
-            ?.searchParams.get("state")
-        ).toBe("draft");
+      "there should be a network request with state set to 'draft'": async () => {
+        await expect
+          .poll(() =>
+            networkRequests
+              .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
+              .find((url) => url.searchParams.get("state") === "draft")
+              ?.searchParams.get("state")
+          )
+          .toBe("draft");
       },
       "there should be a network request with isAssociated set to 'false'":
-        () => {
-          expect(
-            networkRequests
-              .find((url) => url.searchParams.has("isAssociated"))
-              ?.searchParams.get("isAssociated")
-          ).toBe("false");
-        },
-      "there should be a network request with searchTerm set to 'test'": () => {
-        expect(
-          networkRequests
-            .find(
-              (url) =>
-                url.searchParams.has("identifier") &&
-                url.searchParams.get("identifier") === "test"
+        async () => {
+          await expect
+            .poll(() =>
+              networkRequests
+                .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
+                .find((url) => url.searchParams.get("isAssociated") === "false")
+                ?.searchParams.get("isAssociated")
             )
-            ?.searchParams.get("identifier")
-        ).toBe("test");
+            .toBe("false");
+        },
+      "there should be a network request with searchTerm set to 'test'": async () => {
+        await expect
+          .poll(() =>
+            networkRequests
+              .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
+              .find((url) => url.searchParams.get("identifier") === "test")
+              ?.searchParams.get("identifier")
+          )
+          .toBe("test");
       },
       "the IGSN with DOI '10.82316/khma-em96' is added to the selection state":
         async () => {
@@ -408,8 +412,8 @@ const feature = test.extend<{
   },
 
 });
-feature.beforeEach(async ({ router, page, networkRequests }) => {
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
+feature.beforeEach(async ({ page, networkRequests }) => {
+  await page.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
       iat: new Date().getTime(),
@@ -426,14 +430,15 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
     });
 
   });
-  await router.route(
+  await page.route(
     (url) => url.pathname === "/api/inventory/v1/identifiers",
     (route) => {
       const url = new URL(route.request().url());
+      networkRequests.push(url);
       const state = url.searchParams.get("state");
       const isAssociated = url.searchParams.get("isAssociated");
 
-      const searchTerm = url.searchParams.get("searchTerm");
+      const searchTerm = url.searchParams.get("identifier");
 
       let filteredIdentifiers = identifiersJson;
       if (state) {
@@ -530,7 +535,7 @@ test.describe("IGSN Table", () => {
     async ({ Given, When, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
       await When["the researcher types 'test' in the search box"]();
-      void Then[
+      await Then[
         "there should be a network request with searchTerm set to 'test'"
       ]();
     }
@@ -556,8 +561,9 @@ test.describe("IGSN Table", () => {
   );
   feature(
     "When there is no selection, all rows should be included in the export.",
-    async ({ Given, When, Then }) => {
+    async ({ Given, Once, When, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
+      await Once["the table has loaded"]();
       // Note that no selection is made
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
@@ -569,7 +575,7 @@ test.describe("IGSN Table", () => {
     async ({ Given, When, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
       await When["the researcher selects 'Draft' from the state menu"]();
-      void Then[
+      await Then[
         "there should be a network request with state set to 'draft'"
       ]();
     }
@@ -582,7 +588,7 @@ test.describe("IGSN Table", () => {
       await When[
         "the researcher selects 'No Linked Item' from the Linked Item menu"
       ]();
-      void Then[
+      await Then[
         "there should be a network request with isAssociated set to 'false'"
       ]();
     }
@@ -620,16 +626,17 @@ test.describe("IGSN Table", () => {
   );
   feature(
     "Control defaults are applied to the table when provided",
-    async ({ Given, Once, Then }) => {
+    async ({ Given, page }) => {
       await Given[
         "the researcher is viewing the IGSN table with control defaults"
       ]();
-      await Once["the table has loaded"]();
-      Then["there should be a network request with state set to 'draft'"]();
-      Then[
-        "there should be a network request with isAssociated set to 'false'"
-      ]();
-      Then["there should be a network request with searchTerm set to 'test'"]();
+      await expect(page.getByRole("searchbox")).toHaveValue("test");
+      await expect(
+        page.getByRole("button", { name: /State:\s*draft/ }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: /Linked Item:\s*No/ }),
+      ).toBeVisible();
     }
 
   );
@@ -657,7 +664,7 @@ test.describe("IGSN Table", () => {
     "When there are no results, a 'No IGSN IDs' message is displayed",
     async ({ Given, Once, Then }) => {
       await Given["the researcher is viewing the IGSN table with no results"]();
-      await Once["the table has loaded"]();
+      await Once["the empty table has loaded"]();
       await Then["a 'No IGSN IDs' message should be displayed"]();
     }
 
@@ -670,7 +677,7 @@ test.describe("IGSN Table", () => {
       await When["a QR code is scanned with value {value}"]({
         value: "test",
       });
-      Then["there should be a network request with searchTerm set to 'test'"]();
+      await Then["there should be a network request with searchTerm set to 'test'"]();
     }
 
   );

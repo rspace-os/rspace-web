@@ -98,13 +98,11 @@ export function HeadingContext({
 export function Heading({
   children,
   variant,
-  className,
   id,
   sx,
 }: {
   children: React.ReactNode;
   variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-  className?: string;
   id?: string;
   sx?: object;
 }): React.ReactNode {
@@ -116,7 +114,6 @@ export function Heading({
       <Typography
         variant={v}
         component="h1"
-        className={className}
         id={id}
         sx={sx}
       >
@@ -128,7 +125,6 @@ export function Heading({
       <Typography
         variant={v}
         component="h2"
-        className={className}
         id={id}
         sx={sx}
       >
@@ -140,7 +136,6 @@ export function Heading({
       <Typography
         variant={v}
         component="h3"
-        className={className}
         id={id}
         sx={sx}
       >
@@ -152,7 +147,6 @@ export function Heading({
       <Typography
         variant={v}
         component="h4"
-        className={className}
         id={id}
         sx={sx}
       >
@@ -164,7 +158,6 @@ export function Heading({
       <Typography
         variant={v}
         component="h5"
-        className={className}
         id={id}
         sx={sx}
       >
@@ -176,7 +169,6 @@ export function Heading({
       <Typography
         variant={v}
         component="h6"
-        className={className}
         id={id}
         sx={sx}
       >

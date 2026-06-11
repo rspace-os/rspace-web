@@ -14,7 +14,6 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableBody from "@mui/material/TableBody";
 import Alert from "@mui/material/Alert";
-import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import ApiService from "../../../common/InvApiService";
@@ -195,41 +194,39 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
   };
 
   return (
-    <Grid item>
-      <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
-        <FormLabel component="legend">Version</FormLabel>
-        <FormGroup>
-          {record.version ?? "—"}
-          <Button
-            variant="outlined"
-            disableElevation
-            onClick={() => {
-              setOpen(true);
-            }}
-          >
-            View version history
-          </Button>
-          <Dialog open={open} onClose={close}>
-            <DialogTitle>Version history</DialogTitle>
-            <DialogContent>
-              <DialogContents
-                state={state}
-                currentVersion={record.version ?? null}
-                historical={record.historicalVersion ?? false}
-                versionUrl={versionUrl}
-                onNavigate={(url) => {
-                  close();
-                  navigate(url);
-                }}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={close}>Close</Button>
-            </DialogActions>
-          </Dialog>
-        </FormGroup>
-      </FormControl>
-    </Grid>
+    <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
+      <FormLabel component="legend">Version</FormLabel>
+      <FormGroup>
+        {record.version ?? "—"}
+        <Button
+          variant="outlined"
+          disableElevation
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          View version history
+        </Button>
+        <Dialog open={open} onClose={close}>
+          <DialogTitle>Version history</DialogTitle>
+          <DialogContent>
+            <DialogContents
+              state={state}
+              currentVersion={record.version ?? null}
+              historical={record.historicalVersion ?? false}
+              versionUrl={versionUrl}
+              onNavigate={(url) => {
+                close();
+                navigate(url);
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={close}>Close</Button>
+          </DialogActions>
+        </Dialog>
+      </FormGroup>
+    </FormControl>
   );
 }
 

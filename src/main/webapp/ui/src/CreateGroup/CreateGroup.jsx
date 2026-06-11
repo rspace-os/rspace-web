@@ -18,6 +18,7 @@ import Fade from "@mui/material/Fade";
 import axios from "@/common/axios";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
+import Box from "@mui/material/Box";
 import { createRoot } from "react-dom/client";
 
 class CreateGroup extends React.Component {
@@ -254,27 +255,6 @@ class CreateGroup extends React.Component {
     this.initialState = { ...this.state };
   };
 
-  styles = {
-    closeButton: {
-      position: "absolute",
-      right: 0,
-      top: 0,
-      width: "auto",
-    },
-    container: {
-      width: "600px",
-    },
-    toastSuccess: {
-      backgroundColor: "#4CAF50",
-    },
-    errorText: {
-      color: "#d32f2f",
-      textAlign: "center",
-      fontSize: "14px",
-      marginBottom: "10px",
-    },
-  };
-
   render() {
     const detailsComplete = this.detailsComplete();
     const loading = this.state.loading;
@@ -282,7 +262,7 @@ class CreateGroup extends React.Component {
     return (
       <>
         <div>
-          <StyledEngineProvider injectFirst>
+          <StyledEngineProvider injectFirst enableCssLayer>
             <ThemeProvider theme={materialTheme}>
               <Button
                 variant="contained"
@@ -303,21 +283,34 @@ class CreateGroup extends React.Component {
                   <IconButton
                     aria-label="Close"
                     data-test-id="closeModal"
-                    style={this.styles.closeButton}
+                    sx={{
+                      position: "absolute",
+                      right: 0,
+                      top: 0,
+                      width: "auto",
+                    }}
                     onClick={this.handleClose}
                   >
                     <CloseIcon />
                   </IconButton>
                 </DialogTitle>
-                <div style={this.styles.container}>
+                <Box sx={{ width: "600px" }}>
                   {this.getStepContent(this.state.activeStep)}
-                </div>
+                </Box>
                 <Fade in={loading} unmountOnExit>
                   <LinearProgress color="primary" />
                 </Fade>
-                <span style={this.styles.errorText}>
+                <Box
+                  component="span"
+                  sx={{
+                    color: "#d32f2f",
+                    textAlign: "center",
+                    fontSize: "14px",
+                    marginBottom: "10px",
+                  }}
+                >
                   {this.state.errorMessage}
-                </span>
+                </Box>
                 <MobileStepper
                   steps={this.maxSteps}
                   position="static"
@@ -358,7 +351,7 @@ class CreateGroup extends React.Component {
                 open={this.state.toast}
                 autoHideDuration={selfService ? 1000 : 6000}
                 onClose={this.closeToast}
-                style={
+                sx={
                   selfService
                     ? {
                         position: "absolute",
@@ -376,7 +369,7 @@ class CreateGroup extends React.Component {
                       ? `Group creation request for ${this.state.createGroup.groupName} sent successfully`
                       : `${this.state.createGroup.groupName} group created successfully!`
                   }
-                  style={this.styles.toastSuccess}
+                  sx={{ backgroundColor: "#4CAF50" }}
                 />
               </Snackbar>
             </ThemeProvider>

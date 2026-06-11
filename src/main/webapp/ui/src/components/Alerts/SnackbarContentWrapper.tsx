@@ -1,6 +1,6 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import Badge from "@mui/material/Badge";
+import Badge, { badgeClasses } from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -9,12 +9,14 @@ import ErrorIcon from "@mui/icons-material/Error";
 import GlobalId from "../GlobalId";
 import Grid from "@mui/material/Grid";
 import InfoIcon from "@mui/icons-material/Info";
-import SnackbarContent from "@mui/material/SnackbarContent";
+import SnackbarContent, {
+  snackbarContentClasses,
+} from "@mui/material/SnackbarContent";
+import Stack from "@mui/material/Stack";
 import WarningIcon from "@mui/icons-material/Warning";
-import clsx from "clsx";
 import { green } from "@mui/material/colors";
 import React, { forwardRef, useId } from "react";
-import { makeStyles } from "tss-react/mui";
+import { useTheme } from "@mui/material/styles";
 import DismissButton from "./Buttons/Dismiss";
 import ExpandButton from "./Buttons/Expand";
 import RetryButton from "./Buttons/Retry";
@@ -27,60 +29,6 @@ declare module "@mui/material/Alert" {
     notice: true;
   }
 }
-const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
-  (theme, { verySmallLayout }: { verySmallLayout: boolean }) => ({
-    success: {
-      backgroundColor: green[600],
-    },
-    error: {
-      backgroundColor: theme.palette.error.main,
-    },
-    warning: {
-      backgroundColor: theme.palette.warning.main,
-    },
-    notice: {},
-    icon: {
-      fontSize: 20,
-    },
-    iconVariant: {
-      opacity: 0.9,
-      marginRight: theme.spacing(1),
-    },
-    spacer: {
-      flexGrow: 1,
-    },
-    buttons: {
-      margin: -12,
-      flexShrink: 0,
-      marginLeft: 0,
-    },
-    content: {
-      width: "100%",
-    },
-    badge: {
-      right: 8,
-      top: 2,
-      width: 20,
-      border: "2px solid white",
-    },
-    successBadge: {
-      backgroundColor: theme.palette.success.main,
-    },
-    alertTitle: {
-      whiteSpace: "normal",
-    },
-    alertContainer: {
-      maxHeight: verySmallLayout ? "calc(100vh - 210px)" : "max(175px, 50vh)",
-      overflowY: "auto",
-    },
-    detailedAlert: {
-      alignItems: "center",
-    },
-    detailedText: {
-      wordBreak: "break-word",
-    },
-  }),
-);
 
 const variantIcon = {
   success: CheckCircleIcon,
@@ -90,7 +38,6 @@ const variantIcon = {
 };
 
 type SnackbarContentWrapperArgs = {
-  className?: string;
   onClose: () => void;
   alert: AlertType;
   setExpanded: (newExpanded: boolean) => void;
@@ -104,7 +51,6 @@ const SnackbarContentWrapper = forwardRef<
 >(
   (
     {
-      className,
       onClose,
       alert,
       expanded,
@@ -115,141 +61,154 @@ const SnackbarContentWrapper = forwardRef<
     ref,
   ) => {
     const { isViewportVerySmall } = useViewportDimensions();
-    const { classes } = useStyles({ verySmallLayout: isViewportVerySmall });
+    const theme = useTheme();
     const Icon = variantIcon[alert.variant];
     const nameId = useId();
+    const backgroundColorByVariant: Partial<
+      Record<AlertType["variant"], string>
+    > = {
+      success: green[600],
+      error: theme.palette.error.main,
+      warning: theme.palette.warning.main,
+    };
+    const backgroundColor = backgroundColorByVariant[alert.variant];
 
     const standardSnackbarContent = (
-      <Grid item>
-        <Grid container wrap="nowrap">
-          <Grid item>
-            <Badge
-              badgeContent={alert.detailsCount}
-              classes={{
-                badge: clsx(
-                  classes.badge,
-                  alert.variant === "success" && classes.successBadge,
-                ),
-              }}
-              color="error"
-              aria-hidden="true"
-            >
-              {alert.icon ?? (
-                <Icon className={clsx(classes.icon, classes.iconVariant)} />
-              )}
-            </Badge>
-          </Grid>
-          <Grid item>
-            <Box
-              pl={1}
-              pt={0.25}
-              pr={2}
-              whiteSpace="normal"
-              style={{
-                overflowWrap: "anywhere",
-                hyphens: "auto",
-              }}
-              id={nameId}
-            >
-              {alert.title !== null && typeof alert.title !== "undefined" ? (
-                <>
-                  <strong>{alert.title}</strong>
-                  <br />
-                  {alert.message}
-                </>
-              ) : (
-                alert.message
-              )}
-            </Box>
-          </Grid>
-          <Grid item className={classes.spacer}></Grid>
-          <Grid item className={classes.buttons}>
-            {alert.actionLabel !== null &&
-              typeof alert.actionLabel !== "undefined" && (
-                <Button
-                  size="small"
-                  onClick={() => {
-                    onInteraction();
-                    alert.onActionClick();
-                    onClose();
-                  }}
-                  variant="outlined"
-                  sx={{ color: "white", borderColor: "white" }}
-                >
-                  {alert.actionLabel.toUpperCase()}
-                </Button>
-              )}
-            {alert.retryFunction && (
-              <RetryButton
-                retryFunction={alert.retryFunction}
-                onClose={onClose}
-              />
+      <Grid container sx={{ flexWrap: "nowrap" }}>
+        <Grid>
+          <Badge
+            badgeContent={alert.detailsCount}
+            color="error"
+            aria-hidden="true"
+            sx={{
+              [`& .${badgeClasses.badge}`]: {
+                right: 8,
+                top: 2,
+                width: 20,
+                border: "2px solid white",
+                ...(alert.variant === "success"
+                  ? { backgroundColor: theme.palette.success.main }
+                  : {}),
+              },
+            }}
+          >
+            {alert.icon ?? <Icon sx={{ fontSize: 20, opacity: 0.9, mr: 1 }} />}
+          </Badge>
+        </Grid>
+        <Grid>
+          <Box
+            sx={{
+              pl: 1,
+              pt: 0.25,
+              pr: 2,
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+              hyphens: "auto",
+            }}
+            id={nameId}
+          >
+            {alert.title !== null && typeof alert.title !== "undefined" ? (
+              <>
+                <strong>{alert.title}</strong>
+                <br />
+                {alert.message}
+              </>
+            ) : (
+              alert.message
             )}
-            {alert.details.length > 0 && (
-              <ExpandButton
-                ariaLabel={`${alert.detailsCount} sub-messages. Toggle to ${
-                  expanded ? "hide" : "show"
-                }`}
-                expanded={expanded}
-                setExpanded={(e) => {
-                  setExpanded(e);
+          </Box>
+        </Grid>
+        <Grid sx={{ flexGrow: 1 }}></Grid>
+        <Grid sx={{ flexShrink: 0 }}>
+          {alert.actionLabel !== null &&
+            typeof alert.actionLabel !== "undefined" && (
+              <Button
+                size="small"
+                onClick={() => {
                   onInteraction();
+                  alert.onActionClick();
+                  onClose();
                 }}
-              />
+                variant="outlined"
+                sx={{ color: "white", borderColor: "white" }}
+              >
+                {alert.actionLabel.toUpperCase()}
+              </Button>
             )}
-            {alert.allowClosing && <DismissButton onClose={onClose} />}
-          </Grid>
+          {alert.retryFunction && (
+            <RetryButton
+              retryFunction={alert.retryFunction}
+              onClose={onClose}
+            />
+          )}
+          {alert.details.length > 0 && (
+            <ExpandButton
+              ariaLabel={`${alert.detailsCount} sub-messages. Toggle to ${
+                expanded ? "hide" : "show"
+              }`}
+              expanded={expanded}
+              setExpanded={(e) => {
+                setExpanded(e);
+                onInteraction();
+              }}
+            />
+          )}
+          {alert.allowClosing && <DismissButton onClose={onClose} />}
         </Grid>
       </Grid>
     );
 
     const detailedSnackbarContent = (
-      <Grid item xs={12}>
-        <Box mt={2}>
-          <Grid container spacing={1} className={classes.alertContainer}>
-            {alert.details.map(({ record, variant, title, help }, index) => (
-              <Grid item key={index} xs={12}>
-                <Alert
-                  className={classes.detailedAlert}
-                  severity={variant}
-                  action={
-                    record && (
-                      <GlobalId
-                        record={record}
-                        onClick={() => setExpanded(false)}
-                      />
-                    )
-                  }
-                >
-                  <Box className={classes.detailedText}>
-                    {help !== null && typeof help !== "undefined" ? (
-                      <>
-                        <AlertTitle className={classes.alertTitle}>
-                          {title}
-                        </AlertTitle>
-                        {help}
-                      </>
-                    ) : (
-                      title
-                    )}
-                  </Box>
-                </Alert>
-              </Grid>
-            ))}
-            {alert.detailsCount > alert.details.length && (
-              <Grid item xs={12}>
-                <Alert
-                  className={classes.detailedAlert}
-                  severity={alert.variant}
-                >
-                  <Box className={classes.detailedText}>
-                    {`And ${alert.detailsCount - alert.details.length} more...`}
-                  </Box>
-                </Alert>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
+      <Grid size={12} sx={{ mt: 2 }}>
+        <Grid
+          container
+          spacing={1}
+          sx={{
+            maxHeight: isViewportVerySmall
+              ? "calc(100vh - 210px)"
+              : "max(175px, 50vh)",
+            overflowY: "auto",
+          }}
+        >
+          {alert.details.map(({ record, variant, title, help }, index) => (
+            <Grid key={index} size={12}>
+              <Alert
+                sx={{ alignItems: "center" }}
+                severity={variant}
+                action={
+                  record && (
+                    <GlobalId
+                      record={record}
+                      onClick={() => setExpanded(false)}
+                    />
+                  )
+                }
+              >
+                <Box sx={{ wordBreak: "break-word" }}>
+                  {help !== null && typeof help !== "undefined" ? (
+                    <>
+                      <AlertTitle sx={{ whiteSpace: "normal" }}>
+                        {title}
+                      </AlertTitle>
+                      {help}
+                    </>
+                  ) : (
+                    title
+                  )}
+                </Box>
+              </Alert>
+            </Grid>
+          ))}
+          {alert.detailsCount > alert.details.length && (
+            <Grid size={12}>
+              <Alert sx={{ alignItems: "center" }} severity={alert.variant}>
+                <Box sx={{ wordBreak: "break-word" }}>
+                  {`And ${alert.detailsCount - alert.details.length} more...`}
+                </Box>
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
       </Grid>
     );
 
@@ -257,14 +216,16 @@ const SnackbarContentWrapper = forwardRef<
       <SnackbarContent
         {...other}
         data-test-id="toast-content"
-        className={clsx(classes[alert.variant], className)}
-        classes={{
-          message: classes.content,
-        }}
         ref={ref}
         aria-labelledby={nameId}
+        sx={{
+          ...(backgroundColor ? { backgroundColor } : {}),
+          [`& .${snackbarContentClasses.message}`]: {
+            width: "100%",
+          },
+        }}
         message={
-          <Grid container direction="column">
+          <Stack>
             {standardSnackbarContent}
             <Collapse
               in={expanded}
@@ -274,14 +235,12 @@ const SnackbarContentWrapper = forwardRef<
             >
               {detailedSnackbarContent}
             </Collapse>
-          </Grid>
+          </Stack>
         }
       />
     );
   },
 );
-
-SnackbarContentWrapper.displayName = "SnackbarContentWrapper";
 
 /**
  * The actual content of the alert toast.

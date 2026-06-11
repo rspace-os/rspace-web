@@ -1,5 +1,5 @@
 import React, { type ReactNode, forwardRef } from "react";
-import { styled, type Theme } from "@mui/material/styles";
+import { type Theme } from "@mui/material/styles";
 import TickIcon from "@mui/icons-material/Done";
 import CrossIcon from "@mui/icons-material/Clear";
 import Box from "@mui/material/Box";
@@ -18,56 +18,42 @@ const allowedColor = (
   }
 ) => theme.palette[allowed ? "success" : "error"].light;
 
-const WrapperDiv = styled(
-
-  forwardRef<
-    HTMLDivElement,
+const WrapperDiv = forwardRef<
+  HTMLDivElement,
+  {
+    children: ReactNode;
+    dragAndDropInProgress: boolean;
+    isChoosing: boolean;
+    allowed: boolean;
+  } & React.HTMLAttributes<HTMLDivElement>
+>(
+  (
     {
-      children: ReactNode;
-      dragAndDropInProgress: boolean;
-      isChoosing: boolean;
-      allowed: boolean;
-    } & React.HTMLAttributes<HTMLDivElement>
-  >(
-    (
-      {
-        children,
-        dragAndDropInProgress: _dragAndDropInProgress,
-        isChoosing: _isChoosing,
-        allowed: _allowed,
-        ...props
-      },
-      ref
-    ) => (
-      <div {...props} ref={ref}>
-        {children}
-      </div>
-    )
-  )
-)(({ theme, dragAndDropInProgress, isChoosing, allowed }) => ({
-  position: "relative",
-  ...(() => {
-    if (!dragAndDropInProgress) return {};
-    return {
-      border: `3px solid ${
-        isChoosing ? allowedColor(allowed, theme) : "white"
-      }`,
-    };
-  })(),
-}));
-
-const AllowedIcon = styled(
-  ({ allowed, className }: { allowed: boolean; className?: string }) => (
-    <Box className={className}>{allowed ? <TickIcon /> : <CrossIcon />}</Box>
-  )
-)(({ theme, allowed }: { theme: Theme; allowed: boolean }) => ({
-  color: allowedColor(allowed, theme),
-  position: "absolute",
-  fontSize: "1.1rem",
-  top: "calc(50% - 15px)",
-  left: "calc(50% - 12px)",
-  transform: "scale(1.5)",
-}));
+      children,
+      dragAndDropInProgress,
+      isChoosing,
+      allowed,
+      ...props
+    },
+    ref,
+  ) => (
+    <Box
+      {...props}
+      ref={ref}
+      sx={(theme) => ({
+        position: "relative",
+        ...(dragAndDropInProgress
+          ? {
+              border: `3px solid ${isChoosing ? allowedColor(allowed, theme) : "white"}`,
+            }
+          : {}),
+      })}
+    >
+      {children}
+    </Box>
+  ),
+);
+WrapperDiv.displayName = "WrapperDiv";
 
 type DropzoneArgs = {
   children: ReactNode;
@@ -120,13 +106,13 @@ export const Dropzone = observer(
          * operation.
          */
         return (
-          <div
-            style={{
+          <Box
+            sx={{
               filter: "grayscale(0.65) opacity(0.75)",
             }}
           >
             {children}
-          </div>
+          </Box>
         );
       if (thisLocationIsTheOrigin(location))
         /*
@@ -142,7 +128,7 @@ export const Dropzone = observer(
        * may be moved into these locations during the same drag-and-drop
        * operation i.e. consider a list of items all being moved one along.
        */
-      return <div style={{ opacity: 0 }}>{children}</div>;
+      return <Box sx={{ opacity: 0 }}>{children}</Box>;
     }
 
     return (
@@ -154,7 +140,18 @@ export const Dropzone = observer(
       >
         {renderContent()}
         {dragAndDropInProgress && isChoosing(location) && (
-          <AllowedIcon allowed={allowed} />
+          <Box
+            sx={(theme: Theme) => ({
+              color: allowedColor(allowed, theme),
+              position: "absolute",
+              fontSize: "1.1rem",
+              top: "calc(50% - 15px)",
+              left: "calc(50% - 12px)",
+              transform: "scale(1.5)",
+            })}
+          >
+            {allowed ? <TickIcon /> : <CrossIcon />}
+          </Box>
         )}
       </WrapperDiv>
     );

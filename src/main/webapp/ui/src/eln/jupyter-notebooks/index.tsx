@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import Box from "@mui/material/Box";
 import { Notebook, type Ipynb } from "@jupyter-kit/react";
 import { createKatexPlugin } from "@jupyter-kit/katex";
 import { javascript } from "@jupyter-kit/core/langs/javascript";
@@ -195,7 +196,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
 
           function App() {
             return (
-              <div style={{ margin: "4rem 2rem", border: "1px solid black" }}>
+              <Box sx={{ margin: "4rem 2rem", border: "1px solid black" }}>
                 <Notebook
                   ipynb={data}
                   filename={attachedFileId + ".ipynb"}
@@ -203,7 +204,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
                   languages={supportedLanguages}
                   plugins={notebookPlugins}
                 />
-              </div>
+              </Box>
             );
           }
 

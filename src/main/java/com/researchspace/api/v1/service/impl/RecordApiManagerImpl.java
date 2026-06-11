@@ -111,6 +111,8 @@ public class RecordApiManagerImpl implements RecordApiManager {
     if (StringUtils.isNotBlank(newName) && !newName.equals(oldName)) {
       boolean isRenamed = recordManager.renameRecord(newName, doc.getId(), user);
       if (isRenamed) {
+        // the audit event snapshots the audited object's current name, so it must carry the new one
+        doc.setName(newName);
         auditTrailService.notify(new RenameAuditEvent(user, doc, oldName, newName));
       }
     }

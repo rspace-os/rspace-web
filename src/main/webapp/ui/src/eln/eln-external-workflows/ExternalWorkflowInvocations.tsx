@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { withStyles } from "Styles";
 import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import { createSvgIcon, Modal } from "@mui/material";
-import { makeStyles } from "tss-react/mui";
 import axios from "@/common/axios";
 import ExternalWorkflowDialog from "@/eln/eln-external-workflows/ExternalWorkflowDialog";
 import { type GalaxyDataSummary } from "./GalaxyData";
@@ -24,6 +23,9 @@ export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 export type InvocationsAndDataCount = {
   invocationCount: number;
   dataCount: number;
+};
+type GalaxyUsedEventDetail = {
+  fieldId?: string;
 };
 const NO_DATA: InvocationsAndDataCount = { invocationCount: 0, dataCount: 0 };
 
@@ -60,28 +62,6 @@ function ExternalWorkflowInvocations({
   const BUTTON_TOP = isForNotebookPage ? 115 : 100;
   const BUTTON_RIGHT = isForNotebookPage ? -48 : -24;
   const BUTTON_BOTTOM = BUTTON_TOP - 48;
-  const { classes } = useStyles({ BUTTON_TOP, BUTTON_RIGHT, BUTTON_BOTTOM });
-  const CustomBadge = withStyles<
-    { children: React.ReactNode; count: number },
-    {
-      root: string;
-      badge: string;
-    }
-  >(() => ({
-    root: {
-      position: "sticky",
-      top: BUTTON_TOP,
-      zIndex: 1, // so it appears above the TinyMCE Editor
-      pointerEvents: "auto",
-    },
-    badge: {
-      transform: "none",
-    },
-  }))(({ classes, children, count }) => (
-    <Badge badgeContent={count} color="primary" classes={classes}>
-      {children}
-    </Badge>
-  ));
 
   async function checkForRSpaceGalaxyData() {
     await galaxyDataExistsInRSpace();
@@ -93,15 +73,38 @@ function ExternalWorkflowInvocations({
 
   useEffect(() => {
     if (shouldCheckForGalaxyData) {
-      checkForRSpaceGalaxyData();
+      void checkForRSpaceGalaxyData();
     }
   }, [shouldCheckForGalaxyData]);
 
   useEffect(() => {
     if (galaxyDataFoundInRSpace) {
-      fetchDataFromGalaxy();
+      void fetchDataFromGalaxy();
     }
   }, [galaxyDataFoundInRSpace]);
+
+  useEffect(() => {
+    const handleGalaxyUsed = (event: Event) => {
+      const { detail } = event as CustomEvent<GalaxyUsedEventDetail>;
+      const eventFieldId = detail?.fieldId;
+      const normalizedFieldId =
+        typeof eventFieldId === "string" ? eventFieldId.substring(4) : null;
+
+      if (normalizedFieldId === fieldId) {
+        setButtonVisible(true);
+        // not strictly true yet but will be true when the page is refreshed etc
+        setGalaxyDataFoundInRSpace(true);
+        setShouldCheckForGalaxyData(false);
+        // this is a workaround because saving the data is async we cant use
+        // a simple check for the existence of the data
+      }
+    };
+
+    window.addEventListener("galaxy-used", handleGalaxyUsed);
+    return () => {
+      window.removeEventListener("galaxy-used", handleGalaxyUsed);
+    };
+  }, [fieldId, setGalaxyDataFoundInRSpace, setShouldCheckForGalaxyData]);
 
   const galaxyDataExistsInRSpace = async () => {
     const data = await getGalaxyDataExists();
@@ -162,36 +165,24 @@ function ExternalWorkflowInvocations({
   }
 
   const getGalaxyData = async (): Promise<Array<GalaxyDataSummary>> => {
-    return (
-      await axios.get(
-        "/apps/galaxy/getSummaryGalaxyDataForRSpaceField/" + fieldId,
-      )
-    ).data;
+    const { data } = await axios.get<Array<GalaxyDataSummary>>(
+      "/apps/galaxy/getSummaryGalaxyDataForRSpaceField/" + fieldId,
+    );
+    return data;
   };
   const getGalaxyDataExists = async (): Promise<boolean> => {
-    return (await axios.get("/apps/galaxy/galaxyDataExists/" + fieldId)).data;
+    const { data } = await axios.get<boolean>(
+      "/apps/galaxy/galaxyDataExists/" + fieldId,
+    );
+    return data;
   };
 
   const getGalaxyDataCount = async (): Promise<InvocationsAndDataCount> => {
-    return (
-      await axios.get(
-        "/apps/galaxy/getGalaxyInvocationCountForRSpaceField/" + fieldId,
-      )
-    ).data;
+    const { data } = await axios.get<InvocationsAndDataCount>(
+      "/apps/galaxy/getGalaxyInvocationCountForRSpaceField/" + fieldId,
+    );
+    return data;
   };
-
-  window.addEventListener("galaxy-used", function (e) {
-    // @ts-ignore
-    const eFieldId = e.detail?.fieldId.substring(4);
-    if (eFieldId === fieldId) {
-      setButtonVisible(true);
-      //not strictly true yet but will be true when the page is refreshed etc
-      setGalaxyDataFoundInRSpace(true);
-      setShouldCheckForGalaxyData(false);
-      //this is a workaround because saving the data is async we cant use
-      // a simple check for the existence of the data
-    }
-  });
 
   return (
     <>
@@ -204,18 +195,34 @@ function ExternalWorkflowInvocations({
       )}
       {(buttonVisible || invocationsAndDataCount.dataCount > 0) && (
         <>
-          <div className={classes.launcherWrapper}>
-            <CustomBadge count={invocationsAndDataCount.invocationCount}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: BUTTON_TOP,
+              right: BUTTON_RIGHT,
+              bottom: BUTTON_BOTTOM,
+              pointerEvents: "none",
+              "@media print": { display: "none" },
+              zIndex: 2,
+            }}
+          >
+            <Badge
+              badgeContent={invocationsAndDataCount.invocationCount}
+              color="primary"
+              sx={{ position: "sticky", top: BUTTON_TOP, zIndex: 1, pointerEvents: "auto" }}
+              slotProps={{ badge: { style: { transform: "none" } } }}
+            >
               <Fab
-                onClick={async () => {
-                  await updateGalaxyDataSummary();
-                  setShowDialog(true);
+                onClick={() => {
+                  void updateGalaxyDataSummary().then(() => {
+                    setShowDialog(true);
+                  });
                 }}
                 color="primary"
                 size="medium"
                 aria-label="Show computational workflows associated with this field"
                 aria-haspopup="menu"
-                className={classes.fab}
+                sx={{ zIndex: "initial" }}
               >
                 <WorkFlowIcon
                   width="100%"
@@ -223,8 +230,8 @@ function ExternalWorkflowInvocations({
                   enableBackground="new 0 0 225 225"
                 ></WorkFlowIcon>
               </Fab>
-            </CustomBadge>
-          </div>
+            </Badge>
+          </Box>
           <Modal
             open={querying}
             aria-label="Please wait, querying galaxy is in progress"
@@ -233,12 +240,14 @@ function ExternalWorkflowInvocations({
             <Grid
               container
               spacing={0}
-              direction="column"
-              alignItems="center"
-              justifyContent="center"
-              sx={{ minHeight: "100vh" }}
+              sx={{
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "column",
+                minHeight: "100vh",
+              }}
             >
-              <Grid item xs={3}>
+              <Grid size={3}>
                 {querying && (
                   <CircularProgress
                     variant="indeterminate"
@@ -258,14 +267,29 @@ function ExternalWorkflowInvocations({
       )}
       {querying && invocationsAndDataCount.dataCount === 0 && (
         <>
-          <div className={classes.launcherWrapper}>
-            <CustomBadge count={invocationsAndDataCount.invocationCount}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: BUTTON_TOP,
+              right: BUTTON_RIGHT,
+              bottom: BUTTON_BOTTOM,
+              pointerEvents: "none",
+              "@media print": { display: "none" },
+              zIndex: 2,
+            }}
+          >
+            <Badge
+              badgeContent={invocationsAndDataCount.invocationCount}
+              color="primary"
+              sx={{ position: "sticky", top: BUTTON_TOP, zIndex: 1, pointerEvents: "auto" }}
+              slotProps={{ badge: { style: { transform: "none" } } }}
+            >
               <Fab
                 disabled={true}
                 size="medium"
                 aria-label="Please wait, loading computational workflows associated with this field"
                 aria-haspopup="menu"
-                className={classes.fab}
+                sx={{ zIndex: "initial" }}
               >
                 <WorkFlowIcon
                   width="100%"
@@ -273,8 +297,8 @@ function ExternalWorkflowInvocations({
                   enableBackground="new 0 0 225 225"
                 ></WorkFlowIcon>
               </Fab>
-            </CustomBadge>
-          </div>
+            </Badge>
+          </Box>
         </>
       )}
     </>
@@ -323,37 +347,4 @@ export const WorkFlowIcon = createSvgIcon(
   "WorkFlow",
 );
 
-const useStyles = makeStyles<{
-  BUTTON_TOP: number;
-  BUTTON_RIGHT: number;
-  BUTTON_BOTTOM: number;
-}>()((theme, { BUTTON_TOP, BUTTON_RIGHT, BUTTON_BOTTOM }) => ({
-  launcherWrapper: {
-    position: "absolute",
-    top: BUTTON_TOP,
-    right: BUTTON_RIGHT,
-    bottom: BUTTON_BOTTOM,
-    pointerEvents: "none",
-    "@media print": {
-      display: "none",
-    },
-    zIndex: 2,
-  },
-  growTransform: { transformOrigin: "center right" },
-  primary: { color: theme.palette.primary.main },
-  popper: {
-    zIndex: 1, // so it appears above the TinyMCE Editor
-    pointerEvents: "auto",
-  },
-  itemName: { fontWeight: "bold" },
-  itemText: {
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    width: "240px",
-  },
-  fab: {
-    zIndex: "initial",
-  },
-}));
 export default ExternalWorkflowInvocations;

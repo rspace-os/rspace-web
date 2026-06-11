@@ -17,39 +17,37 @@ import {
 } from "@mui/material/styles";
 import DialogTitle from "@mui/material/DialogTitle";
 import CardActionArea from "@mui/material/CardActionArea";
-import { makeStyles } from "tss-react/mui";
+import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import docLinks from "../../assets/DocLinks";
 import Divider from "@mui/material/Divider";
 import CardHeader from "@mui/material/CardHeader";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { type Hsl } from "../../accentedTheme";
-
+import { typographyClasses } from "@mui/material/Typography";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import { radioClasses } from "@mui/material/Radio";
 function hsl(
   hue: number,
   saturation: number,
   lightness: number,
-  opacity: number
+  opacity: number,
 ) {
   // lightness is reduced so that all text meets WCAG2.1 AAA guidelines
   // a reduction of 8 is arbitrary and should be increased to ensure compliance
   const adjustedLightness = Math.max(lightness - 8, 0);
-
   return window.matchMedia("(prefers-contrast: more)").matches
     ? `hsl(${hue} ${saturation}% ${adjustedLightness}% / 100%)`
     : `hsl(${hue} ${saturation}% ${lightness}% / ${opacity}%)`;
 }
-
 const accentTextColor = (color: Hsl, opacity: number = 100) =>
   hsl(color.hue, color.saturation, 27, opacity);
-
 const mainTextColor = (color: Hsl, opacity: number = 100) =>
   hsl(color.hue, color.saturation, 20, opacity);
-
 const borderColor = (color: Hsl, opacity: number = 25) =>
   hsl(color.hue, color.saturation, 20, opacity);
-
 type IntegrationCardArgs<Credentials> = {
   // The name of the integration, as rendered in the UI. Be sure to check how
   // the company chooses to brand the service.
@@ -107,7 +105,6 @@ type IntegrationCardArgs<Credentials> = {
   // it is enabled or disable.
   update: (newState: IntegrationState<Credentials>["mode"]) => void;
 };
-
 const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>(
   (props, ref) => (
     <Grow
@@ -120,20 +117,17 @@ const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>(
         transformOrigin: "center 70%",
       }}
     />
-  )
+  ),
 );
 CustomGrow.displayName = "CustomGrow";
-
 const isTestEnv =
   typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
 type NoopTransitionProps = {
   in?: boolean;
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 };
-
 const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
   ({ in: inProp, children, className, style }, ref) => {
     if (!inProp) return null;
@@ -149,88 +143,6 @@ const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
   },
 );
 NoopTransition.displayName = "NoopTransition";
-
-const useStyles = makeStyles<{
-  color: Hsl;
-  mode: IntegrationState<unknown>["mode"];
-}>()((theme, { color, mode }) => ({
-  card: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    borderRadius: 8,
-    justifyContent: "space-between",
-    boxShadow:
-      mode === "UNAVAILABLE"
-        ? "unset"
-        : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 8px 0px`,
-    filter: mode === "UNAVAILABLE" ? "grayscale(0.6) opacity(0.8)" : "unset",
-    transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches
-      ? "0s"
-      : "0.3s",
-    "&:hover": {
-      boxShadow:
-        mode === "UNAVAILABLE"
-          ? "unset"
-          : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
-    },
-    "&:focus-within": {
-      boxShadow: `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
-      borderColor: theme.palette.primary.main,
-    },
-  },
-  cardMediaWrapper: {
-    borderRadius: theme.spacing(0.75),
-    margin: theme.spacing(0.5),
-    backgroundColor: hsl(color.hue, color.saturation, color.lightness, 100),
-    border: `4px solid ${hsl(
-      color.hue,
-      color.saturation,
-      color.lightness,
-      100
-    )}`,
-    alignSelf: "flex-start",
-  },
-  dialog: {
-    // these styles allow callers of this component to use regular HTML tags to
-    // markup the `setupSection`
-    "& ol": {
-      marginTop: theme.spacing(0.5),
-      paddingLeft: theme.spacing(3),
-      marginBottom: 0,
-    },
-    "& ol > li": {
-      position: "relative",
-      paddingLeft: theme.spacing(1),
-      color: mainTextColor(color),
-      paddingBottom: theme.spacing(0.5),
-      lineHeight: 1.6,
-      fontSize: "0.875rem",
-      "&::marker": {
-        color: mainTextColor(color),
-        fontWeight: 500,
-        content: "counter(list-item) ' '",
-        paddingRight: theme.spacing(0.25),
-        paddingLeft: theme.spacing(0.25),
-      },
-      "&:before": {
-        content: "''",
-        width: theme.spacing(2.5),
-        height: theme.spacing(2.5),
-        display: "block",
-        position: "absolute",
-        left: "-18px",
-        top: "1px",
-        borderRadius: "50%",
-        backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
-          ? "transparent"
-          : borderColor(color),
-      },
-    },
-  },
-}));
-
 function IntegrationCard<Credentials>({
   name,
   explanatoryText,
@@ -247,13 +159,19 @@ function IntegrationCard<Credentials>({
   const [open, setOpen] = useState(false);
   const mode = integrationState.mode;
   const theme = useTheme();
-  const { classes } = useStyles({ color, mode });
   const { trackEvent } = useContext(AnalyticsContext);
+
+  const cardMediaWrapperSx = {
+    borderRadius: theme.spacing(0.75),
+    margin: theme.spacing(0.5),
+    backgroundColor: hsl(color.hue, color.saturation, color.lightness, 100),
+    border: `4px solid ${hsl(color.hue, color.saturation, color.lightness, 100)}`,
+    alignSelf: "flex-start",
+  } as const;
 
   return (
     <ThemeProvider
-      theme={createTheme({
-        ...(theme as any as ThemeOptions),
+      theme={createTheme(theme as unknown as ThemeOptions, {
         components: {
           MuiLink: {
             defaultProps: {
@@ -332,8 +250,9 @@ function IntegrationCard<Credentials>({
             styleOverrides: {
               root: {
                 padding: theme.spacing(1),
-                marginBottom: theme.spacing(2),
+                margin: 0,
                 borderBottom: `1px solid ${borderColor(color, 20)}`,
+                textTransform: "none",
               },
             },
           },
@@ -341,6 +260,7 @@ function IntegrationCard<Credentials>({
             styleOverrides: {
               root: {
                 padding: `${theme.spacing(1.5)} ${theme.spacing(2)}`,
+                paddingTop: theme.spacing(2),
               },
             },
           },
@@ -400,8 +320,8 @@ function IntegrationCard<Credentials>({
                 marginBottom: theme.spacing(1),
               },
               label: {
-                "&.Mui-disabled": {
-                  "& .MuiTypography-root": {
+                [`&.${formControlLabelClasses.disabled}`]: {
+                  [`& .${typographyClasses.root}`]: {
                     color: "grey",
                   },
                 },
@@ -411,11 +331,11 @@ function IntegrationCard<Credentials>({
           MuiRadio: {
             styleOverrides: {
               root: {
-                "& .MuiSvgIcon-root": {
+                [`& .${svgIconClasses.root}`]: {
                   color: accentTextColor(color),
                 },
-                "&.Mui-disabled": {
-                  "& .MuiSvgIcon-root": {
+                [`&.${radioClasses.disabled}`]: {
+                  [`& .${svgIconClasses.root}`]: {
                     color: "grey",
                   },
                 },
@@ -448,21 +368,64 @@ function IntegrationCard<Credentials>({
         },
       })}
     >
-      <Card variant="outlined" className={classes.card} aria-label={name}>
+      <Card
+        variant="outlined"
+        aria-label={name}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          borderRadius: theme.spacing(1),
+          justifyContent: "space-between",
+          boxShadow:
+            mode === "UNAVAILABLE"
+              ? "unset"
+              : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 8px 0px`,
+          filter:
+            mode === "UNAVAILABLE" ? "grayscale(0.6) opacity(0.8)" : "unset",
+          transitionDuration: window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches
+            ? "0s"
+            : "0.3s",
+          "&:hover": {
+            boxShadow:
+              mode === "UNAVAILABLE"
+                ? "unset"
+                : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
+          },
+          "&:focus-within": {
+            boxShadow: `${hsl(
+              color.hue,
+              color.saturation,
+              20,
+              20,
+            )} 0px 2px 12px 4px`,
+            borderColor: theme.palette.primary.main,
+          },
+        }}
+      >
         <CardActionArea
           disabled={mode === "UNAVAILABLE"}
           onClick={() => {
             setOpen(true);
-            trackEvent("Apps page dialog opened", { integrationName: name });
+            trackEvent("Apps page dialog opened", {
+              integrationName: name,
+            });
           }}
         >
           <CardHeader
             title={name}
             subheader={explanatoryText}
             avatar={
-              <div className={classes.cardMediaWrapper}>
-                <CardMedia image={image} />
-              </div>
+              <Box sx={cardMediaWrapperSx}>
+                <CardMedia
+                  component="img"
+                  src={image}
+                  alt=""
+                  role="presentation"
+                />
+              </Box>
             }
           />
         </CardActionArea>
@@ -474,61 +437,118 @@ function IntegrationCard<Credentials>({
         open={open}
         maxWidth="sm"
         fullWidth
-        TransitionComponent={isTestEnv ? NoopTransition : CustomGrow}
         transitionDuration={isTestEnv ? 0 : undefined}
-        className={classes.dialog}
-        PaperProps={{ tabIndex: -1 }}
+        sx={{
+          // these styles allow callers of this component to use regular HTML tags to
+          // markup the `setupSection`
+          "& ol": {
+            marginTop: theme.spacing(0.5),
+            paddingLeft: theme.spacing(3),
+            marginBottom: 0,
+          },
+          "& ol > li": {
+            position: "relative",
+            paddingLeft: theme.spacing(1),
+            color: mainTextColor(color),
+            paddingBottom: theme.spacing(0.5),
+            lineHeight: 1.6,
+            fontSize: "0.875rem",
+            "&::marker": {
+              color: mainTextColor(color),
+              fontWeight: 500,
+              content: "counter(list-item) ' '",
+              paddingRight: theme.spacing(0.25),
+              paddingLeft: theme.spacing(0.25),
+            },
+            "&:before": {
+              content: "''",
+              width: theme.spacing(2.5),
+              height: theme.spacing(2.5),
+              display: "block",
+              position: "absolute",
+              left: "-18px",
+              top: "1px",
+              borderRadius: "50%",
+              backgroundColor: window.matchMedia("(prefers-contrast: more)")
+                .matches
+                ? "transparent"
+                : borderColor(color),
+            },
+          },
+        }}
         disableAutoFocus={isTestEnv}
         disableEnforceFocus={isTestEnv}
         disableRestoreFocus={isTestEnv}
+        slotProps={{
+          paper: {
+            tabIndex: -1,
+          },
+        }}
+        slots={{
+          transition: isTestEnv ? NoopTransition : CustomGrow,
+        }}
       >
         <DialogTitle>
-          <Grid container direction="row" flexWrap="nowrap" spacing={1}>
-            <Grid item>
-              <div className={classes.cardMediaWrapper}>
-                <CardMedia image={image} />
-              </div>
-            </Grid>
-            <Grid item>
+          <Stack
+            direction="row"
+            sx={{
+              flexWrap: "nowrap",
+              alignItems: "flex-start",
+              gap: 1,
+            }}
+          >
+            <Box>
+              <Box sx={cardMediaWrapperSx}>
+                <CardMedia
+                  component="img"
+                  src={image}
+                  alt=""
+                  role="presentation"
+                />
+              </Box>
+            </Box>
+            <Box>
               {name}
               <Typography variant="body2" component="div">
                 {explanatoryText}
               </Typography>
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </DialogTitle>
-        <DialogContent>
-          <section>
-            <Typography variant="body2">{usageText}</Typography>
-            {typeof website === "string" ? (
-              <Typography variant="body2">
-                See{" "}
-                <Link
-                  href={
-                    website.startsWith("/") ? website : `https://${website}`
-                  }
-                >
-                  {website}
-                </Link>
-                {" and our "}
-                <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+        <DialogContent sx={{ p: 0 }}>
+          <Stack sx={{ p: 2 }}>
+            <section>
+              <Typography variant="body2">{usageText}</Typography>
+              {typeof website === "string" ? (
+                <Typography variant="body2">
+                  See{" "}
+                  <Link
+                    href={
+                      website.startsWith("/") ? website : `https://${website}`
+                    }
+                  >
+                    {website}
+                  </Link>
+                  {" and our "}
+                  <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+                </Typography>
+              ) : (
+                <Typography variant="body2">
+                  See our <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
+                  for more.
+                </Typography>
+              )}
+            </section>
+            <Divider orientation="horizontal" sx={{ gap: 0 }} />
+            <section>
+              <Typography variant="subtitle1" component="h4">
+                Setup
               </Typography>
-            ) : (
-              <Typography variant="body2">
-                See our <Link href={docLinks[docLink]}>{helpLinkText}</Link> for
-                more.
-              </Typography>
-            )}
-          </section>
-          <Divider orientation="horizontal" />
-          <section>
-            <Typography variant="subtitle1" component="h4">
-              Setup
-            </Typography>
-            {setupSection}
-          </section>
+              {setupSection}
+            </section>
+          </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: `0 ${theme.spacing(2)} ${theme.spacing(2)}` }}>
           <Button
             onClick={() => {
               setOpen(false);
@@ -554,5 +574,4 @@ function IntegrationCard<Credentials>({
     </ThemeProvider>
   );
 }
-
 export default observer(IntegrationCard);

@@ -1,8 +1,9 @@
 import { type URL } from "../util/types";
 import React from "react";
 import IconButton from "@mui/material/IconButton";
+import { svgIconClasses } from "@mui/material/SvgIcon";
 import HelpIcon from "@mui/icons-material/Help";
-import { withStyles } from "Styles";
+import { useTheme } from "@mui/material/styles";
 import CustomTooltip from "./CustomTooltip";
 
 type HelpIconProps = {
@@ -19,36 +20,36 @@ type AnchorLinkProps = {
   rel: string;
 };
 
-const IconLink = withStyles<
-  Omit<React.ComponentProps<typeof IconButton>, "color"> &
-    AnchorLinkProps & {
-      color: React.ComponentProps<typeof IconButton>["color"] | "white";
-    },
-  { root: string }
->((theme, { color }) => ({
-  root: {
-    color: `${
-      color === "primary" ? theme.palette.primary.dark : color
-    } !important`,
-    cursor: "pointer",
-    transition: "all .15s ease",
-    "&:hover": {
-      filter: "brightness(0.9)",
-      // have to re-state to prevent ELN's a:hover red style from taking effect
-      color: `${
-        color === "primary" ? theme.palette.primary.dark : color
-      } !important`,
-    },
-    transform: "translateY(-2px)",
-    "& .MuiSvgIcon-root": {
-      color: `${
-        color === "primary" ? theme.palette.primary.dark : color
-      } !important`,
-    },
-  },
-}))(({ color: _color, ...rest }) => {
-  return <IconButton {...rest} />;
-});
+function IconLink({
+  color,
+  ...rest
+}: Omit<React.ComponentProps<typeof IconButton>, "color"> &
+  AnchorLinkProps & {
+    color: React.ComponentProps<typeof IconButton>["color"] | "white";
+  }): React.ReactNode {
+  const theme = useTheme();
+  const resolvedColor =
+    color === "primary" ? theme.palette.primary.dark : color;
+  return (
+    <IconButton
+      {...rest}
+      sx={{
+        color: `${resolvedColor} !important`,
+        cursor: "pointer",
+        transition: "all .15s ease",
+        transform: "translateY(-2px)",
+        "&:hover": {
+          filter: "brightness(0.9)",
+          // have to re-state to prevent ELN's a:hover red style from taking effect
+          color: `${resolvedColor} !important`,
+        },
+        [`& .${svgIconClasses.root}`]: {
+          color: `${resolvedColor} !important`,
+        },
+      }}
+    />
+  );
+}
 
 /**
  * A simple question mark icon button for linking to documentation.

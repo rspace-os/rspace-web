@@ -1,49 +1,22 @@
 import { type URL } from "../../../util/types";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import RelativeBox from "../../../components/RelativeBox";
+import Box from "@mui/material/Box";
 import useStores from "../../../stores/use-stores";
 import { doNotAwait } from "../../../util/Util";
 import CommonEditActions from "../CommonEditActions";
 import MoreInfoSidebar from "../MoreInfoSidebar";
 import Toolbar from "../Toolbar/Toolbar";
 import StepperActions from "./StepperActions";
-import { makeStyles } from "tss-react/mui";
 import Alert from "@mui/material/Alert";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState, useContext, type ReactNode } from "react";
 import { type Factory } from "../../../stores/definitions/Factory";
-import clsx from "clsx";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import Stack from "@mui/material/Stack";
-
-const useStyles = makeStyles()((theme) => ({
-  relativeBox: {
-    minHeight: 0,
-    overflowY: "auto",
-  },
-  rightSpacing: {
-    marginRight: theme.spacing(0.75),
-  },
-  truncatedTitle: {
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    fontSize: "20px",
-  },
-}));
-
-type WrapperProps = {
-  children: ReactNode;
-};
-
-const Wrapper = React.forwardRef<HTMLDivElement, WrapperProps>(
-  ({ children }, ref) => <div ref={ref}>{children}</div>,
-);
-Wrapper.displayName = "Wrapper";
 
 type StepperArgs = {
   // The title string to be displayed in the top left corner of the form.
@@ -93,8 +66,6 @@ function _Stepper({
 
   const { state } = activeResult ?? {};
 
-  const { classes } = useStyles();
-
   /*
    * We pin the header that includes the Title, a Global Id link, and the
    * record type label at the top of the viewport so that they are always able
@@ -142,11 +113,18 @@ function _Stepper({
       <Typography
         variant="h5"
         component="h2"
-        className={clsx(
-          classes.rightSpacing,
-          needsTruncating && classes.truncatedTitle,
-        )}
-        sx={{ color: "unset !important" }}
+        sx={{
+          mr: 0.75,
+          color: "unset !important",
+          ...(needsTruncating
+            ? {
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                fontSize: "20px",
+              }
+            : {}),
+        }}
       >
         {titleText}
       </Typography>
@@ -193,11 +171,11 @@ function _Stepper({
         recordType={activeResult.recordType}
         stickyAlert={stickyAlert}
       />
-      <RelativeBox className={classes.relativeBox}>
+      <Box sx={{ position: "relative", minHeight: 0, overflowY: "auto" }}>
         <HeadingContext level={3}>{children}</HeadingContext>
         <FooterActions />
         {state === "preview" && <MoreInfoSidebar factory={factory || null} />}
-      </RelativeBox>
+      </Box>
     </>
   );
 }

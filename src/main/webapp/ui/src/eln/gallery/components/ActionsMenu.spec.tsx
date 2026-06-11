@@ -17,11 +17,6 @@ import {
   ActionsMenuWithSnippetInSystemSharedFolder,
 } from "./ActionsMenu.story";
 
-test.skip(
-  ({ browserName }) => browserName === "webkit",
-  "Flaky on WebKit",
-);
-
 const feature = test.extend<{
   Given: {
     "the actions menu with a non-folder is mounted": () => Promise<void>;

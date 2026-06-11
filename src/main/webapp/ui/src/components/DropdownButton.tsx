@@ -1,11 +1,11 @@
 //@flow strict
 
 import React from "react";
-import Grid from "@mui/material/Grid";
-import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Button, { buttonClasses } from "@mui/material/Button";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import CustomTooltip from "./CustomTooltip";
-import { styled, type SxProps } from "@mui/system";
+import { type SxProps } from "@mui/system";
 
 type DropdownButtonArgs = {
   name: React.ReactNode;
@@ -16,18 +16,6 @@ type DropdownButtonArgs = {
   sx?: SxProps;
 };
 
-const StyledButton = styled(Button)(({ theme }) => ({
-  padding: theme.spacing(0, 0.75),
-  minWidth: "unset",
-  height: 32,
-  textTransform: "none",
-  letterSpacing: "0.04em",
-  border: "none",
-  "& .MuiButton-endIcon": {
-    marginLeft: theme.spacing(0.5),
-  },
-}));
-
 const DropdownButton = ({
   name,
   children,
@@ -36,22 +24,33 @@ const DropdownButton = ({
   title,
   sx,
 }: DropdownButtonArgs) => (
-  <Grid item>
+  <Box>
     <CustomTooltip title={title ?? ""} aria-label="">
-      <StyledButton
+      <Button
         endIcon={<KeyboardArrowDownIcon />}
         size="small"
         onClick={onClick}
         disabled={disabled}
         aria-label={title}
         color="standardIcon"
-        sx={sx}
+        sx={{
+          padding: (theme) => theme.spacing(0, 0.75),
+          minWidth: "unset",
+          height: 32,
+          textTransform: "none",
+          letterSpacing: "0.04em",
+          border: "none",
+          [`& .${buttonClasses.endIcon}`]: {
+            marginLeft: (theme) => theme.spacing(0.5),
+          },
+          ...sx,
+        }}
       >
         {name}
-      </StyledButton>
+      </Button>
     </CustomTooltip>
     {children}
-  </Grid>
+  </Box>
 );
 
 export default DropdownButton;

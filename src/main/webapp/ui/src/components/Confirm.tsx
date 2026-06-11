@@ -34,7 +34,7 @@ function Confirm(): React.ReactNode {
       }}
     >
       <DialogTitle>{uiStore.confirmationDialogProps?.title ?? ""}</DialogTitle>
-      <DialogContent style={{ overscrollBehavior: "contain" }}>
+      <DialogContent sx={{ overscrollBehavior: "contain" }}>
         <DialogContentText>
           {uiStore.confirmationDialogProps?.message ?? ""}
         </DialogContentText>

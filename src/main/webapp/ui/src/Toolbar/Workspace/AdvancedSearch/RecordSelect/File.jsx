@@ -34,7 +34,7 @@ class Folder extends React.Component {
               edge="start"
               checked={this.props.selected}
               onChange={this.updateSelfSelect}
-              style={{ padding: 0 }}
+              sx={{ padding: 0 }}
             />
             <FontAwesomeIcon icon={faFile} size="2x" />
           </>

@@ -68,13 +68,15 @@ class UserList extends React.Component {
             data-test-id={`user-search-${this.props.listTitle
               .split(" ")
               .join("-")}`}
-            inputProps={{ spellcheck: "false" }}
+            slotProps={{
+              htmlInput: { spellcheck: "false" },
+            }}
           />
           <List
             dense
             component="div"
             role="list"
-            style={{ height: "350px", overflowY: "auto" }}
+            sx={{ height: "350px", overflowY: "auto" }}
           >
             {this.visibleUsers().map((user) => (
               <ListItem

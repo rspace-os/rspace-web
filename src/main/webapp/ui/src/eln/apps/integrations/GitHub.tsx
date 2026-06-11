@@ -1,4 +1,6 @@
 import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import React, { useContext, useState } from "react";
 import IntegrationCard from "../IntegrationCard";
 import {
@@ -49,7 +51,7 @@ const DialogContent = observer(
     const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
     const copyOfRepos = useLocalObservable(() =>
-      linkedRepos.map((c) => observable(c))
+      linkedRepos.map((c) => observable(c)),
     );
     const [allRepositories, setAllRepositories] = useState<
       Optional<Array<Repository>>
@@ -82,14 +84,14 @@ const DialogContent = observer(
                   variant: "error",
                   title: "Could not fetch listing of repositories",
                   message: error.message,
-                })
+                }),
               );
             }
           } finally {
             setLoadingAllRepositories(false);
           }
         })();
-      }
+      },
     );
 
     const addHandler = async () => {
@@ -106,7 +108,7 @@ const DialogContent = observer(
               variant: "error",
               title: "Could not fetch listing of repositories",
               message: e.message,
-            })
+            }),
           );
         }
       } finally {
@@ -115,8 +117,8 @@ const DialogContent = observer(
     };
 
     return (
-      <Grid container spacing={3} direction="column" sx={{ mt: 1 }}>
-        <Grid item>
+      <Stack spacing={3} sx={{ mt: 1 }}>
+        <Box>
           <Typography component="h5" variant="subtitle1">
             Linked Repositories
           </Typography>
@@ -140,9 +142,9 @@ const DialogContent = observer(
                     <ListItemText
                       primary={config.GITHUB_REPOSITORY_FULL_NAME}
                       secondary={config.GITHUB_ACCESS_TOKEN.map(
-                        () => null
+                        () => null,
                       ).orElse(
-                        "Repository is in an invalid state. Please remove and re-add."
+                        "Repository is in an invalid state. Please remove and re-add.",
                       )}
                     />
                   </TableCell>
@@ -153,20 +155,20 @@ const DialogContent = observer(
                           try {
                             await deleteAppOptions("GITHUB", config.optionsId);
                             const indexOfDeleted = copyOfRepos.findIndex(
-                              (c) => c.optionsId === config.optionsId
+                              (c) => c.optionsId === config.optionsId,
                             );
                             runInAction(() => {
                               copyOfRepos.splice(indexOfDeleted, 1);
                               integrationState.credentials.splice(
                                 indexOfDeleted,
-                                1
+                                1,
                               );
                             });
                             addAlert(
                               mkAlert({
                                 variant: "success",
                                 message: "Successfully removed repository.",
-                              })
+                              }),
                             );
                           } catch (e) {
                             if (e instanceof Error) {
@@ -175,7 +177,7 @@ const DialogContent = observer(
                                   variant: "error",
                                   title: "Failed to remove repository.",
                                   message: e.message,
-                                })
+                                }),
                               );
                             }
                           }
@@ -189,10 +191,10 @@ const DialogContent = observer(
               ))}
             </TableBody>
           </Table>
-        </Grid>
+        </Box>
         {allRepositories
           .map((repos) => (
-            <Grid item key={null}>
+            <Box key={null}>
               <Typography component="h5" variant="subtitle1">
                 Link Additional Repositories
               </Typography>
@@ -219,79 +221,81 @@ const DialogContent = observer(
                         />
                       </TableCell>
                       <TableCell>
-                    <Button
-                      onClick={() => {
-                        void (async () => {
-                          try {
-                            const newState = await saveAppOptions(
-                              "GITHUB",
-                              Optional.empty(),
-                              {
-                                GITHUB_ACCESS_TOKEN: accessToken,
-                                GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
-                              }
-                            );
-                            const optionIdsOfExistingRepos = new RsSet(
-                              copyOfRepos.map(({ optionsId }) => optionsId)
-                            );
-                            runInAction(() => {
-                              integrationState.credentials =
-                                newState.credentials;
+                        <Button
+                          onClick={() => {
+                            void (async () => {
                               try {
-                                const newlySavedRepo = new RsSet(
-                                  newState.credentials
-                                )
-                                  .mapOptional((x) => x)
-                                  .subtractMap(
-                                    ({ optionsId }) => optionsId,
-                                    optionIdsOfExistingRepos
-                                  ).first;
-                                copyOfRepos.push(observable(newlySavedRepo));
-                              } catch {
-                                throw new Error(
-                                  "Save completed but cannot show results."
+                                const newState = await saveAppOptions(
+                                  "GITHUB",
+                                  Optional.empty(),
+                                  {
+                                    GITHUB_ACCESS_TOKEN: accessToken,
+                                    GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
+                                  },
                                 );
+                                const optionIdsOfExistingRepos = new RsSet(
+                                  copyOfRepos.map(({ optionsId }) => optionsId),
+                                );
+                                runInAction(() => {
+                                  integrationState.credentials =
+                                    newState.credentials;
+                                  try {
+                                    const newlySavedRepo = new RsSet(
+                                      newState.credentials,
+                                    )
+                                      .mapOptional((x) => x)
+                                      .subtractMap(
+                                        ({ optionsId }) => optionsId,
+                                        optionIdsOfExistingRepos,
+                                      ).first;
+                                    copyOfRepos.push(
+                                      observable(newlySavedRepo),
+                                    );
+                                  } catch {
+                                    throw new Error(
+                                      "Save completed but cannot show results.",
+                                    );
+                                  }
+                                  setAllRepositories(
+                                    allRepositories.map((allRepos) =>
+                                      allRepos.filter(
+                                        (r) => r.full_name !== repo.full_name,
+                                      ),
+                                    ),
+                                  );
+                                });
+                                addAlert(
+                                  mkAlert({
+                                    variant: "success",
+                                    message: "Successfully added repository.",
+                                  }),
+                                );
+                              } catch (e) {
+                                if (e instanceof Error) {
+                                  addAlert(
+                                    mkAlert({
+                                      variant: "error",
+                                      title: "Failed to add repository.",
+                                      message: e.message,
+                                    }),
+                                  );
+                                }
                               }
-                              setAllRepositories(
-                                allRepositories.map((allRepos) =>
-                                  allRepos.filter(
-                                    (r) => r.full_name !== repo.full_name
-                                  )
-                                )
-                              );
-                            });
-                            addAlert(
-                              mkAlert({
-                                variant: "success",
-                                message: "Successfully added repository.",
-                              })
-                            );
-                          } catch (e) {
-                            if (e instanceof Error) {
-                              addAlert(
-                                mkAlert({
-                                  variant: "error",
-                                  title: "Failed to add repository.",
-                                  message: e.message,
-                                })
-                              );
-                            }
-                          }
-                        })();
-                      }}
-                    >
-                      Add
-                    </Button>
+                            })();
+                          }}
+                        >
+                          Add
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </Grid>
+            </Box>
           ))
           .orElse(null)}
         {allRepositories.isEmpty() && (
-          <Grid item>
+          <Box>
             <Button
               disabled={loadingAllRepositories}
               onClick={() => {
@@ -302,11 +306,11 @@ const DialogContent = observer(
                 ? "Loading available repositories"
                 : "Add"}
             </Button>
-          </Grid>
+          </Box>
         )}
-      </Grid>
+      </Stack>
     );
-  }
+  },
 );
 
 type GitHubArgs = {
@@ -333,7 +337,13 @@ type GitHubArgs = {
  */
 function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="GitHub"
         integrationState={integrationState}

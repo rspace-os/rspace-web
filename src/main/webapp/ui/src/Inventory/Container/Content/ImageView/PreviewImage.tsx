@@ -1,9 +1,7 @@
 import React, { useContext, useRef, useState, useLayoutEffect } from "react";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import SearchContext from "../../../../stores/contexts/Search";
 import Dragger from "../Dragger";
-import RelativeBox from "../../../../components/RelativeBox";
 import OverlayLoadingSpinner from "../../../components/OverlayLoadingSpinner";
 import EmptyListing from "../../../Search/components/EmptyListing";
 import ContainerModel from "../../../../stores/models/ContainerModel";
@@ -11,20 +9,10 @@ import LocationWrapper from "./LocationWrapper";
 import LocationContent from "../LocationContent";
 import { pick } from "../../../../util/unsafeUtils";
 import * as DragAndDrop from "../DragAndDrop";
-
-const useStyles = makeStyles()(() => ({
-  rounded: {
-    width: "auto",
-    height: "auto",
-    maxWidth: "100%",
-    userSelect: "none",
-    cursor: "crosshair",
-  },
-}));
+import Box from "@mui/material/Box";
 
 function PreviewImage(): React.ReactNode {
   const { scopedResult, search } = useContext(SearchContext);
-  const { classes } = useStyles();
 
   const noSelection = search.uiConfig.selectionMode === "NONE";
   if (!(scopedResult && scopedResult instanceof ContainerModel))
@@ -42,9 +30,9 @@ function PreviewImage(): React.ReactNode {
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
       setImageDimensions(
-        pick("width", "height")(entries[0].target.getBoundingClientRect())
+        pick("width", "height")(entries[0].target.getBoundingClientRect()),
       );
-    })
+    }),
   );
   const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -74,8 +62,8 @@ function PreviewImage(): React.ReactNode {
 
   return (
     <DragAndDrop.Context container={container}>
-      <RelativeBox
-        m={1}
+      <Box
+        sx={{ position: "relative", m: 1 }}
         onMouseDown={(e: React.MouseEvent) => {
           if (noSelection) return;
           setMouseDownPoint({
@@ -107,10 +95,17 @@ function PreviewImage(): React.ReactNode {
           container.moveSelection(e);
         }}
       >
-        <img
+        <Box
+          component="img"
           src={container.locationsImage || undefined}
           alt="Container preview"
-          className={classes.rounded}
+          sx={{
+            width: "auto",
+            height: "auto",
+            maxWidth: "100%",
+            userSelect: "none",
+            cursor: "crosshair",
+          }}
           onLoad={({ target }) => {
             setImg(target as HTMLImageElement);
           }}
@@ -153,7 +148,7 @@ function PreviewImage(): React.ReactNode {
         {container.locationsImage && container.loading && (
           <OverlayLoadingSpinner />
         )}
-      </RelativeBox>
+      </Box>
     </DragAndDrop.Context>
   );
 }

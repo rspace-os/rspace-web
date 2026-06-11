@@ -222,7 +222,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   }
 
   return (
-    <StyledEngineProvider injectFirst>
+    <StyledEngineProvider injectFirst enableCssLayer>
       <link rel="stylesheet" href="/styles/simplicity/typo.css" />
       <link rel="stylesheet" href="/styles/simplicity/typoEdit.css" />
       <CssBaseline />
@@ -231,7 +231,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           {historyId && (
             <>
               <TitledBox title="View Workflow in Galaxy" border>
-                <Stack spacing={2} alignItems="flex-start">
+                <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   <p>Your new history can be viewed here: </p>
                   <p>
                     <a
@@ -245,14 +245,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     will see 'Unnamed History'){" "}
                   </p>
                   <p>
-                    <b>
+                    <strong>
                       {" "}
                       The data you have uploaded to Galaxy has links back to
                       RSpace present in its 'annotation' metadata.
-                    </b>
+                    </strong>
                   </p>
                   <p>
-                    <b>
+                    <strong>
                       {" "}
                       Data uploaded to this history is now viewable by clicking
                       on the 'workflow' icon which will appear in your document.
@@ -261,7 +261,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                       click on this 'workflow' icon. The badge count on the
                       workflow icon indicates how many Galaxy Invocations are
                       using the uploaded data.
-                    </b>
+                    </strong>
                   </p>
                 </Stack>
               </TitledBox>
@@ -270,7 +270,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           {!historyId && (
             <>
               <TitledBox title="Choose Data" border>
-                <Stack spacing={2} alignItems="flex-start">
+                <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
                       <label htmlFor="serverChoice">
@@ -302,11 +302,11 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   which will be available for immediate use. The list dataset
                   will be named after this RSpace document, using the format:
                   <p>
-                    <b>
+                    <strong>
                       "RSPACE_" + document name + "_" + global ID of document +
                       "_" + name of field data was attached to + "_" + global ID
                       of that field.
-                    </b>
+                    </strong>
                   </p>
                   When you click 'Upload to Galaxy', a new history will be
                   created in Galaxy named after your RSpace document with the
@@ -314,11 +314,11 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   data will be uploaded to this new history. You can make this
                   history active in Galaxy by switching to it.
                   <p>
-                    <b>
+                    <strong>
                       RSpace will store the details of the files you have
                       uploaded and also any use of these files on Galaxy in
                       Invocations will be tracked.
-                    </b>
+                    </strong>
                   </p>
                   {errorMessage && (
                     <ErrorView
@@ -335,12 +335,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     <Grid
                       container
                       spacing={0}
-                      direction="column"
-                      alignItems="center"
-                      justifyContent="center"
-                      sx={{ minHeight: "100vh" }}
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexDirection: "column",
+                        minHeight: "100vh",
+                      }}
                     >
-                      <Grid item xs={3}>
+                      <Grid size={3}>
                         {uploading && (
                           <CircularProgress
                             variant="indeterminate"

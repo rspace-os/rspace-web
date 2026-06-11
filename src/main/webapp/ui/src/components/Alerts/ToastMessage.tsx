@@ -2,23 +2,9 @@ import ErrorBoundary from "../ErrorBoundary";
 import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
 import SnackbarContentWrapper from "./SnackbarContentWrapper";
 import React, { useContext } from "react";
-import { makeStyles } from "tss-react/mui";
 import { observer } from "mobx-react-lite";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
-
-const useStyles = makeStyles<{ verySmallLayout: boolean }>()(
-  (theme, { verySmallLayout }: { verySmallLayout: boolean }) => ({
-    toastMessageSnackbar: {
-      position: "relative",
-      marginBottom: 10,
-      maxWidth: verySmallLayout ? "100%" : 500,
-      textAlign: "left",
-      width: "100%",
-      left: 0,
-    },
-  }),
-);
 
 type ToastMessageArgs = {
   alert: Alert;
@@ -28,7 +14,6 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
   const [expanded, setExpanded] = React.useState(false);
   const [timeoutId, setTimeoutId] = React.useState<NodeJS.Timeout | null>(null);
   const { isViewportVerySmall } = useViewportDimensions();
-  const { classes } = useStyles({ verySmallLayout: isViewportVerySmall });
   const { removeAlert } = useContext(AlertContext);
 
   const handleClose = (
@@ -62,7 +47,14 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
         }}
         open={alert.isOpen}
         onClose={handleClose}
-        className={classes.toastMessageSnackbar}
+        sx={{
+          position: "relative",
+          mb: 1.25,
+          maxWidth: isViewportVerySmall ? "100%" : 500,
+          textAlign: "left",
+          width: "100%",
+          left: 0,
+        }}
         role="group"
         aria-label={`${alert.variant} alert`}
       >

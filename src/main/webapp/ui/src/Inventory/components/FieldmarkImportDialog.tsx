@@ -1,12 +1,11 @@
 import React from "react";
-import { ThemeProvider, styled } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import { Dialog } from "../../components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
 import AppBar from "../../components/AppBar";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import { doNotAwait } from "../../util/Util";
@@ -92,7 +91,7 @@ const GridToolbar = ({
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
-      <Box flexGrow={1}></Box>
+      <Box sx={{ flexGrow: 1 }}></Box>
       <GridToolbarColumnsButton
         ref={(node) => {
           if (node) columnMenuRef.current = node;
@@ -102,22 +101,22 @@ const GridToolbar = ({
   );
 };
 
-const StyledGridOverlay = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "100%",
-  backgroundColor: "rgba(18, 18, 18, 0.9)",
-  ...theme.applyStyles("light", {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-  }),
-}));
-
 function CustomLoadingOverlay() {
   const id = React.useId();
   return (
-    <StyledGridOverlay>
+    <Box
+      sx={(theme) => ({
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        backgroundColor: "rgba(18, 18, 18, 0.9)",
+        ...theme.applyStyles("light", {
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+        }),
+      })}
+    >
       <CircularProgress
         variant="indeterminate"
         value={1}
@@ -126,7 +125,7 @@ function CustomLoadingOverlay() {
       <Box sx={{ mt: 2 }} id={id}>
         Fetching notebooks from Fieldmark…
       </Box>
-    </StyledGridOverlay>
+    </Box>
   );
 }
 
@@ -415,13 +414,11 @@ export default function FieldmarkImportDialog({
         />
         <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
         <DialogContent>
-          <Grid
-            container
-            direction="column"
+          <Stack
             spacing={2}
             sx={{ height: "100%", flexWrap: "nowrap" }}
           >
-            <Grid item>
+            <Box>
               <Typography
                 variant="body2"
                 sx={{ maxWidth: "54em" /* entirely arbitrary */ }}
@@ -440,8 +437,8 @@ export default function FieldmarkImportDialog({
                 </Link>{" "}
                 for more.
               </Typography>
-            </Grid>
-            <Grid item>
+            </Box>
+            <Box>
               <DataGridWithRadioSelection
                 columns={[
                   DataGridColumn.newColumnWithFieldName<"name", Notebook>(
@@ -553,8 +550,8 @@ export default function FieldmarkImportDialog({
                 }}
                 getRowId={(row) => row.metadata.project_id}
               />
-            </Grid>
-            <Grid item>
+            </Box>
+            <Box>
               {selectedNotebook &&
                 !(
                   identifierFieldSelection.type === "unselected" && importing
@@ -637,33 +634,29 @@ export default function FieldmarkImportDialog({
                     )}
                   </>
                 )}
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Grid container direction="row" spacing={1}>
-            <Grid item sx={{ ml: "auto" }}>
-              <Stack direction="row" spacing={1}>
-                <Button onClick={() => handleClose()}>Close</Button>
-                <ValidatingSubmitButton
-                  onClick={() => {
-                    if (selectedNotebook)
-                      void importNotebook(selectedNotebook).then(() =>
-                        handleClose(),
-                      );
-                  }}
-                  validationResult={
-                    !selectedNotebook
-                      ? IsInvalid("No Notebook selected.")
-                      : IsValid()
-                  }
-                  loading={importing}
-                >
-                  Import
-                </ValidatingSubmitButton>
-              </Stack>
-            </Grid>
-          </Grid>
+          <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+            <Button onClick={() => handleClose()}>Close</Button>
+            <ValidatingSubmitButton
+              onClick={() => {
+                if (selectedNotebook)
+                  void importNotebook(selectedNotebook).then(() =>
+                    handleClose(),
+                  );
+              }}
+              validationResult={
+                !selectedNotebook
+                  ? IsInvalid("No Notebook selected.")
+                  : IsValid()
+              }
+              loading={importing}
+            >
+              Import
+            </ValidatingSubmitButton>
+          </Stack>
         </DialogActions>
       </Dialog>
     </ThemeProvider>

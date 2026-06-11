@@ -1,13 +1,10 @@
 import React from "react";
-import { withStyles } from "Styles";
 import FormControl from "../../../../components/Inputs/FormControl";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel, {
-  FormControlLabelProps,
-} from "@mui/material/FormControlLabel";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type SharingMode } from "../../../../stores/definitions/InventoryRecord";
 import InventoryBaseRecordCollection from "../../../../stores/models/InventoryBaseRecordCollection";
@@ -25,15 +22,6 @@ import {
   OptionHeading,
   OptionExplanation,
 } from "../../../../components/Inputs/RadioField";
-
-const CustomFormControlLabel = withStyles<
-  React.ComponentProps<typeof FormControlLabel>,
-  { root: string }
->(() => ({
-  root: {
-    alignItems: "flex-start",
-  },
-}))(FormControlLabel);
 
 type Fields = {
   sharingMode: SharingMode;
@@ -123,114 +111,100 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
             });
           }}
         >
-          <Grid container direction="column" spacing={1}>
+          <Stack spacing={1}>
             {(fieldOwner.isFieldEditable("sharingMode") ||
               fieldOwner.fieldValues.sharingMode === "OWNER_GROUPS") && (
-              <Grid item>
-                <CustomFormControlLabel
-                  value="OWNER_GROUPS"
-                  control={
-                    <Radio
-                      color="primary"
-                      disabled={!fieldOwner.isFieldEditable("sharingMode")}
-                    />
-                  }
-                  label={
-                    <Box m={1} mt={0.5}>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
-                          <OptionHeading>Owner&apos;s groups</OptionHeading>
-                          <OptionExplanation>
-                            Accessible to only those who are in a lab or
-                            collaboration group with the owner.{" "}
-                            {!hideOwnersGroups && (
-                              <>
-                                This table lists the groups that the owner is a
-                                member of.
-                              </>
-                            )}
-                          </OptionExplanation>
-                        </Grid>
-                        {!hideOwnersGroups && (
-                          <Grid item>
-                            <OwnersGroupsTable
-                              groups={(fieldOwner.fieldValues.sharedWith ?? [])
-                                .filter(({ itemOwnerGroup }) => itemOwnerGroup)
-                                .map(({ group }) => group)}
-                            />
-                          </Grid>
-                        )}
-                      </Grid>
-                    </Box>
-                  }
-                />
-              </Grid>
+              <FormControlLabel sx={{ alignItems: "flex-start" }}
+                value="OWNER_GROUPS"
+                control={
+                  <Radio
+                    color="primary"
+                    disabled={!fieldOwner.isFieldEditable("sharingMode")}
+                  />
+                }
+                label={
+                  <Box sx={{ m: 1, mt: 0.5 }}>
+                    <Stack spacing={1}>
+                      <Box>
+                        <OptionHeading>Owner&apos;s groups</OptionHeading>
+                        <OptionExplanation>
+                          Accessible to only those who are in a lab or
+                          collaboration group with the owner.{" "}
+                          {!hideOwnersGroups && (
+                            <>
+                              This table lists the groups that the owner is a
+                              member of.
+                            </>
+                          )}
+                        </OptionExplanation>
+                      </Box>
+                      {!hideOwnersGroups && (
+                        <OwnersGroupsTable
+                          groups={(fieldOwner.fieldValues.sharedWith ?? [])
+                            .filter(({ itemOwnerGroup }) => itemOwnerGroup)
+                            .map(({ group }) => group)}
+                        />
+                      )}
+                    </Stack>
+                  </Box>
+                }
+              />
             )}
             {(fieldOwner.isFieldEditable("sharingMode") ||
               fieldOwner.fieldValues.sharingMode === "WHITELIST") && (
-              <Grid item>
-                <CustomFormControlLabel
-                  value="WHITELIST"
-                  control={
-                    <Radio
-                      color="primary"
-                      disabled={!fieldOwner.isFieldEditable("sharingMode")}
-                    />
-                  }
-                  label={
-                    <Box m={1} mt={0.5}>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
-                          <OptionHeading>Explicit access list</OptionHeading>
-                          <OptionExplanation>
-                            Accessible to only those who are in a lab or
-                            collaboration group that is listed in the table
-                            below, which can be any group in the system.
-                          </OptionExplanation>
-                        </Grid>
-                        <Grid item>
-                          <AccessListTable
-                            sharedWith={fieldOwner.fieldValues.sharedWith ?? []}
-                            disabled={!fieldOwner.isFieldEditable("sharedWith")}
-                            onCheckboxClick={(group) => onCheckboxClick(group)}
-                            onAdditionalGroup={(group) =>
-                              onAdditionalGroup(group)
-                            }
-                          />
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  }
-                />
-              </Grid>
+              <FormControlLabel sx={{ alignItems: "flex-start" }}
+                value="WHITELIST"
+                control={
+                  <Radio
+                    color="primary"
+                    disabled={!fieldOwner.isFieldEditable("sharingMode")}
+                  />
+                }
+                label={
+                  <Box sx={{ m: 1, mt: 0.5 }}>
+                    <Stack spacing={1}>
+                      <Box>
+                        <OptionHeading>Explicit access list</OptionHeading>
+                        <OptionExplanation>
+                          Accessible to only those who are in a lab or
+                          collaboration group that is listed in the table
+                          below, which can be any group in the system.
+                        </OptionExplanation>
+                      </Box>
+                      <AccessListTable
+                        sharedWith={fieldOwner.fieldValues.sharedWith ?? []}
+                        disabled={!fieldOwner.isFieldEditable("sharedWith")}
+                        onCheckboxClick={(group) => onCheckboxClick(group)}
+                        onAdditionalGroup={(group) =>
+                          onAdditionalGroup(group)
+                        }
+                      />
+                    </Stack>
+                  </Box>
+                }
+              />
             )}
             {(fieldOwner.isFieldEditable("sharingMode") ||
               fieldOwner.fieldValues.sharingMode === "OWNER_ONLY") && (
-              <Grid item>
-                <CustomFormControlLabel
-                  value="OWNER_ONLY"
-                  control={
-                    <Radio
-                      color="primary"
-                      disabled={!fieldOwner.isFieldEditable("sharingMode")}
-                    />
-                  }
-                  label={
-                    <Box m={1} mt={0.5}>
-                      <Grid container direction="column" spacing={1}>
-                        <Grid item>
-                          <OptionHeading>Only the Owner</OptionHeading>
-                          <OptionExplanation>
-                            Accessible to the item&apos;s owner, and the PI.
-                          </OptionExplanation>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  }
-                />
-              </Grid>
+              <FormControlLabel sx={{ alignItems: "flex-start" }}
+                value="OWNER_ONLY"
+                control={
+                  <Radio
+                    color="primary"
+                    disabled={!fieldOwner.isFieldEditable("sharingMode")}
+                  />
+                }
+                label={
+                  <Box sx={{ m: 1, mt: 0.5 }}>
+                    <OptionHeading>Only the Owner</OptionHeading>
+                    <OptionExplanation>
+                      Accessible to the item&apos;s owner, and the PI.
+                    </OptionExplanation>
+                  </Box>
+                }
+              />
             )}
-          </Grid>
+          </Stack>
         </RadioGroup>
       </FormControl>
     </>

@@ -45,7 +45,7 @@ describe("method: importFile", () => {
             },
             status: 200,
             statusText: "OK",
-            headers: {} as AxiosRequestHeaders,
+            headers: {},
             config: {
               headers: {} as AxiosRequestHeaders,
             } as InternalAxiosRequestConfig,

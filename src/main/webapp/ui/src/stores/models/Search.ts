@@ -1550,10 +1550,10 @@ export default class Search implements SearchInterface {
             [
               ...records.map(
                 (r) =>
-                  ({
+                  (({
                     ...r.paramsForBackend,
-                    type: r.type,
-                  }) as BulkEndpointRecordSerialisation,
+                    type: r.type
+                  }) as BulkEndpointRecordSerialisation),
               ),
             ],
             "UPDATE",

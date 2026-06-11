@@ -4,7 +4,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import Button from "@mui/material/Button";
 import materialTheme from "../../../theme";
 import AdditionalInfo from "./Autoshare/AdditionalInfo";
-import { makeStyles } from "tss-react/mui";
 import axios from "@/common/axios";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -12,17 +11,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
-
-const useStyles = makeStyles()(() => ({
-  publishManager: {
-    margin: "0 0 0.5em 15px",
-  },
-
-  loading: {
-    position: "absolute",
-    margin: "0 auto",
-  },
-}));
 
 function GroupPublishManager({
   groupId,
@@ -32,7 +20,6 @@ function GroupPublishManager({
   isGroupPublicationAllowed,
   canManagePublish,
 }) {
-  const { classes } = useStyles();
   const [publishAllowedStatus, setPublishAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -101,7 +88,7 @@ function GroupPublishManager({
             <Tooltip title={title} aria-label={title}>
               <div>
                 <Button
-                  className={classes.publishManager}
+                  sx={{ margin: "0 0 0.5em 15px" }}
                   variant="outlined"
                   size="small"
                   disabled
@@ -124,7 +111,7 @@ function GroupPublishManager({
           canManagePublish && (
             <>
               <Button
-                className={classes.publishManager}
+                sx={{ margin: "0 0 0.5em 15px" }}
                 onClick={props.callback}
                 variant="outlined"
                 size="small"
@@ -140,13 +127,16 @@ function GroupPublishManager({
   function DialogButtons(props) {
     return (
       <>
-        <Button onClick={props.onCancel} style={{ color: "grey" }}>
+        <Button onClick={props.onCancel} sx={{ color: "grey" }}>
           Cancel
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
           Confirm
           {waiting && (
-            <CircularProgress size={20} className={classes.loading} />
+            <CircularProgress
+              size={20}
+              sx={{ position: "absolute", margin: "0 auto" }}
+            />
           )}
         </Button>
       </>
@@ -174,8 +164,9 @@ function GroupPublishManager({
             <DialogContent>
               <DialogContentText>
                 Enabling group-wide publication will allow non-PI members in the{" "}
-                <b>{groupDisplayName}</b> group to publish and unpublish their
-                own documents. PIs can also unpublish these documents.
+                <strong>{groupDisplayName}</strong> group to publish and
+                unpublish their own documents. PIs can also unpublish these
+                documents.
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -206,8 +197,8 @@ function GroupPublishManager({
             <DialogContent>
               <DialogContentText>
                 Disabling group-wide publication will prevent non PI members of
-                the <b>{groupDisplayName}</b> group publishing their own
-                documents. They may still unpublish previously published
+                the <strong>{groupDisplayName}</strong> group publishing their
+                own documents. They may still unpublish previously published
                 documents.
               </DialogContentText>
             </DialogContent>

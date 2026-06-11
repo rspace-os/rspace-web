@@ -5,10 +5,17 @@ import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import { observer } from "mobx-react-lite";
 import { LOGO_COLOR } from "@/assets/branding/Jupyter";
 import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 function Jupyter(): React.ReactNode {
   return (
-    <Grid item sm={6} xs={12} sx={{ display: "flex" }}>
+    <Grid
+      sx={{ display: "flex" }}
+      size={{
+        sm: 6,
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Jupyter Notebook Synchronisation"
         explanatoryText="Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace."
@@ -21,54 +28,68 @@ function Jupyter(): React.ReactNode {
         setupSection={
           <>
             <ol>
-              <li> <b>Enable API access:</b> Generate your API key in My RSpace → My Profile.</li>
               <li>
-                <b>Configure Jupyter instance for all notebooks:</b> Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:
+                <strong>Enable API access:</strong> Generate your API key in My
+                RSpace → My Profile.
+              </li>
+              <li>
+                <strong>Configure Jupyter instance for all notebooks:</strong>{" "}
+                Follow the instructions in RSpace help docs to use pip to
+                install RSpace client. Run a python cell with the following
+                code:
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
                   <strong>One time install step:</strong>
-                  <pre
-                      style={{
-                        background: "#f5f5f5",
-                        padding: "8px",
-                        overflowX: "auto",
-                      }}
+                  <Box
+                    component="pre"
+                    sx={{
+                      background: "#f5f5f5",
+                      padding: "8px",
+                      overflowX: "auto",
+                    }}
                   >
-            {`%pip install rspace-client==2.6.2`}
-              </pre>
+                    {`%pip install rspace-client==2.6.2`}
+                  </Box>
                 </Typography>
-                Run the cell then <b>restart the kernel</b> and <b>refresh the browser </b> tab running Jupyter.
+                Run the cell then <strong>restart the kernel</strong> and{" "}
+                <strong>refresh the browser </strong> tab running Jupyter.
               </li>
               <li>
-                <b>Configure notebook:</b> Follow the instructions in RSpace help docs to import the sync_notebook script.
-            <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-              <strong>Do this step once per notebook:</strong>
-              <pre
-                style={{
-                  background: "#f5f5f5",
-                  padding: "8px",
-                  overflowX: "auto",
-                }}
-              >
-                {`from rspace_client.notebook_sync import sync_notebook`}
-              </pre>
-            </Typography>
-               Run the cell,  <b>restart the kernel</b> and then run the cell one more time <b>without a kernel restart. Save the Notebook.</b>
-              </li>
-              <li>
-                <b>Run the code:</b>
+                <strong>Configure notebook:</strong> Follow the instructions in
+                RSpace help docs to import the sync_notebook script.
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-                  Paste this code into <b>the last cell in the notebook:</b>
-                  <pre
-                      style={{
-                        background: "#f5f5f5",
-                        padding: "8px",
-                        overflowX: "auto",
-                      }}
+                  <strong>Do this step once per notebook:</strong>
+                  <Box
+                    component="pre"
+                    sx={{
+                      background: "#f5f5f5",
+                      padding: "8px",
+                      overflowX: "auto",
+                    }}
                   >
-                {`await sync_notebook.sync_notebook_to_rspace(
+                    {`from rspace_client.notebook_sync import sync_notebook`}
+                  </Box>
+                </Typography>
+                Run the cell, <strong>restart the kernel</strong> and then run
+                the cell one more time{" "}
+                <strong>without a kernel restart. Save the Notebook.</strong>
+              </li>
+              <li>
+                <strong>Run the code:</strong>
+                <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+                  Paste this code into{" "}
+                  <strong>the last cell in the notebook:</strong>
+                  <Box
+                    component="pre"
+                    sx={{
+                      background: "#f5f5f5",
+                      padding: "8px",
+                      overflowX: "auto",
+                    }}
+                  >
+                    {`await sync_notebook.sync_notebook_to_rspace(
 rspace_url="https://researchspace2.eu.ngrok.io/",
 rspace_username="user1a")`}
-              </pre>
+                  </Box>
                 </Typography>
               </li>
             </ol>

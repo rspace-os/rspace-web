@@ -115,7 +115,7 @@ export default function DataciteCard({
             smallText
           />
         </FormControl>
-        <Box mt={1.5}>
+        <Box sx={{ mt: 1.5 }}>
           <FormControl component="fieldset" fullWidth>
             <FormLabel id="igsn-details-label">Details</FormLabel>
             {(
@@ -135,12 +135,9 @@ export default function DataciteCard({
                     width: "100%",
                   }}
                 >
-                  <Grid item sx={{ flexGrow: 1 }}>
+                  <Grid sx={{ flexGrow: 1 }}>
                     <TextField
                       sx={{ p: 0.5, m: 1 }}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
                       size="small"
                       fullWidth
                       label={SETTINGS_LABELS[entry[0]]}
@@ -162,10 +159,15 @@ export default function DataciteCard({
                       disabled={
                         !updatedSettings.enabled || entry[0] === "serverUrl"
                       }
+                      slotProps={{
+                        inputLabel: {
+                          shrink: true,
+                        },
+                      }}
                     />
                   </Grid>
                   {entry[0] === "serverUrl" && (
-                    <Grid item sx={{ width: "200px" }}>
+                    <Grid sx={{ width: "200px" }}>
                       <RadioField
                         name={"DataCite Server URL"}
                         value={updatedSettings.serverUrl}
@@ -194,12 +196,12 @@ export default function DataciteCard({
       {unsavedChanges && <WarningBar />}
       <CardActions sx={{ justifyContent: "flex-end" }}>
         <Fade in={showConnectionStatus}>
-          <Box mr={1} role="status" id={connectionStatusId}>
+          <Box sx={{ mr: 1 }} role="status" id={connectionStatusId}>
             {lastTestResult?.response === "success" && (
               <Typography variant="caption" sx={{ color: "success.main" }}>
                 Connection succeeded
               </Typography>
-              )}
+            )}
             {lastTestResult?.response === "failed" && (
               <Typography variant="caption" sx={{ color: "warningRed" }}>
                 Connection failed. {lastTestResult.message}
@@ -217,22 +219,22 @@ export default function DataciteCard({
            */
           disabled={unsavedChanges}
           variant="outlined"
-          style={{ minWidth: "max-content" }}
+          sx={{ minWidth: "max-content" }}
           onClick={() => {
             ApiService.get<boolean>("/identifiers/testDataCiteConnection")
               .then(({ data }) => {
                 setLastTestResult(
                   data
                     ? { response: "success" }
-                    : { response: "failed", message: "" }
+                    : { response: "failed", message: "" },
                 );
               })
               .catch((e) => {
                 setLastTestResult({
                   response: "failed",
                   message: getErrorMessage(e, "Unknown reason."),
+                });
               });
-            });
           }}
           aria-controls={showConnectionStatus ? connectionStatusId : undefined}
         >

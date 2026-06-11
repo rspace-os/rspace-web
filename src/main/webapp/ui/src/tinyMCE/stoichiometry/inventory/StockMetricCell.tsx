@@ -36,8 +36,12 @@ const StockMetricCell = ({
     data-status={dataStatus}
     sx={{ verticalAlign: "top", py: 1.5 }}
   >
-    <Stack spacing={0.5} alignItems="flex-end">
-      <Typography variant="h6" fontWeight={700} color={colors.valueColor}>
+    <Stack spacing={0.5} sx={{ alignItems: "flex-end" }}>
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: 700 }}
+        color={colors.valueColor}
+      >
         {unitLabel ? `${value} ${unitLabel}` : value}
       </Typography>
       {warningText && (
@@ -45,8 +49,7 @@ const StockMetricCell = ({
           id={warningTextId}
           variant="caption"
           color={colors.warningColor}
-          display="block"
-          fontWeight={600}
+          sx={{ display: "block", fontWeight: 600 }}
         >
           {warningText}
         </Typography>
