@@ -135,11 +135,10 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
         new ApiSubSampleAlias(sample.getSubSampleAlias(), sample.getSubSampleAliasPlural()));
     setSubSamplesCount(sample.getActiveSubSamplesCount());
     setTemplate(sample.isTemplate());
-    // unwrap lazy proxies typed to the abstract SampleEntity root, which never satisfy
-    // instanceof checks against the concrete subclasses (e.g. Envers revision reads)
-    SampleEntity unproxiedSample = unproxy(sample);
-    if (unproxiedSample instanceof Sample) {
-      Sample nonTemplateSample = (Sample) unproxiedSample;
+    if (sample.isSample()) {
+      // the cast still needs the real instance: lazy references (e.g. Envers revision reads)
+      // are proxies typed to the abstract SampleEntity root
+      Sample nonTemplateSample = (Sample) unproxy(sample);
       // may be null if the sample isn't created from a template.
       if (nonTemplateSample.getSTemplate() != null) {
         setTemplateId(nonTemplateSample.getSTemplate().getId());

@@ -118,8 +118,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
 
   private void addSampleSpecificPropertiesForExport(
       SampleEntity sample, List<String> itemProperties) {
-    SampleTemplate parentTemplate =
-        sample instanceof Sample ? ((Sample) sample).getSTemplate() : null;
+    SampleTemplate parentTemplate = sample.isSample() ? ((Sample) sample).getSTemplate() : null;
     for (ExportableInvRecProperty prop : getExportableProps()) {
       String valueForProp = null;
       switch (prop) {

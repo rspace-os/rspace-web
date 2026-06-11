@@ -25,7 +25,6 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
-import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -424,13 +423,13 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   private boolean isMatchingSearchType(InventoryRecord foundRec, InventorySearchType searchType) {
-    // note: a SampleTemplate's type is SAMPLE, so the type-name arm matches templates for SAMPLE
-    // searches, exactly as before the Sample/SampleTemplate split; templates are then dropped from
-    // SAMPLE results by isMatchingTemplateOption
+    // a template's type is SAMPLE_TEMPLATE, so the type-name arm no longer matches templates for
+    // SAMPLE searches (isMatchingTemplateOption used to drop them later; same outcome), and the
+    // explicit last arm matches them for TEMPLATE searches
     return searchType == null
         || searchType.equals(InventorySearchType.ALL)
         || searchType.toString().equals(foundRec.getType().toString())
-        || (searchType.equals(InventorySearchType.TEMPLATE) && foundRec instanceof SampleTemplate);
+        || (searchType.equals(InventorySearchType.TEMPLATE) && foundRec.isSampleTemplate());
   }
 
   private boolean isMatchingDeletedItemsOption(
@@ -457,9 +456,9 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         return foundRecParent != null && foundRecParent.getOid().equals(parentOid);
       }
     } else if (GlobalIdPrefix.IT.equals(parentOid.getPrefix())) {
-      // only concrete samples have a parent template; a template hit fails the instanceof check,
+      // only concrete samples have a parent template; a template hit fails the isSample() check,
       // matching the old behavior where a template's parentTemplateId was always null
-      return foundRec instanceof Sample
+      return foundRec.isSample()
           && parentOid.getDbId().equals(((Sample) foundRec).getParentTemplateId());
     } else if (GlobalIdPrefix.SA.equals(parentOid.getPrefix())) {
       return foundRec.isSubSample()
@@ -477,7 +476,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   private boolean isMatchingTemplateOption(InventoryRecord record, InventorySearchType searchType) {
-    boolean isTemplate = record instanceof SampleTemplate;
+    boolean isTemplate = record.isSampleTemplate();
     if (isTemplate
         && !(searchType == InventorySearchType.ALL || searchType == InventorySearchType.TEMPLATE)) {
       return false;
@@ -492,8 +491,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     }
     boolean notOwnedByDefaultTemplateOwner =
         !defaultTemplatesOwner.equals(rec.getOwner().getUsername());
-    boolean isSampleTemplate = rec instanceof SampleTemplate;
-    return notOwnedByDefaultTemplateOwner || isSampleTemplate;
+    return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate();
   }
 
   private boolean canCurrentUserReadInvRec(InventoryRecord rec, User authenticatedUser) {
