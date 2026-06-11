@@ -235,6 +235,9 @@ importers:
       '@babel/runtime':
         specifier: 7.29.2
         version: 7.29.2
+      '@eslint/config-helpers':
+        specifier: 0.4.2
+        version: 0.4.2
       '@eslint/js':
         specifier: 9.39.4
         version: 9.39.4
@@ -352,6 +355,9 @@ importers:
       get-port:
         specifier: 7.2.0
         version: 7.2.0
+      globals:
+        specifier: 17.6.0
+        version: 17.6.0
       jsdom:
         specifier: 29.1.1
         version: 29.1.1(canvas@3.2.3)
@@ -3952,6 +3958,10 @@ packages:
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
+    engines: {node: '>=18'}
+
+  globals@17.6.0:
+    resolution: {integrity: sha512-sepffkT8stwnIYbsMBpoCHJuJM5l98FUF2AnE07hfvE0m/qp3R586hw4jF4uadbhvg1ooIdzuu7CsfD2jzCaNA==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -10410,6 +10420,8 @@ snapshots:
       path-is-absolute: 1.0.1
 
   globals@14.0.0: {}
+
+  globals@17.6.0: {}
 
   globalthis@1.0.4:
     dependencies:
