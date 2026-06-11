@@ -12,6 +12,7 @@
   <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
   <link href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" rel="stylesheet" />
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/dashboard.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 </head>
 
 <div class="separator"></div>

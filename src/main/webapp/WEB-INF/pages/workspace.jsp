@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/fontello.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-extra-icons.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace-dialogs.css'/>" />
+  <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
 
@@ -46,6 +47,7 @@
   <script src="<rst:assetUrl value='/scripts/pages/workspace/crudops.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTreeSorter.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
+  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
   <script src="<rst:assetUrl value='/scripts/pages/workspace.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/pages/workspace/workspaceSearch.js'/>"></script>
