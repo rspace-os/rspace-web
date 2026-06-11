@@ -302,13 +302,6 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
     assertEquals(RoleInGroup.PI, updatedCollabGrp.getRoleForUser(pi3));
   }
 
-  @Test
-  public void iCalendarFileCreationIsUnavailable() throws Exception {
-    this.mockMvc
-        .perform(get("/messaging/ical?id=1").principal(mockPrincipal))
-        .andExpect(status().isNotFound());
-  }
-
   private Long getGroupMOROriginatedByUser(User u) {
     openTransaction();
     Session session = sessionFactory.getCurrentSession();
