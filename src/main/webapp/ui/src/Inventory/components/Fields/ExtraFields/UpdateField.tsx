@@ -97,29 +97,13 @@ export default function UpdateField({
     }
   }, [extraField]);
 
-  // While a brand-new field is being created, keep the model in step with the
-  // editor so the record-level Save validates and persists exactly what the
-  // user has entered, even if they have not pressed Apply. Without this, the
-  // model keeps its empty initial state until Apply, so Save always reports
-  // "Names of extra fields cannot be empty" regardless of what is typed.
-  // Existing-field edits deliberately keep their commit-on-Apply semantics so
-  // that Cancel can still revert to the stored values.
-  useEffect(() => {
-    if (!extraField.initial || fieldState.type === "") return;
-    extraField.setAttributesDirty(
-      fieldState.type === "Link"
-        ? {
-            name: fieldState.name,
-            type: fieldState.type,
-            link: {
-              relationType: linkState.relationType,
-              targetGlobalId: linkState.targetGlobalId,
-              versionPin: linkState.versionPin,
-            },
-          }
-        : { name: fieldState.name, type: fieldState.type, link: null },
-    );
-  }, [fieldState, linkState, extraField]);
+  // Mid-edit values live only in this editor and are committed on Apply.
+  // The record-level Save is greyed out while the editor is open
+  // (ExtraFieldModel.isValid rejects an editing field), so nothing typed here
+  // can be lost to a premature Save, and the model's pre-edit state stays
+  // intact for Cancel. Syncing staged values into the model as they were
+  // typed (the previous approach) made canSubmit's "something changed" check
+  // compare equal values, greying out Apply on a fully-filled new field.
 
   const sourceGlobalId = record.globalId ?? "";
   const isLink = fieldState.type === "Link";

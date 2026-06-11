@@ -59,11 +59,19 @@ describe("ExtraFields new-field name typing", () => {
     await user.keyboard("name");
 
     expect(nameField()).toHaveValue("name");
-    // the model received the full name too (this is what record-level Save validates)
-    expect(sample.extraFields[0].name).toBe("name");
+    // mid-edit values live only in the editor; the model is untouched and
+    // reports itself invalid, so the record-level Save is greyed out instead
+    // of silently saving a half-finished field
+    expect(sample.extraFields[0].name).toBe("");
+    expect(sample.extraFields[0].isValid.isOk).toBe(false);
     // and the user can carry on to Apply the new field
-    expect(
-      screen.getByRole("button", { name: /update field/i }),
-    ).toBeEnabled();
+    const applyButton = screen.getByRole("button", { name: /update field/i });
+    expect(applyButton).toBeEnabled();
+
+    await user.click(applyButton);
+
+    // Apply commits the staged values and unblocks the record-level Save
+    expect(sample.extraFields[0].name).toBe("name");
+    expect(sample.extraFields[0].isValid.isOk).toBe(true);
   });
 });

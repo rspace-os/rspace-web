@@ -93,6 +93,16 @@ export default class ExtraFieldModel implements ExtraField {
   }
 
   get isValid(): ValidationResult {
+    // an open editor holds mid-edit values that the model does not have yet;
+    // saving the record now would silently drop them, so Save stays greyed
+    // until the edit is committed or abandoned
+    if (this.editing && !this.deleteFieldRequest) {
+      return IsInvalid(
+        this.initial
+          ? "A new field is being added. Apply or discard it before saving."
+          : `The field "${this.name}" is being edited. Update or cancel the edit before saving.`,
+      );
+    }
     if (!this.name) return IsInvalid("Names of extra fields cannot be empty.");
     if (this.name.length > 255)
       return IsInvalid("Names of extra fields cannot exceed 255 characters.");

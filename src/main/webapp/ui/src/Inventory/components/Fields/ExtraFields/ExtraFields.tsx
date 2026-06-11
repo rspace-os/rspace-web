@@ -27,10 +27,10 @@ function ExtraFields({
     ({ editable }: { editable: boolean }): React.ReactNode => {
       const extraFieldsDisabled = !editable;
       return result.visibleExtraFields.map((ef, i) => (
-        // the key must be stable while the field is edited: a brand-new field
-        // live-syncs each typed character of its name into the model, so
-        // keying by name would remount the editor on every keystroke,
-        // dropping in-flight keystrokes and focus
+        // the key must be stable while the field is edited: keying by the
+        // user-editable name would remount the editor (dropping focus and
+        // local state) whenever a rename commits, and two unsaved fields can
+        // both briefly be named ""
         <div
           key={ef.id !== null ? `field-${ef.id}` : `unsaved-${i}`}
           aria-live="polite"

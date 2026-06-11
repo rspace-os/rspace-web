@@ -70,6 +70,53 @@ describe("ExtraFieldModel link validation", () => {
   });
 });
 
+describe("ExtraFieldModel editing blocks record save", () => {
+  it("is invalid while the field editor is open, so Save is greyed out", () => {
+    // mid-edit values live in the editor, not the model: saving now would
+    // silently drop them. Save stays greyed until Update or Cancel is clicked.
+    const field = makeLinkField({
+      relationType: "References",
+      targetGlobalId: "SA2",
+      versionPin: null,
+    });
+    expect(field.isValid.isOk).toBe(true);
+
+    field.setEditing(true);
+
+    expect(field.isValid.isOk).toBe(false);
+    const message = field.isValid.orElseGet((errors) =>
+      errors.map((e) => e.message).join(" "),
+    );
+    expect(message).toMatch(/update or cancel/i);
+
+    field.setEditing(false);
+    expect(field.isValid.isOk).toBe(true);
+  });
+
+  it("is invalid while a brand-new field is unapplied, so Save is greyed out", () => {
+    const field = new ExtraFieldModel(
+      {
+        id: null,
+        globalId: null,
+        name: "",
+        lastModified: null,
+        type: "text",
+        content: "",
+        parentGlobalId: "SA1",
+        editing: true,
+        initial: true,
+      } as unknown as ConstructorParameters<typeof ExtraFieldModel>[0],
+      makeMockSample(),
+    );
+
+    expect(field.isValid.isOk).toBe(false);
+    const message = field.isValid.orElseGet((errors) =>
+      errors.map((e) => e.message).join(" "),
+    );
+    expect(message).toMatch(/apply or discard/i);
+  });
+});
+
 describe("ExtraFieldModel actions", () => {
   it("mutates observable state only through MobX actions", () => {
     // setInvalidInput and setEditing modify observed observables; if they are

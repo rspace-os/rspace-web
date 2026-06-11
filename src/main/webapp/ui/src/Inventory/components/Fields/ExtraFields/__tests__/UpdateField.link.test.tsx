@@ -202,7 +202,12 @@ describe("UpdateField — Field Type select includes Link", () => {
     ]);
   });
 
-  it("syncs the in-progress link into the model so Save persists it without Apply", async () => {
+  it("leaves the model untouched until Apply, with Apply enabled once filled", async () => {
+    // mid-edit values live only in the editor; the record-level Save is greyed
+    // out while the editor is open (ExtraFieldModel.isValid), so nothing needs
+    // to be synced early. Pushing staged values into the model as they were
+    // typed made canSubmit's "something changed" check compare equal values,
+    // greying out Apply on a fully-filled new link.
     const extraField = makeExtraField();
     const record = makeRecord();
     const user = userEvent.setup();
@@ -226,22 +231,12 @@ describe("UpdateField — Field Type select includes Link", () => {
       "SA99",
     );
 
-    // No Apply click: the editor must have already pushed the full link into the
-    // model so the record-level Save validates and persists it. Without this the
-    // model keeps its empty initial state and Save reports the field name as empty.
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
     const setAttributesDirty = extraField.setAttributesDirty;
-    expect(vi.mocked(setAttributesDirty).mock.calls.at(-1)).toEqual([
-      {
-        name: "Linked sample",
-        type: "Link",
-        link: {
-          relationType: "References",
-          targetGlobalId: "SA99",
-          versionPin: null,
-        },
-      },
-    ]);
+    expect(vi.mocked(setAttributesDirty)).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: /update field/i }),
+    ).toBeEnabled();
   });
 
   it("does not sync edits to the model for an existing field (commit-on-Apply preserved)", async () => {
