@@ -355,7 +355,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   private ApiSample doGetSample(Long id, User user, boolean asTemplate) {
     SampleEntity sample = getIfExists(id);
-    if (asTemplate != (sample instanceof SampleTemplate)) {
+    if (asTemplate != sample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           String.format("Sample template flag doesn't match the request (id %d)", id));
     }
@@ -365,7 +365,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   private ApiSample getOutgoingApiSample(SampleEntity sample, User user) {
     ApiSample result =
-        sample instanceof SampleTemplate
+        sample.isSampleTemplate()
             ? new ApiSampleTemplate((SampleTemplate) sample)
             : new ApiSample((Sample) sample);
     populateOutgoingApiSample(result, sample, user);
@@ -497,7 +497,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   @Override
   public ApiSample updateApiSample(ApiSampleWithoutSubSamples apiSample, User user) {
     SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
-    if (dbSample instanceof SampleTemplate) {
+    if (dbSample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           "trying to update sample template through sample update method");
     }
@@ -543,7 +543,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         dbSample
             .getActiveSubSamples()
             .forEach(ss -> moveItemBetweenWorkbenches(ss, originalOwner, newOwner));
-        if (dbSample instanceof SampleTemplate) {
+        if (dbSample.isSampleTemplate()) {
           dbSample = sampleTemplateDao.saveAndReindexSubSamples((SampleTemplate) dbSample);
         } else {
           dbSample = sampleDao.saveAndReindexSubSamples((Sample) dbSample);
@@ -599,7 +599,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   /** Routes a plain save to the DAO matching the entity's concrete kind. */
   private SampleEntity saveSampleEntity(SampleEntity dbSample) {
-    if (dbSample instanceof SampleTemplate) {
+    if (dbSample.isSampleTemplate()) {
       return sampleTemplateDao.save((SampleTemplate) dbSample);
     }
     return sampleDao.save((Sample) dbSample);
@@ -717,7 +717,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private SampleEntity copyDbSample(Long sampleId, User user) {
     SampleEntity dbSample = assertUserCanReadSample(sampleId, user);
     SampleEntity copy;
-    if (dbSample instanceof Sample) {
+    if (dbSample.isSample()) {
       Sample sampleCopy = ((Sample) dbSample).copy(user);
       setWorkbenchAsParentForNewSubSamples(sampleCopy, user);
       copy = sampleDao.persistNewSample(sampleCopy);
@@ -756,7 +756,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   @Override
   public ApiSampleTemplate getApiSampleTemplateVersion(Long templateId, Long version, User user) {
     SampleEntity currentVersion = getIfExists(templateId);
-    if (!(currentVersion instanceof SampleTemplate)) {
+    if (!currentVersion.isSampleTemplate()) {
       throw new IllegalArgumentException(
           String.format("Requested id (%d) points to the sample, not template", templateId));
     }
@@ -842,7 +842,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   @Override
   public ApiSampleTemplate updateApiSampleTemplate(ApiSampleTemplate apiSample, User user) {
     SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
-    if (!(dbSample instanceof SampleTemplate)) {
+    if (!dbSample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           "trying to update sample through sample template update method");
     }
@@ -904,8 +904,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     SampleEntity dbSample = assertUserCanEditSample(sampleId, user);
     // templates have no parent template; a null id keeps the legacy not-found behaviour of the
     // assert call below
-    Long parentTemplateId =
-        dbSample instanceof Sample ? ((Sample) dbSample).getParentTemplateId() : null;
+    Long parentTemplateId = dbSample.isSample() ? ((Sample) dbSample).getParentTemplateId() : null;
     SampleEntity dbTemplate = assertUserCanReadSample(parentTemplateId, user);
     if (dbTemplate == null) {
       throw new IllegalArgumentException("Sample is not based on any template");

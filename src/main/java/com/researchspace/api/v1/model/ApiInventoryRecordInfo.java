@@ -164,8 +164,8 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   /*
    * Lazily-loaded references (Envers revision reads in particular) arrive as proxies typed to
-   * the abstract hierarchy root (e.g. SampleEntity), which never satisfy instanceof checks
-   * against the concrete subclasses; unwrap before any class-based dispatch.
+   * the abstract hierarchy root (e.g. SampleEntity). The is*() checks dispatch through proxies,
+   * but the casts to concrete subclasses still need the real instance, so unwrap first.
    */
   @SuppressWarnings("unchecked")
   static <T> T unproxy(T entity) {
@@ -174,9 +174,9 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   public static ApiInventoryRecordInfo fromInventoryRecord(InventoryRecord invRecord) {
     invRecord = unproxy(invRecord);
-    if (invRecord instanceof SampleTemplate) {
+    if (invRecord.isSampleTemplate()) {
       return new ApiSampleTemplateInfo((SampleTemplate) invRecord);
-    } else if (invRecord instanceof Sample) {
+    } else if (invRecord.isSample()) {
       return new ApiSampleInfo((Sample) invRecord);
     } else if (invRecord.isSubSample()) {
       return new ApiSubSampleInfoWithSampleInfo((SubSample) invRecord);
@@ -194,9 +194,9 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   public static ApiInventoryRecordInfo fromInventoryRecordToFullApiRecord(
       InventoryRecord invRecord) {
     invRecord = unproxy(invRecord);
-    if (invRecord instanceof SampleTemplate) {
+    if (invRecord.isSampleTemplate()) {
       return new ApiSampleTemplate((SampleTemplate) invRecord);
-    } else if (invRecord instanceof Sample) {
+    } else if (invRecord.isSample()) {
       return new ApiSample((Sample) invRecord);
     } else if (invRecord.isSubSample()) {
       return new ApiSubSample((SubSample) invRecord);

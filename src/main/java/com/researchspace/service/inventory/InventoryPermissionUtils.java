@@ -19,7 +19,6 @@ import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
-import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -184,9 +183,8 @@ public class InventoryPermissionUtils {
   }
 
   private boolean isDefaultSampleTemplate(InventoryRecord record) {
-    if (record instanceof SampleTemplate) {
-      SampleTemplate template = (SampleTemplate) record;
-      return template.getOwner().getUsername().equals(sampleTemplateDao.getDefaultTemplatesOwner());
+    if (record.isSampleTemplate()) {
+      return record.getOwner().getUsername().equals(sampleTemplateDao.getDefaultTemplatesOwner());
     }
     return false;
   }
@@ -347,7 +345,9 @@ public class InventoryPermissionUtils {
 
   private boolean isSampleLimitedReadAllowedThroughSubsampleLimitedRead(
       InventoryRecord invRec, User user) {
-    if (invRec.isSample()) {
+    // templates included: with getType() now SAMPLE_TEMPLATE for templates, a bare isSample()
+    // would drop them from this limited-read path, which covered them before the type split
+    if (invRec.isSample() || invRec.isSampleTemplate()) {
       SampleEntity sample = (SampleEntity) invRec;
       for (SubSample ss : sample.getSubSamples()) {
         if (canUserLimitedReadInventoryRecord(ss, user)) {
@@ -372,14 +372,13 @@ public class InventoryPermissionUtils {
   }
 
   private boolean isTemplateLimitedReadAllowedThroughSample(InventoryRecord invRec, User user) {
-    if (invRec instanceof SampleTemplate) {
-      SampleTemplate recordAsTemplate = (SampleTemplate) invRec;
+    if (invRec.isSampleTemplate()) {
       PaginationCriteria<Sample> allSamplesPgCrit =
           PaginationCriteria.createDefaultForClass(Sample.class);
       allSamplesPgCrit.setResultsPerPage(Integer.MAX_VALUE);
       List<Sample> dbSamplesFromTemplate =
           sampleDao
-              .getSamplesForUser(allSamplesPgCrit, recordAsTemplate.getId(), null, null, user)
+              .getSamplesForUser(allSamplesPgCrit, invRec.getId(), null, null, user)
               .getResults();
       for (Sample sa : dbSamplesFromTemplate) {
         if (canUserReadInventoryRecord(sa, user)) {
