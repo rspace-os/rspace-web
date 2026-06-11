@@ -41,8 +41,19 @@ type Mentions = {
   highlighter: (this: { query: string }, text: string) => string;
 };
 
-/** Loads the config into a sandbox; `autocompleteText` is what the editor's #autocomplete span contains. */
-function load(autocompleteText: string | null): { mentions: Mentions; getCalls: GetCall[] } {
+type Span = { textContent: string };
+type LoadOptions = {
+  /** the active session's span (caret inside it); null = no span in the document */
+  activeText: string | null;
+  /** stale spans from aborted sessions, earlier in document order */
+  staleTexts?: string[];
+  /** simulate the caret having escaped the span (selection cannot resolve it) */
+  caretOutside?: boolean;
+};
+
+/** Loads the config into a sandbox modelling the editor body and caret. */
+function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls: GetCall[] } {
+  const o: LoadOptions = typeof opts === "object" && opts !== null ? opts : { activeText: opts };
   const getCalls: GetCall[] = [];
   const jq = vi.fn((_sel: string) => ({ text: () => "SD2838" })) as unknown as {
     (sel: string): { text: () => string };
@@ -58,13 +69,23 @@ function load(autocompleteText: string | null): { mentions: Mentions; getCalls: 
     };
   };
 
+  const active: Span | null = o.activeText !== null ? { textContent: o.activeText } : null;
+  // document order: stale debris first, active session last
+  const spans: Span[] = [...(o.staleTexts ?? []).map((t) => ({ textContent: t })), ...(active ? [active] : [])];
+
   const editorBody = {
-    querySelector: (sel: string) =>
-      sel === "#autocomplete" && autocompleteText !== null ? { textContent: autocompleteText } : null,
+    querySelector: (sel: string) => (sel === "#autocomplete" ? (spans[0] ?? null) : null),
+    querySelectorAll: (sel: string) => (sel === "#autocomplete" ? spans : []),
+  };
+  const caretNode = {
+    closest: (sel: string) => (sel === "#autocomplete" && !o.caretOutside ? active : null),
   };
 
   const sandbox: Record<string, unknown> = {
-    tinymce: { PluginManager: { add: () => {} }, activeEditor: { getBody: () => editorBody } },
+    tinymce: {
+      PluginManager: { add: () => {} },
+      activeEditor: { getBody: () => editorBody, selection: { getNode: () => caretNode } },
+    },
     $: jq,
     window: {},
     document: { querySelector: () => null },
@@ -122,6 +143,20 @@ describe("RSDEV-992 mention source uses the typed text as the search term", () =
     const { mentions, getCalls } = load(null);
     mentions.source("smith", vi.fn(), "@");
     expect(getCalls[0].params.term).toBe("smith");
+  });
+
+  it("reads the active session's span (via the caret), not stale debris earlier in the document", () => {
+    // aborted sessions / autosaves can leave old #autocomplete spans in the content;
+    // document-order querySelector would return the stale "@perf" instead of the typed text
+    const { mentions, getCalls } = load({ activeText: "@perf02", staleTexts: ["@perf"] });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("falls back to the last span in document order when the caret cannot resolve one", () => {
+    const { mentions, getCalls } = load({ activeText: "@perf02", staleTexts: ["@perf"], caretOutside: true });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
   });
 });
 

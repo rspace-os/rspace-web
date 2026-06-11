@@ -276,7 +276,20 @@ var tinymcesetup = {
 			var term = query;
 			try {
 				var ed = tinymce.activeEditor;
-				var autocomplete = ed && ed.getBody().querySelector('#autocomplete');
+				// Locate the ACTIVE session's span via the caret: aborted sessions, autosaves
+				// or reloads can leave stale #autocomplete spans earlier in the document, and
+				// document-order querySelector would read those instead of the typed text.
+				var autocomplete = null;
+				if (ed) {
+					var selNode = ed.selection && ed.selection.getNode();
+					if (selNode && selNode.closest) {
+						autocomplete = selNode.closest('#autocomplete');
+					}
+					if (!autocomplete) {
+						var spans = ed.getBody().querySelectorAll('#autocomplete');
+						autocomplete = spans.length ? spans[spans.length - 1] : null;
+					}
+				}
 				if (autocomplete) {
 					// strip the zero-width no-break space left by the plugin's dummy caret span
 					var typed = (autocomplete.textContent || "").replace(/\ufeff/g, "").trim();
