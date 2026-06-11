@@ -86,8 +86,8 @@ describe("LinkField", () => {
     expect(heading).toHaveClass("MuiTypography-subtitle1");
     expect(name).toHaveClass("MuiTypography-subtitle1");
     /* eslint-disable testing-library/no-node-access -- asserting both sit inline in the link row */
-    expect(heading.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
-    expect(name.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    expect(heading.closest('[data-test-id="LinkField-row"]')).toBeInTheDocument();
+    expect(name.closest('[data-test-id="LinkField-row"]')).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access */
   });
 
@@ -98,7 +98,7 @@ describe("LinkField", () => {
 
     const editButton = screen.getByRole("button", { name: /edit link/i });
     /* eslint-disable testing-library/no-node-access -- asserting Edit sits inline in the link row */
-    expect(editButton.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    expect(editButton.closest('[data-test-id="LinkField-row"]')).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access */
 
     await user.click(editButton);
@@ -117,7 +117,7 @@ describe("LinkField", () => {
     ).not.toBeInTheDocument();
 
     /* eslint-disable testing-library/no-node-access -- asserting the Open button sits in the same row as the link chips */
-    expect(openButton.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    expect(openButton.closest('[data-test-id="LinkField-row"]')).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access */
 
     await user.click(openButton);

@@ -16,6 +16,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,7 @@ class InventoryLinkManagerImplValidationTest {
   @Mock private InventoryLinkDao linkDao;
   @Mock private InventoryPermissionUtils permissionUtils;
   @Mock private LinkTargetResolver linkTargetResolver;
+  @Mock private LinkTargetSnapshotResolver snapshotResolver;
   @InjectMocks private InventoryLinkManagerImpl manager;
 
   private User user;
@@ -104,6 +106,23 @@ class InventoryLinkManagerImplValidationTest {
     assertEquals(GlobalIdPrefix.SD, saved.getTargetPrefix());
     assertEquals(Long.valueOf(123), saved.getTargetDbId());
     verify(linkDao).save(any(InventoryLink.class));
+  }
+
+  @Test
+  void createLinkPersistsUnsuffixedGlobalIdAndDerivesPinFromVersionSuffix() {
+    targetReadable(true);
+    when(linkDao.save(any(InventoryLink.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 456L, 5L)).thenReturn(77L);
+
+    InventoryLink saved = manager.createLink(apiLink("References", "SA456v5"), user);
+
+    // the suffix becomes the pin and the stored Global ID is the unsuffixed
+    // base, so the version is never doubly encoded in the persisted row
+    assertEquals("SA456", saved.getTargetGlobalId());
+    assertEquals(Long.valueOf(5), saved.getVersionPin());
+    assertEquals(GlobalIdPrefix.SA, saved.getTargetPrefix());
+    assertEquals(Long.valueOf(456), saved.getTargetDbId());
+    assertEquals(Long.valueOf(77), saved.getTargetRevisionId());
   }
 
   @Test

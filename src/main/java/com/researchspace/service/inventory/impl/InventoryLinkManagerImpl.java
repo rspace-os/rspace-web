@@ -156,8 +156,10 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   private void applyApiToEntity(ApiInventoryLink api, InventoryLink entity) {
     entity.setRelationType(api.getRelationType());
-    entity.setTargetGlobalId(api.getTargetGlobalId());
     GlobalIdentifier gid = new GlobalIdentifier(api.getTargetGlobalId());
+    // persist the unsuffixed base id: the version lives in versionPin, so a
+    // "vN" suffix on the incoming id must not be doubly encoded in the row
+    entity.setTargetGlobalId(new GlobalIdentifier(gid.getPrefix(), gid.getDbId()).getIdString());
     entity.setTargetPrefix(gid.getPrefix());
     entity.setTargetDbId(gid.getDbId());
     Long versionPin = gid.hasVersionId() ? gid.getVersionId() : api.getVersionPin();
