@@ -154,9 +154,6 @@ function initProfileDialog(){
       open: function( e ) {
         $("#firstNameInput").val($("#firstName").text().trim());
         $("#surnameInput").val($("#lastName").text().trim());
-        $("#externalLinkInput").val($("#externalLink").text().trim());
-        $("#linkDescriptionInput").val($("#linkDescription").text().trim());
-        $("#additionalInfoArea").val($("#additionalInfo").text().trim());
         $("#newAffiliation").val($("#affiliation").text().trim());
       },
       close: function( e ) {
@@ -177,15 +174,6 @@ function initProfileDialog(){
               RS.confirm("Profile updated", "success", 3000);
               $("#firstName").text(result.data.firstName);
               $("#lastName").text(result.data.lastName);
-              $("#linkDescription").text(result.data.profile.externalLinkDisplay);
-              $("#externalLink").attr("href",result.data.profile.externalLinkURL);
-              $("#externalLink").text(result.data.profile.externalLinkURL);
-              if ($("#externalLink").attr('href').length > 0) {
-                $("#externalLink").show();
-              } else {
-                $("#externalLink").hide();
-              }
-              $("#additionalInfo").text(result.data.profile.profileText);
               $('#affiliation').text(result.data.affiliation);
               window.dispatchEvent(new CustomEvent("USER_RENAME", {
                 detail: {

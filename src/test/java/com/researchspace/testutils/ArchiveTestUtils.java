@@ -60,9 +60,6 @@ public class ArchiveTestUtils {
     userGroupInfo.setCommunities(TransformerUtils.toSet(community));
 
     UserProfile up = new UserProfile(admin);
-    up.setExternalLinkDisplay("mylink");
-    up.setExternalLinkURL("http://google.com");
-    up.setProfileText("blah");
     userGroupInfo.setProfiles(TransformerUtils.toSet(up));
     // need to set these explicitly
 
