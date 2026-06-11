@@ -23,7 +23,7 @@ import Button, { buttonClasses } from "@mui/material/Button";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import { type Search } from "../../../stores/definitions/Search";
-import { doNotAwait, modulo } from "../../../util/Util";
+import { modulo } from "../../../util/Util";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { Link as ReactRouterLink } from "react-router-dom";
 import Typography from "@mui/material/Typography";
@@ -211,20 +211,22 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
             <Button
               aria-controls={cardId}
               size="small"
-              onClick={doNotAwait(async () => {
-                setProcessingCardNav(true);
-                try {
-                  if (index + 1 > search.filteredResults.length - 1)
-                    await search.setPage(search.fetcher.pageNumber + 1);
-                  await search.setActiveResult(
-                    search.filteredResults[
-                      (index + 1) % search.fetcher.pageSize
-                    ],
-                  );
-                } finally {
-                  setProcessingCardNav(false);
-                }
-              })}
+              onClick={() => {
+                void (async () => {
+                  setProcessingCardNav(true);
+                  try {
+                    if (index + 1 > search.filteredResults.length - 1)
+                      await search.setPage(search.fetcher.pageNumber + 1);
+                    await search.setActiveResult(
+                      search.filteredResults[
+                        (index + 1) % search.fetcher.pageSize
+                      ],
+                    );
+                  } finally {
+                    setProcessingCardNav(false);
+                  }
+                })();
+              }}
               disabled={
                 index +
                   search.fetcher.pageSize * search.fetcher.pageNumber +
@@ -239,20 +241,22 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
             <Button
               aria-controls={cardId}
               size="small"
-              onClick={doNotAwait(async () => {
-                setProcessingCardNav(true);
-                try {
-                  if (index === 0)
-                    await search.setPage(search.fetcher.pageNumber - 1);
-                  await search.setActiveResult(
-                    search.filteredResults[
-                      modulo(index - 1, search.fetcher.pageSize)
-                    ],
-                  );
-                } finally {
-                  setProcessingCardNav(false);
-                }
-              })}
+              onClick={() => {
+                void (async () => {
+                  setProcessingCardNav(true);
+                  try {
+                    if (index === 0)
+                      await search.setPage(search.fetcher.pageNumber - 1);
+                    await search.setActiveResult(
+                      search.filteredResults[
+                        modulo(index - 1, search.fetcher.pageSize)
+                      ],
+                    );
+                  } finally {
+                    setProcessingCardNav(false);
+                  }
+                })();
+              }}
               disabled={
                 index + search.fetcher.pageSize * search.fetcher.pageNumber ===
                 0

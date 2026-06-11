@@ -10,7 +10,6 @@ import Box from "@mui/material/Box";
 import Main from "../../Main";
 import { useIdentifiers, useIdentifiersRefresh } from "../../useIdentifiers";
 import { type Identifier } from "../../useIdentifiers";
-import { doNotAwait } from "../../../util/Util";
 import Menu from "@mui/material/Menu";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { useTheme, lighten, darken } from "@mui/material/styles";
@@ -149,18 +148,20 @@ export default function IgsnManagementPage({
                     Cancel
                   </Button>
                   <SubmitSpinnerButton
-                    onClick={doNotAwait(async () => {
-                      setRegisteringInProgress(true);
-                      try {
-                        await bulkRegister({
-                          count: numberOfNewIdentifiers,
-                        });
-                        if (refreshListing) void refreshListing();
-                        setBulkRegisterDialogOpen(false);
-                      } finally {
-                        setRegisteringInProgress(false);
-                      }
-                    })}
+                    onClick={() => {
+                      void (async () => {
+                        setRegisteringInProgress(true);
+                        try {
+                          await bulkRegister({
+                            count: numberOfNewIdentifiers,
+                          });
+                          if (refreshListing) void refreshListing();
+                          setBulkRegisterDialogOpen(false);
+                        } finally {
+                          setRegisteringInProgress(false);
+                        }
+                      })();
+                    }}
                     disabled={registeringInProgress}
                     loading={registeringInProgress}
                     label="Register"

@@ -19,7 +19,6 @@ import {
   parseEncodedTags,
   encodeTags,
 } from "../../components/Tags/ParseEncodedTagStrings";
-import { doNotAwait } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import AlertContext, {
   mkAlert,
@@ -85,49 +84,54 @@ function TagDialog(): React.ReactNode {
   }, [commonTags, addedTags, deletedTags]);
 
   React.useEffect(() => {
-    const handler = doNotAwait(async (event: Event) => {
-      // @ts-expect-error there will be a detail
-      const ids: Array<string> = event.detail.ids;
-      setSelectedIds(ids.map((x) => parseInt(x, 10)));
-      setSavedTagsMap({});
-      setCommonTags(new RsSet([]));
-      setAddedTags([]);
-      setDeletedTags([]);
-      try {
-        const response = await axios.get<
-          Array<{ recordId: number; tagMetaData: string | null }>
-        >("/workspace/getTagsForRecords", {
-          params: new URLSearchParams([["recordIds", ids.join(",")]]),
-        });
-        const newlyFetchedTags: Record<number, Array<Tag>> = Object.fromEntries(
-          response.data.map(({ recordId, tagMetaData }) => [
-            recordId,
-            tagMetaData === null || tagMetaData === ""
-              ? ([] as Array<Tag>)
-              : parseEncodedTags(tagMetaData.split(",")),
-          ]),
-        );
-        setSavedTagsMap(newlyFetchedTags);
-        const newCommonTags = flattenWithIntersectionWithEq(
-          new RsSet(
-            Object.values(newlyFetchedTags).map((tags) => new RsSet(tags)),
-          ),
-          areSameTag,
-        );
-        setCommonTags(newCommonTags);
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error(error);
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Could not get tags.",
-              message: error.message,
-            }),
+    const handler = (event: Event) => {
+      void (async () => {
+        // @ts-expect-error there will be a detail
+        const ids: Array<string> = event.detail.ids;
+        setSelectedIds(ids.map((x) => parseInt(x, 10)));
+        setSavedTagsMap({});
+        setCommonTags(new RsSet([]));
+        setAddedTags([]);
+        setDeletedTags([]);
+        try {
+          const response = await axios.get<
+            Array<{ recordId: number; tagMetaData: string | null }>
+          >("/workspace/getTagsForRecords", {
+            params: new URLSearchParams([["recordIds", ids.join(",")]]),
+          });
+          const newlyFetchedTags: Record<
+            number,
+            Array<Tag>
+          > = Object.fromEntries(
+            response.data.map(({ recordId, tagMetaData }) => [
+              recordId,
+              tagMetaData === null || tagMetaData === ""
+                ? ([] as Array<Tag>)
+                : parseEncodedTags(tagMetaData.split(",")),
+            ]),
           );
+          setSavedTagsMap(newlyFetchedTags);
+          const newCommonTags = flattenWithIntersectionWithEq(
+            new RsSet(
+              Object.values(newlyFetchedTags).map((tags) => new RsSet(tags)),
+            ),
+            areSameTag,
+          );
+          setCommonTags(newCommonTags);
+        } catch (error) {
+          if (error instanceof Error) {
+            console.error(error);
+            addAlert(
+              mkAlert({
+                variant: "error",
+                title: "Could not get tags.",
+                message: error.message,
+              }),
+            );
+          }
         }
-      }
-    });
+      })();
+    };
     window.addEventListener("OPEN_TAG_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
@@ -168,25 +172,27 @@ function TagDialog(): React.ReactNode {
   };
 
   React.useEffect(() => {
-    const handler = doNotAwait(async () => {
-      try {
-        const { data } = await axios.get<boolean>(
-          "/userform/ajax/enforcedOntologies",
-        );
-        setEnforcedOntologies(data);
-      } catch (e) {
-        if (e instanceof Error) {
-          console.error(e);
-          addAlert(
-            mkAlert({
-              title: "Could not determine if ontologies are enforced or not.",
-              message: e.message,
-              variant: "error",
-            }),
+    const handler = () => {
+      void (async () => {
+        try {
+          const { data } = await axios.get<boolean>(
+            "/userform/ajax/enforcedOntologies",
           );
+          setEnforcedOntologies(data);
+        } catch (e) {
+          if (e instanceof Error) {
+            console.error(e);
+            addAlert(
+              mkAlert({
+                title: "Could not determine if ontologies are enforced or not.",
+                message: e.message,
+                variant: "error",
+              }),
+            );
+          }
         }
-      }
-    });
+      })();
+    };
     window.addEventListener("OPEN_TAG_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_TAG_DIALOG", handler);
@@ -207,9 +213,9 @@ function TagDialog(): React.ReactNode {
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">
-            You can tag Documents, Notebooks, and Folders to categorise work
-            and make it more searchable. If you&apos;ve selected multiple
-            items, only shared tags are shown.{" "}
+            You can tag Documents, Notebooks, and Folders to categorise work and
+            make it more searchable. If you&apos;ve selected multiple items,
+            only shared tags are shown.{" "}
             <a href={docLinks.tags} rel="noreferrer" target="_blank">
               Read more about creating, importing, and using Tags here.
             </a>{" "}
@@ -235,61 +241,59 @@ function TagDialog(): React.ReactNode {
             }}
             endAdornment={
               <AddTag
-                    enforceOntologies={enforcedOntologies ?? undefined}
-                    onSelection={(
-                      tag:
-                        | Tag
-                        | {
-                            value: string;
-                            vocabulary: string;
-                            uri: string;
-                            version: string;
-                          },
-                    ) => {
-                      /*
-                       * If ontologies are being enforced then it is guarateed that a
-                       * selected tag will have vocabulary, a URI, and a version and as
-                       * such those properties are not wrapped in Optionals. To make all of
-                       * the logic in this module simpler, we normalised the selected tag
-                       * into a form that will always wrap those properties.
-                       */
-                      const normalisedTag: Tag = {
-                        value: tag.value,
-                        vocabulary:
-                          tag.vocabulary instanceof Optional
-                            ? tag.vocabulary
-                            : Optional.present(tag.vocabulary),
-                        uri:
-                          tag.uri instanceof Optional
-                            ? tag.uri
-                            : Optional.present(tag.uri),
-                        version:
-                          tag.version instanceof Optional
-                            ? tag.version
-                            : Optional.present(tag.version),
-                      };
-                      // condition prevents duplicates
-                      if (
-                        !commonTags
-                          .unionWithEq(new RsSet(addedTags), areSameTag)
-                          .hasWithEq(normalisedTag, areSameTag)
-                      ) {
-                        setAddedTags([...addedTags, normalisedTag]);
-                        setDeletedTags(
-                          deletedTags.filter(
-                            (dTag) => !areSameTag(dTag, normalisedTag),
-                          ),
-                        );
-                      }
-                    }}
-                    value={
-                      savedTagsMap === null ? ([] as Array<Tag>) : visibleTags
-                    }
-                    disabled={
-                      Object.keys(savedTagsMap).length === 0 ||
-                      enforcedOntologies === null
-                    }
-                  />
+                enforceOntologies={enforcedOntologies ?? undefined}
+                onSelection={(
+                  tag:
+                    | Tag
+                    | {
+                        value: string;
+                        vocabulary: string;
+                        uri: string;
+                        version: string;
+                      },
+                ) => {
+                  /*
+                   * If ontologies are being enforced then it is guarateed that a
+                   * selected tag will have vocabulary, a URI, and a version and as
+                   * such those properties are not wrapped in Optionals. To make all of
+                   * the logic in this module simpler, we normalised the selected tag
+                   * into a form that will always wrap those properties.
+                   */
+                  const normalisedTag: Tag = {
+                    value: tag.value,
+                    vocabulary:
+                      tag.vocabulary instanceof Optional
+                        ? tag.vocabulary
+                        : Optional.present(tag.vocabulary),
+                    uri:
+                      tag.uri instanceof Optional
+                        ? tag.uri
+                        : Optional.present(tag.uri),
+                    version:
+                      tag.version instanceof Optional
+                        ? tag.version
+                        : Optional.present(tag.version),
+                  };
+                  // condition prevents duplicates
+                  if (
+                    !commonTags
+                      .unionWithEq(new RsSet(addedTags), areSameTag)
+                      .hasWithEq(normalisedTag, areSameTag)
+                  ) {
+                    setAddedTags([...addedTags, normalisedTag]);
+                    setDeletedTags(
+                      deletedTags.filter(
+                        (dTag) => !areSameTag(dTag, normalisedTag),
+                      ),
+                    );
+                  }
+                }}
+                value={savedTagsMap === null ? ([] as Array<Tag>) : visibleTags}
+                disabled={
+                  Object.keys(savedTagsMap).length === 0 ||
+                  enforcedOntologies === null
+                }
+              />
             }
           />
         </Stack>
@@ -300,48 +304,50 @@ function TagDialog(): React.ReactNode {
           disabled={
             saving || (addedTags.length === 0 && deletedTags.length === 0)
           }
-          onClick={doNotAwait(async () => {
-            try {
-              await handleSave();
-              trackEvent("user:tag:documents:workspace", {
-                count: selectedIds?.length,
-              });
-              setSelectedIds(null);
-              addAlert(
-                mkAlert({
-                  variant: "success",
-                  message: "Successfully saved tags.",
-                }),
-              );
-            } catch (e) {
-              let error: Error;
-              let details: Array<AlertDetails> = [];
-              if (!(e instanceof Error)) {
-                error = new Error("An unknown error occurred.");
-              } else {
-                error = e;
-              }
-              let message = error.message;
-              if (error instanceof AggregateError) {
-                details = ArrayUtils.filterClass(Error, [...error.errors]).map(
-                  (e: Error) => ({
-                    title: e.message,
-                    variant: "error",
+          onClick={() => {
+            void (async () => {
+              try {
+                await handleSave();
+                trackEvent("user:tag:documents:workspace", {
+                  count: selectedIds?.length,
+                });
+                setSelectedIds(null);
+                addAlert(
+                  mkAlert({
+                    variant: "success",
+                    message: "Successfully saved tags.",
                   }),
                 );
-                message = "There are multiple errors.";
+              } catch (e) {
+                let error: Error;
+                let details: Array<AlertDetails> = [];
+                if (!(e instanceof Error)) {
+                  error = new Error("An unknown error occurred.");
+                } else {
+                  error = e;
+                }
+                let message = error.message;
+                if (error instanceof AggregateError) {
+                  details = ArrayUtils.filterClass(Error, [
+                    ...error.errors,
+                  ]).map((e: Error) => ({
+                    title: e.message,
+                    variant: "error",
+                  }));
+                  message = "There are multiple errors.";
+                }
+                console.error(error);
+                addAlert(
+                  mkAlert({
+                    variant: "error",
+                    title: "Could not save tags.",
+                    message,
+                    ...(details.length === 0 ? {} : { details }),
+                  }),
+                );
               }
-              console.error(error);
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Could not save tags.",
-                  message,
-                  ...(details.length === 0 ? {} : { details }),
-                }),
-              );
-            }
-          })}
+            })();
+          }}
           loading={saving}
           label="Save"
         />

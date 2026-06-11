@@ -1,5 +1,5 @@
 import ApiService from "../../common/InvApiService";
-import { doNotAwait, sleep } from "../../util/Util";
+import { sleep } from "../../util/Util";
 import {
   handleDetailedErrors,
   handleDetailedSuccesses,
@@ -381,7 +381,7 @@ export default class TemplateModel extends SampleModel implements Template {
           variant: "notice",
           isInfinite: true,
           actionLabel: "yes",
-          onActionClick: doNotAwait(() => this.updateSamplesToLatest()),
+          onActionClick: () => void this.updateSamplesToLatest(),
         });
         latest.addScopedToast(newToast);
         getRootStore().uiStore.addAlert(newToast);

@@ -4,7 +4,6 @@ import Button from "@mui/material/Button";
 import type { Editable } from "../../stores/definitions/Editable";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { doNotAwait } from "@/util/Util";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 
 type CommonActionsArgs = {
@@ -42,7 +41,7 @@ function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
         Cancel
       </Button>
       <ValidatingSubmitButton
-        onClick={doNotAwait(() => editableObject.update())}
+        onClick={() => void editableObject.update()}
         validationResult={editableObject.submittable}
         loading={editableObject.loading}
         progress={editableObject.uploadProgress}

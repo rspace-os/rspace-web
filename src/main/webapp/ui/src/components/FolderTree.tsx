@@ -19,9 +19,7 @@ import useFolders, {
   folderDetailsAsTreeNode,
   type FolderTreeNode,
 } from "../hooks/api/useFolders";
-import { doNotAwait } from "../util/Util";
 import { Tree, TreeItem } from "./Tree";
-
 
 type CreateFolderDialogProps = {
   open: boolean;
@@ -219,7 +217,7 @@ const TreeItemContent = ({
               action={
                 <Button
                   size="small"
-                  onClick={doNotAwait(() => loadFolders(currentPage))}
+                  onClick={() => void loadFolders(currentPage)}
                   disabled={isLoading}
                 >
                   Retry
@@ -234,7 +232,7 @@ const TreeItemContent = ({
           <Box sx={{ p: 1 }}>
             <Button
               size="small"
-              onClick={doNotAwait(() => loadFolders(currentPage + 1, true))}
+              onClick={() => void loadFolders(currentPage + 1, true)}
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={16} /> : null}
             >
@@ -417,7 +415,7 @@ export default function FolderTree({
       {hasMorePages && (
         <Box sx={{ p: 1, textAlign: "center" }}>
           <Button
-            onClick={doNotAwait(() => loadRootFolders(currentPage + 1, true))}
+            onClick={() => void loadRootFolders(currentPage + 1, true)}
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={16} /> : null}
           >

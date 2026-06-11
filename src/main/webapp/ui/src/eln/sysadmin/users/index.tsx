@@ -79,7 +79,7 @@ import CrossIcon from "@mui/icons-material/Clear";
 import LockIcon from "@mui/icons-material/Lock";
 import ExpandCircleDownIcon from "@mui/icons-material/ExpandCircleDown";
 import DialogContentText from "@mui/material/DialogContentText";
-import { doNotAwait, sleep } from "../../../util/Util";
+import { sleep } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Dialog from "@mui/material/Dialog";
 import Alerts from "../../../components/Alerts/Alerts";
@@ -293,32 +293,34 @@ const TagDialog = ({
           <SubmitSpinnerButton
             disabled={addedTags.length === 0 && deletedTags.length === 0}
             loading={submitting}
-            onClick={doNotAwait(async () => {
-              setSubmitting(true);
-              try {
-                await setTags(addedTags, deletedTags);
-                addAlert(
-                  mkAlert({
-                    message: "Successfully saved tags.",
-                    variant: "success",
-                  }),
-                );
-                onClose();
-              } catch (error) {
-                console.error(error);
-                if (error instanceof Error) {
+            onClick={() => {
+              void (async () => {
+                setSubmitting(true);
+                try {
+                  await setTags(addedTags, deletedTags);
                   addAlert(
                     mkAlert({
-                      title: "Could not save tags.",
-                      message: error.message,
-                      variant: "error",
+                      message: "Successfully saved tags.",
+                      variant: "success",
                     }),
                   );
+                  onClose();
+                } catch (error) {
+                  console.error(error);
+                  if (error instanceof Error) {
+                    addAlert(
+                      mkAlert({
+                        title: "Could not save tags.",
+                        message: error.message,
+                        variant: "error",
+                      }),
+                    );
+                  }
+                } finally {
+                  setSubmitting(false);
                 }
-              } finally {
-                setSubmitting(false);
-              }
-            })}
+              })();
+            }}
             label="Save"
           />
         </DialogActions>
@@ -857,19 +859,24 @@ const DeleteAction = ({
                     mb: 2,
                   }}
                 >
-                  {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
-                      <Alert severity="info" sx={{ mb: 1 }}>
-                        <Typography variant="body2">
-                          The user you are trying to delete is{" "}
-                          <strong>
-                            the owner of Forms and/or Templates that are used by other users.
-                          </strong>
-                          {" "}To ensure continued access to these Forms/Templates, the system
-                          <strong> will transfer ownership</strong> of those files to
-                          <strong> this System Administrator</strong> account. Forms and
-                          Templates that are not used by others will be deleted.
-                        </Typography>
-                      </Alert>
+                  {(user.hasFormsUsedByOtherUsers ||
+                    user.hasTemplatesUsedByOtherUsers) && (
+                    <Alert severity="info" sx={{ mb: 1 }}>
+                      <Typography variant="body2">
+                        The user you are trying to delete is{" "}
+                        <strong>
+                          the owner of Forms and/or Templates that are used by
+                          other users.
+                        </strong>{" "}
+                        To ensure continued access to these Forms/Templates, the
+                        system
+                        <strong> will transfer ownership</strong> of those files
+                        to
+                        <strong> this System Administrator</strong> account.
+                        Forms and Templates that are not used by others will be
+                        deleted.
+                      </Typography>
+                    </Alert>
                   )}
                   <Typography
                     variant="body2"
@@ -943,7 +950,12 @@ const DeleteAction = ({
                   type="submit"
                   loading={false}
                   disabled={false}
-                  label={(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) ? "Transfer Forms/Templates And Delete" : "Delete"}
+                  label={
+                    user.hasFormsUsedByOtherUsers ||
+                    user.hasTemplatesUsedByOtherUsers
+                      ? "Transfer Forms/Templates And Delete"
+                      : "Delete"
+                  }
                 />
               </DialogActions>
             </form>
@@ -1129,8 +1141,8 @@ const SelectionActions = ({
                 <MenuItem
                   disabled={unlockAction.isError}
                   onClick={() => {
-                    unlockAction.do(
-                      doNotAwait(async (user) => {
+                    unlockAction.do((user) => {
+                      void (async () => {
                         try {
                           await user.unlock();
                           addAlert(
@@ -1151,8 +1163,8 @@ const SelectionActions = ({
                             );
                           }
                         }
-                      }),
-                    );
+                      })();
+                    });
                   }}
                 >
                   <ListItemIcon>
@@ -1181,8 +1193,8 @@ const SelectionActions = ({
                 <MenuItem
                   disabled={enableDisableAction.isError}
                   onClick={() =>
-                    enableDisableAction.do(
-                      doNotAwait(async ({ action, user }) => {
+                    enableDisableAction.do(({ action, user }) => {
+                      void (async () => {
                         if (action === "enable") {
                           try {
                             await user.enable();
@@ -1227,8 +1239,8 @@ const SelectionActions = ({
                             }
                           }
                         }
-                      }),
-                    )
+                      })();
+                    })
                   }
                 >
                   <ListItemIcon>
