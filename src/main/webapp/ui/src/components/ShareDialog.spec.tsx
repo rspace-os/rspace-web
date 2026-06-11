@@ -963,7 +963,15 @@ test.describe("ShareDialog", () => {
     );
     feature(
       "When the user changes the folder location for a group share, it should make a POST request to move the document",
-      async ({ Given, When, Then }) => {
+      async ({ Given, When, Then, page }) => {
+        /*
+         * Selecting a folder closes the nested folder-selection dialog with a
+         * MUI exit transition. On WebKit that transition leaves the Share
+         * dialog's Save button non-"stable" long enough that click() can exceed
+         * its timeout. Emulating reduced motion makes the transition instant so
+         * the button settles immediately.
+         */
+        await page.emulateMedia({ reducedMotion: "reduce" });
         await Given[
           "the dialog is displayed with a document with a previous share with Alice and Bob's group"
         ]();

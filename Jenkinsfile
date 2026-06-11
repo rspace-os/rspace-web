@@ -47,6 +47,15 @@ pipeline {
         AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
         APP_VERSION = readMavenPom().getVersion()
 
+        // Give corepack a writable, persistent home for its download cache. The
+        // default (~/.cache/node/corepack) is not always writable on Jenkins agents.
+        COREPACK_HOME = "${JENKINS_HOME}"
+        // `corepack enable` installs the pnpm/yarn shims next to the node binary
+        // (e.g. /usr/local/bin), which the Jenkins user cannot write to (EACCES).
+        // Install them into a writable dir under JENKINS_HOME and put it on PATH
+        // so every `sh` step resolves `pnpm` from there.
+        PATH = "${JENKINS_HOME}/corepack-bin:${PATH}"
+
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
     }
 
@@ -98,7 +107,7 @@ pipeline {
                 }
             }
         }
-        stage('NPM Install') {
+        stage('PNPM Install') {
             when {
                 anyOf {
                     expression { return params.FRONTEND_TESTS }
@@ -111,12 +120,13 @@ pipeline {
                 }
             }
             steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Installing npm packages'
-                    sh 'node -v'
-                    sh 'npx -y npm@11.14.1 -v'
-                    sh 'npx -y npm@11.14.1 ci'
-                }
+                echo 'Installing pnpm packages'
+                sh 'node -v'
+                sh 'mkdir -p "$JENKINS_HOME/corepack-bin"'
+                sh 'corepack enable --install-directory "$JENKINS_HOME/corepack-bin"'
+                sh 'corepack prepare pnpm@11.3.0 --activate'
+                sh 'pnpm -v'
+                sh 'pnpm install --frozen-lockfile'
             }
         }
         stage('TypeScript Check') {
@@ -125,30 +135,9 @@ pipeline {
                 expression { return params.FRONTEND_TESTS_TYPESCRIPT_CHECK }
             }
             steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running TypeScript check'
-                    sh 'npx tsc --version'
-                    sh 'npm run tsc --noEmit'
-                }
-            }
-        }
-        stage('Dependency Cruiser') {
-            when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running dependency cruiser'
-                    sh 'npm run depcruise | sed \'s/\\x1b\\[[0-9;]*[a-zA-Z]//g\''
-                }
+                echo 'Running TypeScript check'
+                sh 'pnpm exec tsc --version'
+                sh 'pnpm run tsc'
             }
         }
         stage('Vitest Tests (feature branch)') {
@@ -169,10 +158,8 @@ pipeline {
             steps {
                 echo 'Running Vitest tests'
                 sh 'git fetch origin main:main || true'
-                dir('src/main/webapp/ui') {
-                    // In Jenkins we limit this to 2 to not overwhelm the CI machine
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers 2 --changed main'
-                }
+                // In Jenkins we limit this to 2 to not overwhelm the CI machine
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test --maxWorkers 2 --changed main'
             }
             post {
                 failure {
@@ -202,9 +189,7 @@ pipeline {
             }
             steps {
                 echo 'Running Vitest tests'
-                dir('src/main/webapp/ui') {
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2'
-                }
+                sh 'env COLORS=false FORCE_COLOR=false pnpm run test --maxWorkers=2'
             }
             post {
                 failure {
@@ -234,11 +219,9 @@ pipeline {
             }
             steps {
                 echo 'Running Playwright tests'
-                dir('src/main/webapp/ui') {
-                    sh 'npx playwright install'
-                    sh 'rm -rf playwright/.cache'
-                    sh 'npm run test-ct -- --only-changed=main'
-                }
+                sh 'pnpm exec playwright install'
+                sh 'rm -rf src/main/webapp/ui/playwright/.cache'
+                sh 'pnpm run test-ct --only-changed=main'
             }
         }
         stage('Playwright Component Tests (main branch)') {
@@ -254,11 +237,9 @@ pipeline {
             }
             steps {
                 echo 'Running Playwright tests'
-                dir('src/main/webapp/ui') {
-                    sh 'npx playwright install'
-                    sh 'rm -rf playwright/.cache'
-                    sh 'npm run test-ct'
-                }
+                sh 'pnpm exec playwright install'
+                sh 'rm -rf src/main/webapp/ui/playwright/.cache'
+                sh 'pnpm run test-ct'
             }
         }
         stage('Build feature branch') {

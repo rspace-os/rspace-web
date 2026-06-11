@@ -96,10 +96,10 @@ export default getPlaywrightConfig();
  * ====  USEFUL COMMANDS  =====================================================
  *
  *  To run all the tests:
- *    npm run test-ct
+ *    pnpm run test-ct
  *
  *  To open the Playwright Test UI, (for dev tools in the live browser) run:
- *    npm run test-ct --ui
+ *    pnpm run test-ct --ui
  *
  *  After switching git branches, you may need to clear the Playwright cache:
  *    rm -r playwright/.cache
