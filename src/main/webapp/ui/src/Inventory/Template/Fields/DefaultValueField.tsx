@@ -64,21 +64,27 @@ function DefaultValueField({
           onChange={(_event, value) =>
             field.setAttributesDirty({ allowedRelationTypes: value })
           }
-          renderInput={(params) => (
-            <MuiTextField
-              {...params}
-              variant="standard"
-              placeholder={
-                field.allowedRelationTypes.length === 0
-                  ? "All relationship types"
-                  : ""
-              }
-              inputProps={{
-                ...params.inputProps,
-                "aria-label": "Allowed relationship types",
-              }}
-            />
-          )}
+          renderInput={(params) => {
+            const { slotProps, ...textFieldProps } = params;
+            return (
+              <MuiTextField
+                {...textFieldProps}
+                variant="standard"
+                placeholder={
+                  field.allowedRelationTypes.length === 0
+                    ? "All relationship types"
+                    : ""
+                }
+                slotProps={{
+                  ...slotProps,
+                  htmlInput: {
+                    ...slotProps.htmlInput,
+                    "aria-label": "Allowed relationship types",
+                  },
+                }}
+              />
+            );
+          }}
         />
       </InputWrapper>
     );

@@ -40,7 +40,7 @@ function ExtraFields({
           ) : (
             <>
               {ef.type === "Link" ? (
-                <Box mt={1} sx={{ position: "relative" }}>
+                <Box sx={{ mt: 1, position: "relative" }}>
                   {!extraFieldsDisabled && (
                     <div
                       style={{

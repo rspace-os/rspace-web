@@ -42,8 +42,7 @@ export function ReferencingInventoryItemsPanel({
   return (
     <Box
       component="section"
-      sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px" }}
-      flexGrow={1}
+      sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px", flexGrow: 1 }}
     >
       <Typography variant="h4" component="h4">
         Related inventory items

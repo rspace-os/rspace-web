@@ -1,6 +1,6 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import GlobalId from "./GlobalId";
 import Date from "./Date";
 import LatestTemplateActions from "./LatestTemplateActions";
@@ -21,7 +21,7 @@ type SidebarBodyArgs = {
  */
 function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
   return (
-    <Grid container direction="column" spacing={5}>
+    <Stack spacing={5}>
       <GlobalId record={record} />
       <Date label="Created" date={record.created} />
       <Date label="Last Modified" date={record.lastModified} />
@@ -30,7 +30,7 @@ function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
       {record.usableInLoM && record.globalId && (
         <LinkedDocuments globalId={record.globalId} factory={factory} />
       )}
-    </Grid>
+    </Stack>
   );
 }
 

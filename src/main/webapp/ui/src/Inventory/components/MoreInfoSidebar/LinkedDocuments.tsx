@@ -165,7 +165,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
             <NoValue label="No documents" />
           )}
         </Box>
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
             Inventory items linking to this item
           </Typography>
@@ -177,7 +177,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
         </Box>
         {bothEmpty && (
           <>
-            <Box mt={1}>
+            <Box sx={{ mt: 1 }}>
               <Typography variant="body1">
                 Adding this item to a document&apos;s{" "}
                 <a
@@ -190,7 +190,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
                 will add an entry for the document in this panel.
               </Typography>
             </Box>
-            <Box mt={1}>
+            <Box sx={{ mt: 1 }}>
               <Typography variant="body1">
                 Other Inventory items that link to this item through a Link
                 custom field will also be listed here.
@@ -273,7 +273,7 @@ function LinkedDocuments({
   }, [open]);
 
   return (
-    <Grid item>
+    <Grid>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
         <FormLabel component="legend">Linked Documents</FormLabel>
         <FormGroup>

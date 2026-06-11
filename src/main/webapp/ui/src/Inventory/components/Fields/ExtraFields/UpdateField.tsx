@@ -286,7 +286,7 @@ export default function UpdateField({
           : `Editing extra field with name ${extraField.name}`
       }
     >
-      <Grid item md={7} xs={12}>
+      <Grid size={{ md: 7, xs: 12 }}>
         <FormField
           value={fieldState.name}
           label="Field name"
@@ -302,7 +302,7 @@ export default function UpdateField({
           helperText={errorMessage}
         />
       </Grid>
-      <Grid item md={5} xs={12}>
+      <Grid size={{ md: 5, xs: 12 }}>
         <FormField
           value={fieldState.type}
           label="Field type"
@@ -329,7 +329,7 @@ export default function UpdateField({
 
       {fieldState.type === "Link" && (
         <>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Autocomplete
               freeSolo
               options={[...DATACITE_RELATION_TYPES]}
@@ -337,30 +337,35 @@ export default function UpdateField({
               onInputChange={(_event, value) =>
                 setLinkState({ ...linkState, relationType: value })
               }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="standard"
-                  label="Relation type"
-                  error={showRelationError}
-                  helperText={
-                    showRelationError ? "Pick a DataCite relation type" : ""
-                  }
-                  inputProps={{
-                    ...params.inputProps,
-                    "aria-label": "Relation type",
-                  }}
-                />
-              )}
+              renderInput={(params) => {
+                const { slotProps, ...textFieldProps } = params;
+                return (
+                  <TextField
+                    {...textFieldProps}
+                    variant="standard"
+                    label="Relation type"
+                    error={showRelationError}
+                    helperText={
+                      showRelationError ? "Pick a DataCite relation type" : ""
+                    }
+                    slotProps={{
+                      ...slotProps,
+                      htmlInput: {
+                        ...slotProps.htmlInput,
+                        "aria-label": "Relation type",
+                      },
+                    }}
+                  />
+                );
+              }}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Box>
               <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
-                sx={{ mb: 1, flexWrap: "wrap" }}
+                sx={{ mb: 1, flexWrap: "wrap", alignItems: "center" }}
               >
                 {linkState.targetGlobalId ? (
                   (() => {
@@ -434,8 +439,7 @@ export default function UpdateField({
               <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
-                sx={{ mt: 1 }}
+                sx={{ mt: 1, alignItems: "center" }}
               >
                 <Chip
                   size="small"
@@ -469,7 +473,7 @@ export default function UpdateField({
         </>
       )}
 
-      <Grid item md={12} xs={12}>
+      <Grid size={12}>
         <Button
           color="callToAction"
           disableElevation

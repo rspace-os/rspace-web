@@ -206,23 +206,28 @@ function LinkFieldValue({
         options={relationOptions}
         value={stagedRelationType === "" ? null : stagedRelationType}
         onChange={(_event, value) => setStagedRelationType(value ?? "")}
-        renderInput={(params) => (
-          <MuiTextField
-            {...params}
-            variant="standard"
-            label="Relationship type"
-            inputProps={{
-              ...params.inputProps,
-              "aria-label": "Relationship type",
-            }}
-          />
-        )}
+        renderInput={(params) => {
+          const { slotProps, ...textFieldProps } = params;
+          return (
+            <MuiTextField
+              {...textFieldProps}
+              variant="standard"
+              label="Relationship type"
+              slotProps={{
+                ...slotProps,
+                htmlInput: {
+                  ...slotProps.htmlInput,
+                  "aria-label": "Relationship type",
+                },
+              }}
+            />
+          );
+        }}
       />
       <Stack
         direction="row"
         spacing={1}
-        alignItems="center"
-        sx={{ mt: 1, flexWrap: "wrap" }}
+        sx={{ mt: 1, flexWrap: "wrap", alignItems: "center" }}
       >
         {stagedTargetGlobalId
           ? (() => {
@@ -273,12 +278,12 @@ function LinkFieldValue({
             : "Paste a Global ID, or use the Browse buttons above.")
         }
         error={Boolean(targetExistenceError) || !targetValidity.ok}
-        inputProps={{ "aria-label": "Target Global ID" }}
+        slotProps={{ htmlInput: { "aria-label": "Target Global ID" } }}
       />
       {validationMessage && (
         <FormHelperText error>{validationMessage}</FormHelperText>
       )}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
         <Chip
           size="small"
           variant="outlined"
