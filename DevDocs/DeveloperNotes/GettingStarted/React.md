@@ -27,7 +27,7 @@ the box JavaScript IDE functionalities.
 
 #### VSCode comments
 _Correct as of 2020 June:_
-In VSCode JavaScript and TypeScript are tighly coupled. VSCode intellisense and
+In VSCode JavaScript and TypeScript are tightly coupled. VSCode intellisense and
 other IDE features for JavaScript are dependent on TypeScript.
 
 #### VSCode __recommendations__
