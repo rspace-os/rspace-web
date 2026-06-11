@@ -251,33 +251,11 @@ describe("ImportDialog", () => {
 
   test("An error when searching should result in an alert toast", async () => {
     const user = userEvent.setup();
-    /*
-     * The component fires the search via `void search(...)`, so the rejection
-     * that `useChemicalImport.search` re-throws after showing the toast surfaces
-     * as an unhandled rejection. That rejection is expected here, so swallow the
-     * specific one rather than letting it fail the run.
-     */
-    const expectedRejection = (reason: unknown) => {
-      if (
-        reason instanceof Error &&
-        reason.message === "Could not search for chemical compounds"
-      ) {
-        return;
-      }
-      throw reason;
-    };
-    process.on("unhandledRejection", expectedRejection);
-    try {
-      render(<ImportDialogStory />);
-      await performSearch(user, "error");
-      const alert = await screen.findByRole("alert");
-      expect(alert).toBeVisible();
-      expect(alert).toHaveTextContent(/There was an error/);
-      // allow the rejected promise from the search flow to settle
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    } finally {
-      process.off("unhandledRejection", expectedRejection);
-    }
+    render(<ImportDialogStory />);
+    await performSearch(user, "error");
+    const alert = await screen.findByRole("alert");
+    expect(alert).toBeVisible();
+    expect(alert).toHaveTextContent(/There was an error/);
   });
 
   test("Should reset state when dialog is closed and reopened", async () => {
