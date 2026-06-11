@@ -5,7 +5,7 @@ info:
     Welcome to the RSpace ELN API.
     
     
-    **Note:** To switch the Inventory API from the API docs, select **RSpace Inventory** from the dropdown at the top of the page.
+    **Note:** To switch the Inventory API from the API docs, select **RSpace Inventory** from the dropdown at the top of the navigation menu.
   
     
     This API enables you to search for and retrieveyour ELN data. It contains methods to create documents, upload files, and

@@ -5,7 +5,7 @@ info:
     Welcome to the RSpace Inventory API.
     
     
-    **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the page.
+    **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
   version: "2.13"
   license:
     name: AGPL-3.0 License
