@@ -433,6 +433,26 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     }
   }
 
+  /**
+   * Soft-deletes the {@link InventoryLink} backing a structured link field once that field has been
+   * soft-deleted, so the link row (and its Envers audit trail) stays in step with the field. The
+   * field's {@code deleted} flag is flipped in the model layer (a template link-field delete, or
+   * its propagation to child samples through {@code Sample#updateToLatestTemplateVersion}), which
+   * cannot reach the service-layer {@link InventoryLinkManager}; a soft-delete is also an ordinary
+   * update rather than a JPA remove, so the {@code cascade}/{@code orphanRemoval} on {@code
+   * InventoryLinkField#link} never fires. Without this the link row would linger with {@code
+   * deleted=false} after its field is gone. No-op unless the field is a deleted {@link
+   * InventoryLinkField} whose link is still live.
+   */
+  void softDeleteLinkOfDeletedLinkField(InventoryEntityField field, User user) {
+    if (field instanceof InventoryLinkField && field.isDeleted()) {
+      InventoryLink link = ((InventoryLinkField) field).getLink();
+      if (link != null && !link.isDeleted()) {
+        inventoryLinkManager.deleteLink(link, user);
+      }
+    }
+  }
+
   private void publishAuditEventsForCreatedSample(User user, Sample savedSample) {
     publisher.publishEvent(new InventoryCreationEvent(savedSample, user));
     for (SubSample subSample : savedSample.getSubSamples()) {
@@ -907,7 +927,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
       dbSample = getIfExists(dbSample.getId());
-      boolean contentChanged = createDeleteRequestedFieldsInDbSampleTemplate(apiSample, dbSample);
+      boolean contentChanged =
+          createDeleteRequestedFieldsInDbSampleTemplate(apiSample, dbSample, user);
       contentChanged |= apiSample.applyChangesToDatabaseTemplate(dbSample, user);
       updateDbSample(apiSample, dbSample, contentChanged, user);
     } finally {
@@ -920,7 +941,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   private boolean createDeleteRequestedFieldsInDbSampleTemplate(
-      ApiSampleWithoutSubSamples apiSample, Sample dbTemplate) {
+      ApiSampleWithoutSubSamples apiSample, Sample dbTemplate, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
     boolean changed = false;
@@ -948,6 +969,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
                   + " doesn't match id of any pre-existing template field");
         }
         dbTemplate.deleteSampleField(dbFieldOpt.get(), apiField.isDeleteFieldOnSampleUpdate());
+        softDeleteLinkOfDeletedLinkField(dbFieldOpt.get(), user);
         changed = true;
       }
     }
@@ -966,7 +988,16 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     try {
       dbSample = getIfExists(dbSample.getId());
       if (!dbTemplate.getVersion().equals(dbSample.getSTemplateLinkedVersion())) {
+        // Snapshot the link fields before the sync: propagating a deleted template link-field
+        // marks the matching sample field deleted in the model layer, which cannot soft-delete the
+        // field's InventoryLink. Reconcile those orphaned links here once the sync has run.
+        List<InventoryLinkField> linkFieldsBeforeUpdate =
+            dbSample.getActiveFields().stream()
+                .filter(InventoryLinkField.class::isInstance)
+                .map(InventoryLinkField.class::cast)
+                .collect(Collectors.toList());
         dbSample.updateToLatestTemplateVersion();
+        linkFieldsBeforeUpdate.forEach(field -> softDeleteLinkOfDeletedLinkField(field, user));
         saveDbSampleUpdate(dbSample, user);
       }
     } finally {

@@ -31,6 +31,11 @@ import org.springframework.test.util.ReflectionTestUtils;
  * and recaptures the pinned audit revision), and clearing the value soft-deletes the old row
  * through the manager. Creating a fresh row on every save left the previous row in the DB with
  * {@code deleted=false} and nothing pointing at it.
+ *
+ * <p>Likewise, soft-deleting a structured link field (a template link-field delete, or its
+ * propagation to child samples via {@code Sample#updateToLatestTemplateVersion}) must soft-delete
+ * the field's link, otherwise the link row lingers with {@code deleted=false} after the field is
+ * gone.
  */
 @ExtendWith(MockitoExtension.class)
 class SampleApiManagerImplLinkFieldTest {
@@ -149,5 +154,42 @@ class SampleApiManagerImplLinkFieldTest {
     assertTrue(changed);
     assertSame(created, dbField.getLink());
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
+  }
+
+  @Test
+  void deletingALinkFieldSoftDeletesItsLinkThroughTheManager() {
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verify(inventoryLinkManager).deleteLink(dbLink, user);
+  }
+
+  @Test
+  void aDeletedLinkFieldWithNoLinkLeavesTheManagerUntouched() {
+    dbField.setLink(null);
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aDeletedLinkFieldWhoseLinkIsAlreadyDeletedLeavesTheManagerUntouched() {
+    dbLink.setDeleted(true);
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aLiveLinkFieldIsLeftAlone() {
+    // field not deleted (default): a live field keeps its link
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
   }
 }
