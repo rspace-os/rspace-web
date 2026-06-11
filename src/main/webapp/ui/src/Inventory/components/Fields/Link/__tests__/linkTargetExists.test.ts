@@ -29,15 +29,40 @@ describe("checkLinkTargetExists", () => {
   ])(
     "resolves an inventory target %s through the inventory API",
     async (globalId, endpoint) => {
-      mockGet.mockResolvedValue({ data: {} });
+      mockGet.mockResolvedValue({ data: { permittedActions: ["READ"] } });
       await expect(checkLinkTargetExists(globalId)).resolves.toBe(true);
       expect(mockGet).toHaveBeenCalledWith(endpoint);
     },
   );
 
+  it("accepts an editable inventory target (READ alongside UPDATE)", async () => {
+    mockGet.mockResolvedValue({
+      data: { permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] },
+    });
+    await expect(checkLinkTargetExists("SA12")).resolves.toBe(true);
+  });
+
   it("reports a missing inventory target as not existing", async () => {
     mockGet.mockRejectedValue(new Error("404"));
     await expect(checkLinkTargetExists("SA99999")).resolves.toBe(false);
+  });
+
+  it("treats a limited-read inventory target as not visible", async () => {
+    // the inventory GET succeeds for items any user may see a redacted view
+    // of, but linking requires full READ (the backend rejects the link at
+    // save); reporting it as not-visible gives the same generic message as a
+    // missing id, so existence is not leaked
+    mockGet.mockResolvedValue({
+      data: { permittedActions: ["LIMITED_READ"] },
+    });
+    await expect(checkLinkTargetExists("SA12")).resolves.toBe(false);
+  });
+
+  it("treats an inventory response without READ permission as not visible", async () => {
+    mockGet.mockResolvedValue({ data: { permittedActions: [] } });
+    await expect(checkLinkTargetExists("SA12")).resolves.toBe(false);
+    mockGet.mockResolvedValue({ data: {} });
+    await expect(checkLinkTargetExists("SA12")).resolves.toBe(false);
   });
 
   it("resolves an ELN target through the workspace record-information endpoint", async () => {

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -53,6 +55,20 @@ class LinkTargetResolverImplTest {
         .thenReturn(false);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
+  }
+
+  @Test
+  void inventoryLinkingRequiresFullReadNotLimitedRead() {
+    // the inventory API grants any logged-in user a redacted "limited read"
+    // view of items, but that must never be enough to link to them: the
+    // resolver consults the full READ check only, so an unreadable target is
+    // rejected exactly like a missing one and existence is not disclosed
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(false);
+
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
+    verify(inventoryPermissionUtils, never())
+        .canUserLimitedReadInventoryRecord(any(GlobalIdentifier.class), eq(user));
   }
 
   @Test
