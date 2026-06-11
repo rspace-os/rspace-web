@@ -4,7 +4,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <changeSet id="RSDEV-1135-drop-removed-user-profile-fields" context="run" author="copilot">
+    <changeSet id="RSDEV-1135-drop-removed-user-profile-fields" context="run" author="tchoi-rs">
         <comment>Drop user profile fields that are no longer displayed or editable.</comment>
         <dropColumn tableName="UserProfile" columnName="externalLinkDisplay"/>
         <dropColumn tableName="UserProfile" columnName="externalLinkURL"/>
