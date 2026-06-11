@@ -27,9 +27,13 @@ function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
       <Date label="Last Modified" date={record.lastModified} />
       <VersionHistory record={record} />
       <LatestTemplateActions record={record} />
-      {record.usableInLoM && record.globalId && (
-        <LinkedDocuments globalId={record.globalId} factory={factory} />
-      )}
+      {/* templates cannot appear in a List of Materials, but they are valid
+          link targets, so the linked-documents dialog (which also lists the
+          inventory items linking here) applies to them like every other type */}
+      {(record.usableInLoM || record.recordType === "sampleTemplate") &&
+        record.globalId && (
+          <LinkedDocuments globalId={record.globalId} factory={factory} />
+        )}
     </Stack>
   );
 }

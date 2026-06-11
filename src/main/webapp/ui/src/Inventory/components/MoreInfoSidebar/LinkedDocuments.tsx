@@ -61,8 +61,11 @@ function referencingItemsEndpoint(globalId: string): string | null {
   const match = GLOBAL_ID_PATTERN.exec(globalId);
   if (!match) return null;
   const segment = PREFIX_TO_PATH[match[1]];
-  if (!segment) return null;
-  return `${segment}/${match[2]}/referencingItems`;
+  if (segment) return `${segment}/${match[2]}/referencingItems`;
+  // sample templates have no typed referencingItems endpoint; use the
+  // generic by-Global-ID route instead
+  if (match[1] === "IT") return `referencingItems/${globalId}`;
+  return null;
 }
 
 function ReferencingItemsTable({

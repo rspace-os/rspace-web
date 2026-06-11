@@ -55,12 +55,14 @@ function makeRecord(overrides: Partial<{
   created: string;
   lastModified: string;
   usableInLoM: boolean;
+  recordType: string;
 }> = {}) {
   return {
     globalId: "SA42",
     created: "2026-01-01T00:00:00Z",
     lastModified: "2026-02-02T00:00:00Z",
     usableInLoM: true,
+    recordType: "sample",
     ...overrides,
   };
 }
@@ -109,6 +111,30 @@ describe("SidebarBody", () => {
       </ThemeProvider>,
     );
     expect(screen.queryByTestId("linked-documents")).not.toBeInTheDocument();
+  });
+
+  it("includes LinkedDocuments for a sample template", () => {
+    // templates cannot appear in a List of Materials (usableInLoM is false),
+    // but they are valid link targets, so "what links to this" applies and
+    // the Show Linked Documents button must be present like all other types
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <SidebarBody
+          record={
+            makeRecord({
+              usableInLoM: false,
+              recordType: "sampleTemplate",
+              globalId: "IT5",
+            }) as never
+          }
+          factory={null}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId("linked-documents")).toHaveAttribute(
+      "data-globalid",
+      "IT5",
+    );
   });
 
   it("omits LinkedDocuments when the record has no Global ID yet", () => {

@@ -46,6 +46,15 @@ export function validateTarget(
       reason:
         "Target must be an Inventory item or an ELN document, notebook or gallery file",
     };
+  if (parsed[3] !== undefined)
+    // versions are pinned through the version dialog, never typed: the dialog
+    // only offers versions the target actually has, and pinning also captures
+    // the matching audit revision
+    return {
+      ok: false,
+      reason:
+        "Enter the Global ID without a version. To pin the link to a version, use the clock icon.",
+    };
   if (isSelfLink(sourceGlobalId, targetGlobalId))
     return { ok: false, reason: "An item cannot link to itself." };
   return { ok: true, reason: "" };

@@ -110,7 +110,7 @@ public class ApiExtraFieldsHelper implements Validator {
         apiInstrument.getExtraFields(), instrument.getActiveExtraFields(), instrument, user);
   }
 
-  private boolean createDeleteRequestedExtraFields(
+  boolean createDeleteRequestedExtraFields(
       List<ApiExtraField> incomingFields,
       List<ExtraField> dbFields,
       InventoryRecord parentInvRec,
@@ -139,7 +139,9 @@ public class ApiExtraFieldsHelper implements Validator {
                     + apiField.getId()
                     + " doesn't match id of any pre-existing extra field");
           }
-          dbFieldOpt.get().setDeleted(true);
+          ExtraField dbField = dbFieldOpt.get();
+          softDeleteLinkIfPresent(dbField, user);
+          dbField.setDeleted(true);
           changed = true;
         }
       }
@@ -148,6 +150,26 @@ public class ApiExtraFieldsHelper implements Validator {
       parentInvRec.refreshActiveExtraFields();
     }
     return changed;
+  }
+
+  /**
+   * Soft-deletes the {@link InventoryLink} backing a Link extra-field when that field is itself
+   * being soft-deleted, so the link row (and its Envers audit trail) stays in step with the field.
+   * A field soft-delete only flips the field's {@code deleted} flag: being an ordinary update
+   * rather than a JPA remove it does not trigger the {@code cascade}/{@code orphanRemoval} on
+   * {@code ExtraLinkField#link}, and it never dereferences the link. Without this the link row
+   * would linger with {@code deleted=false} after its parent field is gone. Mirrors the
+   * structured-link-field clear path in {@code SampleApiManagerImpl#applyLinkFieldValue}, which
+   * also soft-deletes through the manager. No-op for non-link fields or a link field that has no
+   * link yet.
+   */
+  private void softDeleteLinkIfPresent(ExtraField dbField, User user) {
+    if (dbField instanceof ExtraLinkField) {
+      InventoryLink link = ((ExtraLinkField) dbField).getLink();
+      if (link != null) {
+        inventoryLinkManager.deleteLink(link, user);
+      }
+    }
   }
 
   /**

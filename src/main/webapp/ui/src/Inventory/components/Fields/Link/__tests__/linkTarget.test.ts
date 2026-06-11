@@ -33,6 +33,17 @@ describe("validateTarget", () => {
     expect(validateTarget("SA1", "SA1").ok).toBe(false);
     expect(validateTarget("SA1v3", "SA1").ok).toBe(false);
   });
+
+  test("rejects manually-typed version suffixes: versions are pinned via the clock", () => {
+    const inventory = validateTarget("SA6v1", "SA1");
+    expect(inventory.ok).toBe(false);
+    expect(inventory.reason).toMatch(/clock/i);
+    const eln = validateTarget("SD7v2", "SA1");
+    expect(eln.ok).toBe(false);
+    expect(eln.reason).toMatch(/clock/i);
+    // the base id without a suffix remains valid
+    expect(validateTarget("SA6", "SA1").ok).toBe(true);
+  });
 });
 
 describe("isSelfLink", () => {

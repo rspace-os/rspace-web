@@ -23,6 +23,41 @@ describe("LinkedDocuments", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
+  test("fetches a template's back-references via the generic referencingItems endpoint", async () => {
+    // there is no typed /sampleTemplates/{id}/referencingItems endpoint, so
+    // IT targets use the generic /referencingItems/{globalId} route
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (String(url).startsWith("referencingItems/")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA1",
+                sourceName: "A sample",
+                sourceType: "SAMPLE",
+                relationType: "References",
+                versionPin: null,
+              },
+            ],
+          },
+        } as AxiosResponse);
+      }
+      return Promise.resolve({ data: [] } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="IT5" />
+      </ThemeProvider>
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show Linked Documents" })
+    );
+
+    expect(await screen.findByText("A sample")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IT5");
+    expect(spy).toHaveBeenCalledWith("referencingItems/IT5");
+  });
+
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi
       .spyOn(InvApiService, "get")
@@ -77,14 +112,16 @@ describe("LinkedDocuments", () => {
 
     ).toHaveLength(3);
     expect(
-      // @ts-ignore findTableCell exists in the customized within function
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
       })
     ).toHaveTextContent("Foo");
     expect(
-      // @ts-ignore findTableCell exists in the customized within function
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 1,
@@ -122,7 +159,8 @@ describe("LinkedDocuments", () => {
 
     expect(rows).toHaveLength(2);
     expect(
-      // @ts-ignore findTableCell exists in the customized within function
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,

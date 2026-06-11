@@ -494,6 +494,29 @@ describe("UpdateField — Field Type select includes Link", () => {
     expect(vi.mocked(setInvalidInput)).toHaveBeenLastCalledWith(false);
   });
 
+  it("rejects a typed version suffix and points the user at the clock", async () => {
+    const extraField = makeExtraField();
+    const record = makeRecord();
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+
+    await user.type(screen.getByRole("textbox", { name: /field name/i }), "Pinned link");
+    await selectFieldType("Link");
+    await user.type(screen.getByRole("combobox", { name: /relation type/i }), "References");
+    await user.type(screen.getByRole("textbox", { name: /target global id/i }), "SA6v1");
+
+    expect(
+      screen.getByText(/without a version.*clock/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /update field/i }),
+    ).toBeDisabled();
+  });
+
   it("disables Apply when self-link is selected", async () => {
     const extraField = makeExtraField();
     const record = makeRecord();

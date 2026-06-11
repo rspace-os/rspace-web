@@ -5,6 +5,7 @@ import Stack from "@mui/material/Stack";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import MenuList from "@mui/material/MenuList";
 import Paper from "@mui/material/Paper";
 import { FIELD_DATA, type FieldType } from "@/stores/models/FieldTypes";
 import { Observer } from "mobx-react-lite";
@@ -50,7 +51,12 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
             menuItem
           ) : (
             <Box sx={{ height: 72 }}>
-              <Paper>{menuItem}</Paper>
+              {/* MUI 9 MenuItems require a Menu/MenuList ancestor; the
+                  closed-state trigger renders outside the Menu, so it brings
+                  its own MenuList */}
+              <Paper>
+                <MenuList disablePadding>{menuItem}</MenuList>
+              </Paper>
             </Box>
           )
         }
