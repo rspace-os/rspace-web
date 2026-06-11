@@ -18,7 +18,7 @@ import {
 import { getLinkedByRecords } from "@/modules/workspace/linkedRecords";
 import { getPublicLink } from "@/modules/workspace/publicLink";
 import { getStructuredDocumentPreviewHtml } from "@/modules/workspace/documentPreview";
-import useReferencingInventoryItems from "@/eln/gallery/useReferencingInventoryItems";
+import RelatedInventoryItems from "./RelatedInventoryItems";
 
 export interface DocumentSectionsProps {
   info: WorkspaceRecordInformation;
@@ -173,51 +173,6 @@ function LinkedByDocs({
           </li>
         ))}
       </Box>
-    </Box>
-  );
-}
-
-/** The "Related inventory items" section: Inventory items linking TO this record. */
-function RelatedInventoryItems({
-  globalId,
-  recordTypeName,
-}: {
-  globalId: string;
-  recordTypeName: string;
-}): React.ReactElement {
-  const { items, loading, errorMessage } = useReferencingInventoryItems(
-    globalId,
-  );
-
-  return (
-    <Box sx={{ mt: 1 }}>
-      <Typography variant="subtitle2">Related inventory items</Typography>
-      {loading && <Typography variant="body2">Loading…</Typography>}
-      {errorMessage && (
-        <Typography variant="body2" color="error">
-          {errorMessage}
-        </Typography>
-      )}
-      {!loading && !errorMessage && items.length === 0 && (
-        <Typography variant="body2">
-          No Inventory items link to this {recordTypeName}.
-        </Typography>
-      )}
-      {items.length > 0 && (
-        <Box component="ul" sx={{ pl: 3, my: 0.5 }}>
-          {items.map((item) => (
-            <li key={item.globalId}>
-              <GlobalIdLink globalId={item.globalId} />: {item.name}
-              {item.relationType ? (
-                <Typography variant="caption" component="em">
-                  {" "}
-                  ({item.relationType})
-                </Typography>
-              ) : null}
-            </li>
-          ))}
-        </Box>
-      )}
     </Box>
   );
 }

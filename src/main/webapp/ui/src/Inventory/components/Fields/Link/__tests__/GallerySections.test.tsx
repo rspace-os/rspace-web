@@ -8,6 +8,7 @@ import { type WorkspaceRecordInformation } from "@/modules/workspace/schema";
 
 const getLinkedDocuments = vi.fn();
 const uploadNewGalleryVersion = vi.fn();
+const useReferencingInventoryItems = vi.fn();
 
 vi.mock("@/modules/workspace/linkedRecords", () => ({
   getLinkedDocuments: (...args: Array<unknown>) =>
@@ -16,6 +17,10 @@ vi.mock("@/modules/workspace/linkedRecords", () => ({
 vi.mock("@/modules/workspace/galleryUpload", () => ({
   uploadNewGalleryVersion: (...args: Array<unknown>) =>
     uploadNewGalleryVersion(...args) as unknown,
+}));
+vi.mock("@/eln/gallery/useReferencingInventoryItems", () => ({
+  default: (...args: Array<unknown>) =>
+    useReferencingInventoryItems(...args) as unknown,
 }));
 
 import GallerySections from "../GallerySections";
@@ -40,8 +45,14 @@ const imageInfo: WorkspaceRecordInformation = {
 beforeEach(() => {
   getLinkedDocuments.mockReset();
   uploadNewGalleryVersion.mockReset();
+  useReferencingInventoryItems.mockReset();
   getLinkedDocuments.mockResolvedValue({ readable: [], privateByOwner: [] });
   uploadNewGalleryVersion.mockResolvedValue(imageInfo);
+  useReferencingInventoryItems.mockReturnValue({
+    items: [],
+    loading: false,
+    errorMessage: null,
+  });
 });
 
 afterEach(cleanup);
@@ -97,6 +108,57 @@ describe("GallerySections", () => {
       "href",
       "/globalId/SD7",
     );
+  });
+
+  it("hides the related inventory items until 'Show linked docs' is clicked", () => {
+    renderGallery();
+    expect(
+      screen.queryByText("Related inventory items"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the Inventory items that link to this file on 'Show linked docs'", async () => {
+    // the Gallery's own info panel shows these back-references; this dialog must
+    // too, since the ELN linked-docs lookup does not cover inventory links
+    useReferencingInventoryItems.mockReturnValue({
+      items: [
+        {
+          globalId: "SA42",
+          name: "My sample",
+          type: "SAMPLE",
+          relationType: "References",
+          permalinkHref: "/globalId/SA42",
+          linkableRecord: {},
+        },
+      ],
+      loading: false,
+      errorMessage: null,
+    });
+    const user = userEvent.setup();
+    renderGallery();
+
+    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+
+    expect(useReferencingInventoryItems).toHaveBeenCalledWith("GL21");
+    expect(
+      await screen.findByText("Related inventory items"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /SA42/ })).toHaveAttribute(
+      "href",
+      "/globalId/SA42",
+    );
+    expect(screen.getByText(/\(References\)/)).toBeInTheDocument();
+  });
+
+  it("shows an empty message when no Inventory items link to this file", async () => {
+    const user = userEvent.setup();
+    renderGallery();
+
+    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+
+    expect(
+      await screen.findByText(/no inventory items link to this file/i),
+    ).toBeInTheDocument();
   });
 
   it("shows the upload-new-version control when the file is editable (VIEW_MODE)", () => {

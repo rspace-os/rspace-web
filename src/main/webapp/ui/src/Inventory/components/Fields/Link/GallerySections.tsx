@@ -14,6 +14,7 @@ import {
 import { getLinkedDocuments } from "@/modules/workspace/linkedRecords";
 import { uploadNewGalleryVersion } from "@/modules/workspace/galleryUpload";
 import { formatFileSize } from "@/util/files";
+import RelatedInventoryItems from "./RelatedInventoryItems";
 
 export interface GallerySectionsProps {
   info: WorkspaceRecordInformation;
@@ -80,6 +81,9 @@ export default function GallerySections({
 
   const [linked, setLinked] = useState<LinkedRecords | null>(null);
   const [linkedLoading, setLinkedLoading] = useState(false);
+  // Mounting RelatedInventoryItems triggers its fetch, so deferring the mount
+  // until the user asks for linked docs keeps the dialog itself lazy.
+  const [showRelatedInventory, setShowRelatedInventory] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +97,7 @@ export default function GallerySections({
     : `/Streamfile/${info.id}`;
 
   function handleShowLinkedDocs(): void {
+    setShowRelatedInventory(true);
     setLinkedLoading(true);
     void getLinkedDocuments(info.id)
       .then(setLinked)
@@ -243,6 +248,13 @@ export default function GallerySections({
             </>
           )}
         </Box>
+      ) : null}
+
+      {showRelatedInventory ? (
+        <RelatedInventoryItems
+          globalId={info.oid.idString}
+          recordTypeName="file"
+        />
       ) : null}
     </Box>
   );
