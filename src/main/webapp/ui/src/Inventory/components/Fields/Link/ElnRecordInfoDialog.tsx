@@ -16,7 +16,7 @@ import { iconForGlobalId, prefixOf, openUrlForTarget } from "./iconForGlobalId";
 import DocumentSections from "./DocumentSections";
 import GallerySections from "./GallerySections";
 
-export interface EnElnRecordInfoDialogProps {
+export interface ElnRecordInfoDialogProps {
   open: boolean;
   globalId: string;
   /**
@@ -140,8 +140,8 @@ function DialogBody({
  * wrapped in a `QueryClientProvider`), a Suspense boundary for the suspense query, and
  * a local error boundary that shows an inline "not available" message on failure.
  */
-export default function EnElnRecordInfoDialog(
-  props: EnElnRecordInfoDialogProps,
+export default function ElnRecordInfoDialog(
+  props: ElnRecordInfoDialogProps,
 ): React.ReactElement | null {
   // One client per dialog instance keeps cache lifetime tied to the dialog.
   const [queryClient] = useState(() => new QueryClient());

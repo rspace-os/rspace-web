@@ -134,6 +134,39 @@ class ApiExtraFieldsHelperLinkUpdateTest {
   }
 
   @Test
+  void selfLinkViaUpdatePathIsRejected() {
+    // the controller-layer validator can be bypassed by omitting "type", so
+    // the service-layer apply must enforce no-self-links itself
+    ExtraLinkField selfField = org.mockito.Mockito.mock(ExtraLinkField.class);
+    org.mockito.Mockito.lenient().when(selfField.getId()).thenReturn(5L);
+    org.mockito.Mockito.lenient().when(selfField.getLink()).thenReturn(dbLink);
+    org.mockito.Mockito.lenient()
+        .when(selfField.getConnectedRecordGlobalIdentifier())
+        .thenReturn("SA9");
+    ApiExtraField apiField = incomingLinkField(5L, "SA9", null);
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        com.researchspace.api.v1.auth.ApiRuntimeException.class,
+        () -> helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(selfField), user));
+    verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
+    verify(inventoryLinkManager, never()).createLink(any(), any());
+  }
+
+  @Test
+  void suffixPinnedTargetEqualToStoredPinIsNotASpuriousUpdate() {
+    // a raw client may pin via the "vN" suffix with versionPin null; that is
+    // the same link as base-target + stored pin and must not churn the row
+    dbLink.setVersionPin(4L);
+    ApiExtraField apiField = incomingLinkField(5L, "SA2v4", null);
+
+    boolean changed =
+        helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user);
+
+    assertFalse(changed);
+    verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
+  }
+
+  @Test
   void emptyIncomingListIsANoop() {
     assertFalse(
         helper.applyExistingLinkFieldChanges(Collections.emptyList(), List.of(dbField), user));

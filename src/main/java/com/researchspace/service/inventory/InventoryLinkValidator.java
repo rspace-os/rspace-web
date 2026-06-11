@@ -17,6 +17,27 @@ import org.springframework.validation.Errors;
  */
 public class InventoryLinkValidator {
 
+  /**
+   * True when the prefix is a kind that links may target (shared with the manager's write-path
+   * validation).
+   */
+  public static boolean isAllowedTargetPrefix(GlobalIdPrefix prefix) {
+    return prefix != null && ALLOWED_TARGET_PREFIXES.contains(prefix);
+  }
+
+  /** True when target points at the same record as sourceGlobalId (version suffixes ignored). */
+  public static boolean isSelfLink(GlobalIdentifier target, String sourceGlobalId) {
+    if (StringUtils.isBlank(sourceGlobalId) || target == null) {
+      return false;
+    }
+    try {
+      GlobalIdentifier source = new GlobalIdentifier(sourceGlobalId);
+      return source.getPrefix() == target.getPrefix() && source.getDbId().equals(target.getDbId());
+    } catch (IllegalArgumentException ex) {
+      return false;
+    }
+  }
+
   private static final Set<GlobalIdPrefix> ALLOWED_TARGET_PREFIXES =
       EnumSet.of(
           GlobalIdPrefix.SA,
@@ -89,18 +110,6 @@ public class InventoryLinkValidator {
           "errors.inventory.field.link.selfLinkForbidden",
           new Object[] {target},
           "link target cannot equal its source item");
-    }
-  }
-
-  private boolean isSelfLink(GlobalIdentifier target, String sourceGlobalId) {
-    if (StringUtils.isBlank(sourceGlobalId)) {
-      return false;
-    }
-    try {
-      GlobalIdentifier source = new GlobalIdentifier(sourceGlobalId);
-      return source.getPrefix() == target.getPrefix() && source.getDbId().equals(target.getDbId());
-    } catch (IllegalArgumentException ex) {
-      return false;
     }
   }
 }

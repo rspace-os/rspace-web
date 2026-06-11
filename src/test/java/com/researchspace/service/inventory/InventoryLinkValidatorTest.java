@@ -14,6 +14,18 @@ class InventoryLinkValidatorTest {
   private final InventoryLinkValidator validator = new InventoryLinkValidator();
 
   @Test
+  void blankTargetIsRejectedAsNotFound() {
+    ApiInventoryLink link = buildLink("References", "   ");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA1", errors);
+
+    assertTrue(errors.hasFieldErrors("targetGlobalId"));
+    assertEquals(
+        "errors.inventory.field.link.targetNotFound",
+        errors.getFieldError("targetGlobalId").getCode());
+  }
+
+  @Test
   void rejectsUnknownRelationType() {
     ApiInventoryLink link = buildLink("MadeUpRelation", "SA1");
     Errors errors = errorsFor(link);

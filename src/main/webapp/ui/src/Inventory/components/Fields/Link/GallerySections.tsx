@@ -64,7 +64,7 @@ function GlobalIdLink({
 }
 
 /**
- * Gallery-file body for {@link EnElnRecordInfoDialog}. Mirrors the ELN
+ * Gallery-file body for {@link ElnRecordInfoDialog}. Mirrors the ELN
  * `#recordInfoDialog` for GL targets: the core metadata table, an image thumbnail
  * preview, and the Download / Show-linked-docs / Upload-new-version actions.
  */
@@ -101,6 +101,8 @@ export default function GallerySections({
     setLinkedLoading(true);
     void getLinkedDocuments(info.id)
       .then(setLinked)
+      // degrade to the empty state rather than an unhandled rejection
+      .catch(() => setLinked({ readable: [], privateByOwner: [] }))
       .finally(() => setLinkedLoading(false));
   }
 

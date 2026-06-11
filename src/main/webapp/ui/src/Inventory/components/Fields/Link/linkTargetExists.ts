@@ -1,14 +1,6 @@
 import ApiService from "../../../../common/InvApiService";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
-import { GLOBAL_ID_PATTERN } from "./linkTarget";
-
-const INVENTORY_PREFIX_TO_PATH: Record<string, string> = {
-  SA: "samples",
-  SS: "subSamples",
-  IC: "containers",
-  IN: "instruments",
-  IT: "sampleTemplates",
-};
+import { GLOBAL_ID_PATTERN, INVENTORY_PREFIX_TO_API_PATH } from "./linkTarget";
 
 const ELN_PREFIXES = new Set(["SD", "NB", "GL"]);
 
@@ -34,7 +26,7 @@ export async function checkLinkTargetExists(
   if (!parsed) return false;
   const [, prefix, dbId] = parsed;
   try {
-    const inventoryPath = INVENTORY_PREFIX_TO_PATH[prefix];
+    const inventoryPath = INVENTORY_PREFIX_TO_API_PATH[prefix];
     if (inventoryPath) {
       const { data } = await ApiService.get<{ permittedActions?: unknown }>(
         `${inventoryPath}/${dbId}`,

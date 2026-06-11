@@ -26,14 +26,10 @@ export interface InventoryInfoDialogProps {
   onClose: () => void;
 }
 
-const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v\d+)?$/;
-const PREFIX_TO_PATH: Record<string, string> = {
-  SA: "samples",
-  SS: "subSamples",
-  IC: "containers",
-  IN: "instruments",
-  IT: "sampleTemplates",
-};
+import {
+  GLOBAL_ID_PATTERN,
+  INVENTORY_PREFIX_TO_API_PATH,
+} from "./linkTarget";
 
 function recordEndpoint(
   globalId: string,
@@ -41,7 +37,7 @@ function recordEndpoint(
 ): string | null {
   const match = GLOBAL_ID_PATTERN.exec(globalId);
   if (!match) return null;
-  const segment = PREFIX_TO_PATH[match[1]];
+  const segment = INVENTORY_PREFIX_TO_API_PATH[match[1]];
   if (!segment) return null;
   const base = `${segment}/${match[2]}`;
   return versionPin == null ? base : `${base}/versions/${versionPin}`;

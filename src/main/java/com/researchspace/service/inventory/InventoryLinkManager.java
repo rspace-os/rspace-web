@@ -37,9 +37,10 @@ public interface InventoryLinkManager {
   /**
    * Resolves the audit-backed summary of a link's target (globalId, name, type, deleted) for
    * display, applying read permission. A "latest" link (no stored revision) resolves to the newest
-   * revision; a pinned link resolves to its stored {@code targetRevisionId}. This is the
-   * service-layer entry point the read/serialization path uses to populate {@link
-   * ApiInventoryLink#getTargetSummary()}.
+   * revision; a pinned link resolves to its stored {@code targetRevisionId}. NOTE: not yet wired
+   * into any production read path; intended as the service-layer entry point for a future
+   * serialization pass that populates {@link ApiInventoryLink#getTargetSummary()} (needed by the
+   * frontend's target-deleted badge and target-name display).
    */
   ApiInventoryLinkTargetSummary getTargetSummary(InventoryLink link, User actor);
 }

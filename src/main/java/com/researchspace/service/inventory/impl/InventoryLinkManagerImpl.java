@@ -10,7 +10,10 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryLinkManager;
+import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
@@ -29,6 +32,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
+    validateForWrite(apiLink);
     assertTargetExistsAndReadable(apiLink, actor);
     InventoryLink entity = new InventoryLink();
     applyApiToEntity(apiLink, entity);
@@ -37,6 +41,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
+    validateForWrite(apiLink);
     assertTargetExistsAndReadable(apiLink, actor);
     applyApiToEntity(apiLink, existing);
     return linkDao.save(existing);
@@ -64,33 +69,40 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     if (!linkTargetResolver.targetExistsAndIsReadable(target, actor)) {
       throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
     }
-    List<ExtraLinkField> fields =
-        linkDao.findReferencingLinkFields(target.getPrefix(), target.getDbId());
-    List<ApiInventoryReferencingItem> rows = new ArrayList<>(fields.size());
-    for (ExtraLinkField field : fields) {
-      InventoryRecord parent = field.getInventoryRecord();
-      if (parent == null) {
-        continue;
-      }
-      InventoryLink link = field.getLink();
-      if (link == null) {
-        continue;
-      }
-      if (!permissionUtils.canUserReadInventoryRecord(parent, actor)) {
-        continue;
-      }
-      ApiInventoryReferencingItem row = new ApiInventoryReferencingItem();
-      row.setSourceGlobalId(parent.getOid().toString());
-      row.setSourceName(parent.getName());
-      row.setSourceType(parent.getType().toString());
-      row.setRelationType(link.getRelationType());
-      row.setVersionPin(link.getVersionPin());
-      if (link.getModifiedAt() != null) {
-        row.setModifiedAtMillis(link.getModifiedAt().getTime());
-      }
-      rows.add(row);
+    List<ApiInventoryReferencingItem> rows = new ArrayList<>();
+    for (ExtraLinkField field :
+        linkDao.findReferencingLinkFields(target.getPrefix(), target.getDbId())) {
+      addRowIfReadable(rows, field.getInventoryRecord(), field.getLink(), actor);
+    }
+    // template-defined structured link fields are first-class links too
+    for (InventoryLinkField field :
+        linkDao.findReferencingStructuredLinkFields(target.getPrefix(), target.getDbId())) {
+      addRowIfReadable(rows, field.getInventoryRecord(), field.getLink(), actor);
     }
     return rows;
+  }
+
+  private void addRowIfReadable(
+      List<ApiInventoryReferencingItem> rows,
+      InventoryRecord parent,
+      InventoryLink link,
+      User actor) {
+    if (parent == null || link == null || parent.isDeleted()) {
+      return;
+    }
+    if (!permissionUtils.canUserReadInventoryRecord(parent, actor)) {
+      return;
+    }
+    ApiInventoryReferencingItem row = new ApiInventoryReferencingItem();
+    row.setSourceGlobalId(parent.getOid().toString());
+    row.setSourceName(parent.getName());
+    row.setSourceType(parent.getType().toString());
+    row.setRelationType(link.getRelationType());
+    row.setVersionPin(link.getVersionPin());
+    if (link.getModifiedAt() != null) {
+      row.setModifiedAtMillis(link.getModifiedAt().getTime());
+    }
+    rows.add(row);
   }
 
   @Override
@@ -108,6 +120,32 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
    * targets, Inventory and ELN alike. The version suffix (if any) is ignored: only the base record
    * needs to exist and be readable.
    */
+  /**
+   * Structural validation of an incoming link payload, mirroring {@link InventoryLinkValidator}.
+   * The controller-layer validator can be bypassed (an extra-field update payload that omits {@code
+   * type} skips the LINK validation branch, and structured sample fields never run it), so the
+   * manager enforces the same rules at the single write path: a parseable target id, an allowed
+   * target kind, and a DataCite relation type. Failures map to 422 with the same bundle keys the
+   * validator uses.
+   */
+  private void validateForWrite(ApiInventoryLink apiLink) {
+    GlobalIdentifier gid;
+    try {
+      gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.targetNotFound", apiLink.getTargetGlobalId());
+    }
+    if (!InventoryLinkValidator.isAllowedTargetPrefix(gid.getPrefix())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.targetKindUnsupported", gid.getPrefix().name());
+    }
+    if (!DataCiteRelationType.isValid(apiLink.getRelationType())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.relationTypeInvalid", apiLink.getRelationType());
+    }
+  }
+
   private void assertTargetExistsAndReadable(ApiInventoryLink apiLink, User actor) {
     GlobalIdentifier gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
     if (!linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {

@@ -146,6 +146,8 @@ function LinkedByDocs({
             setLoading(true);
             void getLinkedByRecords(info.id)
               .then(setLinked)
+              // degrade to the empty state rather than an unhandled rejection
+              .catch(() => setLinked({ readable: [], privateByOwner: [] }))
               .finally(() => setLoading(false));
           }}
         >
@@ -195,6 +197,9 @@ function SharingAndPublication({
       .then((link) => {
         if (active) setPublicLink(link);
       })
+      // no public link is the normal case for most records; treat a lookup
+      // failure the same rather than leaving an unhandled rejection
+      .catch(() => {})
       .finally(() => {
         if (active) setPublicChecked(true);
       });
@@ -356,7 +361,7 @@ function DocumentPreview({
 }
 
 /**
- * Document/notebook body for {@link EnElnRecordInfoDialog}. Mirrors the ELN
+ * Document/notebook body for {@link ElnRecordInfoDialog}. Mirrors the ELN
  * `#recordInfoDialog` for SD/NB targets: the core metadata table, the three link groups
  * (self / linked-by / forms+template), related inventory items, sharing + publication,
  * and (SD only) the scaled HTML preview.

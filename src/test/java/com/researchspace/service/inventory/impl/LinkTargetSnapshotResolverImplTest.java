@@ -85,6 +85,29 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
+  void resolveSummaryDegradesToGlobalIdOnlyWhenNoAuditSnapshotExists() {
+    // old databases may hold links whose audit rows were purged; the summary
+    // must degrade to the globalId rather than NPE on the missing snapshot
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals("SA10", summary.getGlobalId());
+    assertNull(summary.getName());
+  }
+
+  @Test
+  void resolveSummaryDegradesToGlobalIdOnlyForUnsupportedPrefix() {
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.FL, 7L, null, null, user);
+
+    assertEquals("FL7", summary.getGlobalId());
+    assertNull(summary.getName());
+    verify(auditManager, never()).getNewestRevisionForEntity(any(), any());
+  }
+
+  @Test
   void resolveSummaryLoadsPinnedRevisionAndBuildsVersionedSummary() {
     Sample rec = mock(Sample.class);
     when(rec.getName()).thenReturn("Buffer");

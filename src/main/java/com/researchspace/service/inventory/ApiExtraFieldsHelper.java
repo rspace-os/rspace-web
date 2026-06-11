@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
@@ -7,6 +8,7 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -127,17 +129,13 @@ public class ApiExtraFieldsHelper implements Validator {
         }
         if (apiField.isDeleteFieldRequest()) {
           if (apiField.getId() == null) {
-            throw new IllegalArgumentException(
-                "'id' property not provided "
-                    + "for an extra field with 'deleteFieldRequest' flag");
+            throw new ApiRuntimeException("errors.inventory.field.deleteRequest.idMissing");
           }
           Optional<ExtraField> dbFieldOpt =
               dbFields.stream().filter(sf -> apiField.getId().equals(sf.getId())).findFirst();
           if (!dbFieldOpt.isPresent()) {
-            throw new IllegalArgumentException(
-                "Extra field id: "
-                    + apiField.getId()
-                    + " doesn't match id of any pre-existing extra field");
+            throw new ApiRuntimeException(
+                "errors.inventory.field.deleteRequest.idUnknown", apiField.getId());
           }
           ExtraField dbField = dbFieldOpt.get();
           softDeleteLinkIfPresent(dbField, user);
@@ -158,10 +156,11 @@ public class ApiExtraFieldsHelper implements Validator {
    * A field soft-delete only flips the field's {@code deleted} flag: being an ordinary update
    * rather than a JPA remove it does not trigger the {@code cascade}/{@code orphanRemoval} on
    * {@code ExtraLinkField#link}, and it never dereferences the link. Without this the link row
-   * would linger with {@code deleted=false} after its parent field is gone. Mirrors the
-   * structured-link-field clear path in {@code SampleApiManagerImpl#applyLinkFieldValue}, which
-   * also soft-deletes through the manager. No-op for non-link fields or a link field that has no
-   * link yet.
+   * would linger with {@code deleted=false} after its parent field is gone. (The
+   * structured-link-field clear path differs deliberately: clearing a value dereferences the row,
+   * which the orphanRemoval mapping hard-deletes at flush; see {@code
+   * SampleApiManagerImpl#applyLinkFieldValue}.) No-op for non-link fields or a link field that has
+   * no link yet.
    */
   private void softDeleteLinkIfPresent(ExtraField dbField, User user) {
     if (dbField instanceof ExtraLinkField) {
@@ -203,17 +202,56 @@ public class ApiExtraFieldsHelper implements Validator {
         continue;
       }
       ExtraLinkField dbLinkField = (ExtraLinkField) dbFieldOpt.get();
+      // the controller-layer validator is skipped when the payload omits "type",
+      // so the self-link rule must also hold on this service-layer path
+      rejectSelfLink(apiLink, dbLinkField);
       InventoryLink dbLink = dbLinkField.getLink();
       if (dbLink == null) {
         dbLinkField.setLink(inventoryLinkManager.createLink(apiLink, user));
         changed = true;
-      } else if (!apiLink.getTargetGlobalId().equals(dbLink.getTargetGlobalId())
-          || !Objects.equals(apiLink.getVersionPin(), dbLink.getVersionPin())) {
+      } else if (linkChanged(apiLink, dbLink)) {
         inventoryLinkManager.updateLink(dbLink, apiLink, user);
         changed = true;
       }
     }
     return changed;
+  }
+
+  private void rejectSelfLink(ApiInventoryLink apiLink, ExtraLinkField dbLinkField) {
+    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (target != null
+        && InventoryLinkValidator.isSelfLink(
+            target, dbLinkField.getConnectedRecordGlobalIdentifier())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
+    }
+  }
+
+  /**
+   * True when the incoming payload points at a different target or version than the stored link.
+   * Compared on the parsed base id plus the effective pin (a "vN" suffix counts as a pin), so a
+   * client that pins via the suffix with {@code versionPin: null} does not churn an unchanged row
+   * with spurious updates. An unparseable incoming id counts as changed so the manager rejects it
+   * with its clean validation error.
+   */
+  private boolean linkChanged(ApiInventoryLink apiLink, InventoryLink dbLink) {
+    GlobalIdentifier incoming = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (incoming == null) {
+      return true;
+    }
+    Long effectivePin =
+        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
+    return incoming.getPrefix() != dbLink.getTargetPrefix()
+        || !Objects.equals(incoming.getDbId(), dbLink.getTargetDbId())
+        || !Objects.equals(effectivePin, dbLink.getVersionPin());
+  }
+
+  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
+    try {
+      return new GlobalIdentifier(targetGlobalId);
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      return null;
+    }
   }
 
   private void addRecordExtraFieldForIncomingApiField(

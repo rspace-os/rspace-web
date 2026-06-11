@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
+import Tooltip from "@mui/material/Tooltip";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -19,7 +19,7 @@ import {
   supportsVersionPin,
 } from "./iconForGlobalId";
 import InventoryInfoDialog from "./InventoryInfoDialog";
-import EnElnRecordInfoDialog from "./EnElnRecordInfoDialog";
+import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
 
 // Read-only versioned viewer route added in RSDEV-1141 (matches MoreInfoSidebar/VersionHistory's
 // `/inventory/{recordType}/{id}?version=N`). Keyed by inventory Global ID prefix.
@@ -38,7 +38,6 @@ export interface LinkFieldProps {
   targetDeleted: boolean;
   /** When false, the edit affordance is hidden. */
   editable: boolean;
-  onPeek: () => void;
   onOpen: () => void;
   onEdit: () => void;
 }
@@ -67,9 +66,11 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
     props.onOpen();
   };
   return (
-    <Card variant="outlined" aria-label={`Link field ${props.name}`}>
-      <CardActionArea onClick={props.onPeek}>
-        <CardContent>
+    <Card
+      variant="outlined"
+      aria-label={props.name ? `Link field ${props.name}` : "Link field"}
+    >
+      <CardContent>
           <Box
             sx={{
               display: "flex",
@@ -113,24 +114,26 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             <IconButton
               size="small"
               aria-label={`Show info for ${props.link.targetGlobalId}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setInfoOpen(true);
-              }}
+              onClick={() => setInfoOpen(true)}
             >
               <InfoOutlinedIcon fontSize="small" />
             </IconButton>
             {props.editable && supportsVersionPin(props.link.targetGlobalId) && (
               // a disabled affordance only: like the other link properties,
               // the pin is changed in the link editor (Edit) and committed
-              // with Update, not directly from the view card
-              <IconButton
-                size="small"
-                aria-label={`Pin version for ${props.link.targetGlobalId}`}
-                disabled
-              >
-                <HistoryIcon fontSize="small" />
-              </IconButton>
+              // with Update, not directly from the view card. The tooltip
+              // wrapper says so, since a disabled button cannot.
+              <Tooltip title="Edit the link to change the pinned version">
+                <span>
+                  <IconButton
+                    size="small"
+                    aria-label={`Pin version for ${props.link.targetGlobalId}`}
+                    disabled
+                  >
+                    <HistoryIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             )}
             <Chip
               size="small"
@@ -150,12 +153,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               <Button
                 size="small"
                 startIcon={<OpenInNewIcon />}
-                onClick={(e) => {
-                  // sits inside the clickable card body, so Open must not
-                  // also trigger the peek
-                  e.stopPropagation();
-                  handleOpen();
-                }}
+                onClick={handleOpen}
                 aria-label="Open"
               >
                 Open
@@ -165,20 +163,14 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               <Button
                 size="small"
                 startIcon={<EditIcon />}
-                onClick={(e) => {
-                  // sits inside the clickable card body, so Edit must not
-                  // also trigger the peek
-                  e.stopPropagation();
-                  props.onEdit();
-                }}
+                onClick={props.onEdit}
                 aria-label="Edit link"
               >
                 Edit
               </Button>
             )}
           </Box>
-        </CardContent>
-      </CardActionArea>
+      </CardContent>
       {targetIsInventory ? (
         <InventoryInfoDialog
           open={infoOpen}
@@ -187,7 +179,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           onClose={() => setInfoOpen(false)}
         />
       ) : (
-        <EnElnRecordInfoDialog
+        <ElnRecordInfoDialog
           open={infoOpen}
           globalId={props.link.targetGlobalId}
           versionPin={props.link.versionPin}

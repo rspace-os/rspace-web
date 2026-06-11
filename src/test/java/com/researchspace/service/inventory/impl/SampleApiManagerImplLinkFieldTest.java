@@ -120,15 +120,53 @@ class SampleApiManagerImplLinkFieldTest {
   }
 
   @Test
-  void clearingTheValueSoftDeletesTheOldRowThroughTheManager() {
+  void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
-    // no link payload at all: the field's value is being cleared
-
+    // no link payload at all: the field's value is being cleared. The field's
+    // orphanRemoval mapping hard-deletes the dereferenced row at flush (with a
+    // DEL revision in InventoryLink_AUD); an extra soft-delete write would be
+    // collapsed away by Envers and is deliberately not attempted.
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
 
     assertTrue(changed);
     assertNull(dbField.getLink());
-    verify(inventoryLinkManager).deleteLink(dbLink, user);
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void invalidRelationTypeIsRejectedWithCleanError() {
+    ApiInventoryEntityField apiField = apiLinkField("SA3", "NotARelation", null);
+
+    com.researchspace.api.v1.auth.ApiRuntimeException ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.researchspace.api.v1.auth.ApiRuntimeException.class,
+            () -> manager.applyLinkFieldValue(dbField, apiField, user));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        "errors.inventory.field.link.relationTypeInvalid", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void relationOutsideTemplateWhitelistIsRejected() {
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+    ApiInventoryEntityField apiField = apiLinkField("SA3", "Cites", null);
+
+    com.researchspace.api.v1.auth.ApiRuntimeException ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.researchspace.api.v1.auth.ApiRuntimeException.class,
+            () -> manager.applyLinkFieldValue(dbField, apiField, user));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        "errors.inventory.field.link.relationTypeNotPermitted", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void relationInsideTemplateWhitelistIsAccepted() {
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+    ApiInventoryEntityField apiField = apiLinkField("SA3", "IsPartOf", null);
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
   }
 
   @Test

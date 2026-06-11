@@ -54,6 +54,31 @@ describe("useReferencingInventoryItems", () => {
     expect(row.linkableRecord.permalinkURL).toBe("/globalId/SA1");
   });
 
+  it("renders a row whose relationType is missing rather than dropping it", async () => {
+    // the relation column is nullable on the server; the legacy panel renders
+    // such rows with a blank relation and this hook must agree
+    mockAxiosGet.mockResolvedValue({
+      data: {
+        referencingItems: [
+          {
+            sourceGlobalId: "SA2",
+            sourceName: "No relation",
+            sourceType: "SAMPLE",
+            versionPin: null,
+            modifiedAt: null,
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useReferencingInventoryItems("GL5"));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].globalId).toBe("SA2");
+    expect(result.current.items[0].relationType).toBe("");
+  });
+
   it("does not call the endpoint and reports empty when given a null global id", async () => {
     const { result } = renderHook(() => useReferencingInventoryItems(null));
 

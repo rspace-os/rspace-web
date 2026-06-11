@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
@@ -23,6 +24,7 @@ import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
@@ -45,6 +47,7 @@ import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryLinkManager;
+import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -61,8 +64,6 @@ import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service("sampleApiManager")
@@ -77,7 +78,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired InventoryLinkManager inventoryLinkManager;
-  private @Autowired MessageSource messageSource;
 
   @Override
   public ApiSampleSearchResult getSamplesForUser(
@@ -347,9 +347,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
    * InventoryLinkManager} so the target is parsed/validated and the Envers revision captured (the
    * same path used by extra-field links). An unchanged payload is a no-op (previously every save
    * replaced the row, resetting its identity and creation date); a changed payload updates the
-   * field's existing InventoryLink row in place; clearing the value soft-deletes the old row
-   * through the manager before dereferencing it (the field's orphanRemoval mapping then removes the
-   * dereferenced row at flush). The chosen relation type must be permitted by the template field's
+   * field's existing InventoryLink row in place; clearing the value dereferences the row, which the
+   * field's {@code orphanRemoval} mapping hard-deletes at flush (an Envers DEL revision keeps the
+   * history in {@code InventoryLink_AUD}; a prior soft-delete write would be collapsed into that
+   * same DEL revision, so none is attempted). This differs deliberately from the extra-field delete
+   * path, where the FIELD itself is soft-deleted and its link row therefore survives soft-deleted
+   * alongside it. The chosen relation type must be permitted by the template field's
    * allowed-relation-types whitelist (an empty whitelist permits all).
    */
   boolean applyLinkFieldValue(
@@ -361,13 +364,14 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       if (existing == null) {
         return false; // no link before, none requested now
       }
-      inventoryLinkManager.deleteLink(existing, user);
-      field.setLink(null);
+      field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
       return true;
     }
+    Long effectivePin =
+        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
     if (existing != null
         && target.equals(existing.getTargetGlobalId())
-        && Objects.equals(apiLink.getVersionPin(), existing.getVersionPin())
+        && Objects.equals(effectivePin, existing.getVersionPin())
         && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
       return false; // unchanged
     }
@@ -402,9 +406,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
               .filter(
                   f ->
                       f instanceof InventoryLinkField
-                          && java.util.Objects.equals(f.getId(), apiField.getId()))
+                          && Objects.equals(f.getId(), apiField.getId()))
               .findFirst();
       if (dbFieldOpt.isPresent()) {
+        rejectSelfLink(apiField.getLink(), dbSample);
         changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
       }
     }
@@ -412,24 +417,36 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   private void assertRelationAllowed(InventoryLinkField field, String relationType) {
-    // a chosen relation must be a real DataCite relation type, even when the whitelist is empty
+    // a chosen relation must be a real DataCite relation type, even when the whitelist is empty.
+    // ApiRuntimeException maps to a 422 with the resolved bundle message, where a raw
+    // IllegalArgumentException would surface as an unmapped 500.
     if (!DataCiteRelationType.isValid(relationType)) {
-      throw new IllegalArgumentException(
-          messageSource.getMessage(
-              "errors.inventory.field.link.relationTypeInvalid",
-              new Object[] {relationType},
-              LocaleContextHolder.getLocale()));
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.relationTypeInvalid", relationType);
     }
     String allowed = field.getAllowedRelationTypes();
     if (allowed == null || allowed.trim().isEmpty()) {
       return; // empty whitelist = all relation types allowed
     }
     if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
-      throw new IllegalArgumentException(
-          messageSource.getMessage(
-              "errors.inventory.field.link.relationTypeNotPermitted",
-              new Object[] {relationType, field.getName()},
-              LocaleContextHolder.getLocale()));
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
+    }
+  }
+
+  private void rejectSelfLink(ApiInventoryLink apiLink, Sample dbSample) {
+    if (apiLink == null || dbSample.getOid() == null) {
+      return;
+    }
+    GlobalIdentifier target;
+    try {
+      target = new GlobalIdentifier(apiLink.getTargetGlobalId());
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      return; // malformed/blank targets are handled by the manager / clear path
+    }
+    if (InventoryLinkValidator.isSelfLink(target, dbSample.getOid().toString())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
     }
   }
 
@@ -954,19 +971,15 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       }
       if (apiField.isDeleteFieldRequest()) {
         if (apiField.getId() == null) {
-          throw new IllegalArgumentException(
-              "'id' property not provided "
-                  + "for a template field with 'deleteFieldRequest' flag");
+          throw new ApiRuntimeException("errors.inventory.field.deleteRequest.idMissing");
         }
         Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
                 .filter(sf -> apiField.getId().equals(sf.getId()))
                 .findFirst();
         if (dbFieldOpt.isEmpty()) {
-          throw new IllegalArgumentException(
-              "Field id: "
-                  + apiField.getId()
-                  + " doesn't match id of any pre-existing template field");
+          throw new ApiRuntimeException(
+              "errors.inventory.field.deleteRequest.idUnknown", apiField.getId());
         }
         dbTemplate.deleteSampleField(dbFieldOpt.get(), apiField.isDeleteFieldOnSampleUpdate());
         softDeleteLinkOfDeletedLinkField(dbFieldOpt.get(), user);

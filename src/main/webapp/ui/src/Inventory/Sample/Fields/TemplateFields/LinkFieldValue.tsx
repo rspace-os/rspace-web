@@ -183,7 +183,6 @@ function LinkFieldValue({
         link={committedLink}
         targetDeleted={false}
         editable={!disabled}
-        onPeek={() => undefined}
         onOpen={() => openTargetInNewTab(committedLink)}
         onEdit={() => setEditing(true)}
       />

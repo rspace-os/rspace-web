@@ -82,7 +82,6 @@ function ExtraFields({
                     }
                     targetDeleted={false}
                     editable={editable}
-                    onPeek={() => undefined}
                     onOpen={() => {
                       const link = (ef as typeof ef & {
                         link: {

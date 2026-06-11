@@ -49,22 +49,19 @@ type State =
     }
   | { state: "fail"; error: Error };
 
-const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v\d+)?$/;
-const PREFIX_TO_PATH: Record<string, string> = {
-  SA: "samples",
-  SS: "subSamples",
-  IC: "containers",
-  IN: "instruments",
-};
+import {
+  GLOBAL_ID_PATTERN,
+  INVENTORY_PREFIX_TO_API_PATH,
+} from "@/Inventory/components/Fields/Link/linkTarget";
 
 function referencingItemsEndpoint(globalId: string): string | null {
   const match = GLOBAL_ID_PATTERN.exec(globalId);
   if (!match) return null;
-  const segment = PREFIX_TO_PATH[match[1]];
-  if (segment) return `${segment}/${match[2]}/referencingItems`;
   // sample templates have no typed referencingItems endpoint; use the
   // generic by-Global-ID route instead
   if (match[1] === "IT") return `referencingItems/${globalId}`;
+  const segment = INVENTORY_PREFIX_TO_API_PATH[match[1]];
+  if (segment) return `${segment}/${match[2]}/referencingItems`;
   return null;
 }
 
@@ -86,8 +83,10 @@ function ReferencingItemsTable({
         </TableRow>
       </TableHead>
       <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.sourceGlobalId}>
+        {items.map((item, index) => (
+          // one item can link to the same target through several fields, so
+          // the global id alone is not a unique row key
+          <TableRow key={`${item.sourceGlobalId}-${index}`}>
             <TableCell>{item.sourceName}</TableCell>
             <TableCell>
               <a

@@ -1,9 +1,9 @@
 import { type RecordIconData } from "../../../../stores/definitions/BaseRecord";
 
-const GLOBAL_ID_PATTERN = /^([A-Z]{2})\d+(?:v\d+)?$/;
+import { GLOBAL_ID_PATTERN } from "./linkTarget";
 const GLOBAL_ID_WITH_ID = /^([A-Z]{2})(\d+)(?:v\d+)?$/;
 
-const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
+export const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
   SA: { iconName: "sample", recordTypeLabel: "Sample" },
   SS: { iconName: "subsample", recordTypeLabel: "Subsample" },
   IC: { iconName: "container", recordTypeLabel: "Container" },
@@ -53,11 +53,6 @@ export function isInventoryGlobalId(globalId: string): boolean {
   return prefix != null && prefix in INVENTORY_PREFIX_ICON_DATA;
 }
 
-/** True when the Global ID is an ELN item (document, notebook, gallery file). */
-export function isElnGlobalId(globalId: string): boolean {
-  const prefix = prefixOf(globalId);
-  return prefix != null && prefix in ELN_PREFIX_ICON_DATA;
-}
 
 /**
  * Targets that support version pinning in the link UI: Inventory items and ELN documents (SD).

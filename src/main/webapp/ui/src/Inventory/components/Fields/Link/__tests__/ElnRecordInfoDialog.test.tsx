@@ -29,7 +29,7 @@ vi.mock("../GallerySections", () => ({
   ),
 }));
 
-import EnElnRecordInfoDialog from "../EnElnRecordInfoDialog";
+import ElnRecordInfoDialog from "../ElnRecordInfoDialog";
 
 beforeEach(() => {
   fetchMock.resetMocks();
@@ -58,11 +58,11 @@ function recordInfoResponse(
 }
 
 function renderDialog(
-  props: Partial<React.ComponentProps<typeof EnElnRecordInfoDialog>> = {},
+  props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {},
 ) {
   return render(
     <ThemeProvider theme={materialTheme}>
-      <EnElnRecordInfoDialog
+      <ElnRecordInfoDialog
         open
         globalId="SD123"
         onClose={vi.fn()}
@@ -72,7 +72,7 @@ function renderDialog(
   );
 }
 
-describe("EnElnRecordInfoDialog", () => {
+describe("ElnRecordInfoDialog", () => {
   it("fetches record information using the numeric id derived from the global id", async () => {
     fetchMock.mockResponse(recordInfoResponse());
 
@@ -255,12 +255,12 @@ describe("EnElnRecordInfoDialog", () => {
     // Close, then reopen the same instance.
     rerender(
       <ThemeProvider theme={materialTheme}>
-        <EnElnRecordInfoDialog open={false} globalId="SD123" onClose={vi.fn()} />
+        <ElnRecordInfoDialog open={false} globalId="SD123" onClose={vi.fn()} />
       </ThemeProvider>,
     );
     rerender(
       <ThemeProvider theme={materialTheme}>
-        <EnElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} />
+        <ElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} />
       </ThemeProvider>,
     );
 

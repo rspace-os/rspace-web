@@ -295,7 +295,7 @@ describe("UpdateField — Field Type select includes Link", () => {
       screen.getByText("Pick a DataCite relation type"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Paste a Global ID, or use Browse Inventory above."),
+      screen.getByText("Paste a Global ID, or use the Browse buttons above."),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("combobox", { name: /relation type/i }),

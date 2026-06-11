@@ -424,6 +424,31 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
 
     execute(userId, session, "delete from Container_AUD where owner_id = :id");
     execute(userId, session, "delete from Container where owner_id = :id");
+
+    // Hard-delete InventoryLink rows orphaned by the field deletions above. The FKs point
+    // field -> link, so once the user's ExtraField / InventoryEntityField rows (and their _AUD
+    // copies) are gone the rows are unreachable garbage that would otherwise leak forever
+    // (mirrors the StoichiometryInventoryLink cleanup). The sweep only matches rows with no
+    // remaining referrer in any live or audited field table, so links belonging to other
+    // users' surviving fields are untouched. _AUD first, then main.
+    execute(
+        userId,
+        session,
+        "delete il from InventoryLink_AUD il"
+            + " left join ExtraField ef on ef.link_id = il.id"
+            + " left join ExtraField_AUD efa on efa.link_id = il.id"
+            + " left join InventoryEntityField ief on ief.link_id = il.id"
+            + " left join InventoryEntityField_AUD iefa on iefa.link_id = il.id"
+            + " where ef.id is null and efa.id is null and ief.id is null and iefa.id is null");
+    execute(
+        userId,
+        session,
+        "delete il from InventoryLink il"
+            + " left join ExtraField ef on ef.link_id = il.id"
+            + " left join ExtraField_AUD efa on efa.link_id = il.id"
+            + " left join InventoryEntityField ief on ief.link_id = il.id"
+            + " left join InventoryEntityField_AUD iefa on iefa.link_id = il.id"
+            + " where ef.id is null and efa.id is null and ief.id is null and iefa.id is null");
   }
 
   private void deleteAppConfigs(Long userId, Session session) {

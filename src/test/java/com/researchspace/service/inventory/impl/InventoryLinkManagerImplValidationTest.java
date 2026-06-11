@@ -51,6 +51,50 @@ class InventoryLinkManagerImplValidationTest {
   }
 
   @Test
+  void createLinkRejectsMalformedTargetWithCleanError() {
+    // the validator can be bypassed (e.g. an extra-field update omitting
+    // "type"), so the manager itself must reject bad payloads with a clean
+    // 422 error instead of letting a raw parse exception become a 500
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.createLink(apiLink("References", "not-a-gid"), user));
+    assertEquals("errors.inventory.field.link.targetNotFound", ex.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void createLinkRejectsUnsupportedTargetKind() {
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.createLink(apiLink("References", "FL12"), user));
+    assertEquals("errors.inventory.field.link.targetKindUnsupported", ex.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void createLinkRejectsRelationTypeOutsideDataCiteVocabulary() {
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.createLink(apiLink("NotARelation", "SD123"), user));
+    assertEquals("errors.inventory.field.link.relationTypeInvalid", ex.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void updateLinkRejectsMalformedTargetWithCleanError() {
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.updateLink(new InventoryLink(), apiLink("References", "ZZ99"), user));
+    // ZZ is not a known prefix, so the id fails to parse at all
+    assertEquals("errors.inventory.field.link.targetNotFound", ex.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
   void createLinkPersistsWhenTargetReadable() {
     targetReadable(true);
     when(linkDao.save(any(InventoryLink.class))).thenAnswer(inv -> inv.getArgument(0));

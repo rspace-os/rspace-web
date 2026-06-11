@@ -432,7 +432,7 @@ export default function UpdateField({
                   targetExistenceError ??
                   (showTargetError
                     ? targetValidity.reason
-                    : "Paste a Global ID, or use Browse Inventory above.")
+                    : "Paste a Global ID, or use the Browse buttons above.")
                 }
                 error={Boolean(targetExistenceError) || showTargetError}
               />

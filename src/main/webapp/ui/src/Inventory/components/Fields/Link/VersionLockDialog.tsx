@@ -24,14 +24,10 @@ export interface VersionLockDialogProps {
   onCancel: () => void;
 }
 
-const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v\d+)?$/;
-const INVENTORY_PREFIX_TO_PATH: Record<string, string> = {
-  SA: "samples",
-  SS: "subSamples",
-  IC: "containers",
-  IN: "instruments",
-  IT: "sampleTemplates",
-};
+import {
+  GLOBAL_ID_PATTERN,
+  INVENTORY_PREFIX_TO_API_PATH,
+} from "./linkTarget";
 
 interface ParsedTarget {
   prefix: string;
@@ -50,7 +46,7 @@ function parseGlobalId(globalId: string): ParsedTarget | null {
   return {
     prefix,
     id: Number(match[2]),
-    inventoryPathSegment: INVENTORY_PREFIX_TO_PATH[prefix] ?? null,
+    inventoryPathSegment: INVENTORY_PREFIX_TO_API_PATH[prefix] ?? null,
   };
 }
 
@@ -96,7 +92,7 @@ interface ElnRevisionHistoryResponse {
 export default function VersionLockDialog(
   props: VersionLockDialogProps,
 ): React.ReactElement | null {
-  const parsed = parseGlobalId(props.globalId);
+  const parsed = React.useMemo(() => parseGlobalId(props.globalId), [props.globalId]);
   const initialSelection: VersionLockSelection =
     props.currentVersionPin == null
       ? LATEST_SELECTION

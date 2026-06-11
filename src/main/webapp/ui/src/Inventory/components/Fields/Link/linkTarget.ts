@@ -21,6 +21,19 @@ export const ALLOWED_TARGET_PREFIXES: ReadonlySet<string> = new Set([
 
 export const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v(\d+))?$/;
 
+/**
+ * Inventory Global-ID prefix -> REST API path segment, shared so the map cannot
+ * drift between the existence check, the info/version dialogs and the
+ * back-reference panels (IT was missing from some copies before).
+ */
+export const INVENTORY_PREFIX_TO_API_PATH: Record<string, string> = {
+  SA: "samples",
+  SS: "subSamples",
+  IC: "containers",
+  IN: "instruments",
+  IT: "sampleTemplates",
+};
+
 /** True when target points at the same item as source, ignoring any version suffix. */
 export function isSelfLink(
   sourceGlobalId: string,

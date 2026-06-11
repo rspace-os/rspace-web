@@ -5,7 +5,7 @@ import Typography from "@mui/material/Typography";
 import useReferencingInventoryItems from "@/eln/gallery/useReferencingInventoryItems";
 
 /**
- * The "Related inventory items" section of {@link EnElnRecordInfoDialog}: the
+ * The "Related inventory items" section of {@link ElnRecordInfoDialog}: the
  * Inventory items whose Link field points at the displayed ELN record. The
  * "Show linked docs" action only covers ELN references, so without this section
  * an inventory link to the record would be invisible from its info dialog.

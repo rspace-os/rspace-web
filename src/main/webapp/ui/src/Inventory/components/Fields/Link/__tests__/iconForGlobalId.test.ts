@@ -4,7 +4,6 @@ import {
   iconForGlobalId,
   prefixOf,
   isInventoryGlobalId,
-  isElnGlobalId,
   supportsVersionPin,
   openUrlForTarget,
 } from "../iconForGlobalId";
@@ -88,12 +87,6 @@ describe("prefix helpers", () => {
     expect(isInventoryGlobalId("NB1")).toBe(false);
   });
 
-  test("isElnGlobalId is true only for ELN prefixes", () => {
-    expect(isElnGlobalId("SD1")).toBe(true);
-    expect(isElnGlobalId("NB1")).toBe(true);
-    expect(isElnGlobalId("GL1")).toBe(true);
-    expect(isElnGlobalId("SA1")).toBe(false);
-  });
 
   test("supportsVersionPin is true for inventory and SD, false for NB and GL", () => {
     expect(supportsVersionPin("SA1")).toBe(true);

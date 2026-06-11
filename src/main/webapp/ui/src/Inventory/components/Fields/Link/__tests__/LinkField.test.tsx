@@ -24,7 +24,7 @@ vi.mock("../InventoryInfoDialog", () => ({
     ) : null,
 }));
 
-vi.mock("../EnElnRecordInfoDialog", () => ({
+vi.mock("../ElnRecordInfoDialog", () => ({
   default: ({
     open,
     globalId,
@@ -60,7 +60,6 @@ function renderField(props: Partial<React.ComponentProps<typeof LinkField>> = {}
         targetDeleted={false}
         onOpen={vi.fn()}
         onEdit={vi.fn()}
-        onPeek={vi.fn()}
         editable={true}
         {...props}
       />
@@ -78,14 +77,6 @@ describe("LinkField", () => {
     expect(screen.getByText(/sa42/i)).toBeInTheDocument();
   });
 
-  it("calls onPeek when the card body is clicked", async () => {
-    const onPeek = vi.fn();
-    const user = userEvent.setup();
-    renderField({ onPeek });
-
-    await user.click(screen.getByText(/calibration cert/i));
-    expect(onPeek).toHaveBeenCalledTimes(1);
-  });
 
   it("shows a bold inline 'Link' heading and bold inline field name", () => {
     renderField();
@@ -100,11 +91,10 @@ describe("LinkField", () => {
     /* eslint-enable testing-library/no-node-access */
   });
 
-  it("renders the Edit action inline and without triggering the card peek", async () => {
+  it("renders the Edit action inline", async () => {
     const onEdit = vi.fn();
-    const onPeek = vi.fn();
     const user = userEvent.setup();
-    renderField({ editable: true, onEdit, onPeek });
+    renderField({ editable: true, onEdit });
 
     const editButton = screen.getByRole("button", { name: /edit link/i });
     /* eslint-disable testing-library/no-node-access -- asserting Edit sits inline in the link row */
@@ -113,14 +103,12 @@ describe("LinkField", () => {
 
     await user.click(editButton);
     expect(onEdit).toHaveBeenCalledTimes(1);
-    expect(onPeek).not.toHaveBeenCalled();
   });
 
   it("renders a plain Open action inline with the link chips", async () => {
     const onOpen = vi.fn();
-    const onPeek = vi.fn();
     const user = userEvent.setup();
-    renderField({ onOpen, onPeek });
+    renderField({ onOpen });
 
     // a single consistent label: "Open", never "Open in Inventory"
     const openButton = screen.getByRole("button", { name: /^open$/i });
@@ -134,8 +122,6 @@ describe("LinkField", () => {
 
     await user.click(openButton);
     expect(onOpen).toHaveBeenCalledTimes(1);
-    // sitting inside the clickable card body, Open must not also trigger the peek
-    expect(onPeek).not.toHaveBeenCalled();
   });
 
   it("renders pinned version label when versionPin is set", () => {
@@ -214,7 +200,6 @@ describe("LinkField", () => {
           targetDeleted={false}
           onOpen={vi.fn()}
           onEdit={vi.fn()}
-          onPeek={vi.fn()}
           editable={false}
         />
       </ThemeProvider>,
@@ -348,7 +333,6 @@ describe("LinkField", () => {
           targetDeleted={false}
           onOpen={vi.fn()}
           onEdit={vi.fn()}
-          onPeek={vi.fn()}
           editable={true}
         />
       </ThemeProvider>,

@@ -3,19 +3,11 @@ import axios from "@/common/axios";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
-
-const INVENTORY_ICON_DATA: Record<
-  string,
-  { iconName: string; label: string }
-> = {
-  SA: { iconName: "sample", label: "Sample" },
-  SS: { iconName: "subsample", label: "Subsample" },
-  IC: { iconName: "container", label: "Container" },
-  IN: { iconName: "container", label: "Instrument" },
-};
+import { GLOBAL_ID_PATTERN } from "@/Inventory/components/Fields/Link/linkTarget";
+import { INVENTORY_PREFIX_ICON_DATA } from "@/Inventory/components/Fields/Link/iconForGlobalId";
 
 function prefixOf(globalId: string): string | null {
-  const match = /^([A-Z]{2})\d+/.exec(globalId);
+  const match = GLOBAL_ID_PATTERN.exec(globalId);
   return match ? match[1] : null;
 }
 
@@ -52,12 +44,15 @@ class LinkableInventoryRecord implements LinkableRecord {
   }
 
   get recordTypeLabel(): string {
-    return INVENTORY_ICON_DATA[prefixOf(this.globalId ?? "") ?? ""]?.label ?? "Item";
+    return (
+      INVENTORY_PREFIX_ICON_DATA[prefixOf(this.globalId ?? "") ?? ""]
+        ?.recordTypeLabel ?? "Item"
+    );
   }
 
   get iconName(): string {
     return (
-      INVENTORY_ICON_DATA[prefixOf(this.globalId ?? "") ?? ""]?.iconName ??
+      INVENTORY_PREFIX_ICON_DATA[prefixOf(this.globalId ?? "") ?? ""]?.iconName ??
       "container"
     );
   }
@@ -115,19 +110,19 @@ export default function useReferencingInventoryItems(globalId: string | null): {
                 const type = Parsers.getValueWithKey("sourceType")(obj).flatMap(
                   Parsers.isString,
                 );
+                // relationType is nullable on the server; a row without one
+                // must still render (as the legacy panel does) rather than be
+                // silently dropped
                 const relationType = Parsers.getValueWithKey("relationType")(
                   obj,
-                ).flatMap(Parsers.isString);
-                return Result.all(
-                  sourceGlobalId,
-                  name,
-                  type,
-                  relationType,
-                ).map(([g, n, t, r]) => ({
+                )
+                  .flatMap(Parsers.isString)
+                  .orElse("");
+                return Result.all(sourceGlobalId, name, type).map(([g, n, t]) => ({
                   globalId: g,
                   name: n,
                   type: t,
-                  relationType: r,
+                  relationType,
                   permalinkHref: `/globalId/${g}`,
                   linkableRecord: new LinkableInventoryRecord({
                     id: parseInt(g.replace(/^[A-Z]{2}/, ""), 10) || null,

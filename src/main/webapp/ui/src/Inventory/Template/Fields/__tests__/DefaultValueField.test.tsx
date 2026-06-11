@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
@@ -8,20 +8,6 @@ import DefaultValueField from "../DefaultValueField";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
-// jsdom does not implement matchMedia, which MUI components rely on
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
 
 describe("DefaultValueField", () => {
   describe("link fields' allowed relationship types", () => {
