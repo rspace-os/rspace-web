@@ -3,7 +3,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
-import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
@@ -49,7 +48,6 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
     props.link.versionPin != null ? `Pinned to v${props.link.versionPin}` : "Latest";
   const iconData = iconForGlobalId(props.link.targetGlobalId);
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
-  const openLabel = targetIsInventory ? "Open in Inventory" : "Open";
   const [infoOpen, setInfoOpen] = useState(false);
 
   const handleOpen = () => {
@@ -72,12 +70,31 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
     <Card variant="outlined" aria-label={`Link field ${props.name}`}>
       <CardActionArea onClick={props.onPeek}>
         <CardContent>
-          {props.name && (
-            <Typography variant="subtitle1" component="div">
-              {props.name}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+            data-test-id="LinkField-row"
+          >
+            <Typography
+              variant="subtitle1"
+              component="span"
+              sx={{ fontWeight: 700 }}
+            >
+              Link
             </Typography>
-          )}
-          <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
+            {props.name && (
+              <Typography
+                variant="subtitle1"
+                component="span"
+                sx={{ fontWeight: 700 }}
+              >
+                {props.name}
+              </Typography>
+            )}
             <Chip
               size="small"
               label={props.link.relationType}
@@ -129,31 +146,39 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
                 data-test-id="LinkField-targetDeleted"
               />
             )}
+            {!props.targetDeleted && (
+              <Button
+                size="small"
+                startIcon={<OpenInNewIcon />}
+                onClick={(e) => {
+                  // sits inside the clickable card body, so Open must not
+                  // also trigger the peek
+                  e.stopPropagation();
+                  handleOpen();
+                }}
+                aria-label="Open"
+              >
+                Open
+              </Button>
+            )}
+            {props.editable && (
+              <Button
+                size="small"
+                startIcon={<EditIcon />}
+                onClick={(e) => {
+                  // sits inside the clickable card body, so Edit must not
+                  // also trigger the peek
+                  e.stopPropagation();
+                  props.onEdit();
+                }}
+                aria-label="Edit link"
+              >
+                Edit
+              </Button>
+            )}
           </Box>
         </CardContent>
       </CardActionArea>
-      <CardActions>
-        {!props.targetDeleted && (
-          <Button
-            size="small"
-            startIcon={<OpenInNewIcon />}
-            onClick={handleOpen}
-            aria-label={openLabel}
-          >
-            {openLabel}
-          </Button>
-        )}
-        {props.editable && (
-          <Button
-            size="small"
-            startIcon={<EditIcon />}
-            onClick={props.onEdit}
-            aria-label="Edit link"
-          >
-            Edit
-          </Button>
-        )}
-      </CardActions>
       {targetIsInventory ? (
         <InventoryInfoDialog
           open={infoOpen}

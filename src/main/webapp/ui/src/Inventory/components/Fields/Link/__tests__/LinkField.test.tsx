@@ -87,13 +87,55 @@ describe("LinkField", () => {
     expect(onPeek).toHaveBeenCalledTimes(1);
   });
 
-  it("renders 'Open in Inventory' as a secondary action", async () => {
-    const onOpen = vi.fn();
-    const user = userEvent.setup();
-    renderField({ onOpen });
+  it("shows a bold inline 'Link' heading and bold inline field name", () => {
+    renderField();
+    const heading = screen.getByText(/^link$/i);
+    const name = screen.getByText(/^calibration cert$/i);
+    // subtitle1 is the larger variant; both render bold within the link row
+    expect(heading).toHaveClass("MuiTypography-subtitle1");
+    expect(name).toHaveClass("MuiTypography-subtitle1");
+    /* eslint-disable testing-library/no-node-access -- asserting both sit inline in the link row */
+    expect(heading.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    expect(name.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    /* eslint-enable testing-library/no-node-access */
+  });
 
-    await user.click(screen.getByRole("button", { name: /open in inventory/i }));
+  it("renders the Edit action inline and without triggering the card peek", async () => {
+    const onEdit = vi.fn();
+    const onPeek = vi.fn();
+    const user = userEvent.setup();
+    renderField({ editable: true, onEdit, onPeek });
+
+    const editButton = screen.getByRole("button", { name: /edit link/i });
+    /* eslint-disable testing-library/no-node-access -- asserting Edit sits inline in the link row */
+    expect(editButton.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    /* eslint-enable testing-library/no-node-access */
+
+    await user.click(editButton);
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onPeek).not.toHaveBeenCalled();
+  });
+
+  it("renders a plain Open action inline with the link chips", async () => {
+    const onOpen = vi.fn();
+    const onPeek = vi.fn();
+    const user = userEvent.setup();
+    renderField({ onOpen, onPeek });
+
+    // a single consistent label: "Open", never "Open in Inventory"
+    const openButton = screen.getByRole("button", { name: /^open$/i });
+    expect(
+      screen.queryByRole("button", { name: /open in inventory/i }),
+    ).not.toBeInTheDocument();
+
+    /* eslint-disable testing-library/no-node-access -- asserting the Open button sits in the same row as the link chips */
+    expect(openButton.closest('[data-test-id="LinkField-row"]')).not.toBeNull();
+    /* eslint-enable testing-library/no-node-access */
+
+    await user.click(openButton);
     expect(onOpen).toHaveBeenCalledTimes(1);
+    // sitting inside the clickable card body, Open must not also trigger the peek
+    expect(onPeek).not.toHaveBeenCalled();
   });
 
   it("renders pinned version label when versionPin is set", () => {
@@ -101,10 +143,10 @@ describe("LinkField", () => {
     expect(screen.getByText(/v4|pinned to v4/i)).toBeInTheDocument();
   });
 
-  it("shows 'Target deleted' badge and hides 'Open in Inventory' when the target is deleted", () => {
+  it("shows 'Target deleted' badge and hides Open when the target is deleted", () => {
     renderField({ targetDeleted: true });
     expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /open in inventory/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^open$/i })).not.toBeInTheDocument();
   });
 
   it("greys out the clock in view mode: pin changes happen in the link editor", () => {
@@ -136,7 +178,7 @@ describe("LinkField", () => {
     });
 
     const openButton = screen.getByRole("button", {
-      name: /open in inventory/i,
+      name: /^open$/i,
     });
     expect(openButton).toBeEnabled();
     await user.click(openButton);
@@ -151,10 +193,10 @@ describe("LinkField", () => {
     openSpy.mockRestore();
   });
 
-  it("keeps Open in Inventory enabled when no versionPin is set", () => {
+  it("keeps Open enabled when no versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: null } });
     expect(
-      screen.getByRole("button", { name: /open in inventory/i }),
+      screen.getByRole("button", { name: /^open$/i }),
     ).toBeEnabled();
   });
 
@@ -238,7 +280,7 @@ describe("LinkField", () => {
     ).toBeInTheDocument();
   });
 
-  it("labels the open action 'Open' (not 'Open in Inventory') for ELN targets", () => {
+  it("labels the open action 'Open' for ELN targets too", () => {
     renderField({ link: { ...baseLink, targetGlobalId: "SD3" } });
     expect(screen.getByRole("button", { name: /^open$/i })).toBeInTheDocument();
     expect(
