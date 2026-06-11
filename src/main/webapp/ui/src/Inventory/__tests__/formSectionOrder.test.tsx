@@ -19,11 +19,13 @@ import TemplateNewRecordForm from "../Template/NewRecordForm";
 import SubSampleForm from "../Subsample/Form";
 import SubSampleBatchForm from "../Subsample/BatchForm";
 import MixedBatchForm from "../Mixed/BatchForm";
+import InstrumentForm from "../Instrument/Form";
 import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockTemplate } from "../../stores/models/__tests__/TemplateModel/mocking";
 import { makeMockSubSample } from "../../stores/models/__tests__/SubSampleModel/mocking";
+import { makeMockInstrument } from "../../stores/models/__tests__/InstrumentModel/mocking";
 import { storesContext } from "../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
@@ -247,6 +249,14 @@ describe("Form Section Order", () => {
           "Template New Form",
           getSectionNames(<TemplateNewRecordForm />, {
             activeResult: makeMockTemplate({ id: null, globalId: null }),
+          }),
+        ],
+        [
+          "Instrument Form",
+          getSectionNames(<InstrumentForm />, {
+            activeResult: makeMockInstrument({
+              owner: personAttrs(),
+            }),
           }),
         ],
         [

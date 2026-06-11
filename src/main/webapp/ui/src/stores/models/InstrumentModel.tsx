@@ -35,7 +35,8 @@ import {
 } from "../definitions/HasLocation";
 import { type ContainerAttrs } from "./ContainerModel";
 import React from "react";
-import BiotechIcon from "@mui/icons-material/Biotech";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { action, computed, makeObservable, observable, override } from "mobx";
 import { type Instrument } from "../definitions/Instrument";
 import getRootStore from "../stores/RootStore";
@@ -102,7 +103,6 @@ export default class InstrumentModel
       recordDetails: override,
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
-      createOptions: override,
     });
 
     if (this.recordType === "instrument")
@@ -127,7 +127,7 @@ export default class InstrumentModel
 
   get illustration(): React.ReactNode {
     return (
-      <BiotechIcon sx={{ fontSize: "4rem", color: "text.secondary" }} />
+      <FontAwesomeIcon icon={faMicroscope} style={{ fontSize: "4rem", color: "text.secondary" }} />
     );
   }
 

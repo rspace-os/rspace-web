@@ -12,7 +12,6 @@ import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBen
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import BiotechIcon from "@mui/icons-material/Biotech";
 import { useTheme } from "@mui/material/styles";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -28,6 +27,7 @@ import { InvalidState } from "@/util/error";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -291,11 +291,10 @@ const InstrumentNavItem = observer(
           searchStore.isTypeSelected("INSTRUMENT")
         }
         icon={
-          <BiotechIcon
-            sx={{
-              fontSize: "1.2em",
-              color: theme.palette.standardIcon.main,
-            }}
+          <FontAwesomeIcon
+            icon={faMicroscope}
+            color={theme.palette.standardIcon.main}
+            style={{ fontSize: "1.2em" }}
           />
         }
         index={index}

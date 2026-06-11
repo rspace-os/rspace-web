@@ -12,6 +12,7 @@ import type { RootStore } from "./RootStore";
 import ContainerModel from "../models/ContainerModel";
 import SubSampleModel from "../models/SubSampleModel";
 import SampleModel from "../models/SampleModel";
+import InstrumentModel from "../models/InstrumentModel";
 import { mkAlert } from "../contexts/Alert";
 import {
   handleDetailedErrors,
@@ -192,7 +193,8 @@ export default class MoveStore {
         this.selectedResults = [...this.selectedResults, ...record.subSamples];
       } else if (
         record instanceof SubSampleModel ||
-        record instanceof ContainerModel
+        record instanceof ContainerModel ||
+        record instanceof InstrumentModel
       ) {
         this.selectedResults = [...this.selectedResults, record];
       } else {

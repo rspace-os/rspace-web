@@ -134,6 +134,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
     "CONTAINER",
     "SAMPLE",
     "SUBSAMPLE",
+    "INSTRUMENT",
     "TEMPLATE",
   ]),
   mainColumn: "Name",

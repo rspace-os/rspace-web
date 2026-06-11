@@ -9,7 +9,7 @@ import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
 import { match } from "../../../util/Util";
 import { useTheme } from "@mui/material/styles";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import BiotechIcon from "@mui/icons-material/Biotech";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 
 type TypeFilterArgs = {
   anchorEl: HTMLElement | null;
@@ -135,11 +135,10 @@ export default function TypeFilter({
           data-test-id="instrumentType"
         >
           <ListItemIcon>
-            <BiotechIcon
-              sx={{
-                fontSize: "1em",
-                color: theme.palette.standardIcon.main,
-              }}
+            <FontAwesomeIcon
+              icon={faMicroscope}
+              color={theme.palette.standardIcon.main}
+              style={{ fontSize: "1em" }}
             />
           </ListItemIcon>
           <ListItemText primary="Instruments" />

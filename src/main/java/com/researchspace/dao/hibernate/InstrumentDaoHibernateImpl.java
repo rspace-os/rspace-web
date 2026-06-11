@@ -4,6 +4,7 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -84,6 +85,18 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             ownedBy, user, pageQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
     List<Instrument> page = pageQueryWithParams.list();
     return new SearchResultsImpl<>(page, pgCrit, totalCount);
+  }
+
+  @Override
+  public List<Instrument> getAllUsingImage(FileProperty fileProperty) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from Instrument where imageFileProperty=:fileProperty"
+                + " OR thumbnailFileProperty=:fileProperty",
+            Instrument.class)
+        .setParameter("fileProperty", fileProperty)
+        .list();
   }
 
   @Override

@@ -55,12 +55,22 @@ type MixedSections = {
   barcodes: boolean;
 };
 
+type InstrumentSections = {
+  overview: boolean;
+  details: boolean;
+  barcodes: boolean;
+  identifiers: boolean;
+  attachments: boolean;
+  customFields: boolean;
+};
+
 type FormSectionsState = {
   container: ContainerSections;
   sample: SampleSections;
   subSample: SubSampleSections;
   sampleTemplate: SampleTemplateSections;
   mixed: MixedSections;
+  instrument: InstrumentSections;
 };
 
 type RecordType = keyof FormSectionsState;
@@ -108,6 +118,14 @@ const defaultFormSectionExpandedState = (): FormSectionsState =>
       customFields: false,
       samples: true,
     },
+    instrument: {
+      overview: true,
+      details: false,
+      barcodes: false,
+      identifiers: false,
+      attachments: false,
+      customFields: false,
+    },
     mixed: {
       information: false,
       overview: true,
@@ -138,10 +156,14 @@ function setAllSectionValues<T extends RecordType>(
 export default function SynchroniseFormSections({
   children,
 }: SynchroniseFormSectionsArgs): React.ReactNode {
-  const [formSectionExpandedState, setFormSectionExpandedState] =
+  const [storedState, setFormSectionExpandedState] =
     useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
       defaultValue: defaultFormSectionExpandedState(),
     });
+  const formSectionExpandedState: FormSectionsState = {
+    ...defaultFormSectionExpandedState(),
+    ...storedState,
+  };
   return (
     <FormSectionsContext.Provider
       value={{

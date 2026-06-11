@@ -4,7 +4,6 @@ import { toTitleCase } from "../util/Util";
 import { useTheme } from "@mui/material/styles";
 import BenchIcon from "../assets/graphics/RecordTypeGraphics/Icons/Bench";
 import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
-import BiotechIcon from "@mui/icons-material/Biotech";
 import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
@@ -15,6 +14,7 @@ import { faVials } from '@fortawesome/free-solid-svg-icons/faVials';
 import { faBox } from '@fortawesome/free-solid-svg-icons/faBox';
 import { faPaperclip } from '@fortawesome/free-solid-svg-icons/faPaperclip';
 import { faImage } from '@fortawesome/free-solid-svg-icons/faImage';
+import { faMicroscope } from '@fortawesome/free-solid-svg-icons/faMicroscope';
 
 import { type RecordIconData } from "../stores/definitions/BaseRecord";
 
@@ -72,8 +72,10 @@ export default function RecordTypeIcon({
       break;
     case "instrument":
       icon = (
-        <BiotechIcon
-          sx={{ fontSize: "1em", color: color ?? theme.palette.record.instrument.fg }}
+        <FontAwesomeIcon
+          size="1x"
+          icon={faMicroscope}
+          color={color ?? theme.palette.record.instrument.fg}
           style={style}
         />
       );
