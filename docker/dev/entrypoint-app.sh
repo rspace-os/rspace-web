@@ -17,6 +17,11 @@ JDBC_URL="${JDBC_URL:-jdbc:mysql://db:3306/rspace}"
 JDBC_URL_MAVEN="${JDBC_URL_MAVEN:-jdbc:mysql://db:3306}"
 VITE_ORIGIN="${VITE_ORIGIN:-http://localhost:5173}"
 APP_PUBLIC_PORT="${APP_PUBLIC_PORT:-8080}"
+# Browsers scope cookies by host only, so concurrent worktree instances on
+# different localhost ports would overwrite each other's JSESSIONID and log
+# each other out. Each instance therefore gets a session cookie named after
+# its (worktree-unique) host port.
+SESSION_COOKIE_NAME="${RSPACE_SESSION_COOKIE_NAME:-JSESSIONID_${APP_PUBLIC_PORT}}"
 # Volume-backed search index dirs (outside the bind mount). Under jetty:run the
 # default index base is unset, so without these Lucene scatters per-entity index
 # directories into the worktree root.
@@ -80,6 +85,7 @@ exec mvn -B jetty:run \
   -Drs.hibernate.searchIndex.folder="${SEARCH_INDEX_DIR}" \
   -Drs.attachment.lucene.index.dir="${LUCENE_INDEX_DIR}" \
   -Dserver.urls.prefix="http://localhost:${APP_PUBLIC_PORT}" \
+  -Drs.session.cookie.name="${SESSION_COOKIE_NAME}" \
   -DRS.devlogLevel=INFO \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
   < "${FIFO}"

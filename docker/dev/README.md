@@ -24,7 +24,10 @@ fully isolated RSpace at the same time:
   networks, and volumes never collide;
 - its **own database and build artifacts** (separate volumes);
 - its **own host ports**, auto-allocated to be free and recorded in
-  `docker/dev/.env` (git-ignored).
+  `docker/dev/.env` (git-ignored);
+- its **own session cookie** (`JSESSIONID_<app port>`), so logging into one
+  instance does not log you out of the others — browsers scope cookies by host
+  only, and every instance lives on `localhost`.
 
 Heavy, safe-to-share caches (the Maven `~/.m2` repository and the pnpm store)
 are reused across worktrees so you only download dependencies once.
@@ -372,6 +375,12 @@ wrong, `restart`.
   uses a large Node heap; give Docker Desktop a generous memory limit.
 - **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
   `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
+- **Session cookies**: each instance names its session cookie
+  `JSESSIONID_<app port>` (via the `rs.session.cookie.name` system property),
+  so concurrent localhost logins don't evict each other. Override with
+  `RSPACE_SESSION_COOKIE_NAME` in `.env`. The same property works for a
+  plain (non-Docker) `mvn jetty:run` if you run several checkouts at once:
+  `-Drs.session.cookie.name=JSESSIONID_8081`.
 
 ## What this maps to
 

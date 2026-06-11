@@ -72,6 +72,11 @@ services:
       VITE_ORIGIN: http://localhost:5173
       # Used for absolute links (emails/exports) so they match the host port.
       APP_PUBLIC_PORT: ${APP_PORT:-8080}
+      # Session cookie name override. Cookies are scoped by host only (not
+      # port), so each instance defaults to JSESSIONID_<APP_PUBLIC_PORT> (set in
+      # the entrypoint) to keep concurrent worktree logins from evicting each
+      # other. Set this in .env only if you need a fixed name.
+      RSPACE_SESSION_COOKIE_NAME: ${RSPACE_SESSION_COOKIE_NAME:-}
       MAVEN_OPTS: ${MAVEN_OPTS:--Xmx2g}
       # Remote JVM debugging (JDWP) for IntelliJ etc. Listens on 5005 in the
       # container (published on the frontend service, since the app shares its
