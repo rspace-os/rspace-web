@@ -113,7 +113,7 @@ const CollapseContents = observer(
           const image = await barcode.fetchImage();
           if (image) setPreviewImages([URL.createObjectURL(image)]);
         }
-      } catch (e: Error | unknown) {
+      } catch (e: unknown) {
         uiStore.addAlert(
           mkAlert({
             title: "Unable to retrieve barcode image.",
@@ -135,7 +135,7 @@ const CollapseContents = observer(
           const imageUrls = images.map((img) => URL.createObjectURL(img));
           setPreviewImages(imageUrls);
         }
-      } catch (e: Error | unknown) {
+      } catch (e: unknown) {
         uiStore.addAlert(
           mkAlert({
             title: "Unable to retrieve barcode images.",
@@ -154,7 +154,7 @@ const CollapseContents = observer(
           const image = await barcode.fetchImage();
           setPreviewImages([URL.createObjectURL(image)]);
           setShowPreview(true);
-        } catch (e: Error | unknown) {
+        } catch (e: unknown) {
           uiStore.addAlert(
             mkAlert({
               title: "Unable to retrieve barcode image.",

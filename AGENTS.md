@@ -137,11 +137,12 @@ pnpm run test          # Vitest unit tests
 pnpm run test:ui       # Vitest with browser UI
 pnpm run test-ct       # Playwright component tests
 pnpm run tsc           # TypeScript type check
-pnpm run lint          # ESLint
-pnpm run lint:fix      # ESLint with auto-fix
+pnpm run lint          # Biome lint + format check (read-only)
+pnpm run lint:fix      # Biome lint + format with auto-fix
+pnpm run format        # Biome format only (write)
 ```
 
-When changing frontend code in `src/main/webapp/ui`, run the most relevant checks from the repo root. At minimum, run `pnpm run tsc`; run `pnpm run test` for behavioral changes and `pnpm run lint` when the change could affect linted code or formatting.
+When changing frontend code in `src/main/webapp/ui`, run the most relevant checks before finishing. At minimum, run `pnpm run tsc`; run `pnpm run test` for behavioral changes and `pnpm run lint` when the change could affect linted code or formatting.
 
 Run a single Vitest test file:
 ```bash
@@ -277,7 +278,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 - Functional components with hooks only
 - Axios for API calls (centralized)
 - DOMPurify for any user-generated HTML (XSS prevention)
-- ESLint + Prettier enforced; run `pnpm run lint` from the repo root before committing
+- Biome (lint + format) configured; run `pnpm run lint` (or `pnpm run lint:fix`) before committing
 - Use the existing workspace package manager (`pnpm` for `src/main/webapp/ui`)
 - Install dependencies only when needed for the task
 - Do not add new dependencies unless they are necessary to solve the requested problem

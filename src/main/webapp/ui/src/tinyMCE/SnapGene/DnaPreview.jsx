@@ -27,7 +27,7 @@ export default function DnaPreview(props) {
   });
   const [loadedImage, setLoadedImage] = React.useState(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally recomputes only when 'clicked' changes
   const appliedState = React.useMemo(() => ({ ...state }), [clicked]);
 
   const image = `/molbiol/dna/png/${id}?linear=${appliedState.linear}&showEnzymes=${appliedState.showEnzymes}&showORFs=${appliedState.showORFs}`;

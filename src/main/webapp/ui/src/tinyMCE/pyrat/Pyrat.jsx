@@ -406,9 +406,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }) {
         selectedAnimalIds.includes(animal.eartag_or_id),
       ),
     );
-    /* eslint-disable-next-line react-hooks/exhaustive-deps --
-     * - setSelectedAnimals will not meaningfully change
-     */
+    // biome-ignore lint/correctness/useExhaustiveDependencies: setSelectedAnimals will not meaningfully change
   }, [animals, selectedAnimalIds]);
 
   function handlePyratError(error) {
