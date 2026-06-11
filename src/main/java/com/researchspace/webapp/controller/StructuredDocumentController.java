@@ -213,7 +213,11 @@ public class StructuredDocumentController extends BaseController {
             importer
                 .get()
                 .create(
-                    mf.getInputStream(), user, originalParentFolder, null, mf.getOriginalFilename());
+                    mf.getInputStream(),
+                    user,
+                    originalParentFolder,
+                    null,
+                    mf.getOriginalFilename());
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
           if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
@@ -441,6 +445,8 @@ public class StructuredDocumentController extends BaseController {
           getErrorListFromMessageCode("error.authorization.failure.polite", "rename this record."));
     }
     if (recordRenamed) {
+      // the audit event snapshots the audited object's current name, so it must carry the new one
+      record.setName(newname);
       auditService.notify(new RenameAuditEvent(subject, record, oldName, newname));
     } else {
       return new AjaxReturnObject<String>(

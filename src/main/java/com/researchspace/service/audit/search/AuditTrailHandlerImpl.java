@@ -22,7 +22,6 @@ public class AuditTrailHandlerImpl implements AuditTrailHandler {
   private @Autowired IAuditTrailSearch logSearcher;
   private @Autowired UserManager userManager;
   private @Autowired AuditTrailService auditService;
-  private @Autowired IAuditSearchResultPostProcessor postProcessor;
 
   public ISearchResults<AuditTrailSearchResult> searchAuditTrail(
       IAuditTrailSearchConfig inputSearchConfig,
@@ -34,7 +33,6 @@ public class AuditTrailHandlerImpl implements AuditTrailHandler {
       return SearchResultsImpl.emptyResult(pgCrit);
     }
     ISearchResults<AuditTrailSearchResult> res = logSearcher.search(pgCrit, internalCfg);
-    postProcessAuditResults(res);
     auditService.notify(new GenericEvent(subject, internalCfg, AuditAction.SEARCH));
     return res;
   }
@@ -72,10 +70,5 @@ public class AuditTrailHandlerImpl implements AuditTrailHandler {
       internalCfg.setUsernames(usernames);
     }
     return internalCfg;
-  }
-
-  // handles any modification of audit data for presentation in the UI.
-  private void postProcessAuditResults(ISearchResults<AuditTrailSearchResult> res) {
-    postProcessor.process(res);
   }
 }
