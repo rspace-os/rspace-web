@@ -3,13 +3,15 @@ info:
   title: RSpace Inventory API
   description: |
     Welcome to the RSpace Inventory API.
+    
+    **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the page.
   version: "2.13"
   license:
-    name: Apache2 License
-    url: https://www.apache.org/licenses/LICENSE-2.0
+    name: AGPL-3.0 License
+    url: https://www.gnu.org/licenses/agpl.html
   contact:
     name: RSpace API Support
-    email: support@researchspace.com
+    url: https://documentation.researchspace.com
 security:
   - ApiKeySecurity: []
   - OAuthJWT: []

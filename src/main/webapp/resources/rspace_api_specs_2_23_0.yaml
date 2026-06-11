@@ -2,12 +2,15 @@ openapi: 3.0.0
 info:
   title: RSpace API
   description: >
-    Welcome to the RSpace API. This API enables you to search for and retrieve
+    Welcome to the RSpace ELN API.
+    
+    **Note:** To switch the Inventory API from the API docs, select **RSpace Inventory** from the dropdown at the top of the page.
+    
+    This API enables you to search for and retrieve
     your ELN data. It contains methods to create documents, upload files, and
     search, share and retrieve them.
-
+    
     This documentation enables you to interactively explore the API using your own data, and to generate `curl` and client code snippets.
-
 
     API endpoints require client to be authenticated, so to use this documentation interactively you need to open the authentication panel and authenticate with your preferred method.
 
@@ -23,22 +26,20 @@ info:
 
     The current _API_ version of the API is `version 1` and all URL paths begin with /api/v1. Incremental changes to the API will be backwards compatible. In practice, we'll be adding new methods, but keeping the old ones unchanged.
 
-
     The version of the API specified in the  `version` field of this documentation indicates the specific implementation version, and is tied to RSpace version.
-
 
     If you always work with a single instance of RSpace, code you write using the API should always work in future versions of that RSpace. If, however, you use more than one RSpace (perhaps you have an account on Community and an Enterprise account),  then code developed against a later implementation version of the API may not work on an earlier version running on a different  RSpace as the methods may not exist on the earlier version. See our full [Api Changelog](https://researchspace.helpdocs.io/article/dj4l39d70d-api-changelog) for details.
 
     #### Language support
 
     A high-level overview of API usage can be found on our [Github page](https://github.com/rspace-os/api-tutorial). We are also  developing rich language bindings and example code for `Python`, `Java` and others. Please suggest any use-cases or ideas for improving the API!
-  version: "2.20"
+  version: "2.23"
   license:
-    name: Apache2 License
-    url: https://www.apache.org/licenses/LICENSE-2.0
+    name: AGPL-3.0 License
+    url: https://www.gnu.org/licenses/agpl.html
   contact:
     name: RSpace API Support
-    email: support@researchspace.com
+    url: https://documentation.researchspace.com
 security:
   - ApiKeySecurity: []
   - OAuth: []
