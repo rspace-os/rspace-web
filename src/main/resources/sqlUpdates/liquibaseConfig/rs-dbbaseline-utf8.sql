@@ -19,7 +19,7 @@ CREATE TABLE `App` (
   `name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `AppConfigElement`;
@@ -50,7 +50,7 @@ CREATE TABLE `AppConfigElementDescriptor` (
   KEY `FK22EED128C68E22F3` (`app_id`),
   CONSTRAINT `FK22EED1284B47DE79` FOREIGN KEY (`descriptor_id`) REFERENCES `PropertyDescriptor` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK22EED128C68E22F3` FOREIGN KEY (`app_id`) REFERENCES `App` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `AppConfigElementSet`;
@@ -100,7 +100,7 @@ CREATE TABLE `ArchiveVersionToAppVersion` (
   `fromQualifier` int(11) DEFAULT NULL,
   `fromSuffix` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `BATCH_JOB_EXECUTION`;
@@ -336,7 +336,7 @@ CREATE TABLE `BaseRecord` (
   KEY `FK43851AA24A5647A6` (`owner_id`),
   KEY `record_name_idx` (`name`),
   CONSTRAINT `FK43851AA24A5647A6` FOREIGN KEY (`owner_id`) REFERENCES `User` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `BaseRecord_AUD`;
@@ -1192,7 +1192,7 @@ CREATE TABLE `FileStoreRoot` (
   `fileStoreRoot` varchar(500) NOT NULL,
   `external` bit(1) NOT NULL DEFAULT b'0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `Folder`;
@@ -1309,7 +1309,7 @@ CREATE TABLE `IconEntity` (
   `parentId` bigint(20) DEFAULT NULL,
   `width` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `ImageBlob`;
@@ -1319,7 +1319,7 @@ CREATE TABLE `ImageBlob` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `data` longblob DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `ImageBlob_AUD`;
@@ -1669,7 +1669,7 @@ CREATE TABLE `Organisation` (
   `title` varchar(191) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK_Org_title` (`title`)
-) ENGINE=InnoDB AUTO_INCREMENT=3843 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `PropertyDescriptor`;
@@ -1681,7 +1681,7 @@ CREATE TABLE `PropertyDescriptor` (
   `name` varchar(50) NOT NULL,
   `type` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `REVINFO`;
@@ -1691,7 +1691,7 @@ CREATE TABLE `REVINFO` (
   `REV` int(11) NOT NULL AUTO_INCREMENT,
   `REVTSTMP` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`REV`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `RSChemElement`;
@@ -1959,7 +1959,7 @@ CREATE TABLE `RecordToFolder` (
   KEY `FK3280CA5ACFF3DF14` (`record_id`),
   CONSTRAINT `FK3280CA5ACFF3DF14` FOREIGN KEY (`record_id`) REFERENCES `BaseRecord` (`id`),
   CONSTRAINT `FK3280CA5AEAE40843` FOREIGN KEY (`folder_id`) REFERENCES `Folder` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=110 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `RecordUserFavorites`;
@@ -2448,7 +2448,7 @@ CREATE TABLE `SystemProperty` (
   KEY `FK2E09E144398CEDC3` (`descriptor_id`),
   CONSTRAINT `FK2E09E144398CEDC3` FOREIGN KEY (`descriptor_id`) REFERENCES `PropertyDescriptor` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK2E09E144471C3CE9` FOREIGN KEY (`dependent_id`) REFERENCES `SystemProperty` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `SystemPropertyValue`;
@@ -2464,7 +2464,7 @@ CREATE TABLE `SystemPropertyValue` (
   KEY `FK_drtsb215dfp02l875hmfseykv` (`community_id`),
   CONSTRAINT `FK9AEDEA8D79F8F253` FOREIGN KEY (`property_id`) REFERENCES `SystemProperty` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_drtsb215dfp02l875hmfseykv` FOREIGN KEY (`community_id`) REFERENCES `Community` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS `Thumbnail`;

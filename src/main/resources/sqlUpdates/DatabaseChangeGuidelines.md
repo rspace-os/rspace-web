@@ -48,7 +48,7 @@ There are various naming conventions, please [IntegrationAndAppNotes](integratio
 
 ### Have you set a context?
 
-RSpace is launched with one of three `liquibase.context` strings, set per deployment:
+Every RSpace deployment uses one of three `liquibase.context` strings:
 
 | Deployment              | `liquibase.context` | Where set                                  |
 |-------------------------|---------------------|--------------------------------------------|

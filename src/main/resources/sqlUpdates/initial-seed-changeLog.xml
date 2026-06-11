@@ -8,12 +8,12 @@
          first (before post-1.98.1 changesets). Each changeset MARK_RANs on existing DBs (via precondition)
          so data is not re-inserted on upgrades; on a fresh DB the tables are empty so the seed loads. -->
 
-    <changeSet id="rsdev-416-seed-run" author="matthias">
+    <changeSet id="rsdev-416-seed-run" author="matthias" context="run">
         <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="run seed already present"
                        onErrorMessage="run seed already present">
             <sqlCheck expectedResult="0">SELECT COUNT(*) FROM roles</sqlCheck>
         </preConditions>
-        <comment>Pre-1.98.1 run / no-context seed: roles, permissions, system properties, app configs, the Organisation reference list, sysadmin/system users, default file store, batch sequences.</comment>
+        <comment>Pre-1.98.1 run / no-context seed: roles, permissions, system properties, app configs, the Organisation reference list, sysadmin/system users, batch sequences.</comment>
         <sqlFile path="initial-seed-run.sql" relativeToChangelogFile="true"
                  splitStatements="true" stripComments="true" endDelimiter=";"/>
     </changeSet>

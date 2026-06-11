@@ -2,11 +2,10 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
-    <!-- add files of changes here, one per release. These are executed in order, and
-     assume a base schema is already in place, either generated from Hibernate mappings
-     (in dev environment) or via the baseline sql schema ( deployment environment).
-     file is set by variable at build-time for 0.14-0.15 transition where we have an existing DB that
-      has already core user data in it but has not yet been managed by Liquibase. -->
+    <!-- add files of changes here, one per release. These are executed in order, on top of the
+     1.98.1 baseline schema (liquibaseConfig/rs-dbbaseline-utf8.sql) on a fresh install, or on the
+     existing schema when upgrading. initial-seed-changeLog.xml must remain first so the consolidated
+     pre-1.98.1 seed loads before the post-1.98.1 changesets. -->
     <!--  the order of these files is important and should not be changed! -->
 
 
