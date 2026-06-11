@@ -1433,7 +1433,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>RSDEV-1131-Inventory-link-related-items-32b9336efd-1</version>
+      <version>RSDEV-1131-Inventory-link-related-items-4a3efa575b-1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>

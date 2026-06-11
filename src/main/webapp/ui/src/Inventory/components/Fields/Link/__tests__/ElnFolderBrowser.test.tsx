@@ -151,3 +151,37 @@ describe("ElnFolderBrowser", () => {
     expect(onSelectionChange).toHaveBeenCalledWith(null);
   });
 });
+
+describe("ElnFolderBrowser selection highlight", () => {
+  beforeEach(() => {
+    mockGetFolderTree.mockReset();
+    wireFolderTree();
+  });
+  afterEach(cleanup);
+
+  it("obviously highlights the selected item with the theme primary colour", async () => {
+    renderBrowser(vi.fn());
+    const user = userEvent.setup();
+    await user.click(await screen.findByText(/protocol doc/i));
+
+    const item = screen.getByRole("treeitem", { name: /protocol doc/i });
+
+    /* eslint-disable testing-library/no-node-access, testing-library/no-container -- inspecting the MUI content row that carries the selection styling, and the emotion style tags that define it */
+    // x-tree-view 9 marks selection with a data-selected attribute on the
+    // content row (the Mui-selected class no longer exists)
+    const content = item.querySelector(".MuiTreeItem-content");
+    expect(content).toHaveAttribute("data-selected");
+
+    // the highlight styling must target that data attribute and use the solid
+    // theme primary colour so the selection is unmistakable
+    const css = Array.from(document.head.querySelectorAll("style"))
+      .map((tag) => tag.textContent ?? "")
+      .join("\n");
+    /* eslint-enable testing-library/no-node-access, testing-library/no-container */
+    const selectedRule =
+      css.match(/\.MuiTreeItem-content\[data-selected\][^{]*\{[^}]*\}/)?.[0] ??
+      "";
+    expect(selectedRule).toContain("background-color");
+    expect(selectedRule).toContain(materialTheme.palette.primary.main);
+  });
+});

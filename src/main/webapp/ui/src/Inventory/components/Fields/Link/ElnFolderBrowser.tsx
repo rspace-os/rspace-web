@@ -290,11 +290,17 @@ export default function ElnFolderBrowser({
         itemChildrenIndentation={20}
         slots={{ expandIcon: ExpandArrow, collapseIcon: CollapseArrow }}
         sx={{
-          // ELN selected-row highlight + compact rows; fileTreeBrowser.css cannot bind to
-          // this MUI DOM, so the values are copied here only (see ADR 0001).
+          // Compact rows like the ELN tree (fileTreeBrowser.css cannot bind to this
+          // MUI DOM; see ADR 0001). The selected row uses the solid theme primary
+          // colour so the current selection is unmistakable before clicking Choose.
+          // x-tree-view 9 marks state with data attributes on the content row (the
+          // Mui-selected class no longer exists), so the selectors target those.
           "& .MuiTreeItem-content": { minHeight: "25px", borderRadius: 0, py: 0 },
-          "& .MuiTreeItem-content.Mui-selected, & .MuiTreeItem-content.Mui-selected.Mui-focused, & .MuiTreeItem-content.Mui-selected:hover":
-            { backgroundColor: "rgba(193, 193, 193, 0.5)" },
+          "& .MuiTreeItem-content[data-selected], & .MuiTreeItem-content[data-selected][data-focused], & .MuiTreeItem-content[data-selected]:hover":
+            {
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
+            },
         }}
         expandedItems={expanded}
         onExpandedItemsChange={(_event, items) => setExpanded(items)}
