@@ -410,7 +410,7 @@ function _setInfoPanelRelatedInventoryItemsHtml($div, info, recordTypeNameToDisp
       var globalId = item.sourceGlobalId;
       var name = item.sourceName || "";
       var relation = item.relationType || "";
-      html += "<li><a href='/globalId/" + globalId + "'>" + globalId + "</a>: "
+      html += "<li><a href='/globalId/" + encodeURIComponent(globalId) + "'>" + RS.escapeHtml(globalId) + "</a>: "
         + RS.escapeHtml(name)
         + (relation ? " <em>(" + RS.escapeHtml(relation) + ")</em>" : "")
         + "</li>";

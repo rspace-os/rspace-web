@@ -11,6 +11,12 @@ import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
 /**
+ * One grid row per link FIELD: a source item linking through two fields
+ * repeats its globalId, so each row carries its own synthetic unique id.
+ */
+type ReferencingItemRow = ReferencingInventoryItem & { rowId: string };
+
+/**
  * Lists the Inventory items (samples, subsamples, containers, instruments) whose
  * Link extra-field points at this GalleryFile. The mirror image of
  * {@link LinkedDocumentsPanel}: where that shows ELN documents linking in, this
@@ -49,7 +55,7 @@ export function ReferencingInventoryItemsPanel({
       </Typography>
       <DataGrid
         columns={[
-          DataGridColumn.newColumnWithFieldName<"name", ReferencingInventoryItem>(
+          DataGridColumn.newColumnWithFieldName<"name", ReferencingItemRow>(
             "name",
             {
               headerName: "Name",
@@ -60,7 +66,7 @@ export function ReferencingInventoryItemsPanel({
           ),
           DataGridColumn.newColumnWithFieldName<
             "relationType",
-            ReferencingInventoryItem
+            ReferencingItemRow
           >("relationType", {
             headerName: "Relation",
             flex: 0,
@@ -69,7 +75,7 @@ export function ReferencingInventoryItemsPanel({
           }),
           DataGridColumn.newColumnWithFieldName<
             "globalId",
-            ReferencingInventoryItem
+            ReferencingItemRow
           >("globalId", {
             headerName: "Global ID",
             flex: 0,
@@ -87,7 +93,12 @@ export function ReferencingInventoryItemsPanel({
             ),
           }),
         ]}
-        rows={referencing.items}
+        rows={referencing.items.map((item, index) => ({
+          ...item,
+          // one row per link FIELD: a source item linking through two fields
+          // repeats its globalId, so the grid row id needs the index too
+          rowId: `${item.globalId}-${index}`,
+        }))}
         initialState={{
           columns: {},
         }}
@@ -104,7 +115,7 @@ export function ReferencingInventoryItemsPanel({
             referencing.errorMessage ?? "No related inventory items",
         }}
         loading={referencing.loading}
-        getRowId={(row) => row.globalId}
+        getRowId={(row) => row.rowId}
         sx={{
           ml: 2,
         }}

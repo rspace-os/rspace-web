@@ -38,8 +38,10 @@ export default function RelatedInventoryItems({
       )}
       {items.length > 0 && (
         <Box component="ul" sx={{ pl: 3, my: 0.5 }}>
-          {items.map((item) => (
-            <li key={item.globalId}>
+          {items.map((item, index) => (
+            // one row per link FIELD: a source item linking through two
+            // fields repeats its globalId, so the key needs the index too
+            <li key={`${item.globalId}-${index}`}>
               <Link
                 href={`/globalId/${item.globalId}`}
                 target="_blank"

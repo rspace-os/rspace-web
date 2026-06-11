@@ -86,6 +86,22 @@ class SampleApiManagerImplLinkFieldTest {
   }
 
   @Test
+  void pinnedSuffixedTargetMatchingStoredBaseIdIsUnchanged() {
+    // the stored row holds the base id ("SA2") with the pin in versionPin; an
+    // incoming suffixed id ("SA2v4") carrying the same effective pin must
+    // compare equal, not fire a spurious update (and Envers revision) on
+    // every save
+    dbLink.setVersionPin(4L);
+    ApiInventoryEntityField apiField = apiLinkField("SA2v4", "References", null);
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
   void retargetUpdatesTheExistingRowInPlace() {
     ApiInventoryEntityField apiField = apiLinkField("SA3", "References", null);
     when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);

@@ -369,8 +369,15 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     }
     Long effectivePin =
         apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
+    // compare on the parsed base id, not the raw string: the stored row holds the
+    // unsuffixed id (the pin lives in versionPin), so a suffixed incoming id like
+    // "SA2v4" would otherwise never compare equal and every save would fire a
+    // spurious update (and Envers revision). Mirrors ApiExtraFieldsHelper.linkChanged.
+    GlobalIdentifier incoming = parseTargetOrNull(target);
     if (existing != null
-        && target.equals(existing.getTargetGlobalId())
+        && incoming != null
+        && incoming.getPrefix() == existing.getTargetPrefix()
+        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
         && Objects.equals(effectivePin, existing.getVersionPin())
         && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
       return false; // unchanged
@@ -438,15 +445,21 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     if (apiLink == null || dbSample.getOid() == null) {
       return;
     }
-    GlobalIdentifier target;
-    try {
-      target = new GlobalIdentifier(apiLink.getTargetGlobalId());
-    } catch (IllegalArgumentException | NullPointerException ex) {
+    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (target == null) {
       return; // malformed/blank targets are handled by the manager / clear path
     }
     if (InventoryLinkValidator.isSelfLink(target, dbSample.getOid().toString())) {
       throw new ApiRuntimeException(
           "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
+    }
+  }
+
+  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
+    try {
+      return new GlobalIdentifier(targetGlobalId);
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      return null;
     }
   }
 
