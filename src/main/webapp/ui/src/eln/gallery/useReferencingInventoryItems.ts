@@ -3,13 +3,10 @@ import axios from "@/common/axios";
 import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
-import { GLOBAL_ID_PATTERN } from "@/Inventory/components/Fields/Link/linkTarget";
-import { INVENTORY_PREFIX_ICON_DATA } from "@/Inventory/components/Fields/Link/iconForGlobalId";
-
-function prefixOf(globalId: string): string | null {
-  const match = GLOBAL_ID_PATTERN.exec(globalId);
-  return match ? match[1] : null;
-}
+import {
+  INVENTORY_PREFIX_ICON_DATA,
+  prefixOf,
+} from "@/Inventory/components/Fields/Link/iconForGlobalId";
 
 /**
  * An Inventory item that links to the current ELN record, to the extent the

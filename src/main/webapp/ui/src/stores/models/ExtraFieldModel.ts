@@ -120,7 +120,7 @@ export default class ExtraFieldModel implements ExtraField {
     if (this.type === "Number") {
       if (this.invalidInput)
         return IsInvalid(
-          "The content of numberical extra fields must be a valid number."
+          "The content of numerical extra fields must be a valid number."
         );
       return IsValid();
     }

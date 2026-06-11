@@ -431,8 +431,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     // (mirrors the StoichiometryInventoryLink cleanup). The sweep only matches rows with no
     // remaining referrer in any live or audited field table, so links belonging to other
     // users' surviving fields are untouched. _AUD first, then main.
-    execute(
-        userId,
+    executeUnparameterised(
         session,
         "delete il from InventoryLink_AUD il"
             + " left join ExtraField ef on ef.link_id = il.id"
@@ -440,8 +439,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
             + " left join InventoryEntityField ief on ief.link_id = il.id"
             + " left join InventoryEntityField_AUD iefa on iefa.link_id = il.id"
             + " where ef.id is null and efa.id is null and ief.id is null and iefa.id is null");
-    execute(
-        userId,
+    executeUnparameterised(
         session,
         "delete il from InventoryLink il"
             + " left join ExtraField ef on ef.link_id = il.id"
@@ -727,6 +725,15 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     Query<?> query = session.createSQLQuery(idQuery);
     query.setParameter("id", userId);
     query.executeUpdate();
+    session.flush();
+  }
+
+  /**
+   * Like {@link #execute} but for statements with no bind parameters. The cross-user orphan sweeps
+   * have no {@code :id} placeholder, and binding one anyway makes Hibernate throw at runtime.
+   */
+  private void executeUnparameterised(Session session, String sql) {
+    session.createSQLQuery(sql).executeUpdate();
     session.flush();
   }
 
