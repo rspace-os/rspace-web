@@ -245,6 +245,11 @@ public class InventoryRecordRetriever {
       return true;
     }
 
+    List<Instrument> instrumentsUsingImageFile = instrumentDao.getAllUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, instrumentsUsingImageFile)) {
+      return true;
+    }
+
     return false;
   }
 

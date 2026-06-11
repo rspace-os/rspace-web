@@ -52,7 +52,7 @@ export default function RecordTypeIcon({
       break;
     case "instrument":
       icon = (
-          <BiotechIcon sx={{ fontSize: "1em", color: color ?? theme.palette.record.instrument.fg }} style={style} />
+        <FontAwesomeIcon size="1x" icon={faMicroscope} color={color ?? theme.palette.record.instrument.fg} style={style} />
       );
       break;
     case "template":

@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
@@ -19,6 +20,9 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       User user);
+
+  /** Returns all instruments whose image or thumbnail is the given file property. */
+  List<Instrument> getAllUsingImage(FileProperty fileProperty);
 
   /** Returns all instruments with the given name owned by the given user. */
   List<Instrument> findInstrumentsByName(String name, User user);

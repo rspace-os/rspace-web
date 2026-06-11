@@ -165,7 +165,7 @@ export default class MoveStore {
           await record.fetchAdditionalInfo();
         }
         this.selectedResults = [...this.selectedResults, ...record.subSamples];
-      } else if (record instanceof SubSampleModel || record instanceof ContainerModel) {
+      } else if (record instanceof SubSampleModel || record instanceof ContainerModel || record instanceof InstrumentModel) {
         this.selectedResults = [...this.selectedResults, record];
       } else {
         throw new Error("Unknown type.");

@@ -1,12 +1,3 @@
-import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
-import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Box from "@mui/material/Box";
-import Divider from "@mui/material/Divider";
-import Drawer, { drawerClasses } from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import { useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { InvalidState } from "@/util/error";
 import { mapNullable } from "@/util/Util";
@@ -23,7 +14,7 @@ import useNavigateHelpers from "../../useNavigateHelpers";
 import CreateNew from "../CreateNew";
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
-import BiotechIcon from "@mui/icons-material/Biotech";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);

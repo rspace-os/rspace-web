@@ -11,7 +11,7 @@ import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
 import type { ResultType } from "../../../stores/definitions/Search";
 import { match } from "../../../util/Util";
-import BiotechIcon from "@mui/icons-material/Biotech";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 
 type TypeFilterArgs = {
   anchorEl: HTMLElement | null;
@@ -126,11 +126,10 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             data-test-id="instrumentType"
         >
           <ListItemIcon>
-            <BiotechIcon
-                sx={{
-                  fontSize: "1em",
-                  color: theme.palette.standardIcon.main,
-                }}
+            <FontAwesomeIcon
+              icon={faMicroscope}
+              color={theme.palette.standardIcon.main}
+              sx={{ fontSize: "1em" }}
             />
           </ListItemIcon>
           <ListItemText primary="Instruments" />
