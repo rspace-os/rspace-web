@@ -38,6 +38,7 @@ import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.inventory.DataCiteRelationType;
@@ -53,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
@@ -341,24 +343,40 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   /**
-   * Applies a sample's chosen link value to its structured link field. The link is created through
-   * the {@link InventoryLinkManager} (which parses the target and captures the Envers revision, the
-   * same path used by extra-field links); the chosen relation type must be permitted by the
-   * template field's allowed-relation-types whitelist (an empty whitelist permits all).
+   * Applies a sample's chosen link value to its structured link field, going through the {@link
+   * InventoryLinkManager} so the target is parsed/validated and the Envers revision captured (the
+   * same path used by extra-field links). An unchanged payload is a no-op (previously every save
+   * replaced the row, resetting its identity and creation date); a changed payload updates the
+   * field's existing InventoryLink row in place; clearing the value soft-deletes the old row
+   * through the manager before dereferencing it (the field's orphanRemoval mapping then removes the
+   * dereferenced row at flush). The chosen relation type must be permitted by the template field's
+   * allowed-relation-types whitelist (an empty whitelist permits all).
    */
-  private boolean applyLinkFieldValue(
+  boolean applyLinkFieldValue(
       InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
     ApiInventoryLink apiLink = apiField.getLink();
     String target = apiLink == null ? null : apiLink.getTargetGlobalId();
+    InventoryLink existing = field.getLink();
     if (target == null || target.trim().isEmpty()) {
-      if (field.getLink() == null) {
+      if (existing == null) {
         return false; // no link before, none requested now
       }
+      inventoryLinkManager.deleteLink(existing, user);
       field.setLink(null);
       return true;
     }
+    if (existing != null
+        && target.equals(existing.getTargetGlobalId())
+        && Objects.equals(apiLink.getVersionPin(), existing.getVersionPin())
+        && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
+      return false; // unchanged
+    }
     assertRelationAllowed(field, apiLink.getRelationType());
-    field.setLink(inventoryLinkManager.createLink(apiLink, user));
+    if (existing != null) {
+      field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
+    } else {
+      field.setLink(inventoryLinkManager.createLink(apiLink, user));
+    }
     return true;
   }
 

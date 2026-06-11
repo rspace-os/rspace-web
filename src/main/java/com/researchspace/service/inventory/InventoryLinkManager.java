@@ -27,7 +27,10 @@ public interface InventoryLinkManager {
 
   /**
    * Returns the items that link to the given target GlobalID (ignoring version suffix), filtered to
-   * sources the requesting user can read.
+   * sources the requesting user can read. The target itself must exist and be readable by the
+   * actor: a malformed id, a missing record and an unreadable record all produce the same "target
+   * not found" error, so the response never confirms the existence of a record the caller may not
+   * read.
    */
   List<ApiInventoryReferencingItem> findReferencingItems(String targetGlobalId, User actor);
 

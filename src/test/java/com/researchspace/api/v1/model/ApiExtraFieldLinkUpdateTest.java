@@ -20,9 +20,10 @@ import org.junit.Test;
 
 /**
  * Pure unit tests for {@link ApiExtraField#applyChangesToDatabaseExtraField} when applied to a
- * pre-existing Link extra-field. Drives the fix for the bug where editing the version pin on a
- * saved link reverts to "latest" after the user clicks save: the update path was ignoring the
- * incoming {@code link} payload entirely.
+ * pre-existing Link extra-field. The DTO apply loop reconciles relationType only; target and
+ * version-pin changes are applied in the service layer (ApiExtraFieldsHelper through
+ * InventoryLinkManager#updateLink), which validates the target and recaptures the pinned audit
+ * revision. Applying a pin here in the DTO would leave the stored targetRevisionId stale.
  */
 public class ApiExtraFieldLinkUpdateTest {
 
@@ -77,25 +78,27 @@ public class ApiExtraFieldLinkUpdateTest {
   }
 
   @Test
-  public void appliesNewVersionPinOntoExistingLink() {
+  public void leavesVersionPinChangeToTheServiceLayer() {
     ExtraLinkField dbField = dbLinkField(null);
     ApiExtraField apiField = apiLinkField("References", 7L);
 
     boolean changed = apiField.applyChangesToDatabaseExtraField(dbField, user);
 
-    assertTrue("change flag should be set when versionPin changed", changed);
-    assertEquals(Long.valueOf(7L), dbField.getLink().getVersionPin());
+    // a pin applied here would not recapture targetRevisionId, so the DTO must
+    // leave it to ApiExtraFieldsHelper/InventoryLinkManager.updateLink
+    assertEquals(false, changed);
+    assertNull(dbField.getLink().getVersionPin());
   }
 
   @Test
-  public void clearsVersionPinWhenIncomingIsNull() {
+  public void leavesVersionPinClearToTheServiceLayer() {
     ExtraLinkField dbField = dbLinkField(7L);
     ApiExtraField apiField = apiLinkField("References", null);
 
     boolean changed = apiField.applyChangesToDatabaseExtraField(dbField, user);
 
-    assertTrue("change flag should be set when versionPin cleared", changed);
-    assertNull(dbField.getLink().getVersionPin());
+    assertEquals(false, changed);
+    assertEquals(Long.valueOf(7L), dbField.getLink().getVersionPin());
   }
 
   @Test

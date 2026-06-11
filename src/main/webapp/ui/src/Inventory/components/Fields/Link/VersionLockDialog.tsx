@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -103,6 +103,19 @@ export default function VersionLockDialog(
       : props.currentVersionPin;
   const [selection, setSelection] =
     useState<VersionLockSelection>(initialSelection);
+
+  // The component instance stays mounted while closed (open=false renders
+  // null but keeps hook state), so an abandoned selection from a previous
+  // open would otherwise leak into the next one. Re-sync on each open.
+  useEffect(() => {
+    if (props.open) {
+      setSelection(
+        props.currentVersionPin == null
+          ? LATEST_SELECTION
+          : props.currentVersionPin,
+      );
+    }
+  }, [props.open, props.currentVersionPin]);
 
   const fetchVersions = useCallback(
     async (): Promise<VersionRecord[]> => {

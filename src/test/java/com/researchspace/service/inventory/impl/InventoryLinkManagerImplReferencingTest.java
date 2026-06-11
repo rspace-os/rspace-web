@@ -2,6 +2,8 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +33,9 @@ class InventoryLinkManagerImplReferencingTest {
   @BeforeEach
   void setUp() {
     actor = new User("viewer");
+    // these tests cover the source query, so the target read-permission gate is open;
+    // InventoryLinkManagerImplUnitTest covers the gate itself
+    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
   }
 
   @Test

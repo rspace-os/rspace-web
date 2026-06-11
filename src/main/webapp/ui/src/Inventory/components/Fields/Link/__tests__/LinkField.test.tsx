@@ -373,7 +373,7 @@ describe("LinkField", () => {
     const sampleChip = container.querySelector(
       '[data-test-id="LinkField-target"]',
     );
-    expect(sampleChip?.querySelector("svg")).not.toBeNull();
+    expect(sampleChip?.querySelector("svg")).toBeInTheDocument();
 
     rerender(
       <ThemeProvider theme={materialTheme}>
@@ -391,7 +391,7 @@ describe("LinkField", () => {
     const containerChip = container.querySelector(
       '[data-test-id="LinkField-target"]',
     );
-    expect(containerChip?.querySelector("svg")).not.toBeNull();
+    expect(containerChip?.querySelector("svg")).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access, testing-library/no-container */
   });
 });

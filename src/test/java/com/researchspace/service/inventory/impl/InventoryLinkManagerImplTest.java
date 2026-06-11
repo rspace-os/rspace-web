@@ -3,8 +3,10 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -116,7 +118,29 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
   @Test
   public void findReferencingItemsReturnsEmptyWhenNoSources() {
     User user = createInitAndLoginAnyUser();
-    List<ApiInventoryReferencingItem> rows = linkManager.findReferencingItems("SA9999", user);
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(user);
+
+    List<ApiInventoryReferencingItem> rows =
+        linkManager.findReferencingItems(target.getGlobalId(), user);
+
     assertEquals(0, rows.size());
+  }
+
+  @Test
+  public void findReferencingItemsRejectsTargetTheCallerCannotRead() {
+    User owner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
+    User stranger = createInitAndLoginAnyUser();
+
+    // same error as a missing record, so the response does not confirm the target exists
+    assertThrows(
+        ApiRuntimeException.class,
+        () -> linkManager.findReferencingItems(target.getGlobalId(), stranger));
+  }
+
+  @Test
+  public void findReferencingItemsRejectsMissingTarget() {
+    User user = createInitAndLoginAnyUser();
+    assertThrows(ApiRuntimeException.class, () -> linkManager.findReferencingItems("SA9999", user));
   }
 }

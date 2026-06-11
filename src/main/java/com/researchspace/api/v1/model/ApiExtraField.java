@@ -149,31 +149,24 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
   }
 
   /**
-   * Applies relationType / versionPin changes from the incoming API payload onto the existing
-   * persisted InventoryLink. Target (and pin) changes that need validation and audit-revision
-   * capture are applied in the service layer instead (ApiExtraFieldsHelper's
-   * applyExistingLinkFieldChanges, which can reach the InventoryLinkManager), so by the time this
-   * runs a retargeted link already carries its new target and this only reconciles the remaining
-   * relationType / versionPin fields.
+   * Applies relationType changes from the incoming API payload onto the existing persisted
+   * InventoryLink. Target and version-pin changes are applied in the service layer instead
+   * (ApiExtraFieldsHelper's applyExistingLinkFieldChanges, which can reach the
+   * InventoryLinkManager): both need target validation and a recapture of the pinned audit revision
+   * (targetRevisionId), which this DTO cannot perform. Setting the pin here in-place would leave
+   * the stored revision pointing at the previously pinned version.
    */
   private boolean applyLinkPayload(ExtraLinkField dbField) {
     InventoryLink dbLink = dbField.getLink();
     if (dbLink == null) {
       return false;
     }
-    boolean linkChanged = false;
     String newRelation = link.getRelationType();
     if (newRelation != null && !newRelation.equals(dbLink.getRelationType())) {
       dbLink.setRelationType(newRelation);
-      linkChanged = true;
+      return true;
     }
-    Long newVersionPin = link.getVersionPin();
-    Long currentVersionPin = dbLink.getVersionPin();
-    if (!java.util.Objects.equals(newVersionPin, currentVersionPin)) {
-      dbLink.setVersionPin(newVersionPin);
-      linkChanged = true;
-    }
-    return linkChanged;
+    return false;
   }
 
   /**

@@ -58,6 +58,12 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
       // rather than letting the raw IllegalArgumentException escape to the HTTP layer
       throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
     }
+    // the caller must be able to READ the target itself: filtering the sources alone would
+    // still confirm an unreadable record's existence and reveal its inbound links to anyone
+    // who guesses its id. Same error as the malformed/missing case, so nothing is disclosed.
+    if (!linkTargetResolver.targetExistsAndIsReadable(target, actor)) {
+      throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
+    }
     List<ExtraLinkField> fields =
         linkDao.findReferencingLinkFields(target.getPrefix(), target.getDbId());
     List<ApiInventoryReferencingItem> rows = new ArrayList<>(fields.size());

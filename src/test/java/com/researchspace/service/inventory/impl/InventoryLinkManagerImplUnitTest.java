@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.dao.InventoryLinkDao;
@@ -102,6 +104,31 @@ class InventoryLinkManagerImplUnitTest {
 
     assertEquals(Long.valueOf(7), updated.getVersionPin());
     assertEquals(Long.valueOf(55), updated.getTargetRevisionId());
+  }
+
+  @Test
+  void findReferencingItemsRejectsTargetTheCallerCannotReadWithoutQuerying() {
+    // unreadable and missing targets deliberately produce the same error, so the
+    // response does not confirm to a guessing caller that the record exists
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+
+    assertThrows(ApiRuntimeException.class, () -> linkManager.findReferencingItems("SA42", actor));
+    verify(linkDao, never()).findReferencingLinkFields(any(), any());
+  }
+
+  @Test
+  void findReferencingItemsQueriesSourcesWhenTargetIsReadable() {
+    when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SA, 42L))
+        .thenReturn(java.util.Collections.emptyList());
+
+    assertEquals(0, linkManager.findReferencingItems("SA42", actor).size());
+  }
+
+  @Test
+  void findReferencingItemsRejectsMalformedGlobalId() {
+    assertThrows(
+        ApiRuntimeException.class, () -> linkManager.findReferencingItems("not-a-gid", actor));
+    verify(linkDao, never()).findReferencingLinkFields(any(), any());
   }
 
   @Test

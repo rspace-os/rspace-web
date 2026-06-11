@@ -153,6 +153,50 @@ describe("VersionLockDialog", () => {
     expect(onConfirm).toHaveBeenCalledWith(2);
   });
 
+  it("re-syncs the selection when reopened after an abandoned edit", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    const user = userEvent.setup();
+    const stableProps = {
+      globalId: "SA42",
+      onConfirm: vi.fn(),
+      onCancel: vi.fn(),
+    };
+    const { rerender } = render(
+      <ThemeProvider theme={materialTheme}>
+        <VersionLockDialog open currentVersionPin={null} {...stableProps} />
+      </ThemeProvider>,
+    );
+
+    // abandon an edit: select Version 1, then close without confirming
+    await user.click(await screen.findByText("Version 1"));
+    rerender(
+      <ThemeProvider theme={materialTheme}>
+        <VersionLockDialog
+          open={false}
+          currentVersionPin={null}
+          {...stableProps}
+        />
+      </ThemeProvider>,
+    );
+
+    // reopen after the pin was saved as version 2 elsewhere: the abandoned
+    // selection (Version 1) must not leak into the fresh open
+    rerender(
+      <ThemeProvider theme={materialTheme}>
+        <VersionLockDialog open currentVersionPin={2} {...stableProps} />
+      </ThemeProvider>,
+    );
+
+    // wait for the version rows to load before inspecting the radios
+    expect(await screen.findByText("Version 2")).toBeInTheDocument();
+    const version2Radio = screen
+      .getAllByRole("radio")
+      .find((radio) => radio.getAttribute("value") === "2");
+    expect(version2Radio).toBeChecked();
+  });
+
   it("calls onConfirm with null when the user selects 'latest' after a pin was in place", async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
     const apiGet = InvApiService.get;
