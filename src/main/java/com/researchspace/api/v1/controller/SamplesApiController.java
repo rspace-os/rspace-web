@@ -15,6 +15,8 @@ import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import java.io.IOException;
@@ -54,7 +56,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     ApiSampleWithFullSubSamples apiSample;
     User user;
     // may be null
-    Sample template;
+    SampleTemplate template;
   }
 
   // this class doesn't seem to be used at all, nor its validator
@@ -66,9 +68,9 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     User user;
     Long templateId;
     // may be null
-    Sample template;
+    SampleTemplate template;
     // the db sample matching the api sample
-    Sample dbSample;
+    SampleEntity dbSample;
   }
 
   @Override
@@ -85,6 +87,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     if (apiPgCrit == null) {
       apiPgCrit = new InventoryApiPaginationCriteria();
     }
+    // samples-only listing: Sample.class (not SampleEntity.class) is correct here
     PaginationCriteria<Sample> pgCrit = getPaginationCriteriaForApiSearch(apiPgCrit, Sample.class);
 
     String ownedBy = null;
@@ -141,7 +144,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     return result;
   }
 
-  private void assertNotSampleTemplate(Sample dbSample) {
+  private void assertNotSampleTemplate(SampleEntity dbSample) {
     assertNotSampleTemplate(dbSample.isTemplate());
   }
 
@@ -157,7 +160,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   public void validateCreateSampleInput(
       ApiSampleWithFullSubSamples apiSample, BindingResult errors, User user) throws BindException {
 
-    Sample template = verifyTemplate(apiSample, errors, user);
+    SampleTemplate template = verifyTemplate(apiSample, errors, user);
     // we validate the posted object. We can set errors on individual fields in this validator (
     // doesn't need template)
     inputValidator.validate(apiSample, sampleApiPostValidator, errors);
@@ -194,7 +197,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   }
 
   // ok for template id to be null
-  private Sample verifyTemplate(ApiSampleInfo apiSample, BindingResult errors, User user)
+  private SampleTemplate verifyTemplate(ApiSampleInfo apiSample, BindingResult errors, User user)
       throws BindException {
     if (apiSample.getTemplateId() == null) {
       return null;
@@ -259,7 +262,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     validateUpdateSampleInput(incomingSample, errors);
     // update incoming object's id which could be omitted
     incomingSample.setIdIfNotSet(id);
-    Sample dbSample = sampleApiMgr.assertUserCanEditSample(id, user);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(id, user);
     assertNotSampleTemplate(dbSample);
 
     // update the sample
@@ -275,7 +278,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @RequestParam(name = "forceDelete", required = false) boolean forceDelete,
       @RequestAttribute(name = "user") User user) {
 
-    Sample dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
     assertNotSampleTemplate(dbSample);
 
     ApiSample result;
@@ -290,7 +293,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSample restoreDeletedSample(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    Sample dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
     assertNotSampleTemplate(dbSample);
     return sampleApiMgr.restoreDeletedSample(id, user, true);
   }
@@ -331,7 +334,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSampleWithFullSubSamples duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    Sample dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
     assertNotSampleTemplate(dbSample);
 
     ApiSampleWithFullSubSamples copy = sampleApiMgr.duplicate(id, user);
@@ -351,7 +354,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   public ApiInventoryRecordRevisionList getSampleAllRevisions(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
 
-    Sample dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
     ApiInventoryRecordRevisionList revisions =
         inventoryAuditMgr.getInventoryRecordRevisions(dbSample);
     for (ApiInventoryRecordRevision sampleRev : revisions.getRevisions()) {

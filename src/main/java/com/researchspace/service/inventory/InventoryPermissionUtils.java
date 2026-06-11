@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.dao.ListOfMaterialsDao;
 import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
@@ -17,6 +18,8 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -33,6 +36,7 @@ import org.springframework.stereotype.Component;
 public class InventoryPermissionUtils {
 
   private @Autowired SampleDao sampleDao;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired ListOfMaterialsDao lomDao;
 
   private @Autowired UserManager userMgr;
@@ -180,10 +184,9 @@ public class InventoryPermissionUtils {
   }
 
   private boolean isDefaultSampleTemplate(InventoryRecord record) {
-    if (record.isSample()) {
-      Sample sample = (Sample) record;
-      return sample.isTemplate()
-          && sample.getOwner().getUsername().equals(sampleDao.getDefaultTemplatesOwner());
+    if (record instanceof SampleTemplate) {
+      SampleTemplate template = (SampleTemplate) record;
+      return template.getOwner().getUsername().equals(sampleTemplateDao.getDefaultTemplatesOwner());
     }
     return false;
   }
@@ -345,7 +348,7 @@ public class InventoryPermissionUtils {
   private boolean isSampleLimitedReadAllowedThroughSubsampleLimitedRead(
       InventoryRecord invRec, User user) {
     if (invRec.isSample()) {
-      Sample sample = (Sample) invRec;
+      SampleEntity sample = (SampleEntity) invRec;
       for (SubSample ss : sample.getSubSamples()) {
         if (canUserLimitedReadInventoryRecord(ss, user)) {
           return true;
@@ -369,20 +372,18 @@ public class InventoryPermissionUtils {
   }
 
   private boolean isTemplateLimitedReadAllowedThroughSample(InventoryRecord invRec, User user) {
-    if (invRec.isSample()) {
-      Sample recordAsSample = (Sample) invRec;
-      if (recordAsSample.isTemplate()) {
-        PaginationCriteria<Sample> allSamplesPgCrit =
-            PaginationCriteria.createDefaultForClass(Sample.class);
-        allSamplesPgCrit.setResultsPerPage(Integer.MAX_VALUE);
-        List<Sample> dbSamplesFromTemplate =
-            sampleDao
-                .getSamplesForUser(allSamplesPgCrit, recordAsSample.getId(), null, null, user)
-                .getResults();
-        for (Sample sa : dbSamplesFromTemplate) {
-          if (canUserReadInventoryRecord(sa, user)) {
-            return true;
-          }
+    if (invRec instanceof SampleTemplate) {
+      SampleTemplate recordAsTemplate = (SampleTemplate) invRec;
+      PaginationCriteria<Sample> allSamplesPgCrit =
+          PaginationCriteria.createDefaultForClass(Sample.class);
+      allSamplesPgCrit.setResultsPerPage(Integer.MAX_VALUE);
+      List<Sample> dbSamplesFromTemplate =
+          sampleDao
+              .getSamplesForUser(allSamplesPgCrit, recordAsTemplate.getId(), null, null, user)
+              .getResults();
+      for (Sample sa : dbSamplesFromTemplate) {
+        if (canUserReadInventoryRecord(sa, user)) {
+          return true;
         }
       }
     }

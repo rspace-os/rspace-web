@@ -39,7 +39,7 @@ import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
@@ -77,7 +77,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   @Before
   public void setUp() {
     openMocks(this);
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
     ReflectionTestUtils.setField(sampleApiMgr, "documentTagManager", documentTagManagerMock);
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());
@@ -280,13 +280,13 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     extraApiNumberField.setType(ExtraFieldTypeEnum.NUMBER);
     newSample.setExtraFields(List.of(extraApiNumberField));
 
-    Sample sampleTemplate =
+    SampleTemplate sampleTemplate =
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
     // add default value to various fields
     sampleTemplate.getActiveFields().get(4).setData("text"); // text
     sampleTemplate.getActiveFields().get(8).setData("option1"); // radio
     sampleTemplate.getActiveFields().get(9).setSelectedOptions(List.of("optionA")); // choice
-    Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
     ApiSampleWithFullSubSamples createdSample =
@@ -344,9 +344,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples();
     newSample.setName("complex sample with field content");
 
-    Sample sampleTemplate =
+    SampleTemplate sampleTemplate =
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
-    Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
     List<ApiInventoryEntityField> fields = new ArrayList<>();
@@ -645,9 +645,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
             () -> samplesApi.createNewSample(newSample, mockBindingResult, testUser));
     assertEquals("Please use /sampleTemplates endpoint for template actions", iae.getMessage());
 
-    Sample sampleTemplate =
+    SampleTemplate sampleTemplate =
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
-    Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
     // try changing template name through samples controller

@@ -4,7 +4,7 @@ import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPos
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.List;
@@ -92,7 +92,7 @@ public class SampleApiPostFullValidator implements Validator {
 
   private void validateQuantityUnit(Errors errors, ApiSampleFullPost apiSamplePost) {
     ApiSampleWithFullSubSamples postedApiSample = apiSamplePost.getApiSample();
-    Sample template = apiSamplePost.getTemplate();
+    SampleTemplate template = apiSamplePost.getTemplate();
     if (template != null && postedApiSample.getQuantity() != null) {
       RSUnitDef templateUnit = RSUnitDef.getUnitById(template.getDefaultUnitId());
       RSUnitDef sampleUnit = RSUnitDef.getUnitById(postedApiSample.getQuantity().getUnitId());

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,7 +31,10 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
   };
 
   public List<String> writeSampleCsvHeaderIntoOutput(
-      List<Sample> samples, CsvExportMode exportMode, CsvMapper mapper, OutputStream outputStream)
+      List<? extends SampleEntity> samples,
+      CsvExportMode exportMode,
+      CsvMapper mapper,
+      OutputStream outputStream)
       throws IOException {
     if (mapper == null) {
       mapper = getCsvMapper();
@@ -46,7 +51,8 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
     return SAMPLE_EXPORTABLE_PROPS;
   }
 
-  private List<String> getSampleColumnNamesForCsv(List<Sample> samples, CsvExportMode exportMode) {
+  private List<String> getSampleColumnNamesForCsv(
+      List<? extends SampleEntity> samples, CsvExportMode exportMode) {
     List<String> columnNames = super.getBasicColumnNamesForCsv(exportMode);
     for (ExportableInvRecProperty prop : getExportableProps()) {
       columnNames.add(prop.getCsvColumnHeader());
@@ -58,7 +64,8 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
     return columnNames;
   }
 
-  private List<InventoryEntityField> getSampleFieldsFromAllSamples(List<Sample> samples) {
+  private List<InventoryEntityField> getSampleFieldsFromAllSamples(
+      List<? extends SampleEntity> samples) {
     return samples.stream().flatMap(s -> s.getActiveFields().stream()).collect(Collectors.toList());
   }
 
@@ -82,7 +89,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
   }
 
   protected List<String> writeSampleCsvDetailsIntoOutput(
-      Sample sample,
+      SampleEntity sample,
       List<String> csvColumnNames,
       CsvExportMode exportMode,
       CsvMapper mapper,
@@ -101,7 +108,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
   }
 
   private List<String> getSamplePropertiesForCsv(
-      Sample sample, List<String> csvColumnNames, CsvExportMode exportMode) {
+      SampleEntity sample, List<String> csvColumnNames, CsvExportMode exportMode) {
     List<String> itemProperties = getBasicItemPropertiesForExport(sample, exportMode);
     addSampleSpecificPropertiesForExport(sample, itemProperties);
     addVariableSamplePropertiesForExport(sample, exportMode, csvColumnNames, itemProperties);
@@ -109,7 +116,10 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
     return itemProperties;
   }
 
-  private void addSampleSpecificPropertiesForExport(Sample sample, List<String> itemProperties) {
+  private void addSampleSpecificPropertiesForExport(
+      SampleEntity sample, List<String> itemProperties) {
+    SampleTemplate parentTemplate =
+        sample instanceof Sample ? ((Sample) sample).getSTemplate() : null;
     for (ExportableInvRecProperty prop : getExportableProps()) {
       String valueForProp = null;
       switch (prop) {
@@ -136,11 +146,15 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
                   : null;
           break;
         case TEMPLATE_GLOBAL_ID:
-          valueForProp =
-              sample.getSTemplate() != null ? sample.getSTemplate().getGlobalIdentifier() : null;
+          // templates have no parent template: empty cell, as when sTemplate was a null field
+          if (parentTemplate != null) {
+            valueForProp = parentTemplate.getGlobalIdentifier();
+          }
           break;
         case TEMPLATE_NAME:
-          valueForProp = sample.getSTemplate() != null ? sample.getSTemplate().getName() : null;
+          if (parentTemplate != null) {
+            valueForProp = parentTemplate.getName();
+          }
           break;
         default:
           throw new IllegalStateException("unhandled property: " + prop);
@@ -150,7 +164,7 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
   }
 
   private void addVariableSamplePropertiesForExport(
-      Sample sample,
+      SampleEntity sample,
       CsvExportMode exportMode,
       List<String> csvColumnNames,
       List<String> itemProperties) {
@@ -168,14 +182,14 @@ public class CsvSampleExporter extends InventoryItemCsvExporter {
     }
   }
 
-  public OutputStream getCsvFragmentForSamples(List<Sample> samples, CsvExportMode exportMode)
-      throws IOException {
+  public OutputStream getCsvFragmentForSamples(
+      List<? extends SampleEntity> samples, CsvExportMode exportMode) throws IOException {
     CsvMapper mapper = getCsvMapper();
     OutputStream outputStream = new ByteArrayOutputStream();
     if (!samples.isEmpty()) {
       List<String> columnNames =
           writeSampleCsvHeaderIntoOutput(samples, exportMode, mapper, outputStream);
-      for (Sample s : samples) {
+      for (SampleEntity s : samples) {
         writeSampleCsvDetailsIntoOutput(s, columnNames, exportMode, mapper, outputStream);
       }
     }

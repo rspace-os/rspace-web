@@ -102,7 +102,12 @@ public class CreateWorkbenchAndMoveSubSamples_1_70 extends AbstractCustomLiquiba
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from SubSample where sample.owner=:owner and sample.template = false and"
+                // 'sample.class = Sample' replaces the legacy 'sample.template = false': it
+                // excludes subsamples of sample templates via the discriminator, since the
+                // 'template' boolean no longer exists as an entity property
+                // (the type(sample) = Sample form fails under Hibernate 5's HQL translator on
+                // implicit joins)
+                "from SubSample where sample.owner=:owner and sample.class = Sample and"
                     + " parentLocation is null",
                 SubSample.class)
             .setParameter("owner", user)

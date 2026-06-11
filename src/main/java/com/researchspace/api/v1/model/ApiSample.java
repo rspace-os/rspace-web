@@ -3,7 +3,7 @@ package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ public class ApiSample extends ApiSampleWithoutSubSamples {
   @JsonProperty(value = "canBeDeleted")
   private Boolean canBeDeleted;
 
-  public ApiSample(Sample sample) {
+  public ApiSample(SampleEntity sample) {
     super(sample);
 
     for (SubSample subSample : sample.getActiveSubSamples()) {

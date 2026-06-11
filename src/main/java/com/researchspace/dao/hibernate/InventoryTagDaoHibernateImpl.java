@@ -32,7 +32,9 @@ public class InventoryTagDaoHibernateImpl extends InventoryDaoHibernate<Inventor
             null, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
 
     Set<String> allTags = new HashSet<>();
-    for (String targetClass : List.of("Sample", "SubSample", "Container")) {
+    // SampleEntity spans both samples and sample templates: template tags are part of the result,
+    // matching the behavior of the old single-class Sample entity
+    for (String targetClass : List.of("SampleEntity", "SubSample", "Container")) {
       allTags.addAll(
           getTagsForTargetClass(
               targetClass,

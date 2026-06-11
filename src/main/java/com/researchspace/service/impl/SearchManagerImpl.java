@@ -21,7 +21,7 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
-import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.TextSearchDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -64,7 +64,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired RecordManager recordManager;
   private @Autowired FolderManager folderMgr;
   private @Autowired SampleApiManager sampleApiManager;
-  private @Autowired SampleDao sampleDao;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired BasketApiManager basketApiManager;
   private @Autowired InventoryPermissionUtils invPermissionUtils;
   private @Autowired MessageSourceUtils messages;
@@ -298,7 +298,7 @@ public class SearchManagerImpl implements SearchManager {
      * so default templates are included in search.
      */
     if (searchConfig.isRestrictByUser()) {
-      String defaultTemplatesOwner = sampleDao.getDefaultTemplatesOwner();
+      String defaultTemplatesOwner = sampleTemplateDao.getDefaultTemplatesOwner();
       if (defaultTemplatesOwner != null
           && !invPermissionUtils.isInventoryOwnerReadableByUser(defaultTemplatesOwner, user)) {
         // let's also search templates of default templates owner

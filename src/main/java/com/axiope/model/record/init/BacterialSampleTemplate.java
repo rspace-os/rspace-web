@@ -1,7 +1,7 @@
 package com.axiope.model.record.init;
 
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryStringField;
@@ -24,14 +24,14 @@ public class BacterialSampleTemplate extends BuiltinContent implements SampleTem
     return "Bacteria";
   }
 
-  public Optional<Sample> createSampleTemplate(User createdBy) {
-    Sample sample = createTemplate(createdBy);
+  public Optional<SampleTemplate> createSampleTemplate(User createdBy) {
+    SampleTemplate sample = createTemplate(createdBy);
     m_initializer.saveSampleTemplate(sample);
     m_sampleTemplate = sample;
     return Optional.of(sample);
   }
 
-  private Sample createTemplate(User createdBy) {
+  private SampleTemplate createTemplate(User createdBy) {
     String[] stringFieldKeys1 =
         new String[] {
           "Organism",
@@ -43,11 +43,10 @@ public class BacterialSampleTemplate extends BuiltinContent implements SampleTem
           "Selectable marker"
         };
 
-    Sample sample = recordFactory.createSample("Bacteria", createdBy);
+    SampleTemplate sample = recordFactory.createSampleTemplate("Bacteria", createdBy);
     sample.setStorageTempMax(QuantityInfo.of(-18, RSUnitDef.CELSIUS));
     sample.setStorageTempMin(QuantityInfo.of(-30, RSUnitDef.CELSIUS));
     sample.setDescription("Description of a bacterial culture");
-    sample.setTemplate(true);
     InventoryEntityField id = new InventoryTextField("Identifier");
     sample.addSampleField(id);
 

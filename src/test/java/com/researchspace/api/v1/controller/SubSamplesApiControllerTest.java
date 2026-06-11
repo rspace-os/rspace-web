@@ -70,7 +70,7 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
   @Before
   public void setUp() {
     openMocks(this);
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
     ReflectionTestUtils.setField(sampleApiMgr, "documentTagManager", documentTagManagerMock);
     ReflectionTestUtils.setField(subSampleApiMgr, "documentTagManager", documentTagManagerMock);
     testUser = createInitAndLoginAnyUser();
