@@ -295,16 +295,34 @@ var tinymcesetup = {
 				if (autocomplete) {
 					var typed = autocomplete.textContent || "";
 					// In some engines the caret escapes the span and typed characters land in
-					// text nodes AFTER it; collect following-sibling text up to the caret.
+					// nodes AFTER it; collect following-sibling text up to the caret.
 					if (!caretInSpan) {
 						var rng = ed.selection && ed.selection.getRng ? ed.selection.getRng() : null;
-						for (var node = autocomplete.nextSibling; node; node = node.nextSibling) {
+						var holdsCaret = function (node) {
+							return rng && (node === rng.startContainer || (node.contains && node.contains(rng.startContainer)));
+						};
+						// text of `node` up to the caret: full text when the caret is not inside
+						// it, otherwise only the part before the caret (descending into children,
+						// so an element sibling does not contribute text past the caret)
+						var textUpToCaret = function (node) {
 							if (rng && node === rng.startContainer) {
-								typed += (node.textContent || "").substring(0, rng.startOffset);
-								break;
+								return (node.textContent || "").substring(0, rng.startOffset);
 							}
-							typed += node.textContent || "";
-							if (rng && node.contains && node.contains(rng.startContainer)) {
+							if (!holdsCaret(node)) {
+								return node.textContent || "";
+							}
+							var collected = "";
+							for (var child = node.firstChild; child; child = child.nextSibling) {
+								collected += textUpToCaret(child);
+								if (holdsCaret(child)) {
+									break;
+								}
+							}
+							return collected;
+						};
+						for (var node = autocomplete.nextSibling; node; node = node.nextSibling) {
+							typed += textUpToCaret(node);
+							if (holdsCaret(node)) {
 								break;
 							}
 						}
@@ -312,7 +330,9 @@ var tinymcesetup = {
 					// strip the zero-width no-break space left by the plugin's dummy caret span
 					typed = typed.replace(/\ufeff/g, "").trim();
 					if (delimiter && typed.indexOf(delimiter) === 0) {
-						typed = typed.substring(delimiter.length);
+						// trim again: whitespace directly after the delimiter survives the first
+						// trim ("@ ro" -> " ro") and would be sent to the server
+						typed = typed.substring(delimiter.length).trim();
 					}
 					if (typed) {
 						term = typed;

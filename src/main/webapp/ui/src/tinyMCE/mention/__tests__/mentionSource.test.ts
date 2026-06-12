@@ -44,6 +44,7 @@ type Mentions = {
 type DomNode = {
   textContent: string;
   nextSibling: DomNode | null;
+  firstChild: DomNode | null;
   contains: (n: unknown) => boolean;
 };
 type LoadOptions = {
@@ -59,9 +60,29 @@ type LoadOptions = {
    */
   trailingTexts?: string[];
   caretOffset?: number;
+  /** explicit sibling nodes after the span (overrides trailingTexts) */
+  trailingNodes?: DomNode[];
+  /** explicit caret container (defaults to the last trailing node) */
+  caretContainer?: DomNode;
 };
 
-const mkNode = (textContent: string): DomNode => ({ textContent, nextSibling: null, contains: () => false });
+const mkNode = (textContent: string): DomNode => ({
+  textContent,
+  nextSibling: null,
+  firstChild: null,
+  contains: () => false,
+});
+
+/** element node whose children are linked as siblings, like a real DOM element */
+const mkElement = (children: DomNode[]): DomNode => {
+  for (let i = 0; i < children.length - 1; i++) children[i].nextSibling = children[i + 1];
+  return {
+    textContent: children.map((c) => c.textContent).join(""),
+    nextSibling: null,
+    firstChild: children[0] ?? null,
+    contains: (n: unknown) => children.some((c) => c === n || c.contains(n)),
+  };
+};
 
 /** Loads the config into a sandbox modelling the editor body, spans, siblings and caret. */
 function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls: GetCall[] } {
@@ -82,7 +103,7 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
   };
 
   const active: DomNode | null = o.activeText !== null ? mkNode(o.activeText) : null;
-  const trailing = (o.trailingTexts ?? []).map(mkNode);
+  const trailing = o.trailingNodes ?? (o.trailingTexts ?? []).map(mkNode);
   if (active) {
     let prev: DomNode = active;
     for (const t of trailing) {
@@ -100,7 +121,7 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
   const caretNode = {
     closest: (sel: string) => (sel === "#autocomplete" && !o.caretOutside ? active : null),
   };
-  const caretContainer = trailing.length > 0 ? trailing[trailing.length - 1] : null;
+  const caretContainer = o.caretContainer ?? (trailing.length > 0 ? trailing[trailing.length - 1] : null);
   const rng = caretContainer
     ? { startContainer: caretContainer, startOffset: o.caretOffset ?? caretContainer.textContent.length }
     : { startContainer: caretNode, startOffset: 0 };
@@ -216,6 +237,29 @@ describe("RSDEV-992 mention source uses the typed text as the search term", () =
       activeText: "@ro",
       trailingTexts: [" see you tomorrow"],
     });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("ro");
+  });
+
+  it("descends into an element sibling and stops at the caret inside it", () => {
+    // caret sits inside a formatted element: <span>@</span><strong>perf02| tomorrow</strong>
+    const inner = mkNode("perf02");
+    const after = mkNode(" tomorrow");
+    const strong = mkElement([inner, after]);
+    const { mentions, getCalls } = load({
+      activeText: "@",
+      caretOutside: true,
+      trailingNodes: [strong],
+      caretContainer: inner,
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("trims whitespace that survives the delimiter strip", () => {
+    // "@ ro": the first trim happens while the delimiter is still in front,
+    // so the space after '@' must be trimmed again after the delimiter strip
+    const { mentions, getCalls } = load("@ ro");
     mentions.source("", vi.fn(), "@");
     expect(getCalls[0].params.term).toBe("ro");
   });
