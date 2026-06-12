@@ -242,7 +242,7 @@ All schema changes via Liquibase changesets in `src/main/resources/sqlUpdates/`.
 
 **Liquibase changeset format:**
 - File name: `changeLog-<ticket-id>.xml`
-- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and a `context`. RSpace is launched with one of three context strings: `run` (production), `run,dev-test` (local dev/tests), `run,cloud` (Community). Tag schema changes `context="run"` (applies in all three); use `dev-test` for local/test-only data and `cloud` for Community-only data. See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
+- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and a `context`. RSpace deployments use one of three context strings: `run` (production), `run,dev-test` (local dev/tests), `run,cloud` (Community). Tag schema changes `context="run"` (applies in all three); use `dev-test` for local/test-only data and `cloud` for Community-only data. See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
 - Use standard Liquibase XML elements: `<createTable>`, `<addColumn>`, `<addForeignKeyConstraint>`, `<createIndex>`, etc.
 - Baseline migration: `rs-dbbaseline-utf8.sql` (fresh installs only)
 
