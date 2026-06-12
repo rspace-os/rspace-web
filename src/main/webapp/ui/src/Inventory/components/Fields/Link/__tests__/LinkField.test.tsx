@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { cleanup, render, screen } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
@@ -43,6 +43,11 @@ vi.mock("../ElnRecordInfoDialog", () => ({
     ) : null,
 }));
 
+const mockUseLinkTargetSummary = vi.hoisted(() => vi.fn());
+vi.mock("../useLinkTargetSummary", () => ({
+  default: (globalId: string) => mockUseLinkTargetSummary(globalId) as unknown,
+}));
+
 import LinkField from "../LinkField";
 
 const baseLink = {
@@ -57,7 +62,6 @@ function renderField(props: Partial<React.ComponentProps<typeof LinkField>> = {}
       <LinkField
         name="Calibration cert"
         link={baseLink}
-        targetDeleted={false}
         onOpen={vi.fn()}
         onEdit={vi.fn()}
         editable={true}
@@ -69,6 +73,12 @@ function renderField(props: Partial<React.ComponentProps<typeof LinkField>> = {}
 
 describe("LinkField", () => {
   afterEach(cleanup);
+
+  beforeEach(() => {
+    // default: target state unknown (loading/unresolvable) -> no pill, Open on
+    mockUseLinkTargetSummary.mockReset();
+    mockUseLinkTargetSummary.mockReturnValue(null);
+  });
 
   it("renders relation type, target global id, and name", () => {
     renderField();
@@ -129,10 +139,41 @@ describe("LinkField", () => {
     expect(screen.getByText(/v4|pinned to v4/i)).toBeInTheDocument();
   });
 
-  it("shows 'Target deleted' badge and hides Open when the target is deleted", () => {
-    renderField({ targetDeleted: true });
+  it("shows the Target deleted pill and blocks Open for a deleted ELN target", () => {
+    // a deleted ELN record's open route only produces an error page, so the
+    // card must not offer Open
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SD5",
+      name: "gone doc",
+      type: "DOCUMENT",
+      deleted: true,
+    });
+    renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
     expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^open$/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the Target deleted pill but keeps Open for a deleted inventory target", () => {
+    // deleted inventory items live on in the trash and their viewer works,
+    // so Open stays available alongside the pill
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: "binned sample",
+      type: "SAMPLE",
+      deleted: true,
+    });
+    renderField();
+    expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^open$/i })).toBeEnabled();
+  });
+
+  it("renders no pill and keeps Open while the target state is unknown", () => {
+    // the summary fetch may be in flight or have failed; the card behaves as
+    // it did before the summary existed rather than flashing a wrong state
+    mockUseLinkTargetSummary.mockReturnValue(null);
+    renderField();
+    expect(screen.queryByText(/target deleted/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^open$/i })).toBeEnabled();
   });
 
   it("greys out the clock in view mode: pin changes happen in the link editor", () => {
@@ -197,7 +238,6 @@ describe("LinkField", () => {
         <LinkField
           name="Calibration cert"
           link={baseLink}
-          targetDeleted={false}
           onOpen={vi.fn()}
           onEdit={vi.fn()}
           editable={false}
@@ -330,7 +370,6 @@ describe("LinkField", () => {
         <LinkField
           name="x"
           link={{ ...baseLink, targetGlobalId: "IC9" }}
-          targetDeleted={false}
           onOpen={vi.fn()}
           onEdit={vi.fn()}
           editable={true}

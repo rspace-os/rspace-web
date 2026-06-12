@@ -35,12 +35,12 @@ public interface InventoryLinkManager {
   List<ApiInventoryReferencingItem> findReferencingItems(String targetGlobalId, User actor);
 
   /**
-   * Resolves the audit-backed summary of a link's target (globalId, name, type, deleted) for
-   * display, applying read permission. A "latest" link (no stored revision) resolves to the newest
-   * revision; a pinned link resolves to its stored {@code targetRevisionId}. NOTE: not yet wired
-   * into any production read path; intended as the service-layer entry point for a future
-   * serialization pass that populates {@link ApiInventoryLink#getTargetSummary()} (needed by the
-   * frontend's target-deleted badge and target-name display).
+   * Resolves the audit-backed summary (globalId, name, type, deleted) of the CURRENT state of a
+   * link target, applying read permission: unreadable targets degrade to a globalId-only summary so
+   * names are never disclosed. Any version suffix on the id is ignored, since the summary backs the
+   * "Target deleted" pill, which reflects the record as it is now rather than as pinned. Malformed
+   * ids and prefixes that are not allowed link target kinds are rejected with the same i18n errors
+   * as the write path.
    */
-  ApiInventoryLinkTargetSummary getTargetSummary(InventoryLink link, User actor);
+  ApiInventoryLinkTargetSummary getTargetSummary(String targetGlobalId, User actor);
 }

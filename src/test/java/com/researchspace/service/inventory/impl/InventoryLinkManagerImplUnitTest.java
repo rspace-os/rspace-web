@@ -132,18 +132,29 @@ class InventoryLinkManagerImplUnitTest {
   }
 
   @Test
-  void getTargetSummaryThreadsStoredRevisionToResolver() {
-    InventoryLink link = new InventoryLink();
-    link.setTargetPrefix(GlobalIdPrefix.SA);
-    link.setTargetDbId(10L);
-    link.setVersionPin(3L);
-    link.setTargetRevisionId(99L);
+  void targetSummaryForGlobalIdResolvesCurrentStateOfTheBaseRecord() {
+    // the summary backs the "Target deleted" pill, which must reflect the
+    // record as it is NOW: the pin/revision are deliberately not consulted,
+    // and a version suffix on the id is ignored
     ApiInventoryLinkTargetSummary expected = new ApiInventoryLinkTargetSummary();
-    when(snapshotResolver.resolveSummary(GlobalIdPrefix.SA, 10L, 3L, 99L, actor))
+    expected.setGlobalId("SD42");
+    expected.setDeleted(true);
+    when(snapshotResolver.resolveSummary(GlobalIdPrefix.SD, 42L, null, null, actor))
         .thenReturn(expected);
 
-    ApiInventoryLinkTargetSummary result = linkManager.getTargetSummary(link, actor);
+    assertSame(expected, linkManager.getTargetSummary("SD42v3", actor));
+  }
 
-    assertSame(expected, result);
+  @Test
+  void targetSummaryRejectsMalformedAndUnsupportedIdsWithWritePathErrors() {
+    ApiRuntimeException malformed =
+        assertThrows(
+            ApiRuntimeException.class, () -> linkManager.getTargetSummary("not-a-gid", actor));
+    assertEquals("errors.inventory.field.link.targetNotFound", malformed.getErrorCode());
+
+    // FL is not an allowed link target kind, so its summary must not resolve
+    ApiRuntimeException unsupported =
+        assertThrows(ApiRuntimeException.class, () -> linkManager.getTargetSummary("FL3", actor));
+    assertEquals("errors.inventory.field.link.targetKindUnsupported", unsupported.getErrorCode());
   }
 }

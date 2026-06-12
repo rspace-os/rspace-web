@@ -106,13 +106,11 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   }
 
   @Override
-  public ApiInventoryLinkTargetSummary getTargetSummary(InventoryLink link, User actor) {
-    return snapshotResolver.resolveSummary(
-        link.getTargetPrefix(),
-        link.getTargetDbId(),
-        link.getVersionPin(),
-        link.getTargetRevisionId(),
-        actor);
+  public ApiInventoryLinkTargetSummary getTargetSummary(String targetGlobalId, User actor) {
+    GlobalIdentifier gid = parseAllowedTargetOrThrow(targetGlobalId);
+    // current state of the base record: pin/revision deliberately null so the
+    // "Target deleted" pill reflects the record as it is now, not as pinned
+    return snapshotResolver.resolveSummary(gid.getPrefix(), gid.getDbId(), null, null, actor);
   }
 
   /**
@@ -129,21 +127,29 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
    * validator uses.
    */
   private void validateForWrite(ApiInventoryLink apiLink) {
+    parseAllowedTargetOrThrow(apiLink.getTargetGlobalId());
+    if (!DataCiteRelationType.isValid(apiLink.getRelationType())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.relationTypeInvalid", apiLink.getRelationType());
+    }
+  }
+
+  /**
+   * Parses a target Global ID and asserts its prefix is an allowed link target kind, mapping
+   * failures to the same 422 i18n errors on both the write path and the summary read path.
+   */
+  private GlobalIdentifier parseAllowedTargetOrThrow(String targetGlobalId) {
     GlobalIdentifier gid;
     try {
-      gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
+      gid = new GlobalIdentifier(targetGlobalId);
     } catch (IllegalArgumentException | NullPointerException ex) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.targetNotFound", apiLink.getTargetGlobalId());
+      throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
     }
     if (!InventoryLinkValidator.isAllowedTargetPrefix(gid.getPrefix())) {
       throw new ApiRuntimeException(
           "errors.inventory.field.link.targetKindUnsupported", gid.getPrefix().name());
     }
-    if (!DataCiteRelationType.isValid(apiLink.getRelationType())) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", apiLink.getRelationType());
-    }
+    return gid;
   }
 
   private void assertTargetExistsAndReadable(ApiInventoryLink apiLink, User actor) {

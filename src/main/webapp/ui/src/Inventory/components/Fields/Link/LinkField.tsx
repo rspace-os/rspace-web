@@ -20,6 +20,7 @@ import {
 } from "./iconForGlobalId";
 import InventoryInfoDialog from "./InventoryInfoDialog";
 import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
+import useLinkTargetSummary from "./useLinkTargetSummary";
 
 // Read-only versioned viewer route added in RSDEV-1141 (matches MoreInfoSidebar/VersionHistory's
 // `/inventory/{recordType}/{id}?version=N`). Keyed by inventory Global ID prefix.
@@ -34,8 +35,6 @@ export interface LinkFieldProps {
   /** Field name (the user-supplied label of the ExtraLinkField row) */
   name: string;
   link: ExtraInventoryLink;
-  /** When true, the target inventory record has been soft-deleted on the server. */
-  targetDeleted: boolean;
   /** When false, the edit affordance is hidden. */
   editable: boolean;
   onOpen: () => void;
@@ -48,6 +47,13 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const iconData = iconForGlobalId(props.link.targetGlobalId);
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
   const [infoOpen, setInfoOpen] = useState(false);
+  // current state of the target; null while loading or unresolvable, which
+  // renders the card exactly as before the summary existed (no pill, Open on)
+  const targetSummary = useLinkTargetSummary(props.link.targetGlobalId);
+  const targetDeleted = targetSummary?.deleted === true;
+  // deleted inventory items live on in the trash and their viewer works, so
+  // only deleted ELN targets lose Open (their route is just an error page)
+  const openBlocked = targetDeleted && !targetIsInventory;
 
   const handleOpen = () => {
     // A version-pinned inventory target opens the read-only versioned viewer (RSDEV-1141)
@@ -141,7 +147,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               label={versionLabel}
               data-test-id="LinkField-version"
             />
-            {props.targetDeleted && (
+            {targetDeleted && (
               <Chip
                 size="small"
                 color="warning"
@@ -149,7 +155,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
                 data-test-id="LinkField-targetDeleted"
               />
             )}
-            {!props.targetDeleted && (
+            {!openBlocked && (
               <Button
                 size="small"
                 startIcon={<OpenInNewIcon />}

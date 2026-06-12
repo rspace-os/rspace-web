@@ -181,7 +181,6 @@ function LinkFieldValue({
         // the FormField wrapper already renders the field label, so suppress the card's own name
         name=""
         link={committedLink}
-        targetDeleted={false}
         editable={!disabled}
         onOpen={() => openTargetInNewTab(committedLink)}
         onEdit={() => setEditing(true)}

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 /** API payload representing a Link extra-field's target/relation metadata. */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"relationType", "targetGlobalId", "versionPin", "targetSummary"})
+@JsonPropertyOrder({"relationType", "targetGlobalId", "versionPin"})
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public class ApiInventoryLink {
 
@@ -23,9 +23,6 @@ public class ApiInventoryLink {
 
   @JsonProperty("versionPin")
   private Long versionPin;
-
-  @JsonProperty("targetSummary")
-  private ApiInventoryLinkTargetSummary targetSummary;
 
   public ApiInventoryLink(InventoryLink link) {
     this.relationType = link.getRelationType();
