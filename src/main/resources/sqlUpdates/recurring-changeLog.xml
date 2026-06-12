@@ -8,7 +8,7 @@
          (same id/author) so behaviour is unchanged. To be reviewed in PR2 / phase 2 (RSDEV-416): decide
          whether each is still worth running on every startup, or can be dropped.
 
-         Kept: filestore integrity diagnostics (warn-only) + Spring Batch sequence re-init.
+         Kept: filestore integrity diagnostics + Spring Batch sequence re-init.
          Dropped (obsolete, not preserved): changeLog-1.49 29-01-17/29-01-17b (RSPAC-1446 notification
          relink, no-ops on modern DBs) and data-changeLog 3a (cleared the checksum of changeset
          25-08-14a, which is itself pre-1.98.1 and removed). -->
