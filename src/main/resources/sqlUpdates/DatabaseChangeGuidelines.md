@@ -50,11 +50,11 @@ There are various naming conventions, please [IntegrationAndAppNotes](integratio
 
 Every RSpace deployment uses one of three `liquibase.context` strings:
 
-| Deployment              | `liquibase.context` | Where set                                  |
-|-------------------------|---------------------|--------------------------------------------|
-| Production / Enterprise | `run`               | `deployments/defaultDeployment.properties` |
-| Local dev & test runs   | `run,dev-test`      | `deployments/dev/deployment.properties`    |
-| Community / cloud       | `run,cloud`         | the cloud deployment's external properties |
+| Deployment              | `liquibase.context` | Where set                                                       |
+|-------------------------|---------------------|-----------------------------------------------------------------|
+| Production / Enterprise | `run`               | `src/main/resources/deployments/defaultDeployment.properties`   |
+| Local dev & test runs   | `run,dev-test`      | `src/main/resources/deployments/dev/deployment.properties`      |
+| Community / cloud       | `run,cloud`         | the cloud deployment's external properties                      |
 
 A changeset runs when its `context` matches the launch string (OR-ed; blank always matches):
 
