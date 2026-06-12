@@ -31,7 +31,7 @@ export interface ConfirmActionPayload {
   variant: string;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   // biome-ignore lint/complexity/noBannedTypes: initial biome migration
-    callback: Function;
+  callback: Function;
 }
 
 export function ConfirmationDialog({

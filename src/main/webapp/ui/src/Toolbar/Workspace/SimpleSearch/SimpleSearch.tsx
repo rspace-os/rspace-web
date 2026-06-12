@@ -81,7 +81,7 @@ class SimpleSearch extends React.Component<any, any> {
 
   // with the current configuration, we assume that only one query will be received
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    setQueries = (queries: any) => {
+  setQueries = (queries: any) => {
     if (!queries.length) return;
 
     const query = queries[0];

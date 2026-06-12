@@ -135,7 +135,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
 
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-        workspaceSettings.options.map((_: any, idx: any) => {
+    workspaceSettings.options.map((_: any, idx: any) => {
       filter = workspaceSettings.options[idx];
       term = workspaceSettings.terms[idx];
 

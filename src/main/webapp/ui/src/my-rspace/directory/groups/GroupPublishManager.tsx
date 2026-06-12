@@ -24,7 +24,7 @@ function GroupPublishManager({
   isLabGroup,
   isGroupPublicationAllowed,
   canManagePublish,
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
   const [publishAllowedStatus, setPublishAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -75,7 +75,7 @@ function GroupPublishManager({
 
   /* Publication is not supported on collaboration groups and the community version */
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    function DisabledPublicationButton(props: any) {
+  function DisabledPublicationButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (!isLabGroup) {

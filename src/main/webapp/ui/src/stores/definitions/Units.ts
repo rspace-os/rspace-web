@@ -178,23 +178,23 @@ export function truncateIsoTimestamp(isoTimestamp: string | Date, precision: Dat
       output = `.${date.getMilliseconds().toString().padStart(3, "0")}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-        case "second":
+    case "second":
       output = `:${date.getSeconds().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-        case "minute":
+    case "minute":
       output = `:${date.getMinutes().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-        case "hour":
+    case "hour":
       output = `T${date.getHours().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-        case "date":
+    case "date":
       output = `-${date.getDate().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-        case "month":
+    case "month":
       output = `-${(date.getMonth() + 1).toString().padStart(2, "0")}${output}`;
     // falls through
     case "year":

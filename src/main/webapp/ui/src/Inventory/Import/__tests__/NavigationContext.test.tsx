@@ -16,7 +16,7 @@ const NavigateTo = ({ url }: NavigateToProps) => {
   const navigate = useNavigate();
   return (
     // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+    <button
       onClick={() => {
         navigate(url);
       }}

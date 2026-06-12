@@ -55,7 +55,7 @@ function loadIntercom({
       (() => {
         // Create a queue, but don't obliterate an existing one!
         // biome-ignore lint/suspicious/noAssignInExpressions: initial biome migration
-                var analytics = (window.analytics = window.analytics || []);
+        var analytics = (window.analytics = window.analytics || []);
         // If the real analytics.js is already on the page return.
         if (analytics.initialize) return;
         // If the snippet was invoked already show an error.

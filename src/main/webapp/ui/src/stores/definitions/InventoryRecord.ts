@@ -222,9 +222,9 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * When new data is available, typically by making a GET request, the
    * instance of InventoryRecord can be repopulated with this method.
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-populateFromJson(factory: Factory, params: any, defaultParams: any | null): void;
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  populateFromJson(factory: Factory, params: any, defaultParams: any | null): void;
 
   /*
    * After some set of other Records have been modified, it may be desirable to
@@ -296,9 +296,8 @@ populateFromJson(factory: Factory, params: any, defaultParams: any | null): void
    * to assert as such for each implementation.
    */
 
-  
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-readonly  paramsForBackend: any;
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  readonly paramsForBackend: any;
 
   /*
    * Many of the classes of Inventory records are analogous to physical objects
@@ -316,9 +315,8 @@ readonly  paramsForBackend: any;
    * various UI elements that the user has made changes.
    */
 
-  
-// biome-ignore lint/correctness/noEmptyPattern: initial biome migration
-setAttributesDirty({}): void;
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
+  setAttributesDirty({}): void;
 
   /*
    * The UI SHOULD display clear error and success messages when significant

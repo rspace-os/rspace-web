@@ -15,7 +15,7 @@ describe("useGalleryActions", () => {
       const { duplicateFiles } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+        <button
           onClick={() => {
             void duplicateFiles(
               new RsSet([
@@ -101,7 +101,7 @@ describe("useGalleryActions", () => {
       const { deleteFiles } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+        <button
           onClick={() => {
             void deleteFiles(
               new RsSet([
@@ -187,7 +187,7 @@ describe("useGalleryActions", () => {
       const { moveFiles } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+        <button
           onClick={() => {
             void moveFiles(
               "Images",
@@ -275,7 +275,7 @@ describe("useGalleryActions", () => {
       const { changeDescription } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+        <button
           onClick={() => {
             void changeDescription(
               new LocalGalleryFile({

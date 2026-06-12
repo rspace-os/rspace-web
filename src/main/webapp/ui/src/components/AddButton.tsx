@@ -20,7 +20,7 @@ const AddButton = ({
 }: AddButtonArgs): React.ReactNode => {
   return (
     // biome-ignore lint/a11y/useValidAriaValues: initial biome migration
-<CustomTooltip title={title} aria-label="">
+    <CustomTooltip title={title} aria-label="">
       <IconButton
         color="primary"
         component="span" // why not leaving it a button, who knows ?

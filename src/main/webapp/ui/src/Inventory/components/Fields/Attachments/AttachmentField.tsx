@@ -165,7 +165,7 @@ function AttachmentField<
             />
             {galleryDialogOpen && (
               // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-<React.Suspense fallback={<></>}>
+              <React.Suspense fallback={<></>}>
                 <GalleryPicker
                   open={true}
                   onClose={() => {

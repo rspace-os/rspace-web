@@ -120,7 +120,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
         </Link>
       </TableCell>
     </TableRow>
-  // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
   )) ?? <></>;
 
   const handlePopoverOpen = (event: React.MouseEvent) => {

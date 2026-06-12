@@ -235,7 +235,7 @@ export default function Filter({
         </Grid>
 
         {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-{Object.entries(filter).map(([key, config]: [string, any]) => (
+        {Object.entries(filter).map(([key, config]: [string, any]) => (
           <Grid key={key} size={2}>
             <TextField
               label={config.label}
@@ -257,7 +257,7 @@ export default function Filter({
         </Grid>
 
         {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-{Object.entries(filterMultiReq).map(([key, config]: [string, any]) => (
+        {Object.entries(filterMultiReq).map(([key, config]: [string, any]) => (
           <Grid key={key} size={2}>
             <FormControl fullWidth>
               <Autocomplete

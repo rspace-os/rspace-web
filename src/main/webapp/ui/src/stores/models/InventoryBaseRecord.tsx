@@ -841,7 +841,7 @@ export default class InventoryBaseRecord
       } else {
         // canceling
         // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-                let lockReleased;
+        let lockReleased;
         if (this.state === "edit") {
           lockReleased = await this.releaseLock(silent);
         }
@@ -1084,9 +1084,8 @@ export default class InventoryBaseRecord
    * this analytics event
    */
 
-  
-// biome-ignore lint/complexity/noBannedTypes: initial biome migration
-get  dataAttachedToRecordCreatedAnaylticsEvent(): {} {
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
+  get dataAttachedToRecordCreatedAnaylticsEvent(): {} {
     return {
       type: this.recordType,
     };

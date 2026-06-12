@@ -52,7 +52,7 @@ function WrapperComponent() {
           {listing.loadMore
             .map((loadMore) => (
               // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button key={null} onClick={() => void loadMore()}>
+              <button key={null} onClick={() => void loadMore()}>
                 Load more
               </button>
             ))

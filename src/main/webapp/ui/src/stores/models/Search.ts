@@ -462,7 +462,7 @@ export default class Search implements SearchInterface {
               record: factory.newRecord({
                 ...ss,
                 sample: s,
-              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               } as any as Record<string, unknown> & { globalId: GlobalId }),
             })),
             actionLabel: "Move all to trash",

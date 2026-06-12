@@ -68,7 +68,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
 
   /* BioPortal Ontologies are not supported on the community version */
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    function DisabledBioOntologiesButton(props: any) {
+  function DisabledBioOntologiesButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (isCloud) {

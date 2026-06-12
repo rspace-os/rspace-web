@@ -148,7 +148,7 @@ function OptionsListing({
 
     return (
       // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
-<li
+      <li
         key={key}
         {...optionProps}
         style={{

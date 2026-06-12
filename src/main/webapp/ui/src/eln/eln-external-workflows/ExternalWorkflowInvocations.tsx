@@ -264,7 +264,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
 
 export const WorkFlowIcon = createSvgIcon(
   // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
-<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
+  <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
     <g>
       <circle cx="5.055" cy="3.51" r="2.332" fill="#fff" />
       <circle cx="5.154" cy="10" r="2.332" fill="#fff" />

@@ -50,7 +50,7 @@ type InputRef = React.Ref<HTMLDivElement>;
 function NoOptionsMessage(props: TagNoticeProps) {
   return (
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-<Typography color="textSecondary" sx={{ p: "8px 16px" }} {...(props.innerProps as any)}>
+    <Typography color="textSecondary" sx={{ p: "8px 16px" }} {...(props.innerProps as any)}>
       {props.children}
     </Typography>
   );
@@ -83,7 +83,7 @@ function Control(props: TagControlProps) {
             children,
             ...innerProps,
           },
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         } as any,
       }}
     />

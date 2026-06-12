@@ -4,9 +4,8 @@ import { jwtDecode } from "jwt-decode";
  * @deprecated Use the functions in `src/modules/common/utils/auth.ts` instead.
  */
 
-
 // biome-ignore lint/complexity/noStaticOnlyClass: initial biome migration
-class  JwtService {
+class JwtService {
   // if you change this, change login.jsp and logout.jsp accordingly
   static ID_TOKEN_KEY: string = "id_token";
   static JWT_TOKEN_PATTERN: RegExp = /^.+\..+\..+$/;

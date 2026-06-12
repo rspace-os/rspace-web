@@ -43,7 +43,7 @@ describe("useNavigateHelpers", () => {
         const { navigateToRecord } = useNavigateHelpers();
         return (
           // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+          <button
             onClick={() => {
               void navigateToRecord(mockContainer);
             }}
@@ -75,7 +75,7 @@ describe("useNavigateHelpers", () => {
         const { navigateToSearch } = useNavigateHelpers();
         return (
           // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button
+          <button
             onClick={() => {
               navigateToSearch(mockSearchParams);
             }}

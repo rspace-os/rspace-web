@@ -13,7 +13,7 @@ const activeEditorMock = {
   storedFunction: () => {},
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   // biome-ignore lint/complexity/noBannedTypes: initial biome migration
-    on: function (eventName: string, targetFunction: () => {}) {
+  on: function (eventName: string, targetFunction: () => {}) {
     this.storedEventName = eventName;
     this.storedFunction = targetFunction;
   },

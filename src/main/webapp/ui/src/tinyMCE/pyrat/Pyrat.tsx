@@ -319,7 +319,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
 
           // Not done at render time as "animals" is reused for inserting TinyMCE table
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                    animals.forEach((animal: any) => {
+          animals.forEach((animal: any) => {
             // projects contain a lot of metadata that should not be displayed
             if (animal.projects) {
               // biome-ignore lint/suspicious/noExplicitAny: initial biome migration

@@ -80,7 +80,7 @@ vi.mock("../RaidConnectionsDisassociateButton", () => {
     }) {
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-<button data-testid="disassociate-button">
+        <button data-testid="disassociate-button">
           Disassociate {raidTitle} ({raidIdentifier})
         </button>
       );

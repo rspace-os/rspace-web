@@ -34,7 +34,7 @@ vi.mock("@mui/material/Button", () => ({
   default: vi.fn(({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => {
     // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
     // biome-ignore lint/a11y/useKeyWithClickEvents: initial biome migration
-        return <div onClick={onClick}>{children}</div>;
+    return <div onClick={onClick}>{children}</div>;
   }),
 }));
 let isMobileValue = false;

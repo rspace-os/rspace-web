@@ -189,7 +189,7 @@ class GroupEditBar extends React.Component<any, any> {
                             checked: this.state.pi_can_edit_value,
                             margin: "dense",
                             "data-test-id": "pi-can-edit",
-                          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                           } as any)}
                         />
                       }
@@ -210,7 +210,7 @@ class GroupEditBar extends React.Component<any, any> {
                             checked: this.state.profile_is_hidden,
                             margin: "dense",
                             "data-test-id": "profile-is-hidden",
-                          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                           } as any)}
                         />
                       }
@@ -244,7 +244,7 @@ class GroupEditBar extends React.Component<any, any> {
               {...({
                 onClose: this.closeToast,
                 message: this.state.errorMessage,
-              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               } as any)}
             />
           </Snackbar>

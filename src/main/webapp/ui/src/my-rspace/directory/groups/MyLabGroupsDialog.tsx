@@ -320,7 +320,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
               onClose: this.closeUsersAddedToast,
               message: this.state.usersAddedMsg,
               sx: { backgroundColor: "#4CAF50", color: "white" },
-            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             } as any)}
           />
         </Snackbar>

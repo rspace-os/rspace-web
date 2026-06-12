@@ -64,7 +64,7 @@ describe("RaidConnectionsDisassociateButton", () => {
     if (!window.RS) {
       window.RS = {
         exportModal: { openWithExportSelection: vi.fn() },
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       } as any;
     }
   });

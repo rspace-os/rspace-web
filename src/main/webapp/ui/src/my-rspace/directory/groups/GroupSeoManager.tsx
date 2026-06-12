@@ -68,7 +68,7 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
 
   /* Publication is not supported on collaboration groups and the community version */
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    function DisabledSEOButton(props: any) {
+  function DisabledSEOButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (!isLabGroup) {

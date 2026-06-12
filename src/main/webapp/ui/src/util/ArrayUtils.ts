@@ -104,7 +104,7 @@ export const groupBy = <T, K extends string>(f: (t: T) => K, list: ReadonlyArray
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export  const filterClass = <T, U>(clazz: { new (...args: any[]): T }, array: ReadonlyArray<U>): Array<T> => {
+export const filterClass = <T, U>(clazz: { new (...args: any[]): T }, array: ReadonlyArray<U>): Array<T> => {
   const arrayOft: Array<T> = [];
   for (const a of array) {
     if (a instanceof clazz) arrayOft.push(a);

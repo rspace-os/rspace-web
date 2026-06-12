@@ -133,7 +133,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   const setInitialDocPDF = (exportSelection: ExportSelection) => {
     // Add initial export name data to the loaded dialog (it is used in PDF and WORD exports)
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-        let initialExportName;
+    let initialExportName;
 
     if (exportSelection.type === "selection" && exportSelection.exportNames.length > 0) {
       initialExportName = exportSelection.exportNames[0].trimStart();

@@ -25,7 +25,7 @@ import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFi
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export  function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
+export function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
   return class extends Base implements HasLocation {
     [HasLocationMarker] = true as const;
 

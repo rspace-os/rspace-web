@@ -53,8 +53,8 @@ class Folder extends React.Component<any, any> {
       })
       .then((response) => {
         const selectedFiles = this.props.selected
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          ? response.data.ajaxReturnObject.data.map((f: any) => f.globalId)
+          ? // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            response.data.ajaxReturnObject.data.map((f: any) => f.globalId)
           : response.data.ajaxReturnObject.data
               // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               .map((f: any) => f.globalId)

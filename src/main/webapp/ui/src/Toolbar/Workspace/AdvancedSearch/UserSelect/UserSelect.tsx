@@ -27,7 +27,7 @@ export default function UserSelect(props: any) {
         const local_selected: any[] = [];
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-                selected.map((s: any) => {
+        selected.map((s: any) => {
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           const idx = result.data.data.findIndex((r: any) => r.username === s);
           local_selected.push(result.data.data[idx]);
@@ -51,7 +51,7 @@ export default function UserSelect(props: any) {
       onChange={(_, selection) => handleChangeMulti(selection)}
       renderInput={(props) => (
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-<TextField {...props} variant="standard" placeholder={(props as any).error ?? "Select owner(s)"} />
+        <TextField {...props} variant="standard" placeholder={(props as any).error ?? "Select owner(s)"} />
       )}
       slotProps={{
         popupIndicator: {

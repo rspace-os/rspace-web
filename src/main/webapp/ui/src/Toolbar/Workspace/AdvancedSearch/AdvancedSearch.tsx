@@ -138,7 +138,7 @@ class AdvancedSearch extends React.Component<any, any> {
 
   // Apply an Immer recipe to the queries array and store the result
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    updateQueries = (recipe: any) => {
+  updateQueries = (recipe: any) => {
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
       queries: produce(prevState.queries, recipe),
@@ -402,7 +402,7 @@ class AdvancedSearch extends React.Component<any, any> {
   // Renders one "satisfy all / at least one" radio option. Shows an info
   // tooltip whenever a 'Within records' condition is present.
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      renderFulfillOption = (value: any, dataTestId: any, label: any) => (
+  renderFulfillOption = (value: any, dataTestId: any, label: any) => (
     <FormControlLabel
       value={value}
       control={<Radio color="primary" slotProps={{ input: { "aria-label": label } }} />}

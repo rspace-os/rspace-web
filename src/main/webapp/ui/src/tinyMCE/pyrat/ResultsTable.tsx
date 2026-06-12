@@ -36,8 +36,8 @@ export default function ResultsTable({
   function onRowClick(eartag: any) {
     setSelectedAnimalIds(
       selectedAnimalIds.includes(eartag)
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        ? selectedAnimalIds.filter((id: any) => id !== eartag)
+        ? // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          selectedAnimalIds.filter((id: any) => id !== eartag)
         : [...selectedAnimalIds, eartag],
     );
   }

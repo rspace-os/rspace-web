@@ -33,7 +33,7 @@ describe("fetchAdditionalInfo", () => {
           sample: sampleAttrs(),
           ...subsampleAttrs(),
         },
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       } as any),
     );
     let firstCallDone = false;

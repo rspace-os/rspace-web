@@ -130,9 +130,8 @@ export default class RsSet<A> extends Set<A> {
    * Usage: see test
    */
 
-  
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-filterClass<U>(clazz: { new (...args: any[]): U }): RsSet<U> {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  filterClass<U>(clazz: { new (...args: any[]): U }): RsSet<U> {
     const setOft = new RsSet<U>();
     for (const a of this) {
       if (a instanceof clazz) setOft.add(a);

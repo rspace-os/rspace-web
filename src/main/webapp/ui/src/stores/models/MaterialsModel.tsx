@@ -552,7 +552,7 @@ export class ListOfMaterials {
       this.resetUsedQuantityChanges();
       /* reset materials selection */
       // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-            this.selectedMaterials.forEach((m) => m.toggleSelected());
+      this.selectedMaterials.forEach((m) => m.toggleSelected());
 
       getRootStore().uiStore.addAlert(
         mkAlert({

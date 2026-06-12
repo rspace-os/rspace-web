@@ -67,7 +67,7 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
 
   /* Ontologies are not supported on the community version */
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    function DisabledOntologiesButton(props: any) {
+  function DisabledOntologiesButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (isCloud) {

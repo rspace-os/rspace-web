@@ -268,8 +268,14 @@ describe("GridDimensions", () => {
 
       expect(rows).not.toBeNull();
       expect(columns).not.toBeNull();
-      expect(option).toMatch(new RegExp(`${// biome-ignore lint/style/noNonNullAssertion: initial biome migration
-rows! * columns!}`));
+      expect(option).toMatch(
+        new RegExp(
+          `${
+            // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+            rows! * columns!
+          }`,
+        ),
+      );
     }
   });
   test("The first option, the most popular, should be 96-well plate.", () => {

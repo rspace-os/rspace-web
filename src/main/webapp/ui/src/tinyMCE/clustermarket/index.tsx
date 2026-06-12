@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {...({
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           clustermarket_web_url: (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url,
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         } as any)}
       />
     </Analytics>,

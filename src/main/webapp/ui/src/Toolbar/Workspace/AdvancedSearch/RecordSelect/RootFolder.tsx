@@ -106,7 +106,7 @@ class RootFolder extends React.Component<any, any> {
       <>
         {this.state.subfiles.length > 0 && (
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-<List component="nav">{this.state.subfiles.map((subfile: any) => this.renderFile(subfile))}</List>
+          <List component="nav">{this.state.subfiles.map((subfile: any) => this.renderFile(subfile))}</List>
         )}
       </>
     );

@@ -43,9 +43,8 @@ type AccentMenuItemArgs = {
    * Use these properties to make the menu item a link.
    */
 
-  
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-component?: React.ElementType<any>;
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  component?: React.ElementType<any>;
   href?: string;
 
   /*

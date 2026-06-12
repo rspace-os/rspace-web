@@ -28,7 +28,7 @@ function DisableAutoshareDialog({
   isSwitch,
   isSwitchDisabled,
   switchDisabledReason,
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);

@@ -158,7 +158,7 @@ describe("Form Section Order", () => {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        window.scrollTo = vi.fn() as any;
+    window.scrollTo = vi.fn() as any;
     assertConsistentOrderOfLists(
       new Map([
         [

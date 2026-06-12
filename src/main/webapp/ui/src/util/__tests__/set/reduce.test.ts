@@ -21,17 +21,16 @@ describe("reduce", () => {
   test("Reducing a set of two elements, by a monoial operation, should give the same as applying the monoid's boolean function to the two elements.", () => {
     fc.assert(
       fc.property(
-        fc
-          .oneof(...monoids)
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          .chain(([valueGenerator, booleanFunction, identityElement]: any) =>
+        fc.oneof(...monoids).chain(
+          // biome-ignore lint/suspicious/noExplicitAny: heterogeneous monoid tuples from fc.oneof are not statically typed here
+          ([valueGenerator, booleanFunction, identityElement]: any) =>
             fc.tuple(
               arbRsSet(valueGenerator(), { maxSize: 2, minSize: 2 }),
               fc.constant(booleanFunction),
               fc.constant(identityElement),
             ),
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          ) as any,
+        ) as any,
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         ([set, booleanFunction, identityElement]: any) => {
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration

@@ -10,11 +10,11 @@
 // be careful when using as it erases Flow types
 export const pick =
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  (...props: Array<string>): ((o: any) => any) =>
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  (o: Record<string, any>): object =>
-    // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
-    props.reduce((a, e) => ({ ...a, [e]: o[e] }), {});
+    (...props: Array<string>): ((o: any) => any) =>
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    (o: Record<string, any>): object =>
+      // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
+      props.reduce((a, e) => ({ ...a, [e]: o[e] }), {});
 
 // navigate tree of JSON objects using a period-delimited string
 // e.g. traverseObjectTree({foo: {bar: 4}}, "foo.bar", null) === 4

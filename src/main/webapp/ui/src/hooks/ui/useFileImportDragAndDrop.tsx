@@ -19,7 +19,7 @@ import React from "react";
  */
 export const DisableDragAndDropByDefault = ({ children }: { children: React.ReactNode }): React.ReactNode => (
   // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
-<div
+  <div
     onDragOver={(e) => {
       /*
        * Allow root of page to accept drop events...

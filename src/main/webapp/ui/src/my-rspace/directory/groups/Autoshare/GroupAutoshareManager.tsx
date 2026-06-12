@@ -73,7 +73,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
 
   /* Autosharing is not supported on collaboration groups and the community version */
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    function DisabledAutoshareButton(props: any) {
+  function DisabledAutoshareButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
 

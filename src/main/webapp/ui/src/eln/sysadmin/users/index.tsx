@@ -115,7 +115,7 @@ declare module "@mui/x-data-grid" {
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
   // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
-<div
+  <div
     onKeyDown={(e) => {
       e.stopPropagation();
     }}
@@ -298,7 +298,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
   const [searchTerm, setSearchTerm] = React.useState("");
   return (
     // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-<form
+    <form
       role="search"
       onSubmit={(e) => {
         e.preventDefault();

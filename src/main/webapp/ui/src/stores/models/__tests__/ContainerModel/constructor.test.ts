@@ -46,7 +46,7 @@ describe("constructor", () => {
     test("should be used in the instantiation of all child records.", () => {
       // Define a mock factory with circular references
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-            const mockFactoryRef: any = {};
+      const mockFactoryRef: any = {};
       // Create a mock newRecord implementation
       const mockNewRecord = vi
         .fn()

@@ -699,7 +699,7 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode
                 : Optional.present(decodeTagString(tag.ontologyVersion)),
           })),
         });
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       } catch (e: any) {
         setErrorMessage(e.response.data.message);
         throw new Error(e);

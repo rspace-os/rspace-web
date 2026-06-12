@@ -61,11 +61,11 @@ export default function NewLabGroup() {
 
   const updateSelectedDropdown =
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    (field: any) =>
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    ({ target: { value } }: { target: { value: any } }) => {
-      setValues({ ...values, [field]: value });
-    };
+      (field: any) =>
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      ({ target: { value } }: { target: { value: any } }) => {
+        setValues({ ...values, [field]: value });
+      };
 
   function validateForm() {
     if (values.name.length === 0) {
@@ -98,8 +98,8 @@ export default function NewLabGroup() {
     params.cancel = "Add group";
     params.pis = values.pis.length ? values.pis[0].username : values.pis;
     params.groupOwners = values.groupOwners.length
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      ? values.groupOwners.map((m: any) => m.username)
+      ? // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        values.groupOwners.map((m: any) => m.username)
       : values.groupOwners;
     params.groupType = values.groupType;
     params.memberString = values.name;

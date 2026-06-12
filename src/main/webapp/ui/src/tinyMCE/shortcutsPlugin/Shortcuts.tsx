@@ -254,7 +254,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
 
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-        used.forEach((command: any) => {
+    used.forEach((command: any) => {
       if (arraysEqual(command.split("+"), combination)) {
         isReserved = true;
         return false;

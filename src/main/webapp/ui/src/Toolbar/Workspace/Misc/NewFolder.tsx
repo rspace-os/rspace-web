@@ -63,7 +63,7 @@ export default function NewNotebook() {
       url: `/workspace/ajax/create_folder/${workspaceSettings.parentFolderId}`,
       data: bodyFormData,
       config: { headers: { "Content-Type": "multipart/form-data" } },
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     } as any)
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .then((response: any) => {
