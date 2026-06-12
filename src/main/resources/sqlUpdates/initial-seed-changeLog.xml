@@ -28,6 +28,15 @@
                  splitStatements="true" stripComments="true" endDelimiter=";"/>
     </changeSet>
 
+    <changeSet id="rsdev-416-seed-dev-test-bk" author="matthias" context="dev-test">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="FileStoreRoot_Bk_spac964 already present">
+            <not><tableExists tableName="FileStoreRoot_Bk_spac964"/></not>
+        </preConditions>
+        <comment>RSPAC-964 dev-test backup table, recreated (empty) for schema parity with main; the `external` column is dropped because the original backup predated it. Kept in its own changeset rather than the seed SQL so the DDL's implicit commit cannot split the seed's DML.</comment>
+        <sql>create table if not exists FileStoreRoot_Bk_spac964 select * from FileStoreRoot</sql>
+        <sql>alter table FileStoreRoot_Bk_spac964 drop column external</sql>
+    </changeSet>
+
     <changeSet id="rsdev-416-seed-cloud" author="matthias" context="cloud">
         <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="cloud seed already present"
                        onErrorMessage="cloud seed already present">

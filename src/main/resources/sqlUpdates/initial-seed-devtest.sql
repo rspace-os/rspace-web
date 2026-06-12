@@ -59,7 +59,4 @@ REPLACE INTO `user_role` (`user_id`, `role_id`) VALUES (-4,-2);
 REPLACE INTO `user_role` (`user_id`, `role_id`) VALUES (-3,-2);
 REPLACE INTO `user_role` (`user_id`, `role_id`) VALUES (-1,-3);
 REPLACE INTO `user_role` (`user_id`, `role_id`) VALUES (-1,-2);
--- dev-test backup table (predates the v1.53 'external' column)
-CREATE TABLE IF NOT EXISTS `FileStoreRoot_Bk_spac964` SELECT * FROM `FileStoreRoot`;
-ALTER TABLE `FileStoreRoot_Bk_spac964` DROP COLUMN `external`;
 SET FOREIGN_KEY_CHECKS=1;

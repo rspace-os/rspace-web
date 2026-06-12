@@ -57,7 +57,9 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1136-remove-offline-work.xml"/>
 
 
-  <!--  ensure that customUpdates-changeLog.xml always runs LAST! -->
+  <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
+       customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include
+       (its Java customChange classes depend on the fully-migrated schema). -->
     <include relativeToChangelogFile="true" file="recurring-changeLog.xml"/>
     <include relativeToChangelogFile="true" file="customUpdates-changeLog.xml"/>
 </databaseChangeLog>
