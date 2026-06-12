@@ -1,24 +1,22 @@
-import React, { useEffect, useState } from "react";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
-import axios from "@/common/axios";
-import { type ExportSelection } from "./common";
-import { type Validator } from "../util/Validator";
 import { observer } from "mobx-react-lite";
-import { type Repo } from "./repositories/common";
-import { Optional } from "../util/optional";
+import type React from "react";
+import { useEffect, useState } from "react";
+import axios from "@/common/axios";
+import { OptionExplanation, OptionHeading } from "../components/Inputs/RadioField";
 import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
+import { Optional } from "../util/optional";
 import * as Parsers from "../util/parsers";
-import {
-  OptionHeading,
-  OptionExplanation,
-} from "../components/Inputs/RadioField";
+import type { Validator } from "../util/Validator";
+import type { ExportSelection } from "./common";
+import type { Repo } from "./repositories/common";
 
 export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
 
@@ -67,9 +65,7 @@ function FormatChoice({
   fileStoresSelected,
   updateFileStores,
 }: FormatChoiceArgs): React.ReactNode {
-  const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState(
-    Optional.present("Loading"),
-  );
+  const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState(Optional.present("Loading"));
   const [pdfAvailable, setPdfAvailable] = useState(false);
   const [wordAvailable, setWordAvailable] = useState(false);
   const [wordAvailabilityMessage, setWordAvailabilityMessage] = useState("");
@@ -85,9 +81,7 @@ function FormatChoice({
         if (!Array.isArray(repos)) throw new Error(repos.exceptionMessage);
         if (repos.length === 0) {
           setMsgBlockingRepoChoice(
-            Optional.present(
-              "You have not setup a repository, to do so please activate them within Apps",
-            ),
+            Optional.present("You have not setup a repository, to do so please activate them within Apps"),
           );
           return;
         }
@@ -176,10 +170,7 @@ function FormatChoice({
     let disabledBecauseNotebook = false;
     let disabledBecauseAllMedia = false;
 
-    if (
-      exportSelection.type === "selection" &&
-      exportSelection.exportIds.length === 1
-    ) {
+    if (exportSelection.type === "selection" && exportSelection.exportIds.length === 1) {
       const selectedType = exportSelection.exportTypes[0];
       if (selectedType.indexOf("FOLDER") >= 0) {
         disabledBecauseFolder = true;
@@ -190,16 +181,11 @@ function FormatChoice({
       disabledBecauseMultiple = true;
     }
     if (exportSelection.type === "selection") {
-      disabledBecauseAllMedia = exportSelection.exportTypes.every(
-        (n) => n === "MEDIA_FILE",
-      );
+      disabledBecauseAllMedia = exportSelection.exportTypes.every((n) => n === "MEDIA_FILE");
     }
 
     const wordExportAllowed =
-      !disabledBecauseMultiple &&
-      !disabledBecauseFolder &&
-      !disabledBecauseNotebook &&
-      !disabledBecauseAllMedia;
+      !disabledBecauseMultiple && !disabledBecauseFolder && !disabledBecauseNotebook && !disabledBecauseAllMedia;
 
     setWordAvailable(wordExportAllowed);
 
@@ -219,14 +205,9 @@ function FormatChoice({
     validator.setValidFunc(() => Promise.resolve(true));
   }, [validator]);
 
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { value: ArchiveType };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { value: ArchiveType } }) => {
     exportConfigUpdate("archiveType", value);
-    if (value === "pdf" || value === "doc")
-      exportConfigUpdate("fileStores", false);
+    if (value === "pdf" || value === "doc") exportConfigUpdate("fileStores", false);
     if (value !== "xml") exportConfigUpdate("allVersions", false);
   };
 
@@ -246,12 +227,9 @@ function FormatChoice({
             control={<Radio data-test-id="zip-html" color="primary" />}
             label={
               <>
-                <OptionHeading>
-                  .ZIP bundle containing .HTML files
-                </OptionHeading>
+                <OptionHeading>.ZIP bundle containing .HTML files</OptionHeading>
                 <OptionExplanation>
-                  Exported data, notebooks and attached files can be accessed
-                  offline with a browser.
+                  Exported data, notebooks and attached files can be accessed offline with a browser.
                 </OptionExplanation>
               </>
             }
@@ -263,8 +241,8 @@ function FormatChoice({
               <>
                 <OptionHeading>.ZIP bundle containing .XML files</OptionHeading>
                 <OptionExplanation>
-                  Exported data is machine readable. Good for archiving, or
-                  transferring data from one RSpace server or user to another.
+                  Exported data is machine readable. Good for archiving, or transferring data from one RSpace server or
+                  user to another.
                 </OptionExplanation>
               </>
             }
@@ -279,14 +257,11 @@ function FormatChoice({
                 <OptionExplanation>
                   {pdfAvailable ? (
                     <>
-                      A read-only version of your RSpace documents will be
-                      placed in the &apos;Exports&apos; area of the Gallery
+                      A read-only version of your RSpace documents will be placed in the &apos;Exports&apos; area of the
+                      Gallery
                     </>
                   ) : (
-                    <>
-                      All selected items are attachments &mdash; there are no
-                      RSpace documents to export.
-                    </>
+                    <>All selected items are attachments &mdash; there are no RSpace documents to export.</>
                   )}
                 </OptionExplanation>
               </>
@@ -299,15 +274,12 @@ function FormatChoice({
               <>
                 <OptionHeading>RO-Crate</OptionHeading>
                 <OptionExplanation>
-                  An XML bundle with an RO-Crate metadata file, zipped into a
-                  .eln archive.
+                  An XML bundle with an RO-Crate metadata file, zipped into a .eln archive.
                 </OptionExplanation>
               </>
             }
           />
-          {FetchingData.getSuccessValue(asposeEnabled)
-            .flatMap(Parsers.isBoolean)
-            .orElse(false) && (
+          {FetchingData.getSuccessValue(asposeEnabled).flatMap(Parsers.isBoolean).orElse(false) && (
             <FormControlLabel
               value="doc"
               disabled={!wordAvailable}
@@ -318,8 +290,8 @@ function FormatChoice({
                   <OptionExplanation>
                     {wordAvailable ? (
                       <>
-                        MS Word version of your RSpace documents will be placed
-                        in the &apos;Exports&apos; area of the Gallery.
+                        MS Word version of your RSpace documents will be placed in the &apos;Exports&apos; area of the
+                        Gallery.
                       </>
                     ) : (
                       wordAvailabilityMessage
@@ -339,9 +311,7 @@ function FormatChoice({
           control={
             <Switch
               checked={repoSelected}
-              onChange={({ target: { checked } }) =>
-                exportConfigUpdate("repository", checked)
-              }
+              onChange={({ target: { checked } }) => exportConfigUpdate("repository", checked)}
               value="repository"
               color="primary"
               disabled={msgBlockingRepoChoice.isPresent()}
@@ -352,30 +322,27 @@ function FormatChoice({
           label={msgBlockingRepoChoice.orElse("Export to a repository")}
         />
       </Grid>
-      {allowFileStores &&
-        (archiveType === "html" ||
-          archiveType === "xml" ||
-          archiveType === "eln") && (
-          <Grid size={12}>
-            <h3>Filestores</h3>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={fileStoresSelected}
-                  onChange={({ target: { checked } }) => {
-                    exportConfigUpdate("fileStores", checked);
-                    updateFileStores("includeNfsFiles", checked);
-                  }}
-                  value="fileStores"
-                  color="primary"
-                  data-test-id="filestores"
-                  slotProps={{ input: { role: "checkbox" } }}
-                />
-              }
-              label="Include filestore links"
-            />
-          </Grid>
-        )}
+      {allowFileStores && (archiveType === "html" || archiveType === "xml" || archiveType === "eln") && (
+        <Grid size={12}>
+          <h3>Filestores</h3>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={fileStoresSelected}
+                onChange={({ target: { checked } }) => {
+                  exportConfigUpdate("fileStores", checked);
+                  updateFileStores("includeNfsFiles", checked);
+                }}
+                value="fileStores"
+                color="primary"
+                data-test-id="filestores"
+                slotProps={{ input: { role: "checkbox" } }}
+              />
+            }
+            label="Include filestore links"
+          />
+        </Grid>
+      )}
       {(archiveType === "xml" || archiveType === "eln") && (
         <Grid size={12}>
           <h3>Revisions</h3>

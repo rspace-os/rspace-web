@@ -1,9 +1,9 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockTemplate } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
-  default: () => ({})
+  default: () => ({}),
 }));
 describe("computed: paramsForBackend", () => {
   /*
@@ -16,10 +16,7 @@ describe("computed: paramsForBackend", () => {
   describe("paramsForBackend should be JSON serialisable when", () => {
     test("a Template exists.", () => {
       const Template = makeMockTemplate();
-      expect(JSON.stringify(Template.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
+      expect(JSON.stringify(Template.paramsForBackend)).toEqual(expect.any(String));
     });
   });
 });
-

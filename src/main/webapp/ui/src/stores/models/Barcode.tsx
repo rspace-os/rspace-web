@@ -1,22 +1,20 @@
-import {
-  type BarcodeRecord,
-  type PersistedBarcodeAttrs,
-  type GeneratedBarcodeAttrs,
-  type FromServer,
-  Deleted,
-} from "../definitions/Barcode";
-import React from "react";
-import { makeObservable, observable, computed, action } from "mobx";
-import { type Id } from "../definitions/BaseRecord";
-import { type URL } from "../../util/types";
+import { action, computed, makeObservable, observable } from "mobx";
+import type React from "react";
 import ApiService from "../../common/InvApiService";
+import type { URL } from "../../util/types";
+import type {
+  BarcodeRecord,
+  Deleted,
+  FromServer,
+  GeneratedBarcodeAttrs,
+  PersistedBarcodeAttrs,
+} from "../definitions/Barcode";
+import type { Id } from "../definitions/BaseRecord";
 
 function fetchImage(url: URL, description: string): Promise<File> {
-  return ApiService.query<Blob>(url, new URLSearchParams(), true).then(
-    ({ data }) => {
-      return new File([data], description, { type: "image/png" });
-    },
-  );
+  return ApiService.query<Blob>(url, new URLSearchParams(), true).then(({ data }) => {
+    return new File([data], description, { type: "image/png" });
+  });
 }
 
 /*
@@ -70,9 +68,7 @@ export class PersistedBarcode implements BarcodeRecord {
       this.description = attrs.description;
 
       this.image = null;
-      const imageUrl =
-        fromServerAttrs._links.find(({ rel }) => rel === "enclosure")?.link ??
-        null;
+      const imageUrl = fromServerAttrs._links.find(({ rel }) => rel === "enclosure")?.link ?? null;
       this.imageUrl = imageUrl;
     }
     this.data = attrs.data;

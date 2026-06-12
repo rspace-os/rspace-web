@@ -1,5 +1,5 @@
-import { type Id, type GlobalId } from "./BaseRecord";
-import { type _LINK } from "../../util/types";
+import type { _LINK } from "../../util/types";
+import type { GlobalId, Id } from "./BaseRecord";
 
 /**
  * A simple definition of a group of users (Lab group, Collaboration group,

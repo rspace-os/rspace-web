@@ -1,9 +1,9 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/onedrive";
+import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type OneDriveArgs = {
   integrationState: IntegrationStates["ONEDRIVE"];
@@ -26,8 +26,9 @@ function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="OneDrive"
         integrationState={integrationState}
@@ -42,10 +43,7 @@ function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
         setupSection={
           <ol>
             <li>Enable the integration.</li>
-            <li>
-              When editing a document, click on the OneDrive icon in the text
-              editor toolbar.
-            </li>
+            <li>When editing a document, click on the OneDrive icon in the text editor toolbar.</li>
           </ol>
         }
       />

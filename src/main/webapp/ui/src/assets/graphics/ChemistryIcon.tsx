@@ -1,5 +1,5 @@
-import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
+import type React from "react";
 
 /**
  * Icon component showing a chemistry-related graphic

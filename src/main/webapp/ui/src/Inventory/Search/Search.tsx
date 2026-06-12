@@ -1,16 +1,16 @@
-import { observer } from "mobx-react-lite";
-import React from "react";
-import Searchbar from "./components/Searchbar";
-import SearchFeedback from "./components/SearchFeedback";
-import { type SearchView } from "../../stores/definitions/Search";
-import SearchDisplayControls from "./components/SearchDisplayControls";
-import SearchParameterControls from "./components/SearchParameterControls";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
-import SearchParameterChips from "./components/SearchParameterChips";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import docLinks from "../../assets/DocLinks";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import type { SearchView } from "../../stores/definitions/Search";
+import Searchbar from "./components/Searchbar";
+import SearchDisplayControls from "./components/SearchDisplayControls";
+import SearchFeedback from "./components/SearchFeedback";
+import SearchParameterChips from "./components/SearchParameterChips";
+import SearchParameterControls from "./components/SearchParameterControls";
 
 type MainSearchArgs = {
   size?: "small" | "default";
@@ -31,10 +31,7 @@ function MainSearch({
         <Box sx={{ flexGrow: 1 }}>
           <Searchbar handleSearch={handleSearch} />
         </Box>
-        <HelpLinkIcon
-          link={docLinks.search}
-          title="Info on searching Inventory."
-        />
+        <HelpLinkIcon link={docLinks.search} title="Info on searching Inventory." />
         {size === "small" && <SearchDisplayControls TABS={TABS} />}
         {Boolean(searchbarAdornment) && searchbarAdornment}
       </Stack>

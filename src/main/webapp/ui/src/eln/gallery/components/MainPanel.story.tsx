@@ -1,24 +1,21 @@
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import React from "react";
-import MainPanel from "./MainPanel";
-import { Optional } from "@/util/optional";
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-} from "@mui/material";
-import createAccentedTheme from "@/accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
-import Analytics from "@/components/Analytics";
-import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { BrowserRouter } from "react-router-dom";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import { Description, LocalGalleryFile } from "../useGalleryListing";
+import createAccentedTheme from "@/accentedTheme";
 import Alerts from "@/components/Alerts/Alerts";
+import Analytics from "@/components/Analytics";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
-import OpenFolderProvider from "./OpenFolderProvider";
-import { GallerySelection } from "../useGallerySelection";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
+import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
 import { incrementForever, take } from "@/util/iterators";
+import { Optional } from "@/util/optional";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import { Description, LocalGalleryFile } from "../useGalleryListing";
+import { GallerySelection } from "../useGallerySelection";
+import MainPanel from "./MainPanel";
+import OpenFolderProvider from "./OpenFolderProvider";
 
 /**
  * An example gallery listing with just a bunch of images and no folders.
@@ -40,11 +37,11 @@ export function BunchOfImages(): React.ReactNode {
               modificationDate: new Date("2023-01-01T00:00:00Z"),
               description: Description.Empty(),
               type: "Image",
-                  isSystemFolder: false,
-                  isSharedFolder: false,
-                  ownerId: 1,
+              isSystemFolder: false,
+              isSharedFolder: false,
+              ownerId: 1,
               ownerName: "user1",
-                  ownerUsername: "user1",
+              ownerUsername: "user1",
               path: [],
               gallerySection: "Images",
               size: 0,
@@ -201,10 +198,7 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
           ownerId: 1,
           ownerName: "user1",
           ownerUsername: "user1",
-          path: [
-            MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
-            MOCK_OUTER_FOLDER_LISTING.value.list[0],
-          ],
+          path: [MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0], MOCK_OUTER_FOLDER_LISTING.value.list[0]],
           gallerySection: "Images",
           size: 0,
           version: 1,
@@ -219,12 +213,9 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
       refreshing: false,
     },
   };
-  const [galleryListing, setGalleryListing] = React.useState<
-    React.ComponentProps<typeof MainPanel>["galleryListing"]
-  >(MOCK_ROOT_WITH_OUTER_FOLDER);
-  const [path, setPath] = React.useState<
-    React.ComponentProps<typeof MainPanel>["path"]
-  >([]);
+  const [galleryListing, setGalleryListing] =
+    React.useState<React.ComponentProps<typeof MainPanel>["galleryListing"]>(MOCK_ROOT_WITH_OUTER_FOLDER);
+  const [path, setPath] = React.useState<React.ComponentProps<typeof MainPanel>["path"]>([]);
 
   return (
     <React.StrictMode>
@@ -246,9 +237,7 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
                                 setPath([]);
                               } else if (newPath.length === 1) {
                                 setGalleryListing(MOCK_OUTER_FOLDER_LISTING);
-                                setPath([
-                                  MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
-                                ]);
+                                setPath([MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0]]);
                               } else if (newPath.length === 2) {
                                 setGalleryListing(MOCK_INNER_FOLDER_LISTING);
                                 setPath([

@@ -1,58 +1,48 @@
-import React from "react";
-import {
-  type CreateFrom,
-  type CreateOptionParameter,
-  type InventoryRecord,
-} from "../../../stores/definitions/InventoryRecord";
-import docLinks from "../../../assets/DocLinks";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import Collapse from "@mui/material/Collapse";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Stepper from "@mui/material/Stepper";
-import Step from "@mui/material/Step";
-import StepLabel from "@mui/material/StepLabel";
-import StepContent from "@mui/material/StepContent";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import RadioGroup from "@mui/material/RadioGroup";
-import Radio from "@mui/material/Radio";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import {
-  OptionHeading,
-  OptionExplanation,
-} from "../../../components/Inputs/RadioField";
-import NumberField from "../../../components/Inputs/NumberField";
 import InputAdornment from "@mui/material/InputAdornment";
-import { observer } from "mobx-react-lite";
-import { runInAction } from "mobx";
-import SubmitSpinner from "../../../components/SubmitSpinnerButton";
-import NoValue from "../../../components/NoValue";
-import StringField from "../../../components/Inputs/StringField";
-import { type Id } from "../../../stores/definitions/BaseRecord";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import Step from "@mui/material/Step";
+import StepContent from "@mui/material/StepContent";
+import StepLabel from "@mui/material/StepLabel";
+import Stepper from "@mui/material/Stepper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Checkbox from "@mui/material/Checkbox";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import SearchView from "../../Search/SearchView";
-import SearchContext from "../../../stores/contexts/Search";
+import { runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import docLinks from "../../../assets/DocLinks";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
-import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
-import {
-  type Container,
-  cTypeToDefaultSearchView,
-} from "../../../stores/definitions/Container";
-import { menuIDs } from "../../../util/menuIDs";
-import Search from "../../../stores/models/Search";
-import Collapse from "@mui/material/Collapse";
+import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import NumberField from "../../../components/Inputs/NumberField";
+import { OptionExplanation, OptionHeading } from "../../../components/Inputs/RadioField";
+import StringField from "../../../components/Inputs/StringField";
+import NoValue from "../../../components/NoValue";
+import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import SearchContext from "../../../stores/contexts/Search";
+import type { Id } from "../../../stores/definitions/BaseRecord";
+import { type Container, cTypeToDefaultSearchView } from "../../../stores/definitions/Container";
+import type { CreateFrom, CreateOptionParameter, InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
+import Search from "../../../stores/models/Search";
+import { menuIDs } from "../../../util/menuIDs";
+import SearchView from "../../Search/SearchView";
 
 /*
  * The create dialog allows users to create new Inventory records with respect
@@ -78,28 +68,20 @@ type CreateDialogProps = {
   onClose: () => void;
 };
 
-const Name = observer(
-  ({
-    id,
-    state,
-  }: {
-    id: string;
-    state: { value: string };
-  }): React.ReactNode => {
-    return (
-      <StringField
-        id={id}
-        value={state.value}
-        onChange={({ target }) => {
-          runInAction(() => {
-            state.value = target.value;
-          });
-        }}
-        variant="outlined"
-      />
-    );
-  },
-);
+const Name = observer(({ id, state }: { id: string; state: { value: string } }): React.ReactNode => {
+  return (
+    <StringField
+      id={id}
+      value={state.value}
+      onChange={({ target }) => {
+        runInAction(() => {
+          state.value = target.value;
+        });
+      }}
+      variant="outlined"
+    />
+  );
+});
 
 const Fields = observer(
   ({
@@ -117,8 +99,7 @@ const Fields = observer(
       }>;
     };
   }): React.ReactNode => {
-    if (state.copyFieldContent.length === 0)
-      return <NoValue label="No fields." />;
+    if (state.copyFieldContent.length === 0) return <NoValue label="No fields." />;
     return (
       <TableContainer>
         <Table size="small">
@@ -130,9 +111,7 @@ const Fields = observer(
                     state.copyFieldContent.some(({ selected }) => selected) &&
                     !state.copyFieldContent.every(({ selected }) => selected)
                   }
-                  checked={state.copyFieldContent.every(
-                    ({ selected }) => selected,
-                  )}
+                  checked={state.copyFieldContent.every(({ selected }) => selected)}
                   onChange={({ target: { checked } }) => {
                     runInAction(() => {
                       state.copyFieldContent.forEach((f) => {
@@ -177,169 +156,134 @@ const Fields = observer(
   },
 );
 
-const SplitCount = observer(
-  ({
-    id,
-    state,
-  }: {
-    id: string;
-    state: { copies: number };
-  }): React.ReactNode => {
-    const MIN = 2;
-    const MAX = 100;
+const SplitCount = observer(({ id, state }: { id: string; state: { copies: number } }): React.ReactNode => {
+  const MIN = 2;
+  const MAX = 100;
 
-    return (
-      <Box>
-        <FormControl>
-          <NumberField
-            id={id}
-            name="copies"
-            autoFocus
-            value={state.copies}
-            onChange={({ target }) => {
-              runInAction(() => {
-                state.copies = parseInt(target.value, 10);
-              });
-            }}
-            variant="outlined"
-            size="small"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">Copies</InputAdornment>
-                ),
-              },
-              htmlInput: {
-                min: MIN,
-                max: MAX,
-                step: 1,
-              },
-            }}
-          />
-        </FormControl>
-      </Box>
-    );
-  },
-);
+  return (
+    <Box>
+      <FormControl>
+        <NumberField
+          id={id}
+          name="copies"
+          autoFocus
+          value={state.copies}
+          onChange={({ target }) => {
+            runInAction(() => {
+              state.copies = parseInt(target.value, 10);
+            });
+          }}
+          variant="outlined"
+          size="small"
+          slotProps={{
+            input: {
+              startAdornment: <InputAdornment position="start">Copies</InputAdornment>,
+            },
+            htmlInput: {
+              min: MIN,
+              max: MAX,
+              step: 1,
+            },
+          }}
+        />
+      </FormControl>
+    </Box>
+  );
+});
 
-const LocationPicker = observer(
-  ({ id: _id, state }: { id: string; state: { container: Container } }) => {
-    const search = React.useMemo(() => {
-      const s = new Search({
-        fetcherParams: {
-          parentGlobalId: state.container.globalId,
-        },
-        uiConfig: {
-          allowedSearchModules: new Set([]),
-          allowedTypeFilters: new Set([]),
-          hideContentsOfChip: true,
-          selectionLimit: 1,
-          onlyAllowSelectingEmptyLocations: true,
-        },
-        factory: new AlwaysNewFactory(),
-      });
-      void s.setSearchView(cTypeToDefaultSearchView(state.container.cType));
-      runInAction(() => {
-        s.alwaysFilterOut = () => true;
-      });
-      return s;
-      /*
-       * You might think that this useMemo should run whenever `state.container`
-       * changes, after all `state` is an observable value and when it changes so
-       * should the UI. However, the only way to change `state.container` is to
-       * close the create dialog and open it again with a different container
-       * selected. Not only will this unmount the whole dialog including this form
-       * field but even just changing the selected option (i.e. choosing to create
-       * a sample inside the container instead of another container) will result in
-       * an unmounting and remounting.
-       */
-    }, []);
-
+const LocationPicker = observer(({ id: _id, state }: { id: string; state: { container: Container } }) => {
+  const search = React.useMemo(() => {
+    const s = new Search({
+      fetcherParams: {
+        parentGlobalId: state.container.globalId,
+      },
+      uiConfig: {
+        allowedSearchModules: new Set([]),
+        allowedTypeFilters: new Set([]),
+        hideContentsOfChip: true,
+        selectionLimit: 1,
+        onlyAllowSelectingEmptyLocations: true,
+      },
+      factory: new AlwaysNewFactory(),
+    });
+    void s.setSearchView(cTypeToDefaultSearchView(state.container.cType));
+    runInAction(() => {
+      s.alwaysFilterOut = () => true;
+    });
+    return s;
     /*
-     * If the container has locations but the details have not been fetched,
-     * then fetch them before rendering otherwise the container will show as
-     * empty.
+     * You might think that this useMemo should run whenever `state.container`
+     * changes, after all `state` is an observable value and when it changes so
+     * should the UI. However, the only way to change `state.container` is to
+     * close the create dialog and open it again with a different container
+     * selected. Not only will this unmount the whole dialog including this form
+     * field but even just changing the selected option (i.e. choosing to create
+     * a sample inside the container instead of another container) will result in
+     * an unmounting and remounting.
      */
-    React.useEffect(() => {
-      if (
-        state.container.locationsCount > 0 &&
-        state.container.locations?.length === 0
-      )
-        void state.container.fetchAdditionalInfo();
-    }, [state.container]);
+  }, []);
 
-    if (state.container.cType === "LIST") return null;
-    if (
-      state.container.locationsCount > 0 &&
-      state.container.locations?.length === 0
-    )
-      return null;
-    return (
-      <SearchContext.Provider
-        value={{
-          search,
-          scopedResult: state.container,
-          differentSearchForSettingActiveResult: search,
-        }}
-      >
-        <AlwaysNewWindowNavigationContext>
-          <SearchView contextMenuId={menuIDs.NONE} />
-        </AlwaysNewWindowNavigationContext>
-      </SearchContext.Provider>
-    );
-  },
-);
+  /*
+   * If the container has locations but the details have not been fetched,
+   * then fetch them before rendering otherwise the container will show as
+   * empty.
+   */
+  React.useEffect(() => {
+    if (state.container.locationsCount > 0 && state.container.locations?.length === 0)
+      void state.container.fetchAdditionalInfo();
+  }, [state.container]);
 
-const NewSubsampleCount = observer(
-  ({
-    id,
-    state,
-  }: {
-    id: string;
-    state: { count: number };
-  }): React.ReactNode => {
-    return (
-      <Box>
-        <FormControl>
-          <NumberField
-            id={id}
-            name="count"
-            autoFocus
-            value={state.count}
-            onChange={({ target }) => {
-              runInAction(() => {
-                state.count = parseInt(target.value, 10);
-              });
-            }}
-            variant="outlined"
-            size="small"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">Count</InputAdornment>
-                ),
-              },
-              htmlInput: {
-                min: 1,
-                max: 100,
-                step: 1,
-              },
-            }}
-          />
-        </FormControl>
-      </Box>
-    );
-  },
-);
+  if (state.container.cType === "LIST") return null;
+  if (state.container.locationsCount > 0 && state.container.locations?.length === 0) return null;
+  return (
+    <SearchContext.Provider
+      value={{
+        search,
+        scopedResult: state.container,
+        differentSearchForSettingActiveResult: search,
+      }}
+    >
+      <AlwaysNewWindowNavigationContext>
+        <SearchView contextMenuId={menuIDs.NONE} />
+      </AlwaysNewWindowNavigationContext>
+    </SearchContext.Provider>
+  );
+});
+
+const NewSubsampleCount = observer(({ id, state }: { id: string; state: { count: number } }): React.ReactNode => {
+  return (
+    <Box>
+      <FormControl>
+        <NumberField
+          id={id}
+          name="count"
+          autoFocus
+          value={state.count}
+          onChange={({ target }) => {
+            runInAction(() => {
+              state.count = parseInt(target.value, 10);
+            });
+          }}
+          variant="outlined"
+          size="small"
+          slotProps={{
+            input: {
+              startAdornment: <InputAdornment position="start">Count</InputAdornment>,
+            },
+            htmlInput: {
+              min: 1,
+              max: 100,
+              step: 1,
+            },
+          }}
+        />
+      </FormControl>
+    </Box>
+  );
+});
 
 const NewSubsampleQuantity = observer(
-  ({
-    id,
-    state,
-  }: {
-    id: string;
-    state: { quantity: number | ""; quantityLabel: string };
-  }) => {
+  ({ id, state }: { id: string; state: { quantity: number | ""; quantityLabel: string } }) => {
     return (
       <Box>
         <FormControl>
@@ -358,19 +302,14 @@ const NewSubsampleQuantity = observer(
                  * prohibited from submitting if the field is empty.
                  */
                 const newValue = parseFloat(target.value);
-                if (target.checkValidity())
-                  state.quantity = isNaN(newValue) ? "" : newValue;
+                if (target.checkValidity()) state.quantity = Number.isNaN(newValue) ? "" : newValue;
               });
             }}
             variant="outlined"
             size="small"
             slotProps={{
               input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {state.quantityLabel}
-                  </InputAdornment>
-                ),
+                endAdornment: <InputAdornment position="end">{state.quantityLabel}</InputAdornment>,
               },
               htmlInput: {
                 min: 0,
@@ -409,10 +348,7 @@ const ParameterField = observer(
         <Collapse in appear>
           <Step {...rest}>
             <StepLabel>
-              <label
-                htmlFor={fieldId}
-                style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
-              >
+              <label htmlFor={fieldId} style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}>
                 {label}
               </label>
               <Typography variant="body2">{explanation}</Typography>
@@ -435,22 +371,12 @@ const ParameterField = observer(
                 spacing={1}
               >
                 <Box>
-                  {state.key === "split" && (
-                    <SplitCount id={fieldId} state={state} />
-                  )}
+                  {state.key === "split" && <SplitCount id={fieldId} state={state} />}
                   {state.key === "name" && <Name id={fieldId} state={state} />}
-                  {state.key === "location" && (
-                    <LocationPicker id={fieldId} state={state} />
-                  )}
-                  {state.key === "fields" && (
-                    <Fields id={fieldId} state={state} />
-                  )}
-                  {state.key === "newSubsamplesCount" && (
-                    <NewSubsampleCount id={fieldId} state={state} />
-                  )}
-                  {state.key === "newSubsamplesQuantity" && (
-                    <NewSubsampleQuantity id={fieldId} state={state} />
-                  )}
+                  {state.key === "location" && <LocationPicker id={fieldId} state={state} />}
+                  {state.key === "fields" && <Fields id={fieldId} state={state} />}
+                  {state.key === "newSubsamplesCount" && <NewSubsampleCount id={fieldId} state={state} />}
+                  {state.key === "newSubsamplesQuantity" && <NewSubsampleQuantity id={fieldId} state={state} />}
                 </Box>
                 <Stack spacing={1} direction="row">
                   {showNextButton && (
@@ -484,13 +410,8 @@ const ParameterField = observer(
   },
 );
 
-function CreateDialog({
-  existingRecord,
-  open,
-  onClose,
-}: CreateDialogProps): React.ReactNode {
-  const [selectedCreateOptionIndex, setSelectedCreateOptionIndex] =
-    React.useState<null | number>(null);
+function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): React.ReactNode {
+  const [selectedCreateOptionIndex, setSelectedCreateOptionIndex] = React.useState<null | number>(null);
   const [activeStep, setActiveStep] = React.useState<number>(0);
   const [submitting, setSubmitting] = React.useState(false);
   const firstStepId = React.useId();
@@ -528,13 +449,10 @@ function CreateDialog({
 
   const handleSubmit = () => {
     void (async () => {
-      if (selectedCreateOptionIndex === null)
-        throw new Error("Cannot submit until an option is chosen");
+      if (selectedCreateOptionIndex === null) throw new Error("Cannot submit until an option is chosen");
       setSubmitting(true);
       try {
-        await existingRecord.createOptions[
-          selectedCreateOptionIndex
-        ].onSubmit();
+        await existingRecord.createOptions[selectedCreateOptionIndex].onSubmit();
         handleClose();
       } finally {
         setSubmitting(false);
@@ -543,8 +461,7 @@ function CreateDialog({
   };
 
   const handleClose = () => {
-    if (selectedCreateOptionIndex !== null)
-      existingRecord.createOptions[selectedCreateOptionIndex].onReset();
+    if (selectedCreateOptionIndex !== null) existingRecord.createOptions[selectedCreateOptionIndex].onReset();
     onClose();
   };
 
@@ -558,10 +475,7 @@ function CreateDialog({
       >
         <DialogTitle>
           Create new items from <strong>{existingRecord.name}</strong>
-          <HelpLinkIcon
-            link={docLinks.createDialog}
-            title="Info on creating new items."
-          />
+          <HelpLinkIcon link={docLinks.createDialog} title="Info on creating new items." />
         </DialogTitle>
         <DialogContent>
           {loading ? (
@@ -587,18 +501,11 @@ function CreateDialog({
                     )
                   }
                 >
-                  <label
-                    htmlFor={firstStepId}
-                    style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}
-                  >
+                  <label htmlFor={firstStepId} style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}>
                     Type of item to create
                     {selectedCreateOptionIndex !== null && (
                       <Typography variant="body2">
-                        {
-                          existingRecord.createOptions[
-                            selectedCreateOptionIndex
-                          ].label
-                        }
+                        {existingRecord.createOptions[selectedCreateOptionIndex].label}
                       </Typography>
                     )}
                   </label>
@@ -620,11 +527,7 @@ function CreateDialog({
                  * parameter for the second option would be displayed with a
                  * number 3.
                  */}
-                <StepContent
-                  transitionDuration={
-                    selectedCreateOptionIndex === null ? 0 : 300
-                  }
-                >
+                <StepContent transitionDuration={selectedCreateOptionIndex === null ? 0 : 300}>
                   <FormControl>
                     <RadioGroup
                       id={firstStepId}
@@ -634,47 +537,37 @@ function CreateDialog({
                         setActiveStep(1);
                       }}
                     >
-                      {existingRecord.createOptions.length === 0 && (
-                        <NoValue label="No options available." />
-                      )}
-                      {existingRecord.createOptions.map(
-                        ({ label, explanation, disabled }, index) => (
-                          <FormControlLabel
-                            key={index}
-                            value={index}
-                            control={
-                              <Radio
-                                sx={{
-                                  // align radio button with option heading
-                                  mb: "auto",
-                                  p: 0.5,
-                                  mr: 0.5,
-                                }}
-                              />
-                            }
-                            disabled={disabled}
-                            label={
-                              <>
-                                <OptionHeading>{label}</OptionHeading>
-                                <OptionExplanation>
-                                  {explanation}
-                                </OptionExplanation>
-                              </>
-                            }
-                            sx={{ mt: 2 }}
-                          />
-                        ),
-                      )}
+                      {existingRecord.createOptions.length === 0 && <NoValue label="No options available." />}
+                      {existingRecord.createOptions.map(({ label, explanation, disabled }, index) => (
+                        <FormControlLabel
+                          key={index}
+                          value={index}
+                          control={
+                            <Radio
+                              sx={{
+                                // align radio button with option heading
+                                mb: "auto",
+                                p: 0.5,
+                                mr: 0.5,
+                              }}
+                            />
+                          }
+                          disabled={disabled}
+                          label={
+                            <>
+                              <OptionHeading>{label}</OptionHeading>
+                              <OptionExplanation>{explanation}</OptionExplanation>
+                            </>
+                          }
+                          sx={{ mt: 2 }}
+                        />
+                      ))}
                     </RadioGroup>
                   </FormControl>
                 </StepContent>
               </Step>
-              {selectedCreateOptionIndex !== null &&
-                existingRecord.createOptions[selectedCreateOptionIndex]
-                  .parameters &&
-                existingRecord.createOptions[
-                  selectedCreateOptionIndex
-                ].parameters.map(
+              {selectedCreateOptionIndex &&
+                existingRecord.createOptions[selectedCreateOptionIndex].parameters?.map(
                   ({ label, explanation, state, validState }, index) => (
                     <ParameterField
                       label={label}
@@ -687,13 +580,7 @@ function CreateDialog({
                         if (s === 0) setSelectedCreateOptionIndex(null);
                       }}
                       showNextButton={
-                        index <
-                        (
-                          existingRecord.createOptions[
-                            selectedCreateOptionIndex
-                          ].parameters ?? []
-                        ).length -
-                          1
+                        index < (existingRecord.createOptions[selectedCreateOptionIndex].parameters ?? []).length - 1
                       }
                       key={index}
                     />
@@ -710,15 +597,10 @@ function CreateDialog({
             disabled={
               submitting ||
               selectedCreateOptionIndex === null ||
-              activeStep <
-                (
-                  existingRecord.createOptions[selectedCreateOptionIndex]
-                    .parameters ?? []
-                ).length ||
-              (
-                existingRecord.createOptions[selectedCreateOptionIndex]
-                  .parameters ?? []
-              ).some(({ validState }) => !validState())
+              activeStep < (existingRecord.createOptions[selectedCreateOptionIndex].parameters ?? []).length ||
+              (existingRecord.createOptions[selectedCreateOptionIndex].parameters ?? []).some(
+                ({ validState }) => !validState(),
+              )
             }
             loading={submitting}
           />

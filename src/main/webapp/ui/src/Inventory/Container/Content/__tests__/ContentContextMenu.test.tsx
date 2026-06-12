@@ -1,26 +1,18 @@
-import { test, describe, expect, vi } from 'vitest';
-import * as React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-} from "@testing-library/react";
-import SearchContext from "../../../../stores/contexts/Search";
-import Search from "../../../../stores/models/Search";
-import {
-  makeMockContainer,
-  containerAttrs,
-} from "../../../../stores/models/__tests__/ContainerModel/mocking";
-import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import LocationModel from "../../../../stores/models/LocationModel";
-import ContainerModel from "../../../../stores/models/ContainerModel";
-import ContentContextMenu from "../ContentContextMenu";
-import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import ContextMenuButton from "../../../components/ContextMenu/ContextMenuButton";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
-import { take, incrementForever } from "../../../../util/iterators";
+import { cleanup, render, screen } from "@testing-library/react";
 import fc from "fast-check";
+import { describe, expect, test, vi } from "vitest";
+import SearchContext from "../../../../stores/contexts/Search";
+import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
+import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import type ContainerModel from "../../../../stores/models/ContainerModel";
+import LocationModel from "../../../../stores/models/LocationModel";
+import Search from "../../../../stores/models/Search";
+import materialTheme from "../../../../theme";
+import * as ArrayUtils from "../../../../util/ArrayUtils";
+import { incrementForever, take } from "../../../../util/iterators";
+import ContextMenuButton from "../../../components/ContextMenu/ContextMenuButton";
+import ContentContextMenu from "../ContentContextMenu";
 
 vi.mock("../../../components/ContextMenu/ContextMenuButton", () => ({
   default: vi.fn(() => <div></div>),
@@ -64,7 +56,6 @@ describe("ContentContextMenu", () => {
             <ContentContextMenu />
           </SearchContext.Provider>
         </ThemeProvider>,
-
       );
       expect(ContextMenuButton).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -78,10 +69,7 @@ describe("ContentContextMenu", () => {
   test("When all locations are selected, the badge on the select all button should show the number of locations.", () => {
     fc.assert(
       fc.property(
-        fc.tuple(
-          fc.integer({ min: 1, max: 24 }),
-          fc.integer({ min: 1, max: 24 }),
-        ),
+        fc.tuple(fc.integer({ min: 1, max: 24 }), fc.integer({ min: 1, max: 24 })),
         ([width, height]: [number, number]) => {
           cleanup();
           const container: ContainerModel = makeMockContainer({
@@ -128,7 +116,6 @@ describe("ContentContextMenu", () => {
                 <ContentContextMenu />
               </SearchContext.Provider>
             </ThemeProvider>,
-
           );
           expect(screen.getByText(`${width * height}`)).toBeVisible();
         },
@@ -137,4 +124,3 @@ describe("ContentContextMenu", () => {
     );
   });
 });
-

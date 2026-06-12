@@ -9,7 +9,6 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
-import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
@@ -396,5 +395,4 @@ public class MessageAndRequestController extends BaseController implements Appli
     }
     return completionDate;
   }
-
 }

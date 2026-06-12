@@ -1,12 +1,12 @@
-import React from "react";
 import Box from "@mui/material/Box";
-import TableSortLabel from "./TableSortLabel";
-import TableHead from "@mui/material/TableHead";
-import TableCell from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
 import Checkbox from "@mui/material/Checkbox";
-import { type Order } from "../util/types";
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import type React from "react";
+import type { Order } from "../util/types";
+import TableSortLabel from "./TableSortLabel";
 
 export type Cell<COLUMN_ID_TYPE extends React.Key> = {
   id: COLUMN_ID_TYPE;
@@ -20,10 +20,7 @@ type EnhancedTableHeadArgs<COLUMN_ID_TYPE extends React.Key> = {
   headSx?: SxProps<Theme>;
   order: Order;
   orderBy: COLUMN_ID_TYPE;
-  onRequestSort: (
-    event: React.MouseEvent<HTMLSpanElement>,
-    column: COLUMN_ID_TYPE,
-  ) => void;
+  onRequestSort: (event: React.MouseEvent<HTMLSpanElement>, column: COLUMN_ID_TYPE) => void;
   selectAll?: boolean;
   onSelectAllClick?: (event: {
     target: {
@@ -49,11 +46,9 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
     rowCount,
     emptyCol,
   } = props;
-  const createSortHandler =
-    (property: COLUMN_ID_TYPE) =>
-    (event: React.MouseEvent<HTMLSpanElement>) => {
-      onRequestSort(event, property);
-    };
+  const createSortHandler = (property: COLUMN_ID_TYPE) => (event: React.MouseEvent<HTMLSpanElement>) => {
+    onRequestSort(event, property);
+  };
   return (
     <TableHead>
       <TableRow>
@@ -72,9 +67,7 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
             />
           </TableCell>
         )}
-        {emptyCol && (
-          <TableCell padding="checkbox" sx={headSx} />
-        )}
+        {emptyCol && <TableCell padding="checkbox" sx={headSx} />}
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
@@ -85,8 +78,7 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
             })}
             sx={headSx}
           >
-            {(typeof headCell.sortable === "undefined" ||
-              headCell.sortable === true) && (
+            {(typeof headCell.sortable === "undefined" || headCell.sortable === true) && (
               <TableSortLabel
                 active={orderBy === headCell.id}
                 direction={order}
@@ -108,9 +100,7 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
                       width: 1,
                     }}
                   >
-                    {order === "desc"
-                      ? "sorted descending"
-                      : "sorted ascending"}
+                    {order === "desc" ? "sorted descending" : "sorted ascending"}
                   </Box>
                 ) : null}
               </TableSortLabel>

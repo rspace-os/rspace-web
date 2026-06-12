@@ -1,20 +1,8 @@
-import {
-  runInAction,
-  action,
-  computed,
-  observable,
-  makeObservable,
-} from "mobx";
-import type { RootStore } from "./RootStore";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import ElnApiService from "../../common/ElnApiService";
+import type { RootStore } from "./RootStore";
 
-export type UnitCategory =
-  | "dimensionless"
-  | "volume"
-  | "mass"
-  | "temperature"
-  | "molarity"
-  | "concentration";
+export type UnitCategory = "dimensionless" | "volume" | "mass" | "temperature" | "molarity" | "concentration";
 
 export type Unit = {
   id: number;
@@ -24,9 +12,7 @@ export type Unit = {
 };
 
 const SAVED_UNITS: Array<Unit> =
-  localStorage.getItem("units") === null
-    ? []
-    : JSON.parse(localStorage.getItem("units") as string) ?? [];
+  localStorage.getItem("units") === null ? [] : (JSON.parse(localStorage.getItem("units") as string) ?? []);
 
 export default class UnitStore {
   rootStore: RootStore;
@@ -76,8 +62,7 @@ export default class UnitStore {
   }
 
   getUnit(unitId: number): Unit | undefined {
-    if (this.loading || this.units.length < 1)
-      return SAVED_UNITS.find((u: Unit) => u.id === unitId);
+    if (this.loading || this.units.length < 1) return SAVED_UNITS.find((u: Unit) => u.id === unitId);
     return this.units.find((u: Unit) => u.id === unitId);
   }
 

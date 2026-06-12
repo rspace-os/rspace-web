@@ -1,10 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { render, screen, within, waitFor, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render, screen, waitFor, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import {
   DocumentThatHasBeenSharedIntoANotebook,
@@ -207,9 +206,7 @@ const folder1Response = {
       _links: [],
     },
   ],
-  _links: [
-    { link: "http://localhost:8080/api/v1/folders/154", rel: "self" },
-  ],
+  _links: [{ link: "http://localhost:8080/api/v1/folders/154", rel: "self" }],
 };
 
 const folderTreeResponse = {
@@ -258,9 +255,7 @@ beforeEach(() => {
   mockAxios.onGet("/api/v1/share/document/3").reply(200, shareDocument3);
   mockAxios.onGet("/api/v1/share/document/4").reply(200, shareDocument4);
   mockAxios.onGet("/api/v1/groups").reply(200, groupsResponse);
-  mockAxios
-    .onGet(/\/api\/v1\/userDetails\/groupMembers.*/)
-    .reply(200, groupMembersResponse);
+  mockAxios.onGet(/\/api\/v1\/userDetails\/groupMembers.*/).reply(200, groupMembersResponse);
   mockAxios.onGet("/api/v1/folders/1").reply(200, folder1Response);
   mockAxios.onGet(/\/api\/v1\/folders\/tree.*/).reply(200, folderTreeResponse);
   // UserDetails / GroupDetails lazily fetch mini-profiles on popover open; stub
@@ -333,13 +328,8 @@ afterEach(() => {
  * Returns the recorded request bodies, mirroring the spec's `networkRequests`
  * inspection but reading from axios-mock-adapter's history.
  */
-function findRequest(
-  method: "post" | "put" | "delete",
-  matcher: (entry: { url?: string; data?: unknown }) => boolean,
-) {
-  return mockAxios.history[method].find((entry) =>
-    matcher({ url: entry.url, data: entry.data }),
-  );
+function findRequest(method: "post" | "put" | "delete", matcher: (entry: { url?: string; data?: unknown }) => boolean) {
+  return mockAxios.history[method].find((entry) => matcher({ url: entry.url, data: entry.data }));
 }
 
 describe("ShareDialog", () => {
@@ -352,9 +342,7 @@ describe("ShareDialog", () => {
       });
       expect(dialog).toBeVisible();
       await waitFor(() => {
-        expect(dialog).toHaveTextContent(
-          /This document is not directly shared with anyone./i,
-        );
+        expect(dialog).toHaveTextContent(/This document is not directly shared with anyone./i);
       });
 
       await expectAccessible(baseElement);
@@ -401,9 +389,7 @@ describe("ShareDialog", () => {
       expect(within(row).getByRole("combobox")).toHaveTextContent(/EDIT/i);
       // Folder name is resolved asynchronously after groups + folder fetches.
       await waitFor(() => {
-        expect(within(row).getAllByRole("cell")[3]).toHaveTextContent(
-          /aliceAndBobGroup_SHARED/,
-        );
+        expect(within(row).getAllByRole("cell")[3]).toHaveTextContent(/aliceAndBobGroup_SHARED/);
       });
 
       await expectAccessible(baseElement);
@@ -448,33 +434,20 @@ describe("ShareDialog", () => {
       const directShareRow = within(directShareTable).getAllByRole("row")[1];
       expect(directShareRow).toBeVisible();
       expect(
-        within(within(directShareRow).getAllByRole("cell")[0]).getByRole(
-          "button",
-          { name: /^Alice and Bob's Group$/ },
-        ),
+        within(within(directShareRow).getAllByRole("cell")[0]).getByRole("button", { name: /^Alice and Bob's Group$/ }),
       ).toBeVisible();
-      expect(within(directShareRow).getByRole("combobox")).toHaveTextContent(
-        /READ/i,
-      );
-      expect(
-        within(directShareRow).getAllByRole("cell")[3],
-      ).toHaveTextContent(/A notebook/);
+      expect(within(directShareRow).getByRole("combobox")).toHaveTextContent(/READ/i);
+      expect(within(directShareRow).getAllByRole("cell")[3]).toHaveTextContent(/A notebook/);
 
       const notebookShareRow = within(notebookShareTable).getAllByRole("row")[1];
       expect(notebookShareRow).toBeVisible();
       expect(
-        within(within(notebookShareRow).getAllByRole("cell")[1]).getByRole(
-          "button",
-          { name: /^Alice and Bob's Group$/ },
-        ),
+        within(within(notebookShareRow).getAllByRole("cell")[1]).getByRole("button", {
+          name: /^Alice and Bob's Group$/,
+        }),
       ).toBeVisible();
-      expect(within(notebookShareRow).getByRole("combobox")).toHaveTextContent(
-        /EDIT/i,
-      );
-      expect(within(notebookShareRow).getByRole("combobox")).toHaveAttribute(
-        "aria-disabled",
-        "true",
-      );
+      expect(within(notebookShareRow).getByRole("combobox")).toHaveTextContent(/EDIT/i);
+      expect(within(notebookShareRow).getByRole("combobox")).toHaveAttribute("aria-disabled", "true");
 
       await expectAccessible(baseElement);
     });
@@ -500,17 +473,11 @@ describe("ShareDialog", () => {
       await user.click(within(dialog).getByRole("button", { name: /Save/i }));
 
       // the Save button should have changed to Done
-      expect(
-        await within(dialog).findByRole("button", { name: /Done/i }),
-      ).toBeVisible();
+      expect(await within(dialog).findByRole("button", { name: /Done/i })).toBeVisible();
 
       // a POST request should have been made to create the share
       expect(
-        findRequest(
-          "post",
-          ({ url, data }) =>
-            url === "/api/v1/share" && data !== null && data !== undefined,
-        ),
+        findRequest("post", ({ url, data }) => url === "/api/v1/share" && data !== null && data !== undefined),
       ).toBeDefined();
     });
 
@@ -526,19 +493,13 @@ describe("ShareDialog", () => {
         name: /Add RSpace users or groups/i,
       });
       await user.click(recipientDropdown);
-      await user.click(
-        await screen.findByRole("option", { name: /^Alice and Bob's Group/ }),
-      );
+      await user.click(await screen.findByRole("option", { name: /^Alice and Bob's Group/ }));
 
       await user.click(within(dialog).getByRole("button", { name: /Save/i }));
 
-      expect(
-        await within(dialog).findByRole("button", { name: /Done/i }),
-      ).toBeVisible();
+      expect(await within(dialog).findByRole("button", { name: /Done/i })).toBeVisible();
 
-      expect(
-        findRequest("post", ({ url }) => url === "/api/v1/share"),
-      ).toBeDefined();
+      expect(findRequest("post", ({ url }) => url === "/api/v1/share")).toBeDefined();
     });
 
     test("The same document shouldn't be shareable twice with the same user", async () => {
@@ -572,27 +533,21 @@ describe("ShareDialog", () => {
         name: /Add RSpace users or groups/i,
       });
       await user.click(recipientDropdown);
-      await user.click(
-        await screen.findByRole("option", { name: /Alice and Bob's Group/i }),
-      );
+      await user.click(await screen.findByRole("option", { name: /Alice and Bob's Group/i }));
 
       await user.click(within(dialog).getByRole("button", { name: /Save/i }));
 
-      expect(
-        await within(dialog).findByRole("button", { name: /Done/i }),
-      ).toBeVisible();
+      expect(await within(dialog).findByRole("button", { name: /Done/i })).toBeVisible();
 
       // a POST request should have been made to create the share
-      expect(
-        findRequest("post", ({ url }) => url === "/api/v1/share"),
-      ).toBeDefined();
+      expect(findRequest("post", ({ url }) => url === "/api/v1/share")).toBeDefined();
       // a PUT request should have been made to update the existing share
       const updateRequest = findRequest(
         "put",
-        ({ url, data }) =>
-          url === "/api/v1/share" && data !== null && data !== undefined,
+        ({ url, data }) => url === "/api/v1/share" && data !== null && data !== undefined,
       );
       expect(updateRequest).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts updateRequest is defined above
       const body = JSON.parse(updateRequest!.data as string) as {
         shareId: number;
         permission: "EDIT" | "READ";
@@ -617,10 +572,9 @@ describe("ShareDialog", () => {
       // the user chooses unshare from the permission menu for Bob
       const bobRow = within(table)
         .getAllByRole("row")
-        .find((row) =>
-          within(row).queryByRole("button", { name: "Bob" }),
-        );
+        .find((row) => within(row).queryByRole("button", { name: "Bob" }));
       expect(bobRow).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts bobRow is defined above
       await user.click(within(bobRow!).getByRole("combobox"));
       await user.click(await screen.findByRole("option", { name: /unshare/i }));
 
@@ -629,11 +583,7 @@ describe("ShareDialog", () => {
 
       // a DELETE request should have been made to remove the share
       await waitFor(() => {
-        expect(
-          findRequest("delete", ({ url }) =>
-            (url ?? "").startsWith("/api/v1/share/"),
-          ),
-        ).toBeDefined();
+        expect(findRequest("delete", ({ url }) => (url ?? "").startsWith("/api/v1/share/"))).toBeDefined();
       });
     });
   });
@@ -653,6 +603,7 @@ describe("ShareDialog", () => {
         .getAllByRole("row")
         .find((row) => within(row).queryByRole("button", { name: "Bob" }));
       expect(bobRow).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts bobRow is defined above
       await user.click(within(bobRow!).getByRole("combobox"));
       await user.click(await screen.findByRole("option", { name: /^Edit$/i }));
 
@@ -661,16 +612,14 @@ describe("ShareDialog", () => {
 
       // a PUT request should have been made to update Bob's permission to EDIT
       await waitFor(() => {
-        expect(
-          findRequest("put", ({ url }) => url === "/api/v1/share"),
-        ).toBeDefined();
+        expect(findRequest("put", ({ url }) => url === "/api/v1/share")).toBeDefined();
       });
       const updateRequest = findRequest(
         "put",
-        ({ url, data }) =>
-          url === "/api/v1/share" && data !== null && data !== undefined,
+        ({ url, data }) => url === "/api/v1/share" && data !== null && data !== undefined,
       );
       expect(updateRequest).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts updateRequest is defined above
       const body = JSON.parse(updateRequest!.data as string) as {
         shareId: number;
         permission: "EDIT" | "READ";
@@ -699,6 +648,7 @@ describe("ShareDialog", () => {
           }),
         );
       expect(groupRow).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts groupRow is defined above
       await user.click(within(groupRow!).getByRole("combobox"));
       await user.click(await screen.findByRole("option", { name: /^Read$/i }));
 
@@ -708,19 +658,15 @@ describe("ShareDialog", () => {
       // a PUT request should have been made to update the group's permission to READ
       await waitFor(() => {
         expect(
-          findRequest(
-            "put",
-            ({ url, data }) =>
-              url === "/api/v1/share" && data !== null && data !== undefined,
-          ),
+          findRequest("put", ({ url, data }) => url === "/api/v1/share" && data !== null && data !== undefined),
         ).toBeDefined();
       });
       const updateRequest = findRequest(
         "put",
-        ({ url, data }) =>
-          url === "/api/v1/share" && data !== null && data !== undefined,
+        ({ url, data }) => url === "/api/v1/share" && data !== null && data !== undefined,
       );
       expect(updateRequest).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts updateRequest is defined above
       const body = JSON.parse(updateRequest!.data as string) as {
         shareId: number;
         permission: "EDIT" | "READ";
@@ -748,9 +694,8 @@ describe("ShareDialog", () => {
           }),
         );
       expect(groupRow).toBeDefined();
-      await user.click(
-        within(groupRow!).getByRole("button", { name: /Change/i }),
-      );
+      // biome-ignore lint/style/noNonNullAssertion: test asserts groupRow is defined above
+      await user.click(within(groupRow!).getByRole("button", { name: /Change/i }));
 
       // the user selects a different folder in the folder selection dialog
       const folderDialog = await screen.findByRole("dialog", {
@@ -776,18 +721,14 @@ describe("ShareDialog", () => {
 
       // a POST request should have been made to move the document to the new folder
       await waitFor(() => {
-        expect(
-          findRequest("post", ({ url }) => url === "/api/v1/documents/move"),
-        ).toBeDefined();
+        expect(findRequest("post", ({ url }) => url === "/api/v1/documents/move")).toBeDefined();
       });
       const moveRequest = findRequest(
         "post",
-        ({ url, data }) =>
-          url === "/api/v1/documents/move" &&
-          data !== null &&
-          data !== undefined,
+        ({ url, data }) => url === "/api/v1/documents/move" && data !== null && data !== undefined,
       );
       expect(moveRequest).toBeDefined();
+      // biome-ignore lint/style/noNonNullAssertion: test asserts moveRequest is defined above
       const body = JSON.parse(moveRequest!.data as string) as {
         docId: number;
         sourceFolderId: number;
@@ -811,9 +752,7 @@ describe("ShareDialog", () => {
       });
       expect(dialog).toBeVisible();
       expect(within(dialog).getByText("Another shared snippet")).toBeVisible();
-      expect(
-        within(screen.getByRole("alert")).getByText(/SNIPPETS_Shared/i),
-      ).toBeVisible();
+      expect(within(screen.getByRole("alert")).getByText(/SNIPPETS_Shared/i)).toBeVisible();
     });
 
     test("Closing and reopening should reset transient dialog state", async () => {
@@ -833,23 +772,15 @@ describe("ShareDialog", () => {
 
       await user.keyboard("{Escape}");
       await waitFor(() => {
-        expect(
-          screen.queryByRole("dialog", { name: /Share Sample Document 1/i }),
-        ).toBeNull();
+        expect(screen.queryByRole("dialog", { name: /Share Sample Document 1/i })).toBeNull();
       });
 
-      await user.click(
-        screen.getByRole("button", { name: /Open share dialog/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /Open share dialog/i }));
       const reopenedDialog = await screen.findByRole("dialog", {
         name: /Share Sample Document 1/i,
       });
       expect(reopenedDialog).toBeVisible();
-      expect(
-        within(reopenedDialog).getByText(
-          "This document is not directly shared with anyone.",
-        ),
-      ).toBeVisible();
+      expect(within(reopenedDialog).getByText("This document is not directly shared with anyone.")).toBeVisible();
       expect(within(reopenedDialog).queryByRole("table")).toBeNull();
       expect(
         within(reopenedDialog).getByRole("combobox", {
@@ -881,16 +812,12 @@ describe("ShareDialog", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.queryByRole("dialog", { name: /Share Sample Document 1/i }),
-          ).toBeNull();
+          expect(screen.queryByRole("dialog", { name: /Share Sample Document 1/i })).toBeNull();
         },
         { timeout: 5000 },
       );
       await waitFor(() => {
-        expect(screen.getByRole("alert")).toHaveTextContent(
-          /Shares updated successfully\./i,
-        );
+        expect(screen.getByRole("alert")).toHaveTextContent(/Shares updated successfully\./i);
       });
     });
 
@@ -907,14 +834,10 @@ describe("ShareDialog", () => {
       const doneButton = within(dialog).getByRole("button", { name: /Done/i });
       await user.click(doneButton);
       await waitFor(() => {
-        expect(
-          screen.queryByRole("dialog", { name: /Share Sample Document 1/i }),
-        ).toBeNull();
+        expect(screen.queryByRole("dialog", { name: /Share Sample Document 1/i })).toBeNull();
       });
 
-      const trackedEvents =
-        (window as Window & { __trackedEvents?: string[] }).__trackedEvents ??
-        [];
+      const trackedEvents = (window as Window & { __trackedEvents?: string[] }).__trackedEvents ?? [];
       expect(trackedEvents).toContain("user:close:share_dialog");
     });
   });

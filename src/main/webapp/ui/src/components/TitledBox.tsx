@@ -1,8 +1,8 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import { Heading } from "@/components/DynamicHeadingLevel";
 
 type TitledBoxArgs = {
@@ -12,12 +12,7 @@ type TitledBoxArgs = {
   border?: boolean;
 };
 
-function TitledBox({
-  title,
-  children,
-  allowOverflow = true,
-  border = false,
-}: TitledBoxArgs): React.ReactNode {
+function TitledBox({ title, children, allowOverflow = true, border = false }: TitledBoxArgs): React.ReactNode {
   return (
     <Box
       sx={(theme) => ({

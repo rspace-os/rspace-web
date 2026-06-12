@@ -1,9 +1,7 @@
-// @flow strict
-
-import React from "react";
 import { observer } from "mobx-react-lite";
-import IconButtonWithTooltip from "../../IconButtonWithTooltip";
+import type React from "react";
 import ExpandCollapseIcon from "../../ExpandCollapseIcon";
+import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 
 type ExpandButtonArgs = {
   ariaLabel: string;
@@ -12,12 +10,7 @@ type ExpandButtonArgs = {
   size?: "small" | "medium" | "large";
 };
 
-function ExpandButton({
-  ariaLabel: ariaLabel,
-  expanded,
-  setExpanded,
-  size = "medium",
-}: ExpandButtonArgs): React.ReactNode {
+function ExpandButton({ ariaLabel, expanded, setExpanded, size = "medium" }: ExpandButtonArgs): React.ReactNode {
   return (
     <IconButtonWithTooltip
       ariaLabel={ariaLabel}

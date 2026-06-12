@@ -1,50 +1,39 @@
-import { test, describe, expect, afterEach, vi } from 'vitest';
-import React from "react";
-import {
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-import LinkedDocuments from "../LinkedDocuments";
-import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import InvApiService from "../../../../common/InvApiService";
-import { type AxiosResponse } from "axios";
-import { newDocument } from "../../../../stores/models/Document";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
+import { fireEvent, screen } from "@testing-library/react";
+import type { AxiosResponse } from "axios";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { render, within } from "@/__tests__/customQueries";
+import InvApiService from "@/common/InvApiService";
+import { mockFactory } from "@/stores/definitions/__tests__/Factory/mocking";
+import { newDocument } from "@/stores/models/Document";
+import materialTheme from "@/theme";
+import LinkedDocuments from "../LinkedDocuments";
+
+type TableWithin = ReturnType<typeof within> & {
+  findTableCell: (options: { columnHeading: string; rowIndex: number }) => Promise<HTMLElement>;
+};
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     get: () => ({}),
-  }
-
+  },
 }));
 describe("LinkedDocuments", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
   test("Assert that correct API endpoint is called with Global ID", async () => {
-    const spy = vi
-      .spyOn(InvApiService, "get")
-      .mockImplementation(() => Promise.reject(new Error("An error")));
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
-
   });
   test("When there is an error loading the data, an alert should be shown.", async () => {
-    vi
-      .spyOn(InvApiService, "get")
-      .mockImplementation(() => Promise.reject(new Error("An error")));
+    vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
-
   });
   test("Two different documents should render as two table rows", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -67,30 +56,24 @@ describe("LinkedDocuments", () => {
           })}
           globalId="IC1"
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    const table = screen.getByRole("table");
+    const tableWithin = within(table) as unknown as TableWithin;
+    expect(within(await screen.findByRole("table")).getAllByRole("row")).toHaveLength(3);
     expect(
-      within(await screen.findByRole("table")).getAllByRole("row")
-
-    ).toHaveLength(3);
-    expect(
-      // @ts-ignore findTableCell exists in the customized within function
-      await within(screen.getByRole("table")).findTableCell({
+      await tableWithin.findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
-      })
+      }),
     ).toHaveTextContent("Foo");
     expect(
-      // @ts-ignore findTableCell exists in the customized within function
-      await within(screen.getByRole("table")).findTableCell({
+      await tableWithin.findTableCell({
         columnHeading: "Name",
         rowIndex: 1,
-      })
+      }),
     ).toHaveTextContent("Bar");
-
   });
   test("Two of the same document should render as one table row", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -113,37 +96,31 @@ describe("LinkedDocuments", () => {
           })}
           globalId="IC1"
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
-    );
-    const rows = within(await screen.findByRole("table")).getAllByRole("row");
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    const table = await screen.findByRole("table");
+    const tableWithin = within(table) as unknown as TableWithin;
+    const rows = within(table).getAllByRole("row");
 
     expect(rows).toHaveLength(2);
     expect(
-      // @ts-ignore findTableCell exists in the customized within function
-      await within(screen.getByRole("table")).findTableCell({
+      await tableWithin.findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
-      })
+      }),
     ).toHaveTextContent("Foo");
-
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.reject(new Error("An error"));
     });
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     expect(await screen.findByRole("button", { name: "Close" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await screen.findByRole("button", { name: "Show Linked Documents" });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show Linked Documents" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledTimes(2);
   });

@@ -20,7 +20,7 @@ export function useDmpAssistantEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from DMP Assistant.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useDmpAssistantEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from DMP Assistant.",
-        })
+        }),
       );
     }
   };

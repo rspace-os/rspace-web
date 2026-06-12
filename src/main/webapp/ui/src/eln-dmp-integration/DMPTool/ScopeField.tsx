@@ -1,9 +1,8 @@
-import React, { useState } from "react";
 import Stack from "@mui/material/Stack";
-import RadioField, {
-  type RadioOption,
-} from "../../components/Inputs/RadioField";
 import Typography from "@mui/material/Typography";
+import type React from "react";
+import { useState } from "react";
+import RadioField, { type RadioOption } from "../../components/Inputs/RadioField";
 
 export type Scope = "MINE" | "PUBLIC" | "BOTH";
 
@@ -17,9 +16,7 @@ type ScopeFieldArgs = {
   getDMPs: (scope: Scope) => void;
 };
 
-export default function ScopeField({
-  getDMPs,
-}: ScopeFieldArgs): React.ReactNode {
+export default function ScopeField({ getDMPs }: ScopeFieldArgs): React.ReactNode {
   const [currentScope, setCurrentScope] = useState("MINE");
 
   const onScopeSwitch = (newScope: Scope | null) => {

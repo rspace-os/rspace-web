@@ -1,13 +1,10 @@
-import { TextEncoder, TextDecoder } from "node:util";
-import { vi, expect, afterEach, afterAll } from "vitest";
+import { TextDecoder, TextEncoder } from "node:util";
+import { afterAll, afterEach, expect, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import createFetchMock from "vitest-fetch-mock";
-import {
-  silenceConsole,
-  silenceProcessOutput,
-} from "@/__tests__/helpers/silenceConsole";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
+import createFetchMock from "vitest-fetch-mock";
+import { silenceConsole, silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 
 function createStorageMock() {
   const storage = new Map<string, string>();
@@ -42,10 +39,7 @@ afterEach(() => {
   globalThis.sessionStorage?.clear?.();
 });
 
-const restoreConsole = silenceConsole(
-  ["error"],
-  ["Could not fetch set of users in the same group as current user"],
-);
+const restoreConsole = silenceConsole(["error"], ["Could not fetch set of users in the same group as current user"]);
 const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
 afterAll(() => {
   restoreConsole();
@@ -104,4 +98,3 @@ if (typeof globalThis.IntersectionObserver !== "function") {
   // @ts-expect-error Mocking
   globalThis.IntersectionObserver = IntersectionObserverMock;
 }
-

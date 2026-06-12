@@ -1,9 +1,9 @@
-import React from "react";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
-import { type SxProps, type Theme } from "@mui/material/styles";
-import { Optional } from "../../util/optional";
+import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import React from "react";
+import { Optional } from "../../util/optional";
 import FieldLabel from "./FieldLabel";
 
 /**
@@ -271,12 +271,7 @@ export default function FormField<T>({
   const explanationId = React.useId();
 
   const lengthLabel = (): Optional<string> => {
-    if (
-      Boolean(error) &&
-      typeof helperText === "string" &&
-      helperText.length > 0
-    )
-      return Optional.empty();
+    if (error && typeof helperText === "string" && helperText.length > 0) return Optional.empty();
     if (disabled === true) return Optional.empty();
     if (typeof value !== "string") return Optional.empty();
     if (typeof maxLength === "undefined") return Optional.empty();
@@ -288,18 +283,11 @@ export default function FormField<T>({
       role="group"
       sx={sx}
       fullWidth
-      error={
-        error ||
-        (typeof value === "string" &&
-          typeof maxLength === "number" &&
-          value.length > maxLength)
-      }
+      error={error || (typeof value === "string" && typeof maxLength === "number" && value.length > maxLength)}
       aria-labelledby={labelId}
       required={required}
       id={id}
-      {...(typeof explanation !== "undefined"
-        ? { "aria-describedby": explanationId }
-        : {})}
+      {...(typeof explanation !== "undefined" ? { "aria-describedby": explanationId } : {})}
       {...(asFieldset && !disabled ? { component: "fieldset" } : {})}
     >
       <FieldLabel
@@ -324,9 +312,9 @@ export default function FormField<T>({
       {lengthLabel()
         .map((l) => <FormHelperText key={null}>{l}</FormHelperText>)
         .orElse(null)}
-      {Boolean(error) &&
-        typeof helperText === "string" &&
-        helperText.length > 0 && <FormHelperText>{helperText}</FormHelperText>}
+      {Boolean(error) && typeof helperText === "string" && helperText.length > 0 && (
+        <FormHelperText>{helperText}</FormHelperText>
+      )}
     </FormControl>
   );
 }

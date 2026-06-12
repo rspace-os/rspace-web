@@ -2,24 +2,21 @@ import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
-import FieldTypeMenuItemOpenIcon from "./FieldTypeMenuItemOpenIcon";
-import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import React, { useState, forwardRef } from "react";
-import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
-import useStores from "../../../stores/use-stores";
-import {
-  FIELD_DATA,
-  hasOptions,
-  type FieldType,
-} from "../../../stores/models/FieldTypes";
-import { preventEventBubbling } from "../../../util/Util";
+import Typography from "@mui/material/Typography";
 import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { forwardRef, useState } from "react";
+import { FIELD_DATA, type FieldType, hasOptions } from "../../../stores/models/FieldTypes";
+import useStores from "../../../stores/use-stores";
+import { preventEventBubbling } from "../../../util/Util";
+import FieldTypeMenuItemOpenIcon from "./FieldTypeMenuItemOpenIcon";
 
 type FieldTypeMenuItemArgs = {
   field: FieldType;
@@ -52,16 +49,11 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
               <Avatar>{_fieldData.icon}</Avatar>
             </ListItemAvatar>
             <Box sx={{ flexGrow: 1 }}>
-              <ListItemText
-                primary={_fieldData.label}
-                secondary={_fieldData.help}
-              />
+              <ListItemText primary={_fieldData.label} secondary={_fieldData.help} />
             </Box>
             {!inMenu && hasOptions(field) && (
               <IconButton
-                onClick={preventEventBubbling<
-                  React.MouseEvent<HTMLButtonElement>
-                >(() => setOpen(!open))}
+                onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => setOpen(!open))}
                 sx={{
                   backgroundColor: "transparent",
                   pointerEvents: "auto",
@@ -131,9 +123,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
               <Paper
                 sx={{
                   transition: "transform 0.2s ease 0s, width 0.2s ease 0s",
-                  transform: open
-                    ? `translate(${uiStore.isVerySmall ? 0 : -20}px, -110px)`
-                    : "none",
+                  transform: open ? `translate(${uiStore.isVerySmall ? 0 : -20}px, -110px)` : "none",
                   zIndex: open ? 2001 : 1,
                   position: "absolute",
                   transitionDelay: open ? "0s" : "0.05s",

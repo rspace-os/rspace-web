@@ -1,11 +1,12 @@
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import SearchContext from "../../stores/contexts/Search";
 import { DYNAMIC_PAGE_SIZE } from "../../stores/models/Fetcher/DynamicFetcher";
 import CardList from "../components/DetailedListing/CardList";
 import LoadingCard from "../components/DetailedListing/LoadingCard";
 import LoadingList from "../components/FetchOnScroll/LoadingList";
 import ScrollBox from "./ScrollBox";
-import { observer } from "mobx-react-lite";
-import React, { useContext } from "react";
 
 function ResultsCards(): React.ReactNode {
   const { search } = useContext(SearchContext);

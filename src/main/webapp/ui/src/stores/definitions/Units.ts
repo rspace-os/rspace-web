@@ -1,6 +1,6 @@
-import { match } from "../../util/Util";
-import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import { match } from "../../util/Util";
 
 /**
  * @module
@@ -83,8 +83,7 @@ const isMass = (q: QuantityUnitId) => Object.values(massIds).includes(q);
 /**
  * Checks where a quantity's unit is one that comes in a discrete amount.
  */
-const isUnitless = (q: QuantityUnitId) =>
-  Object.values(unitlessIds).includes(q);
+const isUnitless = (q: QuantityUnitId) => Object.values(unitlessIds).includes(q);
 
 /**
  * For each category of quantity, there is a smallest unit of that category
@@ -140,7 +139,7 @@ const quantityUnitMagnitudes = {
 export function toCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
   const baseId = atomicUnitOfSameCategory(id);
   const gap = quantityUnitMagnitudes[id] - quantityUnitMagnitudes[baseId];
-  return value * Math.pow(1000, gap);
+  return value * 1000 ** gap;
 }
 
 /**
@@ -150,27 +149,17 @@ export function toCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
  * @arg id    The unit to convert to e.g. massIds.grams
  * @returns   The converted quantity value e.g. 4
  */
-export function fromCommonUnit(
-  value: QuantityValue,
-  id: QuantityUnitId,
-): number {
+export function fromCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
   const baseId = atomicUnitOfSameCategory(id);
   const gap = quantityUnitMagnitudes[id] - quantityUnitMagnitudes[baseId];
-  return value / Math.pow(1000, gap);
+  return value / 1000 ** gap;
 }
 
 /**
  * Specifics for working with dates and times
  */
 
-type DatePrecision =
-  | "year"
-  | "month"
-  | "date"
-  | "hour"
-  | "minute"
-  | "second"
-  | "millisecond";
+type DatePrecision = "year" | "month" | "date" | "hour" | "minute" | "second" | "millisecond";
 
 /**
  * This function outputs the prefix of a ISO timestamp.
@@ -179,30 +168,32 @@ type DatePrecision =
  * argument specifies the length of the prefix based to the level of precision
  * that should be encoded in the output string.
  */
-export function truncateIsoTimestamp(
-  isoTimestamp: string | Date,
-  precision: DatePrecision,
-): Result<string> {
+export function truncateIsoTimestamp(isoTimestamp: string | Date, precision: DatePrecision): Result<string> {
   const date = new Date(isoTimestamp);
-  if (date.toString() === "Invalid Date")
-    return Result.Error([new Error("Invalid Date")]);
+  if (date.toString() === "Invalid Date") return Result.Error([new Error("Invalid Date")]);
   let output = "";
   switch (precision) {
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
     case "millisecond":
       output = `.${date.getMilliseconds().toString().padStart(3, "0")}`;
     // falls through
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
     case "second":
       output = `:${date.getSeconds().toString().padStart(2, "0")}${output}`;
     // falls through
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
     case "minute":
       output = `:${date.getMinutes().toString().padStart(2, "0")}${output}`;
     // falls through
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
     case "hour":
       output = `T${date.getHours().toString().padStart(2, "0")}${output}`;
     // falls through
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
     case "date":
       output = `-${date.getDate().toString().padStart(2, "0")}${output}`;
     // falls through
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
     case "month":
       output = `-${(date.getMonth() + 1).toString().padStart(2, "0")}${output}`;
     // falls through
@@ -233,9 +224,7 @@ export function todaysDate(): Date {
 export function getRelativeTime(targetDate: Date): string {
   const now = new Date();
   const futureDate = targetDate;
-  const diffInSeconds = Math.floor(
-    (futureDate.getTime() - now.getTime()) / 1000,
-  );
+  const diffInSeconds = Math.floor((futureDate.getTime() - now.getTime()) / 1000);
 
   const units: Array<{ name: Intl.RelativeTimeFormatUnit; seconds: number }> = [
     { name: "year", seconds: 60 * 60 * 24 * 365 },
@@ -249,10 +238,7 @@ export function getRelativeTime(targetDate: Date): string {
   for (const unit of units) {
     if (Math.abs(diffInSeconds) >= unit.seconds) {
       const value = Math.floor(diffInSeconds / unit.seconds);
-      return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
-        value,
-        unit.name,
-      );
+      return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(value, unit.name);
     }
   }
 
@@ -281,10 +267,7 @@ export const FAHRENHEIT = 10;
 /**
  * The type of any temerature scale.
  */
-export type TemperatureScale =
-  | typeof CELSIUS
-  | typeof KELVIN
-  | typeof FAHRENHEIT;
+export type TemperatureScale = typeof CELSIUS | typeof KELVIN | typeof FAHRENHEIT;
 
 /**
  * A particular temperature, in a particular scale.
@@ -309,11 +292,7 @@ export const LIQUID_NITROGEN = -196;
 /**
  * Convert a temperature from one scale to another.
  */
-export function temperatureFromTo(
-  from: TemperatureScale,
-  to: TemperatureScale,
-  value: number,
-): number {
+export function temperatureFromTo(from: TemperatureScale, to: TemperatureScale, value: number): number {
   let valueInCelsius = value;
   if (from === KELVIN) valueInCelsius = value - 273.15;
   else if (from === FAHRENHEIT) valueInCelsius = (value - 32) / 1.8;

@@ -1,20 +1,20 @@
-import React from "react";
-import Popover from "@mui/material/Popover";
-import Card from "@mui/material/Card";
 import Avatar from "@mui/material/Avatar";
-import CardHeader from "@mui/material/CardHeader";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
-import Button from "@mui/material/Button";
+import CardHeader from "@mui/material/CardHeader";
+import Chip, { type ChipProps } from "@mui/material/Chip";
 import Link from "@mui/material/Link";
+import Popover from "@mui/material/Popover";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
+import React from "react";
 import TimeAgo from "react-timeago";
 import axios from "@/common/axios";
-import { type PersonId } from "@/stores/definitions/Person";
-import Chip, { type ChipProps } from "@mui/material/Chip";
+import type { PersonId } from "@/stores/definitions/Person";
 import * as Parsers from "../util/parsers";
 
 type UserDetailsArgs = {
@@ -51,10 +51,7 @@ function getCreateRequestDialog(): HTMLElement | null {
 }
 
 function canOpenMessageDialog(): boolean {
-  return Boolean(
-    getCreateRequestDialog() &&
-      document.body.querySelector("[aria-describedby='messageDlg']"),
-  );
+  return Boolean(getCreateRequestDialog() && document.body.querySelector("[aria-describedby='messageDlg']"));
 }
 
 function openCreateRequestDialog(recipient: string): void {
@@ -94,11 +91,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     axios
       .get<{ exceptionMessage: string } | { data: Person }>(url)
       .then((response) => {
-        setUser(
-          Parsers.getValueWithKey("data")(response.data).orElse(
-            null,
-          ) as Person | null,
-        );
+        setUser(Parsers.getValueWithKey("data")(response.data).orElse(null) as Person | null);
       })
       .catch((error) => {
         console.error(error);
@@ -127,6 +120,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
         </Link>
       </TableCell>
     </TableRow>
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
   )) ?? <></>;
 
   const handlePopoverOpen = (event: React.MouseEvent) => {
@@ -194,13 +188,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
             <CardHeader
               avatar={<Avatar src={user.profileImageLink ?? ""} />}
               title={`${user.fullname}`}
-              subheader={
-                <>
-                  {user && user.lastLogin && (
-                    <span>Last login: {<TimeAgo date={user.lastLogin} />}</span>
-                  )}
-                </>
-              }
+              subheader={user.lastLogin && <span>Last login: {<TimeAgo date={user.lastLogin} />}</span>}
             />
             <CardContent
               sx={{
@@ -210,10 +198,12 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                 },
               }}
             >
-              <Table sx={{
-                // Override typo.css
-                margin: '0 !important'
-              }}>
+              <Table
+                sx={{
+                  // Override typo.css
+                  margin: "0 !important",
+                }}
+              >
                 <TableBody>
                   <TableRow>
                     <TableCell component="th" scope="row">
@@ -229,9 +219,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                     <TableCell component="th" scope="row">
                       Account Status
                     </TableCell>
-                    <TableCell align="right">
-                      {user.accountEnabled ? "Enabled" : "Disabled"}
-                    </TableCell>
+                    <TableCell align="right">{user.accountEnabled ? "Enabled" : "Disabled"}</TableCell>
                   </TableRow>
                   {listLabgroups}
                 </TableBody>

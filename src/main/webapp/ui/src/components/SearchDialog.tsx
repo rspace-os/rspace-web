@@ -1,19 +1,20 @@
 import SettingsOverscanIcon from "@mui/icons-material/SettingsOverscan";
-import React, { useState } from "react";
-import Grow from "@mui/material/Grow";
-import IconButtonWithTooltip from "./IconButtonWithTooltip";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import DialogTitle from "@mui/material/DialogTitle";
+import Grow from "@mui/material/Grow";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import SubmitSpinnerButton from "./SubmitSpinnerButton";
-import docLinks from "../assets/DocLinks";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import type React from "react";
+import { useState } from "react";
+import docLinks from "../assets/DocLinks";
+import IconButtonWithTooltip from "./IconButtonWithTooltip";
+import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 type TextAreaDialogArgs = {
   query: string;
@@ -22,12 +23,7 @@ type TextAreaDialogArgs = {
   visible: boolean;
 };
 
-export default function TextAreaDialog({
-  onSubmit,
-  setQuery,
-  query,
-  visible,
-}: TextAreaDialogArgs): React.ReactNode {
+export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: TextAreaDialogArgs): React.ReactNode {
   const [dialogOpen, setDialogOpen] = useState(false);
   const onClose = () => setDialogOpen(false);
   return visible ? (
@@ -74,19 +70,11 @@ export default function TextAreaDialog({
               </DialogContentText>
               <DialogContentText>
                 For more information, see{" "}
-                <a
-                  href={docLinks.luceneSyntax}
-                  rel="noreferrer"
-                  target="_blank"
-                >
+                <a href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
                   advanced search
                 </a>{" "}
                 and the related{" "}
-                <a
-                  href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-                  rel="noreferrer"
-                  target="_blank"
-                >
+                <a href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html" rel="noreferrer" target="_blank">
                   Apache page
                 </a>
                 .
@@ -95,9 +83,7 @@ export default function TextAreaDialog({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setQuery({ target: { value: "" } })}>
-            Clear
-          </Button>
+          <Button onClick={() => setQuery({ target: { value: "" } })}>Clear</Button>
           <Button onClick={onClose}>Close</Button>
           <SubmitSpinnerButton
             loading={false}

@@ -1,38 +1,42 @@
-import { GroupInfo } from "@/modules/groups/schema";
-import { RaidReferenceDTO } from "@/modules/raid/schema";
+import type { GroupInfo } from "@/modules/groups/schema";
+import type { RaidReferenceDTO } from "@/modules/raid/schema";
 
-export type RaidExportIneligibleReason = "MISSING_GROUPS" | "NO_PROJECT_GROUPS" | "NO_RAID_ASSOCIATION_FOUND" | "MULTIPLE_RAIDS_FOUND";
+export type RaidExportIneligibleReason =
+  | "MISSING_GROUPS"
+  | "NO_PROJECT_GROUPS"
+  | "NO_RAID_ASSOCIATION_FOUND"
+  | "MULTIPLE_RAIDS_FOUND";
 
 type GetRaidExportEligibilityResult =
-  {
-    isEligible: true;
-    projectGroup: GroupInfo;
-    raid: RaidReferenceDTO;
-  }
   | {
-    isEligible: false;
-    reason: Extract<RaidExportIneligibleReason, "MISSING_GROUPS">;
-    missingGroupIds: number[];
-  }
+      isEligible: true;
+      projectGroup: GroupInfo;
+      raid: RaidReferenceDTO;
+    }
   | {
-    isEligible: false;
-    reason: Extract<RaidExportIneligibleReason, "NO_PROJECT_GROUPS">;
-  } | {
-    isEligible: false;
-    reason: Extract<RaidExportIneligibleReason, "NO_RAID_ASSOCIATION_FOUND">;
-    projectGroups: GroupInfo[],
-  } | {
-    isEligible: false;
-    reason: Extract<RaidExportIneligibleReason, "MULTIPLE_RAIDS_FOUND">;
-    projectGroups: GroupInfo[],
-  }
+      isEligible: false;
+      reason: Extract<RaidExportIneligibleReason, "MISSING_GROUPS">;
+      missingGroupIds: number[];
+    }
+  | {
+      isEligible: false;
+      reason: Extract<RaidExportIneligibleReason, "NO_PROJECT_GROUPS">;
+    }
+  | {
+      isEligible: false;
+      reason: Extract<RaidExportIneligibleReason, "NO_RAID_ASSOCIATION_FOUND">;
+      projectGroups: GroupInfo[];
+    }
+  | {
+      isEligible: false;
+      reason: Extract<RaidExportIneligibleReason, "MULTIPLE_RAIDS_FOUND">;
+      projectGroups: GroupInfo[];
+    };
 
 export const getRaidExportEligibility = (groupsMap: Map<number, GroupInfo | null>): GetRaidExportEligibilityResult => {
   // groupsMap can include targets derived from both direct shares and folderShares.
   const allGroupEntries = Array.from(groupsMap.entries());
-  const missingGroups = allGroupEntries.filter(
-    (entry): entry is [number, null] => entry[1] === null,
-  );
+  const missingGroups = allGroupEntries.filter((entry): entry is [number, null] => entry[1] === null);
 
   if (missingGroups.length > 0) {
     return {
@@ -50,13 +54,12 @@ export const getRaidExportEligibility = (groupsMap: Map<number, GroupInfo | null
   if (projectGroups.length === 0) {
     return {
       isEligible: false,
-      reason: "NO_PROJECT_GROUPS"
-    }
+      reason: "NO_PROJECT_GROUPS",
+    };
   }
 
   const projectGroupsWithRaid = projectGroups.filter(
-    (group): group is GroupInfo & { raid: NonNullable<GroupInfo["raid"]> } =>
-      Boolean(group.raid),
+    (group): group is GroupInfo & { raid: NonNullable<GroupInfo["raid"]> } => Boolean(group.raid),
   );
 
   if (projectGroupsWithRaid.length === 0) {
@@ -79,5 +82,5 @@ export const getRaidExportEligibility = (groupsMap: Map<number, GroupInfo | null
     isEligible: true,
     projectGroup: projectGroupsWithRaid[0],
     raid: projectGroupsWithRaid[0].raid,
-  }
+  };
 };

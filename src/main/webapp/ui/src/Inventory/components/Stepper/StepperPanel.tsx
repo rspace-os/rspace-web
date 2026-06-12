@@ -1,18 +1,14 @@
-import React, { useId, useContext } from "react";
-import { Observer } from "mobx-react-lite";
+import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
-import Box from "@mui/material/Box";
-import {
-  StepperPanelHeader,
-  type FormSectionError,
-} from "./StepperPanelHeader";
-import FormSectionsContext, {
-  type AllowedFormTypes,
-} from "../../../stores/contexts/FormSections";
 import Stack from "@mui/material/Stack";
-import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import { useTheme } from "@mui/material/styles";
+import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useId } from "react";
+import { HeadingContext } from "../../../components/DynamicHeadingLevel";
+import FormSectionsContext, { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
+import { type FormSectionError, StepperPanelHeader } from "./StepperPanelHeader";
 
 type StepperPanelArgs = {
   title: React.ReactNode;
@@ -36,8 +32,7 @@ function StepperPanel({
   const theme = useTheme();
   const headingId = useId();
   const formSectionContext = useContext(FormSectionsContext);
-  if (!formSectionContext)
-    throw new Error("FormSectionContext is required by StepperPanel");
+  if (!formSectionContext) throw new Error("FormSectionContext is required by StepperPanel");
   return (
     <Observer>
       {() => (
@@ -53,9 +48,7 @@ function StepperPanel({
           aria-labelledby={headingId}
         >
           <StepperPanelHeader
-            onToggle={(value) =>
-              formSectionContext.setExpanded(recordType, sectionName, value)
-            }
+            onToggle={(value) => formSectionContext.setExpanded(recordType, sectionName, value)}
             open={formSectionContext.isExpanded(recordType, sectionName)}
             title={title}
             formSectionError={formSectionError}
@@ -66,9 +59,7 @@ function StepperPanel({
           <Collapse
             in={formSectionContext.isExpanded(recordType, sectionName)}
             sx={{
-              transitionDuration: window.matchMedia(
-                "(prefers-reduced-motion: reduce)",
-              ).matches
+              transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches
                 ? "0s !important"
                 : "initial",
             }}

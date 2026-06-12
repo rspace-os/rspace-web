@@ -1,13 +1,14 @@
-import React, { useState, useLayoutEffect, useRef } from "react";
-import { observer } from "mobx-react-lite";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import contextActions from "./ContextActions";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-import StyledMenu from "../../../components/StyledMenu";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import StyledMenu from "../../../components/StyledMenu";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import contextActions from "./ContextActions";
 
 type ContextAction = {
   hidden?: boolean;
@@ -32,9 +33,7 @@ function ContextMenu({
   basketSearch,
 }: ContextMenuArgs): React.ReactNode {
   const anySelected = selectedResults.length > 0;
-  const mixedSelectedStatus =
-    selectedResults.some((r) => r.deleted) &&
-    selectedResults.some((r) => !r.deleted);
+  const mixedSelectedStatus = selectedResults.some((r) => r.deleted) && selectedResults.some((r) => !r.deleted);
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [overflow, setOverflow] = useState<Set<number>>(new Set());
@@ -69,18 +68,13 @@ function ContextMenu({
      * right edge (its content box, i.e. excluding the trailing padding).
      */
     const visibleRight =
-      root.getBoundingClientRect().right -
-      (parseFloat(window.getComputedStyle(root).paddingRight) || 0);
+      root.getBoundingClientRect().right - (parseFloat(window.getComputedStyle(root).paddingRight) || 0);
     const initialOverflow = new Set<number>();
     root.querySelectorAll<HTMLElement>("[data-idx]").forEach((el) => {
-      if (el.getBoundingClientRect().right > visibleRight + 1)
-        initialOverflow.add(Number(el.dataset.idx));
+      if (el.getBoundingClientRect().right > visibleRight + 1) initialOverflow.add(Number(el.dataset.idx));
     });
     setOverflow((prev) =>
-      prev.size === initialOverflow.size &&
-      [...prev].every((i) => initialOverflow.has(i))
-        ? prev
-        : initialOverflow,
+      prev.size === initialOverflow.size && [...prev].every((i) => initialOverflow.has(i)) ? prev : initialOverflow,
     );
     setMeasured(true);
 
@@ -98,15 +92,12 @@ function ContextMenu({
       },
       { root, threshold: 1 },
     );
-    root
-      .querySelectorAll<HTMLElement>("[data-idx]")
-      .forEach((el) => io.observe(el));
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, [buttonList.length, selectedResults]);
 
-  const alertMessage =
-    mixedSelectedStatus &&
-    `Please select only 'Current' or 'In Trash' items to view more actions`;
+  const alertMessage = mixedSelectedStatus && `Please select only 'Current' or 'In Trash' items to view more actions`;
 
   return (
     /*
@@ -146,8 +137,7 @@ function ContextMenu({
                     flex: "0 0 auto",
                     px: "2px",
                     "&:first-of-type": { pl: 0 },
-                    visibility:
-                      measured && !overflow.has(i) ? "visible" : "hidden",
+                    visibility: measured && !overflow.has(i) ? "visible" : "hidden",
                   }}
                   aria-hidden={!measured || overflow.has(i)}
                 >

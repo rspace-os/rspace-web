@@ -1,6 +1,6 @@
-import React from "react";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
+import React from "react";
 
 type ChooseToEditArgs = {
   checked: boolean;
@@ -13,11 +13,7 @@ type ChooseToEditArgs = {
  * editable when batch editing, and as such whether the value will be applied
  * to all of the records being edited.
  */
-export default function ChooseToEdit({
-  checked,
-  onChange,
-  ariaControls,
-}: ChooseToEditArgs): React.ReactNode {
+export default function ChooseToEdit({ checked, onChange, ariaControls }: ChooseToEditArgs): React.ReactNode {
   const id = React.useId();
 
   return (

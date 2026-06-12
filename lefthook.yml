@@ -23,3 +23,11 @@ pre-commit:
     tsc:
       glob: "src/main/webapp/ui/**/*.{ts,tsx}"
       run: pnpm run tsc
+    # Lint/format-check the frontend with Biome when any staged TS/TSX/CSS file
+    # changes. Reject the commit on ANY Biome diagnostic: --error-on-warnings
+    # makes warnings (and errors) fail the exit code, and --diagnostic-level=info
+    # surfaces info-level diagnostics too. Biome lints the whole UI tree in well
+    # under a second, so we run it project-wide like tsc rather than per-file.
+    biome:
+      glob: "src/main/webapp/ui/**/*.{ts,tsx,css}"
+      run: pnpm run lint:ci

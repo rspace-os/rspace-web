@@ -1,8 +1,8 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import { isoToLocale } from "../../../util/Util";
 
 type DateArgs = {
@@ -10,6 +10,7 @@ type DateArgs = {
   label: string;
 };
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: initial biome migration
 function Date({ date, label }: DateArgs): React.ReactNode {
   return (
     <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>

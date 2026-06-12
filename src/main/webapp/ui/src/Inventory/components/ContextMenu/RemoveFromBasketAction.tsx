@@ -1,17 +1,13 @@
-import React, { forwardRef, useContext } from "react";
-import ContextMenuAction, {
-  type ContextMenuRenderOptions,
-} from "./ContextMenuAction";
-import RemoveFromBasketIcon from "./RemoveFromBasketIcon";
 import { Observer } from "mobx-react-lite";
-import { match } from "../../../util/Util";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import useStores from "../../../stores/use-stores";
+import type React from "react";
+import { forwardRef, useContext } from "react";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import {
-  type GlobalId,
-  getSavedGlobalId,
-} from "../../../stores/definitions/BaseRecord";
+import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import useStores from "../../../stores/use-stores";
+import { match } from "../../../util/Util";
+import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
+import RemoveFromBasketIcon from "./RemoveFromBasketIcon";
 
 type RemoveFromBasketActionArgs = {
   as: ContextMenuRenderOptions;
@@ -20,14 +16,8 @@ type RemoveFromBasketActionArgs = {
   selectedResults: Array<InventoryRecord>;
 };
 
-const RemoveFromBasketAction = forwardRef<
-  React.ElementRef<typeof ContextMenuAction>,
-  RemoveFromBasketActionArgs
->(
-  (
-    { as, closeMenu, disabled, selectedResults }: RemoveFromBasketActionArgs,
-    ref
-  ) => {
+const RemoveFromBasketAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, RemoveFromBasketActionArgs>(
+  ({ as, closeMenu, disabled, selectedResults }: RemoveFromBasketActionArgs, ref) => {
     const { searchStore } = useStores();
     const { useLocation } = useContext(NavigateContext);
     function useSearchParams() {
@@ -35,14 +25,10 @@ const RemoveFromBasketAction = forwardRef<
     }
     const searchParams = useSearchParams();
 
-    const itemIds: Array<GlobalId> = selectedResults.map((r) =>
-      getSavedGlobalId(r)
-    );
+    const itemIds: Array<GlobalId> = selectedResults.map((r) => getSavedGlobalId(r));
 
     const onRemove = () => {
-      const currentBasket = searchStore.savedBaskets.find(
-        (b) => b.globalId === searchParams.get("parentGlobalId")
-      );
+      const currentBasket = searchStore.savedBaskets.find((b) => b.globalId === searchParams.get("parentGlobalId"));
       if (currentBasket) void currentBasket.removeItems(itemIds);
     };
 
@@ -72,7 +58,7 @@ const RemoveFromBasketAction = forwardRef<
         )}
       </Observer>
     );
-  }
+  },
 );
 
 RemoveFromBasketAction.displayName = "RemoveFromBasketAction";

@@ -1,4 +1,3 @@
-import React from "react";
 import Stack from "@mui/material/Stack";
 import TableCell from "@mui/material/TableCell";
 import Typography from "@mui/material/Typography";
@@ -30,18 +29,9 @@ const StockMetricCell = ({
   warningTextId,
   dataStatus,
 }: StockMetricCellProps) => (
-  <TableCell
-    align="right"
-    data-column={column}
-    data-status={dataStatus}
-    sx={{ verticalAlign: "top", py: 1.5 }}
-  >
+  <TableCell align="right" data-column={column} data-status={dataStatus} sx={{ verticalAlign: "top", py: 1.5 }}>
     <Stack spacing={0.5} sx={{ alignItems: "flex-end" }}>
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 700 }}
-        color={colors.valueColor}
-      >
+      <Typography variant="h6" sx={{ fontWeight: 700 }} color={colors.valueColor}>
         {unitLabel ? `${value} ${unitLabel}` : value}
       </Typography>
       {warningText && (

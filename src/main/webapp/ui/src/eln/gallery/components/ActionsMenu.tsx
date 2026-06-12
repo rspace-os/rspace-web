@@ -1,80 +1,74 @@
-import React, { Suspense } from "react";
-import ChecklistIcon from "@mui/icons-material/Checklist";
-import Button, { buttonClasses } from "@mui/material/Button";
-import { type GallerySection } from "../common";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
-import { useTheme, darken, lighten } from "@mui/material/styles";
-import AccentMenuItem from "../../../components/AccentMenuItem";
-import OpenWithIcon from "@mui/icons-material/OpenWith";
-import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
+import ChecklistIcon from "@mui/icons-material/Checklist";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import EditIcon from "@mui/icons-material/Edit";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import LogoutIcon from "@mui/icons-material/Logout";
+import OpenWithIcon from "@mui/icons-material/OpenWith";
 import ShareIcon from "@mui/icons-material/Share";
-import { observer } from "mobx-react-lite";
-import { computed } from "mobx";
-import {
-  type GalleryFile,
-  idToString,
-  type Id,
-  Filestore,
-  RemoteFile,
-} from "../useGalleryListing";
-import { useGalleryActions } from "../useGalleryActions";
-import { useGallerySelection } from "../useGallerySelection";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import Button, { buttonClasses } from "@mui/material/Button";
+import CardMedia from "@mui/material/CardMedia";
 import Dialog from "@mui/material/Dialog";
-import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
-import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
-import Result from "../../../util/result";
-import MoveToIrods from "./MoveToIrods";
-import MoveToS3, { type S3TransferSource } from "./MoveToS3";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import { darken, lighten, useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import React, { Suspense } from "react";
+import axios from "@/common/axios";
+import { Menu } from "@/components/DialogBoundary";
+import { ShareDialog } from "@/components/ShareDialog";
+import useWhoAmI from "@/hooks/api/useWhoAmI";
 import { ACCENT_COLOR as IRODS_COLOR } from "../../../assets/branding/irods";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import IrodsLogo from "./IrodsLogo.svg";
-import S3Logo from "./S3Logo.svg";
-import Typography from "@mui/material/Typography";
-import MoveDialog from "./MoveDialog";
-import ExportDialog from "../../../Export/ExportDialog";
+import AccentMenuItem from "../../../components/AccentMenuItem";
 import EventBoundary from "../../../components/EventBoundary";
-import * as Parsers from "../../../util/parsers";
-import * as FetchingData from "../../../util/fetchingData";
+import ImageEditingDialog from "../../../components/ImageEditingDialog";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import ExportDialog from "../../../Export/ExportDialog";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import * as FetchingData from "../../../util/fetchingData";
+import { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
+import type { URL } from "../../../util/types";
+import type { GallerySection } from "../common";
 import {
-  useImagePreviewOfGalleryFile,
+  useAsposePreviewOfGalleryFile,
   useCollaboraEdit,
+  useImagePreviewOfGalleryFile,
   useOfficeOnlineEdit,
   usePdfPreviewOfGalleryFile,
-  useAsposePreviewOfGalleryFile,
-  useSnapGenePreviewOfGalleryFile,
   useShowSnippet,
+  useSnapGenePreviewOfGalleryFile,
 } from "../primaryActionHooks";
+import useFilestoresEndpoint from "../useFilestoresEndpoint";
+import { useGalleryActions } from "../useGalleryActions";
+import { Filestore, type GalleryFile, type Id, idToString, RemoteFile } from "../useGalleryListing";
+import { useGallerySelection } from "../useGallerySelection";
+import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
-import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
-import axios from "@/common/axios";
-import ImageEditingDialog from "../../../components/ImageEditingDialog";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import CardMedia from "@mui/material/CardMedia";
-import { useFolderOpen } from "./OpenFolderProvider";
-import { type URL } from "../../../util/types";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
-import { Optional } from "../../../util/optional";
-import LogoutIcon from "@mui/icons-material/Logout";
-import useFilestoresEndpoint from "../useFilestoresEndpoint";
 import { useSnippetPreview } from "./CallableSnippetPreview";
-import { ShareDialog } from "@/components/ShareDialog";
-import { Menu } from "@/components/DialogBoundary";
-import useWhoAmI from "@/hooks/api/useWhoAmI";
-import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
+import IrodsLogo from "./IrodsLogo.svg";
+import MoveDialog from "./MoveDialog";
+import MoveToIrods from "./MoveToIrods";
+import MoveToS3, { type S3TransferSource } from "./MoveToS3";
+import { useFolderOpen } from "./OpenFolderProvider";
+import S3Logo from "./S3Logo.svg";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -124,10 +118,7 @@ const UploadNewVersionMenuItem = ({
   const uploadNewVersionAllowed = computed((): Result<null> => {
     return selection
       .asSet()
-      .only.toResult(
-        () =>
-          new Error("Only one item may be updated with a new version at once."),
-      )
+      .only.toResult(() => new Error("Only one item may be updated with a new version at once."))
       .flatMap((file) => file.canUploadNewVersion);
   });
   return (
@@ -150,10 +141,7 @@ const UploadNewVersionMenuItem = ({
       />
       {selection
         .asSet()
-        .only.map<[GalleryFile, string | null]>((file) => [
-          file,
-          file.extension,
-        ])
+        .only.map<[GalleryFile, string | null]>((file) => [file, file.extension])
         .flatMap(([f, ext]) =>
           Parsers.isNotNull(ext)
             .toOptional()
@@ -214,15 +202,7 @@ const UploadNewVersionMenuItem = ({
     </>
   );
 };
-const RenameDialog = ({
-  open,
-  onClose,
-  file,
-}: {
-  open: boolean;
-  onClose: () => void;
-  file: GalleryFile;
-}) => {
+const RenameDialog = ({ open, onClose, file }: { open: boolean; onClose: () => void; file: GalleryFile }) => {
   const [newName, setNewName] = React.useState("");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
@@ -252,11 +232,7 @@ const RenameDialog = ({
           >
             Please give a new name for <strong>{file.name}</strong>
           </DialogContentText>
-          <TextField
-            size="small"
-            label="Name"
-            onChange={({ target: { value } }) => setNewName(value)}
-          />
+          <TextField size="small" label="Name" onChange={({ target: { value } }) => setNewName(value)} />
         </DialogContent>
         <DialogActions>
           <Button
@@ -276,9 +252,7 @@ const RenameDialog = ({
               });
             }}
             validationResult={
-              newName.length === 0
-                ? Result.Error([new Error("Empty name is not permitted.")])
-                : Result.Ok(null)
+              newName.length === 0 ? Result.Error([new Error("Empty name is not permitted.")]) : Result.Ok(null)
             }
           >
             Rename
@@ -293,15 +267,9 @@ type ActionsMenuArgs = {
   section: GallerySection | null;
   folderId: FetchingData.Fetched<Id>;
 };
-function ActionsMenu({
-  refreshListing,
-  section,
-  folderId,
-}: ActionsMenuArgs): React.ReactNode {
-  const [actionsMenuAnchorEl, setActionsMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
-  const { deleteFiles, duplicateFiles, uploadFiles, download } =
-    useGalleryActions();
+function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): React.ReactNode {
+  const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState<HTMLElement | null>(null);
+  const { deleteFiles, duplicateFiles, uploadFiles, download } = useGalleryActions();
   const selection = useGallerySelection();
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
@@ -322,8 +290,7 @@ function ActionsMenu({
   const fetchedCurrentUser = useWhoAmI();
   const netfilestoresEnabled = useDeploymentProperty("netfilestores.enabled");
 
-  const currentUser =
-    FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
+  const currentUser = FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
 
   const showNetfileActions = FetchingData.getSuccessValue(netfilestoresEnabled)
     .flatMap(Parsers.isBoolean)
@@ -336,9 +303,7 @@ function ActionsMenu({
   const [s3Open, setS3Open] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
-  const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(
-    null,
-  );
+  const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(null);
   const openAllowed = computed(() => {
     return selection
       .asSet()
@@ -447,22 +412,12 @@ function ActionsMenu({
       ),
   );
   const duplicateAllowed = computed((): Result<null> => {
-    if (selection.size > 50)
-      return Result.Error([
-        new Error("Cannot duplicate more than 50 items at once."),
-      ]);
-    return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(
-      () => null,
-    );
+    if (selection.size > 50) return Result.Error([new Error("Cannot duplicate more than 50 items at once.")]);
+    return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(() => null);
   });
   const deleteAllowed = computed((): Result<null> => {
-    if (selection.size > 50)
-      return Result.Error([
-        new Error("Cannot delete more than 50 items at once."),
-      ]);
-    return Result.all(...selection.asSet().map((f) => f.canDelete)).map(
-      () => null,
-    );
+    if (selection.size > 50) return Result.Error([new Error("Cannot delete more than 50 items at once.")]);
+    return Result.all(...selection.asSet().map((f) => f.canDelete)).map(() => null);
   });
   const renameAllowed = computed((): Result<null> => {
     return selection
@@ -471,51 +426,40 @@ function ActionsMenu({
       .flatMap((file) => file.canRename);
   });
   const moveToIrodsAllowed = computed((): Result<null> => {
-    return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(
-      () => null,
-    );
+    return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(() => null);
   });
 
   const moveToS3Allowed = computed((): Result<null> => {
-    return Result.all(...selection.asSet().map((f) => f.canMoveToS3)).map(
-      () => null,
-    );
+    return Result.all(...selection.asSet().map((f) => f.canMoveToS3)).map(() => null);
   });
 
-  const s3TransferSources = computed(
-    (): ReadonlyArray<S3TransferSource> | null => {
-      const files = selection.asSet().toArray();
-      if (files.length === 0) return null;
-      const sources = files.flatMap((file) => {
-        if (file instanceof RemoteFile && !file.isFolder) {
-          const parentFilestore = file.path[0];
-          if (
-            parentFilestore instanceof Filestore &&
-            parentFilestore.filesystemType === "S3" &&
-            parentFilestore.id !== null
-          ) {
-            return [
-              {
-                sourceFilestoreId: parentFilestore.id,
-                sourcePath: file.remotePath,
-              } satisfies S3TransferSource,
-            ];
-          }
+  const s3TransferSources = computed((): ReadonlyArray<S3TransferSource> | null => {
+    const files = selection.asSet().toArray();
+    if (files.length === 0) return null;
+    const sources = files.flatMap((file) => {
+      if (file instanceof RemoteFile && !file.isFolder) {
+        const parentFilestore = file.path[0];
+        if (
+          parentFilestore instanceof Filestore &&
+          parentFilestore.filesystemType === "S3" &&
+          parentFilestore.id !== null
+        ) {
+          return [
+            {
+              sourceFilestoreId: parentFilestore.id,
+              sourcePath: file.remotePath,
+            } satisfies S3TransferSource,
+          ];
         }
-        return [];
-      });
-      return sources.length === files.length ? sources : null;
-    },
-  );
+      }
+      return [];
+    });
+    return sources.length === files.length ? sources : null;
+  });
 
   const exportAllowed = computed((): Result<null> => {
-    if (selection.size > 100)
-      return Result.Error([
-        new Error("Cannot export more than 100 itemes at once."),
-      ]);
-    return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(
-      () => null,
-    );
+    if (selection.size > 100) return Result.Error([new Error("Cannot export more than 100 itemes at once.")]);
+    return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
   });
   const getShareDialogSelection = (): Result<{
     globalIds: ReadonlyArray<string>;
@@ -525,27 +469,17 @@ function ActionsMenu({
       return Result.Error([new Error("Loading user information...")]);
     }
     if (fetchedCurrentUser.tag === "error") {
-      return Result.Error([
-        new Error(
-          "Unable to load user information. Sharing is temporarily unavailable.",
-        ),
-      ]);
+      return Result.Error([new Error("Unable to load user information. Sharing is temporarily unavailable.")]);
     }
-    if (selection.isEmpty)
-      return Result.Error([
-        new Error("At least one snippet must be selected."),
-      ]);
-    if (selection.asSet().some((f) => !f.isSnippet))
-      return Result.Error([new Error("Only snippets can be shared.")]);
+    if (selection.isEmpty) return Result.Error([new Error("At least one snippet must be selected.")]);
+    if (selection.asSet().some((f) => !f.isSnippet)) return Result.Error([new Error("Only snippets can be shared.")]);
     const selectedFiles = selection.asSet().toArray();
     const globalIds = selectedFiles
       .map((file) => file.globalId)
       .filter((globalId): globalId is string => typeof globalId === "string");
     if (globalIds.length !== selectedFiles.length) {
       // This should never happen, but currently the typing allows for `string | undefined` so it's here as a safeguard
-      return Result.Error([
-        new Error("Cannot share snippets that are missing global IDs."),
-      ]);
+      return Result.Error([new Error("Cannot share snippets that are missing global IDs.")]);
     }
 
     /*
@@ -564,11 +498,7 @@ function ActionsMenu({
          * in /gallery/getUploadedFiles.
          */
         if (currentUser?.id !== file.ownerId) {
-          return Result.Error([
-            new Error(
-              "Only owners of the snippet can change its share settings.",
-            ),
-          ]);
+          return Result.Error([new Error("Only owners of the snippet can change its share settings.")]);
         }
       }
     }
@@ -581,32 +511,21 @@ function ActionsMenu({
     return getShareDialogSelection().map(() => null);
   });
   const downloadAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isFolder))
-      return Result.Error([new Error("Cannot download folders.")]);
-    if (selection.asSet().some((f) => f.isSnippet))
-      return Result.Error([new Error("Cannot download snippets.")]);
+    if (selection.asSet().some((f) => f.isFolder)) return Result.Error([new Error("Cannot download folders.")]);
+    if (selection.asSet().some((f) => f.isSnippet)) return Result.Error([new Error("Cannot download snippets.")]);
     return Result.Ok(null);
   });
   const moveAllowed = computed((): Result<null> => {
-    if (selection.size > 50)
-      return Result.Error([
-        new Error("Cannot move more than 50 items at once."),
-      ]);
-    return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(
-      () => null,
-    );
+    if (selection.size > 50) return Result.Error([new Error("Cannot move more than 50 items at once.")]);
+    return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(() => null);
   });
   const logOutAllowed = computed((): Result<Filestore> => {
     return selection
       .asSet()
-      .only.toResult(
-        () => new Error("Only one item may be logged out of at once."),
-      )
+      .only.toResult(() => new Error("Only one item may be logged out of at once."))
       .flatMapDiscarding((file) => file.canBeLoggedOutOf)
       .flatMap((f: GalleryFile) =>
-        f instanceof Filestore
-          ? Result.Ok(f)
-          : Result.Error([new Error("Cannot log out of this item.")]),
+        f instanceof Filestore ? Result.Ok(f) : Result.Error([new Error("Cannot log out of this item.")]),
       );
   });
   const { logout } = useFilestoresEndpoint();
@@ -701,12 +620,9 @@ function ActionsMenu({
                     void viewAction.downloadHref().then((downloadHref) => {
                       openPdfPreview(downloadHref);
                     });
-                  if (viewAction.key === "aspose")
-                    void openAsposePreview(viewAction.file);
-                  if (viewAction.key === "snapgene")
-                    void openSnapGenePreview(viewAction.file);
-                  if (viewAction.key === "snippet")
-                    openSnippetPreview(viewAction.file);
+                  if (viewAction.key === "aspose") void openAsposePreview(viewAction.file);
+                  if (viewAction.key === "snapgene") void openSnapGenePreview(viewAction.file);
+                  if (viewAction.key === "snippet") openSnippetPreview(viewAction.file);
                 });
                 setActionsMenuAnchorEl(null);
               }}
@@ -1102,7 +1018,7 @@ function ActionsMenu({
                 .elseThrow();
               const newFile = new File(
                 [newBlob],
-                file.transformFilename((name) => name + "_edited"),
+                file.transformFilename((name) => `${name}_edited`),
                 {
                   type: newBlob.type,
                 },

@@ -1,9 +1,10 @@
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
+import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../stores/use-stores";
-import { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage, UserCancelledAction } from "../../util/error";
 
 type MainSearchNavigationContextArgs = {
@@ -18,9 +19,7 @@ type MainSearchNavigationContextArgs = {
  *  2. It propagates the `navigate` calls to the parent NavigationContext,
  *     ultimately resulting in react-router updating the browser's URL.
  */
-export default function MainSearchNavigationContext({
-  children,
-}: MainSearchNavigationContextArgs): React.ReactNode {
+export default function MainSearchNavigationContext({ children }: MainSearchNavigationContextArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   const { uiStore } = useStores();
   const { useNavigate, useLocation } = useContext(NavigateContext);
@@ -39,16 +38,11 @@ export default function MainSearchNavigationContext({
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
           isInfinite: true,
-        })
+        }),
       );
     }
 
-    if (
-      !search.activeResult &&
-      Boolean(search.filteredResults.length) &&
-      !uiStore.isVerySmall &&
-      !uiStore.isSmall
-    ) {
+    if (!search.activeResult && search.filteredResults.length && !uiStore.isVerySmall && !uiStore.isSmall) {
       try {
         await search.setActiveResult();
         uiStore.setVisiblePanel("right");
@@ -66,22 +60,19 @@ export default function MainSearchNavigationContext({
       opts?: {
         skipToParentContext?: boolean;
         modifyVisiblePanel?: boolean;
-      } | null
+      } | null,
     ) => {
-      const { skipToParentContext = false, modifyVisiblePanel = true } =
-        opts ?? {
-          skipToParentContext: false,
-          modifyVisiblePanel: true,
-        };
+      const { skipToParentContext = false, modifyVisiblePanel = true } = opts ?? {
+        skipToParentContext: false,
+        modifyVisiblePanel: true,
+      };
       if (/^\/inventory\/search/.test(url) && !skipToParentContext) {
         /*
          * If the navigation is to another part of the Inventory search page,
          * with either the same or different search parameters, then the
          * search is re-run.
          */
-        void doSearch(
-          new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1])
-        );
+        void doSearch(new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1]));
         /*
          * We also invoke the parent NavigationContext to propagate the
          * navigation up, until it reaches the root NavigationContext which

@@ -1,26 +1,20 @@
-import React, { useId } from "react";
-import { observer } from "mobx-react-lite";
-import FieldModel from "../../../stores/models/FieldModel";
-import {
-  FIELD_LABEL,
-  fieldTypeToApiString,
-  FieldTypes,
-  type FieldType,
-} from "../../../stores/models/FieldTypes";
-import { match, toYesNo } from "../../../util/Util";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
-import FieldTypeMenu from "./FieldTypeMenu";
-import DefaultValueField from "./DefaultValueField";
-import NameField from "./CustomFieldNameField";
-import Typography from "@mui/material/Typography";
-import RemoveButton from "../../../components/RemoveButton";
-import RemoveMenu, {
-  type DeleteOption,
-} from "../../components/Fields/RemoveMenu";
 import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useId } from "react";
+import InputWrapper from "../../../components/Inputs/InputWrapper";
+import RemoveButton from "../../../components/RemoveButton";
+import type FieldModel from "../../../stores/models/FieldModel";
+import { FIELD_LABEL, type FieldType, FieldTypes, fieldTypeToApiString } from "../../../stores/models/FieldTypes";
+import { match, toYesNo } from "../../../util/Util";
+import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
+import NameField from "./CustomFieldNameField";
+import DefaultValueField from "./DefaultValueField";
+import FieldTypeMenu from "./FieldTypeMenu";
 import MoveButtons from "./MoveButtons";
 
 const deleteOptions: Array<DeleteOption> = [
@@ -52,29 +46,25 @@ const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
   );
 });
 
-const Mandatory = observer(
-  ({ field, editing }: { field: FieldModel; editing: boolean }) => {
-    return (
-      <InputWrapper label="Mandatory">
-        {editing ? (
-          <>
-            <Switch
-              checked={field.mandatory}
-              onChange={({ target: { checked } }) => {
-                field.setAttributesDirty({
-                  mandatory: checked,
-                });
-              }}
-              edge="start"
-            />
-          </>
-        ) : (
-          toYesNo(field.mandatory)
-        )}
-      </InputWrapper>
-    );
-  },
-);
+const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: boolean }) => {
+  return (
+    <InputWrapper label="Mandatory">
+      {editing ? (
+        <Switch
+          checked={field.mandatory}
+          onChange={({ target: { checked } }) => {
+            field.setAttributesDirty({
+              mandatory: checked,
+            });
+          }}
+          edge="start"
+        />
+      ) : (
+        toYesNo(field.mandatory)
+      )}
+    </InputWrapper>
+  );
+});
 
 type CustomFieldArgs = {
   field: FieldModel;
@@ -104,8 +94,7 @@ function CustomField({
           {field.deleteFieldRequest ? (
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle1">
-                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]}{" "}
-                field will be deleted from this template.
+                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will be deleted from this template.
               </Typography>
               <p>
                 New samples will not include this field.{" "}
@@ -143,10 +132,7 @@ function CustomField({
                   {editable && (
                     <Box sx={{ ml: 0.75, mb: 0.75 }}>
                       {field.initial ? (
-                        <RemoveButton
-                          onClick={() => onRemove()}
-                          title="Delete new field"
-                        />
+                        <RemoveButton onClick={() => onRemove()} title="Delete new field" />
                       ) : (
                         <RemoveMenu
                           deleteOptions={deleteOptions}
@@ -164,10 +150,7 @@ function CustomField({
                 </Box>
               </Box>
               <Box sx={{ mt: 4 }}>
-                <Grid
-                  container
-                  sx={{ flexDirection: forceColumnLayout ? "column" : "row" }}
-                >
+                <Grid container sx={{ flexDirection: forceColumnLayout ? "column" : "row" }}>
                   <Grid
                     size={{
                       lg: 3,
@@ -189,12 +172,7 @@ function CustomField({
                 </Grid>
               </Box>
               <DefaultValueField field={field} editing={editable} />
-              {editable && (
-                <MoveButtons
-                  index={i}
-                  onClick={(newIndex) => onMove(newIndex)}
-                />
-              )}
+              {editable && <MoveButtons index={i} onClick={(newIndex) => onMove(newIndex)} />}
             </Box>
           )}
         </Paper>

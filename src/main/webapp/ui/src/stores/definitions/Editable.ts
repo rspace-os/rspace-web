@@ -1,5 +1,5 @@
-import { type ValidationResult } from "../../components/ValidatingSubmitButton";
-import { type Progress } from "../../util/progress";
+import type { ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { Progress } from "../../util/progress";
 
 /**
  * Objects and classes that implement this interface can be edited by the user
@@ -76,6 +76,8 @@ export interface HasEditableFields<Fields> {
    * every call site, it seems cleaner to make the parameter be any-typed.
    */
   /* eslint-disable @typescript-eslint/no-explicit-any */
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   setFieldsDirty(newState: any): void;
 
   /*

@@ -1,11 +1,8 @@
-import { parse, parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import type { Either } from "purify-ts/Either";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
-import {
-  ShareSearchResponseSchema,
-  type ShareSearchResponse,
-} from "@/modules/share/schema";
+import type { Either } from "purify-ts/Either";
+import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
+import { parse, parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { type ShareSearchResponse, ShareSearchResponseSchema } from "@/modules/share/schema";
 import { getCommonGroupsInShares } from "@/modules/share/services/shareGroups";
 
 const API_BASE_URL = "/api/v1";
@@ -28,15 +25,11 @@ export type ShareListingParams = {
 
 export const shareQueryKeys = {
   all: ["rspace.api.share"] as const,
-  listing: (params: ShareListingParams) =>
-    [...shareQueryKeys.all, "listing", params] as const,
-  commonGroups: (params: ShareListingParams) =>
-    [...shareQueryKeys.all, "commonGroups", params] as const,
+  listing: (params: ShareListingParams) => [...shareQueryKeys.all, "listing", params] as const,
+  commonGroups: (params: ShareListingParams) => [...shareQueryKeys.all, "commonGroups", params] as const,
 };
 
-const buildShareListingSearchParams = (
-  params: ShareListingParams,
-): URLSearchParams => {
+const buildShareListingSearchParams = (params: ShareListingParams): URLSearchParams => {
   const searchParams = new URLSearchParams();
 
   if (params.pageNumber !== undefined) {
@@ -67,9 +60,7 @@ export async function getShareListing(
   { token }: { token: string },
 ): Promise<ShareSearchResponse> {
   const searchParams = buildShareListingSearchParams(params);
-  const url = searchParams.toString()
-    ? `${API_BASE_URL}/share?${searchParams.toString()}`
-    : `${API_BASE_URL}/share`;
+  const url = searchParams.toString() ? `${API_BASE_URL}/share?${searchParams.toString()}` : `${API_BASE_URL}/share`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -82,27 +73,16 @@ export async function getShareListing(
 
   if (!response.ok) {
     // Try to parse and throw typed error
-    const errorResult: Either<Error, RestApiError> = parse(
-      RestApiErrorSchema,
-      data,
-    );
+    const errorResult: Either<Error, RestApiError> = parse(RestApiErrorSchema, data);
     throw errorResult
       .map((validatedError: RestApiError) => new Error(validatedError?.message))
-      .orDefault(
-        new Error(`Failed to fetch shared items: ${response.statusText}`),
-      );
+      .orDefault(new Error(`Failed to fetch shared items: ${response.statusText}`));
   }
 
   return parseOrThrow(ShareSearchResponseSchema, data);
 }
 
-export function useShareListingQuery({
-  params,
-  token,
-}: {
-  params?: ShareListingParams;
-  token: string;
-}) {
+export function useShareListingQuery({ params, token }: { params?: ShareListingParams; token: string }) {
   return useSuspenseQuery({
     queryKey: shareQueryKeys.listing(params ?? {}),
     queryFn: () => getShareListing(params ?? {}, { token }),

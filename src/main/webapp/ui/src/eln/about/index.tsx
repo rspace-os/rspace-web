@@ -1,19 +1,19 @@
+import { CacheProvider } from "@emotion/react";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import { AboutRSpaceContent } from "../../components/AppBar/AboutRSpaceDialog";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
+import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
 import createAccentedTheme from "../../accentedTheme";
-import { CacheProvider } from "@emotion/react";
-import { DialogBoundary } from "../../components/DialogBoundary";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
 import Analytics from "../../components/Analytics";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AboutRSpaceContent } from "../../components/AppBar/AboutRSpaceDialog";
+import { DialogBoundary } from "../../components/DialogBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -50,12 +50,7 @@ window.addEventListener("load", () => {
                   <DialogBoundary>
                     <Container maxWidth="sm">
                       <Box sx={{ py: 4 }}>
-                        <Typography
-                          variant="h4"
-                          component="h1"
-                          align="center"
-                          gutterBottom
-                        >
+                        <Typography variant="h4" component="h1" align="center" gutterBottom>
                           About RSpace
                         </Typography>
                         <AboutRSpaceContent />

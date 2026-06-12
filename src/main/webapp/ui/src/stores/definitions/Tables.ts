@@ -1,7 +1,7 @@
-import React from "react";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Person } from "./Person";
-import { type Tag } from "./Tag";
+import type React from "react";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { Person } from "./Person";
+import type { Tag } from "./Tag";
 
 export type AdjustableTableRowLabel = string;
 export type CellContent =
@@ -11,10 +11,7 @@ export type CellContent =
   | { renderOption: "location"; data: InventoryRecord }
   | { renderOption: "owner"; data: Person }
   | { renderOption: "tags"; data: Array<Tag> };
-export type AdjustableTableRowOptions<T extends AdjustableTableRowLabel> = Map<
-  T,
-  () => CellContent
->;
+export type AdjustableTableRowOptions<T extends AdjustableTableRowLabel> = Map<T, () => CellContent>;
 
 /*
  * All classes which implement this interface can be used as the source data

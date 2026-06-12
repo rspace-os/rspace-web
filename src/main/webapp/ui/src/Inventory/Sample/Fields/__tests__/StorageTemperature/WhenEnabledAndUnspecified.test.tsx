@@ -1,20 +1,15 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import StorageTemperature from "../../StorageTemperature";
-import {
-  CELSIUS,
-  type Temperature,
-} from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../../theme";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, test, vi } from "vitest";
+import type { HasEditableFields } from "../../../../../stores/definitions/Editable";
+import { CELSIUS, type Temperature } from "../../../../../stores/definitions/Units";
+import materialTheme from "../../../../../theme";
+import StorageTemperature from "../../StorageTemperature";
 
-import { type HasEditableFields } from "../../../../../stores/definitions/Editable";
 type MockFields = {
   storageTempMin: Temperature | null;
   storageTempMax: Temperature | null;
-
 };
 type MockFieldOwnerProps = {
   fieldValues: {
@@ -26,20 +21,14 @@ type MockFieldOwnerProps = {
     storageTempMin: string | null;
     storageTempMax: string | null;
   };
-
 };
-const mockFieldOwner = (
-  mockedParts: MockFieldOwnerProps
-): HasEditableFields<MockFields> => ({
-  isFieldEditable: vi
-    .fn()
-    .mockImplementation((_field: string) => mockedParts.isFieldEditable()),
+const mockFieldOwner = (mockedParts: MockFieldOwnerProps): HasEditableFields<MockFields> => ({
+  isFieldEditable: vi.fn().mockImplementation((_field: string) => mockedParts.isFieldEditable()),
   fieldValues: mockedParts.fieldValues,
   setFieldsDirty: vi.fn(),
   canChooseWhichToEdit: false,
   setFieldEditable: vi.fn(),
   noValueLabel: mockedParts.noValueLabel,
-
 });
 describe("StorageTemperature", () => {
   describe("When enabled and unspecified, the component should", () => {
@@ -60,11 +49,8 @@ describe("StorageTemperature", () => {
       const spy = vi.spyOn(fieldOwner, "setFieldsDirty");
       render(
         <ThemeProvider theme={materialTheme}>
-          <StorageTemperature
-            fieldOwner={fieldOwner}
-            onErrorStateChange={() => {}}
-          />
-        </ThemeProvider>
+          <StorageTemperature fieldOwner={fieldOwner} onErrorStateChange={() => {}} />
+        </ThemeProvider>,
       );
       await user.click(screen.getByText("Specify"));
       expect(spy).toHaveBeenCalledWith({
@@ -74,4 +60,3 @@ describe("StorageTemperature", () => {
     });
   });
 });
-

@@ -1,15 +1,12 @@
-import { action, observable, computed, makeObservable } from "mobx";
-import Search from "./Search";
-import InventoryBaseRecord from "./InventoryBaseRecord";
-import getRootStore from "../stores/RootStore";
-import { type GlobalId } from "../definitions/BaseRecord";
-import {
-  type RecordType,
-  type InventoryRecord,
-} from "../definitions/InventoryRecord";
-import { type HasChildren } from "../definitions/HasChildren";
+import { action, computed, makeObservable, observable } from "mobx";
 import { UserCancelledAction } from "../../util/error";
-import { type TreeView } from "../definitions/TreeView";
+import type { GlobalId } from "../definitions/BaseRecord";
+import type { HasChildren } from "../definitions/HasChildren";
+import type { InventoryRecord, RecordType } from "../definitions/InventoryRecord";
+import type { TreeView } from "../definitions/TreeView";
+import getRootStore from "../stores/RootStore";
+import InventoryBaseRecord from "./InventoryBaseRecord";
+import type Search from "./Search";
 
 export type TreeAttrs = {
   treeHolder: Search;
@@ -87,13 +84,7 @@ export default class TreeModel implements HasChildren, TreeView {
  *  record type, to find the record with the passed Global ID. Null is returned
  *  if no such record exists in the tree.
  */
-const findNode = (
-  globalId: GlobalId | null,
-  node: HasChildren
-): InventoryBaseRecord | null => {
+const findNode = (globalId: GlobalId | null, node: HasChildren): InventoryBaseRecord | null => {
   if (node instanceof InventoryBaseRecord && node.globalId === globalId) return node;
-  return node.children.reduce<InventoryBaseRecord | null>(
-    (acc, result) => acc ?? findNode(globalId, result),
-    null
-  );
+  return node.children.reduce<InventoryBaseRecord | null>((acc, result) => acc ?? findNode(globalId, result), null);
 };

@@ -1,5 +1,5 @@
-import { type BaseRecord, type RecordIconData } from "./BaseRecord";
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
+import type { BaseRecord, RecordIconData } from "./BaseRecord";
 
 /**
  * This interface is for records that have a dedicated page for displaying

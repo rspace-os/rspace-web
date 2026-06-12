@@ -1,14 +1,14 @@
-import React, { useEffect, useContext } from "react";
-import RecordsImport from "./RecordsImport";
+import Box from "@mui/material/Box";
+import React, { useContext, useEffect } from "react";
 import { Navigate } from "react-router-dom";
+import { useLandmark } from "@/components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
+import useStores from "../../stores/use-stores";
 import Header from "../components/Layout/Header";
 import Sidebar from "../components/Layout/Sidebar";
-import useStores from "../../stores/use-stores";
-import NavigationContext from "./NavigationContext";
 import Main from "../Main";
-import Box from "@mui/material/Box";
-import { useLandmark } from "@/components/LandmarksContext";
+import NavigationContext from "./NavigationContext";
+import RecordsImport from "./RecordsImport";
 
 export default function ImportRouter(): React.ReactNode {
   const { importStore } = useStores();
@@ -21,9 +21,7 @@ export default function ImportRouter(): React.ReactNode {
    * importStore.importData
    */
   useEffect(() => {
-    importStore.importData?.updateRecordType(
-      new URLSearchParams(location.search),
-    );
+    importStore.importData?.updateRecordType(new URLSearchParams(location.search));
   }, [location.search]);
 
   useEffect(() => {
@@ -34,11 +32,7 @@ export default function ImportRouter(): React.ReactNode {
   const mainContentRef = useLandmark("Import main content");
 
   const recordType = importStore.importData?.recordType;
-  if (
-    recordType === "SAMPLES" ||
-    recordType === "CONTAINERS" ||
-    recordType === "SUBSAMPLES"
-  ) {
+  if (recordType === "SAMPLES" || recordType === "CONTAINERS" || recordType === "SUBSAMPLES") {
     return (
       <NavigationContext>
         <Header sidebarId={sidebarId} />

@@ -1,12 +1,12 @@
+import { grey, red } from "@mui/material/colors";
+import { formLabelClasses } from "@mui/material/FormLabel";
+import { inputLabelClasses } from "@mui/material/InputLabel";
 import {
   createTheme,
   type ThemeOptions as MuiThemeOptions,
   type PaletteColorOptions,
   type Transitions,
 } from "@mui/material/styles";
-import { grey, red } from "@mui/material/colors";
-import { inputLabelClasses } from "@mui/material/InputLabel";
-import { formLabelClasses } from "@mui/material/FormLabel";
 import { hslToHex } from "./util/colors";
 
 /**
@@ -206,11 +206,7 @@ export const COLORS = {
 const baseTheme = createTheme({
   palette: {
     primary: {
-      main: hslToHex(
-        COLORS.primary.hue,
-        COLORS.primary.saturation,
-        COLORS.primary.lightness,
-      ),
+      main: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, COLORS.primary.lightness),
       contrastText: "#fff",
       saturated: "#009ad6",
       placeholderText: "#8babcb",
@@ -327,10 +323,8 @@ const baseTheme = createTheme({
     section: "2px solid rgb(235, 235, 235)",
     menuButton: "1px solid rgba(192 ,192, 192, 1)",
     card: "1px solid rgba(0, 0, 0, 0.12)",
-    themedDialog: (hue: number, sat: number, lig: number) =>
-      `3px solid hsl(${hue} ${sat}% ${lig}% / 25%)`,
-    themedDialogTitle: (hue: number, sat: number, lig: number) =>
-      `1px solid hsl(${hue} ${sat}% ${lig}% / 20%)`,
+    themedDialog: (hue: number, sat: number, lig: number) => `3px solid hsl(${hue} ${sat}% ${lig}% / 25%)`,
+    themedDialogTitle: (hue: number, sat: number, lig: number) => `1px solid hsl(${hue} ${sat}% ${lig}% / 20%)`,
   },
   transitions: {
     iconTransformations: "transform 0.3s cubic-bezier(0.42, 0, 0.94, 1.49) 0s", // just a little bounce
@@ -352,6 +346,7 @@ const baseTheme = createTheme({
  */
 export default createTheme({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   ...(baseTheme as any as MuiThemeOptions),
   components: {
     MuiFormLabel: {

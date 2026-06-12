@@ -1,5 +1,5 @@
-import React from "react";
 import Typography from "@mui/material/Typography";
+import type React from "react";
 
 type VisuallyHiddenHeadingArgs = {
   variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
@@ -18,10 +18,7 @@ type VisuallyHiddenHeadingArgs = {
  * correct heading level. Given that this heading will never be shown, how MUI
  * chooses to style that tag is irrelevant.
  */
-export default function VisuallyHiddenHeading({
-  variant,
-  children,
-}: VisuallyHiddenHeadingArgs): React.ReactNode {
+export default function VisuallyHiddenHeading({ variant, children }: VisuallyHiddenHeadingArgs): React.ReactNode {
   return (
     <Typography
       variant={variant}

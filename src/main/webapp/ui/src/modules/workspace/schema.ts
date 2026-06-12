@@ -16,9 +16,7 @@ export const WorkspaceRecordEditStatusSchema = v.picklist([
   "CANNOT_EDIT_NO_PERMISSION",
   "CAN_NEVER_EDIT",
 ]);
-export type WorkspaceRecordEditStatus = v.InferOutput<
-  typeof WorkspaceRecordEditStatusSchema
->;
+export type WorkspaceRecordEditStatus = v.InferOutput<typeof WorkspaceRecordEditStatusSchema>;
 
 export const WorkspaceRecordSignatureStatusSchema = v.picklist([
   "UNSIGNED",
@@ -28,9 +26,7 @@ export const WorkspaceRecordSignatureStatusSchema = v.picklist([
   "UNSIGNABLE",
   "SIGNED_AND_LOCKED_WITNESSES_DECLINED",
 ]);
-export type WorkspaceRecordSignatureStatus = v.InferOutput<
-  typeof WorkspaceRecordSignatureStatusSchema
->;
+export type WorkspaceRecordSignatureStatus = v.InferOutput<typeof WorkspaceRecordSignatureStatusSchema>;
 
 export const WorkspaceSharingMapSchema = v.record(v.string(), v.string());
 export type WorkspaceSharingMap = v.InferOutput<typeof WorkspaceSharingMapSchema>;
@@ -78,9 +74,7 @@ export const WorkspaceRecordInformationSchema = v.objectWithRest(
   },
   v.unknown(),
 );
-export type WorkspaceRecordInformation = v.InferOutput<
-  typeof WorkspaceRecordInformationSchema
->;
+export type WorkspaceRecordInformation = v.InferOutput<typeof WorkspaceRecordInformationSchema>;
 
 export const WorkspaceGetRecordInformationResponseSchema = v.objectWithRest(
   {
@@ -91,7 +85,4 @@ export const WorkspaceGetRecordInformationResponseSchema = v.objectWithRest(
   },
   v.unknown(),
 );
-export type WorkspaceGetRecordInformationResponse = v.InferOutput<
-  typeof WorkspaceGetRecordInformationResponseSchema
->;
-
+export type WorkspaceGetRecordInformationResponse = v.InferOutput<typeof WorkspaceGetRecordInformationResponseSchema>;

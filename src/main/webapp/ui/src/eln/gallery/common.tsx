@@ -1,18 +1,18 @@
-import React from "react";
+import { faFile } from "@fortawesome/free-solid-svg-icons/faFile";
+import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
+import { faFileInvoice } from "@fortawesome/free-solid-svg-icons/faFileInvoice";
+import { faFilm } from "@fortawesome/free-solid-svg-icons/faFilm";
+import { faImage } from "@fortawesome/free-solid-svg-icons/faImage";
+import { faScissors } from "@fortawesome/free-solid-svg-icons/faScissors";
+import { faShapes } from "@fortawesome/free-solid-svg-icons/faShapes";
+import { faVolumeLow } from "@fortawesome/free-solid-svg-icons/faVolumeLow";
+import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
+import type React from "react";
 import { COLORS as baseThemeColors } from "../../theme";
-import Result from "../../util/result";
 import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 import ChemistryIcon from "./ChemistryIcon";
 import FilestoreIcon from "./FilestoreIcon";
-import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
-import { faImage } from '@fortawesome/free-solid-svg-icons/faImage';
-import { faFilm } from '@fortawesome/free-solid-svg-icons/faFilm';
-import { faFile } from '@fortawesome/free-solid-svg-icons/faFile';
-import { faFileInvoice } from '@fortawesome/free-solid-svg-icons/faFileInvoice';
-import { faShapes } from '@fortawesome/free-solid-svg-icons/faShapes';
-import { faVolumeLow } from '@fortawesome/free-solid-svg-icons/faVolumeLow';
-import { faScissors } from '@fortawesome/free-solid-svg-icons/faScissors';
-import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 
 /**
  * Constants for the strings that identify gallery sections.
@@ -72,13 +72,10 @@ export const parseGallerySection = (section: string): Result<GallerySection> =>
  * 'mediaType' search parameter. Most of this logic is to satify flow that the
  * string is indeed one of the valid strings that identify a gallery section.
  */
-export const parseGallerySectionFromUrlSearchParams = (
-  searchParams: URLSearchParams,
-): Result<GallerySection> =>
-  Result.fromNullable(
-    searchParams.get("mediaType"),
-    new Error("No search parameter with name 'mediaType'"),
-  ).flatMap(parseGallerySection);
+export const parseGallerySectionFromUrlSearchParams = (searchParams: URLSearchParams): Result<GallerySection> =>
+  Result.fromNullable(searchParams.get("mediaType"), new Error("No search parameter with name 'mediaType'")).flatMap(
+    parseGallerySection,
+  );
 
 /**
  * Mapping of gallery sections to a label that can be shown in the UI.

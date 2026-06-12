@@ -1,10 +1,6 @@
-import axios from "@/common/axios";
 import React from "react";
-import {
-  getStoredToken,
-  saveStoredToken,
-  secondsToExpiry,
-} from "@/modules/common/utils/auth";
+import axios from "@/common/axios";
+import { getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
 
 /**
  * This custom hook allows us to get a token for making calls to the API
@@ -64,9 +60,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * across page loads and only incur that penalty on the first page load.
    */
   async function fetchToken(): Promise<string> {
-    const response = await axios.get<{ data: string }>(
-      "/userform/ajax/inventoryOauthToken",
-    );
+    const response = await axios.get<{ data: string }>("/userform/ajax/inventoryOauthToken");
     const newToken = response.data.data;
     saveStoredToken(newToken);
     return newToken;
@@ -80,12 +74,9 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
   async function refreshToken(): Promise<void> {
     const newToken = await fetchToken();
     tokenRef.current = newToken;
-    setTimeout(
-      () => {
-        void refreshToken();
-      },
-      secondsToExpiry(newToken) * 1000,
-    );
+    setTimeout(() => {
+      void refreshToken();
+    }, secondsToExpiry(newToken) * 1000);
   }
 
   const getToken = React.useCallback(async () => {
@@ -113,12 +104,9 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * in session storage, and the current page and all subsequent ones in
      * the next temporal window will continue to work.
      */
-    setTimeout(
-      () => {
-        void refreshToken();
-      },
-      secondsToExpiry(savedToken) * 1000,
-    );
+    setTimeout(() => {
+      void refreshToken();
+    }, secondsToExpiry(savedToken) * 1000);
     return savedToken;
   }, []);
 

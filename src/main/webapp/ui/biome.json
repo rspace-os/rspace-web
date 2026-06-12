@@ -1,0 +1,52 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
+  },
+  "files": {
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "lineWidth": 120
+  },
+  "json": {
+    "formatter": {
+      "indentStyle": "space",
+      "lineWidth": 120
+    }
+  },
+  "css": {
+    "formatter": {
+      "indentStyle": "space",
+      "lineWidth": 120
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["@fortawesome/free-*", "!@fortawesome/free-*/*"],
+                "message": "Import individual icons from a deep path, not the whole @fortawesome/free-* package (tree-shaking)."
+              },
+              {
+                "group": ["@mui/material", "@mui/icons-material"],
+                "message": "Import from the deep path (e.g. @mui/material/Button), not the @mui barrel package (tree-shaking)."
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

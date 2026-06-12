@@ -1,7 +1,7 @@
-import React from "react";
-import CustomTooltip from "./CustomTooltip";
-import IconButton from "@mui/material/IconButton";
 import AddIcon from "@mui/icons-material/Add";
+import IconButton from "@mui/material/IconButton";
+import type React from "react";
+import CustomTooltip from "./CustomTooltip";
 
 type AddButtonArgs = {
   onClick?: (event: React.MouseEvent) => void;
@@ -19,6 +19,7 @@ const AddButton = ({
   id,
 }: AddButtonArgs): React.ReactNode => {
   return (
+    // biome-ignore lint/a11y/useValidAriaValues: initial biome migration
     <CustomTooltip title={title} aria-label="">
       <IconButton
         color="primary"

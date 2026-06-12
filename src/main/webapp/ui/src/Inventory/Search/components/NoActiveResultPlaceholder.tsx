@@ -1,18 +1,15 @@
-import React from "react";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import { darken } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import type React from "react";
 import HeroImage from "/src/assets/graphics/NoActiveResult.svg";
 import docLinks from "../../../assets/DocLinks";
-import { darken } from "@mui/material/styles";
 
 export default function NoActiveResultPlaceholder(): React.ReactNode {
   return (
-    <Stack
-      direction="row"
-      sx={{ justifyContent: "space-around", minHeight: "100vh" }}
-    >
+    <Stack direction="row" sx={{ justifyContent: "space-around", minHeight: "100vh" }}>
       <Stack sx={{ alignSelf: "center", alignItems: "center" }}>
         <Box sx={{ mb: 1, mt: 2 }}>
           <Typography variant="h1">Welcome to RSpace Inventory!</Typography>
@@ -41,6 +38,7 @@ export default function NoActiveResultPlaceholder(): React.ReactNode {
             Get Started Guide
           </Link>
         </Box>
+        {/** biome-ignore lint/a11y/useAltText: initial biome migration */}
         <img src={HeroImage} />
       </Stack>
     </Stack>

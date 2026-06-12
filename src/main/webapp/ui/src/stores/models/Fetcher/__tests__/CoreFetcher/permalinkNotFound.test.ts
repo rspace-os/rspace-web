@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
-import CoreFetcher from "../../CoreFetcher";
-import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import InvApiService from "../../../../../common/InvApiService";
+import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
+import CoreFetcher from "../../CoreFetcher";
 
 vi.mock("../../../../stores/RootStore", () => ({
   default: () => ({
@@ -20,9 +20,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
 describe("permalinkNotFound", () => {
   test("a failed versioned permalink fetch records which version was not found", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
-      Promise.reject(
-        Object.assign(new Error("Not Found"), { response: { status: 404 } }),
-      ),
+      Promise.reject(Object.assign(new Error("Not Found"), { response: { status: 404 } })),
     );
     const fetcher = new CoreFetcher(mockFactory(), null);
 
@@ -45,11 +43,7 @@ describe("permalinkNotFound", () => {
     // show the live record
     const getSpy = vi
       .spyOn(InvApiService, "get")
-      .mockImplementation(() =>
-        Promise.reject(
-          Object.assign(new Error("Not Found"), { response: { status: 404 } }),
-        ),
-      );
+      .mockImplementation(() => Promise.reject(Object.assign(new Error("Not Found"), { response: { status: 404 } })));
     const fetcher = new CoreFetcher(mockFactory(), null);
 
     await fetcher.search(
@@ -69,9 +63,7 @@ describe("permalinkNotFound", () => {
 
   test("a transient failure does not claim the record was not found", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
-      Promise.reject(
-        Object.assign(new Error("Server Error"), { response: { status: 500 } }),
-      ),
+      Promise.reject(Object.assign(new Error("Server Error"), { response: { status: 500 } })),
     );
     const fetcher = new CoreFetcher(mockFactory(), null);
 
@@ -95,10 +87,7 @@ describe("permalinkNotFound", () => {
     const factory = mockFactory({
       newRecord: vi.fn().mockImplementation(() => ({ deleted: false })),
     });
-    const fetcher = new CoreFetcher(
-      mockFactory({ newFactory: () => factory }),
-      null,
-    );
+    const fetcher = new CoreFetcher(mockFactory({ newFactory: () => factory }), null);
 
     await fetcher.search(
       {

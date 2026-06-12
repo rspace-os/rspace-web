@@ -1,27 +1,23 @@
-import { test, describe, expect, vi } from 'vitest';
-import * as React from "react";
-import { render, screen } from "@testing-library/react";
-import materialTheme from "../../../../theme";
-
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-
 import { personAttrs } from "../../../../stores/models/__tests__/PersonModel/mocking";
+import materialTheme from "../../../../theme";
 import Card from "../Card";
 
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  searchStore: {
-    search: {
-      alwaysFilterOut: () => false,
-      fetcher: { basketSearch: false },
+    searchStore: {
+      search: {
+        alwaysFilterOut: () => false,
+        fetcher: { basketSearch: false },
+      },
     },
-  },
-})
+  }),
 }));
 vi.mock("react-router", () => ({
   useNavigate: () => ({}),
-
 }));
 describe("Card", () => {
   describe("When the passed record has been deleted,", () => {
@@ -34,15 +30,11 @@ describe("Card", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <Card record={mockContainer} />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       const titleText = screen.getByText("A list container");
-      const decorationLineStyle = window
-        .getComputedStyle(titleText)
-        .getPropertyValue("text-decoration-line");
+      const decorationLineStyle = window.getComputedStyle(titleText).getPropertyValue("text-decoration-line");
       expect(decorationLineStyle).toEqual("line-through");
     });
   });
 });
-

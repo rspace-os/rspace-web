@@ -1,23 +1,23 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { render, screen, within, cleanup, expectAccessible} from "@/__tests__/customQueries";
 import { waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import type React from "react";
+import { cleanup, expectAccessible, render, screen, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import {
-  ActionsMenuWithNonFolder,
   ActionsMenuWithFolder,
-  ActionsMenuWithSnippet,
   ActionsMenuWithMixedSelection,
   ActionsMenuWithMultipleSnippets,
-  ActionsMenuWithSnippetMissingGlobalId,
-  ActionsMenuWithSnippetInSharedFolderOwnedBySelf,
+  ActionsMenuWithNonFolder,
+  ActionsMenuWithSnippet,
   ActionsMenuWithSnippetInSharedFolderOwnedByOther,
+  ActionsMenuWithSnippetInSharedFolderOwnedBySelf,
   ActionsMenuWithSnippetInSystemSharedFolder,
+  ActionsMenuWithSnippetMissingGlobalId,
 } from "./ActionsMenu.story";
 
 /*
@@ -46,9 +46,7 @@ const whoAmIResponse = {
   workbenchId: 1,
 };
 
-function stubCommonEndpoints({
-  netfilestoresEnabled = false,
-}: { netfilestoresEnabled?: boolean } = {}) {
+function stubCommonEndpoints({ netfilestoresEnabled = false }: { netfilestoresEnabled?: boolean } = {}) {
   // Bootstrap calls made on mount by the component tree.
   mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, {});
   mockAxios.onGet("/officeOnline/supportedExts").reply(200, {});
@@ -166,11 +164,7 @@ afterEach(() => {
  * a provider holding a new Map to keep tests isolated.
  */
 function renderStory(ui: React.ReactElement) {
-  return render(
-    <DeploymentPropertyContext.Provider value={new Map()}>
-      {ui}
-    </DeploymentPropertyContext.Provider>,
-  );
+  return render(<DeploymentPropertyContext.Provider value={new Map()}>{ui}</DeploymentPropertyContext.Provider>);
 }
 
 async function openMenu(user: ReturnType<typeof userEvent.setup>) {
@@ -207,27 +201,21 @@ describe("ActionsMenu", () => {
       renderStory(<ActionsMenuWithNonFolder />);
       await openMenu(user);
       await screen.findByRole("menu", { name: /actions/i });
-      expect(
-        screen.queryByRole("menuitem", { name: /open/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: /open/i })).not.toBeInTheDocument();
     });
 
     test("When the selected file is a folder, open should be visible", async () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithFolder />);
       await openMenu(user);
-      expect(
-        await screen.findByRole("menuitem", { name: /open/i }),
-      ).toBeVisible();
+      expect(await screen.findByRole("menuitem", { name: /open/i })).toBeVisible();
     });
 
     test("When the selected file is a snippet, download should be disabled", async () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
       await openMenu(user);
-      expectMenuItemDisabled(
-        await screen.findByRole("menuitem", { name: /download/i }),
-      );
+      expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /download/i }));
     });
 
     test("Share should always be visible and enabled when only snippets are selected", async () => {
@@ -255,9 +243,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
-      expect(
-        await screen.findByRole("dialog", { name: /Share My Snippet/i }),
-      ).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: /Share My Snippet/i })).toBeVisible();
     });
 
     test("Share should pass all selected snippets to the dialog", async () => {
@@ -267,9 +253,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
-      expect(
-        await screen.findByRole("dialog", { name: /Share 2 snippets/i }),
-      ).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: /Share 2 snippets/i })).toBeVisible();
 
       // Share info should be requested for both selected snippets.
       await waitFor(() => {
@@ -285,9 +269,7 @@ describe("ActionsMenu", () => {
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /share/i });
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent(
-        /Cannot share snippets that are missing global IDs\./i,
-      );
+      expect(share).toHaveTextContent(/Cannot share snippets that are missing global IDs\./i);
     });
 
     test("Share should be enabled when the current user owns a snippet in a shared folder", async () => {
@@ -306,9 +288,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent(
-        /Only owners of the snippet can change its share settings\./i,
-      );
+      expect(share).toHaveTextContent(/Only owners of the snippet can change its share settings\./i);
     });
 
     test("Share should not be enabled for a snippet in a system shared folder", async () => {
@@ -318,9 +298,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent(
-        /Only owners of the snippet can change its share settings\./i,
-      );
+      expect(share).toHaveTextContent(/Only owners of the snippet can change its share settings\./i);
     });
 
     test("Share should be disabled while the current user details are still loading", async () => {
@@ -368,15 +346,13 @@ describe("ActionsMenu", () => {
       await user.click(saveButton);
 
       // Success alert appears...
-      expect(
-        await screen.findByRole("alert", undefined, { timeout: 5000 }),
-      ).toHaveTextContent(/Shares updated successfully\./i);
+      expect(await screen.findByRole("alert", undefined, { timeout: 5000 })).toHaveTextContent(
+        /Shares updated successfully\./i,
+      );
 
       // ...and the share dialog closes.
       await waitFor(() => {
-        expect(
-          screen.queryByRole("dialog", { name: /Share My Snippet/i }),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog", { name: /Share My Snippet/i })).not.toBeInTheDocument();
       });
     });
   });
@@ -386,16 +362,12 @@ describe("ActionsMenu", () => {
       mockAxios.reset();
       stubCommonEndpoints({ netfilestoresEnabled: true });
 
-      const errorSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithNonFolder />);
       await openMenu(user);
-      expect(
-        await screen.findByRole("menuitem", { name: /move to s3/i }),
-      ).toBeVisible();
+      expect(await screen.findByRole("menuitem", { name: /move to s3/i })).toBeVisible();
 
       const muiErrors = errorSpy.mock.calls
         .map((args) => args.map((a) => String(a)).join(" "))
@@ -410,12 +382,8 @@ describe("ActionsMenu", () => {
       renderStory(<ActionsMenuWithNonFolder />);
       await openMenu(user);
       await screen.findByRole("menu", { name: /actions/i });
-      expect(
-        screen.queryByRole("menuitem", { name: /move to irods/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("menuitem", { name: /move to s3/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: /move to irods/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem", { name: /move to s3/i })).not.toBeInTheDocument();
     });
   });
 });

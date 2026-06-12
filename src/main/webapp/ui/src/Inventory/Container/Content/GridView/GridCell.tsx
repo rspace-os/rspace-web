@@ -1,23 +1,20 @@
-import React, { useRef, useEffect, type ReactNode } from "react";
-import { observer } from "mobx-react-lite";
 import TableCell from "@mui/material/TableCell";
-import useResizeObserver from "../../../components/ResizeObserver";
-import { type Location } from "../../../../stores/definitions/Container";
-import * as DragAndDrop from "../DragAndDrop";
 import { runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode, useEffect, useRef } from "react";
+import type { Location } from "../../../../stores/definitions/Container";
+import useResizeObserver from "../../../components/ResizeObserver";
+import * as DragAndDrop from "../DragAndDrop";
 
 const calculateLocationGeometry = (
   tableCellRef: React.RefObject<HTMLTableCellElement>,
   parentRef: React.RefObject<HTMLElement>,
-  location: Location
+  location: Location,
 ) => {
   const rect = tableCellRef.current?.getBoundingClientRect();
   const parentRect = parentRef.current?.getBoundingClientRect();
   if (rect && parentRect) {
-    location.setPosition(
-      rect.left - parentRect.left,
-      rect.top - parentRect.top
-    );
+    location.setPosition(rect.left - parentRect.left, rect.top - parentRect.top);
     location.setDimensions(rect.width, rect.height);
   }
 };
@@ -66,7 +63,7 @@ function GridCell({
       if (parentRef.current) {
         calculateLocationGeometry(cellRef, parentRef, location);
       }
-    })
+    }),
   );
 
   useEffect(() => {
@@ -110,9 +107,7 @@ function GridCell({
         background: hoverEffect ? "rgba(0, 0, 0, 0.04)" : "unset",
       })}
     >
-      <DragAndDrop.Dropzone location={location}>
-        {children}
-      </DragAndDrop.Dropzone>
+      <DragAndDrop.Dropzone location={location}>{children}</DragAndDrop.Dropzone>
     </TableCell>
   );
 }

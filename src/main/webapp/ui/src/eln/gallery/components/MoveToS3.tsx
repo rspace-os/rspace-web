@@ -1,35 +1,32 @@
-import React from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../../accentedTheme";
-import Dialog from "@mui/material/Dialog";
-import Typography from "@mui/material/Typography";
-import AppBar from "../../../components/AppBar";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import FormField from "../../../components/Inputs/FormField";
-import MenuItem from "@mui/material/MenuItem";
-import Menu from "@mui/material/Menu";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItem from "@mui/material/ListItem";
-import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import ChoiceField from "../../../components/Inputs/ChoiceField";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import * as FetchingData from "../../../util/fetchingData";
-import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
-import Result from "../../../util/result";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import React from "react";
+import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/s3";
-import useS3Filestores, {
-  type S3Filestore,
-  type S3TransferSource,
-} from "./useS3Filestores";
+import AppBar from "../../../components/AppBar";
+import ChoiceField from "../../../components/Inputs/ChoiceField";
+import FormField from "../../../components/Inputs/FormField";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as FetchingData from "../../../util/fetchingData";
+import Result from "../../../util/result";
+import useS3Filestores, { type S3Filestore, type S3TransferSource } from "./useS3Filestores";
 
 type MoveCopyDialogArgs = {
   dialogOpen: boolean;
@@ -39,12 +36,7 @@ type MoveCopyDialogArgs = {
   | { selectedIds?: never; transferSources: ReadonlyArray<S3TransferSource> }
 );
 
-function MoveCopyDialog({
-  dialogOpen,
-  setDialogOpen,
-  selectedIds,
-  transferSources,
-}: MoveCopyDialogArgs) {
+function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSources }: MoveCopyDialogArgs) {
   const isTransferMode = transferSources !== undefined;
   const sourceFilestoreIds = React.useMemo(
     () => new Set(transferSources?.map((s) => s.sourceFilestoreId) ?? []),
@@ -52,10 +44,8 @@ function MoveCopyDialog({
   );
   const { trackEvent } = React.useContext(AnalyticsContext);
   const s3Filestores = useS3Filestores();
-  const [destinationAnchorEl, setDestinationAnchorEl] =
-    React.useState<HTMLElement | null>(null);
-  const [selectedFilestore, setSelectedFilestore] =
-    React.useState<S3Filestore | null>(null);
+  const [destinationAnchorEl, setDestinationAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [selectedFilestore, setSelectedFilestore] = React.useState<S3Filestore | null>(null);
   const [retainSourceCopy, setRetainSourceCopy] = React.useState(false);
   const [operationInProgress, setOperationInProgress] = React.useState(false);
 
@@ -64,16 +54,10 @@ function MoveCopyDialog({
       s3Filestores.tag === "loading"
         ? Result.Error<null>([new Error("Loading available S3 filestores")])
         : Result.Ok(null),
-      s3Filestores.tag === "error"
-        ? Result.Error([new Error(s3Filestores.error)])
-        : Result.Ok(null),
+      s3Filestores.tag === "error" ? Result.Error([new Error(s3Filestores.error)]) : Result.Ok(null),
     )
       .flatMap(() =>
-        selectedFilestore
-          ? Result.Ok(null)
-          : Result.Error<null>([
-              new Error("A destination filestore is required."),
-            ]),
+        selectedFilestore ? Result.Ok(null) : Result.Error<null>([new Error("A destination filestore is required.")]),
       )
       .map(() => null);
   }
@@ -96,18 +80,12 @@ function MoveCopyDialog({
           setOperationInProgress(false);
         });
     } else {
-      const recordIds: ReadonlyArray<number> = (selectedIds ?? []).flatMap(
-        (id) => {
-          const n = parseInt(id, 10);
-          return isNaN(n) ? [] : [n];
-        },
-      );
+      const recordIds: ReadonlyArray<number> = (selectedIds ?? []).flatMap((id) => {
+        const n = parseInt(id, 10);
+        return Number.isNaN(n) ? [] : [n];
+      });
       const op = retainSourceCopy ? "copy" : "move";
-      void (
-        retainSourceCopy
-          ? selectedFilestore.copy(recordIds)
-          : selectedFilestore.move(recordIds)
-      )
+      void (retainSourceCopy ? selectedFilestore.copy(recordIds) : selectedFilestore.move(recordIds))
         .then(() => {
           setDialogOpen(false);
           trackEvent(`user:${op}:file:s3`);
@@ -118,9 +96,7 @@ function MoveCopyDialog({
     }
   };
 
-  const itemCount = isTransferMode
-    ? transferSources.length
-    : (selectedIds ?? []).length;
+  const itemCount = isTransferMode ? transferSources.length : (selectedIds ?? []).length;
 
   return (
     <Dialog
@@ -151,9 +127,7 @@ function MoveCopyDialog({
             flexGrow: 1,
           }}
         >
-          <DialogTitle variant="h3">
-            {isTransferMode ? "Transfer to S3" : "Move to S3"}
-          </DialogTitle>
+          <DialogTitle variant="h3">{isTransferMode ? "Transfer to S3" : "Move to S3"}</DialogTitle>
           <DialogContent>
             <Stack spacing={2}>
               {FetchingData.match(s3Filestores, {
@@ -161,27 +135,20 @@ function MoveCopyDialog({
                 error: (errorMsg) => (
                   <Alert severity="error">
                     <AlertTitle>{errorMsg}</AlertTitle>
-                    Please check with your System Admin to ensure the S3
-                    filestore is correctly configured.
+                    Please check with your System Admin to ensure the S3 filestore is correctly configured.
                   </Alert>
                 ),
                 success: (filestores) =>
                   filestores.length === 0 ? (
                     <Alert severity="error">
-                      <AlertTitle>
-                        No S3 filestore has been configured.
-                      </AlertTitle>
-                      Add a new one in the filestore section of the Gallery or
-                      speak to your system administrator.
+                      <AlertTitle>No S3 filestore has been configured.</AlertTitle>
+                      Add a new one in the filestore section of the Gallery or speak to your system administrator.
                     </Alert>
                   ) : filestores.every((fs) => !fs.canWrite) ? (
                     <Alert severity="error">
-                      <AlertTitle>
-                        You do not have write access to any S3 filestore.
-                      </AlertTitle>
-                      Your account is not on the write allowlist for any S3
-                      filestore. Ask your system administrator if you need write
-                      access.
+                      <AlertTitle>You do not have write access to any S3 filestore.</AlertTitle>
+                      Your account is not on the write allowlist for any S3 filestore. Ask your system administrator if
+                      you need write access.
                     </Alert>
                   ) : (
                     <>
@@ -189,17 +156,14 @@ function MoveCopyDialog({
                         {isTransferMode ? (
                           <>
                             You have selected {itemCount} item
-                            {itemCount > 1 && "s"} to transfer to another S3
-                            bucket. By default, the items will be copied to the
-                            destination and deleted from the source.
+                            {itemCount > 1 && "s"} to transfer to another S3 bucket. By default, the items will be
+                            copied to the destination and deleted from the source.
                           </>
                         ) : (
                           <>
                             You have selected {itemCount} item
-                            {itemCount > 1 && "s"} to move to S3. By default,
-                            the items will be added to S3 and removed from
-                            RSpace. You will be able to link to the S3 items
-                            inside of RSpace documents.
+                            {itemCount > 1 && "s"} to move to S3. By default, the items will be added to S3 and removed
+                            from RSpace. You will be able to link to the S3 items inside of RSpace documents.
                           </>
                         )}
                       </Typography>
@@ -212,9 +176,7 @@ function MoveCopyDialog({
                         options={[
                           {
                             value: "keep",
-                            label: isTransferMode
-                              ? "Retain a copy on source bucket"
-                              : "Retain a copy in RSpace",
+                            label: isTransferMode ? "Retain a copy on source bucket" : "Retain a copy in RSpace",
                           },
                         ]}
                       />
@@ -228,16 +190,9 @@ function MoveCopyDialog({
                               <ListItem disablePadding>
                                 <ListItemButton
                                   sx={{ maxWidth: "400px" }}
-                                  onClick={(e) =>
-                                    setDestinationAnchorEl(e.currentTarget)
-                                  }
+                                  onClick={(e) => setDestinationAnchorEl(e.currentTarget)}
                                 >
-                                  <ListItemText
-                                    primary={
-                                      selectedFilestore?.name ??
-                                      "Select a filestore"
-                                    }
-                                  />
+                                  <ListItemText primary={selectedFilestore?.name ?? "Select a filestore"} />
                                   <KeyboardArrowDownIcon />
                                 </ListItemButton>
                               </ListItem>
@@ -250,11 +205,7 @@ function MoveCopyDialog({
                               }}
                             >
                               {filestores
-                                .filter(
-                                  (fs) =>
-                                    !isTransferMode ||
-                                    !sourceFilestoreIds.has(fs.id),
-                                )
+                                .filter((fs) => !isTransferMode || !sourceFilestoreIds.has(fs.id))
                                 .map((fs) => (
                                   <MenuItem
                                     key={fs.id}
@@ -268,11 +219,7 @@ function MoveCopyDialog({
                                   >
                                     <ListItemText
                                       primary={fs.name}
-                                      secondary={
-                                        fs.canWrite
-                                          ? undefined
-                                          : "No write access"
-                                      }
+                                      secondary={fs.canWrite ? undefined : "No write access"}
                                     />
                                   </MenuItem>
                                 ))}
@@ -286,10 +233,7 @@ function MoveCopyDialog({
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => setDialogOpen(false)}
-              disabled={operationInProgress}
-            >
+            <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
               Cancel
             </Button>
             <ValidatingSubmitButton

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { createRoot } from "react-dom/client";
 import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
@@ -92,17 +92,12 @@ const isHTMLElement = (node: unknown): node is HTMLElement => {
 
 class StoichiometryPlugin {
   constructor(editor: Editor) {
-    const isStoichiometryTableOnlyNode = (
-      node: Node | null,
-    ): node is HTMLElement => {
+    const isStoichiometryTableOnlyNode = (node: Node | null): node is HTMLElement => {
       if (!isHTMLElement(node)) {
         return false;
       }
 
-      return (
-        node.tagName === "DIV" &&
-        node.getAttribute(STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE) === "true"
-      );
+      return node.tagName === "DIV" && node.getAttribute(STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE) === "true";
     };
 
     const findStoichiometryRootNode = (node: Node | null): HTMLElement | null => {
@@ -130,13 +125,10 @@ class StoichiometryPlugin {
         return;
       }
 
-      const hasStoichiometryData = node.hasAttribute(
-        STOICHIOMETRY_TABLE_DATA_ATTRIBUTE,
-      );
+      const hasStoichiometryData = node.hasAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE);
       const hasElementChildren = node.children.length > 0;
       const textContent = node.textContent?.trim() ?? "";
-      const hasOnlyPlaceholderText =
-        textContent === EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER;
+      const hasOnlyPlaceholderText = textContent === EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER;
 
       if (hasStoichiometryData) {
         if (!hasElementChildren && hasOnlyPlaceholderText) {
@@ -178,32 +170,24 @@ class StoichiometryPlugin {
         return;
       }
 
-      editorDoc
-        .querySelectorAll(`div[${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true"]`)
-        .forEach((node) => {
-          if (isHTMLElement(node)) {
-            syncStoichiometryTableOnlyNodePresentation(node);
-          }
-        });
+      editorDoc.querySelectorAll(`div[${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true"]`).forEach((node) => {
+        if (isHTMLElement(node)) {
+          syncStoichiometryTableOnlyNodePresentation(node);
+        }
+      });
     };
 
-    const getStoichiometryDataFromTableOnlyNode = (
-      node: HTMLElement,
-    ): { id: number; revision?: number } => {
+    const getStoichiometryDataFromTableOnlyNode = (node: HTMLElement): { id: number; revision?: number } => {
       const rawStoichiometry = node.getAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE);
       if (rawStoichiometry === null) {
-        throw new Error(
-          "Stoichiometry table node is missing data-stoichiometry-table.",
-        );
+        throw new Error("Stoichiometry table node is missing data-stoichiometry-table.");
       }
 
       let parsedStoichiometry: unknown;
       try {
         parsedStoichiometry = JSON.parse(rawStoichiometry);
       } catch {
-        throw new Error(
-          "Stoichiometry table node has invalid data-stoichiometry-table JSON.",
-        );
+        throw new Error("Stoichiometry table node has invalid data-stoichiometry-table JSON.");
       }
 
       if (
@@ -212,14 +196,11 @@ class StoichiometryPlugin {
         !("id" in parsedStoichiometry) ||
         typeof parsedStoichiometry.id !== "number"
       ) {
-        throw new Error(
-          "Stoichiometry table node has malformed data-stoichiometry-table attributes.",
-        );
+        throw new Error("Stoichiometry table node has malformed data-stoichiometry-table attributes.");
       }
 
       const revision =
-        "revision" in parsedStoichiometry &&
-        typeof parsedStoichiometry.revision === "number"
+        "revision" in parsedStoichiometry && typeof parsedStoichiometry.revision === "number"
           ? parsedStoichiometry.revision
           : undefined;
 
@@ -236,11 +217,7 @@ class StoichiometryPlugin {
     const insertStoichiometryTableOnly = (): string => {
       const nodeId = createStoichiometryNodeId();
 
-      editor.execCommand(
-        "mceInsertContent",
-        false,
-        buildStoichiometryTableOnlyHtml(nodeId),
-      );
+      editor.execCommand("mceInsertContent", false, buildStoichiometryTableOnlyHtml(nodeId));
       editor.setDirty(true);
 
       const insertedNode = getEditorDoc()?.getElementById(nodeId);
@@ -267,11 +244,7 @@ class StoichiometryPlugin {
         onDelete: () => {},
       };
 
-      return (
-        nextProps: Partial<
-          React.ComponentProps<typeof StoichiometryDialogEntrypoint>
-        > = {},
-      ) => {
+      return (nextProps: Partial<React.ComponentProps<typeof StoichiometryDialogEntrypoint>> = {}) => {
         props = {
           ...props,
           ...nextProps,
@@ -335,8 +308,7 @@ class StoichiometryPlugin {
             revision?: unknown;
           };
           stoichiometryId = typeof id === "number" ? id : undefined;
-          stoichiometryRevision =
-            typeof revision === "number" ? revision : undefined;
+          stoichiometryRevision = typeof revision === "number" ? revision : undefined;
         } catch {}
 
         const parsedChemId = Number.parseInt(nodeId, 10);
@@ -382,12 +354,10 @@ class StoichiometryPlugin {
 
     const updateStoichiometryNode = (
       nodeId: string | undefined,
-      stoichiometry:
-        | {
-            id: number;
-            revision: number;
-          }
-        | null,
+      stoichiometry: {
+        id: number;
+        revision: number;
+      } | null,
     ) => {
       const targetNode = findStoichiometryNode(nodeId);
       if (!targetNode) {
@@ -395,10 +365,7 @@ class StoichiometryPlugin {
       }
 
       if (stoichiometry) {
-        targetNode.setAttribute(
-          STOICHIOMETRY_TABLE_DATA_ATTRIBUTE,
-          JSON.stringify(stoichiometry),
-        );
+        targetNode.setAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE, JSON.stringify(stoichiometry));
       } else {
         targetNode.removeAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE);
       }
@@ -478,10 +445,7 @@ class StoichiometryPlugin {
           });
         },
         onDelete: () => {
-          if (
-            anchorWasInsertedForNewTable ||
-            activeNodeType === "tableOnly"
-          ) {
+          if (anchorWasInsertedForNewTable || activeNodeType === "tableOnly") {
             removeStoichiometryNode(activeNodeId);
           } else {
             updateStoichiometryNode(activeNodeId, null);
@@ -490,7 +454,6 @@ class StoichiometryPlugin {
         },
       });
     };
-
 
     const openStoichiometryDialogFromSelection = () => {
       editor.execCommand("cmdStoichiometry", false);
@@ -518,7 +481,7 @@ class StoichiometryPlugin {
       action: openStoichiometryDialogFromSelection,
     });
 
-    editor.addCommand("cmdCreateStoichiometry", function () {
+    editor.addCommand("cmdCreateStoichiometry", () => {
       openStoichiometryDialog({
         chemId: null,
         nodeId: undefined,
@@ -528,7 +491,7 @@ class StoichiometryPlugin {
       });
     });
 
-    editor.addCommand("cmdStoichiometry", function () {
+    editor.addCommand("cmdStoichiometry", () => {
       const selectedStoichiometry = getSelectedStoichiometryContext();
       openStoichiometryDialog({
         chemId: selectedStoichiometry?.chemId ?? null,

@@ -1,16 +1,10 @@
-import React from "react";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-import RadioField, {
-  type RadioOption,
-} from "../../../../components/Inputs/RadioField";
+import type React from "react";
+import type { Container } from "@/stores/definitions/Container";
+import { type Axis, DEFAULT_COLUMN_AXIS, DEFAULT_ROW_AXIS } from "@/stores/definitions/container/types";
 import FormControl from "../../../../components/Inputs/FormControl";
-import { type Container } from "@/stores/definitions/Container";
-import {
-  Axis,
-  DEFAULT_COLUMN_AXIS,
-  DEFAULT_ROW_AXIS,
-} from "@/stores/definitions/container/types";
+import RadioField, { type RadioOption } from "../../../../components/Inputs/RadioField";
 
 const LABEL_OPTIONS: Array<RadioOption<Axis>> = [
   { label: "ABC", value: "ABC" },
@@ -23,16 +17,11 @@ type GridLayoutConfigArgs = {
   container: Container;
 };
 
-function GridLayoutConfig({
-  container,
-}: GridLayoutConfigArgs): React.ReactNode {
+function GridLayoutConfig({ container }: GridLayoutConfigArgs): React.ReactNode {
   const gridLayout = container.gridLayout;
-  if (container.cType !== "GRID" || !gridLayout)
-    throw new Error("Container must be a Grid Container");
+  if (container.cType !== "GRID" || !gridLayout) throw new Error("Container must be a Grid Container");
 
-  const handleChange = (e: {
-    target: { name: string; value: Axis | null };
-  }) => {
+  const handleChange = (e: { target: { name: string; value: Axis | null } }) => {
     const { name, value } = e.target;
     container.setAttributesDirty({
       gridLayout: { ...container.gridLayout, [name]: value },
@@ -44,8 +33,9 @@ function GridLayoutConfig({
       <Grid
         size={{
           xs: 12,
-          md: 6
-        }}>
+          md: 6,
+        }}
+      >
         <FormControl label="Row Labels">
           <RadioField
             name="rowsLabelType"
@@ -58,8 +48,9 @@ function GridLayoutConfig({
       <Grid
         size={{
           xs: 12,
-          md: 6
-        }}>
+          md: 6,
+        }}
+      >
         <FormControl label="Column Labels">
           <RadioField
             name="columnsLabelType"

@@ -1,22 +1,22 @@
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import useStores from "../../../stores/use-stores";
-import GlobalId from "../../../components/GlobalId";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import type Alert from "@mui/material/Alert";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import { useTheme } from "@mui/material/styles";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import { observer } from "mobx-react-lite";
-import React from "react";
-import { useTheme } from "@mui/material/styles";
+import type React from "react";
+import GlobalId from "../../../components/GlobalId";
+import type { AllowedFormTypes } from "../../../stores/contexts/FormSections";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import useStores from "../../../stores/use-stores";
 import { UserCancelledAction } from "../../../util/error";
-import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import StickyMenu from "../Stepper/StickyMenu";
 import StickyStatus from "../StickyStatus";
-import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 type CustomToolbarArgs = {
   title: React.ReactNode;
@@ -30,13 +30,7 @@ type CustomToolbarArgs = {
  * The top-most section of the right-hand side panel of the main Inventory UI,
  * which displays the name of the current record alongside visual elements.
  */
-function CustomToolbar({
-  title,
-  record,
-  recordType,
-  batch,
-  stickyAlert,
-}: CustomToolbarArgs): React.ReactNode {
+function CustomToolbar({ title, record, recordType, batch, stickyAlert }: CustomToolbarArgs): React.ReactNode {
   const theme = useTheme();
   const {
     uiStore,
@@ -62,12 +56,8 @@ function CustomToolbar({
       elevation={0}
       sx={{
         backgroundColor:
-          recordType && theme.palette.record[recordType]
-            ? theme.palette.record[recordType].bg
-            : "white !important",
-        color: recordType
-          ? "white"
-          : `${theme.palette.text.primary} !important`,
+          recordType && theme.palette.record[recordType] ? theme.palette.record[recordType].bg : "white !important",
+        color: recordType ? "white" : `${theme.palette.text.primary} !important`,
         border: recordType ? "none" : theme.borders.section,
       }}
     >
@@ -86,10 +76,7 @@ function CustomToolbar({
         }}
       >
         {isSingleColumnLayout && (
-          <IconButton
-            onClick={handleBackClick}
-            sx={{ p: theme.spacing(1, 0.5, 1, 1.5) }}
-          >
+          <IconButton onClick={handleBackClick} sx={{ p: theme.spacing(1, 0.5, 1, 1.5) }}>
             <ArrowBackIosIcon
               fontSize="small"
               data-test-id="backIcon"
@@ -103,16 +90,10 @@ function CustomToolbar({
           </IconButton>
         )}
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>{title}</Box>
-        <Box sx={{ minWidth: 90 }}>
-          {record?.illustration}
-        </Box>
+        <Box sx={{ minWidth: 90 }}>{record?.illustration}</Box>
         {record && record.id !== null && (
           <Stack>
-            <Typography
-              variant="caption"
-              component="span"
-              sx={{ color: "inherit", whiteSpace: "nowrap", pb: 0.25 }}
-            >
+            <Typography variant="caption" component="span" sx={{ color: "inherit", whiteSpace: "nowrap", pb: 0.25 }}>
               {record.recordTypeLabel.toUpperCase()}
             </Typography>
             <GlobalId record={record} />
@@ -123,10 +104,7 @@ function CustomToolbar({
       <Box sx={{ pb: 0.25 }} />
       {(record !== undefined || batch === true) && (
         <Box sx={{ position: "relative" }}>
-          <StickyStatus
-            recordState={record?.state || "edit"}
-            deleted={record?.deleted || false}
-          />
+          <StickyStatus recordState={record?.state || "edit"} deleted={record?.deleted || false} />
         </Box>
       )}
     </AppBar>

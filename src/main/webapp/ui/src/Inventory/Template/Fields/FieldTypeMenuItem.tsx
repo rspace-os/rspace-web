@@ -1,13 +1,14 @@
-import React, { forwardRef } from "react";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
-import { FIELD_DATA, type FieldType } from "@/stores/models/FieldTypes";
+import Stack from "@mui/material/Stack";
 import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { forwardRef } from "react";
+import { FIELD_DATA, type FieldType } from "@/stores/models/FieldTypes";
 
 type FieldTypeMenuItemArgs = {
   field: FieldType;
@@ -34,10 +35,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
             <Avatar>{_fieldData.icon}</Avatar>
           </ListItemAvatar>
           <Box sx={{ flexGrow: 1 }}>
-            <ListItemText
-              primary={_fieldData.label}
-              secondary={_fieldData.help}
-            />
+            <ListItemText primary={_fieldData.label} secondary={_fieldData.help} />
           </Box>
         </Stack>
       </MenuItem>

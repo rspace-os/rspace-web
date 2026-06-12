@@ -1,11 +1,11 @@
-import React from "react";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
-import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import type React from "react";
 import CustomTooltip from "../../../components/CustomTooltip";
 import FormControl from "../../../components/Inputs/FormControl";
-import TemplateModel from "../../../stores/models/TemplateModel";
-import { type FieldModelAttrs } from "../../../stores/models/FieldModel";
+import type { FieldModelAttrs } from "../../../stores/models/FieldModel";
+import type TemplateModel from "../../../stores/models/TemplateModel";
 
 const EMPTY_FIELD: FieldModelAttrs = {
   name: "",

@@ -8,17 +8,15 @@ import RsSet from "../../set";
 export function arbRsSet<T>(
   arb: Arbitrary<T>,
   options?: {
-    minSize?: number,
-    maxSize?: number,
-  }
+    minSize?: number;
+    maxSize?: number;
+  },
 ): Arbitrary<RsSet<T>> {
   const { minSize, maxSize } = options ?? {};
-  const uniqueArrayOptions: { minLength?: number, maxLength?: number } = {};
+  const uniqueArrayOptions: { minLength?: number; maxLength?: number } = {};
   if (typeof minSize !== "undefined") uniqueArrayOptions.minLength = minSize;
   if (typeof maxSize !== "undefined") uniqueArrayOptions.maxLength = maxSize;
-  return fc
-    .uniqueArray(arb, uniqueArrayOptions)
-    .map((array) => new RsSet(array));
+  return fc.uniqueArray(arb, uniqueArrayOptions).map((array) => new RsSet(array));
 }
 
 /**
@@ -33,12 +31,7 @@ export function arbSubsetOf<T>(arbSet: RsSet<T>): Arbitrary<RsSet<T>> {
  * A function for unwrapping objects with an id attribute, and a few sets of
  * those objects for testing.
  */
-export type ArbitraryMappableSets<A, B extends { id: A }> = [
-  (arg: B) => A,
-  RsSet<B>,
-  RsSet<B>,
-  RsSet<B>
-];
+export type ArbitraryMappableSets<A, B extends { id: A }> = [(arg: B) => A, RsSet<B>, RsSet<B>, RsSet<B>];
 
 /**
  * Functions like subtractMap, intersectionMap, and unionWith operate over a
@@ -47,23 +40,16 @@ export type ArbitraryMappableSets<A, B extends { id: A }> = [
  * several sets of arbitrary contents.
  */
 export const arbitraryMappableSets: Arbitrary<
-  [
-    (arg: { id: unknown }) => unknown,
-    RsSet<{ id: unknown }>,
-    RsSet<{ id: unknown }>,
-    RsSet<{ id: unknown }>
-  ]
+  [(arg: { id: unknown }) => unknown, RsSet<{ id: unknown }>, RsSet<{ id: unknown }>, RsSet<{ id: unknown }>]
 > = fc.uniqueArray(fc.anything()).chain((ids) => {
   function makeSetOfObjectsWithId() {
-    return fc
-      .shuffledSubarray(ids)
-      .map((someIds) => new RsSet(someIds).map((id) => ({ id })));
+    return fc.shuffledSubarray(ids).map((someIds) => new RsSet(someIds).map((id) => ({ id })));
   }
   return fc.tuple(
     fc.constant((arg: { id: unknown }) => arg.id),
     makeSetOfObjectsWithId(),
     makeSetOfObjectsWithId(),
-    makeSetOfObjectsWithId()
+    makeSetOfObjectsWithId(),
   );
 });
 
@@ -81,6 +67,6 @@ export const arbSetOfSetsWithHighOverlap: Arbitrary<RsSet<RsSet<unknown>>> = fc
   .chain((list) =>
     arbRsSet(
       fc.shuffledSubarray(list, { minLength: 1 }).map((x) => new RsSet(x)),
-      { maxSize: 3, minSize: 1 }
-    )
+      { maxSize: 3, minSize: 1 },
+    ),
   );

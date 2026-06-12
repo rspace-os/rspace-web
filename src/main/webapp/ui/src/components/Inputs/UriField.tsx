@@ -1,5 +1,5 @@
-import React from "react";
 import TextField from "@mui/material/TextField";
+import type React from "react";
 import NoValue from "../../components/NoValue";
 
 export type UriFieldArgs = {
@@ -13,13 +13,7 @@ export type UriFieldArgs = {
   id?: string;
 };
 
-export default function UriField({
-  disabled,
-  value,
-  onChange,
-  name,
-  id,
-}: UriFieldArgs): React.ReactNode {
+export default function UriField({ disabled, value, onChange, name, id }: UriFieldArgs): React.ReactNode {
   return disabled && !value ? (
     <NoValue label="None" />
   ) : (
@@ -34,7 +28,7 @@ export default function UriField({
       slotProps={{
         htmlInput: {
           inputMode: "url",
-        }
+        },
       }}
     />
   );

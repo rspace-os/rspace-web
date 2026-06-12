@@ -1,27 +1,16 @@
-import getRootStore from "../stores/stores/RootStore";
-import { mkAlert } from "../stores/contexts/Alert";
-import { toTitleCase } from "./Util";
-import * as ArrayUtils from "./ArrayUtils";
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
-import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { mkAlert } from "../stores/contexts/Alert";
+import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
+import getRootStore from "../stores/stores/RootStore";
 import { traverseObjectTree } from "../util/unsafeUtils";
+import * as ArrayUtils from "./ArrayUtils";
 import { Optional } from "./optional";
+import { toTitleCase } from "./Util";
 
-type Operation =
-  | "trashed"
-  | "restored"
-  | "duplicated"
-  | "split"
-  | "moved"
-  | "updated"
-  | "transferred";
+type Operation = "trashed" | "restored" | "duplicated" | "split" | "moved" | "updated" | "transferred";
 
-const bulkSuccessAlert = (
-  records: Array<InventoryRecord>,
-  suffix: string
-): string => {
+const bulkSuccessAlert = (records: Array<InventoryRecord>, suffix: string): string => {
   if (records.length === 0) {
     return "No changes.";
   }
@@ -40,7 +29,7 @@ export const handleDetailedSuccesses = (
   records: Array<InventoryRecord>,
   operation: Operation,
   recordAltOperation: (record: InventoryRecord) => string = () => operation,
-  message: string | null = null
+  message: string | null = null,
 ) => {
   const variant = "success";
   getRootStore().uiStore.addAlert(
@@ -53,7 +42,7 @@ export const handleDetailedSuccesses = (
         variant,
         record,
       })),
-    })
+    }),
   );
 };
 
@@ -116,10 +105,8 @@ export const handleDetailedErrors = (
     record?: InventoryRecord;
   }>,
   operation: string,
-  retryFunction:
-    | ((records: Array<InventoryRecord>) => Promise<void>)
-    | null = null, // requires record on data array
-  defaultHelp: string | null = null
+  retryFunction: ((records: Array<InventoryRecord>) => Promise<void>) | null = null, // requires record on data array
+  defaultHelp: string | null = null,
 ): boolean => {
   const errorData = data.filter(({ response }) => Boolean(response.error));
   const variant = "error";
@@ -137,21 +124,16 @@ export const handleDetailedErrors = (
             }))(record ?? {}),
             variant,
             record,
-          }))
+          })),
         ),
         ...(retryFunction
           ? Object.freeze({
               retryFunction: () => {
-                return retryFunction(
-                  ArrayUtils.mapOptional(
-                    (r) => Optional.fromNullable(r.record),
-                    errorData
-                  )
-                );
+                return retryFunction(ArrayUtils.mapOptional((r) => Optional.fromNullable(r.record), errorData));
               },
             })
           : Object.freeze({})),
-      })
+      }),
     );
   }
   return Boolean(errorCount);
@@ -160,10 +142,7 @@ export const handleDetailedErrors = (
 /**
  * Shows a loading alert whilst a promise is pending.
  */
-export async function showToastWhilstPending<A>(
-  message: string,
-  promise: Promise<A>
-): Promise<A> {
+export async function showToastWhilstPending<A>(message: string, promise: Promise<A>): Promise<A> {
   const loadingIcon = <FontAwesomeIcon icon={faSpinner} spin size="1x" />;
   const processingAlert = mkAlert({
     message,

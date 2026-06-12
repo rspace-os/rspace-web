@@ -1,89 +1,52 @@
-import { type URL as URLType, type BlobUrl, _LINK } from "../../util/types";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import type React from "react";
+import type { AxiosProgressEvent } from "@/common/axios";
 import ApiService from "../../common/InvApiService";
-import { sameKeysAndValues, match, isoToLocale } from "../../util/Util";
+import { decodeTagString, encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
+import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { SortProperty } from "../../Inventory/components/Tables/SortableProperty";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import { capImageAt1MB } from "../../util/images";
-import {
-  globalIdPatterns,
-  type GlobalId,
-  type Id,
-} from "../definitions/BaseRecord";
-import {
-  type RecordDetails,
-  type Thumbnail,
-  type ReadAccessLevel,
-} from "../definitions/Record";
-import { type Location } from "../definitions/Container";
-import {
-  type Action,
-  type RecordType,
-  type InventoryRecord,
-  type LockStatus,
-  type State,
-  type ApiRecordType,
-  type SharingMode,
-  type CreateOption,
-} from "../definitions/InventoryRecord";
-import {
-  type AdjustableTableRow,
-  type AdjustableTableRowOptions,
-} from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
-import { mkAlert, type Alert } from "../contexts/Alert";
-import { AttachmentJson, newExistingAttachment } from "./AttachmentModel";
-import ExtraFieldModel from "./ExtraFieldModel";
-import {
-  type ExtraFieldAttrs,
-  type ExtraField,
-} from "../definitions/ExtraField";
-import { type CoreFetcherArgs } from "../definitions/Search";
-import { PersonAttrs, type Person } from "../definitions/Person";
-import {
-  action,
-  computed,
-  observable,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import React from "react";
-import {
-  type HasEditableFields,
-  type HasUneditableFields,
-} from "../definitions/Editable";
-import { type Factory } from "../definitions/Factory";
-import { type Attachment } from "../definitions/Attachment";
-import {
-  PersistedBarcodeAttrs,
-  type BarcodeRecord,
-} from "../definitions/Barcode";
-import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
-import { type SharedWithGroup } from "../definitions/Group";
-import { type ContainerInContainerParams } from "./ContainerModel";
-import { type SampleInContainerParams } from "./SampleModel";
-import { noProgress, type Progress } from "../../util/progress";
-import { type SortProperty } from "../../Inventory/components/Tables/SortableProperty";
-import {
-  type Identifier,
-  type IdentifierAttrs,
-} from "../definitions/Identifier";
-import IdentifierModel from "./IdentifierModel";
-import { type Tag } from "../definitions/Tag";
-import { Optional } from "../../util/optional";
-import {
-  encodeTagString,
-  decodeTagString,
-} from "../../components/Tags/ParseEncodedTagStrings";
-import { pick } from "../../util/unsafeUtils";
-import {
-  IsValid,
-  IsInvalid,
-  allAreValid,
-  type ValidationResult,
-} from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
+import { capImageAt1MB } from "../../util/images";
+import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
+import { noProgress, type Progress } from "../../util/progress";
 import Result from "../../util/result";
-import { AxiosProgressEvent } from "@/common/axios";
+import type { _LINK, BlobUrl, URL as URLType } from "../../util/types";
+import { isoToLocale, match, sameKeysAndValues } from "../../util/Util";
+import { pick } from "../../util/unsafeUtils";
+import { type Alert, mkAlert } from "../contexts/Alert";
+import type { Attachment } from "../definitions/Attachment";
+import type { BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcode";
+import { type GlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
+import type { Location } from "../definitions/Container";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraField, ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { SharedWithGroup } from "../definitions/Group";
+import type { Identifier, IdentifierAttrs } from "../definitions/Identifier";
+import type {
+  Action,
+  ApiRecordType,
+  CreateOption,
+  InventoryRecord,
+  LockStatus,
+  RecordType,
+  SharingMode,
+  State,
+} from "../definitions/InventoryRecord";
+import type { Person, PersonAttrs } from "../definitions/Person";
+import type { ReadAccessLevel, RecordDetails, Thumbnail } from "../definitions/Record";
+import type { CoreFetcherArgs } from "../definitions/Search";
+import type { AdjustableTableRow, AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Tag } from "../definitions/Tag";
+import getRootStore from "../stores/RootStore";
+import { type AttachmentJson, newExistingAttachment } from "./AttachmentModel";
+import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
+import type { ContainerInContainerParams } from "./ContainerModel";
+import ExtraFieldModel from "./ExtraFieldModel";
+import IdentifierModel from "./IdentifierModel";
+import type { SampleInContainerParams } from "./SampleModel";
 
 export type InventoryBaseRecordEditableFields = {
   /*
@@ -123,11 +86,9 @@ export const sortProperties: Array<SortProperty> = [
   },
 ];
 
-export const isSortable = (propKey: string): boolean =>
-  sortProperties.map((p) => p.key).includes(propKey);
+export const isSortable = (propKey: string): boolean => sortProperties.map((p) => p.key).includes(propKey);
 
-const calculateUploadProgress = (soFar: number, total: number): number =>
-  Math.floor((soFar / total) * 10) * 10;
+const calculateUploadProgress = (soFar: number, total: number): number => Math.floor((soFar / total) * 10) * 10;
 
 type LockOwner = {
   firstName: string;
@@ -159,10 +120,15 @@ const FIELDS: Set<string> = new Set([
   "sharingMode",
   "sharedWith",
 ]);
+
 export { FIELDS as RESULT_FIELDS };
+
 const defaultVisibleFields: Set<string> = new Set([...FIELDS]);
+
 export { defaultVisibleFields as defaultVisibleResultFields };
+
 const defaultEditableFields: Set<string> = new Set();
+
 export { defaultEditableFields as defaultEditableResultFields };
 
 type ResultAttrs = {
@@ -397,11 +363,7 @@ export default class InventoryBaseRecord
     return false;
   }
 
-  populateFromJson(
-    factory: Factory,
-    passedParams: object,
-    defaultParams: object = {},
-  ): void {
+  populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
     const params = { ...defaultParams, ...passedParams } as ResultAttrs;
     this.id = params.id;
     this.globalId = params.globalId;
@@ -415,26 +377,17 @@ export default class InventoryBaseRecord
     this.type = params.type;
     this.name = params.name;
     this.description = params.description;
-    this.extraFields = (params.extraFields ?? []).map(
-      (efParams) => new ExtraFieldModel(efParams, this),
-    );
+    this.extraFields = (params.extraFields ?? []).map((efParams) => new ExtraFieldModel(efParams, this));
     this.tags =
       params.tags === null || params.tags === ""
         ? []
         : params.tags.map((tag) => ({
             value: decodeTagString(tag.value),
-            uri:
-              tag.uri === ""
-                ? Optional.empty()
-                : Optional.present(decodeTagString(tag.uri)),
+            uri: tag.uri === "" ? Optional.empty() : Optional.present(decodeTagString(tag.uri)),
             vocabulary:
-              tag.ontologyName === ""
-                ? Optional.empty()
-                : Optional.present(decodeTagString(tag.ontologyName)),
+              tag.ontologyName === "" ? Optional.empty() : Optional.present(decodeTagString(tag.ontologyName)),
             version:
-              tag.ontologyVersion === ""
-                ? Optional.empty()
-                : Optional.present(decodeTagString(tag.ontologyVersion)),
+              tag.ontologyVersion === "" ? Optional.empty() : Optional.present(decodeTagString(tag.ontologyVersion)),
           }));
     this.lastModified = params.lastModified;
     this.created = params.created;
@@ -443,9 +396,7 @@ export default class InventoryBaseRecord
     this.deleted = params.deleted;
     this.permittedActions = new Set(params.permittedActions);
     this.attachments = (params.attachments ?? []).map((a) =>
-      newExistingAttachment(a, this.permalinkURL, () =>
-        this.setAttributesDirty({}),
-      ),
+      newExistingAttachment(a, this.permalinkURL, () => this.setAttributesDirty({})),
     );
     this.iconId = params.iconId;
     this.sharingMode = params.sharingMode;
@@ -456,20 +407,14 @@ export default class InventoryBaseRecord
     }
     this.processLinks(params._links);
 
-    if (
-      this.id !== null &&
-      this.permalinkURL &&
-      this.readAccessLevel !== "public"
-    ) {
+    if (this.id !== null && this.permalinkURL && this.readAccessLevel !== "public") {
       this.barcodes = [
         new GeneratedBarcode({
           /*
            * A barcode is a durable, physical artefact: it must always resolve
            * to the live record, never a version-pinned view.
            */
-          data: `${window.location.origin}/inventory/${this.recordType.toLowerCase()}/${
-            this.id
-          }`,
+          data: `${window.location.origin}/inventory/${this.recordType.toLowerCase()}/${this.id}`,
         }),
         ...params.barcodes.map((attrs) => factory.newBarcode(attrs)),
       ];
@@ -499,15 +444,14 @@ export default class InventoryBaseRecord
    * compounds when there are many thousands of search results in memory.
    */
   processLinks(_links: Array<_LINK>): void {
-    this._links = Object.fromEntries(
-      _links.map(({ link, rel }) => [rel, link]),
-    );
+    this._links = Object.fromEntries(_links.map(({ link, rel }) => [rel, link]));
   }
 
   setLoading(value: boolean): void {
     this.loading = value;
   }
 
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   setFieldsDirty(newFieldValues: {}) {
     this.setAttributesDirty(newFieldValues);
   }
@@ -520,6 +464,7 @@ export default class InventoryBaseRecord
     });
   }
 
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   setAttributesDirty(params: {}) {
     if (["create", "edit"].includes(this.state)) {
       if (this.state === "edit") {
@@ -541,6 +486,7 @@ export default class InventoryBaseRecord
     getRootStore().uiStore.unsetDirty();
   }
 
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   setAttributes(params: {}) {
     Object.assign(this, params);
   }
@@ -604,10 +550,8 @@ export default class InventoryBaseRecord
       globalId: this.globalId,
     };
     if (this.currentlyEditableFields.has("name")) params.name = this.name;
-    if (this.currentlyEditableFields.has("description"))
-      params.description = this.description;
-    if (this.currentlyEditableFields.has("extraFields"))
-      params.extraFields = extraFields;
+    if (this.currentlyEditableFields.has("description")) params.description = this.description;
+    if (this.currentlyEditableFields.has("extraFields")) params.extraFields = extraFields;
     if (this.currentlyEditableFields.has("tags")) {
       params.tags = this.tags.map((tag) => ({
         value: encodeTagString(tag.value),
@@ -617,19 +561,12 @@ export default class InventoryBaseRecord
       }));
     }
 
-    if (this.currentlyEditableFields.has("image"))
-      params.newBase64Image = this.newBase64Image;
+    if (this.currentlyEditableFields.has("image")) params.newBase64Image = this.newBase64Image;
     if (this.currentlyEditableFields.has("barcodes"))
-      params.barcodes = ArrayUtils.filterClass(
-        PersistedBarcode,
-        this.barcodes,
-      ).map((b) => b.paramsForBackend);
-    if (this.currentlyEditableFields.has("identifiers"))
-      params.identifiers = this.identifiers.map((i) => i.toJson());
-    if (this.currentlyEditableFields.has("sharingMode"))
-      params.sharingMode = this.sharingMode;
-    if (this.currentlyEditableFields.has("sharedWith"))
-      params.sharedWith = this.sharedWith;
+      params.barcodes = ArrayUtils.filterClass(PersistedBarcode, this.barcodes).map((b) => b.paramsForBackend);
+    if (this.currentlyEditableFields.has("identifiers")) params.identifiers = this.identifiers.map((i) => i.toJson());
+    if (this.currentlyEditableFields.has("sharingMode")) params.sharingMode = this.sharingMode;
+    if (this.currentlyEditableFields.has("sharedWith")) params.sharedWith = this.sharedWith;
     return params;
   }
 
@@ -637,49 +574,37 @@ export default class InventoryBaseRecord
     const validateName = () => {
       if (!this.isFieldEditable("name")) return IsValid();
       if (this.name.length < 1) return IsInvalid("Name cannot be empty.");
-      if (this.name.length < 2)
-        return IsInvalid("Name cannot be a single character.");
-      if (this.name.length > 255)
-        return IsInvalid("Name cannot be more than 255 characters.");
-      if (this.name.trim().length < 1)
-        return IsInvalid("Name cannot be just whitespace.");
+      if (this.name.length < 2) return IsInvalid("Name cannot be a single character.");
+      if (this.name.length > 255) return IsInvalid("Name cannot be more than 255 characters.");
+      if (this.name.trim().length < 1) return IsInvalid("Name cannot be just whitespace.");
       return IsValid();
     };
 
     const validateDescription = () => {
       if (!this.isFieldEditable("description")) return IsValid();
-      if (typeof this.description === "undefined" || this.description === null)
-        return IsValid();
+      if (typeof this.description === "undefined" || this.description === null) return IsValid();
       if (this.description.length <= 250) return IsValid();
       return IsInvalid("Description cannot be longer than 250 characters.");
     };
 
     const validateTags = () => {
       if (!this.isFieldEditable("tags")) return IsValid();
-      if (typeof this.tags === "undefined" || this.tags === null)
-        return IsValid();
+      if (typeof this.tags === "undefined" || this.tags === null) return IsValid();
       if (this.tags.join(",").length > 255) return IsInvalid("Too many tags.");
       return IsValid();
     };
 
     const validateExtraFields = () => {
-      if (!ArrayUtils.allAreUnique(this.fieldNamesInUse))
-        return IsInvalid("All field names must be distinct.");
+      if (!ArrayUtils.allAreUnique(this.fieldNamesInUse)) return IsInvalid("All field names must be distinct.");
       return allAreValid(this.extraFields.map((e) => e.isValid));
     };
 
-    return allAreValid([
-      validateName(),
-      validateDescription(),
-      validateTags(),
-      validateExtraFields(),
-    ]);
+    return allAreValid([validateName(), validateDescription(), validateTags(), validateExtraFields()]);
   }
 
   get submittable(): ValidationResult {
     return this.validate().flatMap(() => {
-      if (this.lockExpired)
-        return IsInvalid("Edit lock has expired. Please refresh.");
+      if (this.lockExpired) return IsInvalid("Edit lock has expired. Please refresh.");
       return IsValid();
     });
   }
@@ -716,9 +641,8 @@ export default class InventoryBaseRecord
         (await getRootStore().uiStore.confirm(
           "Your editing session is about to expire",
           <>
-            This session will expire in one minute. Please confirm if you want
-            to continue editing this {this.recordTypeLabel.toLowerCase()}. If
-            you cancel, your unsaved changes will be lost.
+            This session will expire in one minute. Please confirm if you want to continue editing this{" "}
+            {this.recordTypeLabel.toLowerCase()}. If you cancel, your unsaved changes will be lost.
           </>,
           "CONTINUE",
         ))
@@ -763,9 +687,8 @@ export default class InventoryBaseRecord
       await getRootStore().uiStore.confirm(
         "Your editing session has expired",
         <>
-          Another user may be editing this {this.recordTypeLabel.toLowerCase()}.
-          Please copy any information you need and then press{" "}
-          <strong>Cancel</strong>.
+          Another user may be editing this {this.recordTypeLabel.toLowerCase()}. Please copy any information you need
+          and then press <strong>Cancel</strong>.
         </>,
         "OK",
         "",
@@ -775,14 +698,9 @@ export default class InventoryBaseRecord
 
   handleLockExpiry(remainingSeconds: number) {
     if (remainingSeconds) {
-      this.lockExpiry = new Date(
-        this.lastEditInput.getTime() + remainingSeconds * 1000,
-      );
+      this.lockExpiry = new Date(this.lastEditInput.getTime() + remainingSeconds * 1000);
       void this.expiryCheck();
-      this.expiryCheckInterval = setInterval(
-        () => void this.expiryCheck(),
-        5000,
-      );
+      this.expiryCheckInterval = setInterval(() => void this.expiryCheck(), 5000);
     } else {
       clearInterval(this.expiryCheckInterval);
     }
@@ -800,31 +718,20 @@ export default class InventoryBaseRecord
   async releaseLock(silent: boolean = false): Promise<boolean | null> {
     try {
       if (!this.globalId) throw new Error("globalId is required.");
-      const response = await ApiService.delete<void>(
-        `editLocks/${this.globalId}`,
-        "",
-      );
+      const response = await ApiService.delete<void>(`editLocks/${this.globalId}`, "");
       return response.status === 200;
     } catch (error) {
       if (!silent) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: `Relinquishing control of ${
-              this.globalId ?? "UNKNOWN"
-            } failed`,
+            title: `Relinquishing control of ${this.globalId ?? "UNKNOWN"} failed`,
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           }),
         );
       }
-      console.error(
-        `Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`,
-        error,
-      );
-      throw new Error(
-        `Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`,
-        { cause: error },
-      );
+      console.error(`Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`, error);
+      throw new Error(`Error relinquishing control of ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     }
   }
 
@@ -864,11 +771,7 @@ export default class InventoryBaseRecord
     }
   }
 
-  async setEditing(
-    value: boolean,
-    refresh?: boolean | null,
-    silent?: boolean | null,
-  ): Promise<LockStatus> {
+  async setEditing(value: boolean, refresh?: boolean | null, silent?: boolean | null): Promise<LockStatus> {
     /*
      * Defence-in-depth: a historical version must never enter edit mode, as
      * saving would overwrite the live record with stale snapshot values. The
@@ -891,8 +794,7 @@ export default class InventoryBaseRecord
     try {
       if (value) {
         // editing (fresh or extended)
-        const { status, lockOwner, remainingTimeInSeconds } =
-          await this.checkLock(silent);
+        const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(silent);
         if (status === "LOCKED_OK") {
           runInAction(() => {
             this.lastEditInput = new Date();
@@ -938,6 +840,7 @@ export default class InventoryBaseRecord
         }
       } else {
         // canceling
+        // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
         let lockReleased;
         if (this.state === "edit") {
           lockReleased = await this.releaseLock(silent);
@@ -983,10 +886,7 @@ export default class InventoryBaseRecord
   }
 
   // to be implemented by the classes that extend this abtract one (and can be created inside a container)
-  get inContainerParams():
-    | ContainerInContainerParams
-    | SampleInContainerParams
-    | null {
+  get inContainerParams(): ContainerInContainerParams | SampleInContainerParams | null {
     return null;
   }
 
@@ -1018,9 +918,7 @@ export default class InventoryBaseRecord
      * selection across different searches. Note the use of `this` rather
      * than comparing IDs.
      */
-    const parentLocation = locations.find(
-      ({ content }) => (content as InventoryBaseRecord | null) === this,
-    );
+    const parentLocation = locations.find(({ content }) => (content as InventoryBaseRecord | null) === this);
 
     // this check is necessary to avoid stack overflow
     if (parentLocation?.selected !== value) {
@@ -1050,10 +948,7 @@ export default class InventoryBaseRecord
         this.historicalVersion && this.version !== null
           ? `${this.recordType}s/${id}/versions/${this.version}`
           : `${this.recordType}s/${id}`;
-      this.fetchingAdditionalInfo = ApiService.query<object>(
-        endpoint,
-        new URLSearchParams(queryParameters),
-      );
+      this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
       const { data } = await this.fetchingAdditionalInfo;
       this.fetchingAdditionalInfo = null;
       runInAction(() => {
@@ -1067,22 +962,14 @@ export default class InventoryBaseRecord
       if (!silent) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: `Could not load full details of ${
-              this.globalId ?? "UNKNOWN"
-            }.`,
+            title: `Could not load full details of ${this.globalId ?? "UNKNOWN"}.`,
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
           }),
         );
       }
-      console.error(
-        `Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`,
-        error,
-      );
-      throw new Error(
-        `Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`,
-        { cause: error },
-      );
+      console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
+      throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     } finally {
       this.setLoading(false);
     }
@@ -1104,10 +991,7 @@ export default class InventoryBaseRecord
         onUploadProgress: (progressEvent) =>
           this.setAttributes({
             uploadProgress: progressEvent.total
-              ? calculateUploadProgress(
-                  progressEvent.loaded,
-                  progressEvent.total,
-                )
+              ? calculateUploadProgress(progressEvent.loaded, progressEvent.total)
               : 0,
           }),
       });
@@ -1138,10 +1022,7 @@ export default class InventoryBaseRecord
           variant: "success",
         }),
       );
-      trackingStore.trackEvent(
-        "InventoryRecordCreated",
-        this.dataAttachedToRecordCreatedAnaylticsEvent,
-      );
+      trackingStore.trackEvent("InventoryRecordCreated", this.dataAttachedToRecordCreatedAnaylticsEvent);
       if (peopleStore.currentUser) await peopleStore.currentUser.getBench();
     } catch (error) {
       this.setAttributes({
@@ -1149,14 +1030,9 @@ export default class InventoryBaseRecord
       });
       Parsers.objectPath(["response"], error).do((response) => {
         try {
-          const statusCode = Parsers.objectPath(["status"], response)
-            .flatMap(Parsers.isNumber)
-            .elseThrow();
+          const statusCode = Parsers.objectPath(["status"], response).flatMap(Parsers.isNumber).elseThrow();
           if (statusCode !== 400) throw new Error("Not a 400 status code");
-          const validationErrors = Parsers.objectPath(
-            ["data", "data", "validationErrors"],
-            response,
-          )
+          const validationErrors = Parsers.objectPath(["data", "data", "validationErrors"], response)
             .flatMap(Parsers.isArray)
             .elseThrow();
           const newAlert = mkAlert({
@@ -1167,28 +1043,18 @@ export default class InventoryBaseRecord
                 Parsers.isObject(e)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) =>
-                    Result.lift2<
-                      string,
-                      string,
-                      { title: string; help: string; variant: "error" }
-                    >((title, help) => ({
+                    Result.lift2<string, string, { title: string; help: string; variant: "error" }>((title, help) => ({
                       title,
                       help,
                       variant: "error",
                     }))(
-                      Parsers.getValueWithKey("field")(obj).flatMap(
-                        Parsers.isString,
-                      ),
-                      Parsers.getValueWithKey("message")(obj).flatMap(
-                        Parsers.isString,
-                      ),
+                      Parsers.getValueWithKey("field")(obj).flatMap(Parsers.isString),
+                      Parsers.getValueWithKey("message")(obj).flatMap(Parsers.isString),
                     ),
                   ),
               ),
             )
-              .mapError(
-                () => new Error("Could not parse any validation errors"),
-              )
+              .mapError(() => new Error("Could not parse any validation errors"))
               .elseThrow(),
             retryFunction: () => this.update().then(() => {}),
           });
@@ -1217,6 +1083,8 @@ export default class InventoryBaseRecord
    * This provides a mechanism for the child classes to attach additional data
    * this analytics event
    */
+
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   get dataAttachedToRecordCreatedAnaylticsEvent(): {} {
     return {
       type: this.recordType,
@@ -1229,22 +1097,14 @@ export default class InventoryBaseRecord
     try {
       const params = { ...this.paramsForBackend };
       if (!this.id) throw new Error("id is required.");
-      const { data } = await ApiService.update<unknown>(
-        `${this.recordType}s`,
-        this.id,
-        params,
-        {
-          onUploadProgress: (progressEvent: AxiosProgressEvent) =>
-            this.setAttributes({
-              uploadProgress: progressEvent.total
-                ? calculateUploadProgress(
-                    progressEvent.loaded,
-                    progressEvent.total,
-                  )
-                : 0,
-            }),
-        },
-      );
+      const { data } = await ApiService.update<unknown>(`${this.recordType}s`, this.id, params, {
+        onUploadProgress: (progressEvent: AxiosProgressEvent) =>
+          this.setAttributes({
+            uploadProgress: progressEvent.total
+              ? calculateUploadProgress(progressEvent.loaded, progressEvent.total)
+              : 0,
+          }),
+      });
       try {
         await this.saveAttachments();
       } catch (error) {
@@ -1271,14 +1131,9 @@ export default class InventoryBaseRecord
       });
       Parsers.objectPath(["response"], error).do((response) => {
         try {
-          const statusCode = Parsers.objectPath(["status"], response)
-            .flatMap(Parsers.isNumber)
-            .elseThrow();
+          const statusCode = Parsers.objectPath(["status"], response).flatMap(Parsers.isNumber).elseThrow();
           if (statusCode !== 400) throw new Error("Not a 400 status code");
-          const validationErrors = Parsers.objectPath(
-            ["data", "data", "validationErrors"],
-            response,
-          )
+          const validationErrors = Parsers.objectPath(["data", "data", "validationErrors"], response)
             .flatMap(Parsers.isArray)
             .elseThrow();
           const newAlert = mkAlert({
@@ -1289,28 +1144,18 @@ export default class InventoryBaseRecord
                 Parsers.isObject(e)
                   .flatMap(Parsers.isNotNull)
                   .flatMap((obj) =>
-                    Result.lift2<
-                      string,
-                      string,
-                      { title: string; help: string; variant: "error" }
-                    >((title, help) => ({
+                    Result.lift2<string, string, { title: string; help: string; variant: "error" }>((title, help) => ({
                       title,
                       help,
                       variant: "error",
                     }))(
-                      Parsers.getValueWithKey("field")(obj).flatMap(
-                        Parsers.isString,
-                      ),
-                      Parsers.getValueWithKey("message")(obj).flatMap(
-                        Parsers.isString,
-                      ),
+                      Parsers.getValueWithKey("field")(obj).flatMap(Parsers.isString),
+                      Parsers.getValueWithKey("message")(obj).flatMap(Parsers.isString),
                     ),
                   ),
               ),
             )
-              .mapError(
-                () => new Error("Could not parse any validation errors"),
-              )
+              .mapError(() => new Error("Could not parse any validation errors"))
               .elseThrow(),
             retryFunction: () => this.update().then(() => {}),
           });
@@ -1348,7 +1193,7 @@ export default class InventoryBaseRecord
   }
 
   isFieldVisible(field: string): boolean {
-    if (this.editing || this.id === null || !this.hasOwnProperty(field)) {
+    if (this.editing || this.id === null || !Object.hasOwn(this, field)) {
       return this.currentlyVisibleFields.has(field);
     }
     return (
@@ -1435,10 +1280,7 @@ export default class InventoryBaseRecord
     }
   }
 
-  updateExtraField(
-    oldFieldName: string,
-    updatedField: { name: string; type: string },
-  ) {
+  updateExtraField(oldFieldName: string, updatedField: { name: string; type: string }) {
     const field = this.extraFields.find((ef) => ef.name === oldFieldName);
 
     if (field) {
@@ -1449,10 +1291,7 @@ export default class InventoryBaseRecord
         content: field.type !== updatedField.type ? "" : field.content,
       };
       const justNameAndType = pick("name", "type");
-      const areEqual = sameKeysAndValues(
-        justNameAndType(field),
-        justNameAndType(updatedField),
-      );
+      const areEqual = sameKeysAndValues(justNameAndType(field), justNameAndType(updatedField));
       if (areEqual) {
         field.setAttributes(attrs);
       } else {
@@ -1468,8 +1307,7 @@ export default class InventoryBaseRecord
         await getRootStore().uiStore.confirm(
           "You are about to create an Identifier",
           <>
-            An IGSN ID in <strong>Draft</strong> state will be created. No
-            metadata will be made public at this stage.
+            An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.
           </>,
           "OK",
           "CANCEL",
@@ -1477,17 +1315,10 @@ export default class InventoryBaseRecord
       ) {
         const globalId = this.globalId;
         if (!globalId) throw new Error("Global Id is required.");
-        const response = await ApiService.post<IdentifierAttrs>(
-          `/identifiers`,
-          {
-            parentGlobalId: globalId,
-          },
-        );
-        const newIGSN = new IdentifierModel(
-          response.data,
-          globalId,
-          ApiService,
-        );
+        const response = await ApiService.post<IdentifierAttrs>(`/identifiers`, {
+          parentGlobalId: globalId,
+        });
+        const newIGSN = new IdentifierModel(response.data, globalId, ApiService);
         this.identifiers = this.identifiers.concat(newIGSN);
         getRootStore().searchStore.search.replaceResult(this);
         getRootStore().uiStore.addAlert(
@@ -1506,9 +1337,7 @@ export default class InventoryBaseRecord
           variant: "error",
         }),
       );
-      throw new Error(
-        `An error occurred while minting the identifier: ${error}`,
-      );
+      throw new Error(`An error occurred while minting the identifier: ${error}`);
     } finally {
       this.setLoading(false);
     }
@@ -1521,22 +1350,17 @@ export default class InventoryBaseRecord
         await getRootStore().uiStore.confirm(
           "You are about to delete this Identifier",
           <>
-            The IGSN ID will be deleted, and this item will no longer have an
-            IGSN ID associated with it. Do you want to proceed?
+            The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to
+            proceed?
           </>,
           "OK",
           "CANCEL",
         )
       ) {
         if (!id) throw new Error("DOI Id must be known.");
-        const response = await ApiService.delete<unknown>(
-          `/identifiers/${id}`,
-          "",
-        );
+        const response = await ApiService.delete<unknown>(`/identifiers/${id}`, "");
         if (response.data) {
-          const index = this.identifiers.findIndex(
-            (identifier) => identifier.id === id,
-          );
+          const index = this.identifiers.findIndex((identifier) => identifier.id === id);
           this.identifiers.splice(index, 1);
           getRootStore().uiStore.addAlert(
             mkAlert({
@@ -1554,9 +1378,7 @@ export default class InventoryBaseRecord
           variant: "error",
         }),
       );
-      throw new Error(
-        `An error occurred while deleting the identifier draft: ${error}`,
-      );
+      throw new Error(`An error occurred while deleting the identifier draft: ${error}`);
     } finally {
       this.setLoading(false);
     }
@@ -1567,9 +1389,7 @@ export default class InventoryBaseRecord
     this.setAttributesDirty({ identifiers: this.identifiers });
   }
 
-  fetchImage(
-    name: "image" | "locationsImage" | "thumbnail",
-  ): Promise<BlobUrl | null> {
+  fetchImage(name: "image" | "locationsImage" | "thumbnail"): Promise<BlobUrl | null> {
     const link = this._links[name];
     if (!link) return Promise.resolve(null);
     return getRootStore()
@@ -1627,9 +1447,7 @@ export default class InventoryBaseRecord
 
   contextMenuDisabled(): string | null {
     return this.historicalVersion
-      ? `Cannot modify a historical version of a ${
-          this.recordTypeLabel.toLowerCase() || "record"
-        }.`
+      ? `Cannot modify a historical version of a ${this.recordTypeLabel.toLowerCase() || "record"}.`
       : null;
   }
 
@@ -1788,8 +1606,7 @@ export default class InventoryBaseRecord
    * The current value of the editable fields, as required by the interface
    * `HasEditableFields` and `HasUneditableFields`.
    */
-  get fieldValues(): InventoryBaseRecordEditableFields &
-    InventoryBaseRecordUneditableFields {
+  get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields {
     return {
       name: this.name,
       description: this.description,

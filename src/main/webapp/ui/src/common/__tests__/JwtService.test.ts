@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import JwtService from "@/common/JwtService";
 
-const originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(
-  globalThis,
-  "sessionStorage",
-);
+const originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
 
 describe("JwtService", () => {
   beforeEach(() => {
@@ -13,11 +10,7 @@ describe("JwtService", () => {
 
   afterEach(() => {
     if (originalSessionStorageDescriptor) {
-      Object.defineProperty(
-        globalThis,
-        "sessionStorage",
-        originalSessionStorageDescriptor,
-      );
+      Object.defineProperty(globalThis, "sessionStorage", originalSessionStorageDescriptor);
     }
   });
 
@@ -66,4 +59,3 @@ describe("JwtService", () => {
     expect(() => JwtService.destroyToken()).not.toThrow();
   });
 });
-

@@ -1,18 +1,18 @@
-import Grid from "@mui/material/Grid";
-import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import BoxIcon from "../../../assets/branding/box/logo.svg";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
-import RadioGroup from "@mui/material/RadioGroup";
-import Radio from "@mui/material/Radio";
 import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import Grid from "@mui/material/Grid";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
-import { Optional } from "../../../util/optional";
+import React from "react";
 import { LOGO_COLOR } from "../../../assets/branding/box";
+import BoxIcon from "../../../assets/branding/box/logo.svg";
+import { Optional } from "../../../util/optional";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type BoxArgs = {
   integrationState: IntegrationStates["BOX"];
@@ -30,17 +30,16 @@ type BoxArgs = {
  * document editor.
  */
 function Box({ integrationState, update }: BoxArgs): React.ReactNode {
-  const [linkType, setLinkType] = React.useState(
-    integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE")
-  );
+  const [linkType, setLinkType] = React.useState(integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE"));
 
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Box"
         explanatoryText="Collaborate with anyone from anywhere with a content management and workflow cloud."
@@ -59,10 +58,7 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
             <ol>
               <li>Enable the integration.</li>
               <li>Check that the link type option below is correct.</li>
-              <li>
-                When editing a document, click on the Box icon in the text
-                editor toolbar.
-              </li>
+              <li>When editing a document, click on the Box icon in the text editor toolbar.</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
@@ -72,19 +68,15 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                     mode: integrationState.mode,
                     credentials: {
                       BOX_LINK_TYPE: Optional.present(linkType),
-                      "box.api.enabled":
-                        integrationState.credentials["box.api.enabled"],
+                      "box.api.enabled": integrationState.credentials["box.api.enabled"],
                     },
                   });
                 }}
               >
                 <CardContent>
-                  {!integrationState.credentials["box.api.enabled"].orElse(
-                    false
-                  ) && (
+                  {!integrationState.credentials["box.api.enabled"].orElse(false) && (
                     <Typography variant="body2">
-                      To enable the disabled options, please contact your
-                      sysadmin.
+                      To enable the disabled options, please contact your sysadmin.
                     </Typography>
                   )}
                   <RadioGroup
@@ -100,12 +92,8 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                       label={
                         <>
                           <Typography variant="body1">Live</Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontSize: "0.825em" }}
-                          >
-                            Only live links (that always point to the latest
-                            version of the file) are inserted.
+                          <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
+                            Only live links (that always point to the latest version of the file) are inserted.
                           </Typography>
                         </>
                       }
@@ -113,23 +101,14 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                     <FormControlLabel
                       value="VERSIONED"
                       sx={{ alignItems: "flex-start" }}
-                      disabled={
-                        !integrationState.credentials["box.api.enabled"].orElse(
-                          false
-                        )
-                      }
+                      disabled={!integrationState.credentials["box.api.enabled"].orElse(false)}
                       control={<Radio />}
                       label={
                         <>
                           <Typography variant="body1">Versioned</Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontSize: "0.825em" }}
-                          >
-                            If the file is updated in Box after you made the
-                            link, you&apos;ll still be able to download the
-                            original version. This feature only works for
-                            premium Box accounts.
+                          <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
+                            If the file is updated in Box after you made the link, you&apos;ll still be able to download
+                            the original version. This feature only works for premium Box accounts.
                           </Typography>
                         </>
                       }
@@ -137,24 +116,15 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                     <FormControlLabel
                       value="ASK"
                       sx={{ alignItems: "flex-start" }}
-                      disabled={
-                        !integrationState.credentials["box.api.enabled"].orElse(
-                          false
-                        )
-                      }
+                      disabled={!integrationState.credentials["box.api.enabled"].orElse(false)}
                       control={<Radio />}
                       label={
                         <>
                           <Typography variant="body1">
-                            Decide between live and versioned links when
-                            inserting a link.
+                            Decide between live and versioned links when inserting a link.
                           </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontSize: "0.825em" }}
-                          >
-                            This allows some links to be to live files and some
-                            to be to older versions.
+                          <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
+                            This allows some links to be to live files and some to be to older versions.
                           </Typography>
                         </>
                       }

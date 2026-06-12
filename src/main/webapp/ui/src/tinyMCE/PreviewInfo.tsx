@@ -1,20 +1,21 @@
-import React, { useEffect } from "react";
-import ChemCard from "./ChemCard";
-import { createRoot } from "react-dom/client";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import createAccentedTheme from "../accentedTheme";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type React from "react";
+import { useEffect } from "react";
+import { createRoot } from "react-dom/client";
 import { ACCENT_COLOR } from "@/assets/branding/chemistry";
-import ErrorBoundary from "@/components/ErrorBoundary";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import createAccentedTheme from "../accentedTheme";
 import { useIntegrationIsAllowedAndEnabled } from "../hooks/api/integrationHelpers";
 import * as FetchingData from "../util/fetchingData";
+import ChemCard from "./ChemCard";
 import StoichiometryTable from "./stoichiometry/StoichiometryTable";
 
 type PreviewInfoItem = Record<string, string | undefined>;
@@ -34,8 +35,7 @@ function getStoichiometryReference(raw: string | undefined) {
       revision?: number | string;
     };
     const parsedId = typeof id === "number" ? id : Number(id);
-    const parsedRevision =
-      typeof revision === "number" ? revision : Number(revision);
+    const parsedRevision = typeof revision === "number" ? revision : Number(revision);
 
     if (Number.isNaN(parsedId)) {
       return null;
@@ -63,9 +63,7 @@ function getAttributes(domNode: Element | null): PreviewInfoItem {
 function getPreviewNodes(detail?: string | number): Array<HTMLElement> {
   const selector = `img.chem, div[${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true"]`;
   const container =
-    typeof detail === "string" || typeof detail === "number"
-      ? document.getElementById(`div_${detail}`)
-      : document;
+    typeof detail === "string" || typeof detail === "number" ? document.getElementById(`div_${detail}`) : document;
 
   if (!container) {
     return [];
@@ -95,29 +93,21 @@ export function StoichiometryPreviewSection({
             {FetchingData.match(chemistryStatus, {
               loading: () => (
                 <Box sx={{ p: 2 }}>
-                  <Alert severity="info">
-                    Checking chemistry integration status...
-                  </Alert>
+                  <Alert severity="info">Checking chemistry integration status...</Alert>
                 </Box>
               ),
               error: (error) => (
                 <Box sx={{ p: 2 }}>
-                  <Alert severity="error">
-                    Error checking chemistry integration: {String(error)}
-                  </Alert>
+                  <Alert severity="error">Error checking chemistry integration: {String(error)}</Alert>
                 </Box>
               ),
               success: (isEnabled) =>
                 isEnabled ? (
-                  <StoichiometryTable
-                    stoichiometryId={stoichiometryId}
-                    stoichiometryRevision={stoichiometryRevision}
-                  />
+                  <StoichiometryTable stoichiometryId={stoichiometryId} stoichiometryRevision={stoichiometryRevision} />
                 ) : (
                   <Box sx={{ p: 2 }}>
                     <Alert severity="warning">
-                      Chemistry integration is not enabled. Please contact your
-                      administrator to enable it.
+                      Chemistry integration is not enabled. Please contact your administrator to enable it.
                     </Alert>
                   </Box>
                 ),
@@ -129,13 +119,7 @@ export function StoichiometryPreviewSection({
   );
 }
 
-function PreviewInfoFrame({
-  children,
-  isTableOnly = false,
-}: {
-  children: React.ReactNode;
-  isTableOnly?: boolean;
-}) {
+function PreviewInfoFrame({ children, isTableOnly = false }: { children: React.ReactNode; isTableOnly?: boolean }) {
   const theme = createAccentedTheme(ACCENT_COLOR);
 
   return (
@@ -165,9 +149,7 @@ function PreviewInfoFrame({
 }
 
 export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
-  const stoichiometryReference = getStoichiometryReference(
-    item["data-stoichiometry-table"],
-  );
+  const stoichiometryReference = getStoichiometryReference(item["data-stoichiometry-table"]);
   const isTableOnly = item[STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE] === "true";
 
   useEffect(() => {
@@ -197,9 +179,10 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
         }}
       >
         <Box sx={{ alignSelf: "center", mx: "auto" }}>
+          {/** biome-ignore lint/a11y/useAltText: initial biome migration */}
           <img
             id={item.id}
-            className={item["class"]}
+            className={item.class}
             src={item.src}
             width={item.width}
             height={item.height}
@@ -264,16 +247,14 @@ function handleDocumentPlaced(event: Event & { detail?: string | number }) {
 function handleChemUpdated(event: Event & { detail?: string | number }) {
   const selector = event.detail ? `#div_${event.detail} img.chem` : "img.chem";
 
-  document
-    .querySelectorAll<HTMLImageElement>(selector)
-    .forEach((domContainer) => {
-      const span = domContainer.closest("span");
-      if (!span) {
-        return;
-      }
+  document.querySelectorAll<HTMLImageElement>(selector).forEach((domContainer) => {
+    const span = domContainer.closest("span");
+    if (!span) {
+      return;
+    }
 
-      render(getAttributes(domContainer), span);
-    });
+    render(getAttributes(domContainer), span);
+  });
 }
 
 document.addEventListener("document-placed", handleDocumentPlaced);

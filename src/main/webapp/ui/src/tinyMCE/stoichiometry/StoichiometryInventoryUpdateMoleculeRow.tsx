@@ -1,13 +1,13 @@
-import React from "react";
 import Alert, { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
+import { alpha, type Theme, useTheme } from "@mui/material/styles";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import { alpha, type Theme, useTheme } from "@mui/material/styles";
+import React from "react";
 import GlobalId from "@/components/GlobalId";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import StockMetricCell, {
@@ -82,10 +82,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
   const nameId = React.useId();
   const helperTextId = React.useId();
   const warningTextId = React.useId();
-  const describedBy = [
-    helperText ? helperTextId : null,
-    stockDisplay.warningText ? warningTextId : null,
-  ]
+  const describedBy = [helperText ? helperTextId : null, stockDisplay.warningText ? warningTextId : null]
     .filter(Boolean)
     .join(" ");
   const defaultMetricColors = getMetricColors(theme, {
@@ -96,9 +93,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
   });
   const moleculeName = molecule.name ?? "Unnamed molecule";
   const mainRowHasSubRow = Boolean(helperText);
-  const rowBackgroundColor = selected
-    ? alpha(theme.palette.primary.main, 0.06)
-    : theme.palette.background.paper;
+  const rowBackgroundColor = selected ? alpha(theme.palette.primary.main, 0.06) : theme.palette.background.paper;
   const sharedRowCellSx = {
     backgroundColor: rowBackgroundColor,
   } as const;
@@ -117,12 +112,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
           },
         }}
       >
-        <TableCell
-          padding="checkbox"
-          data-column="Actions"
-          width={52}
-          sx={{ px: 0.5 }}
-        >
+        <TableCell padding="checkbox" data-column="Actions" width={52} sx={{ px: 0.5 }}>
           <Box
             data-dimmed={disabled ? "true" : "false"}
             sx={{
@@ -154,45 +144,20 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
         </TableCell>
         <TableCell data-column="Molecule" sx={{ py: 1.5 }}>
           <Stack spacing={0.75}>
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center", flexWrap: "wrap" }}
-            >
-              <Typography
-                id={nameId}
-                variant="subtitle1"
-                component="h3"
-                sx={{ fontWeight: 600 }}
-              >
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+              <Typography id={nameId} variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
                 {moleculeName}
               </Typography>
-              {molecule.role && (
-                <StoichiometryTableRoleChip role={molecule.role} />
-              )}
+              {molecule.role && <StoichiometryTableRoleChip role={molecule.role} />}
             </Stack>
             {molecule.inventoryLink && (
-              <Stack
-                direction="row"
-                spacing={0.75}
-                sx={{ flexWrap: "wrap" }}
-                useFlexGap
-              >
+              <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }} useFlexGap>
                 <GlobalId
-                  record={
-                    new LinkableRecordFromGlobalId(
-                      molecule.inventoryLink.inventoryItemGlobalId,
-                    )
-                  }
+                  record={new LinkableRecordFromGlobalId(molecule.inventoryLink.inventoryItemGlobalId)}
                   onClick={() => {}}
                 />
                 {molecule.inventoryLink.stockDeducted && (
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    color="warning"
-                    label="Stock Deducted"
-                  />
+                  <Chip size="small" variant="outlined" color="warning" label="Stock Deducted" />
                 )}
               </Stack>
             )}
@@ -232,12 +197,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
         >
           <TableCell padding="checkbox" sx={{ px: 0.5 }} />
           <TableCell colSpan={5} sx={{ pt: 0, pb: 1.25 }}>
-            <Alert
-              id={helperTextId}
-              severity="warning"
-              variant="standard"
-              sx={getHelperAlertSx(theme)}
-            >
+            <Alert id={helperTextId} severity="warning" variant="standard" sx={getHelperAlertSx(theme)}>
               {helperText}
             </Alert>
           </TableCell>

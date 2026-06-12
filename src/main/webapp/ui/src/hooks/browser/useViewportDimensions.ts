@@ -1,6 +1,6 @@
-import React from "react";
+import { computed, makeObservable, observable, runInAction } from "mobx";
 import { useLocalObservable } from "mobx-react-lite";
-import { runInAction, makeObservable, observable, computed } from "mobx";
+import React from "react";
 import theme from "../../theme";
 
 class ViewportDimensions {
@@ -56,11 +56,7 @@ class ViewportDimensions {
   }
 
   get isViewportNotLarge(): boolean {
-    return (
-      this.viewportSize === "xs" ||
-      this.viewportSize === "sm" ||
-      this.viewportSize === "md"
-    );
+    return this.viewportSize === "xs" || this.viewportSize === "sm" || this.viewportSize === "md";
   }
 }
 
@@ -112,7 +108,6 @@ export default function useViewportDimensions(): ViewportDimensions {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-
   }, []);
 
   return viewportDimensions;

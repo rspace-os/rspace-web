@@ -1,12 +1,8 @@
-import { describe, test, expect, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import { render, screen, waitFor, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
-import {
-  ProgressExample,
-  SimpleExample,
-} from "./ValidatingSubmitButton.story";
+import { expectAccessible, render, screen, waitFor } from "@/__tests__/customQueries";
+import { ProgressExample, SimpleExample } from "./ValidatingSubmitButton.story";
 
 /*
  * Converted from ValidatingSubmitButton.spec.tsx (Playwright CT). The render,
@@ -25,10 +21,7 @@ describe("ValidatingSubmitButton", () => {
 
   test("The button should have type 'submit'", () => {
     render(<ProgressExample onClick={() => {}} />);
-    expect(screen.getByRole("button", { name: /Submit/ })).toHaveAttribute(
-      "type",
-      "submit"
-    );
+    expect(screen.getByRole("button", { name: /Submit/ })).toHaveAttribute("type", "submit");
   });
 
   test("When the button is loading, it should be disabled", async () => {
@@ -89,7 +82,7 @@ describe("ValidatingSubmitButton", () => {
         () => {
           expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
         },
-        { timeout: 10000 }
+        { timeout: 10000 },
       );
     }, 15000);
   });
@@ -111,9 +104,7 @@ describe("ValidatingSubmitButton", () => {
       await user.click(screen.getByRole("button", { name: /Set Invalid/ }));
       await user.click(screen.getByRole("button", { name: "Submit" }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(
-        await screen.findByRole("alert", { name: "Warning" })
-      ).toBeVisible();
+      expect(await screen.findByRole("alert", { name: "Warning" })).toBeVisible();
     });
   });
 });

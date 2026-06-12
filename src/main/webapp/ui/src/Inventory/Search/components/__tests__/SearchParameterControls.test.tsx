@@ -1,28 +1,28 @@
-import React from "react";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
-import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-import { storesContext } from "../../../../stores/stores-context";
-import Search from "../../../../stores/models/Search";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import SearchParameterControls from "../SearchParameterControls";
-import { ThemeProvider } from "@mui/material/styles";
+import Search from "../../../../stores/models/Search";
+import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
+import SearchParameterControls from "../SearchParameterControls";
 import "@/__tests__/__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
-import { test, type Mock, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
+
 vi.mock("../../../../common/InvApiService", () => ({
-  default: {
-  }}));
+  default: {},
+}));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  searchStore: {
-    search: null,
-    savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
-    savedBaskets: [],
-  },
-})
+    searchStore: {
+      search: null,
+      savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
+      savedBaskets: [],
+    },
+  }),
 }));
 
 window.fetch = vi.fn(() =>
@@ -35,15 +35,14 @@ window.fetch = vi.fn(() =>
     statusText: "OK",
     type: "basic",
     url: "",
-    clone: () => ({} as Response),
+    clone: () => ({}) as Response,
     body: null,
     bodyUsed: false,
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
     blob: () => Promise.resolve(new Blob()),
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
-  } as Response)
-
+  } as Response),
 );
 describe("SearchParameterControls", () => {
   describe("Saved searches controls", () => {
@@ -54,14 +53,12 @@ describe("SearchParameterControls", () => {
           savedSearches: [{ name: "Test search", resultType: "SAMPLE" }],
           savedBaskets: [],
         },
-
       });
       const search = new Search({
         factory: mockFactory(),
         uiConfig: {
           allowedTypeFilters: new Set(["CONTAINER"]),
         },
-
       });
       render(
         <ThemeProvider theme={materialTheme}>
@@ -75,14 +72,10 @@ describe("SearchParameterControls", () => {
               <SearchParameterControls />
             </SearchContext.Provider>
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
-      expect(
-        screen.getByRole("menuitem", { name: /^Test search/ })
-      ).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("menuitem", { name: /^Test search/ })).toHaveAttribute("aria-disabled", "true");
     });
   });
 });
-

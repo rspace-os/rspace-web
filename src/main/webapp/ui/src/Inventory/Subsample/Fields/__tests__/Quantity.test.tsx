@@ -1,27 +1,20 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  fireEvent,
-  screen,
-} from "@testing-library/react";
-import Quantity from "../Quantity";
 import { ThemeProvider } from "@mui/material/styles";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
-import { type Quantity as QuantityType } from "../../../../stores/definitions/HasQuantity";
+import Quantity from "../Quantity";
 
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  unitStore: {
-    unitsOfCategory: vi.fn(() => [
-      { id: 5, label: "µg", category: "mass" },
-      { id: 6, label: "mg", category: "mass" },
-      { id: 7, label: "g", category: "mass" },
-    ]),
-    getUnit: vi.fn(),
-  },
-})
-
+    unitStore: {
+      unitsOfCategory: vi.fn(() => [
+        { id: 5, label: "µg", category: "mass" },
+        { id: 6, label: "mg", category: "mass" },
+        { id: 7, label: "g", category: "mass" },
+      ]),
+      getUnit: vi.fn(),
+    },
+  }),
 }));
 describe("Quantity", () => {
   test("Should support scientific notation.", () => {
@@ -49,8 +42,7 @@ describe("Quantity", () => {
           }}
           quantityCategory="mass"
         />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     const input = screen.getByDisplayValue(INITIAL_VALUE);
 
@@ -63,4 +55,3 @@ describe("Quantity", () => {
     });
   });
 });
-

@@ -1,34 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+import Skeleton from "@mui/material/Skeleton";
 import Table from "@mui/material/Table";
-import TableRow from "@mui/material/TableRow";
+import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
-import TableBody from "@mui/material/TableBody";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useState } from "react";
+import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
-import { type Factory } from "../../../stores/definitions/Factory";
-import RsSet, { unionWith } from "../../../util/set";
-import Skeleton from "@mui/material/Skeleton";
 import NoValue from "../../../components/NoValue";
-import {
-  type Document,
-  type DocumentAttrs,
-} from "../../../stores/definitions/Document";
-import Alert from "@mui/material/Alert";
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
 import UserDetails from "../../../components/UserDetails";
-import Typography from "@mui/material/Typography";
-import docLinks from "../../../assets/DocLinks";
-import Box from "@mui/material/Box";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
+import type { Document, DocumentAttrs } from "../../../stores/definitions/Document";
+import type { Factory } from "../../../stores/definitions/Factory";
+import RsSet, { unionWith } from "../../../util/set";
 
 type State =
   | { state: "init" }
@@ -41,10 +39,7 @@ type LinkedDocumentsArgs = {
   factory: Factory | null;
 };
 
-function LinkedDocuments({
-  globalId,
-  factory,
-}: LinkedDocumentsArgs): React.ReactNode {
+function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>({ state: "init" });
 
@@ -54,9 +49,9 @@ function LinkedDocuments({
       setState({ state: "loading" });
       void (async () => {
         try {
-          const { data } = await ApiService.get<
-            Array<{ elnDocument: DocumentAttrs }>
-          >(`listOfMaterials/forInventoryItem/${globalId}`);
+          const { data } = await ApiService.get<Array<{ elnDocument: DocumentAttrs }>>(
+            `listOfMaterials/forInventoryItem/${globalId}`,
+          );
 
           // always use a new factory so that closing and reopening the
           // dialog uses the newly fetched data
@@ -69,11 +64,7 @@ function LinkedDocuments({
             documents: unionWith(
               ({ id }: Document) => id,
               data.map(
-                ({
-                  elnDocument: { globalId: docGlobalId, name, id, owner },
-                }: {
-                  elnDocument: DocumentAttrs;
-                }) =>
+                ({ elnDocument: { globalId: docGlobalId, name, id, owner } }: { elnDocument: DocumentAttrs }) =>
                   new RsSet([
                     newFactory.newDocument({
                       globalId: docGlobalId,
@@ -109,23 +100,15 @@ function LinkedDocuments({
         <Dialog open={open} onClose={() => setOpen(false)}>
           <DialogTitle>Linked Documents</DialogTitle>
           <DialogContent>
-            {state.state === "loading" && (
-              <Skeleton variant="rectangular" width={210} height={118} />
-            )}
-            {state.state === "fail" && (
-              <Alert severity="error">{state.error.message}</Alert>
-            )}
+            {state.state === "loading" && <Skeleton variant="rectangular" width={210} height={118} />}
+            {state.state === "fail" && <Alert severity="error">{state.error.message}</Alert>}
             {state.state === "success" && state.documents.size === 0 && (
               <>
                 <NoValue label="None" />
                 <Box sx={{ mt: 1 }}>
                   <Typography variant="body1">
                     Adding this item to a document&apos;s{" "}
-                    <a
-                      href={docLinks.listOfMaterials}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
+                    <a href={docLinks.listOfMaterials} rel="noreferrer" target="_blank">
                       List of Materials
                     </a>{" "}
                     will add an entry for the document in this panel.

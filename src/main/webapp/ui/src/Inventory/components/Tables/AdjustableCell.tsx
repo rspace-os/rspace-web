@@ -1,17 +1,14 @@
 import TableCell from "@mui/material/TableCell";
-import {
-  type AdjustableTableRow,
-  type AdjustableTableRowLabel,
-  type CellContent,
-} from "../../../stores/definitions/Tables";
-import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import GlobalId from "../../../components/GlobalId";
-import { RecordLink } from "../../../Inventory/components/RecordLink";
-import UserDetails from "../../../components/UserDetails";
-import RecordLocation from "../../../Inventory/components/RecordLocation";
 import TagListing from "../../../components/Tags/TagListing";
+import UserDetails from "../../../components/UserDetails";
+import { RecordLink } from "../../../Inventory/components/RecordLink";
+import RecordLocation from "../../../Inventory/components/RecordLocation";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import type { AdjustableTableRow, AdjustableTableRowLabel, CellContent } from "../../../stores/definitions/Tables";
 
 type AdjustableCellArgs<T extends AdjustableTableRowLabel> = {
   dataSource: AdjustableTableRow<T>;
@@ -26,9 +23,9 @@ function AdjustableCell<T extends AdjustableTableRowLabel>({
   const navigate = useNavigate();
 
   const selectedContent = (
-    dataSource.adjustableTableOptions().get(selectedOption) ??
-    (() => ({ renderOption: "node", data: null }))
+    dataSource.adjustableTableOptions().get(selectedOption) ?? (() => ({ renderOption: "node", data: null }))
   )();
+  // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
   let content;
 
   const cellContent: CellContent = selectedContent;
@@ -52,11 +49,7 @@ function AdjustableCell<T extends AdjustableTableRowLabel>({
     );
   } else if (cellContent.renderOption === "owner") {
     content = cellContent.data ? (
-      <UserDetails
-        userId={cellContent.data.id}
-        fullName={cellContent.data.fullName}
-        position={["bottom", "right"]}
-      />
+      <UserDetails userId={cellContent.data.id} fullName={cellContent.data.fullName} position={["bottom", "right"]} />
     ) : (
       ""
     );

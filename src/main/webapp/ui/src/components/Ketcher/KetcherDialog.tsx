@@ -1,25 +1,23 @@
 import "ketcher-react/dist/index.css";
 
-import React, { useMemo, useRef, useState } from "react";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { createTheme, type ThemeOptions } from "@mui/material";
+import Button from "@mui/material/Button";
 import Dialog, { dialogClasses } from "@mui/material/Dialog";
-import { paperClasses } from "@mui/material/Paper";
-import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import DialogTitle from "@mui/material/DialogTitle";
+import { paperClasses } from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import type { Ketcher } from "ketcher-core";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
-import { ThemeProvider, useTheme } from "@mui/material/styles";
-import Stack from "@mui/material/Stack";
+import React, { useMemo, useRef, useState } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import { Ketcher } from "ketcher-core";
-import ValidatingSubmitButton, {
-  IsValid,
-  ValidationResult,
-} from "../ValidatingSubmitButton";
-import { createTheme, ThemeOptions } from "@mui/material";
+import ValidatingSubmitButton, { IsValid, type ValidationResult } from "../ValidatingSubmitButton";
 
 declare global {
   interface Window {
@@ -36,11 +34,7 @@ const structServiceProvider = new StandaloneStructServiceProvider();
  * color="standardIcon" but can't resolve it against Ketcher's partial theme.
  * This wrapper resets the default to "primary" within Ketcher's scope.
  */
-const KetcherThemeProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode => {
+const KetcherThemeProvider = ({ children }: { children: React.ReactNode }): React.ReactNode => {
   const outerTheme = useTheme();
   const theme = useMemo(
     () =>
@@ -126,10 +120,7 @@ const KetcherDialog = ({
     }
   };
 
-  const handleDialogClose = (
-    _event: object,
-    reason: "backdropClick" | "escapeKeyDown",
-  ) => {
+  const handleDialogClose = (_event: object, reason: "backdropClick" | "escapeKeyDown") => {
     if (reason === "backdropClick" || reason === "escapeKeyDown") {
       void handleCancelClick();
     }
@@ -180,9 +171,7 @@ const KetcherDialog = ({
                     initialKet.current = null;
                   });
                 if (readOnly) {
-                  ketcher.editor.setOptions(
-                    JSON.stringify({ viewOnlyMode: true }),
-                  );
+                  ketcher.editor.setOptions(JSON.stringify({ viewOnlyMode: true }));
                 }
               }}
             />
@@ -200,29 +189,18 @@ const KetcherDialog = ({
       <DialogActions>
         <Button onClick={handleCancelClick}>Cancel</Button>
         {actionBtnText && (
-          <ValidatingSubmitButton
-            loading={false}
-            validationResult={validationResult}
-            onClick={onInsertClick}
-          >
+          <ValidatingSubmitButton loading={false} validationResult={validationResult} onClick={onInsertClick}>
             {actionBtnText}
           </ValidatingSubmitButton>
         )}
       </DialogActions>
-      <Dialog
-        open={showDiscardConfirm}
-        onClose={() => setShowDiscardConfirm(false)}
-      >
+      <Dialog open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)}>
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            You have unsaved changes. Are you sure you want to discard them?
-          </DialogContentText>
+          <DialogContentText>You have unsaved changes. Are you sure you want to discard them?</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDiscardConfirm(false)}>
-            Keep Editing
-          </Button>
+          <Button onClick={() => setShowDiscardConfirm(false)}>Keep Editing</Button>
           <Button
             onClick={() => {
               setShowDiscardConfirm(false);

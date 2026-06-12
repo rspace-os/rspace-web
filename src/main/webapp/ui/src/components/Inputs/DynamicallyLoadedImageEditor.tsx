@@ -1,13 +1,10 @@
-import React, { lazy, Suspense } from "react";
-import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
+import { observer } from "mobx-react-lite";
+import React, { lazy, Suspense } from "react";
 
 const LoadedImageEditorDialog = lazy(() => import("../ImageEditingDialog"));
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean }
-> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -21,8 +18,7 @@ class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <Alert severity="error">
-          Could not load the image editor at this time. Please check your
-          network connection and refresh.
+          Could not load the image editor at this time. Please check your network connection and refresh.
         </Alert>
       );
     }

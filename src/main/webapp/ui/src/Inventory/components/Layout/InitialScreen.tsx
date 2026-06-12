@@ -1,21 +1,21 @@
-import React from "react";
+import Container from "@mui/material/Container";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import { observer } from "mobx-react-lite";
-import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
-import Layout from "./Layout2x1";
-import useNavigateHelpers from "../../useNavigateHelpers";
-import useStores from "../../../stores/use-stores";
-import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Main from "../../Main";
 import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import useStores from "../../../stores/use-stores";
+import Main from "../../Main";
+import useNavigateHelpers from "../../useNavigateHelpers";
+import Header from "./Header";
+import Layout from "./Layout2x1";
+import Sidebar from "./Sidebar";
 
 function InitialScreen(): React.ReactNode {
   const theme = useTheme();
@@ -106,6 +106,7 @@ function InitialScreen(): React.ReactNode {
               <List component="nav">{navButtons(navFilters)}</List>
             </Container>
           }
+          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           colRight={<></>}
         />
       </Main>

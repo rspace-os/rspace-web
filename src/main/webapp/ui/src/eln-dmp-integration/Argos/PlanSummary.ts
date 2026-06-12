@@ -47,16 +47,14 @@ export async function fetchPlanSummaries({
 }: SearchParameters): Promise<Plans> {
   // prettier-ignore
   const urlArgs = new URLSearchParams({
-    ...((like              ? { like              } : {})),
-    ...((grantsLike        ? { grantsLike        } : {})),
-    ...((fundersLike       ? { fundersLike       } : {})),
-    ...((collaboratorsLike ? { collaboratorsLike } : {})),
+    ...(like ? { like } : {}),
+    ...(grantsLike ? { grantsLike } : {}),
+    ...(fundersLike ? { fundersLike } : {}),
+    ...(collaboratorsLike ? { collaboratorsLike } : {}),
     page: page.toString(),
     pageSize: pageSize.toString(),
   });
-  const { data } = await axios.get<ApiResponse>(
-    `/apps/argos/plans?${urlArgs.toString()}`
-  );
+  const { data } = await axios.get<ApiResponse>(`/apps/argos/plans?${urlArgs.toString()}`);
   if (isErrorResponse(data)) {
     throw data.error;
   }

@@ -1,4 +1,3 @@
-
 import { expect } from "vitest";
 
 type CustomMatcherResult = {
@@ -15,17 +14,12 @@ type OrderedPairOfElementsInList = {
   index2: number; // index of the second element in the pair
 };
 
-const formatListOfOutput = ({
-  list,
-  index1,
-  index2,
-}: OrderedPairOfElementsInList): string => {
+const formatListOfOutput = ({ list, index1, index2 }: OrderedPairOfElementsInList): string => {
   const [indexOfA, indexOfB] = [index1, index2];
   const a = list[indexOfA];
   const b = list[indexOfB];
   const neitherIsFirstInList = indexOfA !== 0 && indexOfB !== 0;
-  const neitherIsLastInList =
-    indexOfA !== list.length - 1 && indexOfB !== list.length - 1;
+  const neitherIsLastInList = indexOfA !== list.length - 1 && indexOfB !== list.length - 1;
   const areNotConsecutive = Math.abs(indexOfA - indexOfB) > 1;
 
   return [
@@ -41,24 +35,20 @@ const formatErrorMessage = (
   expectLists: Array<OrderedPairOfElementsInList>,
   receivedList: OrderedPairOfElementsInList,
   printExpected: (val: string) => string,
-  printReceived: (val: string) => string
+  printReceived: (val: string) => string,
 ) =>
   [
     `Expected:`,
     ...expectLists.map((expectList) =>
       [
         `  In ${expectList.name}:`,
-        `    ${printExpected(formatListOfOutput(expectList))
-          .replace('"', "[")
-          .replace('"', "]")}`,
-      ].join("\n")
+        `    ${printExpected(formatListOfOutput(expectList)).replace('"', "[").replace('"', "]")}`,
+      ].join("\n"),
     ),
     ``,
     `Received:`,
     `  In ${receivedList.name}:`,
-    `   ${printReceived(formatListOfOutput(receivedList))
-      .replace('"', "[")
-      .replace('"', "]")}`,
+    `   ${printReceived(formatListOfOutput(receivedList)).replace('"', "[").replace('"', "]")}`,
   ].join("\n");
 
 /*
@@ -76,7 +66,7 @@ export function toHaveConsistentOrdering(
       printReceived: (val: string) => string;
     };
   },
-  mapOfListsOfNumbers: Map<ListName, Array<string>>
+  mapOfListsOfNumbers: Map<ListName, Array<string>>,
 ): CustomMatcherResult {
   /*
    * This Map map pairs of strings (x,y) to the list in which they are found
@@ -105,13 +95,11 @@ export function toHaveConsistentOrdering(
                 seen,
                 { name, list, index1: i, index2: j },
                 this.utils.printExpected,
-                this.utils.printReceived
+                this.utils.printReceived,
               ),
           };
         }
-        seenPairs.set(JSON.stringify([first, second]), [
-          { list, name, index1: i, index2: j },
-        ]);
+        seenPairs.set(JSON.stringify([first, second]), [{ list, name, index1: i, index2: j }]);
         /*
          * In addition to the pair of elements currently be asserted, we also
          * add to seenPairs all of the transitive possibilities so that if we
@@ -119,16 +107,8 @@ export function toHaveConsistentOrdering(
          */
         for (const [json, lists] of seenPairs) {
           const [x, y] = JSON.parse(json) as [string, string];
-          if (y === first)
-            seenPairs.set(JSON.stringify([x, second]), [
-              ...lists,
-              { list, name, index1: i, index2: j },
-            ]);
-          if (x === second)
-            seenPairs.set(JSON.stringify([first, y]), [
-              { list, name, index1: i, index2: j },
-              ...lists,
-            ]);
+          if (y === first) seenPairs.set(JSON.stringify([x, second]), [...lists, { list, name, index1: i, index2: j }]);
+          if (x === second) seenPairs.set(JSON.stringify([first, y]), [{ list, name, index1: i, index2: j }, ...lists]);
         }
       }
     }
@@ -151,9 +131,6 @@ expect.extend({
   toHaveConsistentOrdering,
 });
 
-export function assertConsistentOrderOfLists(
-  lists: Map<ListName, Array<string>>
-): void {
+export function assertConsistentOrderOfLists(lists: Map<ListName, Array<string>>): void {
   expect(lists).toHaveConsistentOrdering();
 }
-

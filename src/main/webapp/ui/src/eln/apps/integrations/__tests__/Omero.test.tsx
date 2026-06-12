@@ -1,10 +1,5 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, test } from "vitest";
 import Omero from "../Omero";
 
 import "@/__tests__/__mocks__/matchMedia";
@@ -17,8 +12,7 @@ describe("Omero", () => {
           credentials: {},
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -35,8 +29,7 @@ describe("Omero", () => {
           credentials: {},
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));

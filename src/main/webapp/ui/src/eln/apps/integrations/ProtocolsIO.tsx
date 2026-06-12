@@ -1,12 +1,12 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useState, useContext } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
-import { useProtocolsioEndpoint } from "../useProtocolsio";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
+import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useProtocolsioEndpoint } from "../useProtocolsio";
 
 type ProtocolsIOArgs = {
   integrationState: IntegrationStates["PROTOCOLS_IO"];
@@ -37,15 +37,10 @@ type ProtocolsIOArgs = {
  * The process of disconnecing is via a standard API call made by
  * ../useProtocolsio.
  */
-function ProtocolsIO({
-  integrationState,
-  update,
-}: ProtocolsIOArgs): React.ReactNode {
+function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useProtocolsioEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
   useEffect(() => {
     const f = () => {
@@ -54,7 +49,7 @@ function ProtocolsIO({
         mkAlert({
           variant: "success",
           message: "Successfully connected to Protocols IO.",
-        })
+        }),
       );
     };
     window.addEventListener("PROTOCOLS_IO_CONNECTED", f);
@@ -68,17 +63,16 @@ function ProtocolsIO({
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="protocols.io"
         integrationState={integrationState}
         explanatoryText="Develop, organise, and share reproducible experimental protocols through a secure repository."
         image={ProtocolsIOIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText="You can browse private and public protocols, and import them into RSpace."
         helpLinkText="protocols.io integration docs"
         website="protocols.io"
@@ -87,14 +81,11 @@ function ProtocolsIO({
           <>
             <ol>
               <li>Register for a protocols.io account.</li>
-              <li>
-                Click on Connect to authorise RSpace to access your protocols.io
-                account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your protocols.io account.</li>
               <li>Enable the integration.</li>
               <li>
-                You can now import protocols from the Workspace Create menu, or
-                from the text editor toolbar when editing a document.
+                You can now import protocols from the Workspace Create menu, or from the text editor toolbar when
+                editing a document.
               </li>
             </ol>
             {connected ? (
@@ -112,12 +103,7 @@ function ProtocolsIO({
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/protocolsio/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/protocolsio/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

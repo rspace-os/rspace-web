@@ -1,34 +1,17 @@
-import { action, observable, computed, makeObservable } from "mobx";
+import { action, computed, makeObservable, observable } from "mobx";
+import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import {
-  type AttachmentJson,
-  newAttachment,
-  newGalleryAttachment,
-  newExistingAttachment,
-} from "./AttachmentModel";
-import {
-  apiStringToFieldType,
-  type FieldType as FieldTypeSymbol,
-} from "./FieldTypes";
-import InventoryBaseRecord from "./InventoryBaseRecord";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
-import { type URL as URLType } from "../../util/types";
-import { type Sample } from "../definitions/Sample";
-import { type Attachment } from "../definitions/Attachment";
 import { UnparsableString } from "../../util/error";
-import {
-  type Field,
-  type FieldType,
-  type OptionValue,
-  type Option,
-} from "../definitions/Field";
+import type { URL as URLType } from "../../util/types";
 import { pick } from "../../util/unsafeUtils";
-import {
-  IsInvalid,
-  IsValid,
-  type ValidationResult,
-} from "../../components/ValidatingSubmitButton";
-import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { Attachment } from "../definitions/Attachment";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { Field, FieldType, Option, OptionValue } from "../definitions/Field";
+import type { Sample } from "../definitions/Sample";
+import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAttachment } from "./AttachmentModel";
+import { apiStringToFieldType, type FieldType as FieldTypeSymbol } from "./FieldTypes";
+import type InventoryBaseRecord from "./InventoryBaseRecord";
 
 const formatOption = (option: OptionValue): Option => ({
   value: option,
@@ -125,7 +108,7 @@ export default class FieldModel implements Field {
       "type",
       "name",
       "initial",
-      "mandatory"
+      "mandatory",
     )(_params) as object & {
       content: string | number | Date;
       type: FieldType;
@@ -149,10 +132,7 @@ export default class FieldModel implements Field {
     if (params.type === "time") {
       if (params.content === "") {
         // do nothing; empty string is valid value when not set
-      } else if (
-        typeof params.content === "string" &&
-        params.content.length === 5
-      ) {
+      } else if (typeof params.content === "string" && params.content.length === 5) {
         // as "hh:mm"
         const date = new Date();
         const [h, m] = params.content.split(":").map((n) => Number(n));
@@ -164,10 +144,7 @@ export default class FieldModel implements Field {
          * date object, we only use the time component throughout the UI.
          */
       } else {
-        throw new UnparsableString(
-          params.content as string,
-          "Invalid time format"
-        );
+        throw new UnparsableString(params.content as string, "Invalid time format");
       }
     }
 
@@ -176,7 +153,7 @@ export default class FieldModel implements Field {
     }
 
     if (params.type === "number") {
-      if (isNaN(params.content as number)) params.content = "";
+      if (Number.isNaN(params.content as number)) params.content = "";
       if (params.content !== "") {
         params.content = parseFloat(params.content as string);
       }
@@ -197,17 +174,19 @@ export default class FieldModel implements Field {
           (a: Attachment) => {
             if (!this.originalAttachment) this.originalAttachment = a;
             this.setAttributesDirty({});
-          }
+          },
         ),
       });
     this.error = false;
   }
 
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   setAttributesDirty(attrs: {}) {
     this.owner.setAttributesDirty({});
     this.setAttributes(attrs);
   }
 
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   setAttributes(attrs: {}) {
     Object.assign(this, attrs);
   }
@@ -229,38 +208,22 @@ export default class FieldModel implements Field {
   }
 
   validate(): ValidationResult {
-    if (this.name === "")
-      return IsInvalid("Names for custom fields cannot be empty.");
-    if (this.name.length > 50)
-      return IsInvalid("Names for custom fields cannot exceed 50 characters.");
+    if (this.name === "") return IsInvalid("Names for custom fields cannot be empty.");
+    if (this.name.length > 50) return IsInvalid("Names for custom fields cannot exceed 50 characters.");
     if (this.type === "radio") {
-      if (this.options.length === 0)
-        return IsInvalid("Custom radio fields must have at least one option.");
-      if (this.options.some((o) => o.value === ""))
-        return IsInvalid("Options of custom radio fields cannot be empty.");
-      if (!this.optionsAreUnique)
-        return IsInvalid(
-          "Options of custom radio fields must all be distinct."
-        );
+      if (this.options.length === 0) return IsInvalid("Custom radio fields must have at least one option.");
+      if (this.options.some((o) => o.value === "")) return IsInvalid("Options of custom radio fields cannot be empty.");
+      if (!this.optionsAreUnique) return IsInvalid("Options of custom radio fields must all be distinct.");
     }
     if (this.type === "choice") {
-      if (this.options.length === 0)
-        return IsInvalid("Custom choice fields must have at least one option.");
+      if (this.options.length === 0) return IsInvalid("Custom choice fields must have at least one option.");
       if (this.options.some((o) => o.value === ""))
         return IsInvalid("Options of custom choice fields cannot be empty.");
-      if (!this.optionsAreUnique)
-        return IsInvalid(
-          "Options of custom choice fields must all be distinct."
-        );
+      if (!this.optionsAreUnique) return IsInvalid("Options of custom choice fields must all be distinct.");
     }
     if (this.mandatory && this.owner.enforceMandatoryFields && !this.hasContent)
-      return IsInvalid(
-        `The mandatory custom field "${this.name}" must have a valid value.`
-      );
-    if (this.error)
-      return IsInvalid(
-        `There is an error with the custom field, "${this.name}".`
-      );
+      return IsInvalid(`The mandatory custom field "${this.name}" must have a valid value.`);
+    if (this.error) return IsInvalid(`There is an error with the custom field, "${this.name}".`);
     return IsValid();
   }
 
@@ -281,18 +244,12 @@ export default class FieldModel implements Field {
     this.setAttributesDirty({
       attachment:
         file instanceof File
-          ? newAttachment(
-              file,
-              this.owner.id ? this.permalinkURL : "",
-              (attachment) => {
-                if (!this.originalAttachment)
-                  this.originalAttachment = attachment;
-                this.setAttributesDirty({});
-              }
-            )
+          ? newAttachment(file, this.owner.id ? this.permalinkURL : "", (attachment) => {
+              if (!this.originalAttachment) this.originalAttachment = attachment;
+              this.setAttributesDirty({});
+            })
           : newGalleryAttachment(file, (attachment) => {
-              if (!this.originalAttachment)
-                this.originalAttachment = attachment;
+              if (!this.originalAttachment) this.originalAttachment = attachment;
               this.setAttributesDirty({});
             }),
     });
@@ -337,7 +294,7 @@ export default class FieldModel implements Field {
       "deleteFieldRequest",
       "deleteFieldOnSampleUpdate",
       "columnIndex",
-      "mandatory"
+      "mandatory",
     )(ret) as object;
   }
 }

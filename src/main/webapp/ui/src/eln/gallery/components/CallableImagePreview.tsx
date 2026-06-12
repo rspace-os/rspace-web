@@ -1,8 +1,6 @@
 import React from "react";
-import ImagePreview, {
-  type PreviewSize,
-} from "../../../components/ImagePreview";
-import { type URL } from "../../../util/types";
+import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
+import type { URL } from "../../../util/types";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the
@@ -16,8 +14,8 @@ const ImagePreviewContext = React.createContext(
     _link: URL,
     _opts?: {
       caption?: ReadonlyArray<string>;
-    } | null
-  ) => {}
+    } | null,
+  ) => {},
 );
 
 /**
@@ -37,7 +35,7 @@ export function useImagePreview(): {
        * `<br />`s, placed at the bottom of the viewport
        */
       caption?: ReadonlyArray<string>;
-    } | null
+    } | null,
   ) => void;
 } {
   const openImagePreview = React.useContext(ImagePreviewContext);
@@ -58,18 +56,10 @@ export function useImagePreview(): {
  *      caption: ["Example image with caption"],
  *    });
  */
-export function CallableImagePreview({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
+export function CallableImagePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [link, setLink] = React.useState<null | URL>(null);
-  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
-    null
-  );
-  const [caption, setCaption] = React.useState<null | ReadonlyArray<string>>(
-    null
-  );
+  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(null);
+  const [caption, setCaption] = React.useState<null | ReadonlyArray<string>>(null);
 
   return (
     <>

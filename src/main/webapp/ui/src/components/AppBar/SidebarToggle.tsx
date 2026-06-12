@@ -1,6 +1,6 @@
-import React from "react";
-import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
+import IconButton from "@mui/material/IconButton";
+import type React from "react";
 
 type SidebarToggleArgs = {
   sidebarOpen: boolean;
@@ -12,11 +12,7 @@ type SidebarToggleArgs = {
  * A hamburger menu icon that sits in the AppBar for toggling the left-hand
  * sidebar.
  */
-export default function SidebarToggle({
-  sidebarOpen,
-  sidebarId,
-  setSidebarOpen,
-}: SidebarToggleArgs): React.ReactNode {
+export default function SidebarToggle({ sidebarOpen, sidebarId, setSidebarOpen }: SidebarToggleArgs): React.ReactNode {
   return (
     <IconButton
       aria-label={sidebarOpen ? "close sidebar" : "open sidebar"}

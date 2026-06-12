@@ -1,15 +1,10 @@
-
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
+import InvApiService from "../../../../common/InvApiService";
+import getRootStore from "../../../stores/RootStore";
+import { sampleAttrs } from "../SampleModel/mocking";
 import { makeMockTemplate } from "./mocking";
 
-import { sampleAttrs } from "../SampleModel/mocking";
-import getRootStore from "../../../stores/RootStore";
-import InvApiService from "../../../../common/InvApiService";
-import {
-  type AxiosResponse,
-  type InternalAxiosRequestConfig,
-
-} from "@/common/axios";
 const mockRootStore = {
   uiStore: {
     confirm: vi.fn(() => Promise.resolve(true)),
@@ -27,7 +22,6 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {
     post: vi.fn(),
   },
-
 }));
 describe("action: updateSampleToLatest", () => {
   describe("When there are two samples, of which only one can be updated, there should", () => {
@@ -57,7 +51,7 @@ describe("action: updateSampleToLatest", () => {
             statusText: "OK",
             headers: {},
             config: {} as InternalAxiosRequestConfig,
-          })
+          }),
       );
     });
     test("Be two toasts, detailing the error and the success.", async () => {
@@ -65,13 +59,8 @@ describe("action: updateSampleToLatest", () => {
       const template = makeMockTemplate();
 
       await template.updateSamplesToLatest();
-      expect(addAlertSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: "success" })
-      );
-      expect(addAlertSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: "error" })
-      );
+      expect(addAlertSpy).toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+      expect(addAlertSpy).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" }));
     });
   });
 });
-

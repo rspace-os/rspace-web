@@ -1,10 +1,10 @@
-import ErrorBoundary from "../ErrorBoundary";
-import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
-import SnackbarContentWrapper from "./SnackbarContentWrapper";
-import React, { useContext } from "react";
+import Snackbar, { type SnackbarCloseReason } from "@mui/material/Snackbar";
 import { observer } from "mobx-react-lite";
+import React, { useContext } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
+import ErrorBoundary from "../ErrorBoundary";
+import SnackbarContentWrapper from "./SnackbarContentWrapper";
 
 type ToastMessageArgs = {
   alert: Alert;
@@ -16,10 +16,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
   const { isViewportVerySmall } = useViewportDimensions();
   const { removeAlert } = useContext(AlertContext);
 
-  const handleClose = (
-    event?: Event | React.SyntheticEvent,
-    reason?: SnackbarCloseReason,
-  ): void => {
+  const handleClose = (_event?: Event | React.SyntheticEvent, reason?: SnackbarCloseReason): void => {
     if (reason !== "clickaway") removeAlert(alert);
   };
 
@@ -27,7 +24,6 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
     if (!alert.isInfinite) {
       setTimeoutId(setTimeout(() => removeAlert(alert), alert.duration));
     }
-
   }, []);
 
   const stopTimeout = () => {

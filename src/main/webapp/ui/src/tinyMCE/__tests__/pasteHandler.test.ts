@@ -3,22 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   bootstrapLegacyEditorHarness,
   createJQueryRequestChain,
-  loadLegacyEditorScript,
   type LegacyEditorHarness,
+  loadLegacyEditorScript,
 } from "./legacyEditorTestHarness";
 
 describe("tinymceRS_pasteHandler", () => {
   let harness: LegacyEditorHarness;
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   let pasteHandler: Record<string, (...args: Array<any>) => any>;
   let currentServerUrl: string;
 
   beforeEach(() => {
     harness = bootstrapLegacyEditorHarness();
     loadLegacyEditorScript("tinymceRS_pasteHandler.js");
-    pasteHandler = harness.RS.tinymcePasteHandler as Record<
-      string,
-      (...args: Array<any>) => any
-    >;
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    pasteHandler = harness.RS.tinymcePasteHandler as Record<string, (...args: Array<any>) => any>;
     currentServerUrl = (harness.RS.createAbsoluteUrl as () => string)();
   });
 
@@ -33,7 +32,7 @@ describe("tinymceRS_pasteHandler", () => {
   it("does not process arbitrary pasted html", () => {
     const text = "paragraph a, with an img script in itparagraph b";
     const html =
-      '<div><p>paragraph a, with an img script in it</p>' +
+      "<div><p>paragraph a, with an img script in it</p>" +
       '<img onerror="alert(\'xss attempt\')" src="dummy.png"></div>' +
       "<div><p>paragraph b</p></div>";
 
@@ -43,10 +42,7 @@ describe("tinymceRS_pasteHandler", () => {
 
   it.each([
     ["asdf", "<span>asdf</span>"],
-    [
-      "John, take a look at SD27.",
-      "<span>John, take a look at SD27.</span>",
-    ],
+    ["John, take a look at SD27.", "<span>John, take a look at SD27.</span>"],
   ])("does not recognise %s as an RSpace link", (text, html) => {
     expect(pasteHandler._isRSpaceLink(text)).toBe(false);
     expect(pasteHandler.processPastedContent(text, html)).toBe(false);
@@ -54,6 +50,7 @@ describe("tinymceRS_pasteHandler", () => {
 
   it("recognises plain text global ids and requests record details", () => {
     const requestedUrls: Array<string> = [];
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     (harness.$.get as any).mockImplementation((url: string) => {
       requestedUrls.push(url);
       return {
@@ -65,15 +62,11 @@ describe("tinymceRS_pasteHandler", () => {
 
     expect(pasteHandler._isRSpaceLink("GL12345")).toBe(true);
     expect(pasteHandler._isGlobalId("GL12345")).toBe("GL12345");
-    expect(
-      pasteHandler.processPastedContent("GL12345", "<span>GL12345</span>"),
-    ).toBe(true);
+    expect(pasteHandler.processPastedContent("GL12345", "<span>GL12345</span>")).toBe(true);
 
     expect(pasteHandler._isRSpaceLink("SD54321")).toBe(true);
     expect(pasteHandler._isGlobalId("SD54321")).toBe("SD54321");
-    expect(
-      pasteHandler.processPastedContent("SD54321", "<span>SD54321</span>"),
-    ).toBe(true);
+    expect(pasteHandler.processPastedContent("SD54321", "<span>SD54321</span>")).toBe(true);
 
     expect(requestedUrls).toEqual([
       "/workspace/getRecordInformation?recordId=12345",
@@ -83,6 +76,7 @@ describe("tinymceRS_pasteHandler", () => {
 
   it("handles same-instance internal document and gallery links", () => {
     const requestedUrls: Array<string> = [];
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     (harness.$.get as any).mockImplementation((url: string) => {
       requestedUrls.push(url);
       return {
@@ -95,15 +89,11 @@ describe("tinymceRS_pasteHandler", () => {
     const documentText = `${currentServerUrl}/globalId/SD27`;
     expect(pasteHandler._isRSpaceLink(documentText)).toBe(true);
     expect(pasteHandler._isGlobalIdUrl(documentText)).toBe(documentText);
-    expect(pasteHandler.processPastedContent(documentText, documentText)).toBe(
-      true,
-    );
+    expect(pasteHandler.processPastedContent(documentText, documentText)).toBe(true);
 
     const galleryHtml = `<a class="infoPanel-objectIdLink" href="${currentServerUrl}/globalId/GL21">GL21</a>`;
     expect(pasteHandler._isRSpaceLink("GL21")).toBe(true);
-    expect(pasteHandler._containsGlobalIdHref(harness.$(galleryHtml))).toBe(
-      `${currentServerUrl}/globalId/GL21`,
-    );
+    expect(pasteHandler._containsGlobalIdHref(harness.$(galleryHtml))).toBe(`${currentServerUrl}/globalId/GL21`);
     expect(pasteHandler.processPastedContent("GL21", galleryHtml)).toBe(true);
 
     expect(requestedUrls).toEqual([
@@ -117,9 +107,7 @@ describe("tinymceRS_pasteHandler", () => {
 
     expect(pasteHandler._isRSpaceLink(otherInstanceUrl)).toBe(true);
     expect(pasteHandler._isGlobalIdUrl(otherInstanceUrl)).toBe(otherInstanceUrl);
-    expect(
-      pasteHandler.processPastedContent(otherInstanceUrl, otherInstanceUrl),
-    ).toBe(true);
+    expect(pasteHandler.processPastedContent(otherInstanceUrl, otherInstanceUrl)).toBe(true);
 
     expect(harness.$.get).not.toHaveBeenCalled();
     expect(harness.execCommand).toHaveBeenCalledWith(
@@ -131,6 +119,7 @@ describe("tinymceRS_pasteHandler", () => {
 
   it("requests the right record version for versioned links", () => {
     const requestedUrls: Array<string> = [];
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     (harness.$.get as any).mockImplementation((url: string) => {
       requestedUrls.push(url);
       return {
@@ -143,24 +132,13 @@ describe("tinymceRS_pasteHandler", () => {
     const versionedDocumentUrl = `${currentServerUrl}/globalId/SD27v2`;
     const versionedExternalUrl = "http://other.rspace:8080/globalId/SD28v3";
 
-    expect(pasteHandler._isGlobalIdUrl(versionedDocumentUrl)).toBe(
-      versionedDocumentUrl,
-    );
-    expect(
-      pasteHandler.processPastedContent(versionedDocumentUrl, versionedDocumentUrl),
-    ).toBe(true);
+    expect(pasteHandler._isGlobalIdUrl(versionedDocumentUrl)).toBe(versionedDocumentUrl);
+    expect(pasteHandler.processPastedContent(versionedDocumentUrl, versionedDocumentUrl)).toBe(true);
 
     expect(pasteHandler._isRSpaceLink("SD28v3")).toBe(true);
-    expect(
-      pasteHandler.processPastedContent(
-        "SD28v3",
-        `<a href="${versionedExternalUrl}">SD28v3</a>`,
-      ),
-    ).toBe(true);
+    expect(pasteHandler.processPastedContent("SD28v3", `<a href="${versionedExternalUrl}">SD28v3</a>`)).toBe(true);
 
-    expect(requestedUrls).toEqual([
-      "/workspace/getRecordInformation?recordId=27&version=2",
-    ]);
+    expect(requestedUrls).toEqual(["/workspace/getRecordInformation?recordId=27&version=2"]);
     expect(harness.execCommand).toHaveBeenCalledWith(
       "mceInsertContent",
       false,
@@ -169,6 +147,7 @@ describe("tinymceRS_pasteHandler", () => {
   });
 
   it("inserts internal links and gallery items after resolving record details", () => {
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     (harness.$.get as any).mockImplementation(
       (url: string, success: (result: { data: { id: number; name: string } }) => void) => {
         if (url.includes("recordId=27")) {
@@ -184,19 +163,10 @@ describe("tinymceRS_pasteHandler", () => {
       },
     );
 
-    expect(pasteHandler.processPastedContent("SD27", "<span>SD27</span>")).toBe(
-      true,
-    );
-    expect(pasteHandler.processPastedContent("GL21", "<span>GL21</span>")).toBe(
-      true,
-    );
+    expect(pasteHandler.processPastedContent("SD27", "<span>SD27</span>")).toBe(true);
+    expect(pasteHandler.processPastedContent("GL21", "<span>GL21</span>")).toBe(true);
 
-    expect(harness.RS.tinymceInsertInternalLink).toHaveBeenCalledWith(
-      27,
-      "SD27",
-      "Notebook entry",
-      expect.any(Object),
-    );
+    expect(harness.RS.tinymceInsertInternalLink).toHaveBeenCalledWith(27, "SD27", "Notebook entry", expect.any(Object));
     expect(harness.addFromGallery).toHaveBeenCalledWith({
       id: 21,
       name: "Gallery image",
@@ -211,16 +181,14 @@ describe("tinymceRS_pasteHandler", () => {
       '<div class="tableDownloadWrap"><table border="1"><tbody><tr><td>a</td></tr></tbody></table>' +
       '<div class="tableContextButtons tableDownloadButton"></div></div></div></div>';
 
-    const $html = (harness.RS.safelyParseHtmlInto$Html as (html: string) => JQuery)(
-      html,
-    );
+    const $html = (harness.RS.safelyParseHtmlInto$Html as (html: string) => JQuery)(html);
     expect(pasteHandler._containsRSpaceViewModeClasses($html)).toBe(true);
 
     expect(pasteHandler.processPastedContent("text", html)).toBe(true);
     expect(harness.execCommand).toHaveBeenCalledWith(
       "mceInsertContent",
       false,
-      "<p>text</p><table border=\"1\"><tbody><tr><td>a</td></tr></tbody></table>",
+      '<p>text</p><table border="1"><tbody><tr><td>a</td></tr></tbody></table>',
     );
   });
 
@@ -230,9 +198,7 @@ describe("tinymceRS_pasteHandler", () => {
       '<img id="65569-1995" class="imageDropped inlineImageThumbnail" src="http://localhost:8080/thumbnail/data?sourceType=IMAGE&amp;sourceId=1995" alt="image test2.png"></div>' +
       '<div class="imageData"><span class="imageFileName">test2.png</span></div></div><span>after</span>';
 
-    const $html = (harness.RS.safelyParseHtmlInto$Html as (html: string) => JQuery)(
-      html,
-    );
+    const $html = (harness.RS.safelyParseHtmlInto$Html as (html: string) => JQuery)(html);
     const strippedHtml = (harness.RS.convert$HtmlToHtmlString as ($html: JQuery) => string)(
       pasteHandler._getHtmlWithoutRSpaceViewModeClasses($html),
     );
@@ -272,11 +238,11 @@ describe("tinymceRS_pasteHandler", () => {
 
   it("copies pasted RSpace elements through the server endpoint", () => {
     const request = createJQueryRequestChain();
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     (harness.$.post as any).mockImplementation((url: string, payload: unknown) => {
       expect(url).toBe("/workspace/editor/structuredDocument/copyContentIntoField");
       expect(payload).toEqual({
-        content:
-          '<p><img id="360450" class="chem" src="/thumbnail/data?sourceType=CHEM&amp;sourceId=360450"></p>',
+        content: '<p><img id="360450" class="chem" src="/thumbnail/data?sourceType=CHEM&amp;sourceId=360450"></p>',
         fieldId: "11",
       });
       return request.chain;
@@ -289,32 +255,20 @@ describe("tinymceRS_pasteHandler", () => {
       ),
     ).toBe(true);
 
-    expect(harness.blockPage).toHaveBeenCalledWith(
-      "Copying elements in pasted content...",
-    );
+    expect(harness.blockPage).toHaveBeenCalledWith("Copying elements in pasted content...");
 
     request.resolve("mocked_copy_response");
 
     expect(harness.unblockPage).toHaveBeenCalled();
-    expect(harness.execCommand).toHaveBeenCalledWith(
-      "mceInsertContent",
-      false,
-      "mocked_copy_response",
-    );
+    expect(harness.execCommand).toHaveBeenCalledWith("mceInsertContent", false, "mocked_copy_response");
   });
 
   it("processes pasted image data by forwarding a generated file to the upload widget", async () => {
     const blob = new Blob(["png"], { type: "image/png" });
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue({ blob: vi.fn().mockResolvedValue(blob) } as any);
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ blob: vi.fn().mockResolvedValue(blob) } as any);
 
-    expect(
-      pasteHandler.processPastedContent(
-        "",
-        '<img src="data:image/png;base64," alt="">',
-      ),
-    ).toBe(true);
+    expect(pasteHandler.processPastedContent("", '<img src="data:image/png;base64," alt="">')).toBe(true);
 
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalledWith("data:image/png;base64,");
@@ -327,4 +281,3 @@ describe("tinymceRS_pasteHandler", () => {
     });
   });
 });
-

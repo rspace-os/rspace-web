@@ -1,8 +1,6 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import { HighContrastExample } from "./ValidatingSubmitButton.story";
-
 import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+import { HighContrastExample } from "./ValidatingSubmitButton.story";
 
 /*
  * Only the WCAG AAA contrast case remains in Playwright. It relies on
@@ -51,9 +49,7 @@ const feature = test.extend<{
          * before performing the analysis.
          */
         await page.evaluate(() => {
-          const button = Array.from(document.querySelectorAll("button")).find(
-            (btn) => btn.textContent === "Submit",
-          );
+          const button = Array.from(document.querySelectorAll("button")).find((btn) => btn.textContent === "Submit");
           if (!button) return;
           const ripple = button.querySelector(".MuiTouchRipple-root");
           if (ripple) {
@@ -102,9 +98,7 @@ test.describe("ValidatingSubmitButton", () => {
             return originalMatchMedia(query);
           };
         });
-        await Given[
-          "the ValidatingSubmitButton with high contrast is rendered"
-        ]();
+        await Given["the ValidatingSubmitButton with high contrast is rendered"]();
         await Then["there shouldn't be any contrast violations at AAA level"]();
       },
     );

@@ -1,21 +1,21 @@
-import { describe, expect, test, vi } from 'vitest';
-import { makeMockContainer, containerAttrs } from "./mocking";
+import { describe, expect, test, vi } from "vitest";
+import type { AxiosRequestConfig, AxiosResponse } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
-import { type AxiosResponse, type AxiosRequestConfig } from "@/common/axios";
+import { containerAttrs, makeMockContainer } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  query: vi.fn(() => {}),
-  }}));
+    query: vi.fn(() => {}),
+  },
+}));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  uiStore: {
-    addAlert: () => {},
-    setPageNavigationConfirmation: () => {},
-    setDirty: () => {},
-  },
-})
-
+    uiStore: {
+      addAlert: () => {},
+      setPageNavigationConfirmation: () => {},
+      setDirty: () => {},
+    },
+  }),
 }));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
@@ -27,13 +27,11 @@ describe("fetchAdditionalInfo", () => {
         statusText: "OK",
         headers: {},
         config: {} as AxiosRequestConfig,
-      } as AxiosResponse)
-
+      } as AxiosResponse),
     );
     let firstCallDone = false;
     await container.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
-
     });
     await container.fetchAdditionalInfo();
     /*
@@ -43,4 +41,3 @@ describe("fetchAdditionalInfo", () => {
     expect(firstCallDone).toBe(true);
   });
 });
-

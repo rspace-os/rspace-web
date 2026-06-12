@@ -1,14 +1,13 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockField } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("computed: paramsForBackend", () => {
   /*
@@ -24,9 +23,7 @@ describe("computed: paramsForBackend", () => {
         type: "number",
         content: "1",
       });
-      expect(JSON.stringify(field.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
+      expect(JSON.stringify(field.paramsForBackend)).toEqual(expect.any(String));
     });
     test("the field is a choice field.", () => {
       const field = makeMockField({
@@ -36,10 +33,7 @@ describe("computed: paramsForBackend", () => {
         },
         selectedOptions: ["foo"],
       });
-      expect(JSON.stringify(field.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
+      expect(JSON.stringify(field.paramsForBackend)).toEqual(expect.any(String));
     });
   });
 });
-

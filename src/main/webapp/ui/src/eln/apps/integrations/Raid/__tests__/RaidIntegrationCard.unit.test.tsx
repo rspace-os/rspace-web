@@ -1,20 +1,15 @@
-import { test, describe, expect, beforeEach, afterEach, vi } from 'vitest';
-import React from "react";
-import {
-  screen,
-  waitFor,
-  act,
-  render,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import materialTheme from "@/theme";
 import { ThemeProvider } from "@mui/material/styles";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import materialTheme from "@/theme";
 import "@/__tests__/__mocks__/matchMedia";
-import AlertContext, { Alert } from "@/stores/contexts/Alert";
-import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-import RaidIntegrationCard, { RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
+import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
+import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
+import AlertContext, { type Alert } from "@/stores/contexts/Alert";
+
 const mockSaveAppOptions = vi.fn();
 const mockDeleteAppOptions = vi.fn();
 vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
@@ -22,20 +17,16 @@ vi.mock("@/eln/apps/useIntegrationsEndpoint", () => ({
     saveAppOptions: mockSaveAppOptions,
     deleteAppOptions: mockDeleteAppOptions,
   }),
-
 }));
 const broadcastHandlers: Array<(e: MessageEvent<RaidConnectedMessage>) => void> = [];
 vi.mock("@/modules/common/hooks/broadcast", () => ({
-  useBroadcastChannel: (
-    _channel: string,
-    handler: (e: MessageEvent<RaidConnectedMessage>) => void,
-  ) => {
+  useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<RaidConnectedMessage>) => void) => {
     broadcastHandlers.push(handler);
   },
 }));
 const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],
-  update: (s: IntegrationStates["RAID"]) => void = () => {}
+  update: (s: IntegrationStates["RAID"]) => void = () => {},
 ) => {
   const addAlert = vi.fn();
   const removeAlert = vi.fn();
@@ -48,10 +39,9 @@ const renderWithProviders = (
       <AlertContext.Provider value={result}>
         <RaidIntegrationCard integrationState={integrationState} update={update} />
       </AlertContext.Provider>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
   return { ...view, addAlert };
-
 };
 describe("RaidIntegrationCard", () => {
   let restoreConsole = () => {};
@@ -61,7 +51,6 @@ describe("RaidIntegrationCard", () => {
   });
   afterEach(() => {
     restoreConsole();
-
   });
   describe("Accessibility", () => {
     test("Should have no axe violations once dialog opened.", async () => {
@@ -79,8 +68,7 @@ describe("RaidIntegrationCard", () => {
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
     });
-
-});
+  });
   describe("Rendering", () => {
     test("Shows placeholder text when there are no authenticated servers.", async () => {
       renderWithProviders({
@@ -103,9 +91,7 @@ describe("RaidIntegrationCard", () => {
             { alias: "srvA", url: "https://a.example" },
             { alias: "srvB", url: "https://b.example" },
           ],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" }],
         },
       });
 
@@ -114,7 +100,6 @@ describe("RaidIntegrationCard", () => {
       expect(screen.getByRole("link", { name: /https:\/\/a.example/i })).toBeVisible();
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
     });
-
   });
   describe("Broadcast connect flow", () => {
     test("Marks server authenticated and shows alert when RAID_CONNECTED message received.", async () => {
@@ -122,9 +107,7 @@ describe("RaidIntegrationCard", () => {
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" }],
         },
       });
 
@@ -132,8 +115,10 @@ describe("RaidIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
-        broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaidConnectedMessage>));
-
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+        broadcastHandlers.forEach((h) =>
+          h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaidConnectedMessage>),
+        );
       });
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
@@ -146,9 +131,7 @@ describe("RaidIntegrationCard", () => {
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" }],
         },
       });
 
@@ -156,8 +139,10 @@ describe("RaidIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
-        broadcastHandlers.forEach((h) => h({ data: { type: "RAID_CONNECTED", alias: "srvB" } } as MessageEvent<RaidConnectedMessage>));
-
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+        broadcastHandlers.forEach((h) =>
+          h({ data: { type: "RAID_CONNECTED", alias: "srvB" } } as MessageEvent<RaidConnectedMessage>),
+        );
       });
       expect(screen.queryByRole("button", { name: /disconnect/i })).not.toBeInTheDocument();
       expect(addAlert).not.toHaveBeenCalled();
@@ -168,9 +153,7 @@ describe("RaidIntegrationCard", () => {
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" }],
         },
       });
 
@@ -178,13 +161,12 @@ describe("RaidIntegrationCard", () => {
 
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
       act(() => {
-        broadcastHandlers.forEach((h) => h('aaaaaaa' as unknown as MessageEvent<RaidConnectedMessage>));
-
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+        broadcastHandlers.forEach((h) => h("aaaaaaa" as unknown as MessageEvent<RaidConnectedMessage>));
       });
       expect(screen.queryByRole("button", { name: /disconnect/i })).not.toBeInTheDocument();
       expect(addAlert).not.toHaveBeenCalled();
     });
-
   });
   describe("Add server", () => {
     test("Clicking Add menu item calls saveAppOptions and adds server.", async () => {
@@ -195,7 +177,6 @@ describe("RaidIntegrationCard", () => {
             { alias: "srvB", url: "https://b.example", authenticated: false, optionsId: "2" },
           ],
         },
-
       });
       renderWithProviders({
         mode: "DISABLED",
@@ -204,9 +185,7 @@ describe("RaidIntegrationCard", () => {
             { alias: "srvA", url: "https://a.example" },
             { alias: "srvB", url: "https://b.example" },
           ],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" }],
         },
       });
 
@@ -217,11 +196,9 @@ describe("RaidIntegrationCard", () => {
       await userEvent.click(menuItem);
       await waitFor(() => {
         expect(mockSaveAppOptions).toHaveBeenCalled();
-
       });
       expect(screen.getByText("srvB")).toBeVisible();
     });
-
   });
   describe("Disconnect", () => {
     test("Disconnect button triggers fetch and shows success alert.", async () => {
@@ -230,9 +207,7 @@ describe("RaidIntegrationCard", () => {
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: true, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: true, optionsId: "1" }],
         },
       });
 
@@ -241,8 +216,10 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", { method: "DELETE", headers: { "X-Requested-With": "XMLHttpRequest" } });
-
+        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", {
+          method: "DELETE",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
       });
       await waitFor(() => {
         expect(addAlert).toHaveBeenCalled();
@@ -258,9 +235,7 @@ describe("RaidIntegrationCard", () => {
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: true, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: true, optionsId: "1" }],
         },
       });
 
@@ -269,8 +244,10 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", { method: "DELETE", headers: { "X-Requested-With": "XMLHttpRequest" } });
-
+        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", {
+          method: "DELETE",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
       });
       await waitFor(() => {
         expect(addAlert).toHaveBeenCalled();
@@ -281,15 +258,12 @@ describe("RaidIntegrationCard", () => {
     });
 
     test("Disconnect button shows error alert on fetch network error.", async () => {
-
       fetchMock.mockRejectOnce(new Error("Network error"));
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: true, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: true, optionsId: "1" }],
         },
       });
 
@@ -298,8 +272,10 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", { method: "DELETE", headers: { "X-Requested-With": "XMLHttpRequest" } });
-
+        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", {
+          method: "DELETE",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
       });
       await waitFor(() => {
         expect(addAlert).toHaveBeenCalled();
@@ -308,19 +284,15 @@ describe("RaidIntegrationCard", () => {
       expect(alertArg.message).toContain("Network error");
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
     });
-
   });
   describe("Delete", () => {
     test("Delete button calls deleteAppOptions and removes server from list.", async () => {
-
       mockDeleteAppOptions.mockResolvedValue({});
       renderWithProviders({
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
-          authenticatedServers: [
-            { alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" },
-          ],
+          authenticatedServers: [{ alias: "srvA", url: "https://a.example", authenticated: false, optionsId: "1" }],
         },
       });
 
@@ -332,5 +304,5 @@ describe("RaidIntegrationCard", () => {
         expect(mockDeleteAppOptions).toHaveBeenCalledWith("RAID", "1");
       });
     });
-  })
+  });
 });

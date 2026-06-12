@@ -1,43 +1,41 @@
-import InventoryPicker from "../../Inventory/components/Picker/Picker";
-import Alerts from "../../Inventory/components/Alerts";
-import Confirm from "../../components/Confirm";
-import CustomTooltip from "../../components/CustomTooltip";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import Exporter from "../../Inventory/components/Export/Exporter";
-import { type ExportOptions } from "../../stores/definitions/Search";
-import { defaultExportOptions } from "../../Inventory/components/Export/ExportDialog";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import useStores from "../../stores/use-stores";
-import { preventEventBubbling } from "../../util/Util";
-import { showToastWhilstPending } from "../../util/alerts";
-import MaterialsTable from "./MaterialsTable";
-import PopoutPrintIcon from "./PopoutPrintIcon";
+import PrintIcon from "@mui/icons-material/Print";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
-import Portal from "@mui/material/Portal";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import Portal from "@mui/material/Portal";
 import Slide from "@mui/material/Slide";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import PrintIcon from "@mui/icons-material/Print";
-import { observer, Observer } from "mobx-react-lite";
-import React, { useState, forwardRef, useEffect } from "react";
+import { Observer, observer } from "mobx-react-lite";
+import type React from "react";
+import { forwardRef, useEffect, useState } from "react";
 import docLinks from "../../assets/DocLinks";
-import { type ListOfMaterials } from "../../stores/models/MaterialsModel";
-import WarningBar from "../../components/WarningBar";
-import Box from "@mui/material/Box";
-import ValidatingSubmitButton, {
-  IsInvalid,
-  IsValid,
-} from "../../components/ValidatingSubmitButton";
-import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
-import getRootStore from "../../stores/stores/RootStore";
-import { hasLocation } from "../../stores/models/HasLocation";
 import Analytics from "../../components/Analytics";
+import Confirm from "../../components/Confirm";
+import CustomTooltip from "../../components/CustomTooltip";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
+import WarningBar from "../../components/WarningBar";
+import Alerts from "../../Inventory/components/Alerts";
+import { defaultExportOptions } from "../../Inventory/components/Export/ExportDialog";
+import Exporter from "../../Inventory/components/Export/Exporter";
+import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
+import InventoryPicker from "../../Inventory/components/Picker/Picker";
+import type { ExportOptions } from "../../stores/definitions/Search";
+import { hasLocation } from "../../stores/models/HasLocation";
+import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
+import getRootStore from "../../stores/stores/RootStore";
+import useStores from "../../stores/use-stores";
+import { showToastWhilstPending } from "../../util/alerts";
+import { preventEventBubbling } from "../../util/Util";
+import MaterialsTable from "./MaterialsTable";
+import PopoutPrintIcon from "./PopoutPrintIcon";
 
 type CardWrapperArgs = {
   children: React.ReactNode;
@@ -79,46 +77,39 @@ const disableBackgroundSx = (openSlide: boolean) => ({
   pointerEvents: openSlide ? "none" : "unset",
 });
 
-const CardWrapper = forwardRef<
-  React.ElementRef<typeof Grid>,
-  CardWrapperArgs & React.ComponentProps<typeof Grid>
->(({ children, className, ...gridProps }, ref) => {
-  const isSingleColumnLayout = useIsSingleColumnLayout();
+const CardWrapper = forwardRef<React.ElementRef<typeof Grid>, CardWrapperArgs & React.ComponentProps<typeof Grid>>(
+  ({ children, className, ...gridProps }, ref) => {
+    const isSingleColumnLayout = useIsSingleColumnLayout();
 
-  return (
-    <Observer>
-      {() => (
-        <Grid
-          {...gridProps}
-          sx={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            bottom: 0,
-            zIndex: 100,
-            width: "100%",
-          }}
-          className={className}
-          ref={ref}
-          onClick={preventEventBubbling()}
-          size={isSingleColumnLayout ? 12 : 9}
-        >
-          {children}
-        </Grid>
-      )}
-    </Observer>
-  );
-});
+    return (
+      <Observer>
+        {() => (
+          <Grid
+            {...gridProps}
+            sx={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 100,
+              width: "100%",
+            }}
+            className={className}
+            ref={ref}
+            onClick={preventEventBubbling()}
+            size={isSingleColumnLayout ? 12 : 9}
+          >
+            {children}
+          </Grid>
+        )}
+      </Observer>
+    );
+  },
+);
 
 CardWrapper.displayName = "CardWrapper";
 
-function BigButton({
-  icon,
-  onClick,
-}: {
-  onClick: () => void;
-  icon: React.ReactNode;
-}): React.ReactNode {
+function BigButton({ icon, onClick }: { onClick: () => void; icon: React.ReactNode }): React.ReactNode {
   return (
     <IconButton
       component="div"
@@ -214,16 +205,12 @@ const ActionsBar = observer(
         ? false
         : (currentList?.materials.every((m) => {
             return hasLocation(m.invRec)
-              .map(
-                (r) =>
-                  currentUser && r.isDirectlyOnWorkbenchOfUser(currentUser),
-              )
+              .map((r) => currentUser && r.isDirectlyOnWorkbenchOfUser(currentUser))
               .orElse(true);
           }) ?? false);
 
     const moveAllToBenchValidation = () => {
-      if (currentList?.materials.length === 0)
-        return IsInvalid("Nothing to move.");
+      if (currentList?.materials.length === 0) return IsInvalid("Nothing to move.");
       if (originalList && !currentList?.isEqual(originalList))
         return IsInvalid("Cannot move whilst there are unsaved changes.");
       if (allOnBench) return IsInvalid("All items are already on your bench.");
@@ -237,11 +224,9 @@ const ActionsBar = observer(
             color="primary"
             variant="contained"
             disableElevation
-            onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
-              () => {
-                setOpenPicker(true);
-              },
-            )}
+            onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => {
+              setOpenPicker(true);
+            })}
             disabled={!canEdit}
           >
             Add items
@@ -252,11 +237,9 @@ const ActionsBar = observer(
             color="primary"
             variant="contained"
             disableElevation
-            onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(
-              () => {
-                currentList?.setEditingMode(!editingMode);
-              },
-            )}
+            onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => {
+              currentList?.setEditingMode(!editingMode);
+            })}
             disabled={!canEditQuantities}
           >
             {editingMode ? "Close Quantity Editor" : "Edit Quantities"}
@@ -281,10 +264,7 @@ const ActionsBar = observer(
         {!standalonePage && currentList?.id !== null && (
           <Grid>
             <CustomTooltip title="View in new tab">
-              <BigButton
-                icon={<PopoutPrintIcon />}
-                onClick={onOpenStandalone}
-              />
+              <BigButton icon={<PopoutPrintIcon />} onClick={onOpenStandalone} />
             </CustomTooltip>
           </Grid>
         )}
@@ -301,8 +281,7 @@ const ActionsBar = observer(
         {anyDataInList && (
           <Grid>
             <Typography variant="inherit" component="p" sx={{ margin: 0 }}>
-              Tip: to edit an item click its Global ID, then the Edit button in
-              the new browser tab.
+              Tip: to edit an item click its Global ID, then the Edit button in the new browser tab.
             </Typography>
           </Grid>
         )}
@@ -317,11 +296,7 @@ type DialogArgs = {
   standalonePage?: boolean;
 };
 
-function MaterialsDialog({
-  open,
-  setOpen,
-  standalonePage = false,
-}: DialogArgs): React.ReactNode {
+function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs): React.ReactNode {
   const { materialsStore } = useStores();
   const isSingleColumn = useIsSingleColumnLayout();
   const fullScreen = isSingleColumn || standalonePage;
@@ -347,8 +322,7 @@ function MaterialsDialog({
   );
 
   const refetch = () => {
-    if (currentList)
-      void materialsStore.getFieldMaterialsListings(currentList.elnFieldId);
+    if (currentList) void materialsStore.getFieldMaterialsListings(currentList.elnFieldId);
   };
 
   useEffect(() => {
@@ -432,18 +406,10 @@ function MaterialsDialog({
                 }}
               >
                 <DialogTitle sx={{ pb: 0.5 }}>
-                  {currentList?.id === undefined && "New "} List of Materials
-                  (Inventory)&nbsp;
-                  <HelpLinkIcon
-                    link={docLinks.listOfMaterials}
-                    title="Info on using Lists of Materials."
-                  />
+                  {currentList?.id === undefined && "New "} List of Materials (Inventory)&nbsp;
+                  <HelpLinkIcon link={docLinks.listOfMaterials} title="Info on using Lists of Materials." />
                   {!isSingleColumn && (
-                    <MetadataBar
-                      currentList={currentList}
-                      canEdit={canEdit}
-                      isSingleColumn={false}
-                    />
+                    <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={false} />
                   )}
                 </DialogTitle>
                 <DialogContent
@@ -455,11 +421,7 @@ function MaterialsDialog({
                   <Grid container>
                     <Grid sx={disableBackgroundSx(openSlide)} size={12}>
                       {isSingleColumn && (
-                        <MetadataBar
-                          currentList={currentList}
-                          canEdit={canEdit}
-                          isSingleColumn={isSingleColumn}
-                        />
+                        <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={isSingleColumn} />
                       )}
                       <ActionsBar
                         setOpenPicker={setOpenPicker}
@@ -477,14 +439,8 @@ function MaterialsDialog({
                         />
                       )}
                       {currentList && currentList.materials.length === 0 && (
-                        <Typography
-                          component="div"
-                          variant="body2"
-                          color="textPrimary"
-                          align="center"
-                        >
-                          Use &quot;Add items&quot; to add materials to this
-                          list.
+                        <Typography component="div" variant="body2" color="textPrimary" align="center">
+                          Use &quot;Add items&quot; to add materials to this list.
                         </Typography>
                       )}
                     </Grid>
@@ -509,9 +465,7 @@ function MaterialsDialog({
                             elevation={6}
                             header={"Export Options"}
                             showActions
-                            selectedResults={currentList.materials.map(
-                              (m) => m.invRec,
-                            )}
+                            selectedResults={currentList.materials.map((m) => m.invRec)}
                             setOpenExporter={setOpenExporter}
                             exportOptions={exportOptions}
                             setExportOptions={setExportOptions}
@@ -530,29 +484,18 @@ function MaterialsDialog({
                     <WarningBar />
                   </Box>
                 )}
-                <DialogActions
-                  sx={[
-                    barWrapperSx,
-                    disableBackgroundSx(openSlide),
-                    hideWhenPrintingSx,
-                  ]}
-                >
+                <DialogActions sx={[barWrapperSx, disableBackgroundSx(openSlide), hideWhenPrintingSx]}>
                   <Box sx={spacedBetweenRowSx}>
                     <Button
                       color="primary"
                       variant="contained"
                       disableElevation
-                      onClick={preventEventBubbling<
-                        React.MouseEvent<HTMLButtonElement>
-                      >(() => {
+                      onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => {
                         void (async () => {
                           if (currentList) {
                             const changed = materialsStore.hasListChanged;
                             if (changed) {
-                              await showToastWhilstPending(
-                                `Saving changes...`,
-                                currentList.update(),
-                              );
+                              await showToastWhilstPending(`Saving changes...`, currentList.update());
                               materialsStore.setCurrentList(currentList);
                               refetch();
                             }
@@ -581,9 +524,7 @@ function MaterialsDialog({
                           isUnchanged
                             ? () => setOpen(false)
                             : () => {
-                                materialsStore.setCurrentList(
-                                  materialsStore.originalList,
-                                );
+                                materialsStore.setCurrentList(materialsStore.originalList);
                                 if (isListNew) setOpen(false);
                               }
                         }
@@ -595,18 +536,11 @@ function MaterialsDialog({
                           void (async () => {
                             if (currentList && isListValid) {
                               if (isListNew) {
-                                await showToastWhilstPending(
-                                  `Creating list...`,
-                                  currentList.create(),
-                                );
+                                await showToastWhilstPending(`Creating list...`, currentList.create());
                               }
                               if (isListExisting) {
                                 const changed = materialsStore.hasListChanged;
-                                if (changed)
-                                  await showToastWhilstPending(
-                                    `Updating list...`,
-                                    currentList.update(),
-                                  );
+                                if (changed) await showToastWhilstPending(`Updating list...`, currentList.update());
                               }
                               materialsStore.setCurrentList(currentList);
                               refetch();

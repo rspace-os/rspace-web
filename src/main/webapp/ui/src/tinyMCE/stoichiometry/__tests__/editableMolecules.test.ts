@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StoichiometryResponse } from "@/modules/stoichiometry/schema";
 import { toEditableMolecules } from "@/tinyMCE/stoichiometry/editableMolecules";
 
-function makeStoichiometryResponse(
-  molecules: StoichiometryResponse["molecules"],
-): StoichiometryResponse {
+function makeStoichiometryResponse(molecules: StoichiometryResponse["molecules"]): StoichiometryResponse {
   return {
     id: 3,
     revision: 1,
@@ -153,13 +151,7 @@ describe("toEditableMolecules", () => {
       ]),
     );
 
-    expect(result.map(({ limitingReagent }) => limitingReagent)).toEqual([
-      false,
-      false,
-    ]);
-    expect(result.every(({ moles, actualMoles }) => moles === null && actualMoles === null)).toBe(
-      true,
-    );
+    expect(result.map(({ limitingReagent }) => limitingReagent)).toEqual([false, false]);
+    expect(result.every(({ moles, actualMoles }) => moles === null && actualMoles === null)).toBe(true);
   });
 });
-

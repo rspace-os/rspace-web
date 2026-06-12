@@ -1,16 +1,14 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
+import Box from "@mui/material/Box";
+import FormControlLabel, { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel, {
-  formControlLabelClasses,
-} from "@mui/material/FormControlLabel";
 import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import RemoveButton from "../../components/RemoveButton";
-import NoValue from "../../components/NoValue";
 import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import NoValue from "../../components/NoValue";
+import RemoveButton from "../../components/RemoveButton";
 
 export type RadioOption<OptionValue extends string> = {
   label: React.ReactNode;
@@ -20,9 +18,7 @@ export type RadioOption<OptionValue extends string> = {
 
 export type RadioFieldArgs<OptionValue extends string> = {
   name: string;
-  onChange: (event: {
-    target: { value: OptionValue | null; name: string };
-  }) => void;
+  onChange: (event: { target: { value: OptionValue | null; name: string } }) => void;
   options: Array<RadioOption<OptionValue>>;
   value: OptionValue | null;
   allowOptionDeletion?: boolean;
@@ -31,10 +27,7 @@ export type RadioFieldArgs<OptionValue extends string> = {
   hideWhenDisabled?: boolean;
   labelPlacement?: "top" | "start" | "bottom" | "end";
   noValueLabel?: string | null;
-  onOptionChange?: (
-    index: number,
-    newOption: { label: React.ReactNode; value: OptionValue; editing: true }
-  ) => void;
+  onOptionChange?: (index: number, newOption: { label: React.ReactNode; value: OptionValue; editing: true }) => void;
   onOptionRemove?: (index: number) => void;
   row?: boolean;
   smallText?: boolean;
@@ -69,10 +62,7 @@ function RadioField<OptionValue extends string>({
   };
 
   const radioOptions = () => {
-    const filteredOptions =
-      disabled && hideWhenDisabled
-        ? options.filter((o) => o.value === value)
-        : options;
+    const filteredOptions = disabled && hideWhenDisabled ? options.filter((o) => o.value === value) : options;
 
     return disabled && !value && hideWhenDisabled ? (
       <NoValue label={noValueLabel ?? "No option selected"} />
@@ -84,7 +74,7 @@ function RadioField<OptionValue extends string>({
             label: React.ReactNode;
             editing?: boolean;
           },
-          i
+          i,
         ) => (
           <Box
             key={i}
@@ -114,22 +104,12 @@ function RadioField<OptionValue extends string>({
                   sx={row ? { p: 0.5 } : undefined}
                   color="primary"
                   disabled={disabled || !option.value}
-                  onClick={() =>
-                    updateSelected(
-                      allowRadioUnselection && value === option.value
-                        ? null
-                        : option.value
-                    )
-                  }
+                  onClick={() => updateSelected(allowRadioUnselection && value === option.value ? null : option.value)}
                 />
               }
               labelPlacement={labelPlacement}
               label={option.editing ? "" : option.label}
-              data-test-id={
-                typeof option.label === "string"
-                  ? option.label.replace(/\s/g, "")
-                  : null
-              }
+              data-test-id={typeof option.label === "string" ? option.label.replace(/\s/g, "") : null}
             />
             {!disabled && allowOptionDeletion && !option.editing && (
               <RemoveButton
@@ -142,7 +122,6 @@ function RadioField<OptionValue extends string>({
             )}
             {option.editing && (
               <TextField
-
                 autoFocus={!option.value}
                 variant="standard"
                 value={option.value}
@@ -159,11 +138,7 @@ function RadioField<OptionValue extends string>({
                 }}
                 placeholder={`Option ${i + 1}`}
                 error={option.value === ""}
-                helperText={
-                  option.value.length === 0
-                    ? "Option value cannot be empty"
-                    : null
-                }
+                helperText={option.value.length === 0 ? "Option value cannot be empty" : null}
                 slotProps={{
                   input: {
                     endAdornment: (
@@ -177,12 +152,12 @@ function RadioField<OptionValue extends string>({
                         />
                       </InputAdornment>
                     ),
-                  }
+                  },
                 }}
               />
             )}
           </Box>
-        )
+        ),
       )
     );
   };
@@ -222,10 +197,7 @@ type OptionExplanationArgs = {
   "data-testid"?: string;
 };
 
-export function OptionExplanation({
-  children,
-  ...rest
-}: OptionExplanationArgs): React.ReactNode {
+export function OptionExplanation({ children, ...rest }: OptionExplanationArgs): React.ReactNode {
   return (
     <Typography variant="body2" sx={{ fontSize: "0.825em" }} {...rest}>
       {children}

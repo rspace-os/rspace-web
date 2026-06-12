@@ -1,17 +1,17 @@
+import { CacheProvider } from "@emotion/react";
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import ErrorBoundary from "../components/ErrorBoundary";
-import AppBar from "../components/AppBar";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import Box from "@mui/material/Box";
-import createAccentedTheme from "../accentedTheme";
-import { CacheProvider } from "@emotion/react";
-import { DialogBoundary } from "../components/DialogBoundary";
-import Analytics from "../components/Analytics";
-import { color, currentPage } from "@/util/pageBranding";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { color, currentPage } from "@/util/pageBranding";
+import createAccentedTheme from "../accentedTheme";
+import Analytics from "../components/Analytics";
+import AppBar from "../components/AppBar";
+import { DialogBoundary } from "../components/DialogBoundary";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -51,11 +51,7 @@ window.addEventListener("load", () => {
                    * We use a DialogBoundary to keep the menu inside the shadow DOM
                    */}
                   <DialogBoundary>
-                    <AppBar
-                      variant="page"
-                      currentPage={currentPage()}
-                      accessibilityTips={{}}
-                    />
+                    <AppBar variant="page" currentPage={currentPage()} accessibilityTips={{}} />
                   </DialogBoundary>
                 </Box>
                 <Box sx={{ height: "30px" }}></Box>

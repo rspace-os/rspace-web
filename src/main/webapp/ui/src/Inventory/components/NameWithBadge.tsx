@@ -1,10 +1,10 @@
-import React from "react";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import type { Record } from "../../stores/definitions/Record";
 import InfoBadge from "./InfoBadge";
 import InfoCard from "./InfoCard";
-import type { Record } from "../../stores/definitions/Record";
-import { observer } from "mobx-react-lite";
-import Stack from "@mui/material/Stack";
 
 type NameWithBadgeArgs = {
   record: Record;

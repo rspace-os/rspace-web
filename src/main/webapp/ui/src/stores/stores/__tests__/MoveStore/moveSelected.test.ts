@@ -1,22 +1,22 @@
-import { describe, expect, test, vi } from 'vitest';
-import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
-import getRootStore from "../../RootStore";
-import Search from "../../../models/Search";
+import type { AxiosResponse } from "axios";
+import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
+import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import ContainerModel from "../../../models/ContainerModel";
 import MemoisedFactory from "../../../models/Factory/MemoisedFactory";
-import { type AxiosResponse } from "axios";
+import Search from "../../../models/Search";
+import getRootStore from "../../RootStore";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  bulk: vi.fn().mockResolvedValue({}),
-  get: vi.fn().mockResolvedValue({}),
-  query: vi.fn().mockResolvedValue({}),
-}}));
+    bulk: vi.fn().mockResolvedValue({}),
+    get: vi.fn().mockResolvedValue({}),
+    query: vi.fn().mockResolvedValue({}),
+  },
+}));
 describe("action: moveSelected", () => {
   describe("Moving the contents of a location into its current location should", () => {
     test("result in new records being allocated in memory.", async () => {
-
       const { searchStore, moveStore } = getRootStore();
       /*
        * 1. Setup SearchStore with an activeResult that is a grid container
@@ -41,8 +41,7 @@ describe("action: moveSelected", () => {
           },
         ],
       });
-      const preMoveContent: ContainerModel = activeResult.locations?.[0]
-        .content as ContainerModel;
+      const preMoveContent: ContainerModel = activeResult.locations?.[0].content as ContainerModel;
       vi.spyOn(InvApiService, "query").mockImplementation(
         () =>
           Promise.resolve({
@@ -55,14 +54,12 @@ describe("action: moveSelected", () => {
                 columnsLabelType: "ABC",
                 rowsLabelType: "ABC",
               },
-              locations: [
-                { id: 1, coordX: 1, coordY: 1, content: locationContent },
-              ],
+              locations: [{ id: 1, coordX: 1, coordY: 1, content: locationContent }],
               attachments: [],
               barcodes: [],
               _links: [],
             },
-          }) as unknown as Promise<AxiosResponse<unknown>>
+          }) as unknown as Promise<AxiosResponse<unknown>>,
       );
       await searchStore.search.setActiveResult(activeResult);
       const location = activeResult.locations?.[0];
@@ -75,16 +72,12 @@ describe("action: moveSelected", () => {
        * 2. Setup move dialog to move selected location's content into its
        * current location
        */
-      vi
-        .spyOn(Search.prototype, "setSearchView")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(Search.prototype, "setSearchView").mockImplementation(() => Promise.resolve());
       await moveStore.setIsMoving(true);
 
       moveStore.setSelectedResults([preMoveContent]);
       const destination = activeResult;
-      vi
-        .spyOn(destination.contentSearch.fetcher, "performInitialSearch")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(destination.contentSearch.fetcher, "performInitialSearch").mockImplementation(() => Promise.resolve());
 
       await moveStore.setTargetContainer(destination);
 
@@ -111,12 +104,9 @@ describe("action: moveSelected", () => {
               successCount: 1,
               successCountBeforeFirstError: 1,
             },
-          }) as unknown as Promise<AxiosResponse<unknown>>
+          }) as unknown as Promise<AxiosResponse<unknown>>,
       );
-      vi
-        .spyOn(searchStore.search.fetcher, "performInitialSearch")
-
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(searchStore.search.fetcher, "performInitialSearch").mockImplementation(() => Promise.resolve());
 
       await moveStore.moveSelected();
       const newLocation = activeResult.locations?.[0];
@@ -124,10 +114,7 @@ describe("action: moveSelected", () => {
       expect(newLocation?.content?.id).toEqual(preMoveContent.id);
       expect(newLocation?.content).not.toBe(preMoveContent);
       expect(activeResult.selectedLocations?.length).toBe(0);
-      expect(activeResult.locations?.map((l) => l.content?.selected)).toEqual([
-        false,
-      ]);
+      expect(activeResult.locations?.map((l) => l.content?.selected)).toEqual([false]);
     });
   });
 });
-

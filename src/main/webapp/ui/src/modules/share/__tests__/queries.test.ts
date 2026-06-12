@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { RestApiError } from "@/modules/common/api/schema";
 import { getShareListing } from "../queries";
 import type { ShareSearchResponse } from "../schema";
-import type { RestApiError } from "@/modules/common/api/schema";
 
 const API_BASE_URL = "/api/v1";
 
@@ -88,23 +88,15 @@ describe("getShareListing", () => {
 
     await getShareListing({}, { token });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/share`,
-      expect.any(Object),
-    );
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/share`, expect.any(Object));
   });
 
   test("should parse folderShares when provided", async () => {
     fetchMock.mockResponseOnce(JSON.stringify(mockShareResponseWithFolderShares));
 
-    const result = await getShareListing(
-      { sharedItemIds: ["999"] },
-      { token },
-    );
+    const result = await getShareListing({ sharedItemIds: ["999"] }, { token });
 
-    expect(result.folderShares).toEqual(
-      mockShareResponseWithFolderShares.folderShares,
-    );
+    expect(result.folderShares).toEqual(mockShareResponseWithFolderShares.folderShares);
   });
 
   test("should throw error when server returns error response", async () => {
@@ -124,8 +116,6 @@ describe("getShareListing", () => {
       statusText: "Not Found",
     });
 
-    await expect(getShareListing({}, { token })).rejects.toThrow(
-      "Share listing not found",
-    );
+    await expect(getShareListing({}, { token })).rejects.toThrow("Share listing not found");
   });
 });

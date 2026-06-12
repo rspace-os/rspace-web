@@ -1,21 +1,20 @@
-import path from "node:path";
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import bundleEntries from "./bundleEntries.json";
-import { defineConfig } from "vitest/config";
-import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
+import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
+import { defineConfig } from "vitest/config";
+import bundleEntries from "./bundleEntries.json";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const resolveFromRoot = (relativePath: string) =>
-  path.resolve(__dirname, relativePath);
+const resolveFromRoot = (relativePath: string) => path.resolve(__dirname, relativePath);
 
 /*
  * Serves the self-hosted TinyMCE 8 build as static files under
@@ -42,14 +41,7 @@ const TINYMCE_MIME: Record<string, string> = {
   ".html": "text/html",
 };
 // Subset of the package needed at runtime (omit TS/source files from dist).
-const TINYMCE_RUNTIME_ENTRIES = [
-  "tinymce.min.js",
-  "models",
-  "themes",
-  "icons",
-  "skins",
-  "plugins",
-];
+const TINYMCE_RUNTIME_ENTRIES = ["tinymce.min.js", "models", "themes", "icons", "skins", "plugins"];
 
 // Resolve the installed TinyMCE package and read its version. The version is
 // the cache-busting token for the lazily-loaded TinyMCE assets (see the
@@ -57,9 +49,7 @@ const TINYMCE_RUNTIME_ENTRIES = [
 // TinyMCE release changes the `?v=` suffix and invalidates browser/proxy
 // caches, matching the `?v=<token>` convention RSpace uses elsewhere
 // (com.axiope.webapp.taglib.AssetUrlTag).
-const tinymceDir = path.dirname(
-  createRequire(import.meta.url).resolve("tinymce/package.json"),
-);
+const tinymceDir = path.dirname(createRequire(import.meta.url).resolve("tinymce/package.json"));
 const tinymceVersion = (
   JSON.parse(fs.readFileSync(path.join(tinymceDir, "package.json"), "utf8")) as {
     version: string;
@@ -80,17 +70,10 @@ function tinymceAssets(base: string): Plugin {
         if (!matched) return next();
         const rel = decodeURIComponent(pathname.slice(matched.length));
         const filePath = path.normalize(path.join(tinymceDir, rel));
-        if (
-          !filePath.startsWith(tinymceDir) ||
-          !fs.existsSync(filePath) ||
-          !fs.statSync(filePath).isFile()
-        ) {
+        if (!filePath.startsWith(tinymceDir) || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
           return next();
         }
-        res.setHeader(
-          "Content-Type",
-          TINYMCE_MIME[path.extname(filePath)] ?? "application/octet-stream",
-        );
+        res.setHeader("Content-Type", TINYMCE_MIME[path.extname(filePath)] ?? "application/octet-stream");
         // Keep dev fresh; production cache-busting is handled by the `?v=`
         // version suffix on the asset URLs (see __TINYMCE_VERSION__).
         res.setHeader("Cache-Control", "no-cache");
@@ -140,10 +123,7 @@ const vitestAliases: Alias[] = [
 ];
 
 const resolvedBundleEntries = Object.fromEntries(
-  Object.entries(bundleEntries).map(([name, relativePath]) => [
-    name,
-    resolveFromRoot(relativePath),
-  ]),
+  Object.entries(bundleEntries).map(([name, relativePath]) => [name, resolveFromRoot(relativePath)]),
 ) satisfies Record<string, string>;
 
 export default defineConfig(async ({ mode }) => {
@@ -196,12 +176,7 @@ export default defineConfig(async ({ mode }) => {
     plugins,
     resolve: {
       tsconfigPaths: true,
-      alias: isVitest
-        ? [
-            { find: /^@\//, replacement: `${resolveFromRoot("src")}/` },
-            ...vitestAliases,
-          ]
-        : [],
+      alias: isVitest ? [{ find: /^@\//, replacement: `${resolveFromRoot("src")}/` }, ...vitestAliases] : [],
       ...(isVitest ? { externalConditions: ["require"] } : {}),
     },
     // HTTP requests for /ui/dist/* are reverse-proxied by Jetty (see
