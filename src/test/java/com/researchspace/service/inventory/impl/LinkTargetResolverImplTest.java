@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,6 +35,7 @@ class LinkTargetResolverImplTest {
 
   @Mock private InventoryPermissionUtils inventoryPermissionUtils;
   @Mock private BaseRecordManager baseRecordManager;
+  @Mock private IPermissionUtils permissionUtils;
   @InjectMocks private LinkTargetResolverImpl resolver;
 
   private User user;
@@ -39,6 +43,36 @@ class LinkTargetResolverImplTest {
   @BeforeEach
   void setUp() {
     user = new User("any");
+  }
+
+  @Test
+  void resolutionAppliesPendingPermissionCacheRefreshBeforeChecking() {
+    // an unshare notifies the affected user to refresh their cached Shiro
+    // authorisation; resolution must apply that pending refresh first, or the
+    // viewer keeps the stale read grant (and a working Open with no pill)
+    // until the server restarts
+    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
+        .thenReturn(Collections.emptyList());
+
+    resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD42"), user);
+
+    InOrder inOrder = inOrder(permissionUtils, baseRecordManager);
+    inOrder.verify(permissionUtils).refreshCacheIfNotified();
+    inOrder.verify(baseRecordManager).getByGlobalIdsAndReadPermission(any(), eq(user));
+  }
+
+  @Test
+  void inventoryResolutionAlsoAppliesPendingPermissionCacheRefreshFirst() {
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(true);
+
+    resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user);
+
+    InOrder inOrder = inOrder(permissionUtils, inventoryPermissionUtils);
+    inOrder.verify(permissionUtils).refreshCacheIfNotified();
+    inOrder
+        .verify(inventoryPermissionUtils)
+        .canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user));
   }
 
   @Test

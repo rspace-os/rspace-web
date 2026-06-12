@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -40,12 +41,17 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
 
   @Autowired private InventoryPermissionUtils inventoryPermissionUtils;
   @Autowired private BaseRecordManager baseRecordManager;
+  @Autowired private IPermissionUtils permissionUtils;
 
   @Override
   public boolean targetExistsAndIsReadable(GlobalIdentifier target, User user) {
     if (target == null) {
       return false;
     }
+    // an unshare notifies the affected user to refresh their cached Shiro
+    // authorisation; apply any pending refresh before checking, or the
+    // viewer keeps the revoked read grant until the server restarts
+    permissionUtils.refreshCacheIfNotified();
     GlobalIdentifier base =
         target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
     GlobalIdPrefix prefix = base.getPrefix();
