@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 /** Summary of an InventoryLink's target as seen at read time. */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"globalId", "name", "type", "deleted"})
+@JsonPropertyOrder({"globalId", "name", "type", "deleted", "readable"})
 public class ApiInventoryLinkTargetSummary {
 
   @JsonProperty("globalId")
@@ -23,4 +23,12 @@ public class ApiInventoryLinkTargetSummary {
 
   @JsonProperty("deleted")
   private boolean deleted;
+
+  /**
+   * True only when the actor can read the target. False deliberately conflates "unreadable" with
+   * "nonexistent": both produce field-for-field identical payloads so callers cannot probe which
+   * records exist (see DevDocs/adr/0002-link-target-state-non-disclosure.md).
+   */
+  @JsonProperty("readable")
+  private boolean readable;
 }

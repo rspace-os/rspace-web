@@ -95,6 +95,7 @@ class LinkTargetSnapshotResolverImplTest {
 
     assertEquals("SA10", summary.getGlobalId());
     assertNull(summary.getName());
+    assertFalse(summary.isReadable());
   }
 
   @Test
@@ -123,6 +124,7 @@ class LinkTargetSnapshotResolverImplTest {
     assertEquals("Buffer", s.getName());
     assertEquals("SAMPLE", s.getType());
     assertFalse(s.isDeleted());
+    assertTrue(s.isReadable());
     verify(auditManager, never()).getNewestRevisionForEntity(any(), any());
   }
 
@@ -174,6 +176,30 @@ class LinkTargetSnapshotResolverImplTest {
     assertEquals("SA10", s.getGlobalId());
     assertNull(s.getName());
     assertNull(s.getType());
+    assertFalse(s.isReadable());
+  }
+
+  @Test
+  void resolveSummaryMakesUnreadableTargetIndistinguishableFromNonexistent() {
+    // Non-disclosure invariant (ADR-0002): a target the actor cannot read must
+    // produce a payload field-for-field identical to one for a record that does
+    // not exist, so probing the summary endpoint with guessed ids learns nothing.
+    Sample rec = mock(Sample.class);
+    User owner = mock(User.class);
+    when(owner.getUsername()).thenReturn("alice");
+    when(rec.getOwner()).thenReturn(owner);
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L))
+        .thenReturn(null)
+        .thenReturn(new AuditedEntity<>(rec, 120));
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+    when(user.getUsername()).thenReturn("bob");
+
+    ApiInventoryLinkTargetSummary nonexistent =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+    ApiInventoryLinkTargetSummary unreadable =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals(nonexistent, unreadable);
   }
 
   @Test
@@ -192,6 +218,7 @@ class LinkTargetSnapshotResolverImplTest {
     assertEquals("My doc", s.getName());
     assertEquals("DOCUMENT", s.getType());
     assertFalse(s.isDeleted());
+    assertTrue(s.isReadable());
   }
 
   @Test

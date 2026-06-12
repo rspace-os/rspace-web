@@ -17,7 +17,13 @@ describe("useLinkTargetSummary", () => {
 
   it("resolves the target's current state from the lazy summary endpoint", async () => {
     mockGet.mockResolvedValue({
-      data: { globalId: "SD5", name: "my doc", type: "DOCUMENT", deleted: true },
+      data: {
+        globalId: "SD5",
+        name: "my doc",
+        type: "DOCUMENT",
+        deleted: true,
+        readable: true,
+      },
     });
 
     const { result } = renderHook(() => useLinkTargetSummary("SD5"));
@@ -26,11 +32,14 @@ describe("useLinkTargetSummary", () => {
     expect(mockGet).toHaveBeenCalledWith("linkTargets/SD5/summary");
     expect(result.current?.deleted).toBe(true);
     expect(result.current?.name).toBe("my doc");
+    expect(result.current?.readable).toBe(true);
   });
 
   it("degrades to null on any resolution failure", async () => {
-    // missing record, no permission and network failure all look the same to
-    // the card: no pill, Open kept, exactly as before the summary existed
+    // network failure and malformed ids look the same to the card: no pill,
+    // Open kept, exactly as before the summary existed. (Missing and
+    // unreadable records are not failures: they resolve to a redacted
+    // readable:false summary.)
     mockGet.mockRejectedValue(new Error("404"));
 
     const { result } = renderHook(() => useLinkTargetSummary("SD404"));

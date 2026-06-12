@@ -11,13 +11,21 @@ export type LinkTargetSummary = {
   name: string | null;
   type: string | null;
   deleted: boolean;
+  /**
+   * False when the viewer cannot read the target. Deliberately conflates
+   * unshared, never-shared, nonexistent, and hard-deleted-by-another-owner:
+   * all are redacted identically (ADR-0002), so false never discloses
+   * whether the record exists.
+   */
+  readable: boolean;
 };
 
 /**
  * Resolves the current state of a link target for the link card. Returns null
- * while loading and on any failure (missing record, no permission, network
- * error): the card then renders no "Target deleted" pill and keeps its Open
- * action, the same as before the summary existed.
+ * while loading and on any failure (network error, malformed id): the card
+ * then renders no state pill and keeps its Open action, the same as before
+ * the summary existed. Missing and unreadable targets are not failures: the
+ * server resolves them to a redacted summary with readable false.
  */
 export default function useLinkTargetSummary(
   globalId: string,

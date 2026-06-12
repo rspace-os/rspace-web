@@ -74,6 +74,7 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       // Redacted: globalId only, never disclose name/type of a target the actor cannot read.
       return summary;
     }
+    summary.setReadable(true);
     summary.setType(typeFor(prefix));
     summary.setName(nameOf(entity));
     summary.setDeleted(deletedOf(entity));

@@ -147,6 +147,7 @@ describe("LinkField", () => {
       name: "gone doc",
       type: "DOCUMENT",
       deleted: true,
+      readable: true,
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
     expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
@@ -161,9 +162,67 @@ describe("LinkField", () => {
       name: "binned sample",
       type: "SAMPLE",
       deleted: true,
+      readable: true,
     });
     renderField();
     expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^open$/i })).toBeEnabled();
+  });
+
+  it("shows the No access pill and removes Open for an unreadable ELN target", () => {
+    // the server redacts targets the viewer cannot read (unshared, never
+    // shared, nonexistent, or hard-deleted by another owner all look alike);
+    // opening such an ELN target could only produce an error page
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SD5",
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+    });
+    renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
+    expect(screen.getByText(/no access/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^open$/i }),
+    ).not.toBeInTheDocument();
+    // info and Edit stay: Edit is the repair path (retarget or remove the field)
+    expect(
+      screen.getByRole("button", { name: /show info for sd5/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /edit link/i })).toBeInTheDocument();
+  });
+
+  it("explains the No access pill with a permission tooltip", async () => {
+    const user = userEvent.setup();
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SD5",
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+    });
+    renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
+
+    await user.hover(screen.getByText(/no access/i));
+
+    // no "no longer": viewers who never had access see this pill too
+    expect(
+      await screen.findByText(/you do not have permission to view this item/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a normal card with Open for an unreadable inventory target", () => {
+    // every logged-in user keeps the limited-read view of inventory items,
+    // so Open still lands somewhere useful and no pill is warranted
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+    });
+    renderField();
+    expect(screen.queryByText(/no access/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^open$/i })).toBeEnabled();
   });
 
