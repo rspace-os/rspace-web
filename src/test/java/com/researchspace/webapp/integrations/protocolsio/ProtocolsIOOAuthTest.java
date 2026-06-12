@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
-import static com.researchspace.webapp.integrations.protocolsio.ProtocolsIO_OAuthController.PROTOCOLSIO_ACCESS_TOKEN_URL;
 import static com.researchspace.webapp.integrations.protocolsio.ProtocolsIO_OAuthController.REFRESH_TOKEN_EXPIRED_CODE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -45,6 +44,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -54,6 +54,10 @@ import org.springframework.web.servlet.view.RedirectView;
 public class ProtocolsIOOAuthTest {
 
   private static final String USERNAME = "user";
+  private static final String PROTOCOLSIO_ACCESS_TOKEN_URL =
+      "https://www.protocols.io/api/v3/oauth/token";
+  private static final String PROTOCOLSIO_AUTH_URL =
+      "https://www.protocols.io/api/v3/oauth/authorize";
 
   @Rule public MockitoRule rule = MockitoJUnit.rule();
 
@@ -70,6 +74,9 @@ public class ProtocolsIOOAuthTest {
     shiroUtils = new ShiroTestUtils();
     shiroUtils.setSubject(subjct);
     Mockito.when(subjct.getSession()).thenReturn(new SimpleSession());
+    ReflectionTestUtils.setField(
+        ctrller, "protocolsioAccessTokenUrl", PROTOCOLSIO_ACCESS_TOKEN_URL);
+    ReflectionTestUtils.setField(ctrller, "protocolsioAuthUrl", PROTOCOLSIO_AUTH_URL);
   }
 
   @After

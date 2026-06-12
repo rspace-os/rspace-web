@@ -80,6 +80,12 @@ public class SlackController extends BaseController {
   @Value("${slack.verification.token}")
   private String verificationToken;
 
+  @Value("${slack.oauth.authorize.url:https://slack.com/oauth/authorize}")
+  private String slackOauthAuthorizeUrl;
+
+  @Value("${slack.api.base.url:https://slack.com/api}")
+  private String slackApiBaseUrl;
+
   private @Autowired UserAppConfigManager userAppCfgMgr;
   private @Autowired SlackService slackService;
   private @Autowired ChatBotFunctionalityHandler chatBotFunctionalityHandler;
@@ -90,7 +96,8 @@ public class SlackController extends BaseController {
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
     var url =
-        "https://slack.com/oauth/authorize?scope=incoming-webhook,commands,channels:history,users:read,files:read,groups:history,im:history,mpim:history&client_id="
+        slackOauthAuthorizeUrl
+            + "?scope=incoming-webhook,commands,channels:history,users:read,files:read,groups:history,im:history,mpim:history&client_id="
             + this.clientId;
     return new AjaxReturnObject<>(url, null);
   }
@@ -112,7 +119,8 @@ public class SlackController extends BaseController {
     String authorizationCode = params.get("code");
     try {
       String slackUrl =
-          "https://slack.com/api/oauth.access?client_id="
+          slackApiBaseUrl
+              + "/oauth.access?client_id="
               + clientId
               + "&client_secret="
               + clientSecret

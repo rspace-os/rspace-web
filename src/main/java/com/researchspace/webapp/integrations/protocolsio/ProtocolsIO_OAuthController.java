@@ -52,8 +52,12 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
   @Value("${protocolsio.secret}")
   private String clientSecret;
 
-  static final String PROTOCOLSIO_ACCESS_TOKEN_URL = "https://www.protocols.io/api/v3/oauth/token";
-  static final String PROTOCOLSIO_AUTH_URL = "https://www.protocols.io/api/v3/oauth/authorize";
+  @Value("${protocolsio.oauth.token.url:https://www.protocols.io/api/v3/oauth/token}")
+  private String protocolsioAccessTokenUrl;
+
+  @Value("${protocolsio.oauth.authorize.url:https://www.protocols.io/api/v3/oauth/authorize}")
+  private String protocolsioAuthUrl;
+
   static final int REFRESH_TOKEN_EXPIRED_CODE = 1217;
 
   private RestTemplate restTemplate;
@@ -76,7 +80,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     String url =
         String.format(
             "%s?client_id=%s&redirect_url=%s&response_type=%s&scope=readwrite&state=%s",
-            PROTOCOLSIO_AUTH_URL, clientId, redirectUrl, "code", state);
+            protocolsioAuthUrl, clientId, redirectUrl, "code", state);
     return new RedirectView(url);
   }
 
@@ -183,7 +187,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     try {
       ResponseEntity<AccessToken> newToken =
           restTemplate.exchange(
-              PROTOCOLSIO_ACCESS_TOKEN_URL,
+              protocolsioAccessTokenUrl,
               HttpMethod.POST,
               accessTokenRequestEntity,
               AccessToken.class);
@@ -236,7 +240,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
 
     ResponseEntity<AccessToken> accessToken =
         restTemplate.exchange(
-            PROTOCOLSIO_ACCESS_TOKEN_URL,
+            protocolsioAccessTokenUrl,
             HttpMethod.POST,
             accessTokenRequestEntity,
             AccessToken.class);
