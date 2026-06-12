@@ -115,6 +115,15 @@ const lightningCssTargets = browserslistToTargets(browserslist());
 const shouldGenerateBuildStats = process.env.FRONTEND_BUILD_STATS === "true";
 const devServerHost = process.env.VITE_DEV_SERVER_HOST ?? "127.0.0.1";
 const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT ?? "5173");
+// When the dev server runs in a container, it binds 0.0.0.0 internally while the
+// browser reaches HMR via a published host port. These let the browser-facing
+// HMR host/port differ from the bind host/port; both default to the bind values
+// so local (non-container) dev is unchanged. VITE_USE_POLLING enables polling-
+// based file watching, which is needed for HMR over bind mounts (macOS/Windows
+// Docker), where native filesystem events are not delivered.
+const hmrHost = process.env.VITE_HMR_HOST ?? devServerHost;
+const hmrClientPort = Number(process.env.VITE_HMR_CLIENT_PORT ?? devServerPort);
+const useFsPolling = process.env.VITE_USE_POLLING === "true";
 
 const vitestAliases: Alias[] = [
   {
@@ -213,10 +222,13 @@ export default defineConfig(async ({ mode }) => {
       port: devServerPort,
       strictPort: true,
       hmr: {
-        host: devServerHost,
+        host: hmrHost,
         port: devServerPort,
-        clientPort: devServerPort,
+        clientPort: hmrClientPort,
       },
+      ...(useFsPolling
+        ? { watch: { usePolling: true, interval: 200 } }
+        : {}),
     },
     build: {
       outDir: "dist",

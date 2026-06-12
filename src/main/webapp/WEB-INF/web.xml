@@ -206,6 +206,12 @@
         </jsp-property-group>
     </jsp-config>
  
+    <!-- Must run before any session is created: renames the session cookie when
+         rs.session.cookie.name (or RSPACE_SESSION_COOKIE_NAME) is set, so multiple
+         localhost instances on different ports don't overwrite each other's cookie. -->
+    <listener>
+        <listener-class>com.axiope.webapp.listener.SessionCookieNameListener</listener-class>
+    </listener>
     <listener>
         <listener-class>net.bull.javamelody.SessionListener</listener-class>
     </listener>
