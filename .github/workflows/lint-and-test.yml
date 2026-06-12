@@ -116,9 +116,30 @@ jobs:
 
       - name: Run fast tests
         run: |
-          ./mvnw clean test -U -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+          ./mvnw clean test jacoco:report -U -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+            -DenableTestCoverage \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+
+      # Posts a coverage summary to the PR using the JaCoCo XML report generated
+      # by `jacoco:report` above (target/site/jacoco/jacoco.xml). Restricted to
+      # same-repo PRs because commenting needs a writable GITHUB_TOKEN, which
+      # fork PRs do not receive. Thresholds are informational for now (0 = always
+      # pass); raise them once a baseline is established to enforce coverage.
+      - name: Add coverage to PR
+        uses: madrapps/jacoco-report@v1.8.0
+        if: |
+          always() &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          hashFiles('target/site/jacoco/jacoco.xml') != ''
+        with:
+          paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: Java Code Coverage
+          update-comment: true
+          min-coverage-overall: 0
+          min-coverage-changed-files: 0
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.23.0
