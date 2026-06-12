@@ -35,12 +35,7 @@ public class PubchemSearcherTest {
 
   @BeforeEach
   public void setUp() {
-    pubchemSearcher =
-        new PubchemSearcher(
-            restTemplate,
-            "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound",
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l",
-            "https://pubchem.ncbi.nlm.nih.gov/compound/%s");
+    pubchemSearcher = new PubchemSearcher(restTemplate, "https://pubchem.ncbi.nlm.nih.gov");
   }
 
   private static PubchemResponse createValidPubChemResponse() {

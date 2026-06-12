@@ -28,19 +28,12 @@ public class PubchemSearcher implements ChemicalSearcher {
 
   private final RestTemplate restTemplate;
   private final String pubchemBaseUrl;
-  private final String pubchemImageUrl;
-  private final String pubchemCompoundUrl;
 
   @Autowired
   public PubchemSearcher(
-      RestTemplate restTemplate,
-      @Value("${pubchem.api.base.url}") String pubchemBaseUrl,
-      @Value("${pubchem.image.url}") String pubchemImageUrl,
-      @Value("${pubchem.compound.url}") String pubchemCompoundUrl) {
+      RestTemplate restTemplate, @Value("${pubchem.base.url}") String pubchemBaseUrl) {
     this.restTemplate = restTemplate;
     this.pubchemBaseUrl = pubchemBaseUrl;
-    this.pubchemImageUrl = pubchemImageUrl;
-    this.pubchemCompoundUrl = pubchemCompoundUrl;
   }
 
   @Override
@@ -50,7 +43,7 @@ public class PubchemSearcher implements ChemicalSearcher {
     validateSearchParameters(searchType, searchTerm);
     String url =
         String.format(
-            "%s/%s/%s/property/Title,SMILES,MolecularFormula/json",
+            "%s/rest/pug/compound/%s/%s/property/Title,SMILES,MolecularFormula/json",
             pubchemBaseUrl, searchType.name(), searchTerm);
     return makeApiRequestAndParseResponse(url, searchTerm);
   }
@@ -102,8 +95,8 @@ public class PubchemSearcher implements ChemicalSearcher {
           .formula(property.getMolecularFormula())
           .smiles(property.getSmiles())
           .cas(cas)
-          .pngImage(String.format(pubchemImageUrl, cid))
-          .pubchemUrl(String.format(pubchemCompoundUrl, cid))
+          .pngImage(String.format("%s/image/imgsrv.fcgi?cid=%s&t=l", pubchemBaseUrl, cid))
+          .pubchemUrl(String.format("%s/compound/%s", pubchemBaseUrl, cid))
           .build();
 
     } catch (Exception e) {
@@ -122,7 +115,7 @@ public class PubchemSearcher implements ChemicalSearcher {
    */
   private String fetchCasNumberFromSynonyms(String cid) {
     try {
-      String url = String.format("%s/cid/%s/synonyms/JSON", pubchemBaseUrl, cid);
+      String url = String.format("%s/rest/pug/compound/cid/%s/synonyms/JSON", pubchemBaseUrl, cid);
       log.info("Fetching synonyms from PubChem API: {}", url);
 
       ResponseEntity<PubchemSynonymsResponse> response =
