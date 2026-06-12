@@ -224,13 +224,21 @@ export default function CompoundSearchDialog({
     void search({
       searchTerm,
       searchType,
-    }).then((newResults) => {
-      setResults(newResults);
-      // Auto-select when there's exactly one result.
-      setSelectedCompounds(Object.fromEntries(newResults.map((c) => [c.pubchemId, newResults.length === 1])));
-      setHasSearched(true);
-      setDisplayedSearchTerm(searchTerm);
-    });
+    })
+      .then((newResults) => {
+        setResults(newResults);
+        // Auto-select when there's exactly one result.
+        setSelectedCompounds(Object.fromEntries(newResults.map((c) => [c.pubchemId, newResults.length === 1])));
+        setHasSearched(true);
+        setDisplayedSearchTerm(searchTerm);
+      })
+      .catch(() => {
+        /*
+         * `useChemicalImport.search` already reports the failure to the user via
+         * an alert toast. Swallow the rejected promise here so a handled API
+         * error does not bubble up as an unhandled rejection in the UI or tests.
+         */
+      });
   }
   React.useEffect(() => {
     if (!open) {

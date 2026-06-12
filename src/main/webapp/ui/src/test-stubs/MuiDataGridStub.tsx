@@ -46,13 +46,16 @@ type DataGridStubProps<Row> = {
   slotProps?: {
     toolbar?: Record<string, unknown>;
   };
-  apiRef?: React.MutableRefObject<{ exportDataAsCsv: () => void } | null>;
+  apiRef?: React.MutableRefObject<GridApi | null>;
   "aria-label"?: string;
 };
 
-const GridApiContext = React.createContext<React.MutableRefObject<{
+type GridApi = {
   exportDataAsCsv: () => void;
-} | null> | null>(null);
+  autosizeColumns: (options?: unknown) => Promise<void>;
+};
+
+const GridApiContext = React.createContext<React.MutableRefObject<GridApi | null> | null>(null);
 
 const toSelectedIds = (selectionModel: SelectionModel): Set<GridId> => {
   if (Array.isArray(selectionModel)) return new Set(selectionModel);
@@ -130,8 +133,9 @@ export const GRID_CHECKBOX_SELECTION_COL_DEF = {
 };
 
 export const useGridApiRef = () =>
-  React.useRef<{ exportDataAsCsv: () => void }>({
+  React.useRef<GridApi>({
     exportDataAsCsv: () => {},
+    autosizeColumns: () => Promise.resolve(),
   });
 
 export const useGridApiContext = () => {
@@ -140,6 +144,7 @@ export const useGridApiContext = () => {
     apiRef ?? {
       current: {
         exportDataAsCsv: () => {},
+        autosizeColumns: () => Promise.resolve(),
       },
     }
   );
@@ -214,9 +219,10 @@ export function DataGrid<Row>({
   apiRef,
   "aria-label": ariaLabel,
 }: DataGridStubProps<Row>) {
-  const internalApiRef = apiRef ?? {
+  const internalApiRef: React.MutableRefObject<GridApi | null> = apiRef ?? {
     current: {
       exportDataAsCsv: () => {},
+      autosizeColumns: () => Promise.resolve(),
     },
   };
 
@@ -256,6 +262,7 @@ export function DataGrid<Row>({
       const blob = new Blob([lines.join("\n")], { type: "text/csv" });
       window.URL.createObjectURL(blob);
     },
+    autosizeColumns: () => Promise.resolve(),
   };
 
   const toggleRow = (id: GridId, checked: boolean) => {
@@ -281,19 +288,19 @@ export function DataGrid<Row>({
       >
         <div>
           {ToolbarComponent ? <ToolbarComponent {...slotProps?.toolbar} /> : null}
-          {/** biome-ignore lint/a11y/useSemanticElements: initial biome migration */}
+          {/* biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup */}
           <div role="grid" aria-label={ariaLabel}>
-            {/** biome-ignore lint/a11y/useSemanticElements: initial biome migration */}
-            {/** biome-ignore lint/a11y/useFocusableInteractive: initial biome migration */}
+            {/* biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup */}
+            {/* biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup */}
             <div role="row">
               {checkboxSelection ? (
-                // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+                // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
                 <div role="columnheader">{localeText?.checkboxSelectionHeaderName ?? "Select"}</div>
               ) : null}
               {visibleColumns.map((column, index) => (
-                // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+                // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
                 <div role="columnheader" key={column.field ?? column.headerName ?? index}>
                   {typeof column.renderHeader === "function"
                     ? column.renderHeader()
@@ -302,26 +309,29 @@ export function DataGrid<Row>({
               ))}
             </div>
             {rows.length === 0 ? (
-              // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-              // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+              // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+              // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
               <div role="row">
-                {/** biome-ignore lint/a11y/useSemanticElements: initial biome migration */}
-                {/** biome-ignore lint/a11y/useFocusableInteractive: initial biome migration */}
+                {/* biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup */}
+                {/* biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup */}
                 <div role="gridcell">{localeText?.noRowsLabel ?? "No rows"}</div>
               </div>
             ) : null}
             {rows.map((row, rowIndex) => {
               const id = getRowId ? getRowId(row) : rowIndex;
               return (
-                // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+                // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
                 <div role="row" key={String(id)}>
                   {checkboxSelection ? (
-                    // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                    // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+                    // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                    // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
                     <div role="gridcell">
                       <input
                         type="checkbox"
+                        // biome-ignore lint/a11y/useAriaPropsForRole: test stub mirrors MUI DataGrid ARIA markup
+                        // biome-ignore lint/a11y/noRedundantRoles: test stub mirrors MUI DataGrid ARIA markup
+                        role="checkbox"
                         aria-label="Select row"
                         checked={selectedIds.has(id)}
                         onChange={(event) => toggleRow(id, event.target.checked)}
@@ -340,8 +350,8 @@ export function DataGrid<Row>({
                           })
                         : toText(value);
                     return (
-                      // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                      // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+                      // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                      // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
                       <div role="gridcell" key={`${String(id)}-${column.field ?? columnIndex}`}>
                         {content}
                       </div>

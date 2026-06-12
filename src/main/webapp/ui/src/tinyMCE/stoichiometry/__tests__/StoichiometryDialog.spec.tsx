@@ -11,19 +11,6 @@ type CalledSpy = {
   hasBeenCalled: () => boolean;
 };
 
-const createCalledSpy = (): CalledSpy => {
-  let called = false;
-  const handler = () => {
-    called = true;
-  };
-
-  const hasBeenCalled = () => called;
-  return {
-    handler,
-    hasBeenCalled,
-  };
-};
-
 const hasStoichiometryRequest = (
   networkRequests: Array<{ url: URL; postData: string | null; method: string }>,
   method: "POST" | "PUT" | "DELETE",
@@ -219,7 +206,7 @@ const feature = test.extend<{
       },
     });
   },
-  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
   networkRequests: async ({}, use) => {
     await use([]);
   },
@@ -399,117 +386,24 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
 });
+/*
+ * Only the genuinely browser-bound cases remain here. The behavioural cases
+ * (render, axe, create/save/delete flows) were converted to jsdom in
+ * StoichiometryDialog.test.tsx. Kept in Playwright:
+ *   - "supports high-contrast mode": needs page.emulateMedia({ contrast }).
+ *   - "shows save button when ... editing a cell": needs MUI DataGrid's real
+ *     inline cell editing, which the vitest DataGrid stub cannot perform.
+ */
 test.describe("Stoichiometry Dialog", () => {
-  feature("shows calculate button when no table is present", async ({ Given, Then }) => {
-    await Given["the dialog is open without a stoichiometry table"]();
-    await Then["the calculate button is visible"]();
-  });
-  feature("calculate dialog has no accessibility violations", async ({ Given, Then }) => {
-    await Given["the dialog is open without a stoichiometry table"]();
-    await Then["there shouldn't be any axe violations"]();
-  });
-  feature("displays stoichiometry table when data is available", async ({ Given, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-  });
-  feature("Has no accessibility violations", async ({ Given, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["there shouldn't be any axe violations"]();
-  });
   feature("supports high-contrast mode", async ({ Given, Then, page }) => {
-    page.emulateMedia({ contrast: "more" });
+    await page.emulateMedia({ contrast: "more" });
     await Given["the dialog is open with a stoichiometry table"]();
     await Then["there shouldn't be any axe violations"]();
-  });
-  feature("invokes callback when table is successfully created", async ({ Given, When, Then }) => {
-    const onTableCreatedSpy = createCalledSpy();
-    await Given["the dialog is open without a stoichiometry table"]({
-      onTableCreatedSpy,
-    });
-    await When["the user clicks calculate"]();
-    await Then["the table is displayed"]();
-    Then["the callback should have been invoked"]({
-      onTableCreatedSpy,
-    });
-  });
-  feature("makes a POST API call when creating a new table", async ({ Given, When, Then }) => {
-    await Given["the dialog is open without a stoichiometry table"]();
-    await When["the user clicks calculate"]();
-    await Then["the table is displayed"]();
-    Then["a POST request should have been made to create the stoichiometry table"]();
-  });
-  feature("shows an inline error when creating a new table fails", async ({ Given, When, Then, page }) => {
-    const createErrorMessage = "Unable to create stoichiometry table.";
-    await page.route(/\/api\/v1\/stoichiometry\?recordId=1&chemId=12345$/, async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: "application/json",
-        body: JSON.stringify({
-          status: "error",
-          httpCode: 500,
-          internalCode: 500,
-          message: createErrorMessage,
-          messageCode: null,
-          errors: [],
-          iso8601Timestamp: "2026-04-07T00:00:00Z",
-          data: null,
-        }),
-      });
-    });
-
-    await Given["the dialog is open without a stoichiometry table"]();
-    await When["the user clicks calculate"]();
-    await Then["the calculate button is visible"]();
-    await Then["an inline calculate error should be displayed"](createErrorMessage);
-  });
-  feature("does not show save button when table has not been modified", async ({ Given, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await Then["the save button should not be visible"]();
   });
   feature("shows save button when table data is modified by editing a cell", async ({ Given, When, Then }) => {
     await Given["the dialog is open with a stoichiometry table"]();
     await Then["the table is displayed"]();
     await When["the user edits a cell in the table"]();
     await Then["the save button should be visible"]();
-  });
-  feature("shows save button when limiting reagent is changed", async ({ Given, When, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await When["the user changes the limiting reagent"]();
-    await Then["the save button should be visible"]();
-  });
-  feature("hides save button after saving changes", async ({ Given, When, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await When["the user edits a cell in the table"]();
-    await When["the user saves the changes"]();
-    await Then["the save button should not be visible"]();
-  });
-  feature("makes a PUT API call when saving changes to the table", async ({ Given, When, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await When["the user edits a cell in the table"]();
-    await When["the user saves the changes"]();
-    Then["a PUT request should have been made to update the stoichiometry table"]();
-  });
-  feature("shows delete button when table is present", async ({ Given, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await Then["the delete button should be visible"]();
-  });
-  feature("shows confirmation dialog when delete button is clicked", async ({ Given, When, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await When["the user clicks the delete button"]();
-    await Then["the confirmation dialog should be displayed"]();
-  });
-  feature("makes a DELETE API call and hides table when deletion is confirmed", async ({ Given, When, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["the table is displayed"]();
-    await When["the user clicks the delete button"]();
-    await When["the user confirms the deletion"]();
-    Then["a DELETE request should have been made to delete the stoichiometry table"]();
-    await Then["the table should be hidden"]();
   });
 });

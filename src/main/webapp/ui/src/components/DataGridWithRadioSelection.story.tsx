@@ -40,6 +40,7 @@ export function DataGridWithRadioSelectionExample() {
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
+        getRowId={(row) => row.id}
         onSelectionChange={handleSelectionChange}
         selectRadioAriaLabelFunc={(row) => `Select ${row.firstName} ${row.lastName}`}
         data-testid="data-grid"
@@ -73,6 +74,7 @@ export function ControlledDataGridWithRadioSelectionExample({
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
+        getRowId={(row) => row.id}
         onSelectionChange={handleSelectionChange}
         selectedRowId={selectedRowId}
         selectRadioAriaLabelFunc={(row) => `Select ${row.firstName} ${row.lastName}`}
@@ -81,9 +83,9 @@ export function ControlledDataGridWithRadioSelectionExample({
       <div data-testid="selection-indicator">
         {selectedRowId !== null ? `Selected ID: ${selectedRowId}` : "Nothing selected"}
       </div>
-      {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
+      {/* biome-ignore lint/a11y/useButtonType: story fixture button */}
       <button onClick={() => setSelectedRowId(null)}>Reset Selection</button>
-      {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
+      {/* biome-ignore lint/a11y/useButtonType: story fixture button */}
       <button onClick={() => setSelectedRowId(2)}>Select Row 2</button>
     </Box>
   );
@@ -104,6 +106,7 @@ export function DataGridWithFeatures() {
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
+        getRowId={(row) => row.id}
         onSelectionChange={handleSelectionChange}
         selectRadioAriaLabelFunc={(row) => `Select ${row.firstName} ${row.lastName}`}
         initialState={{

@@ -9,7 +9,6 @@
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/myrequests.js'/>"></script>
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
   <link href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" rel="stylesheet" />
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/dashboard.js'/>"></script>
@@ -48,8 +47,6 @@
             </c:if>
 		</a>
 		<a class="dashboardOptions" id="myrequests" href="#"><spring:message code="dashboard.sent.header"/>  </a>
-    <a class="dashboardOptions" id="createCalendarEntryDlgLink" href="#"><spring:message code="dashboard.new.calendar.entry"/>  </a>
-    <jsp:include page="../workspace/calendarDialog.jsp" />
 	</div>
 	<div class="dashboardContainer notificationList"><jsp:include page="notifications_ajax.jsp"></jsp:include></div>
 </div>

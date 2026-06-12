@@ -1,4 +1,4 @@
-// requires notification.js, messages.js, myrequests.js, ../workspace/calendarDialog.js
+// requires notification.js, messages.js, myrequests.js
 $(document).ready(function() {
   var messageListCSSclass = "messageList";
   var myrequestListCSSclass = "myrequestList";
@@ -51,9 +51,4 @@ $(document).ready(function() {
    
   unescapeMessageContent();
 
-  initCreateCalendarEntryDlg();
-  initAttachFileToCalendarEntryDlg();
-  $('#createCalendarEntryDlgLink').click(function () {
-    $('#createCalendarEntryDlg').dialog('open');
-  });
 });

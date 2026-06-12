@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
+// eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { within } from "@/__tests__/customQueries";
+import { expectAccessible, within } from "@/__tests__/customQueries";
+import { stubAppChrome } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import DMPDialog from "../DMPDialog";
 
@@ -12,37 +14,39 @@ const mockAxios = new MockAdapter(axios);
 describe("DMPDialog", () => {
   beforeEach(() => {
     mockAxios.resetHistory();
-    mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, {
-      data: "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJpYXQiOjE3MzQzNDI5NTYsImV4cCI6MTczNDM0NjU1NiwicmVmcmVzaFRva2VuSGFzaCI6ImZlMTVmYTNkNWUzZDVhNDdlMzNlOWUzNDIyOWIxZWEyMzE0YWQ2ZTZmMTNmYTQyYWRkY2E0ZjE0Mzk1ODJhNGQifQ.HCKre3g_P1wmGrrrnQncvFeT9pAePFSc4UPuyP5oehI",
+    // importPlan calls a `gallery()` global defined on the legacy Gallery page;
+    // stub it so the import success path completes cleanly under jsdom.
+    (globalThis as unknown as { gallery: () => void }).gallery = () => {};
+    stubAppChrome(mockAxios, {
+      visibleTabs: { published: false, system: false },
     });
-
-    mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(
-      200,
-      {
-        bannerImgSrc: "/public/banner",
-        visibleTabs: {
-          inventory: true,
-          myLabGroups: true,
-          published: false,
-          system: false,
-        },
-        userDetails: {
-          username: "user1a",
-          fullName: "user user",
-          email: "user@user.com",
-          orcidId: null,
-          orcidAvailable: false,
-          profileImgSrc: null,
-          lastSession: "2025-03-25T15:45:57.000Z",
-        },
-        operatedAs: false,
-        nextMaintenance: null,
-      },
-      {
-        contentType: "application/json",
-      },
-    );
   });
+
+  const plansResponse = {
+    data: {
+      totalCount: 2,
+      data: [
+        {
+          id: "e27789f1-de35-4b4a-9587-a46d131c366e",
+          label: "Foo",
+          grant: "Foo's grant",
+          createdAt: 0,
+          modifiedAt: 0,
+        },
+        {
+          id: "e9a73d77-adfa-4546-974f-4a4a623b53a8",
+          label: "Bar",
+          grant: "Bar's grant",
+          createdAt: 0,
+          modifiedAt: 0,
+        },
+      ],
+    },
+    error: null,
+    errorMsg: null,
+    success: true,
+  };
+
   test("Should render mock data correctly.", async () => {
     vi.clearAllMocks();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
@@ -89,6 +93,43 @@ describe("DMPDialog", () => {
       }),
     ).toHaveTextContent("Foo");
   });
+
+  test("Should have no axe violations.", async () => {
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, plansResponse);
+    const { baseElement } = render(<DMPDialog open setOpen={() => {}} />);
+    await waitFor(
+      () => {
+        expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+        // i.e. the table body has been rendered
+      },
+      { timeout: 2000 },
+    );
+    await expectAccessible(baseElement);
+  });
+
+  test("Importing a selected DMP should call the import endpoint.", async () => {
+    const user = userEvent.setup();
+    mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, plansResponse);
+    mockAxios.onPost("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e").reply(200);
+    render(<DMPDialog open setOpen={() => {}} />);
+    await waitFor(
+      () => {
+        expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+        // i.e. the table body has been rendered
+      },
+      { timeout: 2000 },
+    );
+    await user.click(screen.getByRole("radio", { name: "Select plan: Foo" }));
+    await user.click(screen.getByRole("button", { name: "Import" }));
+    await waitFor(() => {
+      expect(
+        mockAxios.history.post.some(({ url }) =>
+          /\/apps\/argos\/importPlan\/e27789f1-de35-4b4a-9587-a46d131c366e$/.test(url ?? ""),
+        ),
+      ).toBe(true);
+    });
+  });
+
   describe.skip("Pagination should work.", () => {
     test(
       "Next and previous page buttons should make the right API calls.",

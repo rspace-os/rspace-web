@@ -1,4 +1,3 @@
-import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
 import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
 import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
 import { faList } from "@fortawesome/free-solid-svg-icons/faList";
@@ -335,16 +334,6 @@ class WorkspaceToolbar extends React.Component<any, any> {
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
-            <Tooltip title="Create a calendar entry" enterDelay={300}>
-              <IconButton
-                id="createCalendarEntryDlgLink"
-                color="inherit"
-                data-test-id="toolbar-calendar"
-                aria-label="Create a calendar entry"
-              >
-                <FontAwesomeIcon icon={faCalendarAlt} />
-              </IconButton>
-            </Tooltip>
           </Box>
         )}
         <Box
