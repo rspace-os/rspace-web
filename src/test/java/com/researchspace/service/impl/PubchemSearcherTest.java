@@ -12,11 +12,11 @@ import com.researchspace.model.dtos.chemistry.PubchemResponse;
 import com.researchspace.model.dtos.chemistry.PubchemSynonymsResponse;
 import com.researchspace.service.ChemicalImportException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,17 @@ public class PubchemSearcherTest {
 
   @Mock private RestTemplate restTemplate;
 
-  @InjectMocks private PubchemSearcher pubchemSearcher;
+  private PubchemSearcher pubchemSearcher;
+
+  @BeforeEach
+  public void setUp() {
+    pubchemSearcher =
+        new PubchemSearcher(
+            restTemplate,
+            "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound",
+            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l",
+            "https://pubchem.ncbi.nlm.nih.gov/compound/%s");
+  }
 
   private static PubchemResponse createValidPubChemResponse() {
     PubchemResponse.ChemicalProperty property = new PubchemResponse.ChemicalProperty();

@@ -33,7 +33,7 @@ public class OrcidController {
   @Value("${orcid.client.secret}")
   private String clientSecret;
 
-  @Value("${orcid.oauth.token.url:https://orcid.org/oauth/token}")
+  @Value("${orcid.oauth.token.url}")
   private String tokenUrl;
 
   @Autowired private IntegrationsHandler integrationsHandler;

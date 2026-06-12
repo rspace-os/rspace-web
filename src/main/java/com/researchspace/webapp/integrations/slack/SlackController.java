@@ -80,10 +80,10 @@ public class SlackController extends BaseController {
   @Value("${slack.verification.token}")
   private String verificationToken;
 
-  @Value("${slack.oauth.authorize.url:https://slack.com/oauth/authorize}")
+  @Value("${slack.oauth.authorize.url}")
   private String slackOauthAuthorizeUrl;
 
-  @Value("${slack.api.base.url:https://slack.com/api}")
+  @Value("${slack.api.base.url}")
   private String slackApiBaseUrl;
 
   private @Autowired UserAppConfigManager userAppCfgMgr;

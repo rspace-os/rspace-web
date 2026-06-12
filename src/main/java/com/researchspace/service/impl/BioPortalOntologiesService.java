@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,9 +17,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class BioPortalOntologiesService {
-
-  @Value("${bioportal.base.url:https://bioportal.bioontology.org}")
-  private String bioportalBaseUrl;
 
   private BioPortalOntologiesClient bioOntologiesClient;
 
@@ -41,7 +37,11 @@ public class BioPortalOntologiesService {
           String[] ontologyTermParts = ontologyTerm.split("\\|\\|");
           String ontologyName = ontologyTermParts[1].split("\\|")[0];
           String ontologyVersion =
-              bioportalBaseUrl + "/ontologies/" + ontologyName + "  on: " + dtf.format(now);
+              bioOntologiesClient.getBioportalBaseUrl()
+                  + "/ontologies/"
+                  + ontologyName
+                  + "  on: "
+                  + dtf.format(now);
           String[] termValueAndUrl = ontologyTermParts[0].split("\\|");
           parsedBioOntologyTerms.append(
               termValueAndUrl[0]

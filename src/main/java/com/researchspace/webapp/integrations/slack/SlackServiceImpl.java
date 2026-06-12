@@ -41,7 +41,7 @@ public class SlackServiceImpl implements SlackService {
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired RecordManager recordManager;
 
-  @Value("${slack.api.base.url:https://slack.com/api}")
+  @Value("${slack.api.base.url}")
   private String slackApiBaseUrl;
 
   private RestTemplate restTemplate = new RestTemplate();

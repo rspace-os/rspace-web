@@ -36,7 +36,7 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
   @Value("${user.signup.captcha.secret}")
   private String googleCaptchaSecret;
 
-  @Value("${user.signup.captcha.verify.url:https://www.google.com/recaptcha/api/siteverify}")
+  @Value("${user.signup.captcha.verify.url}")
   private String googleCaptchaVerifyUrl;
 
   @Override

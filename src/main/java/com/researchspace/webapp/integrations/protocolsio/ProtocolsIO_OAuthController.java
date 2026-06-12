@@ -52,10 +52,10 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
   @Value("${protocolsio.secret}")
   private String clientSecret;
 
-  @Value("${protocolsio.oauth.token.url:https://www.protocols.io/api/v3/oauth/token}")
+  @Value("${protocolsio.oauth.token.url}")
   private String protocolsioAccessTokenUrl;
 
-  @Value("${protocolsio.oauth.authorize.url:https://www.protocols.io/api/v3/oauth/authorize}")
+  @Value("${protocolsio.oauth.authorize.url}")
   private String protocolsioAuthUrl;
 
   static final int REFRESH_TOKEN_EXPIRED_CODE = 1217;

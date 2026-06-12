@@ -34,12 +34,9 @@ public class PubchemSearcher implements ChemicalSearcher {
   @Autowired
   public PubchemSearcher(
       RestTemplate restTemplate,
-      @Value("${pubchem.api.base.url:https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound}")
-          String pubchemBaseUrl,
-      @Value("${pubchem.image.url:https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l}")
-          String pubchemImageUrl,
-      @Value("${pubchem.compound.url:https://pubchem.ncbi.nlm.nih.gov/compound/%s}")
-          String pubchemCompoundUrl) {
+      @Value("${pubchem.api.base.url}") String pubchemBaseUrl,
+      @Value("${pubchem.image.url}") String pubchemImageUrl,
+      @Value("${pubchem.compound.url}") String pubchemCompoundUrl) {
     this.restTemplate = restTemplate;
     this.pubchemBaseUrl = pubchemBaseUrl;
     this.pubchemImageUrl = pubchemImageUrl;

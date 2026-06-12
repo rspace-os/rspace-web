@@ -49,13 +49,13 @@ public class GitHubController {
 
   protected static final String GITHUB_VIEW_NAME = "connect/github/gitHubTreeView";
 
-  @Value("${github.oauth.access.token.url:https://github.com/login/oauth/access_token}")
+  @Value("${github.oauth.access.token.url}")
   private String githubAccessTokenUrl;
 
-  @Value("${github.api.base.url:https://api.github.com}")
+  @Value("${github.api.base.url}")
   private String githubApiUrl;
 
-  @Value("${github.oauth.authorize.url:https://github.com/login/oauth/authorize}")
+  @Value("${github.oauth.authorize.url}")
   private String githubAuthorizeUrl;
 
   @Value("${github.client.id}")

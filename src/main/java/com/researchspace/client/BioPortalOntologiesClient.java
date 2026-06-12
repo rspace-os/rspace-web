@@ -2,6 +2,7 @@ package com.researchspace.client;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -11,7 +12,8 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class BioPortalOntologiesClient {
 
-  @Value("${bioportal.base.url:https://bioportal.bioontology.org}")
+  @Getter
+  @Value("${bioportal.base.url}")
   private String bioportalBaseUrl;
 
   // Hold up to MAX_SIZE and then evict
