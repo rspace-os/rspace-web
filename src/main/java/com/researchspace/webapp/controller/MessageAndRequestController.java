@@ -202,8 +202,11 @@ public class MessageAndRequestController extends BaseController implements Appli
         externalMessageHandler.sendExternalMessage(
             message, appConfigElementSetId, Arrays.asList(ArrayUtils.nullToEmpty(recordIds)), user);
     if (!resp.isSucceeded()) {
-      return new AjaxReturnObject<>(
-          null, ErrorList.createErrListWithSingleMsg("Could not send message"));
+      String errorMsg =
+          isBlank(resp.getMessage())
+              ? getText(ExternalMessageHandler.SEND_FAILED_MSG_KEY)
+              : resp.getMessage();
+      return new AjaxReturnObject<>(null, ErrorList.createErrListWithSingleMsg(errorMsg));
     }
 
     return new AjaxReturnObject<>(Boolean.TRUE, null);
