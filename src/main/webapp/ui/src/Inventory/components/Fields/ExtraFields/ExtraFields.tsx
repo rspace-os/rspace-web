@@ -69,32 +69,13 @@ function ExtraFields({
                       />
                     </div>
                   )}
-                  {(ef as typeof ef & {
-                    link: {
-                      relationType: string;
-                      targetGlobalId: string;
-                      versionPin: number | null;
-                    } | null;
-                  }).link?.targetGlobalId ? (
+                  {ef.link?.targetGlobalId ? (
                     <LinkField
                       name={ef.name}
-                      link={
-                        (ef as typeof ef & {
-                          link: {
-                            relationType: string;
-                            targetGlobalId: string;
-                            versionPin: number | null;
-                          };
-                        }).link
-                      }
+                      link={ef.link}
                       editable={editable}
                       onOpen={() => {
-                        const link = (ef as typeof ef & {
-                          link: {
-                            targetGlobalId: string;
-                            versionPin: number | null;
-                          };
-                        }).link;
+                        const link = ef.link;
                         if (link?.targetGlobalId) {
                           // Gallery files open at their location in the Gallery; other
                           // targets keep the /globalId route (honouring any pinned version).
