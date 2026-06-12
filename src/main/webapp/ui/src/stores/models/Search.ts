@@ -1,13 +1,7 @@
 import ApiService, {
   BulkEndpointRecordSerialisation,
 } from "../../common/InvApiService";
-import {
-  match,
-  doNotAwait,
-  omitNull,
-  sameKeysAndValues,
-  mapObject,
-} from "../../util/Util";
+import { match, omitNull, sameKeysAndValues, mapObject } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import {
   handleDetailedErrors,
@@ -647,11 +641,13 @@ export default class Search implements SearchInterface {
           variant: "notice",
           isInfinite: true,
           actionLabel: "yes",
-          onActionClick: doNotAwait(async () => {
-            await this.deleteRecords([sample]);
-            await sample.fetchAdditionalInfo();
-            await searchStore.search.fetcher.performInitialSearch(null);
-          }),
+          onActionClick: () => {
+            void (async () => {
+              await this.deleteRecords([sample]);
+              await sample.fetchAdditionalInfo();
+              await searchStore.search.fetcher.performInitialSearch(null);
+            })();
+          },
         }),
       );
     }
@@ -1314,7 +1310,7 @@ export default class Search implements SearchInterface {
   get showSavedSearches(): boolean {
     return Boolean(
       this.uiConfig.allowedSearchModules.has("SAVEDSEARCHES") &&
-        getRootStore().searchStore.savedSearches.length > 0,
+      getRootStore().searchStore.savedSearches.length > 0,
     );
   }
 
@@ -1369,7 +1365,7 @@ export default class Search implements SearchInterface {
 
     // in the move dialog, choosing a bench should set it as the target
     if (user) {
-      doNotAwait(async () => {
+      void (async () => {
         const bench = user.bench ?? (await user.getBench());
         await getRootStore().moveStore.setTargetContainer(bench);
       })();
@@ -1550,10 +1546,10 @@ export default class Search implements SearchInterface {
             [
               ...records.map(
                 (r) =>
-                  (({
+                  ({
                     ...r.paramsForBackend,
-                    type: r.type
-                  }) as BulkEndpointRecordSerialisation),
+                    type: r.type,
+                  }) as BulkEndpointRecordSerialisation,
               ),
             ],
             "UPDATE",

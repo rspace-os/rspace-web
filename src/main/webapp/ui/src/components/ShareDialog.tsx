@@ -37,7 +37,6 @@ import useShare, {
   NewShare,
   getParentFolderName,
 } from "../hooks/api/useShare";
-import { doNotAwait } from "../util/Util";
 import useGroups from "../hooks/api/useGroups";
 import useUserDetails from "../hooks/api/useUserDetails";
 import useWhoAmI from "../hooks/api/useWhoAmI";
@@ -1577,7 +1576,7 @@ export function ShareDialog({
         {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
         <ValidatingSubmitButton
           loading={saving}
-          onClick={doNotAwait(handleSave)}
+          onClick={() => void handleSave()}
           validationResult={validationResult}
         >
           {hasChanges ? "Save" : "Done"}

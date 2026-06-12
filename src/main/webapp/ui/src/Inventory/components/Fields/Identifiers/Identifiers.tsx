@@ -7,11 +7,7 @@ import React, {
 import { observer } from "mobx-react-lite";
 import { runInAction } from "mobx";
 import useStores from "../../../../stores/use-stores";
-import {
-  match,
-  capitaliseJustFirstChar,
-  doNotAwait,
-} from "../../../../util/Util";
+import { match, capitaliseJustFirstChar } from "../../../../util/Util";
 import docLinks from "../../../../assets/DocLinks";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import CustomTooltip from "../../../../components/CustomTooltip";
@@ -663,20 +659,22 @@ const AssignDialog = observer(
                     : IsValid(),
                 )
                 .orElse(IsInvalid("No IGSN ID selected."))}
-              onClick={doNotAwait(async () => {
-                await selectedIgsns.only
-                  .toResult(
-                    () =>
-                      new Error(
-                        "Invalid state: zero or many identifiers are selected",
-                      ),
-                  )
-                  .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
-                await recordToAssignTo.fetchAdditionalInfo();
-                setSelectedIgsns(new RsSet([]));
-                onClose();
-                trackEvent("user:assign-existing-igsn");
-              })}
+              onClick={() => {
+                void (async () => {
+                  await selectedIgsns.only
+                    .toResult(
+                      () =>
+                        new Error(
+                          "Invalid state: zero or many identifiers are selected",
+                        ),
+                    )
+                    .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
+                  await recordToAssignTo.fetchAdditionalInfo();
+                  setSelectedIgsns(new RsSet([]));
+                  onClose();
+                  trackEvent("user:assign-existing-igsn");
+                })();
+              }}
             >
               Link
             </ValidatingSubmitButton>
@@ -710,7 +708,7 @@ const IdentifiersCard = observer((): ReactNode => {
             <Button
               color="primary"
               variant="outlined"
-              onClick={doNotAwait(() => activeResult.addIdentifier())}
+              onClick={() => void activeResult.addIdentifier()}
             >
               Create new IGSN ID
             </Button>

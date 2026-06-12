@@ -10,7 +10,6 @@ import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import SimpleRecordsTable from "../SimpleRecordsTable";
 import { type Record } from "../../../stores/definitions/Record";
 import NameWithBadge from "../NameWithBadge";
-import { doNotAwait } from "../../../util/Util";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 
 type DialogTitleArgs<RecordLike extends Record> = {
@@ -74,7 +73,7 @@ function MoveDialog(): React.ReactNode {
         onClose={handleClose}
         actions={
           <Actions
-            handleMove={doNotAwait(handleMove)}
+            handleMove={() => void handleMove()}
             handleClose={handleClose}
             handleBack={handleBack}
             handleNext={handleNext}

@@ -126,6 +126,11 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     assertEquals(1, matchingRecipients.size());
     assertEquals(pi, matchingRecipients.toArray()[0]);
 
+    // RSDEV-992: a blank term must behave exactly like no term (and not scan the users table)
+    Set<User> blankTermRecipients =
+        policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, sd1, "  ", docOwner);
+    assertEquals(recipients2, blankTermRecipients);
+
     // now we give the document edit permission
     RecordGroupSharing rgs = sharingMgr.getSharedRecordsForUser(docOwner).get(0);
     sharingMgr.updatePermissionForRecord(rgs.getId(), "WRITE", docOwner.getUsername());

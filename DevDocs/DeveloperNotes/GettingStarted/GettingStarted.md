@@ -54,6 +54,27 @@ path to your java installation.
 
 **NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>
 
+### Enable git hooks (recommended)
+
+Git pre-commit hooks are managed by [lefthook](https://lefthook.dev). Enable
+them once per clone by installing the root dependencies (Node 24 + pnpm via
+corepack required):
+
+```bash
+corepack enable pnpm
+pnpm install   # run from the repo root; the prepare script runs `lefthook install`
+```
+
+This installs a `pre-commit` hook that, on the relevant staged files:
+
+- runs `mvn spotless:check` on staged `*.java` files and **blocks the commit if
+  any need reformatting** (run `./mvnw spotless:apply` to fix), and
+- runs `pnpm run tsc` when frontend `*.ts`/`*.tsx` files are staged and
+  **blocks the commit if the type-check fails**.
+
+To bypass the hooks for a single commit (e.g. a work-in-progress), set
+`LEFTHOOK=0 git commit …`.
+
 ### Check out and compile the project
 
 Current location of the codebase is https://github.com/rspace-os/rspace-web
@@ -88,9 +109,9 @@ mvn clean package -DgenerateReactDist -DskipTests=true \
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
-which installs Node/npm locally, runs `npm ci`, and runs the Vite production build,
-bundling the resulting `dist/` files into the WAR. Without this flag the frontend is
-not built.
+which installs Node/pnpm locally, runs `pnpm install --frozen-lockfile`, and runs the
+Vite production build, bundling the resulting `dist/` files into the WAR. Without this
+flag the frontend is not built.
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
@@ -186,9 +207,9 @@ When `-DreactDevMode=true` is set, Jetty proxies frontend asset requests to a
 local Vite dev server for Hot Module Replacement (HMR). Start the Vite dev
 server in a separate terminal:
 ```bash
-cd src/main/webapp/ui
-npm ci
-npm run serve
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run serve
 ```
 
 Legacy `rst:assetUrl` references under `/scripts/**` and `/styles/**` do not add the `?v=`

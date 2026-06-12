@@ -54,13 +54,18 @@ type DataGridStubProps<Row> = {
   slotProps?: {
     toolbar?: Record<string, unknown>;
   };
-  apiRef?: React.MutableRefObject<{ exportDataAsCsv: () => void } | null>;
+  apiRef?: React.MutableRefObject<GridApi | null>;
   ["aria-label"]?: string;
 };
 
-const GridApiContext = React.createContext<React.MutableRefObject<{
+type GridApi = {
   exportDataAsCsv: () => void;
-} | null> | null>(null);
+  autosizeColumns: (options?: unknown) => Promise<void>;
+};
+
+const GridApiContext = React.createContext<React.MutableRefObject<GridApi | null> | null>(
+  null,
+);
 
 const toSelectedIds = (selectionModel: SelectionModel): Set<GridId> => {
   if (Array.isArray(selectionModel)) return new Set(selectionModel);
@@ -138,19 +143,20 @@ export const GRID_CHECKBOX_SELECTION_COL_DEF = {
 };
 
 export const useGridApiRef = () =>
-  React.useRef<{ exportDataAsCsv: () => void }>({
+  React.useRef<GridApi>({
     exportDataAsCsv: () => {},
+    autosizeColumns: () => Promise.resolve(),
   });
 
 export const useGridApiContext = () => {
   const apiRef = React.useContext(GridApiContext);
   return (
-    apiRef ??
-    ({
+    apiRef ?? {
       current: {
         exportDataAsCsv: () => {},
+        autosizeColumns: () => Promise.resolve(),
       },
-    })
+    }
   );
 };
 
@@ -233,13 +239,13 @@ export function DataGrid<Row>({
   apiRef,
   "aria-label": ariaLabel,
 }: DataGridStubProps<Row>) {
-  const internalApiRef =
-    apiRef ??
-    ({
+  const internalApiRef: React.MutableRefObject<GridApi | null> =
+    apiRef ?? {
       current: {
         exportDataAsCsv: () => {},
+        autosizeColumns: () => Promise.resolve(),
       },
-    });
+    };
 
   const selectedIds = toSelectedIds(rowSelectionModel);
   const effectiveColumnVisibility = {
@@ -290,6 +296,7 @@ export function DataGrid<Row>({
       const blob = new Blob([lines.join("\n")], { type: "text/csv" });
       window.URL.createObjectURL(blob);
     },
+    autosizeColumns: () => Promise.resolve(),
   };
 
   const toggleRow = (id: GridId, checked: boolean) => {
