@@ -1,5 +1,3 @@
-// @flow
-
 import ClearIcon from "@mui/icons-material/Clear";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";

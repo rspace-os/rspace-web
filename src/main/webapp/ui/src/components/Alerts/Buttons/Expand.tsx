@@ -1,5 +1,3 @@
-// @flow strict
-
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import ExpandCollapseIcon from "../../ExpandCollapseIcon";

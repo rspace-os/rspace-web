@@ -1,5 +1,3 @@
-//@flow
-
 import fc, { type Arbitrary } from "fast-check";
 import { describe, expect, test } from "vitest";
 

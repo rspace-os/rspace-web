@@ -1,5 +1,3 @@
-// @flow
-
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";

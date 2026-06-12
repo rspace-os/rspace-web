@@ -1,5 +1,3 @@
-// @flow
-
 import { getByKey } from "../../util/optional";
 import { type GlobalId, globalIdToInventoryRecordTypeLabel } from "../definitions/BaseRecord";
 import type { LinkableRecord } from "../definitions/LinkableRecord";

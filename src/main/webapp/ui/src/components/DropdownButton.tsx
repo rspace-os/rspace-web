@@ -1,5 +1,3 @@
-//@flow strict
-
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Box from "@mui/material/Box";
 import Button, { buttonClasses } from "@mui/material/Button";

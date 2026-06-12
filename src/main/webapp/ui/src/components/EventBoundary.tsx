@@ -1,5 +1,3 @@
-//@flow
-
 import type React from "react";
 
 /**

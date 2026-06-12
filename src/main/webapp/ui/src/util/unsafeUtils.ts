@@ -1,5 +1,3 @@
-//@flow
-
 /*
  * These functions should ideally not be used as they are difficult or impossible to properly type
  * and so any code that utilises them does not have as strong type guarantees.

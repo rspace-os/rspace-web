@@ -1,5 +1,3 @@
-//@flow strict
-
 import Grid from "@mui/material/Grid";
 import React from "react";
 import { LOGO_COLOR } from "../../../assets/branding/googledrive";

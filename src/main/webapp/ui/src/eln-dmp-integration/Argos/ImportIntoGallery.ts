@@ -1,5 +1,3 @@
-//@flow
-
 import axios from "@/common/axios";
 import type { PlanSummary } from "./PlanSummary";
 
