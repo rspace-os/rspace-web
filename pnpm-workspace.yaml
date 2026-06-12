@@ -20,6 +20,7 @@ allowBuilds:
   core-js: true
   esbuild: true
   protobufjs: true
+  vue-demi: true
 
 # Block packages published less than 7 days ago (10080 minutes) as a defence
 # against supply-chain attacks that are typically caught within that window.

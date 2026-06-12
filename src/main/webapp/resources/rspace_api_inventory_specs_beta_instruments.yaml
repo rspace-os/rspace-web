@@ -8,11 +8,11 @@ info:
   termsOfService: >-
     Currently unrestricted, subject to usage limits returned in X-Rate-Limit headers.
   license:
-    name: Apache2 License
-    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+    name: AGPL-3.0 License
+    url: https://www.gnu.org/licenses/agpl.html
   contact:
     name: RSpace API Support
-    email: support@researchspace.com
+    url: https://documentation.researchspace.com
 basePath: /api/inventory/v1
 produces:
   - application/json
