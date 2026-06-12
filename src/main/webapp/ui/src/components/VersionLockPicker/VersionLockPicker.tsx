@@ -19,7 +19,6 @@ export type VersionLockSelection = number | typeof LATEST_SELECTION;
 
 export interface VersionLockPickerProps {
   recordId: number;
-  prefix: string;
   currentSelection: VersionLockSelection;
   fetchVersions: (recordId: number) => Promise<VersionRecord[]>;
   onChange: (selection: VersionLockSelection) => void;

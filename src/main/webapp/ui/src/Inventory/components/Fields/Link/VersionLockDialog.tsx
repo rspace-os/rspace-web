@@ -187,7 +187,6 @@ export default function VersionLockDialog(
       <DialogContent>
         <VersionLockPicker
           recordId={parsed.id}
-          prefix={parsed.prefix}
           currentSelection={selection}
           fetchVersions={fetchVersions}
           onChange={setSelection}

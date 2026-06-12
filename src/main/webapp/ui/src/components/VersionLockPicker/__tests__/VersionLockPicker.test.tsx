@@ -23,7 +23,6 @@ function renderComponent(props: {
     <ThemeProvider theme={materialTheme}>
       <VersionLockPicker
         recordId={42}
-        prefix="SA"
         currentSelection={props.currentSelection}
         fetchVersions={() => Promise.resolve(revisions)}
         onChange={props.onChange}
@@ -93,7 +92,6 @@ describe("VersionLockPicker", () => {
         <ThemeProvider theme={materialTheme}>
           <VersionLockPicker
             recordId={42}
-            prefix="SA"
             currentSelection={LATEST_SELECTION}
             fetchVersions={() =>
               Promise.reject(new Error("versions endpoint down"))

@@ -7,7 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Response wrapper listing items that reference a target inventory record via a Link extraField.
+ * Response wrapper listing the inventory items that reference a target record via a Link
+ * extraField. The target may be an Inventory item or an ELN record (document, notebook or gallery
+ * file): the referencing-items endpoints serve both.
  */
 @Data
 @NoArgsConstructor
