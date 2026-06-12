@@ -5,7 +5,6 @@ import {
   render,
   cleanup,
   screen,
-  fireEvent,
   waitFor,
 } from "@testing-library/react";
 import {
@@ -24,6 +23,21 @@ import { ThemeProvider } from "@mui/material/styles";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
 
 import userEvent from "@testing-library/user-event";
+
+async function replaceInputValue(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+  value: string,
+) {
+  const input = screen.getAllByLabelText(label).at(-1);
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error(`Could not find input labelled \"${label}\"`);
+  }
+  await user.click(input);
+  input.setSelectionRange(0, input.value.length);
+  await user.paste(value);
+}
+
 class DummyResult {
   editing: boolean = true;
 
@@ -107,9 +121,7 @@ describe("StepperPanelHeader", () => {
 
           render(<DummyFormSection result={new DummyResult()} />);
           for (const error of errors) {
-            fireEvent.change(screen.getByLabelText("Set error"), {
-              target: { value: error },
-            });
+            await replaceInputValue(user, "Set error", error);
 
           }
           await user.click(
@@ -145,9 +157,7 @@ describe("StepperPanelHeader", () => {
 
           render(<DummyFormSection result={new DummyResult()} />);
           for (const error of errors) {
-            fireEvent.change(screen.getByLabelText("Set error"), {
-              target: { value: error },
-            });
+            await replaceInputValue(user, "Set error", error);
 
           }
 
@@ -165,13 +175,11 @@ describe("StepperPanelHeader", () => {
 
   });
   test("When opened, the header shows no badge.", async () => {
+    cleanup();
     const user = userEvent.setup();
 
     render(<DummyFormSection result={new DummyResult()} />);
-    fireEvent.change(screen.getByLabelText("Set error"), {
-      target: { value: "an error" },
-
-    });
+    await replaceInputValue(user, "Set error", "an error");
     expect(screen.getByLabelText("Collapse section")).not.toHaveTextContent(
       "1"
 
@@ -207,9 +215,7 @@ describe("StepperPanelHeader", () => {
 
           render(<DummyFormSection result={new DummyResult()} />);
           for (const error of errors) {
-            fireEvent.change(screen.getByLabelText("Set error"), {
-              target: { value: error },
-            });
+            await replaceInputValue(user, "Set error", error);
 
           }
           await user.click(
@@ -227,9 +233,7 @@ describe("StepperPanelHeader", () => {
 
           );
           for (const errorToRemove of errorsToRemove) {
-            fireEvent.change(screen.getByLabelText("Unset error"), {
-              target: { value: errorToRemove },
-            });
+            await replaceInputValue(user, "Unset error", errorToRemove);
 
           }
           await user.click(
@@ -259,14 +263,12 @@ describe("StepperPanelHeader", () => {
 
   });
   test("When `editing` is set to false, the errors are reset.", async () => {
+    cleanup();
     const user = userEvent.setup();
     const result = new DummyResult();
 
     render(<DummyFormSection result={result} />);
-    fireEvent.change(screen.getByLabelText("Set error"), {
-      target: { value: "an error" },
-
-    });
+    await replaceInputValue(user, "Set error", "an error");
     await user.click(screen.getByRole("button", { name: "Collapse section" }));
     await waitFor(() => {
       expect(

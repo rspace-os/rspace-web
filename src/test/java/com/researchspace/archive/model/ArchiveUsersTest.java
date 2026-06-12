@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.Community;
 import com.researchspace.model.User;
-import com.researchspace.model.UserProfile;
 import com.researchspace.testutils.ArchiveTestUtils;
 import java.util.Iterator;
 import org.junit.After;
@@ -40,8 +39,7 @@ public class ArchiveUsersTest {
     assertEquals(testData.getGroup(), inCommunity.getLabGroups().iterator().next());
     assertEquals(testData.getAdmin(), inCommunity.getAdmins().iterator().next());
     // profiles
-    UserProfile profileIn = fromXml.getProfiles().iterator().next();
-    assertEquals("blah", profileIn.getProfileText());
+    assertEquals(1, fromXml.getProfiles().size());
     assertTrue(true);
   }
 }

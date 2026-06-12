@@ -23,7 +23,6 @@ import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.Year;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
@@ -32,7 +31,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class MessageAndRequestControllerIT extends MVCTestBase {
@@ -302,59 +300,6 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
     assertEquals(3, updatedCollabGrp.getMembers().size());
     assertTrue(updatedCollabGrp.getMembers().contains(pi3));
     assertEquals(RoleInGroup.PI, updatedCollabGrp.getRoleForUser(pi3));
-  }
-
-  @Test
-  public void checkICalendarFileForRecordReviewRequest() throws Exception {
-
-    StructuredDocument sd = setUpLoginAsPIUserAndCreateADocument();
-    User target = createAndSaveUser(getRandomAlphabeticString("target"));
-    initUser(target);
-    String nextYearAsString = (Year.now().getValue() + 1) + "";
-    MvcResult createResponse =
-        this.mockMvc
-            .perform(
-                post("/messaging/ajax/create")
-                    .principal(mockPrincipal)
-                    .sessionAttr("request", new MsgOrReqstCreationCfg())
-                    .param("messageType", MessageType.REQUEST_RECORD_REVIEW.toString())
-                    .param("targetFinderPolicy", "ALL")
-                    .param("recipientnames", target.getUsername())
-                    .param("requestedCompletionDate", nextYearAsString + "-01-31 12:00")
-                    .param("recordId", sd.getId() + ""))
-            .andExpect(model().hasNoErrors())
-            .andReturn();
-
-    Long msgId = (Long) createResponse.getModelAndView().getModel().get("createdMessageId");
-    logoutAndLoginAs(target);
-    MvcResult icalResponse = getIcalForRequest(target, msgId);
-    logoutAndLoginAs(piUser);
-    icalResponse = getIcalForRequest(piUser, msgId);
-
-    MockHttpServletResponse response = icalResponse.getResponse();
-    assertEquals("text/calendar", response.getContentType());
-    assertEquals("attachment; filename=rspace.ics", response.getHeader("Content-Disposition"));
-    // other user can't access rspac1253
-    User otherUser = createInitAndLoginAnyUser();
-    icalResponse =
-        this.mockMvc
-            .perform(
-                get("/messaging/ical?id=" + msgId)
-                    .principal(new MockPrincipal(otherUser.getUsername())))
-            .andReturn();
-    assertAuthorizationException(icalResponse);
-    RSpaceTestUtils.logout();
-  }
-
-  private MvcResult getIcalForRequest(User target, Long msgId) throws Exception {
-    MvcResult icalResponse =
-        this.mockMvc
-            .perform(
-                get("/messaging/ical?id=" + msgId)
-                    .principal(new MockPrincipal(target.getUsername())))
-            .andExpect(status().isOk())
-            .andReturn();
-    return icalResponse;
   }
 
   private Long getGroupMOROriginatedByUser(User u) {

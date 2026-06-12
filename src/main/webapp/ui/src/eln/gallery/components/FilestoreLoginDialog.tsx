@@ -9,7 +9,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import Stack from "@mui/material/Stack";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import axios from "@/common/axios";
-import { doNotAwait } from "../../../util/Util";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
@@ -73,45 +72,50 @@ const FilestoreLoginDialog = ({
   return (
     <Dialog open onClose={onClose}>
       <form
-        onSubmit={doNotAwait(async (e) => {
-          e.preventDefault();
-          setSubmitting(true);
-          try {
-            const api = axios.create({
-              baseURL: "/api/v1/gallery",
-              headers: {
-                Authorization: "Bearer " + (await getToken()),
-              },
-            });
-            await api.post<unknown>(`filesystems/${filesystemId}/login`, {
-              username,
-              password,
-            });
-            onSuccess();
-          } catch (error) {
-            console.error(error);
-            if (error instanceof Error) {
-              const message = Parsers.objectPath(["response", "status"], error)
-                .flatMap((status) => {
-                  if (status === 403) return Result.Ok("Wrong credentials?");
-                  return Parsers.objectPath(
-                    ["response", "data", "message"],
-                    error,
-                  ).flatMap(Parsers.isString);
-                })
-                .orElse(error.message);
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Could not authenticate",
-                  message,
-                }),
-              );
+        onSubmit={(e) => {
+          void (async () => {
+            e.preventDefault();
+            setSubmitting(true);
+            try {
+              const api = axios.create({
+                baseURL: "/api/v1/gallery",
+                headers: {
+                  Authorization: "Bearer " + (await getToken()),
+                },
+              });
+              await api.post<unknown>(`filesystems/${filesystemId}/login`, {
+                username,
+                password,
+              });
+              onSuccess();
+            } catch (error) {
+              console.error(error);
+              if (error instanceof Error) {
+                const message = Parsers.objectPath(
+                  ["response", "status"],
+                  error,
+                )
+                  .flatMap((status) => {
+                    if (status === 403) return Result.Ok("Wrong credentials?");
+                    return Parsers.objectPath(
+                      ["response", "data", "message"],
+                      error,
+                    ).flatMap(Parsers.isString);
+                  })
+                  .orElse(error.message);
+                addAlert(
+                  mkAlert({
+                    variant: "error",
+                    title: "Could not authenticate",
+                    message,
+                  }),
+                );
+              }
+            } finally {
+              setSubmitting(false);
             }
-          } finally {
-            setSubmitting(false);
-          }
-        })}
+          })();
+        }}
       >
         <DialogTitle>Filestore Login</DialogTitle>
         <DialogContent>

@@ -38,18 +38,17 @@ Uncaught ReferenceError: Cannot access a module export before initialization
 
 ## So then how do I fix the issue?
 
-[Dependency-cruiser][depcruiser] to the rescue!
-
-Run `npm run depcruise` from `src/main/webapp/ui` and amongst the output,
-you're looking for a fragment that looks like this:
+The fix is to find and break the chain of imports that pulls a store into the
+public page. Starting from the public page, trace its imports until you reach
+one of the `src/stores/stores/` modules. A typical offending chain looks like
+this:
 
 ```
-warn Public pages must not use stores: src/components/PublicPages/IdentifierPublicPage.js → src/stores/stores/ImportStore.js
-      src/components/PublicPages/IdentifierPublicPage.js →
-      src/stores/models/IdentifierModel.js →
-      src/common/InvApiService.js →
-      src/stores/stores/RootStore.js →
-      src/stores/stores/ImportStore.js
+src/components/PublicPages/IdentifierPublicPage.js →
+src/stores/models/IdentifierModel.js →
+src/common/InvApiService.js →
+src/stores/stores/RootStore.js →
+src/stores/stores/ImportStore.js
 ```
 
 What this says is that `IdentifierPublicPage.js` has an indirect dependency on
@@ -67,11 +66,9 @@ Inventory records classes and the components that render the IGSN forms so its
 easier to make the necessary change than all the places that use the Inventory
 API service.
 
-If dependency-cruiser by itself doesn't help, as there may end up being lots of
-false positives if we don't end up keeping on top of what dependency-cruiser is
-reporting, then try finding the git commit that introduced the issue (here `git
-bisect` is your friend). If the commit is small then it may well be obvious
-what the new import statement is.
+If tracing the imports by hand doesn't help, then try finding the git commit
+that introduced the issue (here `git bisect` is your friend). If the commit is
+small then it may well be obvious what the new import statement is.
 
 If the change is large and nothing else is helping, then try removing chunks of
 the public page in question until it starts working again. If the issue is a
@@ -79,8 +76,3 @@ react component, or something imported by a react component, then removing it
 from the page (by removing all the places it is rendered and its import) will
 allow the page to render. Then its just a case of repeating the process down
 the component tree.
-
-
-
-
-[depcruiser]: https://github.com/sverweij/dependency-cruiser

@@ -38,7 +38,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 - Parent POM: `rspace-parent` (controls dependency versions — if a version isn't in this project's `pom.xml`, check the parent)
 
 **Frontend** (`src/main/webapp/ui/`):
-- TypeScript + React, Node 24, npm
+- TypeScript + React, Node 24, pnpm
 - Vite bundler, Material-UI v5
 - Vitest (unit tests), Playwright (component/E2E tests)
 - MobX (legacy state) + React Query (newer state)
@@ -79,9 +79,9 @@ Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysa
 ### Frontend Development (watch mode)
 
 ```bash
-cd src/main/webapp/ui
-npm ci
-npm run serve  # Vite dev server
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run serve  # Vite dev server
 ```
 
 ### Full Build (no tests)
@@ -91,7 +91,7 @@ mvn clean package -DgenerateReactDist -DskipTests=true
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` profile that
-runs `npm ci` and the Vite production build and bundles `dist/` into the WAR. It is
+runs `pnpm install --frozen-lockfile` and the Vite production build and bundles `dist/` into the WAR. It is
 opt-in: omit it and `mvn compile`/`test`/`package` skip the frontend build entirely
 (useful for fast backend-only builds, but the resulting WAR has no frontend).
 
@@ -133,21 +133,19 @@ Choosing a base class:
 ### Frontend
 
 ```bash
-cd src/main/webapp/ui
-
-npm run test          # Vitest unit tests
-npm run test:ui       # Vitest with browser UI
-npm run test-ct       # Playwright component tests
-npm run tsc           # TypeScript type check
-npm run lint          # ESLint
-npm run lint:fix      # ESLint with auto-fix
+pnpm run test          # Vitest unit tests
+pnpm run test:ui       # Vitest with browser UI
+pnpm run test-ct       # Playwright component tests
+pnpm run tsc           # TypeScript type check
+pnpm run lint          # ESLint
+pnpm run lint:fix      # ESLint with auto-fix
 ```
 
-When changing frontend code in `src/main/webapp/ui`, run the most relevant checks before finishing. At minimum, run `npm run tsc`; run `npm run test` for behavioral changes and `npm run lint` when the change could affect linted code or formatting.
+When changing frontend code in `src/main/webapp/ui`, run the most relevant checks from the repo root. At minimum, run `pnpm run tsc`; run `pnpm run test` for behavioral changes and `pnpm run lint` when the change could affect linted code or formatting.
 
 Run a single Vitest test file:
 ```bash
-npx vitest run src/components/MyComponent/__tests__/MyComponent.test.tsx
+pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 ```
 
 ### Frontend Testing Patterns
@@ -279,8 +277,8 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 - Functional components with hooks only
 - Axios for API calls (centralized)
 - DOMPurify for any user-generated HTML (XSS prevention)
-- ESLint + Prettier enforced; run `npm run lint` before committing
-- Use the existing workspace package manager (`npm` for `src/main/webapp/ui`)
+- ESLint + Prettier enforced; run `pnpm run lint` from the repo root before committing
+- Use the existing workspace package manager (`pnpm` for `src/main/webapp/ui`)
 - Install dependencies only when needed for the task
 - Do not add new dependencies unless they are necessary to solve the requested problem
 
@@ -356,4 +354,3 @@ to use them in this repo.
 **To add a new skill:** create `.agents/skills/<skill-name>/SKILL.md` with
 frontmatter, keep it under ~150 lines, and put bulky templates/recipes in a
 sibling `REFERENCE.md`. List it above so the team can discover it.
-

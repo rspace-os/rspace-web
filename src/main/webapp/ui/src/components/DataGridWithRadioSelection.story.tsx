@@ -1,11 +1,6 @@
 import React from "react";
 import { DataGridWithRadioSelection } from "./DataGridWithRadioSelection";
-import {
-  ExportCsv,
-  GridColDef,
-  GridRowId,
-  Toolbar,
-} from "@mui/x-data-grid";
+import { GridColDef, GridRowId } from "@mui/x-data-grid";
 import Box from "@mui/material/Box";
 
 type DemoRow = {
@@ -47,6 +42,7 @@ export function DataGridWithRadioSelectionExample() {
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
+        getRowId={(row) => row.id}
         onSelectionChange={handleSelectionChange}
         selectRadioAriaLabelFunc={(row) =>
           `Select ${row.firstName} ${row.lastName}`
@@ -86,6 +82,7 @@ export function ControlledDataGridWithRadioSelectionExample({
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
+        getRowId={(row) => row.id}
         onSelectionChange={handleSelectionChange}
         selectedRowId={selectedRowId}
         selectRadioAriaLabelFunc={(row) =>
@@ -121,6 +118,7 @@ export function DataGridWithFeatures() {
       <DataGridWithRadioSelection
         rows={rows}
         columns={columns}
+        getRowId={(row) => row.id}
         onSelectionChange={handleSelectionChange}
         selectRadioAriaLabelFunc={(row) =>
           `Select ${row.firstName} ${row.lastName}`

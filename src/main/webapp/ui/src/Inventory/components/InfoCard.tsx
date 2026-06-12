@@ -12,7 +12,6 @@ import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalL
 import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { type Record } from "../../stores/definitions/Record";
 import ContainerModel from "../../stores/models/ContainerModel";
-import { doNotAwait } from "../../util/Util";
 import NavigateContext from "../../stores/contexts/Navigate";
 
 function OpenButton({
@@ -64,10 +63,12 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
         <Button
           color="callToAction"
           variant="contained"
-          onClick={doNotAwait(async () => {
-            await moveStore.search?.setActiveResult(r);
-            moveStore.setActivePane("right");
-          })}
+          onClick={() => {
+            void (async () => {
+              await moveStore.search?.setActiveResult(r);
+              moveStore.setActivePane("right");
+            })();
+          }}
           disableElevation
         >
           Set as Target

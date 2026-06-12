@@ -5,7 +5,6 @@
 
 import axios from "@/common/axios";
 import * as FetchingData from "../../util/fetchingData";
-import { doNotAwait } from "../../util/Util";
 import React from "react";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -115,8 +114,8 @@ export function useIntegrationIsAllowedAndEnabled(
   const [integrationState, setIntegrationState] =
     React.useState<null | IntegrationInfo>(null);
 
-  React.useEffect(
-    doNotAwait(async () => {
+  React.useEffect(() => {
+    void (async () => {
       try {
         setIntegrationState(await fetchIntegrationInfo(name));
       } catch (e) {
@@ -124,9 +123,8 @@ export function useIntegrationIsAllowedAndEnabled(
       } finally {
         setLoading(false);
       }
-    }),
-    [],
-  );
+    })();
+  }, []);
 
   return React.useMemo(() => {
     if (loading) return { tag: "loading" };

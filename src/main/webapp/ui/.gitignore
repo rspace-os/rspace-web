@@ -6,3 +6,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Bundle analysis output (pnpm run build:stats)
+/stats.html
+/stats.json

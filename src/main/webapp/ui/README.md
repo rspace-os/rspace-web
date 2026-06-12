@@ -9,12 +9,8 @@ The [Vite config](./vite.config.ts) defines multiple entry points for these
 different application parts -- see the `bundleEntries` object for the complete
 list of bundles and their purposes.
 
-The [package.json](./package.json) defines the dependencies and scripts for
-development, testing, and building the application.
-
-The [dependency cruiser config](./dependency-cruiser.js) defines rules for
-how the codebase should be organised, ensuring that where code is shared between
-different parts of the application it is done so in a controlled manner.
+The root [package.json](../../../package.json) defines the dependencies and
+scripts for development, testing, and building the application.
 
 ## Architecture
 
@@ -54,17 +50,17 @@ instead use React Context and custom hooks for state management.
 
 ## Building the code
 
-To build the codebase you will need to have Node.js and NPM installed. Maven
+To build the codebase you will need to have Node.js and pnpm installed. Maven
 builds the production frontend bundle by default. This can be quite slow and is
 not necessary for frontend development, instead run the maven command with
-`-DreactDevMode=true` but in a separate terminal run `npm install` and
-then `npm run serve` from this directory to start a process that watches
+`-DreactDevMode=true` but in a separate terminal at the repo root run `corepack enable`,
+`pnpm install --frozen-lockfile`, and then `pnpm run serve` to start a process that watches
 for changes to the React code and recompiles it as necessary. This is much
 faster and provides a better development experience, with shorter feedback loops
 and source maps for easier debugging.
 
-The frontend build now uses Vite by default. `npm run build` and
-`npm run serve` both target the Vite configuration in `vite.config.ts`,
+The frontend build now uses Vite by default. `pnpm run build` and
+`pnpm run serve` both target the Vite configuration in `vite.config.ts`,
 emitting the main browser bundles into `dist`. Production builds use hashed
 filenames, while the development watch build keeps stable filenames to reduce
 stale-asset issues during JSP-driven development.
@@ -106,14 +102,13 @@ different setups for the componenent as Playwright has restrictions on what
 can be done in the test file itself. These story files can also act as a form of
 documentation for the component, showing different ways it can be used.
 
-#### Unit Tests (Jest)
-Much of the rest of the React codebase is still tested using Jest unit tests. These
+#### Unit Tests (Vitest)
+Much of the rest of the React codebase is tested using Vitest unit tests. These
 tests are generally faster to run than Playwright component tests, but can be
 less realistic as they often require more mocking and stubbing of dependencies.
-The most compelling reason to avoid using Jest, however, is simply how
+The most compelling reason to avoid relying only on unit tests, however, is simply how
 frustrating it is to assert properties about a UI that you cannot see. The
-config for Jest can be found in the [package.json](./package.json) under the
-`jest` key.
+config for Vitest can be found in the [Vite config](./vite.config.ts).
 
 The test files can be found in `__tests__` directories alongside the code under test.
 This directory usually contains either a file for each file under test in the

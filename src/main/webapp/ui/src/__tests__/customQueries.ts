@@ -11,6 +11,7 @@ import {
   type RenderOptions,
   getQueriesForElement,
 } from "@testing-library/react";
+import { expect } from "vitest";
 
 export function getIndexOfTableCell(
   tablerow: HTMLElement,
@@ -133,6 +134,28 @@ const customWithin: typeof getQueriesForElement &
       name: string | RegExp
     ) => number;
   }) = (element: HTMLElement) => within(element, { ...allQueries });
+
+/**
+ * Typed wrapper around the `@sa11y/vitest` `toBeAccessible` matcher (registered
+ * in `src/__tests__/setup.ts`). The matcher is extended at runtime so it is not
+ * visible to TypeScript on the `Assertion` interface; this helper hides the one
+ * unavoidable cast (and the `no-unsafe-call` it would otherwise trigger) so
+ * tests can write `await expectAccessible(baseElement)` without per-call
+ * `@ts-expect-error` / eslint-disable comments.
+ *
+ * Note: in jsdom, axe cannot compute rendered colours, so `color-contrast` and
+ * `color-contrast-enhanced` rules simply do not run. Contrast checks must stay
+ * in Playwright.
+ */
+export const expectAccessible = (element: HTMLElement): Promise<void> => {
+  // `vitest/valid-expect` cannot see that the chained call below IS the matcher
+  // - it only sees `expect(...)` with no immediate matcher property access.
+  // eslint-disable-next-line vitest/valid-expect
+  const assertion = expect(element) as unknown as {
+    toBeAccessible: () => Promise<void>;
+  };
+  return assertion.toBeAccessible();
+};
 
 // re-export everything
 export * from "@testing-library/react";

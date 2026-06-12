@@ -183,6 +183,9 @@ public class StructuredDocumentControllerTest {
     assertNotNull(rc.getData());
     verify(auditTrail).notify(eq(renameAuditEvent));
     assertEquals("from: \"oldname\" to: \"newname\"", renameAuditEvent.getDescription());
+    // RSDEV-1124: the audited object must carry the new name, as the audit
+    // trail snapshots its current state for the document name column
+    assertEquals("newname", sd.getName());
   }
 
   @Test

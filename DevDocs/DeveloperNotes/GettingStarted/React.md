@@ -7,20 +7,10 @@ making the development less error prone and more convenient.
 the box JavaScript IDE functionalities.
 
 ## Do
-- To enable the use of Flow, add `// @flow` at the top of a JavaScript file
-- Please familiarise yourself with [Flow types](https://flow.org/en/docs/types/)
 - If Prettier is not run on autosave, run Prettier on all modified JavaScript files
   before commit
-- If you are installing a new npm package and need flow typings, do `npm run
-  flow-typed search <package-name>` and install with `npm run flow-typed install <annotations-package-name>`.
-  For example `npm run flow-typed install react-router-dom` installs type annotations
-  for `react-router-dom`.
 
 ## Notes
-- Flow does not support typescript type information files `.d.ts` :confused:
-  [link](https://github.com/facebook/flow/issues/7)
-- The more of the codebase is covered with Flow, the easier it will become to migrate
-  to TypeScript if desired
 - Prettier works with JavaScript, JSON, Markdown, ...
 
 ## Editor set up
@@ -34,17 +24,11 @@ the box JavaScript IDE functionalities.
    - Windows `Shift + Alt + F`
    - Mac `Shift + Option + F`
    - Ubuntu `Ctrl + Shift + I`
-4. Install Flow language support `flowtype.flow-for-vscode`
 
 #### VSCode comments
 _Correct as of 2020 June:_
-In VSCode JavaScript and TypeScript are tighly coupled. VSCode intellisense and other IDE
-features for JavaScript are dependent on TypeScript. When Flow is enabled, this
-results in double type annotations on hover and double autocomplete suggestions.
-Generally, the top type pop-up annotation comes from Flow and the bottom one from
-TypeScript. At the moment it is not possible to disable the double annotation
-pop-ups  without disabling TypeScript and hence disabling some important IDE
-features.
+In VSCode JavaScript and TypeScript are tightly coupled. VSCode intellisense and
+other IDE features for JavaScript are dependent on TypeScript.
 
 #### VSCode __recommendations__
 - Additional plugins:
@@ -62,28 +46,9 @@ features.
      popup (`Cmd/Ctrl-Shift-A`)
   1. Tick the "Run on save for files" option in `File > Settings/Preferences >
      Languages & Frameworks > JavaScript > Prettier`
-- Change the project language level to Flow:
-  1. Go to `File > Settings/Preferences > Languages & Frameworks > JavaScript`
-  1. From the `JavaScript Language Version` list, choose Flow
-  1. In the Flow package or executable field, specify the path to `node_modules/flow-bin`
-  1. In the Use Flow server for area tick: `Type checking` and `Navigation, code
-     completion, and type hinting`
-  1. Ensure `Save all modified files automatically` checkbox is selected
-
 ### Other editors
-You need to set up Flow, Prettier and Eslint. If your editor/IDE does not provide
-plugins for these, it is possible to run these from the command line.
-
-### Flow
-A lot of editor plugins for flow are simple wrappers around calls to the
-[Language Server][lsp] that the [flow binary exposes][flow-cli]. If your editor
-is having trouble displaying any flow errors then ensure that this server is
-running correctly (to restart run `npm run flow stop ; npm run flow start`). If
-your editor does not have a dedicated flow plugin, then see if you editor's
-Language Server Protocol integration will do the same job.
-
-[lsp]: https://microsoft.github.io/language-server-protocol/
-[flow-cli]: https://flow.org/en/docs/cli/
+You need to set up TypeScript, Prettier and Eslint. If your editor/IDE does not
+provide plugins for these, it is possible to run these from the command line.
 
 
 ## General Notes

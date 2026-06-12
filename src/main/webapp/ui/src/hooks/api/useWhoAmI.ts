@@ -2,7 +2,6 @@ import React from "react";
 import axios from "@/common/axios";
 import { Person, PersonAttrs } from "@/stores/definitions/Person";
 import { Fetched } from "@/util/fetchingData";
-import { doNotAwait } from "@/util/Util";
 import useOauthToken from "../auth/useOauthToken";
 
 /**
@@ -14,8 +13,8 @@ export default function useWhoAmI(): Fetched<Person> {
     tag: "loading",
   });
 
-  React.useEffect(
-    doNotAwait(async () => {
+  React.useEffect(() => {
+    void (async () => {
       try {
         const { data } = await axios.get<PersonAttrs>(
           "/api/v1/userDetails/whoami",
@@ -52,9 +51,8 @@ export default function useWhoAmI(): Fetched<Person> {
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
-    }),
-    [],
-  );
+    })();
+  }, []);
 
   return currentUser;
 }

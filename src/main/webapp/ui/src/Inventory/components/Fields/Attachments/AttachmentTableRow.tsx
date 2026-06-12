@@ -18,7 +18,6 @@ import useStores from "../../../../stores/use-stores";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { type BlobUrl } from "../../../../util/types";
-import { doNotAwait } from "../../../../util/Util";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 const KetcherDialog = React.lazy(
@@ -179,7 +178,7 @@ const SetAsPreviewImage = <
         }
         size="small"
         color="primary"
-        onClick={doNotAwait(setAsPreviewImage)}
+        onClick={() => void setAsPreviewImage()}
         icon={<InsertPhotoIcon />}
         disabled={disabled}
       />

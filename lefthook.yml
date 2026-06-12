@@ -1,0 +1,25 @@
+# Git hooks managed by lefthook (https://lefthook.dev).
+# Enable once per clone by running `pnpm install` in the repo root.
+pre-commit:
+  parallel: true
+  commands:
+    # Fail the commit if any staged Java file is not spotless-formatted.
+    # spotlessFiles matches the absolute path via String#matches, so each
+    # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
+    # Guard against an empty list (drop blank lines) so we never fall back to
+    # `-DspotlessFiles=".*"`, which would match every file in the repo.
+    spotless:
+      glob: "**/*.java"
+      run: |
+        spotless_files=$(printf '%s\n' {staged_files} \
+          | sed '/^$/d; s#^#.*#' \
+          | paste -sd, -)
+        if [ -n "$spotless_files" ]; then
+          ./mvnw -q spotless:check -DspotlessFiles="$spotless_files"
+        fi
+    # Type-check the frontend when any staged TS/TSX file changes. tsc is a
+    # whole-project check, so we run the full `tsc --noEmit` rather than a
+    # per-file subset.
+    tsc:
+      glob: "src/main/webapp/ui/**/*.{ts,tsx}"
+      run: pnpm run tsc
