@@ -1003,12 +1003,15 @@ feature.beforeEach(async ({ page, stoichiometryMocks }) => {
 
 });
 test.describe("Stoichiometry Table", () => {
-  feature("Has no accessibility violations", async ({ Given, Once, Then }) => {
-    await Given["the table is loaded with data"]();
-    await Once["the table has loaded"]();
-    await Then["there shouldn't be any axe violations"]();
-
-  });
+  // NOTE: the structural axe check, "Renders and displays data correctly",
+  // column headers, inventory link controls, inventory picker open/close,
+  // default limiting reagent, the CSV-export menu, and "toolbar opens the
+  // inventory stock update dialog" were converted to jsdom in
+  // StoichiometryTable.test.tsx. Kept here: high-contrast (emulateMedia), the
+  // CSV-download content assertions (real download + fs.readFile), the
+  // limiting-reagent yield calculations, the detailed inventory stock-update
+  // dialog cases, the "Adding reagents" flows, and the "Calculation Logic"
+  // inline-edit cases.
   feature(
     "supports high-contrast mode",
     async ({ Given, Then, Once, page }) => {
@@ -1016,68 +1019,6 @@ test.describe("Stoichiometry Table", () => {
       await Given["the table is loaded with data"]();
       await Once["the table has loaded"]();
       await Then["there shouldn't be any axe violations"]();
-    },
-
-  );
-  feature(
-    "Renders and displays data correctly",
-    async ({ Given, Once, Then }) => {
-      await Given["the table is loaded with data"]();
-      await Once["the table has loaded"]();
-      await Then["the table should be visible"]();
-      await Then["the table displays molecule data"]();
-    },
-
-  );
-  feature("Displays expected column headers", async ({ Given, Once, Then }) => {
-    await Given["the table is loaded with data"]();
-    await Once["the table has loaded"]();
-    await Then["the default columns should be visible"]();
-
-  });
-  feature(
-    "Shows inventory link controls for both linked and unlinked molecules",
-    async ({ Given, Once, Then }) => {
-      await Given["the table is loaded with data"]();
-      await Once["the table has loaded"]();
-      await Then[
-        "inventory link controls should be visible for linked and unlinked molecules"
-      ]();
-    },
-  );
-  feature(
-    "Opens and closes the inventory picker from an unlinked molecule",
-    async ({ Given, Once, When, Then }) => {
-      await Given["the table is loaded with data"]();
-      await Once["the table has loaded"]();
-      await When["the user opens inventory picker for {molecule}"]({
-        molecule: "Benzene",
-      });
-      await Then["inventory picker should be visible for {molecule}"]({
-        molecule: "Benzene",
-      });
-      await When["the user closes the inventory picker"]();
-      await Then["inventory picker should not be visible"]();
-    },
-  );
-  feature(
-    "Sets first reactant as default limiting reagent when none is selected",
-    async ({ Given, Once, Then }) => {
-      await Given["the table is loaded with data"]();
-      await Once["the table has loaded"]();
-      await Then[
-        "the first reactant should be selected as the default limiting reagent"
-      ]();
-    },
-
-  );
-  feature(
-    "There should be a menu for exporting the stoichiometry table to CSV",
-    async ({ Given, Then }) => {
-      await Given["the table is loaded with data"]();
-      await Then[
-        "there should be a menu for exporting the stoichiometry table to CSV"
-      ]();
     },
 
   );
@@ -1139,18 +1080,6 @@ test.describe("Stoichiometry Table", () => {
       await Then["the second row should NOT have a yield value"]();
     },
 
-  );
-  feature(
-    "The toolbar can open the inventory stock update dialog",
-    async ({ Given, Once, When, Then }) => {
-      await Given["the table is loaded with data"]();
-      await Once["the table has loaded"]();
-      await When["the user clicks Update Inventory Stock"]();
-      await Then["the inventory update dialog should open"]();
-      await Then[
-        "the inventory update dialog should list the current molecules"
-      ]();
-    },
   );
   feature(
     "The inventory stock update dialog only preselects eligible molecules and explains disabled ones",
@@ -1296,7 +1225,7 @@ test.describe("Stoichiometry Table", () => {
       ]();
     },
   );
-  test.describe("Adding reagants", () => {
+  test.describe("Adding reagents", () => {
     feature(
       "User can access the Add Chemical menu",
       async ({ Given, Once, When, Then }) => {
