@@ -15,7 +15,7 @@
     "lint": "cd src/main/webapp/ui && biome check .",
     "lint:fix": "cd src/main/webapp/ui && biome check --write .",
     "format": "cd src/main/webapp/ui && biome format --write .",
-    "lint:ci": "cd src/main/webapp/ui && biome ci .",
+    "lint:ci": "cd src/main/webapp/ui && biome ci --error-on-warnings --diagnostic-level=info .",
     "biome": "cd src/main/webapp/ui && biome"
   },
   "devDependencies": {
