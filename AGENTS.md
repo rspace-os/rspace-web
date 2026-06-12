@@ -322,7 +322,7 @@ DevDocs/                           # Developer documentation
 
 - **GitHub Actions:** `.github/workflows/lint-and-test.yml` (public CI) — auto-detects frontend vs Java changes and runs appropriate test suites
 - **Jenkins:** `Jenkinsfile` (internal CI with code coverage)
-- Code quality: SonarQube, SpotBugs, Checkstyle
+- Code quality: SonarQube, Checkstyle
 - **PR template:** `.github/pull_request_template.md` — requires a description; design decisions and testing notes optional; include screenshots for UI changes
 
 ## Agent-Specific Config Files
