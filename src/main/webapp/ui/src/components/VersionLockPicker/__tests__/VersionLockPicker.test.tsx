@@ -78,4 +78,40 @@ describe("VersionLockPicker", () => {
     );
     expect(checkedRadios).toHaveLength(1);
   });
+
+  it("degrades to the latest-only view when fetchVersions rejects", async () => {
+    // the fetchVersions contract does not promise to never reject; a failing
+    // versions endpoint must leave the picker in a known state (no version
+    // rows) without an unhandled promise rejection escaping the component
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => {
+      unhandled.push(reason);
+    };
+    process.on("unhandledRejection", onUnhandled);
+    try {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <VersionLockPicker
+            recordId={42}
+            prefix="SA"
+            currentSelection={LATEST_SELECTION}
+            fetchVersions={() =>
+              Promise.reject(new Error("versions endpoint down"))
+            }
+            onChange={vi.fn()}
+          />
+        </ThemeProvider>,
+      );
+
+      expect(await screen.findByText(/latest/i)).toBeInTheDocument();
+      // let the rejection cross a macrotask boundary so node's
+      // unhandled-rejection detection has run
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(screen.queryByText(/version \d/i)).not.toBeInTheDocument();
+      expect(unhandled).toHaveLength(0);
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+  });
 });

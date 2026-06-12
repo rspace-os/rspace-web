@@ -32,11 +32,20 @@ export default function VersionLockPicker(
 
   useEffect(() => {
     let cancelled = false;
-    props.fetchVersions(props.recordId).then((rows) => {
-      if (!cancelled) {
-        setVersions(rows);
-      }
-    });
+    props.fetchVersions(props.recordId).then(
+      (rows) => {
+        if (!cancelled) {
+          setVersions(rows);
+        }
+      },
+      () => {
+        // a failed fetch degrades to the latest-only view; the rejection must
+        // not escape the component as an unhandled promise rejection
+        if (!cancelled) {
+          setVersions([]);
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
