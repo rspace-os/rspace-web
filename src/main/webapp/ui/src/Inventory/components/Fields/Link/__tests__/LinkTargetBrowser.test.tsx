@@ -92,6 +92,22 @@ describe("LinkTargetBrowser", () => {
     expect(args.uiConfig.instantConfirm).toBe(false);
   });
 
+  it("constructs the search model once, not on every render", () => {
+    // useState's initializer must be lazy: a Search constructed per render is
+    // discarded by React immediately but still pays the store/fetcher setup
+    // cost (and any MobX side effects) on each render
+    const before = searchConstructorArgs.length;
+    const { rerender } = render(
+      <LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />,
+    );
+    rerender(
+      <LinkTargetBrowser open={false} onPick={() => {}} onCancel={() => {}} />,
+    );
+    rerender(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    expect(searchConstructorArgs.length - before).toBe(1);
+  });
+
   it("treats an empty addition as cancel so the Cancel button closes the dialog", async () => {
     // defensive: the Choose button is disabled while nothing is selected, but
     // an empty confirmation must still close rather than commit an empty pick

@@ -16,8 +16,11 @@ export interface LinkTargetBrowserProps {
 }
 
 function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
+  // lazy initializer: Search sets up the store/fetcher chain, which must not
+  // be re-done (and discarded) on every render
   const [search] = useState(
-    new Search({
+    () =>
+      new Search({
       factory: new AlwaysNewFactory(),
       fetcherParams: {
         resultType: "ALL",
