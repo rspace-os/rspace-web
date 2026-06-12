@@ -81,8 +81,10 @@ class LinkTargetResolverImplTest {
 
   @Test
   void elnDocumentTargetReadableResolvesTrue() {
+    BaseRecord document = org.mockito.Mockito.mock(BaseRecord.class);
+    when(document.getOid()).thenReturn(new GlobalIdentifier("SD123"));
     when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(List.of(org.mockito.Mockito.mock(BaseRecord.class)));
+        .thenReturn(List.of(document));
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SD123"), user));
   }
@@ -105,8 +107,12 @@ class LinkTargetResolverImplTest {
 
   @Test
   void notebookAndGalleryTargetsResolveViaBaseRecordManager() {
+    BaseRecord notebook = org.mockito.Mockito.mock(BaseRecord.class);
+    when(notebook.getOid()).thenReturn(new GlobalIdentifier("NB7"));
+    BaseRecord galleryFile = org.mockito.Mockito.mock(BaseRecord.class);
+    when(galleryFile.getOid()).thenReturn(new GlobalIdentifier("GL55"));
     when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
-        .thenReturn(List.of(org.mockito.Mockito.mock(BaseRecord.class)));
+        .thenReturn(List.of(notebook), List.of(galleryFile));
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB7"), user));
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("GL55"), user));
@@ -124,6 +130,19 @@ class LinkTargetResolverImplTest {
     assertFalse(resolved.hasVersionId(), "version suffix should be stripped before resolving");
     assertEquals(Long.valueOf(123), resolved.getDbId());
     assertEquals(GlobalIdPrefix.SD, resolved.getPrefix());
+  }
+
+  @Test
+  void elnTargetMustMatchRequestedPrefixNotJustDbId() {
+    // the workspace loader resolves by numeric id alone, so "GL150" loads
+    // whatever record has id 150 (e.g. folder FL150); only a record whose own
+    // oid prefix matches the requested one may count as the link target
+    BaseRecord folder = org.mockito.Mockito.mock(BaseRecord.class);
+    when(folder.getOid()).thenReturn(new GlobalIdentifier("FL150"));
+    when(baseRecordManager.getByGlobalIdsAndReadPermission(any(), eq(user)))
+        .thenReturn(List.of(folder));
+
+    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("GL150"), user));
   }
 
   @Test

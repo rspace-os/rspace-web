@@ -71,7 +71,16 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
       List<BaseRecord> readable =
           baseRecordManager.getByGlobalIdsAndReadPermission(
               Collections.singletonList(target), user);
-      return !readable.isEmpty();
+      // the loader resolves by numeric id alone, so a typed id can load a
+      // different record kind sharing the number (e.g. "GL150" loads folder
+      // FL150): only a record whose own oid prefix matches the requested one
+      // counts as the link target
+      for (BaseRecord record : readable) {
+        if (record.getOid() != null && record.getOid().getPrefix() == target.getPrefix()) {
+          return true;
+        }
+      }
+      return false;
     } catch (ObjectRetrievalFailureException | AuthorizationException e) {
       return false;
     }

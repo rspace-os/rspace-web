@@ -37,8 +37,13 @@ export async function checkLinkTargetExists(
       );
     }
     if (ELN_PREFIXES.has(prefix)) {
-      await getWorkspaceRecordInformationAjax({ recordId: Number(dbId) });
-      return true;
+      const info = await getWorkspaceRecordInformationAjax({
+        recordId: Number(dbId),
+      });
+      // the workspace endpoint resolves by numeric id alone, so a typed id
+      // can resolve a different record kind sharing the number (e.g. "GL150"
+      // resolves folder FL150): only an exact Global ID match counts
+      return info.oid.idString === `${prefix}${dbId}`;
     }
     return false;
   } catch {

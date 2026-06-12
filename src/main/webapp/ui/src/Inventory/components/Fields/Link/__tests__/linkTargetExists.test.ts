@@ -66,7 +66,10 @@ describe("checkLinkTargetExists", () => {
   });
 
   it("resolves an ELN target through the workspace record-information endpoint", async () => {
-    mockGetWorkspaceRecordInformationAjax.mockResolvedValue({ id: 42 });
+    mockGetWorkspaceRecordInformationAjax.mockResolvedValue({
+      id: 42,
+      oid: { idString: "SD42" },
+    });
     await expect(checkLinkTargetExists("SD42")).resolves.toBe(true);
     expect(mockGetWorkspaceRecordInformationAjax).toHaveBeenCalledWith({
       recordId: 42,
@@ -81,11 +84,25 @@ describe("checkLinkTargetExists", () => {
   });
 
   it("checks the base record for a version-pinned target", async () => {
-    mockGetWorkspaceRecordInformationAjax.mockResolvedValue({ id: 7 });
+    mockGetWorkspaceRecordInformationAjax.mockResolvedValue({
+      id: 7,
+      oid: { idString: "SD7" },
+    });
     await expect(checkLinkTargetExists("SD7v3")).resolves.toBe(true);
     expect(mockGetWorkspaceRecordInformationAjax).toHaveBeenCalledWith({
       recordId: 7,
     });
+  });
+
+  it("rejects an ELN target whose resolved record has a different prefix", async () => {
+    // the workspace endpoint resolves by numeric id alone, so "GL150"
+    // resolves whatever record has id 150 (e.g. folder FL150); only an exact
+    // Global ID match counts as existing
+    mockGetWorkspaceRecordInformationAjax.mockResolvedValue({
+      id: 150,
+      oid: { idString: "FL150" },
+    });
+    await expect(checkLinkTargetExists("GL150")).resolves.toBe(false);
   });
 
   it("reports unknown prefixes and malformed ids as not existing", async () => {
