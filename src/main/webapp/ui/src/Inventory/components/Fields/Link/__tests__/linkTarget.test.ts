@@ -1,0 +1,55 @@
+import { describe, expect, test } from "vitest";
+import { validateTarget, isSelfLink } from "../linkTarget";
+
+describe("validateTarget", () => {
+  test("accepts all inventory prefixes, including sample templates", () => {
+    for (const globalId of ["SA9", "SS9", "IC9", "IN9", "IT9"]) {
+      expect(validateTarget(globalId, "SA1").ok, `${globalId} accepted`).toBe(
+        true,
+      );
+    }
+  });
+
+  test("accepts ELN prefixes", () => {
+    for (const globalId of ["SD9", "NB9", "GL9"]) {
+      expect(validateTarget(globalId, "SA1").ok, `${globalId} accepted`).toBe(
+        true,
+      );
+    }
+  });
+
+  test("rejects unsupported prefixes", () => {
+    const { ok, reason } = validateTarget("GF9", "SA1");
+    expect(ok).toBe(false);
+    expect(reason).toMatch(/target must be/i);
+  });
+
+  test("rejects malformed and empty ids as 'required'", () => {
+    expect(validateTarget("", "SA1").reason).toMatch(/required/i);
+    expect(validateTarget("not-an-id", "SA1").reason).toMatch(/required/i);
+  });
+
+  test("rejects self-links, ignoring any version suffix", () => {
+    expect(validateTarget("SA1", "SA1").ok).toBe(false);
+    expect(validateTarget("SA1v3", "SA1").ok).toBe(false);
+  });
+
+  test("rejects manually-typed version suffixes: versions are pinned via the clock", () => {
+    const inventory = validateTarget("SA6v1", "SA1");
+    expect(inventory.ok).toBe(false);
+    expect(inventory.reason).toMatch(/clock/i);
+    const eln = validateTarget("SD7v2", "SA1");
+    expect(eln.ok).toBe(false);
+    expect(eln.reason).toMatch(/clock/i);
+    // the base id without a suffix remains valid
+    expect(validateTarget("SA6", "SA1").ok).toBe(true);
+  });
+});
+
+describe("isSelfLink", () => {
+  test("matches only the same prefix and id", () => {
+    expect(isSelfLink("SA1", "SA1")).toBe(true);
+    expect(isSelfLink("SA1", "SS1")).toBe(false);
+    expect(isSelfLink("SA1", "SA2")).toBe(false);
+  });
+});

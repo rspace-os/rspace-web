@@ -1,19 +1,26 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IRecordFactory;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +38,9 @@ import org.springframework.validation.Validator;
 public class ApiExtraFieldsHelper implements Validator {
 
   private IRecordFactory recordFactory;
+  private final InventoryLinkValidator linkValidator = new InventoryLinkValidator();
+
+  @Autowired private InventoryLinkManager inventoryLinkManager;
 
   public ApiExtraFieldsHelper(@Autowired IRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -49,10 +59,32 @@ public class ApiExtraFieldsHelper implements Validator {
       ValidationUtils.rejectIfEmptyOrWhitespace(
           errors, "name", "errors.required", "name is required");
     }
+    if (aef.getTypeAsFieldType() == FieldType.LINK) {
+      validateLinkPayload(aef, errors);
+      return;
+    }
     ExtraField extraField = recordFactory.createExtraField(aef.getTypeAsFieldType());
     String validationMsg = extraField.validateNewData(aef.getContent());
     if (!StringUtils.isEmpty(validationMsg)) {
       errors.rejectValue("content", "", validationMsg);
+    }
+  }
+
+  private void validateLinkPayload(ApiExtraField aef, Errors errors) {
+    if (aef.getLink() == null) {
+      errors.rejectValue(
+          "link", "errors.required", new Object[] {"link"}, "link payload is required");
+      return;
+    }
+    String sourceGlobalId =
+        aef.getParentGlobalId() != null
+            ? aef.getParentGlobalId()
+            : (aef.getParentRecordInfo() != null ? aef.getParentRecordInfo().getGlobalId() : null);
+    errors.pushNestedPath("link");
+    try {
+      linkValidator.validate(aef.getLink(), sourceGlobalId, errors);
+    } finally {
+      errors.popNestedPath();
     }
   }
 
@@ -80,7 +112,7 @@ public class ApiExtraFieldsHelper implements Validator {
         apiInstrument.getExtraFields(), instrument.getActiveExtraFields(), instrument, user);
   }
 
-  private boolean createDeleteRequestedExtraFields(
+  boolean createDeleteRequestedExtraFields(
       List<ApiExtraField> incomingFields,
       List<ExtraField> dbFields,
       InventoryRecord parentInvRec,
@@ -88,7 +120,7 @@ public class ApiExtraFieldsHelper implements Validator {
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         null, incomingFields);
-    boolean changed = false;
+    boolean changed = applyExistingLinkFieldChanges(incomingFields, dbFields, user);
     if (!CollectionUtils.isEmpty(incomingFields)) {
       for (ApiExtraField apiField : incomingFields) {
         if (apiField.isNewFieldRequest()) {
@@ -97,19 +129,17 @@ public class ApiExtraFieldsHelper implements Validator {
         }
         if (apiField.isDeleteFieldRequest()) {
           if (apiField.getId() == null) {
-            throw new IllegalArgumentException(
-                "'id' property not provided "
-                    + "for an extra field with 'deleteFieldRequest' flag");
+            throw new ApiRuntimeException("errors.inventory.field.deleteRequest.idMissing");
           }
           Optional<ExtraField> dbFieldOpt =
               dbFields.stream().filter(sf -> apiField.getId().equals(sf.getId())).findFirst();
           if (!dbFieldOpt.isPresent()) {
-            throw new IllegalArgumentException(
-                "Extra field id: "
-                    + apiField.getId()
-                    + " doesn't match id of any pre-existing extra field");
+            throw new ApiRuntimeException(
+                "errors.inventory.field.deleteRequest.idUnknown", apiField.getId());
           }
-          dbFieldOpt.get().setDeleted(true);
+          ExtraField dbField = dbFieldOpt.get();
+          softDeleteLinkIfPresent(dbField, user);
+          dbField.setDeleted(true);
           changed = true;
         }
       }
@@ -120,12 +150,138 @@ public class ApiExtraFieldsHelper implements Validator {
     return changed;
   }
 
+  /**
+   * Soft-deletes the {@link InventoryLink} backing a Link extra-field when that field is itself
+   * being soft-deleted, so the link row (and its Envers audit trail) stays in step with the field.
+   * A field soft-delete only flips the field's {@code deleted} flag: being an ordinary update
+   * rather than a JPA remove it does not trigger the {@code cascade}/{@code orphanRemoval} on
+   * {@code ExtraLinkField#link}, and it never dereferences the link. Without this the link row
+   * would linger with {@code deleted=false} after its parent field is gone. (The
+   * structured-link-field clear path differs deliberately: clearing a value dereferences the row,
+   * which the orphanRemoval mapping hard-deletes at flush; see {@code
+   * SampleApiManagerImpl#applyLinkFieldValue}.) No-op for non-link fields or a link field that has
+   * no link yet.
+   */
+  private void softDeleteLinkIfPresent(ExtraField dbField, User user) {
+    if (dbField instanceof ExtraLinkField) {
+      InventoryLink link = ((ExtraLinkField) dbField).getLink();
+      if (link != null) {
+        inventoryLinkManager.deleteLink(link, user);
+      }
+    }
+  }
+
+  /**
+   * Applies target and version-pin changes to existing Link extra-fields. The DTO apply loop
+   * ({@code ApiExtraField#applyChangesToDatabaseExtraField}) cannot reach the service-layer {@link
+   * InventoryLinkManager}, so a retargeted link would otherwise be silently dropped and the
+   * previous target returned on save. Changes go through {@link InventoryLinkManager#updateLink},
+   * which validates the new target (existence + readability) and recaptures the pinned audit
+   * revision; an extra-field whose link is still unset gains its first link via {@link
+   * InventoryLinkManager#createLink}. Relation-type-only changes are left to the DTO apply loop.
+   */
+  boolean applyExistingLinkFieldChanges(
+      List<ApiExtraField> incomingFields, List<ExtraField> dbFields, User user) {
+    if (CollectionUtils.isEmpty(incomingFields)) {
+      return false;
+    }
+    boolean changed = false;
+    for (ApiExtraField apiField : incomingFields) {
+      if (apiField.isNewFieldRequest()
+          || apiField.isDeleteFieldRequest()
+          || apiField.getId() == null) {
+        continue;
+      }
+      ApiInventoryLink apiLink = apiField.getLink();
+      if (apiLink == null || StringUtils.isBlank(apiLink.getTargetGlobalId())) {
+        continue;
+      }
+      Optional<ExtraField> dbFieldOpt =
+          dbFields.stream().filter(f -> apiField.getId().equals(f.getId())).findFirst();
+      if (!dbFieldOpt.isPresent() || !(dbFieldOpt.get() instanceof ExtraLinkField)) {
+        continue;
+      }
+      ExtraLinkField dbLinkField = (ExtraLinkField) dbFieldOpt.get();
+      // the controller-layer validator is skipped when the payload omits "type",
+      // so the self-link rule must also hold on this service-layer path
+      rejectSelfLink(apiLink, dbLinkField);
+      InventoryLink dbLink = dbLinkField.getLink();
+      if (dbLink == null) {
+        dbLinkField.setLink(inventoryLinkManager.createLink(apiLink, user));
+        changed = true;
+      } else if (linkChanged(apiLink, dbLink)) {
+        inventoryLinkManager.updateLink(dbLink, apiLink, user);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  private void rejectSelfLink(ApiInventoryLink apiLink, ExtraLinkField dbLinkField) {
+    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (target != null
+        && InventoryLinkValidator.isSelfLink(
+            target, dbLinkField.getConnectedRecordGlobalIdentifier())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
+    }
+  }
+
+  /**
+   * True when the incoming payload points at a different target or version than the stored link.
+   * Compared on the parsed base id plus the effective pin (a "vN" suffix counts as a pin), so a
+   * client that pins via the suffix with {@code versionPin: null} does not churn an unchanged row
+   * with spurious updates. An unparseable incoming id counts as changed so the manager rejects it
+   * with its clean validation error.
+   */
+  private boolean linkChanged(ApiInventoryLink apiLink, InventoryLink dbLink) {
+    GlobalIdentifier incoming = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (incoming == null) {
+      return true;
+    }
+    Long effectivePin =
+        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
+    return incoming.getPrefix() != dbLink.getTargetPrefix()
+        || !Objects.equals(incoming.getDbId(), dbLink.getTargetDbId())
+        || !Objects.equals(effectivePin, dbLink.getVersionPin());
+  }
+
+  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
+    try {
+      return new GlobalIdentifier(targetGlobalId);
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      return null;
+    }
+  }
+
   private void addRecordExtraFieldForIncomingApiField(
       ApiExtraField apiField, User user, InventoryRecord parentInvRec) {
-    ExtraField newField =
-        recordFactory.createExtraField(
-            apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
-    newField.setData(apiField.getContent());
+    ExtraField newField;
+    if (apiField.getTypeAsFieldType() == FieldType.LINK) {
+      newField = buildExtraLinkField(apiField, user, parentInvRec);
+    } else {
+      newField =
+          recordFactory.createExtraField(
+              apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
+      newField.setData(apiField.getContent());
+    }
     parentInvRec.addExtraField(newField); // update parent's field list
+  }
+
+  private ExtraLinkField buildExtraLinkField(
+      ApiExtraField apiField, User user, InventoryRecord parentInvRec) {
+    ExtraLinkField linkField = new ExtraLinkField();
+    linkField.setInventoryRecord(parentInvRec);
+    if (!StringUtils.isBlank(apiField.getName())) {
+      linkField.setName(apiField.getName());
+    }
+    linkField.setCreatedBy(user.getUsername());
+    linkField.setModifiedBy(user.getUsername());
+    ApiInventoryLink apiLink = apiField.getLink();
+    if (apiLink != null) {
+      InventoryLink persisted = inventoryLinkManager.createLink(apiLink, user);
+      linkField.setLink(persisted);
+    }
+    return linkField;
   }
 }

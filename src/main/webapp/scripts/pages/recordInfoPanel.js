@@ -238,6 +238,16 @@ function generate$RecordInfoPanel(info) {
     _setInfoPanelInternalLinksHtml($newInfoPanel.find('.infoPanelInternalLinksDiv'), info, recordTypeNameToDisplay);
   }
 
+  // Inventory items can link to this ELN document/notebook via an Inventory Link
+  // extra-field; surface those back-references in a distinct section.
+  var showRelatedInventoryItems = isStructuredDocument || isNotebook;
+  $newInfoPanel.find('.infoPanelRelatedInventoryItemsDiv').toggle(showRelatedInventoryItems);
+  if (showRelatedInventoryItems) {
+    _setInfoPanelRelatedInventoryItemsHtml(
+      $newInfoPanel.find('.infoPanelRelatedInventoryItemsDiv'), info,
+      isStructuredDocument ? 'document' : 'notebook');
+  }
+
   var showSharingStatus = isStructuredDocument || isNotebook;
   $newInfoPanel.find('.infoPanelSharingDiv').toggle(showSharingStatus);
   if (showSharingStatus) {
@@ -375,6 +385,44 @@ function _setInfoPanelInternalLinksHtml($internalLinksDiv, info, recordTypeNameT
     return false;
   });
 }
+/**
+ * Renders the "Related inventory items" section: the Inventory items (samples,
+ * subsamples, containers, instruments) whose Link extra-field points at this ELN
+ * record. Reads the shared, permission-filtered back-reference endpoint, the same
+ * one used by the React gallery info panel. The relation is shown with the
+ * Inventory item as the subject (e.g. "SA1 IsPartOf this document").
+ */
+function _setInfoPanelRelatedInventoryItemsHtml($div, info, recordTypeNameToDisplay) {
+  $div.empty().append(
+    "<strong>Related inventory items</strong><br/>"
+    + "<span class='relatedInventoryItemsContent'>Loading&hellip;</span>");
+  var $content = $div.find('.relatedInventoryItemsContent');
+
+  var req = $.get("/workspace/getReferencingInventoryItems/" + info.oid.idString);
+  req.done(function (resp) {
+    var items = (resp && resp.referencingItems) || [];
+    if (!items.length) {
+      $content.text("No Inventory items link to this " + recordTypeNameToDisplay + ".");
+      return;
+    }
+    var html = "<ul>";
+    $.each(items, function (i, item) {
+      var globalId = item.sourceGlobalId;
+      var name = item.sourceName || "";
+      var relation = item.relationType || "";
+      html += "<li><a href='/globalId/" + encodeURIComponent(globalId) + "'>" + RS.escapeHtml(globalId) + "</a>: "
+        + RS.escapeHtml(name)
+        + (relation ? " <em>(" + RS.escapeHtml(relation) + ")</em>" : "")
+        + "</li>";
+    });
+    html += "</ul>";
+    $content.html(html);
+  });
+  req.fail(function () {
+    $content.text("Could not load related Inventory items.");
+  });
+}
+
 const makePublicLink = (info, isNotebook, panel) => {
   const publicExistsRequest = $.get('/public/publishedView/publiclink?globalId=' + info.oid.idString);
   publicExistsRequest.done(function (resp) {

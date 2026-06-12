@@ -375,6 +375,13 @@ feature.beforeEach(async ({ router }) => {
       }),
     });
   });
+  await router.route("/workspace/getReferencingInventoryItems/*", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ referencingItems: [] }),
+    });
+  });
   await router.route(
     "/gallery/getUploadedFiles?mediatype=Images&currentFolderId=1&name=&pageNumber=0&sortOrder=ASC&orderBy=name&foldersOnly=false",
     (route) => {

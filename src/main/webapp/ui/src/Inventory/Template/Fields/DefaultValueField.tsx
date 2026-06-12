@@ -7,6 +7,9 @@ import * as ArrayUtils from "../../../util/ArrayUtils";
 import CustomField from "../../components/Inputs/CustomField";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import Button from "@mui/material/Button";
+import Autocomplete from "@mui/material/Autocomplete";
+import MuiTextField from "@mui/material/TextField";
+import { DATACITE_RELATION_TYPES } from "../../components/Fields/Link/dataciteRelationTypes";
 import AddIcon from "@mui/icons-material/Add";
 import Box from "@mui/material/Box";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
@@ -36,6 +39,56 @@ function DefaultValueField({
    * have to be re-rendered anyway.
    */
   const key = React.useMemo(() => field.id ?? crypto.randomUUID(), [field.id]);
+
+  /*
+   * Link template fields don't store a "default value" in the usual sense; instead the template
+   * defines which DataCite relationship types samples may use. An empty whitelist means all
+   * relationship types are allowed.
+   */
+  if (field.type === "link") {
+    return (
+      <InputWrapper
+        label="Allowed relationship types"
+        explanation="The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types."
+      >
+        <Autocomplete
+          multiple
+          disabled={!editing}
+          options={[...DATACITE_RELATION_TYPES]}
+          value={field.allowedRelationTypes}
+          // already-chosen types are greyed out rather than toggled off; they
+          // are removed via their chip's delete icon instead
+          getOptionDisabled={(option) =>
+            field.allowedRelationTypes.includes(option)
+          }
+          onChange={(_event, value) =>
+            field.setAttributesDirty({ allowedRelationTypes: value })
+          }
+          renderInput={(params) => {
+            const { slotProps, ...textFieldProps } = params;
+            return (
+              <MuiTextField
+                {...textFieldProps}
+                variant="standard"
+                placeholder={
+                  field.allowedRelationTypes.length === 0
+                    ? "All relationship types"
+                    : ""
+                }
+                slotProps={{
+                  ...slotProps,
+                  htmlInput: {
+                    ...slotProps.htmlInput,
+                    "aria-label": "Allowed relationship types",
+                  },
+                }}
+              />
+            );
+          }}
+        />
+      </InputWrapper>
+    );
+  }
 
   const errorState = match<void, string | null>([
     [() => !_hasOptions, null],

@@ -105,3 +105,25 @@ if (typeof globalThis.IntersectionObserver !== "function") {
   globalThis.IntersectionObserver = IntersectionObserverMock;
 }
 
+/*
+ * jsdom does not implement window.matchMedia, but some dependencies (TinyMCE,
+ * MUI useMediaQuery) call it at module-evaluation time, before a test file's
+ * own per-file mock import can run. Defining it here guarantees it exists
+ * before any module is evaluated.
+ */
+if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}

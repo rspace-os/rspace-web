@@ -19,6 +19,7 @@ import { UnparsableString } from "../../util/error";
 import {
   type Field,
   type FieldType,
+  type FieldLink,
   type OptionValue,
   type Option,
 } from "../definitions/Field";
@@ -55,6 +56,8 @@ export type FieldModelAttrs = {
   columnIndex: number | null;
   attachment: AttachmentJson | null;
   mandatory: boolean;
+  allowedRelationTypes?: Array<string> | null;
+  link?: FieldLink | null;
 };
 
 export default class FieldModel implements Field {
@@ -86,6 +89,10 @@ export default class FieldModel implements Field {
   // @ts-expect-error Initialised by setAttributes
   mandatory: boolean;
   error: boolean;
+  /** Link template fields: permitted DataCite relation types; empty = all allowed. */
+  allowedRelationTypes: Array<string> = [];
+  /** Link fields: the single link value, or null when unset. */
+  link: FieldLink | null = null;
 
   constructor(_params: FieldModelAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
@@ -106,6 +113,8 @@ export default class FieldModel implements Field {
       attachment: observable,
       mandatory: observable,
       error: observable,
+      allowedRelationTypes: observable,
+      link: observable,
       setAttributesDirty: action,
       setAttributes: action,
       setEditing: action,
@@ -125,7 +134,9 @@ export default class FieldModel implements Field {
       "type",
       "name",
       "initial",
-      "mandatory"
+      "mandatory",
+      "allowedRelationTypes",
+      "link"
     )(_params) as object & {
       content: string | number | Date;
       type: FieldType;
@@ -133,9 +144,13 @@ export default class FieldModel implements Field {
       attachment?: AttachmentJson;
       owner: InventoryBaseRecord;
       options: Array<OptionValue> | Array<Option>;
+      allowedRelationTypes?: Array<string> | null;
+      link?: FieldLink | null;
     };
 
     params.initial = params.initial ?? false;
+    params.allowedRelationTypes = params.allowedRelationTypes ?? [];
+    params.link = params.link ?? null;
 
     if (_params.definition) {
       params = {
@@ -257,6 +272,10 @@ export default class FieldModel implements Field {
       return IsInvalid(
         `The mandatory custom field "${this.name}" must have a valid value.`
       );
+    if (this.type === "link" && this.error)
+      return IsInvalid(
+        `Apply or discard the link changes in "${this.name}" before saving.`
+      );
     if (this.error)
       return IsInvalid(
         `There is an error with the custom field, "${this.name}".`
@@ -267,6 +286,7 @@ export default class FieldModel implements Field {
   get hasContent(): boolean {
     if (hasOptions(this.type)) return Boolean(this.selectedOptions?.length);
     if (this.type === "number") return this.content !== "";
+    if (this.type === "link") return Boolean(this.link?.targetGlobalId);
     return Boolean(this.content);
   }
 
@@ -327,17 +347,25 @@ export default class FieldModel implements Field {
         ret.content = ret.content ?? "";
         break;
     }
-    return pick(
+    const keys = [
       "id",
       "name",
-      hasOptions(ret.type) ? "selectedOptions" : "content",
       "type",
       "definition",
       "newFieldRequest",
       "deleteFieldRequest",
       "deleteFieldOnSampleUpdate",
       "columnIndex",
-      "mandatory"
-    )(ret) as object;
+      "mandatory",
+    ];
+    if (ret.type === "link") {
+      // link fields carry their permitted relation-type whitelist and the
+      // chosen link value; their data column is unused, so no content is sent
+      // (the backend's mandatory check rejects empty content)
+      keys.push("allowedRelationTypes", "link");
+    } else {
+      keys.push(hasOptions(ret.type) ? "selectedOptions" : "content");
+    }
+    return pick(...keys)(ret) as object;
   }
 }

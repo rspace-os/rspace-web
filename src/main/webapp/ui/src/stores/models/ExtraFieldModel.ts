@@ -5,6 +5,7 @@ import {
   type ExtraFieldAttrs,
   type ExtraFieldType,
   type ExtraField,
+  type ExtraInventoryLink,
 } from "../definitions/ExtraField";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import {
@@ -41,6 +42,7 @@ export default class ExtraFieldModel implements ExtraField {
   // @ts-expect-error Set by the call to setAttributes
   owner: InventoryRecord;
   invalidInput: boolean;
+  link: ExtraInventoryLink | null = null;
 
   constructor(attrs: ExtraFieldAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {
@@ -55,8 +57,11 @@ export default class ExtraFieldModel implements ExtraField {
       initial: observable,
       owner: observable,
       invalidInput: observable,
+      link: observable,
       setAttributesDirty: action,
       setAttributes: action,
+      setEditing: action,
+      setInvalidInput: action,
       isValid: computed,
       hasContent: computed,
     });
@@ -64,7 +69,8 @@ export default class ExtraFieldModel implements ExtraField {
     this.setAttributes({
       ...attrs,
       owner,
-      type: attrs.type === "text" ? "Text" : "Number",
+      type: typeNameFromApi(attrs.type),
+      link: attrs.link ?? null,
     });
     this.invalidInput = false;
   }
@@ -87,6 +93,16 @@ export default class ExtraFieldModel implements ExtraField {
   }
 
   get isValid(): ValidationResult {
+    // an open editor holds mid-edit values that the model does not have yet;
+    // saving the record now would silently drop them, so Save stays greyed
+    // until the edit is committed or abandoned
+    if (this.editing && !this.deleteFieldRequest) {
+      return IsInvalid(
+        this.initial
+          ? "A new field is being added. Apply or discard it before saving."
+          : `The field "${this.name}" is being edited. Update or cancel the edit before saving.`,
+      );
+    }
     if (!this.name) return IsInvalid("Names of extra fields cannot be empty.");
     if (this.name.length > 255)
       return IsInvalid("Names of extra fields cannot exceed 255 characters.");
@@ -104,14 +120,37 @@ export default class ExtraFieldModel implements ExtraField {
     if (this.type === "Number") {
       if (this.invalidInput)
         return IsInvalid(
-          "The content of numberical extra fields must be a valid number."
+          "The content of numerical extra fields must be a valid number."
         );
+      return IsValid();
+    }
+    if (this.type === "Link") {
+      if (this.invalidInput)
+        return IsInvalid(
+          `The link field "${this.name}" needs its Target Global ID set. Set a target or cancel the edit.`
+        );
+      // an absent payload is the legitimate "No link set" empty state (the
+      // backend allows payload-less Link extra-fields), so it must not block
+      // record-level Save; only a half-set payload is invalid
+      if (!this.link) return IsValid();
+      if (!this.link.relationType || !this.link.targetGlobalId) {
+        return IsInvalid("Link fields require a relation type and target.");
+      }
       return IsValid();
     }
     return IsInvalid("Invalid field type");
   }
 
   get hasContent(): boolean {
+    if (this.type === "Link") {
+      return Boolean(this.link?.targetGlobalId);
+    }
     return Boolean(this.content);
   }
+}
+
+function typeNameFromApi(t: "text" | "number" | "link"): ExtraFieldType {
+  if (t === "text") return "Text";
+  if (t === "number") return "Number";
+  return "Link";
 }

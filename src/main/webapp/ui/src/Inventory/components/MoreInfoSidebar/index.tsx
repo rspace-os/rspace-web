@@ -5,16 +5,11 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import useStores from "../../../stores/use-stores";
-import GlobalId from "./GlobalId";
-import Date from "./Date";
-import LatestTemplateActions from "./LatestTemplateActions";
-import VersionHistory from "./VersionHistory";
-import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
-import LinkedDocuments from "./LinkedDocuments";
-import type { Factory } from "../../../stores/definitions/Factory";
+import SidebarBody from "./SidebarBody";
+import { type Factory } from "../../../stores/definitions/Factory";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 
 type SidebarArgs = {
@@ -53,19 +48,7 @@ function Sidebar({ factory }: SidebarArgs): React.ReactNode {
         </CardActions>
         <Divider />
         <CardContent sx={{ overflowX: "hidden" }}>
-          <Stack spacing={5}>
-            <GlobalId record={activeResult} />
-            <Date label="Created" date={activeResult.created} />
-            <Date label="Last Modified" date={activeResult.lastModified} />
-            <VersionHistory record={activeResult} />
-            <LatestTemplateActions record={activeResult} />
-            {activeResult.usableInLoM && activeResult.globalId && (
-              <LinkedDocuments
-                globalId={activeResult.globalId}
-                factory={factory}
-              />
-            )}
-          </Stack>
+          <SidebarBody record={activeResult} factory={factory} />
         </CardContent>
       </Card>
     </Drawer>

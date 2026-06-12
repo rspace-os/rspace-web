@@ -21,6 +21,7 @@ export const FieldTypes: { [fieldName: string]: symbol } = {
   uri: Symbol.for("uri"),
   reference: Symbol.for("reference"),
   attachment: Symbol.for("attachment"),
+  link: Symbol.for("link"),
 };
 
 export type FieldType = (typeof FieldTypes)[keyof typeof FieldTypes];
@@ -55,6 +56,7 @@ export const fieldTypeToApiString = (fieldType: FieldType): string => {
     [FieldTypes.time]: "time",
     [FieldTypes.reference]: "reference",
     [FieldTypes.attachment]: "attachment",
+    [FieldTypes.link]: "link",
   };
   if (!map[fieldType])
     throw new Error(`Invalid field type: Symbol(${Symbol.keyFor(fieldType)})`);
@@ -73,6 +75,7 @@ export const apiStringToFieldType = (apiString: string): FieldType => {
     time: FieldTypes.time,
     reference: FieldTypes.reference,
     attachment: FieldTypes.attachment,
+    link: FieldTypes.link,
   };
   if (!map[apiString])
     throw new Error(
@@ -95,6 +98,7 @@ export const FIELD_LABEL: { [fieldName: FieldType]: string } = {
   [FieldTypes.time]: "Time",
   [FieldTypes.attachment]: "Attachment",
   [FieldTypes.reference]: "Reference",
+  [FieldTypes.link]: "Link",
 };
 
 export const FIELD_ICON: { [fieldName: FieldType]: React.ReactNode } = {
@@ -107,6 +111,7 @@ export const FIELD_ICON: { [fieldName: FieldType]: React.ReactNode } = {
   [FieldTypes.uri]: <LinkOutlinedIcon />,
   [FieldTypes.time]: <QueryBuilderOutlinedIcon />,
   [FieldTypes.attachment]: <AttachFileOutlinedIcon />,
+  [FieldTypes.link]: <LinkOutlinedIcon />,
 };
 
 export const FIELD_HELP_TEXT: { [fieldName: FieldType]: string } = {
@@ -120,6 +125,7 @@ export const FIELD_HELP_TEXT: { [fieldName: FieldType]: string } = {
   [FieldTypes.time]: "A time of day.",
   [FieldTypes.attachment]: "A single file, e.g. document, or chemistry file.",
   [FieldTypes.reference]: "",
+  [FieldTypes.link]: "A link to another Inventory item or ELN record.",
 };
 
 export const SUPPORTED_TYPES: Set<FieldType> = new Set<FieldType>([
@@ -132,6 +138,7 @@ export const SUPPORTED_TYPES: Set<FieldType> = new Set<FieldType>([
   FieldTypes.uri,
   FieldTypes.time,
   FieldTypes.attachment,
+  FieldTypes.link,
 ]);
 
 export const FIELD_DATA: {

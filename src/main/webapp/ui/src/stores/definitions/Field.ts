@@ -13,9 +13,20 @@ export type FieldType =
   | "uri"
   | "time"
   | "reference"
-  | "attachment";
+  | "attachment"
+  | "link";
 
 export type OptionValue = string;
+
+/**
+ * The value of a link field: a single link to another Inventory item or ELN record, with a
+ * DataCite relationship type and an optional pinned version.
+ */
+export type FieldLink = {
+  relationType: string;
+  targetGlobalId: string;
+  versionPin: number | null;
+};
 
 export type Option = {
   value: OptionValue;
@@ -38,6 +49,15 @@ export interface Field extends BaseRecord {
   content: string | number | Date;
   selectedOptions: Array<string> | null;
   options: Array<Option>;
+
+  /**
+   * For link template fields: the whitelist of permitted DataCite relation types. An empty array
+   * means all relation types are allowed.
+   */
+  allowedRelationTypes: Array<string>;
+
+  /** For link fields: the single link value, or null when unset. */
+  link: FieldLink | null;
 
   readonly paramsForBackend: object;
   readonly hasContent: boolean;
