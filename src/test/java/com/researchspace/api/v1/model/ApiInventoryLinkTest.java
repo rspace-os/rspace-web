@@ -20,8 +20,7 @@ class ApiInventoryLinkTest {
     String json = mapper.writeValueAsString(link);
 
     assertEquals(
-        "{\"relationType\":\"IsCalibratedBy\",\"targetGlobalId\":\"SA123\","
-            + "\"versionPin\":null,\"targetSummary\":null}",
+        "{\"relationType\":\"IsCalibratedBy\",\"targetGlobalId\":\"SA123\",\"versionPin\":null}",
         json);
   }
 
@@ -44,7 +43,7 @@ class ApiInventoryLinkTest {
   @Test
   void roundTripJsonPreservesValues() throws Exception {
     String json =
-        "{\"relationType\":\"References\",\"targetGlobalId\":\"SS42v7\",\"versionPin\":7,\"targetSummary\":null}";
+        "{\"relationType\":\"References\",\"targetGlobalId\":\"SS42v7\",\"versionPin\":7}";
     ApiInventoryLink parsed = mapper.readValue(json, ApiInventoryLink.class);
     assertEquals("References", parsed.getRelationType());
     assertEquals("SS42v7", parsed.getTargetGlobalId());

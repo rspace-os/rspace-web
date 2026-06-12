@@ -80,6 +80,7 @@ export default function useReferencingInventoryItems(globalId: string | null): {
   const fetchReferencingItems = React.useCallback(async (): Promise<void> => {
     if (!globalId) {
       setItems([]);
+      setErrorMessage(null);
       setLoading(false);
       return;
     }

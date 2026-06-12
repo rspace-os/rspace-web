@@ -96,4 +96,24 @@ describe("useReferencingInventoryItems", () => {
     expect(result.current.errorMessage).toMatch(/related inventory items/i);
     expect(result.current.items).toHaveLength(0);
   });
+
+  it("clears a stale error when the global id becomes null", async () => {
+    // a failure for one record must not leave its error showing once the hook
+    // is pointed at no record at all (the early-return path)
+    mockAxiosGet.mockRejectedValue(new Error("boom"));
+
+    const initialProps: { id: string | null } = { id: "GL5" };
+    const { result, rerender } = renderHook(
+      ({ id }: { id: string | null }) => useReferencingInventoryItems(id),
+      { initialProps },
+    );
+
+    await waitFor(() => expect(result.current.errorMessage).not.toBeNull());
+
+    rerender({ id: null });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.errorMessage).toBeNull();
+    expect(result.current.items).toHaveLength(0);
+  });
 });
