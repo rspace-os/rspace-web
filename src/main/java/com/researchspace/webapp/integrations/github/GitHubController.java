@@ -49,11 +49,14 @@ public class GitHubController {
 
   protected static final String GITHUB_VIEW_NAME = "connect/github/gitHubTreeView";
 
-  private static final String GITHUB_ACCESS_TOKEN_URL =
-      "https://github.com/login/oauth/access_token";
-  private static final String GITHUB_API_URL = "https://api.github.com";
-  private static final String GITHUB_API_USER_REPOS =
-      String.format("%s/user/repos", GITHUB_API_URL);
+  @Value("${github.oauth.access.token.url}")
+  private String githubAccessTokenUrl;
+
+  @Value("${github.api.base.url}")
+  private String githubApiUrl;
+
+  @Value("${github.oauth.authorize.url}")
+  private String githubAuthorizeUrl;
 
   @Value("${github.client.id}")
   private String clientId;
@@ -147,7 +150,7 @@ public class GitHubController {
 
     ResponseEntity<AccessToken> accessToken =
         restTemplate.exchange(
-            GITHUB_ACCESS_TOKEN_URL, HttpMethod.POST, accessTokenRequestEntity, AccessToken.class);
+            githubAccessTokenUrl, HttpMethod.POST, accessTokenRequestEntity, AccessToken.class);
 
     // Check if error is not set
     if (accessToken.hasBody() && accessToken.getBody().getError() != null) {
@@ -185,7 +188,7 @@ public class GitHubController {
   private List<Repository> getUserRepositories(String accessToken) throws RestClientException {
     return restTemplate
         .exchange(
-            GITHUB_API_USER_REPOS,
+            String.format("%s/user/repos", githubApiUrl),
             HttpMethod.GET,
             new HttpEntity<>(getApiHeaders(accessToken)),
             new ParameterizedTypeReference<List<Repository>>() {})
@@ -195,7 +198,7 @@ public class GitHubController {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
-    var url = "https://github.com/login/oauth/authorize?scope=repo,user&client_id=" + this.clientId;
+    var url = githubAuthorizeUrl + "?scope=repo,user&client_id=" + this.clientId;
     return new AjaxReturnObject<>(url, null);
   }
 
@@ -324,7 +327,7 @@ public class GitHubController {
 
   private String getDefaultBranchFromGitHubApi(String repositoryName, String accessToken) {
 
-    String url = String.format("%s/repos/%s", GITHUB_API_URL, repositoryName);
+    String url = String.format("%s/repos/%s", githubApiUrl, repositoryName);
     String result = "unknown";
     try {
       JsonNode repoDetailsResponse =
@@ -345,7 +348,7 @@ public class GitHubController {
   private List<TreeNode> getNodesFromGitHubApi(
       String fullRepoName, String fullPath, String sha, String accessToken)
       throws RestClientException {
-    String url = String.format("%s/repos/%s/git/trees/%s", GITHUB_API_URL, fullRepoName, sha);
+    String url = String.format("%s/repos/%s/git/trees/%s", githubApiUrl, fullRepoName, sha);
     TreeApiResponse treeApiResponse =
         restTemplate
             .exchange(

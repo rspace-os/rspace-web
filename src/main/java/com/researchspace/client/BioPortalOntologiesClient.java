@@ -2,6 +2,8 @@ package com.researchspace.client;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -9,6 +11,11 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 public class BioPortalOntologiesClient {
+
+  @Getter
+  @Value("${bioportal.base.url}")
+  private String bioportalBaseUrl;
+
   // Hold up to MAX_SIZE and then evict
   private static class OntologyCache extends LinkedHashMap<String, String> {
     private final int MAX_SIZE;
@@ -33,7 +40,8 @@ public class BioPortalOntologiesClient {
     String json =
         restTemplate
             .exchange(
-                "https://bioportal.bioontology.org/search/json_search?q="
+                bioportalBaseUrl
+                    + "/search/json_search?q="
                     + searchTerm
                     + "&subtreerootconceptid=&response=json",
                 HttpMethod.GET,
