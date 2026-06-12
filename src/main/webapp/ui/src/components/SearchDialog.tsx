@@ -10,8 +10,8 @@ import Grow from "@mui/material/Grow";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import docLinks from "../assets/DocLinks";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";

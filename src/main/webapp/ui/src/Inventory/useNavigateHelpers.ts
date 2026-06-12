@@ -1,7 +1,6 @@
 import React from "react";
 import NavigateContext from "../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import type { CoreFetcherArgs } from "../stores/definitions/Search";
 import useStores from "../stores/use-stores";
 import { UserCancelledAction } from "../util/error";

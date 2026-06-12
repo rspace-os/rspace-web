@@ -157,12 +157,7 @@ export function getInventoryUpdateEligibility(
   }
 
   const linkedInventoryQuantityInfo = linkedInventoryQuantityInfoByGlobalId.get(inventoryItemGlobalId);
-  if (
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    !linkedInventoryQuantityInfo ||
-    linkedInventoryQuantityInfo.status !== "available" ||
-    !linkedInventoryQuantityInfo.quantity
-  ) {
+  if (linkedInventoryQuantityInfo?.status !== "available" || !linkedInventoryQuantityInfo.quantity) {
     return {
       disabledReason: "linkedStockUnavailable",
       helperText: getInventoryUpdateDisabledReasonText("linkedStockUnavailable"),

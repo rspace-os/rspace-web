@@ -2,15 +2,13 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { action, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../../../stores/models/Search";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import type { StoreContainer } from "../../../../stores/stores/RootStore";
 import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import MoveDialog from "../../MoveToTarget/MoveDialog";

@@ -8,8 +8,7 @@ import type React from "react";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import TextField from "../../../../components/Inputs/TextField";
 import UserDetails from "../../../../components/UserDetails";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Note } from "../../../../stores/models/SubSampleModel";
+import type { Note } from "../../../../stores/models/SubSampleModel";
 
 type NoteItemArgs = {
   note: Note;

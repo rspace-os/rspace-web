@@ -1,7 +1,6 @@
 //@flow
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 /**
  * All of the DOM events that happen inside of a dialog shouldn't propagate
@@ -19,8 +18,9 @@ export default function EventBoundary({ children }: { children: React.ReactNode 
      * the `div` itself for this to work.
      */
 
-    // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
-    <div
+    
+// biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
+<div
       onKeyDown={(e) => {
         e.stopPropagation();
       }}

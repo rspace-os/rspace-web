@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ContainerAttrs } from "../../ContainerModel";
+import type { ContainerAttrs } from "../../ContainerModel";
 import LocationModel from "../../LocationModel";
 import { containerAttrs, makeMockContainer } from "./mocking";
 

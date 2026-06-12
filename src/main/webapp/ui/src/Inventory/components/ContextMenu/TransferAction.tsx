@@ -12,12 +12,9 @@ import type React from "react";
 import { forwardRef, useContext, useState } from "react";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Username } from "../../../stores/definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import PersonModel from "../../../stores/models/PersonModel";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { Username } from "../../../stores/definitions/Person";
+import type PersonModel from "../../../stores/models/PersonModel";
 import RsSet from "../../../util/set";
 import { match } from "../../../util/Util";
 import PeopleField from "../Inputs/PeopleField";
@@ -68,8 +65,8 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
     const ownersOfSelectedResults = new RsSet<Username>(
       selectedResults
         .filter(({ owner }) => Boolean(owner))
-        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        .map((r) => r.owner!.username),
+        .map((r) => r.owner?.username)
+        .filter((username): username is string => username !== undefined),
     );
     const excludedFromSelection = ownersOfSelectedResults.size === 1 ? ownersOfSelectedResults : new RsSet<Username>();
 

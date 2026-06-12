@@ -7,8 +7,7 @@ import FormGroup from "@mui/material/FormGroup";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import useStores from "../../../stores/use-stores";
 import * as Parsers from "../../../util/parsers";
 import TemplatePicker from "../../components/Picker/TemplatePicker";

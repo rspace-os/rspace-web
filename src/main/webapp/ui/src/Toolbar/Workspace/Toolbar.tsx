@@ -65,8 +65,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
       anchorEl: [null, null],
       advancedOpen: false,
       hideIcons: false,
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      treeView: workspaceSettings.currentViewMode == "TREE_VIEW",
+      treeView: workspaceSettings.currentViewMode === "TREE_VIEW",
       sharedFilter: workspaceSettings.sharedFilter,
       favoritesFilter: workspaceSettings.favoritesFilter,
       templatesFilter: workspaceSettings.templatesFilter,
@@ -85,11 +84,9 @@ class WorkspaceToolbar extends React.Component<any, any> {
   componentDidMount() {
     this.checkSavedSettings();
 
-    // Bad practise. Change when the reset button is in React
-    const toolbar = this;
     $(document).on("click", "#resetSearch", () => {
       abandonSearch();
-      toolbar.setState({
+      this.setState({
         sharedFilter: workspaceSettings.sharedFilter,
         favoritesFilter: workspaceSettings.favoritesFilter,
         templatesFilter: workspaceSettings.templatesFilter,
@@ -99,13 +96,12 @@ class WorkspaceToolbar extends React.Component<any, any> {
     });
 
     // Sets up callback function so that regular JS listeners can reset the toolbar after navigating to a folder for e.g.
-    // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-    resetToolbar = function () {
+    resetToolbar = () => {
       workspaceSettings.sharedFilter = false;
       workspaceSettings.favoritesFilter = false;
       workspaceSettings.templatesFilter = false;
       resetSearch();
-      toolbar.setState({
+      this.setState({
         sharedFilter: workspaceSettings.sharedFilter,
         favoritesFilter: workspaceSettings.favoritesFilter,
         templatesFilter: workspaceSettings.templatesFilter,
@@ -137,9 +133,9 @@ class WorkspaceToolbar extends React.Component<any, any> {
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       to: any;
 
-    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    workspaceSettings.options.map((_: any, idx: any) => {
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+        workspaceSettings.options.map((_: any, idx: any) => {
       filter = workspaceSettings.options[idx];
       term = workspaceSettings.terms[idx];
 
@@ -177,13 +173,13 @@ class WorkspaceToolbar extends React.Component<any, any> {
     // Menu to render in the top-left corner of the viewport rather than next
     // to the button that opened it.
     const anchor = event.currentTarget;
-    // biome-ignore lint/suspicious/noExplicitAny: component state is untyped (React.Component<any, any>)
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: immer draft of untyped state
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       open: produce(prevState.open, (draft: any) => {
         draft[idx] = true;
       }),
-      // biome-ignore lint/suspicious/noExplicitAny: immer draft of untyped state
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       anchorEl: produce(prevState.anchorEl, (draft: any) => {
         draft[idx] = anchor;
       }),
@@ -192,9 +188,9 @@ class WorkspaceToolbar extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleClose = (idx: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: component state is untyped (React.Component<any, any>)
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: immer draft of untyped state
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       open: produce(prevState.open, (draft: any) => {
         draft[idx] = false;
       }),
@@ -209,8 +205,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       const queries: any[] = [];
 
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      if (filter == "global") {
+      if (filter === "global") {
         queries.push({ filter: "fullText", term });
       } else {
         queries.push({ filter, term, from, to });
@@ -296,8 +291,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
 
   displayWorkspace = () => {
     this.setWorkspaceSettings();
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    const url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
+    const url = `/workspace/ajax/view/${workspaceSettings.parentFolderId}`;
 
     if (workspaceSettings.searchMode) {
       doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
@@ -309,9 +303,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
   setWorkspaceSettingsUrl = () => {
     workspaceSettings.parentFolderId = this.state.labgroupsFolderId;
     workspaceSettings.grandparentFolderId = null;
-    workspaceSettings.url =
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "/workspace/ajax/view/" + this.state.labgroupsFolderId;
+    workspaceSettings.url = `/workspace/ajax/view/${this.state.labgroupsFolderId}`;
   };
 
   setWorkspaceSettings = () => {

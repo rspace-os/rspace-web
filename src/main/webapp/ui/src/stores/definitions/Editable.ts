@@ -1,7 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ValidationResult } from "../../components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Progress } from "../../util/progress";
+import type { ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { Progress } from "../../util/progress";
 
 /**
  * Objects and classes that implement this interface can be edited by the user
@@ -79,8 +77,9 @@ export interface HasEditableFields<Fields> {
    */
   /* eslint-disable @typescript-eslint/no-explicit-any */
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  setFieldsDirty(newState: any): void;
+  
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+setFieldsDirty(newState: any): void;
 
   /*
    * When true, the user MUST be given the option of not editing each field,

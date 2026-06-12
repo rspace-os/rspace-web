@@ -20,9 +20,9 @@ import Step2 from "./CreateGroupStep2";
 import Step3 from "./CreateGroupStep3";
 import Step4 from "./CreateGroupStep4";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class CreateGroup extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -58,7 +58,7 @@ class CreateGroup extends React.Component<any, any> {
     if (this.state.activeStep === this.maxSteps - 1) {
       this.createGroup();
     } else {
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       this.setState((prevState: any) => ({
         activeStep: prevState.activeStep + 1,
       }));
@@ -66,13 +66,13 @@ class CreateGroup extends React.Component<any, any> {
   };
 
   handleBack = () => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
       activeStep: prevState.activeStep - 1,
     }));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   groupTypeSelect = (groupType: any) => {
     this.setState({
       activeStep: 1,
@@ -92,7 +92,7 @@ class CreateGroup extends React.Component<any, any> {
     });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   changePI = (selectPiOptions: any) => {
     this.setState({
       createGroup: {
@@ -104,9 +104,9 @@ class CreateGroup extends React.Component<any, any> {
     });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   updateInvitedmembers = (existingUsers: any, newUsers: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
       createGroup: {
         ...prevState.createGroup,
@@ -231,8 +231,7 @@ class CreateGroup extends React.Component<any, any> {
       toast: false,
     });
     if (selfService) {
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      window.location.replace("/groups/view/" + this.state.newGroup);
+      window.location.replace(`/groups/view/${this.state.newGroup}`);
     }
   };
 
@@ -248,128 +247,123 @@ class CreateGroup extends React.Component<any, any> {
     const loading = this.state.loading;
 
     return (
-      // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-      <>
-        <div>
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={materialTheme}>
-              <Button
-                variant="contained"
-                color="primary"
-                data-test-id="createGroupOpenButton"
-                onClick={this.handleClickOpen}
-              >
-                Create Group
-              </Button>
-              <Dialog
-                aria-labelledby="simple-dialog-title"
-                open={this.state.open}
-                className="createGroup-Modal"
-                data-test-id="createGroupModal"
-              >
-                <DialogTitle data-test-id="modalTitle">
-                  Create group
-                  <IconButton
-                    aria-label="Close"
-                    data-test-id="closeModal"
-                    sx={{
-                      position: "absolute",
-                      right: 0,
-                      top: 0,
-                      width: "auto",
-                    }}
-                    onClick={this.handleClose}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                </DialogTitle>
-                <Box sx={{ width: "600px" }}>{this.getStepContent(this.state.activeStep)}</Box>
-                <Fade in={loading} unmountOnExit>
-                  <LinearProgress color="primary" />
-                </Fade>
-                <Box
-                  component="span"
+      <div>
+        <StyledEngineProvider injectFirst enableCssLayer>
+          <ThemeProvider theme={materialTheme}>
+            <Button
+              variant="contained"
+              color="primary"
+              data-test-id="createGroupOpenButton"
+              onClick={this.handleClickOpen}
+            >
+              Create Group
+            </Button>
+            <Dialog
+              aria-labelledby="simple-dialog-title"
+              open={this.state.open}
+              className="createGroup-Modal"
+              data-test-id="createGroupModal"
+            >
+              <DialogTitle data-test-id="modalTitle">
+                Create group
+                <IconButton
+                  aria-label="Close"
+                  data-test-id="closeModal"
                   sx={{
-                    color: "#d32f2f",
-                    textAlign: "center",
-                    fontSize: "14px",
-                    marginBottom: "10px",
+                    position: "absolute",
+                    right: 0,
+                    top: 0,
+                    width: "auto",
                   }}
+                  onClick={this.handleClose}
                 >
-                  {this.state.errorMessage}
-                </Box>
-                <MobileStepper
-                  steps={this.maxSteps}
-                  position="static"
-                  activeStep={this.state.activeStep}
-                  nextButton={
-                    <Button
-                      size="small"
-                      data-test-id="nextButton"
-                      onClick={this.handleNext}
-                      disabled={
-                        this.state.createGroup.groupType === "" ||
-                        (this.state.activeStep === this.maxSteps - 1 && detailsComplete === false)
-                      }
-                    >
-                      {this.state.activeStep !== this.maxSteps - 1
-                        ? "Next"
-                        : `Create ${this.state.createGroup.groupType}`}
-                    </Button>
-                  }
-                  backButton={
-                    <Button
-                      size="small"
-                      data-test-id="backButton"
-                      onClick={this.handleBack}
-                      disabled={this.state.activeStep === 0}
-                    >
-                      Back
-                    </Button>
-                  }
-                />
-              </Dialog>
-              <Snackbar
-                anchorOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
+                  <CloseIcon />
+                </IconButton>
+              </DialogTitle>
+              <Box sx={{ width: "600px" }}>{this.getStepContent(this.state.activeStep)}</Box>
+              <Fade in={loading} unmountOnExit>
+                <LinearProgress color="primary" />
+              </Fade>
+              <Box
+                component="span"
+                sx={{
+                  color: "#d32f2f",
+                  textAlign: "center",
+                  fontSize: "14px",
+                  marginBottom: "10px",
                 }}
-                open={this.state.toast}
-                autoHideDuration={selfService ? 1000 : 6000}
-                onClose={this.closeToast}
-                sx={
-                  selfService
-                    ? {
-                        position: "absolute",
-                        marginBottom: "10px",
-                        textAlign: "left",
-                      }
-                    : {}
-                }
               >
-                <SnackbarContent
-                  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-                  {...({ onClose: this.closeToast } as any)}
-                  message={
-                    this.state.createGroup.currentUser !== this.state.createGroup.selectPI.selectedUser
-                      ? `Group creation request for ${this.state.createGroup.groupName} sent successfully`
-                      : `${this.state.createGroup.groupName} group created successfully!`
-                  }
-                  sx={{ backgroundColor: "#4CAF50" }}
-                />
-              </Snackbar>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        </div>
-      </>
+                {this.state.errorMessage}
+              </Box>
+              <MobileStepper
+                steps={this.maxSteps}
+                position="static"
+                activeStep={this.state.activeStep}
+                nextButton={
+                  <Button
+                    size="small"
+                    data-test-id="nextButton"
+                    onClick={this.handleNext}
+                    disabled={
+                      this.state.createGroup.groupType === "" ||
+                      (this.state.activeStep === this.maxSteps - 1 && detailsComplete === false)
+                    }
+                  >
+                    {this.state.activeStep !== this.maxSteps - 1
+                      ? "Next"
+                      : `Create ${this.state.createGroup.groupType}`}
+                  </Button>
+                }
+                backButton={
+                  <Button
+                    size="small"
+                    data-test-id="backButton"
+                    onClick={this.handleBack}
+                    disabled={this.state.activeStep === 0}
+                  >
+                    Back
+                  </Button>
+                }
+              />
+            </Dialog>
+            <Snackbar
+              anchorOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              open={this.state.toast}
+              autoHideDuration={selfService ? 1000 : 6000}
+              onClose={this.closeToast}
+              sx={
+                selfService
+                  ? {
+                      position: "absolute",
+                      marginBottom: "10px",
+                      textAlign: "left",
+                    }
+                  : {}
+              }
+            >
+              <SnackbarContent
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                {...({ onClose: this.closeToast } as any)}
+                message={
+                  this.state.createGroup.currentUser !== this.state.createGroup.selectPI.selectedUser
+                    ? `Group creation request for ${this.state.createGroup.groupName} sent successfully`
+                    : `${this.state.createGroup.groupName} group created successfully!`
+                }
+                sx={{ backgroundColor: "#4CAF50" }}
+              />
+            </Snackbar>
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </div>
     );
   }
 }
 
 const domContainer = document.getElementById("createGroup");
-// biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-const selfService = $("#selfServiceLabGroup").length != 0;
-// biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-const projectGroup = $("#projectGroup").length != 0;
+const selfService = $("#selfServiceLabGroup").length !== 0;
+const projectGroup = $("#projectGroup").length !== 0;
 const root = createRoot(domContainer as HTMLElement);
 root.render(<CreateGroup />);

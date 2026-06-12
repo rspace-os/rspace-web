@@ -1,11 +1,7 @@
+import fs from "node:fs/promises";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
-import fs from "fs/promises";
 import * as Jwt from "jsonwebtoken";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Download } from "playwright-core";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
+import type { Download } from "playwright-core";
 import identifiersJson from "../../__tests__/identifiers.json";
 import { IgsnTableWithControlDefaults, SimpleIgsnTable, SingularSelectionIgsnTable } from "./IgsnTable.story";
 
@@ -337,8 +333,7 @@ feature.beforeEach(async ({ page, networkRequests }) => {
   await page.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      // biome-ignore lint/complexity/useDateNow: initial biome migration
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
       refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };

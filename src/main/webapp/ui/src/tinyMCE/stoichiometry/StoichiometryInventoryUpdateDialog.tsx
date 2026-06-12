@@ -6,10 +6,6 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import List from "@mui/material/List";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";

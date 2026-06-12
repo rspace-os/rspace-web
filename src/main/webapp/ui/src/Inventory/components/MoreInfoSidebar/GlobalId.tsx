@@ -3,8 +3,7 @@ import FormLabel from "@mui/material/FormLabel";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import GlobalIdLink from "../../../components/GlobalId";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
 type GlobalIdArgs = {
   record: InventoryRecord;

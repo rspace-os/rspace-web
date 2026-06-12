@@ -1,19 +1,14 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { WorkbenchId } from "@/stores/definitions/container/types";
+import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import RsSet from "../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Group } from "../definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonAttrs, type Username } from "../definitions/Person";
+import type { Group } from "../definitions/Group";
+import type { PersonAttrs, Username } from "../definitions/Person";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import PersonModel from "../models/PersonModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RootStore } from "./RootStore";
+import type PersonModel from "../models/PersonModel";
+import type { RootStore } from "./RootStore";
 
 export default class PeopleStore {
   rootStore: RootStore;

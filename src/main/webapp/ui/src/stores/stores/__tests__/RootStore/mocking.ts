@@ -1,24 +1,14 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import AuthStore from "../../AuthStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ImageStore from "../../ImageStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ImportStore from "../../ImportStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import MaterialsStore from "../../MaterialsStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import MoveStore from "../../MoveStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import PeopleStore from "../../PeopleStore";
+import type AuthStore from "../../AuthStore";
+import type ImageStore from "../../ImageStore";
+import type ImportStore from "../../ImportStore";
+import type MaterialsStore from "../../MaterialsStore";
+import type MoveStore from "../../MoveStore";
+import type PeopleStore from "../../PeopleStore";
 import type { StoreContainer } from "../../RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SearchStore from "../../SearchStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import TrackingStore from "../../TrackingStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import UiStore from "../../UiStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import UnitStore from "../../UnitStore";
+import type SearchStore from "../../SearchStore";
+import type TrackingStore from "../../TrackingStore";
+import type UiStore from "../../UiStore";
+import type UnitStore from "../../UnitStore";
 
 export type MockStores = Partial<{ [key in keyof StoreContainer]: object }>;
 

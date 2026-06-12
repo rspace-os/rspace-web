@@ -6,8 +6,7 @@ import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useFigshareEndpoint } from "../useFigshare";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type FigshareArgs = {
   integrationState: IntegrationStates["FIGSHARE"];
@@ -100,13 +99,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/figshare/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/figshare/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

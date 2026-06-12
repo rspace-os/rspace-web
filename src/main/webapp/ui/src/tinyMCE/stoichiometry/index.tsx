@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { createRoot } from "react-dom/client";
 import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
@@ -482,8 +481,7 @@ class StoichiometryPlugin {
       action: openStoichiometryDialogFromSelection,
     });
 
-    // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-    editor.addCommand("cmdCreateStoichiometry", function () {
+    editor.addCommand("cmdCreateStoichiometry", () => {
       openStoichiometryDialog({
         chemId: null,
         nodeId: undefined,
@@ -493,8 +491,7 @@ class StoichiometryPlugin {
       });
     });
 
-    // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-    editor.addCommand("cmdStoichiometry", function () {
+    editor.addCommand("cmdStoichiometry", () => {
       const selectedStoichiometry = getSelectedStoichiometryContext();
       openStoichiometryDialog({
         chemId: selectedStoichiometry?.chemId ?? null,

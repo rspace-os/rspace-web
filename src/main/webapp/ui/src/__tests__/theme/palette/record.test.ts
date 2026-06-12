@@ -24,8 +24,7 @@ type Luminosity = number; // 0 to 1
 const luminosity = (color: RGB): Luminosity => {
   const { red, green, blue } = mapObject((_, v) => {
     const x = v / 255;
-    // biome-ignore lint/style/useExponentiationOperator: initial biome migration
-    return x < 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    return x < 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
   }, color);
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 };

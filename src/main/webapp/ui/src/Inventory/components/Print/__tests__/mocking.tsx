@@ -1,11 +1,6 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordType } from "../../../../stores/definitions/InventoryRecord";
+import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
+import type { RecordType } from "../../../../stores/definitions/InventoryRecord";
 
 /* mocking barcode objects */
 

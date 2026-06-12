@@ -29,34 +29,33 @@ export default function ResultsTable({
   rowsPerPage,
   count,
 }: {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   [key: string]: any;
 }) {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function onRowClick(eartag: any) {
     setSelectedAnimalIds(
       selectedAnimalIds.includes(eartag)
-        ? // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-          selectedAnimalIds.filter((id: any) => id !== eartag)
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        ? selectedAnimalIds.filter((id: any) => id !== eartag)
         : [...selectedAnimalIds, eartag],
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  function handleRequestSort(event: any, property: any) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  function handleRequestSort(_event: any, property: any) {
     const isDesc = orderBy === property && order === Order.desc;
     setOrder(isDesc ? Order.asc : Order.desc);
     setOrderBy(property);
     onPageChange(0);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function handleChangePage(_: any, newPage: any) {
     onPageChange(newPage);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function handleChangeRowsPerPage(event: any) {
     const num = parseInt(event.target.value, 10);
     onRowsPerPageChange(num);
@@ -75,7 +74,7 @@ export default function ResultsTable({
             selectAll={true}
             onSelectAllClick={(event) => {
               if (event.target.checked) {
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 const newSelected = animals.map((animal: any) => animal.eartag_or_id);
                 return setSelectedAnimalIds(newSelected);
               }
@@ -85,7 +84,7 @@ export default function ResultsTable({
             rowCount={animals.length}
           />
           <TableBody>
-            {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+            {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
             {stableSort(animals, getSorting(order, orderBy)).map((animal: any, index: number) => {
               const isItemSelected = selectedAnimalIds.indexOf(animal.eartag_or_id) !== -1;
               const labelId = `animal-search-results-checkbox-${index}`;
@@ -118,7 +117,7 @@ export default function ResultsTable({
                       }}
                     />
                   </TableCell>
-                  {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+                  {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
                   {visibleHeaderCells.map((cell: any, i: number) => (
                     // owner and responsible person could have the same name
                     <TableCell key={`${cell.id}${i}`}>{animal[cell.id]}</TableCell>

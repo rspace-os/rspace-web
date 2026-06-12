@@ -1,6 +1,5 @@
 import * as v from "valibot";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AjaxOperationFailure, AjaxOperationFailureResponseSchema } from "@/modules/common/api/schema";
+import { type AjaxOperationFailure, AjaxOperationFailureResponseSchema } from "@/modules/common/api/schema";
 
 // RAiD Reference DTO Schema
 export const RaidReferenceDTOSchema = v.object({

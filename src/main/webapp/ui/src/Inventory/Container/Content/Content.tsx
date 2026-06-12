@@ -4,8 +4,7 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import docLinks from "../../../assets/DocLinks";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import useStores from "../../../stores/use-stores";
 import { menuIDs } from "../../../util/menuIDs";
@@ -34,8 +33,7 @@ function ImageContainerZoomHelpText() {
   } catch (_) {
     return null;
   }
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  zoomText = zoomText + " to zoom the page out to view more of the image.";
+  zoomText = `${zoomText} to zoom the page out to view more of the image.`;
 
   const helpText = isSingleColumnLayout ? (
     zoomText

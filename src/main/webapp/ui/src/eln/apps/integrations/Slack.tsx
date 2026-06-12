@@ -234,8 +234,7 @@ const DialogContent = observer(
                         try {
                           await deleteAppOptions("SLACK", channel.optionsId);
                           runInAction(() => {
-                            // biome-ignore lint/complexity/useIndexOf: initial biome migration
-                            const deletedIndex = copyOfChannels.findIndex((c) => c === channel);
+                            const deletedIndex = copyOfChannels.indexOf(channel);
                             copyOfChannels.splice(deletedIndex, 1);
                             integrationState.credentials.splice(deletedIndex, 1);
                           });

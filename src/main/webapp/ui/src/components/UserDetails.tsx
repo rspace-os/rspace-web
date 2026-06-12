@@ -14,8 +14,7 @@ import TableRow from "@mui/material/TableRow";
 import React from "react";
 import TimeAgo from "react-timeago";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonId } from "@/stores/definitions/Person";
+import type { PersonId } from "@/stores/definitions/Person";
 import * as Parsers from "../util/parsers";
 
 type UserDetailsArgs = {
@@ -121,7 +120,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
         </Link>
       </TableCell>
     </TableRow>
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+  // biome-ignore lint/complexity/noUselessFragments: initial biome migration
   )) ?? <></>;
 
   const handlePopoverOpen = (event: React.MouseEvent) => {

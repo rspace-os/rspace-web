@@ -3,10 +3,8 @@ import type React from "react";
 import FormField from "../../../components/Inputs/FormField";
 import NoValue from "../../../components/NoValue";
 import UserDetails from "../../../components/UserDetails";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasUneditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../../../stores/definitions/Person";
+import type { HasUneditableFields } from "../../../stores/definitions/Editable";
+import type { Person } from "../../../stores/definitions/Person";
 
 export default function Owner<
   Fields extends {

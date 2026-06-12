@@ -4,8 +4,7 @@ import Button, { buttonClasses } from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import { paperClasses } from "@mui/material/Paper";
 import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import AccentMenuItem from "./AccentMenuItem";
+import type AccentMenuItem from "./AccentMenuItem";
 
 /**
  * This component renders a button that shows a regular label and a label for

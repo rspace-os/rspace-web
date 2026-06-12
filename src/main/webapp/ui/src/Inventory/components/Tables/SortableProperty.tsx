@@ -3,8 +3,7 @@ import type React from "react";
 import { useContext } from "react";
 import TableSortLabel from "../../../components/TableSortLabel";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 
 export type SortProperty = {
   key: string;

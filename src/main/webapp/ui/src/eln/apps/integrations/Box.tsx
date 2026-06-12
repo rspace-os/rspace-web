@@ -12,8 +12,7 @@ import { LOGO_COLOR } from "../../../assets/branding/box";
 import BoxIcon from "../../../assets/branding/box/logo.svg";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type BoxArgs = {
   integrationState: IntegrationStates["BOX"];

@@ -1,13 +1,12 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Alert from "@mui/material/Alert";
+import type Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import useStores from "../../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import theme, { RecordPalette } from "../../../theme";
+import type theme from "../../../theme";
+import type { RecordPalette } from "../../../theme";
 import ExtendedContextMenu from "../ContextMenu/ExtendedContextMenu";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 

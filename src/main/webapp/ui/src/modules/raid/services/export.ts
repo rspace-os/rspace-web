@@ -1,7 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GroupInfo } from "@/modules/groups/schema";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { RaidReferenceDTO } from "@/modules/raid/schema";
+import type { GroupInfo } from "@/modules/groups/schema";
+import type { RaidReferenceDTO } from "@/modules/raid/schema";
 
 export type RaidExportIneligibleReason =
   | "MISSING_GROUPS"

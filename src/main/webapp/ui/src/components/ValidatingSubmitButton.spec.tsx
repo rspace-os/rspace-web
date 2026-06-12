@@ -1,8 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { touchRippleClasses } from "@mui/material/ButtonBase";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { HighContrastExample, ProgressExample, SimpleExample } from "./ValidatingSubmitButton.story";
 
 const createOnClickSpy = () => {

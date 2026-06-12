@@ -4,8 +4,7 @@ import React from "react";
 import { LOGO_COLOR } from "../../../assets/branding/argos";
 import ArgosIcon from "../../../assets/branding/argos/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ArgosArgs = {
   integrationState: IntegrationStates["ARGOS"];

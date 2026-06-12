@@ -1,9 +1,5 @@
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-  // biome-ignore lint/style/noRestrictedImports: initial biome migration
-} from "@mui/material";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import createAccentedTheme from "@/accentedTheme";

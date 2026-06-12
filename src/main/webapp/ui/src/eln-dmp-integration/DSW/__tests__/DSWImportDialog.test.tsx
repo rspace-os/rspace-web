@@ -6,12 +6,9 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import materialTheme from "../../../theme";
 import DSWImportDialog from "../DSWImportDialog";
 

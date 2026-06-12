@@ -96,8 +96,7 @@ const makeQuery = () => ({
 const DEFAULT_STATE = {
   loading: false,
   queries: [makeQuery()],
-  // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-  fulfillAll: workspaceSettings.operator == "AND" ? "true" : "false",
+  fulfillAll: workspaceSettings.operator === "AND" ? "true" : "false",
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -112,8 +111,7 @@ class AdvancedSearch extends React.Component<any, any> {
 
   componentDidMount = () => {
     const toolbar = this;
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    $(document).on("click", "#resetSearch", (e) => {
+    $(document).on("click", "#resetSearch", (_e) => {
       toolbar.reset();
     });
   };
@@ -140,7 +138,7 @@ class AdvancedSearch extends React.Component<any, any> {
 
   // Apply an Immer recipe to the queries array and store the result
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  updateQueries = (recipe: any) => {
+    updateQueries = (recipe: any) => {
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
       queries: produce(prevState.queries, recipe),
@@ -212,8 +210,7 @@ class AdvancedSearch extends React.Component<any, any> {
     workspaceSettings.terms = this.state.queries.map((q: any) => this.formatTerm(q));
     workspaceSettings.advancedSearch = true;
     workspaceSettings.searchMode = true;
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    workspaceSettings.operator = this.state.fulfillAll == "true" ? "AND" : "OR";
+    workspaceSettings.operator = this.state.fulfillAll === "true" ? "AND" : "OR";
     workspaceSettings.pageNumber = 0;
 
     doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
@@ -229,8 +226,7 @@ class AdvancedSearch extends React.Component<any, any> {
       // Setting beginning of the day for 'from' and end of the day for 'to'
       return `${this.toISO(query.from, 0, 0, 0)}; ${this.toISO(query.to, 23, 59, 59)}`;
     }
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (query.filter == "records") {
+    if (query.filter === "records") {
       return query.term.join("; ");
     }
     return query.term;
@@ -275,8 +271,7 @@ class AdvancedSearch extends React.Component<any, any> {
             oneValid = true;
             draft[idx].error = null;
           } else {
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            draft[idx].error = "Include at least one " + query.filter;
+            draft[idx].error = `Include at least one ${query.filter}`;
             if (draft.length === 1) valid = false;
           }
         } else {
@@ -286,10 +281,8 @@ class AdvancedSearch extends React.Component<any, any> {
     });
     valid = valid && oneValid;
 
-    const validatedQueries = valid
-      ? // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        queries.filter((q: any) => q.error == null)
-      : queries;
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    const validatedQueries = valid ? queries.filter((q: any) => q.error == null) : queries;
 
     this.setState({ queries: validatedQueries }, () => {
       if (valid) this.submitSearch();
@@ -377,8 +370,7 @@ class AdvancedSearch extends React.Component<any, any> {
               </Grid>
             </Grid>
           )}
-          {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-          {query.filter == "records" && (
+          {query.filter === "records" && (
             <FilePicker
               error={query.error}
               term={query.term}
@@ -395,8 +387,7 @@ class AdvancedSearch extends React.Component<any, any> {
               </IconButton>
             </Tooltip>
           )}
-          {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-          {this.state.queries.length == idx + 1 && (
+          {this.state.queries.length === idx + 1 && (
             <Tooltip title="Add new condition">
               <IconButton onClick={this.addNewQuery} data-test-id={`a-search-query-add`}>
                 <FontAwesomeIcon icon={faPlus} />
@@ -411,7 +402,7 @@ class AdvancedSearch extends React.Component<any, any> {
   // Renders one "satisfy all / at least one" radio option. Shows an info
   // tooltip whenever a 'Within records' condition is present.
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  renderFulfillOption = (value: any, dataTestId: any, label: any) => (
+      renderFulfillOption = (value: any, dataTestId: any, label: any) => (
     <FormControlLabel
       value={value}
       control={<Radio color="primary" slotProps={{ input: { "aria-label": label } }} />}

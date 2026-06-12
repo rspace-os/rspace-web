@@ -228,8 +228,7 @@ const DialogContent = observer(
                         try {
                           await deleteAppOptions("DSW", config.optionsId);
                           runInAction(() => {
-                            // biome-ignore lint/complexity/useIndexOf: initial biome migration
-                            const deletedIndex = observableConfigs.findIndex((c) => c === config);
+                            const deletedIndex = observableConfigs.indexOf(config);
                             observableConfigs.splice(deletedIndex, 1);
                             integrationState.credentials.splice(deletedIndex, 1);
                           });

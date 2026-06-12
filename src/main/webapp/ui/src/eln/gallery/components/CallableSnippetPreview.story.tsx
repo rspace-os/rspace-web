@@ -1,7 +1,6 @@
 import Button from "@mui/material/Button";
 import Result from "../../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Description, GalleryFile } from "../useGalleryListing";
+import { Description, type GalleryFile } from "../useGalleryListing";
 import { CallableSnippetPreview, useSnippetPreview } from "./CallableSnippetPreview";
 
 const mockSnippetFile: GalleryFile = {

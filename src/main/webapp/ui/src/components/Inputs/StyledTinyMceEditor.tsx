@@ -1,6 +1,5 @@
 import { Editor } from "@tinymce/tinymce-react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import type { RawEditorOptions } from "tinymce";
 
 /*

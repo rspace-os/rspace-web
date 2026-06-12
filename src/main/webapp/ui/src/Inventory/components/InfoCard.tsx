@@ -9,8 +9,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../stores/definitions/Record";
+import type { Record } from "../../stores/definitions/Record";
 import ContainerModel from "../../stores/models/ContainerModel";
 import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import useStores from "../../stores/use-stores";

@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function MemberAutoshareStatusWrapper(props: any) {
   const [isCurrentlySharing, setIsCurrentlySharing] = React.useState(props.isAutoshareInProgress);
   const [autoshareEnabled, setAutoshareEnabled] = React.useState(props.autoshareEnabled);
@@ -70,8 +70,7 @@ const domContainer = document.getElementById("memberAutoshareStatusWrapper");
 const isCloud = domContainer?.dataset.iscloud === "true";
 const groupId = domContainer?.dataset.groupid;
 const groupDisplayName = domContainer?.dataset.displayname;
-// biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-const subjectId = parseInt(domContainer?.dataset.subjectid ?? "");
+const subjectId = parseInt(domContainer?.dataset.subjectid ?? "", 10);
 const canManageAutoshare = domContainer?.dataset.canmanageautoshare === "true";
 const isGroupAutoshareAllowed = domContainer?.dataset.isgroupautoshareallowed === "true";
 const isLabGroup = domContainer?.dataset.islabgroup === "true";
@@ -82,9 +81,9 @@ axios.get(url).then((response) => {
   const members = response.data.data;
 
   members
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     .filter((member: any) => Boolean(document.getElementById(`autoshareStatus-${member.userId}`)))
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     .forEach((member: any) => {
       const root = createRoot(document.getElementById(`autoshareStatus-${member.userId}`) as HTMLElement);
       root.render(

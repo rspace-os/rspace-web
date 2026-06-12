@@ -140,10 +140,7 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
   };
 
   return (
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-    <>
-      <AsposePreviewContext.Provider value={{ setFile, setDetails, loading }}>{children}</AsposePreviewContext.Provider>
-    </>
+    <AsposePreviewContext.Provider value={{ setFile, setDetails, loading }}>{children}</AsposePreviewContext.Provider>
   );
 }
 

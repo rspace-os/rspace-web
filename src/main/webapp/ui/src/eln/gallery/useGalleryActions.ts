@@ -7,11 +7,9 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import { partitionAllSettled } from "../../util/Util";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GallerySection } from "./common";
+import type { GallerySection } from "./common";
 import {
   type Description,
   Filestore,
@@ -160,8 +158,7 @@ export function useGalleryActions(): {
     const api = axios.create({
       baseURL: "/api/v1/files",
       headers: {
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        Authorization: "Bearer " + (await getToken()),
+        Authorization: `Bearer ${await getToken()}`,
       },
     });
 
@@ -389,8 +386,7 @@ export function useGalleryActions(): {
     const api = axios.create({
       baseURL: "/api/v1/gallery",
       headers: {
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        Authorization: "Bearer " + (await getToken()),
+        Authorization: `Bearer ${await getToken()}`,
       },
     });
     try {
@@ -461,8 +457,7 @@ export function useGalleryActions(): {
       formData.append("idToCopy[]", idToString(file.id).elseThrow());
       formData.append(
         "newName[]",
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        file.transformFilename((name) => name + "_copy"),
+        file.transformFilename((name) => `${name}_copy`),
       );
     }
     const duplicatingAlert = mkAlert({

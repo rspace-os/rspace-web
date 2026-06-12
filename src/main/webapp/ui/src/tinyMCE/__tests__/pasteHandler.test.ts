@@ -16,11 +16,8 @@ describe("tinymceRS_pasteHandler", () => {
   beforeEach(() => {
     harness = bootstrapLegacyEditorHarness();
     loadLegacyEditorScript("tinymceRS_pasteHandler.js");
-    pasteHandler = harness.RS.tinymcePasteHandler as Record<
-      string,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      (...args: Array<any>) => any
-    >;
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    pasteHandler = harness.RS.tinymcePasteHandler as Record<string, (...args: Array<any>) => any>;
     currentServerUrl = (harness.RS.createAbsoluteUrl as () => string)();
   });
 
@@ -268,10 +265,8 @@ describe("tinymceRS_pasteHandler", () => {
 
   it("processes pasted image data by forwarding a generated file to the upload widget", async () => {
     const blob = new Blob(["png"], { type: "image/png" });
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      .mockResolvedValue({ blob: vi.fn().mockResolvedValue(blob) } as any);
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({ blob: vi.fn().mockResolvedValue(blob) } as any);
 
     expect(pasteHandler.processPastedContent("", '<img src="data:image/png;base64," alt="">')).toBe(true);
 

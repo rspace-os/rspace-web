@@ -1,8 +1,8 @@
 import Box from "@mui/material/Box";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useMemo } from "react";
+import type React from "react";
+import { useMemo } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 import { preventEventBubbling } from "../../util/Util";

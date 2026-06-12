@@ -13,12 +13,10 @@ import { action, observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { Suspense, startTransition, useEffect, useState } from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { DEFAULT_STATE, ExportConfig } from "@/Export/constants";
+import { DEFAULT_STATE, type ExportConfig } from "@/Export/constants";
 import ExportDialogRaid from "@/Export/ExportDialogRaid";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GroupInfo } from "@/modules/groups/schema";
+import type { GroupInfo } from "@/modules/groups/schema";
 import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";
 import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
@@ -33,22 +31,17 @@ import * as ArrayUtils from "../util/ArrayUtils";
 import { lift3 } from "../util/optional";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportSelection } from "./common";
+import type { ExportSelection } from "./common";
 import ExportFileStore from "./ExportFileStore";
 import ExportRepo from "./ExportRepo";
 import FormatChoice, { type ArchiveType } from "./FormatChoice";
 import FormatSpecificOptions from "./FormatSpecificOptions";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { HtmlXmlExportDetails } from "./HtmlXmlExport";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { PdfExportDetails } from "./PdfExport";
+import type { HtmlXmlExportDetails } from "./HtmlXmlExport";
+import type { PdfExportDetails } from "./PdfExport";
 import { DEFAULT_REPO_CONFIG, type Repo } from "./repositories/common";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "./repositories/Tags";
+import type { Tag } from "./repositories/Tags";
 import { appendPane, getIndexOfPane, getPaneByKey, makePane, numberOfPanes } from "./WizardPanes";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { WordExportDetails } from "./WordExport";
+import type { WordExportDetails } from "./WordExport";
 
 /*
  * This react component implements the entire export flow for ELN documents.
@@ -140,16 +133,14 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   const setInitialDocPDF = (exportSelection: ExportSelection) => {
     // Add initial export name data to the loaded dialog (it is used in PDF and WORD exports)
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-    let initialExportName;
+        let initialExportName;
 
     if (exportSelection.type === "selection" && exportSelection.exportNames.length > 0) {
       initialExportName = exportSelection.exportNames[0].trimStart();
     } else if (exportSelection.type === "user") {
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      initialExportName = exportSelection.username + " - all work";
+      initialExportName = `${exportSelection.username} - all work`;
     } else if (exportSelection.type === "group") {
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      initialExportName = exportSelection.groupName + " - all work";
+      initialExportName = `${exportSelection.groupName} - all work`;
     } else {
       initialExportName = "Export Data";
     }
@@ -400,16 +391,13 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
                   />
                 )}
                 {activePane.key === "FormatSpecificOptions" && state.exportConfig.archiveType !== "" && (
-                  // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-                  <>
-                    <FormatSpecificOptions
-                      exportType={state.exportConfig.archiveType}
-                      // @ts-expect-error Impossible to type check this
-                      exportDetails={state.exportDetails}
-                      updateExportDetails={updateExportDetails}
-                      validator={getPaneByKey(firstPane, "FormatSpecificOptions").validator}
-                    />
-                  </>
+                  <FormatSpecificOptions
+                    exportType={state.exportConfig.archiveType}
+                    // @ts-expect-error Impossible to type check this
+                    exportDetails={state.exportDetails}
+                    updateExportDetails={updateExportDetails}
+                    validator={getPaneByKey(firstPane, "FormatSpecificOptions").validator}
+                  />
                 )}
                 {activePane.key === "ExportRepo" && (
                   <ExportRepo

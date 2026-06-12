@@ -1,6 +1,5 @@
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type OptionsId } from "./useIntegrationsEndpoint";
+import type { OptionsId } from "./useIntegrationsEndpoint";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 

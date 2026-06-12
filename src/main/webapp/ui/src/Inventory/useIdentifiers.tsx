@@ -2,8 +2,7 @@ import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
 

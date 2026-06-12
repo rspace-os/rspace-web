@@ -1,10 +1,8 @@
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "@/stores/definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Axis, DEFAULT_COLUMN_AXIS, DEFAULT_ROW_AXIS } from "@/stores/definitions/container/types";
+import type { Container } from "@/stores/definitions/Container";
+import { type Axis, DEFAULT_COLUMN_AXIS, DEFAULT_ROW_AXIS } from "@/stores/definitions/container/types";
 import FormControl from "../../../../components/Inputs/FormControl";
 import RadioField, { type RadioOption } from "../../../../components/Inputs/RadioField";
 

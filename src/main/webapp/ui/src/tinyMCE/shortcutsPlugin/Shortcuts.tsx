@@ -26,7 +26,7 @@ import ActionsTab from "./ActionsTab";
 import configJson from "./config.json";
 import SymbolsTab from "./SymbolsTab";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const config: any = configJson;
 
 const used = config.used.split(" ");
@@ -44,9 +44,9 @@ type ShortcutsState = {
   errorMessage: string;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class Shortcuts extends React.Component<any, ShortcutsState> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -74,9 +74,8 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
     parent.document.addEventListener("shortcuts-submit", this.saveSettings);
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  handleChange = (event: any, newValue: number) => {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  handleChange = (_event: any, newValue: number) => {
     this.setState((oldState) => {
       return {
         ...oldState,
@@ -86,8 +85,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
   };
 
   applyCurrentConfig = () => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (this.state.tab == 0) {
+    if (this.state.tab === 0) {
       this.applyCurrentConfigActions();
     } else {
       this.applyCurrentConfigSymbols();
@@ -130,8 +128,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
   };
 
   applyDefaultConfig = () => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (this.state.tab == 0) {
+    if (this.state.tab === 0) {
       this.setState((oldState) => {
         return {
           ...oldState,
@@ -165,8 +162,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
     // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     Object.keys(this.state.symbolShortcuts).map((k) => {
       shortcut = rev_humanize(this.state.symbolShortcuts[k]);
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      if (shortcut != "") {
+      if (shortcut !== "") {
         //don't save empty shortcut
         new_config[k] = shortcut;
       }
@@ -174,7 +170,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
     localStorage.setItem("custom_shortcuts_symbols", JSON.stringify(new_config));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   detectShortcut = (key: string, e: any) => {
     e.stopPropagation();
     e.preventDefault();
@@ -192,8 +188,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
       (e.metaKey ? "Meta " : "") +
       String.fromCharCode(e.which);
 
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (combination.split(" ").length >= 2 && e.which != 9) {
+    if (combination.split(" ").length >= 2 && e.which !== 9) {
       // escape tab
       this.setShortcut(key, combination);
     }
@@ -229,15 +224,13 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
           ...oldState,
           hasError: false,
           symbolShortcuts:
-            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            this.state.tab == 1
+            this.state.tab === 1
               ? produce(oldState.symbolShortcuts, (draft) => {
                   draft[key] = combination;
                 })
               : oldState.symbolShortcuts,
           actionShortcuts:
-            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            this.state.tab == 0
+            this.state.tab === 0
               ? produce(oldState.actionShortcuts, (draft) => {
                   draft[key] = combination;
                 })
@@ -254,14 +247,14 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
     });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   isShortcutReserved = (combination: any) => {
     combination = humanize(combination).split(" ");
     let isReserved = false;
 
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-    used.forEach((command: any) => {
+        used.forEach((command: any) => {
       if (arraysEqual(command.split("+"), combination)) {
         isReserved = true;
         return false;
@@ -282,7 +275,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
     return isReserved;
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   addShortcut = (symbol: any) => {
     this.setState((oldState) => {
       return {
@@ -301,15 +294,13 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
         return {
           ...oldState,
           symbolShortcuts:
-            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            this.state.tab == 1
+            this.state.tab === 1
               ? produce(oldState.symbolShortcuts, (draft) => {
                   draft[this.state.selectedKey as string] = "";
                 })
               : oldState.symbolShortcuts,
           actionShortcuts:
-            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            this.state.tab == 0
+            this.state.tab === 0
               ? produce(oldState.actionShortcuts, (draft) => {
                   draft[this.state.selectedKey as string] = "";
                 })
@@ -359,16 +350,14 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
                 </IconButton>
               </Tooltip>
             </AlertTitle>
-            {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-            {this.state.tab == 0 && this.state.instructions && (
+            {this.state.tab === 0 && this.state.instructions && (
               <ul>
                 <li>Click on the input field next to the command you would like to configure.</li>
                 <li>On your keyboard, press the key combination you would like to use for that command.</li>
                 <li>Click on 'Save'.</li>
               </ul>
             )}
-            {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-            {this.state.tab == 1 && this.state.instructions && (
+            {this.state.tab === 1 && this.state.instructions && (
               <ul>
                 <li>
                   All configurable symbols are divided into sections. Click on a section to find the desired symbol. For
@@ -410,8 +399,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             <Tab label="Symbols" />
           </Tabs>
         </Grid>
-        {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-        {this.state.tab == 0 && (
+        {this.state.tab === 0 && (
           <ActionsTab
             actionShortcuts={this.state.actionShortcuts}
             config={config}
@@ -422,8 +410,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             onKeyUp={this.resetInput}
           />
         )}
-        {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-        {this.state.tab == 1 && (
+        {this.state.tab === 1 && (
           <SymbolsTab
             config={config}
             symbolShortcuts={this.state.symbolShortcuts}

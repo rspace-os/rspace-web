@@ -1,11 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import AlertContext, { type Alert } from "../../../../stores/contexts/Alert";
+import AlertContext from "../../../../stores/contexts/Alert";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockSubSample, subsampleAttrs } from "../../../../stores/models/__tests__/SubSampleModel/mocking";

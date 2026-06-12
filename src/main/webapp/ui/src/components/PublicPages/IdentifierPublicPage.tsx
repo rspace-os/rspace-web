@@ -27,8 +27,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ComponentType, type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
@@ -37,10 +36,8 @@ import { decodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import Description from "../../Inventory/components/Fields/Description";
 import MapViewer from "../../Inventory/components/Fields/Identifiers/MapViewer";
 import Tags from "../../Inventory/components/Fields/Tags";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier, type IdentifierAttrs } from "../../stores/definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../stores/definitions/Tag";
+import type { Identifier, IdentifierAttrs } from "../../stores/definitions/Identifier";
+import type { Tag } from "../../stores/definitions/Tag";
 import { truncateIsoTimestamp } from "../../stores/definitions/Units";
 import IdentifierModel from "../../stores/models/IdentifierModel";
 import materialTheme from "../../theme";
@@ -235,8 +232,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                   {identifier.doi}
                 </a>
               ) : (
-                // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-                <>{identifier.doi}</>
+                identifier.doi
               )}
             </Typography>
           </Stack>
@@ -332,8 +328,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                         <Grid sx={LABEL_SX}>{RECOMMENDED_FIELDS_LABELS[sf.key]}</Grid>
                         <Grid>
                           {sf.value ? (
-                            // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-                            <>{sf.value}</>
+                            sf.value
                           ) : (
                             <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
                               None
@@ -371,10 +366,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                     subFields(id).map((sf) => (
                       <Grid container direction="row" sx={ROW_SX} spacing={1} key={sf.key}>
                         <Grid sx={LABEL_SX}>{RECOMMENDED_FIELDS_LABELS[sf.key]}</Grid>
-                        <Grid>
-                          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-                          {sf.value ? <>{sf.value}</> : <em>None</em>}
-                        </Grid>
+                        <Grid>{sf.value ? sf.value : <em>None</em>}</Grid>
                       </Grid>
                     ))}
                 </Grid>
@@ -387,14 +379,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                 <h3>Dates</h3>
               </Grid>
               {identifier.dates.map((d, i) => (
-                <Grid
-                  container
-                  direction="row"
-                  sx={ROW_SX}
-                  spacing={1}
-                  // biome-ignore lint/style/useTemplate: initial biome migration
-                  key={d.value.toString() + "-" + i}
-                >
+                <Grid container direction="row" sx={ROW_SX} spacing={1} key={`${d.value.toString()}-${i}`}>
                   <Grid sx={LABEL_SX}>{capitaliseJustFirstChar(d.type.toLowerCase())}</Grid>
                   <Grid>{truncateIsoTimestamp(d.value, "date").orElse("Invalid date")}</Grid>
                 </Grid>
@@ -714,7 +699,7 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode
                 : Optional.present(decodeTagString(tag.ontologyVersion)),
           })),
         });
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       } catch (e: any) {
         setErrorMessage(e.response.data.message);
         throw new Error(e);

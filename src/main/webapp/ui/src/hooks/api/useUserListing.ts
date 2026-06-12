@@ -1,8 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
 import { getErrorMessage } from "../../util/error";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../util/fetchingData";
+import type * as FetchingData from "../../util/fetchingData";
 import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";

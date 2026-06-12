@@ -2,15 +2,11 @@ import { action, makeObservable, observable } from "mobx";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Basket, type BasketAttrs, type BasketDetails } from "../definitions/Basket";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { Basket, BasketAttrs, BasketDetails } from "../definitions/Basket";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
 import getRootStore from "../stores/RootStore";
 
 /**

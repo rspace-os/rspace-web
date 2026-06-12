@@ -50,8 +50,8 @@ const mockIntegrationInfoSuccess: IntegrationRaidInfo = {
         RAID_ALIAS: "test-server-2",
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    } as any,
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          } as any,
   },
 };
 
@@ -85,7 +85,7 @@ const mockIntegrationInfoSuccessResponse: IntegrationRaidInfo = {
         RAID_URL: "https://raid-server-2.example.com",
         RAID_ALIAS: "test-server-2",
       },
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     } as any,
   },
 };
@@ -102,8 +102,8 @@ const mockIntegrationInfoDisabled: IntegrationRaidInfo = {
     options: {
       RAID_CONFIGURED_SERVERS: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    } as any,
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          } as any,
   },
 };
 

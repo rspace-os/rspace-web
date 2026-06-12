@@ -3,8 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
@@ -40,8 +39,7 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
     !hasConnectedServers ||
     groupType !== "PROJECT_GROUP";
 
-  // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-  const isEnabled = integrationData?.data?.enabled;
+  const _isEnabled = integrationData?.data?.enabled;
 
   const getUnavailableMessage = () => {
     if (groupType !== "PROJECT_GROUP") {

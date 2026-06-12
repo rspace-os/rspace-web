@@ -17,12 +17,12 @@ import React from "react";
 import axios from "@/common/axios";
 import UserListComponent from "./UserList";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
 
 // UserList is an untyped JS->TSX class component; cast at the call site to
 // accept the props it consumes without changing behavior.
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const UserList = UserListComponent as any;
 
 const DEFAULT_STATE = {
@@ -36,9 +36,9 @@ const DEFAULT_STATE = {
   useSearch: false,
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class MyLabGroupsDialog extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = DEFAULT_STATE;
@@ -88,8 +88,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
         });
       })
       .catch((error) => {
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        console.error("couldn't add users: " + error);
+        console.error(`couldn't add users: ${error}`);
         RS.confirm(
           "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
           "error",
@@ -109,13 +108,12 @@ class MyLabGroupsDialog extends React.Component<any, any> {
           availableUsers: response.data.data,
         });
       })
-      // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-      .catch((error) => {
+      .catch((_error) => {
         this.setState({ useSearch: true });
       });
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   searchUsers(term: any) {
     if (!this.state.useSearch) {
     } else if (term.length < 3) {
@@ -133,22 +131,20 @@ class MyLabGroupsDialog extends React.Component<any, any> {
     }
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   findUser = (array: any, user: any) => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-    return array.findIndex((selected: any) => selected.username == user.username);
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    return array.findIndex((selected: any) => selected.username === user.username);
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleSelected = (action: any) => (user: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       selectedUsers: produce(prevState.selectedUsers, (draft: any) => {
         const idx = this.findUser(draft[action], user);
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        if (idx == -1) {
+        if (idx === -1) {
           draft[action].push(user);
         } else {
           draft[action].splice(idx, 1);
@@ -159,9 +155,9 @@ class MyLabGroupsDialog extends React.Component<any, any> {
 
   addUsers = () => {
     this.setState(
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       (prevState: any) => ({
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         chosenUsers: produce(prevState.chosenUsers, (draft: any) => {
           draft.push(...prevState.selectedUsers.add);
         }),
@@ -174,14 +170,10 @@ class MyLabGroupsDialog extends React.Component<any, any> {
     this.setState(
       {
         chosenUsers: this.state.chosenUsers.filter(
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           (user: any) =>
-            this.state.selectedUsers.remove.findIndex(
-              // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-              // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-              (selected: any) => selected.username == user.username,
-              // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            ) == -1,
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            this.state.selectedUsers.remove.findIndex((selected: any) => selected.username === user.username) === -1,
         ),
       },
       this.updateAvailableUsers,
@@ -191,11 +183,8 @@ class MyLabGroupsDialog extends React.Component<any, any> {
   updateAvailableUsers = () => {
     this.setState(
       {
-        availableUsers: this.state.userList.filter(
-          // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-          (user: any) => this.findUser(this.state.chosenUsers, user) == -1,
-        ),
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        availableUsers: this.state.userList.filter((user: any) => this.findUser(this.state.chosenUsers, user) === -1),
       },
       // @ts-expect-error pragmatic jsx->tsx conversion: preserves original immediate-invoke behavior
       this.resetSelection(),
@@ -214,7 +203,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
 
   resetSelection = () => {
     this.setState({
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       selectedUsers: produce(this.state.selectedUsers, (draft: any) => {
         draft.add = [];
         draft.remove = [];
@@ -224,8 +213,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
 
   submitButtonTitle = () => {
     // sysadmin/community admin can directly add other people to a group
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (this.props.role == "admin") return "Add";
+    if (this.props.role === "admin") return "Add";
 
     // PIs, as admins of LabGroups, or regular users, as owners of Project
     // Groups, can invite others to their respective groups.
@@ -332,7 +320,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
               onClose: this.closeUsersAddedToast,
               message: this.state.usersAddedMsg,
               sx: { backgroundColor: "#4CAF50", color: "white" },
-              // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             } as any)}
           />
         </Snackbar>

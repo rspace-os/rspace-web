@@ -7,9 +7,8 @@ import { createRoot } from "react-dom/client";
 import materialTheme from "../../theme";
 import OAuthTable from "./OAuthTable";
 
-// biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-export default function OAuthTrigger(props: any) {
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+export default function OAuthTrigger(_props: any) {
   const [open, setOpen] = React.useState(false);
 
   const handleOpen = () => {

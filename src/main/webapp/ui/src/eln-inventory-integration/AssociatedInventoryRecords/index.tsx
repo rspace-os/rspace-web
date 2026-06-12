@@ -5,8 +5,7 @@ import { createRoot } from "react-dom/client";
 import Analytics from "@/components/Analytics";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import AnalyticsContext from "@/stores/contexts/Analytics";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ElnDocumentId } from "@/stores/models/MaterialsModel";
+import type { ElnDocumentId } from "@/stores/models/MaterialsModel";
 import NoValue from "../../components/NoValue";
 import useStores from "../../stores/use-stores";
 
@@ -43,8 +42,7 @@ const AssociatedInventoryRecords = observer(function AssociatedInventoryRecords(
     };
   }, []);
 
-  // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-  if (isNaN(elnDocumentId)) return null;
+  if (Number.isNaN(elnDocumentId)) return null;
   return (
     <>
       {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}

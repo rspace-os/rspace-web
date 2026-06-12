@@ -1,14 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { Optional } from "../../../../util/optional";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import Slack from "../Slack";
 
 import "@/__tests__/__mocks__/matchMedia";

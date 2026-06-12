@@ -2,8 +2,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import createAccentedTheme from "./accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
@@ -36,25 +36,22 @@ function App(): React.ReactNode {
   }, []);
 
   return loadingDone ? (
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-    <>
-      {(authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
-        <>
-          <GoogleLoginProvider />
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
-              <QueryClientProvider client={queryClient}>
-                <Analytics>
-                  <Router />
-                </Analytics>
-              </QueryClientProvider>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        </>
-      ) : (
-        ERROR_MSG
-      )}
-    </>
+    (authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
+      <>
+        <GoogleLoginProvider />
+        <StyledEngineProvider injectFirst enableCssLayer>
+          <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
+            <QueryClientProvider client={queryClient}>
+              <Analytics>
+                <Router />
+              </Analytics>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </>
+    ) : (
+      ERROR_MSG
+    )
   ) : null;
 }
 

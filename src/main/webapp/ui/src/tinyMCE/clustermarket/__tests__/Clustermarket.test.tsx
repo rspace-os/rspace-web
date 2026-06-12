@@ -1,7 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
@@ -19,11 +17,11 @@ const rsMock = {
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 Object.defineProperty(window, "RS", { value: rsMock });
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const getWrapper = (props?: any) => {
   return render(<Clustermarket {...props} />);
 };
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const findFirstByText = async (text: any, options?: any, waitOptions?: any) => {
   const [match] = await screen.findAllByText(text, options, waitOptions);
   return match;

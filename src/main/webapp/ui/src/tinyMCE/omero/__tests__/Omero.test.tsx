@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Omero, { getOrder, getOrderBy } from "../../omero/Omero";
@@ -93,8 +92,7 @@ const getWrapper = (props: React.ComponentProps<typeof Omero>) => {
 };
 
 beforeEach(() => {
-  // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-  window.HTMLElement.prototype.scrollIntoView = function () {};
+  window.HTMLElement.prototype.scrollIntoView = () => {};
   localStorageMock.getItem = vi.fn().mockImplementation(() => null);
   mockAxios.onGet("/apps/omero/projects/?dataType=Projects").reply(200, ProjectsList.data);
   mockAxios.onGet("/apps/omero/projects/?dataType=Screens").reply(200, ScreensList.data);
@@ -177,11 +175,9 @@ const setUpProjectsAsData = async () => {
 };
 
 const fetchDetailsFor = async (type: string, typeID: number) => {
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const fetchDetails = getFirstByTestId(type + "_fetch_details_" + typeID);
+  const fetchDetails = getFirstByTestId(`${type}_fetch_details_${typeID}`);
   fireEvent.click(fetchDetails);
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  await screen.findByTestId(type + "_annotation_" + typeID + "_1", undefined, {
+  await screen.findByTestId(`${type}_annotation_${typeID}_1`, undefined, {
     timeout: 5500,
   });
   await waitForLoadingToFinish();
@@ -224,11 +220,9 @@ type OrderValue = (typeof Order)[keyof typeof Order];
 const setUpLocalStorageWithOrder = (order: OrderValue) => {
   localStorageMock.getItem = vi.fn().mockImplementation((key: string) => {
     if (key === "omeroSearchOrder") {
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      return '"' + order + '"';
+      return `"${order}"`;
     }
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (key == "omeroSearchOrderBy") {
+    if (key === "omeroSearchOrderBy") {
       return '"name"';
     }
     return null;
@@ -248,17 +242,13 @@ const navigateFromScreenToPlate = async (
   await findFirstByText(screenName, undefined, {
     timeout: 5500,
   });
-  const fetchPlates = screen.queryAllByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "screen_fetch_childrenLink_" + screenID,
-  )[0];
+  const fetchPlates = screen.queryAllByTestId(`screen_fetch_childrenLink_${screenID}`)[0];
   if (!fetchPlates) {
     return false;
   }
   fireEvent.click(fetchPlates);
   try {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("plate_name_display_" + plateID, undefined, {
+    await screen.findByTestId(`plate_name_display_${plateID}`, undefined, {
       timeout: 5500,
     });
     await waitForLoadingToFinish();
@@ -286,17 +276,13 @@ const navigateFromProjectToDataset = async (
   await findFirstByText(projectName, undefined, {
     timeout: 5500,
   });
-  const fetchDatasets = screen.queryAllByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "project_fetch_childrenLink_" + projectID,
-  )[0];
+  const fetchDatasets = screen.queryAllByTestId(`project_fetch_childrenLink_${projectID}`)[0];
   if (!fetchDatasets) {
     return false;
   }
   fireEvent.click(fetchDatasets);
   try {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("dataset_name_display_" + datasetID, undefined, {
+    await screen.findByTestId(`dataset_name_display_${datasetID}`, undefined, {
       timeout: 5500,
     });
     await waitForLoadingToFinish();
@@ -313,43 +299,30 @@ const hideChildren = async (
   childID: number,
   numchildren: number,
 ): Promise<boolean> => {
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const fetchChildrenID = type + "_fetch_childrenLink_" + typeID;
+  const fetchChildrenID = `${type}_fetch_childrenLink_${typeID}`;
   const hideChildrenLink = screen.queryAllByTestId(fetchChildrenID)[0];
   if (!hideChildrenLink) {
     return false;
   }
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const targetChildID = childType + "_name_display_" + childID;
+  const targetChildID = `${childType}_name_display_${childID}`;
   const targetChildren = screen.queryAllByTestId(targetChildID);
   if (!targetChildren.length) {
     return false;
   }
-  assertElemWithTestIDHasTextContent(
-    fetchChildrenID,
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "hide children [" + numchildren + "]",
-  );
+  assertElemWithTestIDHasTextContent(fetchChildrenID, `hide children [${numchildren}]`);
   fireEvent.click(hideChildrenLink);
-  assertElemWithTestIDHasTextContent(
-    fetchChildrenID,
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "show " + childType + "s [" + numchildren + "]",
-  );
+  assertElemWithTestIDHasTextContent(fetchChildrenID, `show ${childType}s [${numchildren}]`);
   return true;
 };
 
 const hideImageGrid = async (type: string, typeID: number, imageID: number): Promise<boolean> => {
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const targetImageID = "image_img_" + imageID;
+  const targetImageID = `image_img_${imageID}`;
   const targetImage = screen.queryAllByTestId(targetImageID)[0];
   if (!targetImage) {
     return false;
   }
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const hideImageGridLinkID = type + "_hide_grid_" + typeID;
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const showImageGridLinkID = type + "_show_grid_" + typeID;
+  const hideImageGridLinkID = `${type}_hide_grid_${typeID}`;
+  const showImageGridLinkID = `${type}_show_grid_${typeID}`;
   expect(screen.queryByTestId(showImageGridLinkID)).not.toBeInTheDocument();
   const hideImageGridLink = screen.queryAllByTestId(hideImageGridLinkID)[0];
   if (!hideImageGridLink) {
@@ -365,23 +338,15 @@ const clickChildLinkAndShowPlateAcquisition = async (
   childLInkID: number,
   plateAcquisitionID: number,
 ): Promise<boolean> => {
-  const fetchPlatesAcquisitions = screen.queryAllByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "plate_fetch_childrenLink_" + childLInkID,
-  )[0];
+  const fetchPlatesAcquisitions = screen.queryAllByTestId(`plate_fetch_childrenLink_${childLInkID}`)[0];
   if (!fetchPlatesAcquisitions) {
     return false;
   }
   fireEvent.click(fetchPlatesAcquisitions);
   try {
-    await screen.findByTestId(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "plateAcquisition_name_display_" + plateAcquisitionID,
-      undefined,
-      {
-        timeout: 5500,
-      },
-    );
+    await screen.findByTestId(`plateAcquisition_name_display_${plateAcquisitionID}`, undefined, {
+      timeout: 5500,
+    });
     await waitForLoadingToFinish();
     return true;
   } catch {
@@ -395,17 +360,13 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
   plateAcquisitionID: number,
   imageID: number,
 ): Promise<boolean> => {
-  const fetchGridOfImages = screen.queryAllByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "plate_fetch_childrenLink_" + childLInkID,
-  )[0];
+  const fetchGridOfImages = screen.queryAllByTestId(`plate_fetch_childrenLink_${childLInkID}`)[0];
   if (!fetchGridOfImages) {
     return false;
   }
   fireEvent.click(fetchGridOfImages);
   try {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("image_img_" + imageID, undefined, {
+    await screen.findByTestId(`image_img_${imageID}`, undefined, {
       timeout: 5500,
     });
     await waitForLoadingToFinish();
@@ -413,10 +374,7 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
     return false;
   }
   //check that a plate acquisition is also displayed
-  const plateAcquisition = screen.queryByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "plateAcquisition_name_display_" + plateAcquisitionID,
-  );
+  const plateAcquisition = screen.queryByTestId(`plateAcquisition_name_display_${plateAcquisitionID}`);
   if (!plateAcquisition) {
     return false;
   }
@@ -425,19 +383,16 @@ const clickChildLinkAndShowPlateAcquisitionWithImages = async (
 };
 
 const clickOnImageWithIDInGridAndAwaitInsertionAsChildOfFullImageData = async (imageID: number): Promise<boolean> => {
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const imageInGrid = screen.queryAllByTestId("image_img_" + imageID)[0];
+  const imageInGrid = screen.queryAllByTestId(`image_img_${imageID}`)[0];
   if (!imageInGrid) {
     return false;
   }
   fireEvent.click(imageInGrid);
   try {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("image_name_display_" + imageID, undefined, {
+    await screen.findByTestId(`image_name_display_${imageID}`, undefined, {
       timeout: 5500,
     });
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("image_annotation_" + imageID + "_0", undefined, {
+    await screen.findByTestId(`image_annotation_${imageID}_0`, undefined, {
       timeout: 5500,
     });
     await waitForLoadingToFinish();
@@ -451,17 +406,13 @@ const clickDatasetImageGridLinkAndCheckForImageWithID = async (
   datasetID: number,
   targetImageID: number,
 ): Promise<boolean> => {
-  const fetchImages = screen.queryAllByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "dataset_show_grid_" + datasetID,
-  )[0];
+  const fetchImages = screen.queryAllByTestId(`dataset_show_grid_${datasetID}`)[0];
   if (!fetchImages) {
     return false;
   }
   fireEvent.click(fetchImages);
   try {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("image_img_" + targetImageID, undefined, {
+    await screen.findByTestId(`image_img_${targetImageID}`, undefined, {
       timeout: 5500,
     });
     await waitForLoadingToFinish();
@@ -475,17 +426,13 @@ const clickImageGridLinkAndCheckForImageWithID = async (
   imageGridLinkID: number,
   targetImageID: number,
 ): Promise<boolean> => {
-  const fetchGridOfImages = screen.queryAllByTestId(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "plateAcquisition_show_grid_" + imageGridLinkID,
-  )[0];
+  const fetchGridOfImages = screen.queryAllByTestId(`plateAcquisition_show_grid_${imageGridLinkID}`)[0];
   if (!fetchGridOfImages) {
     return false;
   }
   fireEvent.click(fetchGridOfImages);
   try {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    await screen.findByTestId("image_img_" + targetImageID, undefined, {
+    await screen.findByTestId(`image_img_${targetImageID}`, undefined, {
       timeout: 5500,
     });
     await waitForLoadingToFinish();

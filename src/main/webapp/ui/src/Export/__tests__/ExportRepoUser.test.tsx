@@ -1,12 +1,9 @@
 import { act, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import ExportRepoUser from "../ExportRepoUser";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../repositories/common";
+import type { Person } from "../repositories/common";
 
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
 function renderExportRepoUser({

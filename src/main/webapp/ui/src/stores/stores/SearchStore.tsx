@@ -1,37 +1,24 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { WorkbenchId } from "@/stores/definitions/container/types";
+import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type emptyObject } from "../../util/types";
+import type { emptyObject } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Basket, type BasketAttrs } from "../definitions/Basket";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Group } from "../definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcher, type CoreFetcherArgs, type ResultType } from "../definitions/Search";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { Basket, BasketAttrs } from "../definitions/Basket";
+import type { Container } from "../definitions/Container";
+import type { Factory } from "../definitions/Factory";
+import type { Group } from "../definitions/Group";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
+import type { CoreFetcher, CoreFetcherArgs, ResultType } from "../definitions/Search";
 import BasketModel from "../models/Basket";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "../models/InventoryBaseRecord";
+import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import TemplateModel, { type TemplateAttrs } from "../models/TemplateModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RootStore } from "./RootStore";
+import type { RootStore } from "./RootStore";
 
 export type SavedSearch = CoreFetcherArgs & {
   name: string;
@@ -189,8 +176,7 @@ export default class SearchStore {
     }
   }
 
-  // biome-ignore lint/suspicious/noConfusingVoidType: initial biome migration
-  async getBasket(id: Id): Promise<Basket | void> {
+  async getBasket(id: Id): Promise<Basket | undefined> {
     const { uiStore } = this.rootStore;
     try {
       if (id) {

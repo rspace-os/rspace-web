@@ -9,14 +9,14 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SimpleSearchScopeDialog(props: any) {
   return (
     <Dialog open={props.open}>
       <DialogTitle>Scope search within records</DialogTitle>
       <DialogContent>
         <DialogContentText>You have selected the records listed below.</DialogContentText>
-        {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+        {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
         {props.selectedRecords.map((r: any) => (
           <Chip
             sx={{ marginRight: "10px" }}

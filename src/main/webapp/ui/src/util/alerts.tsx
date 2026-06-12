@@ -1,10 +1,7 @@
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { mkAlert } from "../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import getRootStore from "../stores/stores/RootStore";
 import { traverseObjectTree } from "../util/unsafeUtils";
 import * as ArrayUtils from "./ArrayUtils";

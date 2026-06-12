@@ -3,8 +3,7 @@ import type React from "react";
 import { forwardRef, useContext } from "react";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
 import { match } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";

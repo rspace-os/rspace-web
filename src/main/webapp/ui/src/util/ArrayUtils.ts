@@ -102,11 +102,9 @@ export const groupBy = <T, K extends string>(f: (t: T) => K, list: ReadonlyArray
  * of the array are instances of the passed class. Useful where TypeScript would not
  * recognise a normal filter.
  */
-export const filterClass = <T, U>(
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  clazz: { new (...args: any[]): T },
-  array: ReadonlyArray<U>,
-): Array<T> => {
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+export  const filterClass = <T, U>(clazz: { new (...args: any[]): T }, array: ReadonlyArray<U>): Array<T> => {
   const arrayOft: Array<T> = [];
   for (const a of array) {
     if (a instanceof clazz) arrayOft.push(a);
@@ -162,13 +160,7 @@ export function find<T>(func: (t: T) => boolean, array: ReadonlyArray<T>): Optio
  * function return Optional.empty
  */
 export function getAt<T>(index: number, array: ReadonlyArray<T>): Optional<T> {
-  if (
-    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-    !isNaN(index) &&
-    Number.isInteger(index) &&
-    index >= 0 &&
-    index < array.length
-  ) {
+  if (!Number.isNaN(index) && Number.isInteger(index) && index >= 0 && index < array.length) {
     return Optional.present(array[index]);
   }
 

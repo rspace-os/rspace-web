@@ -1,13 +1,9 @@
+import fs from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { gridClasses } from "@mui/x-data-grid";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
-import fs from "fs/promises";
 import * as Jwt from "jsonwebtoken";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Download, Locator, Page, Route } from "playwright-core";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
+import type { Download, Locator, Page, Route } from "playwright-core";
 import { ReadOnlyStoichiometryTableStory, StoichiometryTableWithDataStory } from "./StoichiometryTable.story";
 
 test.setTimeout(20 * 1000);
@@ -791,8 +787,7 @@ feature.beforeEach(async ({ page, stoichiometryMocks }) => {
   await page.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      // biome-ignore lint/complexity/useDateNow: initial biome migration
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
       refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
@@ -1342,8 +1337,7 @@ test.describe("Stoichiometry Table", () => {
 
       await benzeneMassCell.click();
       await benzeneMassCell.press("Enter");
-      // biome-ignore lint/style/useConst: initial biome migration
-      let input = page.locator(`.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`);
+      const input = page.locator(`.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`);
       await input.waitFor({ state: "visible" });
       await input.fill("15");
 

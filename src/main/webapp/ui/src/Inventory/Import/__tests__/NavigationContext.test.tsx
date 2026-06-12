@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useContext } from "react";
+import { useContext } from "react";
 import type { Location } from "react-router-dom";
 import { describe, expect, test, vi } from "vitest";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -17,7 +16,7 @@ const NavigateTo = ({ url }: NavigateToProps) => {
   const navigate = useNavigate();
   return (
     // biome-ignore lint/a11y/useButtonType: initial biome migration
-    <button
+<button
       onClick={() => {
         navigate(url);
       }}

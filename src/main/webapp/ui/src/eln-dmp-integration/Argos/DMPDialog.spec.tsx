@@ -1,7 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import DMPDialog from "./DMPDialog";
 
 test.beforeEach(async ({ router, page }) => {
@@ -115,9 +113,6 @@ test("Importing a selected DMP should call the import endpoint.", async ({ mount
     importRequestUrl = request.url();
   });
   await test.step("Then the import endpoint is called for the selected DMP", async () => {
-    expect(importRequestUrl).toMatch(
-      // biome-ignore lint/complexity/useRegexLiterals: initial biome migration
-      new RegExp("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e"),
-    );
+    expect(importRequestUrl).toMatch(/\/apps\/argos\/importPlan\/e27789f1-de35-4b4a-9587-a46d131c366e/);
   });
 });

@@ -1,8 +1,7 @@
 //@flow
 
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PlanSummary } from "./PlanSummary";
+import type { PlanSummary } from "./PlanSummary";
 
 /*
  * Code for completing the process of importing the DMP from Argos and into the

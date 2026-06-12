@@ -1,15 +1,9 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import InvApiService from "../../common/InvApiService";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord, type PersistedBarcodeAttrs } from "./Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "./BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Document, type DocumentAttrs } from "./Document";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier, type IdentifierAttrs } from "./Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "./InventoryRecord";
+import type InvApiService from "../../common/InvApiService";
+import type { BarcodeRecord, PersistedBarcodeAttrs } from "./Barcode";
+import type { GlobalId } from "./BaseRecord";
+import type { Document, DocumentAttrs } from "./Document";
+import type { Identifier, IdentifierAttrs } from "./Identifier";
+import type { InventoryRecord } from "./InventoryRecord";
 import type { Person, PersonAttrs } from "./Person";
 
 /**

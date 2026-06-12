@@ -1,5 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import "leaflet/dist/leaflet.css";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
@@ -7,12 +7,7 @@ import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
 import { useTheme } from "@mui/material/styles";
 import { Circle, MapContainer, Polygon, Rectangle, TileLayer } from "react-leaflet";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type GeoLocationBox,
-  type GeoLocationPolygon,
-  type PolygonPoint,
-} from "../../../../stores/definitions/GeoLocation";
+import type { GeoLocationBox, GeoLocationPolygon, PolygonPoint } from "../../../../stores/definitions/GeoLocation";
 import { boxComplete, pointComplete } from "../../../../stores/models/GeoLocationModel";
 
 type MapViewerArgs = {
@@ -75,19 +70,13 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
   let latitudeCenter = 0;
   let latitudeDataPoints = 0;
   if (pointComplete(point)) {
-    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-    if (!isNaN(parseFloat(point.pointLatitude))) {
+    if (!Number.isNaN(parseFloat(point.pointLatitude))) {
       latitudeCenter += parseFloat(point.pointLatitude);
       latitudeDataPoints++;
     }
   }
   if (boxComplete(box)) {
-    if (
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      !isNaN(parseFloat(box.northBoundLatitude)) &&
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      !isNaN(parseFloat(box.southBoundLatitude))
-    ) {
+    if (!Number.isNaN(parseFloat(box.northBoundLatitude)) && !Number.isNaN(parseFloat(box.southBoundLatitude))) {
       latitudeCenter += 0.5 * parseFloat(box.northBoundLatitude) + 0.5 * parseFloat(box.southBoundLatitude);
       latitudeDataPoints++;
     }
@@ -103,19 +92,13 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
   let longitudeCenter = 0;
   let longitudeDataPoints = 0;
   if (pointComplete(point)) {
-    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-    if (!isNaN(parseFloat(point.pointLongitude))) {
+    if (!Number.isNaN(parseFloat(point.pointLongitude))) {
       longitudeCenter += parseFloat(point.pointLongitude);
       longitudeDataPoints++;
     }
   }
   if (boxComplete(box)) {
-    if (
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      !isNaN(parseFloat(box.eastBoundLongitude)) &&
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      !isNaN(parseFloat(box.westBoundLongitude))
-    ) {
+    if (!Number.isNaN(parseFloat(box.eastBoundLongitude)) && !Number.isNaN(parseFloat(box.westBoundLongitude))) {
       longitudeCenter += 0.5 * parseFloat(box.eastBoundLongitude) + 0.5 * parseFloat(box.westBoundLongitude);
       longitudeDataPoints++;
     }

@@ -7,10 +7,8 @@ import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportOptions } from "../../../stores/definitions/Search";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { ExportOptions } from "../../../stores/definitions/Search";
 import { ExportOptionsWrapper } from "./ExportDialog";
 
 type ExporterArgs = {
@@ -74,27 +72,24 @@ function Exporter({
       </CardContent>
       {showActions && (
         <CardActions>
-          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-          <>
-            <Button
-              variant="contained"
-              color="callToAction"
-              disableElevation
-              onClick={() => {
-                void onExport();
-              }}
-              disabled={selectedResults.length === 0}
-            >
-              DOWNLOAD {exportOptions.resultFileType === "ZIP" ? "ZIP" : "CSV"}
-            </Button>
-            <Button
-              onClick={() => {
-                setOpenExporter(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </>
+          <Button
+            variant="contained"
+            color="callToAction"
+            disableElevation
+            onClick={() => {
+              void onExport();
+            }}
+            disabled={selectedResults.length === 0}
+          >
+            DOWNLOAD {exportOptions.resultFileType === "ZIP" ? "ZIP" : "CSV"}
+          </Button>
+          <Button
+            onClick={() => {
+              setOpenExporter(false);
+            }}
+          >
+            Cancel
+          </Button>
         </CardActions>
       )}
     </Card>

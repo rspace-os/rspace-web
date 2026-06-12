@@ -11,8 +11,8 @@ import Slide from "@mui/material/Slide";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { Observer, observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { forwardRef, useEffect, useState } from "react";
+import type React from "react";
+import { forwardRef, useEffect, useState } from "react";
 import docLinks from "../../assets/DocLinks";
 import Analytics from "../../components/Analytics";
 import Confirm from "../../components/Confirm";
@@ -27,11 +27,9 @@ import { defaultExportOptions } from "../../Inventory/components/Export/ExportDi
 import Exporter from "../../Inventory/components/Export/Exporter";
 import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 import InventoryPicker from "../../Inventory/components/Picker/Picker";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportOptions } from "../../stores/definitions/Search";
+import type { ExportOptions } from "../../stores/definitions/Search";
 import { hasLocation } from "../../stores/models/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ListOfMaterials } from "../../stores/models/MaterialsModel";
+import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
 import getRootStore from "../../stores/stores/RootStore";
 import useStores from "../../stores/use-stores";
 import { showToastWhilstPending } from "../../util/alerts";

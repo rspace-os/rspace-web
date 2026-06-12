@@ -27,17 +27,17 @@ export default function Filter({
   // options, triggering this event.
   onOptionsFilterChange,
 }: {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   [key: string]: any;
 }) {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [valid, setValid] = React.useState<Record<string, any>>({});
 
   useEffect(resetValidity, []);
 
   function resetValidity() {
     setValid(
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       Object.keys(filter).reduce((acc: Record<string, any>, key: string) => {
         acc[key] = true;
         return acc;
@@ -48,7 +48,7 @@ export default function Filter({
   function handleClear() {
     setFilter(
       Object.entries(filter).reduce(
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         (acc: Record<string, any>, [key, config]: [string, any]) => ({
           // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
           ...acc,
@@ -62,7 +62,7 @@ export default function Filter({
     );
     setFilterMultiReq(
       Object.entries(filterMultiReq).reduce(
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         (acc: Record<string, any>, [key, config]: [string, any]) => ({
           // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
           ...acc,
@@ -76,7 +76,7 @@ export default function Filter({
     );
     setFilterSpecial(
       Object.entries(filterSpecial).reduce(
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         (acc: Record<string, any>, [key, config]: [string, any]) => ({
           // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
           ...acc,
@@ -92,7 +92,7 @@ export default function Filter({
     resetValidity();
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function handleFilterChange(event: any, key: any, config: any) {
     const number = event.target.value;
     let isValid = true;
@@ -114,7 +114,7 @@ export default function Filter({
     }
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function DateField({ name, config }: { name: any; config: any }) {
     return (
       <DateField2
@@ -170,13 +170,13 @@ export default function Filter({
     enumObj,
     ...rest
   }: {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     name?: any;
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     config?: any;
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     enumObj?: any;
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     [key: string]: any;
   }) {
     return (
@@ -234,8 +234,8 @@ export default function Filter({
           <DateField name="sacrifice_date_to" config={filterSpecial.sacrifice_date_to} />
         </Grid>
 
-        {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
-        {Object.entries(filter).map(([key, config]: [string, any]) => (
+        {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
+{Object.entries(filter).map(([key, config]: [string, any]) => (
           <Grid key={key} size={2}>
             <TextField
               label={config.label}
@@ -256,30 +256,28 @@ export default function Filter({
           <SelectField name="building_id" config={filterSpecial.building_id} />
         </Grid>
 
-        {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
-        {Object.entries(filterMultiReq).map(([key, config]: [string, any]) => (
+        {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
+{Object.entries(filterMultiReq).map(([key, config]: [string, any]) => (
           <Grid key={key} size={2}>
             <FormControl fullWidth>
               <Autocomplete
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 options={stableSort(Object.values(config.enumObj), (a: any, b: any) => a.label.localeCompare(b.label))}
                 renderInput={(props) => <TextField variant="outlined" {...props} label={config.label} />}
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 getOptionLabel={(option: any) => {
                   if (typeof option === "string") return option; // this is for when nothing is selected
                   return option.label;
                 }}
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 {...({ label: config.label, margin: "dense" } as any)}
                 loading={Object.values(config.enumObj).length === 0}
                 value={config.value}
                 onOpen={() => onOptionsFilterChange(key, "*")}
-                // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-                onInputChange={(event, input, reason) => {
+                onInputChange={(_event, input, reason) => {
                   if (reason === "input") onOptionsFilterChange(key, `*${input}*`);
                 }}
-                // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-                onChange={(event, value) => {
+                onChange={(_event, value) => {
                   setFilterMultiReq({
                     ...filterMultiReq,
                     [key]: {

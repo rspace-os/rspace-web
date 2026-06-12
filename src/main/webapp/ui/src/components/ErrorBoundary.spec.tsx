@@ -1,6 +1,5 @@
 import { expect, type MountResult, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import ErrorBoundary from "./ErrorBoundary";
 
 import { ErrorComponent } from "./ErrorBoundary.story";

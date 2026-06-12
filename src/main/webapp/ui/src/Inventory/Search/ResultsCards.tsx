@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import SearchContext from "../../stores/contexts/Search";
 import { DYNAMIC_PAGE_SIZE } from "../../stores/models/Fetcher/DynamicFetcher";
 import CardList from "../components/DetailedListing/CardList";

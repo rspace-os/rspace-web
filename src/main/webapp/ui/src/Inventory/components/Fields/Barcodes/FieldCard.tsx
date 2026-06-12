@@ -27,14 +27,10 @@ import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import StringField from "../../../../components/Inputs/StringField";
 import NoValue from "../../../../components/NoValue";
 import { mkAlert } from "../../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../../stores/definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Factory } from "../../../../stores/definitions/Factory";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { barcodeFormatAsString } from "../../../../util/barcode";
@@ -214,10 +210,7 @@ const CollapseContents = observer(
                                 : "Barcode print is not supported or you do not have permission."
                             }
                             icon={b.imageUrl ? <PrintIcon /> : <PrintDisabledIcon />}
-                            disabled={
-                              // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-                              !connectedItem || !connectedItem.canRead || !b.imageUrl
-                            }
+                            disabled={!connectedItem?.canRead || !b.imageUrl}
                             onClick={() => void handlePrintOne(b)}
                           />
                         </Grid>

@@ -41,10 +41,8 @@ class RootFolder extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   updateSelected = (add: any, remove: any) => {
-    let remaining = this.state.globalSelect.filter(
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      (f: any) => !remove.includes(f),
-    );
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    let remaining = this.state.globalSelect.filter((f: any) => !remove.includes(f));
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     remaining = remaining.concat(add.filter((f: any) => !remaining.includes(f)));
     this.setState({ globalSelect: remaining });
@@ -53,19 +51,18 @@ class RootFolder extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   updateSubfilesSelect = (file_id: any, selected: any) => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (selected && this.state.selectedFiles.indexOf(file_id) == -1) {
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    if (selected && this.state.selectedFiles.indexOf(file_id) === -1) {
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       this.setState((prevState: any) => ({
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         selectedFiles: produce(prevState.selectedFiles, (draft: any) => {
           draft.push(file_id);
         }),
       }));
     } else if (!selected) {
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       this.setState((prevState: any) => ({
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         selectedFiles: produce(prevState.selectedFiles, (draft: any) => {
           const idx = draft.indexOf(file_id);
           if (idx !== -1) {
@@ -108,12 +105,8 @@ class RootFolder extends React.Component<any, any> {
     return (
       <>
         {this.state.subfiles.length > 0 && (
-          <List component="nav">
-            {
-              // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-              this.state.subfiles.map((subfile: any) => this.renderFile(subfile))
-            }
-          </List>
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+<List component="nav">{this.state.subfiles.map((subfile: any) => this.renderFile(subfile))}</List>
         )}
       </>
     );

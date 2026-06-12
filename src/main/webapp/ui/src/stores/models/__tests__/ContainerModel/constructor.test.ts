@@ -1,10 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { type InventoryRecord } from "../../../definitions/InventoryRecord";
+import type { Factory } from "../../../definitions/Factory";
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 
@@ -50,7 +46,7 @@ describe("constructor", () => {
     test("should be used in the instantiation of all child records.", () => {
       // Define a mock factory with circular references
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      const mockFactoryRef: any = {};
+            const mockFactoryRef: any = {};
       // Create a mock newRecord implementation
       const mockNewRecord = vi
         .fn()

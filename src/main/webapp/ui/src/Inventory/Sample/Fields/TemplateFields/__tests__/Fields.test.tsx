@@ -2,8 +2,6 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import materialTheme from "../../../../../theme";
 import Fields from "../Fields";

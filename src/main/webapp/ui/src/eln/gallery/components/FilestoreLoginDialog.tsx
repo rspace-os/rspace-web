@@ -65,8 +65,7 @@ const FilestoreLoginDialog = ({
               const api = axios.create({
                 baseURL: "/api/v1/gallery",
                 headers: {
-                  // biome-ignore lint/style/useTemplate: initial biome migration
-                  Authorization: "Bearer " + (await getToken()),
+                  Authorization: `Bearer ${await getToken()}`,
                 },
               });
               await api.post<unknown>(`filesystems/${filesystemId}/login`, {

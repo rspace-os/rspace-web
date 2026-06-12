@@ -9,8 +9,7 @@ import { useContext } from "react";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ResultType } from "../../../stores/definitions/Search";
+import type { ResultType } from "../../../stores/definitions/Search";
 import { match } from "../../../util/Util";
 
 type TypeFilterArgs = {

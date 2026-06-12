@@ -18,8 +18,7 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type DataCiteServerUrl, type IntegrationState, type SystemSettings } from "../../../stores/stores/AuthStore";
+import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
 

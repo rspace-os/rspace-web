@@ -1,5 +1,3 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { useStoichiometryTableController } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import StoichiometryTableLoadingDialog from "@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog";
 import StaticStoichiometryTable from "./table/StaticStoichiometryTable";

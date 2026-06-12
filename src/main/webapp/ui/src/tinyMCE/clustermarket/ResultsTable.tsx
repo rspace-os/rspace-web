@@ -7,11 +7,9 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import EnhancedTableHead, { Cell } from "../../components/EnhancedTableHead";
+import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
 import { getSorting, stableSort } from "../../util/table";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { BookingAndEquipmentDetails } from "./ClustermarketData";
+import type { BookingAndEquipmentDetails } from "./ClustermarketData";
 import { BookingType, Order } from "./Enums";
 
 type HeaderCellId =
@@ -47,21 +45,13 @@ export default function ResultsTable({
   setSelectedBookingIds: (newSelection: Array<BookingAndEquipmentDetails["bookingID"]>) => void;
   bookingType: string;
 }) {
-  function onRowClick(
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: unknown,
-    item_id: BookingAndEquipmentDetails["bookingID"],
-  ) {
+  function onRowClick(_event: unknown, item_id: BookingAndEquipmentDetails["bookingID"]) {
     const newSelected = selectedBookingIds.includes(item_id)
       ? selectedBookingIds.filter((id) => id !== item_id)
       : [...selectedBookingIds, item_id];
     setSelectedBookingIds(newSelected);
   }
-  function handleRequestSort(
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.MouseEvent<HTMLSpanElement>,
-    property: string,
-  ) {
+  function handleRequestSort(_event: React.MouseEvent<HTMLSpanElement>, property: string) {
     const isDesc = orderBy === property && order === Order.desc;
     setOrder(isDesc ? Order.asc : Order.desc);
     setOrderBy(property);

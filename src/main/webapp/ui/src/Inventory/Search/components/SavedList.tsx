@@ -12,8 +12,7 @@ import { useContext, useState } from "react";
 import CustomTooltip from "../../../components/CustomTooltip";
 import StyledMenu from "../../../components/StyledMenu";
 import NameDialog from "../../../Inventory/Search/components/NameDialog";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SavedItem } from "../../../Inventory/Search/components/SearchParameterControls";
+import type { SavedItem } from "../../../Inventory/Search/components/SearchParameterControls";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import BasketModel from "../../../stores/models/Basket";
 import useStores from "../../../stores/use-stores";

@@ -139,8 +139,7 @@ const quantityUnitMagnitudes = {
 export function toCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
   const baseId = atomicUnitOfSameCategory(id);
   const gap = quantityUnitMagnitudes[id] - quantityUnitMagnitudes[baseId];
-  // biome-ignore lint/style/useExponentiationOperator: initial biome migration
-  return value * Math.pow(1000, gap);
+  return value * 1000 ** gap;
 }
 
 /**
@@ -153,8 +152,7 @@ export function toCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
 export function fromCommonUnit(value: QuantityValue, id: QuantityUnitId): number {
   const baseId = atomicUnitOfSameCategory(id);
   const gap = quantityUnitMagnitudes[id] - quantityUnitMagnitudes[baseId];
-  // biome-ignore lint/style/useExponentiationOperator: initial biome migration
-  return value / Math.pow(1000, gap);
+  return value / 1000 ** gap;
 }
 
 /**
@@ -180,23 +178,23 @@ export function truncateIsoTimestamp(isoTimestamp: string | Date, precision: Dat
       output = `.${date.getMilliseconds().toString().padStart(3, "0")}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-    case "second":
+        case "second":
       output = `:${date.getSeconds().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-    case "minute":
+        case "minute":
       output = `:${date.getMinutes().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-    case "hour":
+        case "hour":
       output = `T${date.getHours().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-    case "date":
+        case "date":
       output = `-${date.getDate().toString().padStart(2, "0")}${output}`;
     // falls through
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: initial biome migration
-    case "month":
+        case "month":
       output = `-${(date.getMonth() + 1).toString().padStart(2, "0")}${output}`;
     // falls through
     case "year":

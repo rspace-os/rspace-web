@@ -11,20 +11,18 @@ import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
   ColumnsPanelTrigger,
   DataGrid,
   Toolbar as DataGridToolbar,
   type GridRenderCellParams,
-  GridRowSelectionModel,
+  type GridRowSelectionModel,
   GridToolbarExportContainer,
   useGridApiContext,
 } from "@mui/x-data-grid";
 import React from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GlobalId } from "@/stores/definitions/BaseRecord";
+import type { GlobalId } from "@/stores/definitions/BaseRecord";
 import createAccentedTheme from "../../accentedTheme";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
@@ -267,8 +265,7 @@ function CompareDialog(): React.ReactNode {
                 `/api/v1/documents/${id}`,
                 {
                   headers: {
-                    // biome-ignore lint/style/useTemplate: initial biome migration
-                    Authorization: "Bearer " + token,
+                    Authorization: `Bearer ${token}`,
                   },
                 },
               );

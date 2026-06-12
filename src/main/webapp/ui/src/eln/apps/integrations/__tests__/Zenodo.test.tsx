@@ -1,14 +1,12 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useState } from "react";
+import { useState } from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { when } from "vitest-when";
 import { Optional } from "../../../../util/optional";
 import Zenodo from "../Zenodo";
 import "@/__tests__/__mocks__/matchMedia";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 
 const update = vi.fn<(state: IntegrationStates["ZENODO"]) => IntegrationStates["ZENODO"]>();
 const ZenodoWrapper = ({

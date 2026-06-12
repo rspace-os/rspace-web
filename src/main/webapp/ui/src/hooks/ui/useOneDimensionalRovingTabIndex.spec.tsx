@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type emptyObject } from "../../util/types";
+import type { emptyObject } from "../../util/types";
 import { HorizontalExample, SimpleExample } from "./useOneDimensionalRovingTabIndex.story";
 
 const feature = test.extend<{

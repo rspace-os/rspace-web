@@ -4,8 +4,8 @@ import Button, { buttonClasses } from "@mui/material/Button";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Tooltip from "@mui/material/Tooltip";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 
 type ContextMenuButtonArgs = {
   icon?: React.ReactElement;

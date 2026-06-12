@@ -3,14 +3,14 @@ import TextField from "@mui/material/TextField";
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function UserSelect(props: any) {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [multi, setMulti] = React.useState<any[]>([]);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [suggestions, setSuggestions] = React.useState<any[]>([]);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function handleChangeMulti(value: any) {
     setMulti(value);
     props.updateSelected(value, "username");
@@ -23,14 +23,13 @@ export default function UserSelect(props: any) {
       setSuggestions(result.data.data);
       if (props.selected) {
         const selected = props.selected.split("<<>>");
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         const local_selected: any[] = [];
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-        selected.map((s: any) => {
-          // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-          const idx = result.data.data.findIndex((r: any) => r.username == s);
+                selected.map((s: any) => {
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          const idx = result.data.data.findIndex((r: any) => r.username === s);
           local_selected.push(result.data.data[idx]);
         });
         handleChangeMulti(local_selected);
@@ -51,8 +50,8 @@ export default function UserSelect(props: any) {
       }
       onChange={(_, selection) => handleChangeMulti(selection)}
       renderInput={(props) => (
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-        <TextField {...props} variant="standard" placeholder={(props as any).error ?? "Select owner(s)"} />
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+<TextField {...props} variant="standard" placeholder={(props as any).error ?? "Select owner(s)"} />
       )}
       slotProps={{
         popupIndicator: {

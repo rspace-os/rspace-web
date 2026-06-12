@@ -1,7 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
 import ScopeField, { type Scope } from "../ScopeField";

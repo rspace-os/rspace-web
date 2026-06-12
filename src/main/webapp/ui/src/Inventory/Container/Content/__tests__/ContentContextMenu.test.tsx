@@ -1,14 +1,11 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render, screen } from "@testing-library/react";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import * as React from "react";
 import { describe, expect, test, vi } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../../../stores/models/ContainerModel";
+import type ContainerModel from "../../../../stores/models/ContainerModel";
 import LocationModel from "../../../../stores/models/LocationModel";
 import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";

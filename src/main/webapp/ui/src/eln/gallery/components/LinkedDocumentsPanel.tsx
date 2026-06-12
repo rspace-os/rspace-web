@@ -5,8 +5,7 @@ import React from "react";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../../util/table";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "../useGalleryListing";
+import type { GalleryFile } from "../useGalleryListing";
 import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 
 /**

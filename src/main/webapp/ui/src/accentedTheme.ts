@@ -299,8 +299,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 paddingRight: baseTheme.spacing(0.5),
                 textDecoration: "unset !important",
                 color: `${prefersMoreContrast ? "rgb(0,0,0)" : contrastTextColor} !important`,
-                // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                [`&::after`]: {
+                "&::after": {
                   content: "''",
                   width: "100%",
                   height: "2px",
@@ -313,18 +312,14 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                   opacity: "0",
                   transition: "all .1s ease-in-out",
                 },
-                // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                [`&:hover`]: {
-                  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                  [`&::after`]: {
+                "&:hover": {
+                  "&::after": {
                     opacity: "0.75",
                     transform: "translateY(0px)",
                   },
                 },
-                // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                [`&[aria-current="page"]`]: {
-                  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                  [`&::after`]: {
+                '&[aria-current="page"]': {
+                  "&::after": {
                     opacity: "0.9",
                     transform: "translateY(0px)",
                     left: baseTheme.spacing(-1),

@@ -178,10 +178,7 @@ function TagDialog(): React.ReactNode {
   return (
     <Dialog open={selectedIds !== null} onClose={() => setSelectedIds(null)}>
       <DialogTitle>
-        {selectedIds === null ? (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>{/* never shown due to open prop */}</>
-        ) : (
+        {selectedIds !== null && (
           <>
             Tagging {selectedIds.length} item{selectedIds.length > 1 && "s"}
           </>
@@ -205,8 +202,7 @@ function TagDialog(): React.ReactNode {
                     ...new RsSet(addedTags).subtractWithEq(new RsSet(deletedTags), areSameTag),
                   ]
             }
-            // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-            onDelete={(index, tag) => {
+            onDelete={(_index, tag) => {
               setDeletedTags([...deletedTags, tag]);
               setAddedTags(addedTags.filter((aTag) => aTag !== tag));
             }}

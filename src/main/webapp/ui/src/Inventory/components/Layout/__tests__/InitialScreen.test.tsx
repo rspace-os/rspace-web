@@ -1,7 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";

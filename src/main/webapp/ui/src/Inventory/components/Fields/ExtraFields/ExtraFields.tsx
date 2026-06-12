@@ -7,8 +7,7 @@ import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip"
 import NumberField from "../../../../components/Inputs/NumberField";
 import TextField from "../../../../components/Inputs/TextField";
 import NoValue from "../../../../components/NoValue";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Result from "../../../../stores/models/InventoryBaseRecord";
+import type Result from "../../../../stores/models/InventoryBaseRecord";
 import FormField from "../../../components/Inputs/FormField";
 import NewField from "./NewField";
 import UpdateField from "./UpdateField";
@@ -25,106 +24,101 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
       <div key={ef.name} aria-live="polite">
         {ef.editing ? (
           <UpdateField extraField={ef} index={i} record={result} />
-        ) : (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>
-            {ef.type === "Number" ? (
-              <FormField
-                label={ef.name}
-                disabled={!editable}
-                value={ef.content}
-                renderInput={(props) => (
-                  <>
-                    {extraFieldsDisabled ? null : (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          right: 0,
-                        }}
-                      >
-                        <IconButtonWithTooltip
-                          title="Field settings"
-                          size="small"
-                          onClick={() => ef.setEditing(true)}
-                          icon={<SettingsIcon fontSize="small" />}
-                        />
-                        <IconButtonWithTooltip
-                          title="Delete field"
-                          size="small"
-                          onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
-                          icon={<CloseIcon fontSize="small" />}
-                        />
-                      </Box>
-                    )}
-                    <NumberField
-                      {...props}
-                      slotProps={{
-                        htmlInput: {
-                          step: "any",
-                        },
-                      }}
-                      onChange={(e) => {
-                        console.debug(e);
-                        const { target } = e;
-                        ef.setInvalidInput(!target.checkValidity());
-                        ef.setAttributesDirty({ content: target.value });
-                        onErrorStateChange(`extra_${ef.name}`, ef.invalidInput);
-                      }}
+        ) : ef.type === "Number" ? (
+          <FormField
+            label={ef.name}
+            disabled={!editable}
+            value={ef.content}
+            renderInput={(props) => (
+              <>
+                {extraFieldsDisabled ? null : (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                    }}
+                  >
+                    <IconButtonWithTooltip
+                      title="Field settings"
+                      size="small"
+                      onClick={() => ef.setEditing(true)}
+                      icon={<SettingsIcon fontSize="small" />}
                     />
-                  </>
+                    <IconButtonWithTooltip
+                      title="Delete field"
+                      size="small"
+                      onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
+                      icon={<CloseIcon fontSize="small" />}
+                    />
+                  </Box>
                 )}
-                error={ef.invalidInput}
-                helperText="Must be a valid number."
-              />
-            ) : (
-              <FormField
-                label={ef.name}
-                disabled={!editable}
-                value={ef.content}
-                // ID is not used because TinyMCE does not expose an HTMLInputElement to attach it to
-                doNotAttachIdToLabel
-                renderInput={({ error: _error, id: _id, ...props }) => (
-                  <>
-                    {extraFieldsDisabled ? null : (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          right: 0,
-                        }}
-                      >
-                        <IconButtonWithTooltip
-                          title="Field settings"
-                          size="small"
-                          onClick={() => ef.setEditing(true)}
-                          icon={<SettingsIcon fontSize="small" />}
-                        />
-                        <IconButtonWithTooltip
-                          title="Delete field"
-                          size="small"
-                          onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
-                          icon={<CloseIcon fontSize="small" />}
-                        />
-                      </Box>
-                    )}
-                    <Box sx={{ mt: 1 }}>
-                      <TextField
-                        {...props}
-                        onChange={({ target }) => {
-                          ef.setAttributesDirty({ content: target.value });
-                          onErrorStateChange(`extra_${ef.name}`, ef.content.length > 250 || ef.invalidInput);
-                        }}
-                      />
-                    </Box>
-                  </>
-                )}
-                maxLength={250}
-                error={ef.content.length > 250 || ef.invalidInput}
-                helperText="Must be no more than 250 characters."
-              />
+                <NumberField
+                  {...props}
+                  slotProps={{
+                    htmlInput: {
+                      step: "any",
+                    },
+                  }}
+                  onChange={(e) => {
+                    console.debug(e);
+                    const { target } = e;
+                    ef.setInvalidInput(!target.checkValidity());
+                    ef.setAttributesDirty({ content: target.value });
+                    onErrorStateChange(`extra_${ef.name}`, ef.invalidInput);
+                  }}
+                />
+              </>
             )}
-          </>
+            error={ef.invalidInput}
+            helperText="Must be a valid number."
+          />
+        ) : (
+          <FormField
+            label={ef.name}
+            disabled={!editable}
+            value={ef.content}
+            // ID is not used because TinyMCE does not expose an HTMLInputElement to attach it to
+            doNotAttachIdToLabel
+            renderInput={({ error: _error, id: _id, ...props }) => (
+              <>
+                {extraFieldsDisabled ? null : (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                    }}
+                  >
+                    <IconButtonWithTooltip
+                      title="Field settings"
+                      size="small"
+                      onClick={() => ef.setEditing(true)}
+                      icon={<SettingsIcon fontSize="small" />}
+                    />
+                    <IconButtonWithTooltip
+                      title="Delete field"
+                      size="small"
+                      onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
+                      icon={<CloseIcon fontSize="small" />}
+                    />
+                  </Box>
+                )}
+                <Box sx={{ mt: 1 }}>
+                  <TextField
+                    {...props}
+                    onChange={({ target }) => {
+                      ef.setAttributesDirty({ content: target.value });
+                      onErrorStateChange(`extra_${ef.name}`, ef.content.length > 250 || ef.invalidInput);
+                    }}
+                  />
+                </Box>
+              </>
+            )}
+            maxLength={250}
+            error={ef.content.length > 250 || ef.invalidInput}
+            helperText="Must be no more than 250 characters."
+          />
         )}
       </div>
     ));

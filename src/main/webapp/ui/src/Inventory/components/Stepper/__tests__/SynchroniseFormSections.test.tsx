@@ -1,11 +1,9 @@
 import { describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/useUiPreference";
 import { render } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useContext, useEffect } from "react";
+import { useContext, useEffect } from "react";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordType } from "../../../../stores/definitions/InventoryRecord";
+import type { RecordType } from "../../../../stores/definitions/InventoryRecord";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 
 function MockFormSectionInOuterContext() {

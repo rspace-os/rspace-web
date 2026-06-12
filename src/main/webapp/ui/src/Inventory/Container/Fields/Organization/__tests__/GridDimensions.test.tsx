@@ -2,15 +2,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../../../../stores/models/ContainerModel";
+import type ContainerModel from "../../../../../stores/models/ContainerModel";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type StoreContainer } from "../../../../../stores/stores/RootStore";
+import type { StoreContainer } from "../../../../../stores/stores/RootStore";
 import { storesContext } from "../../../../../stores/stores-context";
 import materialTheme from "../../../../../theme";
 import * as ArrayUtils from "../../../../../util/ArrayUtils";
@@ -272,14 +268,8 @@ describe("GridDimensions", () => {
 
       expect(rows).not.toBeNull();
       expect(columns).not.toBeNull();
-      expect(option).toMatch(
-        new RegExp(
-          `${
-            // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-            rows! * columns!
-          }`,
-        ),
-      );
+      expect(option).toMatch(new RegExp(`${// biome-ignore lint/style/noNonNullAssertion: initial biome migration
+rows! * columns!}`));
     }
   });
   test("The first option, the most popular, should be 96-well plate.", () => {
@@ -347,12 +337,10 @@ describe("GridDimensions", () => {
         const option = menuOptions[unboundedIndex % menuOptions.length];
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         let gridLayout: any;
-        vi.spyOn(gridContainer, "setAttributesDirty").mockImplementation(
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          (args: any) => {
-            gridLayout = args.gridLayout;
-          },
-        );
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        vi.spyOn(gridContainer, "setAttributesDirty").mockImplementation((args: any) => {
+          gridLayout = args.gridLayout;
+        });
         await user.click(
           within(screen.getByRole("listbox")).getByRole("option", {
             name: option,

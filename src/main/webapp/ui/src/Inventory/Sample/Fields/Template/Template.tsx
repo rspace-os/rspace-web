@@ -51,43 +51,39 @@ function Template(): React.ReactNode {
   if (!(template === null || template instanceof TemplateModel)) throw new Error("Template is not a TemplateModel");
   if (!activeResult.id)
     return (
-      // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-      <>
-        <InputWrapper
-          label="Sample Template"
-          data-test-id="ChooseTemplate"
-          explanation={
-            activeResult.isFieldEditable("template") ? (
-              <>
-                If you select a sample template below, initial metadata and custom fields will be automatically
-                generated.
-                <a href={docLinks.createTemplate} target="_blank" rel="noreferrer">
-                  (Learn more about sample templates)
-                </a>
-              </>
-            ) : null
-          }
-        >
-          <Stack sx={{ flexWrap: "nowrap" }}>
-            <FormControlLabel
-              value="no-template"
-              control={<Radio checked={template === null} />}
-              label="No template"
-              onClick={() => {
-                setTemplate(null);
-              }}
-              sx={{ mb: 2, mt: 1 }}
+      <InputWrapper
+        label="Sample Template"
+        data-test-id="ChooseTemplate"
+        explanation={
+          activeResult.isFieldEditable("template") ? (
+            <>
+              If you select a sample template below, initial metadata and custom fields will be automatically generated.
+              <a href={docLinks.createTemplate} target="_blank" rel="noreferrer">
+                (Learn more about sample templates)
+              </a>
+            </>
+          ) : null
+        }
+      >
+        <Stack sx={{ flexWrap: "nowrap" }}>
+          <FormControlLabel
+            value="no-template"
+            control={<Radio checked={template === null} />}
+            label="No template"
+            onClick={() => {
+              setTemplate(null);
+            }}
+            sx={{ mb: 2, mt: 1 }}
+          />
+          {activeResult.isFieldEditable("template") && (
+            <TemplatePicker
+              disabled={!activeResult.isFieldEditable("template")}
+              setTemplate={setTemplate}
+              sample={activeResult}
             />
-            {activeResult.isFieldEditable("template") && (
-              <TemplatePicker
-                disabled={!activeResult.isFieldEditable("template")}
-                setTemplate={setTemplate}
-                sample={activeResult}
-              />
-            )}
-          </Stack>
-        </InputWrapper>
-      </>
+          )}
+        </Stack>
+      </InputWrapper>
     );
   return (
     <>
@@ -107,43 +103,40 @@ function Template(): React.ReactNode {
           ) : null
         }
       >
-        {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-        <>
-          <Grid container direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
-            <Grid sx={{ flexGrow: 1 }}>
-              <SummaryInfo
-                template={template}
-                loading={
-                  activeResult.templateId !== null &&
-                  typeof activeResult.templateId !== "undefined" &&
-                  !activeResult.template
-                }
-                paddingless={!activeResult.isFieldEditable("template")}
-              />
-            </Grid>
-            {activeResult.isFieldEditable("template") && (
-              <Grid>
-                <IconButton
-                  onClick={() => {
-                    setOpen(!open);
-                  }}
-                  size="small"
-                >
-                  <ExpandCollapseIcon open={open} />
-                </IconButton>
-              </Grid>
-            )}
-          </Grid>
-          {template && (
-            <VersionInfo
+        <Grid container direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+          <Grid sx={{ flexGrow: 1 }}>
+            <SummaryInfo
               template={template}
-              onUpdate={() => {
-                void activeResult.updateToLatestTemplate();
-              }}
-              disabled={activeResult.deleted || activeResult.editing}
+              loading={
+                activeResult.templateId !== null &&
+                typeof activeResult.templateId !== "undefined" &&
+                !activeResult.template
+              }
+              paddingless={!activeResult.isFieldEditable("template")}
             />
+          </Grid>
+          {activeResult.isFieldEditable("template") && (
+            <Grid>
+              <IconButton
+                onClick={() => {
+                  setOpen(!open);
+                }}
+                size="small"
+              >
+                <ExpandCollapseIcon open={open} />
+              </IconButton>
+            </Grid>
           )}
-        </>
+        </Grid>
+        {template && (
+          <VersionInfo
+            template={template}
+            onUpdate={() => {
+              void activeResult.updateToLatestTemplate();
+            }}
+            disabled={activeResult.deleted || activeResult.editing}
+          />
+        )}
       </InputWrapper>
       {activeResult.isFieldEditable("template") && (
         <>

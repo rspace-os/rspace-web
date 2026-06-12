@@ -1,7 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "../../../stores/definitions/Container";
+import type React from "react";
+import type { Container } from "../../../stores/definitions/Container";
 import CountChip from "./CountChip";
 
 type ContentsChipsArgs = {

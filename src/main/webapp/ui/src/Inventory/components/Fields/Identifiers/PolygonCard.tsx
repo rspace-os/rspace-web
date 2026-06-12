@@ -14,8 +14,7 @@ import AddButton from "../../../../components/AddButton";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../../components/RemoveButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GeoLocation, type PolygonPoint } from "../../../../stores/definitions/GeoLocation";
+import type { GeoLocation, PolygonPoint } from "../../../../stores/definitions/GeoLocation";
 import AmberNumberField from "./AmberNumberField";
 import {
   COORD_RANGE_X,

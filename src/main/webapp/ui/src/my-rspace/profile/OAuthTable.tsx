@@ -6,8 +6,7 @@ import TablePagination from "@mui/material/TablePagination";
 import { type ChangeEvent, useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
 import OAuthTableRow from "@/my-rspace/profile/OAuthTableRow";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { OAuthApp } from "@/my-rspace/profile/types";
+import type { OAuthApp } from "@/my-rspace/profile/types";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getSorting, paginationOptions, stableSort } from "@/util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
@@ -89,8 +88,7 @@ export default function OAuthTable() {
   };
 
   const removeApp = (clientId: string) => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    setApps((oldApps) => oldApps.filter((oa) => oa.clientId != clientId));
+    setApps((oldApps) => oldApps.filter((oa) => oa.clientId !== clientId));
   };
 
   const handleRequestSort = (_: unknown, property: string) => {

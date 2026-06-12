@@ -10,8 +10,7 @@ import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ZenodoArgs = {
   integrationState: IntegrationStates["ZENODO"];

@@ -12,12 +12,9 @@ import StateMachine from "../../util/stateMachine";
 import { filterObject, match, toTitleCase } from "../../util/Util";
 import { pick } from "../../util/unsafeUtils";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GlobalId } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FieldModelAttrs as TemplateField } from "../models/FieldModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ImportRecordType } from "../stores/ImportStore";
+import type { GlobalId } from "../definitions/BaseRecord";
+import type { FieldModelAttrs as TemplateField } from "../models/FieldModel";
+import type { ImportRecordType } from "../stores/ImportStore";
 import getRootStore from "../stores/RootStore";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import {
@@ -27,8 +24,8 @@ import {
   FieldTypes,
   fieldTypeToApiString,
 } from "./FieldTypes";
-// biome-ignore lint/style/useImportType: initial biome migration
-import TemplateModel, { TemplateAttrs } from "./TemplateModel";
+import type TemplateModel from "./TemplateModel";
+import type { TemplateAttrs } from "./TemplateModel";
 
 export const Fields: { [fieldName: string]: symbol } = {
   name: Symbol.for("NAME"),
@@ -682,12 +679,8 @@ export default class Import {
               if (newFieldMap.isCompatibleWithField(fieldsByRecordType[nameToMatch(name as string)])) {
                 newFieldMap.setField(fieldsByRecordType[nameToMatch(name as string)]);
               }
-              if (
-                // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-                data.fieldMappings !== undefined &&
-                // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-                data.fieldMappings.hasOwnProperty(originalColumnName)
-              ) {
+              // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
+              if (data.fieldMappings?.hasOwnProperty(originalColumnName)) {
                 newFieldMap.field = Fields[data.fieldMappings[originalColumnName]];
                 newFieldMap.selected = true;
               }
@@ -723,12 +716,8 @@ export default class Import {
                 newFieldMap.setField(Fields.none);
                 newFieldMap.selected = false;
               }
-              if (
-                // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-                data.fieldMappings !== undefined &&
-                // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-                data.fieldMappings.hasOwnProperty(columnName)
-              ) {
+              // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
+              if (data.fieldMappings?.hasOwnProperty(columnName)) {
                 newFieldMap.field = Fields[data.fieldMappings[columnName]];
                 newFieldMap.selected = true;
               }

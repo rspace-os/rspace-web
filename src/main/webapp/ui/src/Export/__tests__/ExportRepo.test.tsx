@@ -1,7 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import fc, { type Arbitrary } from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { mkValidator } from "../../util/Validator";
 import ExportRepo from "../ExportRepo";
@@ -11,8 +9,7 @@ import repoList from "./repoList.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
 import { DEFAULT_STATE } from "@/Export/constants";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../repositories/Tags";
+import type { Tag } from "../repositories/Tags";
 
 type DMP = {
   dmpUserInternalId: number;

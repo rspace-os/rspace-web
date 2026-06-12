@@ -1,6 +1,5 @@
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ThemeOptions } from "@mui/material";
+import type { ThemeOptions } from "@mui/material";
 import { alpha, createTheme, darken, lighten, type Theme } from "@mui/material/styles";
 import "@mui/x-data-grid/themeAugmentation";
 import { gridClasses } from "@mui/x-data-grid";

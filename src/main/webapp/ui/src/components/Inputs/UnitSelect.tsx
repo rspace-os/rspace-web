@@ -1,8 +1,7 @@
 import FormControl from "@mui/material/FormControl";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Select, { SelectChangeEvent, selectClasses } from "@mui/material/Select";
+import Select, { type SelectChangeEvent, selectClasses } from "@mui/material/Select";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import useStores from "../../stores/use-stores";

@@ -10,11 +10,9 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import GlobalId from "../../components/GlobalId";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../stores/definitions/Record";
+import type { Record } from "../../stores/definitions/Record";
 
 type SimpleRecordsTableArgs = {
   open: boolean;

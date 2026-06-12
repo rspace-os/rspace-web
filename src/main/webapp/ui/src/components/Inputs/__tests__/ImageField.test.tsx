@@ -2,8 +2,7 @@ import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { __setIsMobile } from "react-device-detect";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
@@ -35,7 +34,7 @@ vi.mock("@mui/material/Button", () => ({
   default: vi.fn(({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => {
     // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
     // biome-ignore lint/a11y/useKeyWithClickEvents: initial biome migration
-    return <div onClick={onClick}>{children}</div>;
+        return <div onClick={onClick}>{children}</div>;
   }),
 }));
 let isMobileValue = false;

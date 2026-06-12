@@ -1,9 +1,7 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import DisableAutoshareDialog from "./DisableAutoshareDialog";
 import EnableAutoshareDialog from "./EnableAutoshareDialog";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function AutoshareStatus(props: any) {
   return (
     <>

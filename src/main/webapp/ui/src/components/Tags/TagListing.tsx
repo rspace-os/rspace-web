@@ -7,8 +7,7 @@ import Grid from "@mui/material/Grid";
 import Popover from "@mui/material/Popover";
 import type React from "react";
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../stores/definitions/Tag";
+import type { Tag } from "../../stores/definitions/Tag";
 import DescriptionList from "../DescriptionList";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 

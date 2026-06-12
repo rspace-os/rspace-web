@@ -13,8 +13,7 @@ import Tabs from "@mui/material/Tabs";
 import { observer } from "mobx-react-lite";
 import React, { createRef, useEffect, useRef } from "react";
 import TitledBox from "../../../components/TitledBox";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../stores/definitions/Container";
+import type { Location } from "../../../stores/definitions/Container";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";

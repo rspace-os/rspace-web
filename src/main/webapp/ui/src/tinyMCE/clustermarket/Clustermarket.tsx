@@ -12,8 +12,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UseState } from "../../util/types";
+import type { UseState } from "../../util/types";
 import { getAllBookingDetails, getAllEquipmentDetails, getBookings } from "./ClustermarketClient";
 import {
   type BOOKING_TYPE,

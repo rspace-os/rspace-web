@@ -1,14 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { Optional } from "../../../../util/optional";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import Dataverse from "../Dataverse";
 
 import "@/__tests__/__mocks__/matchMedia";
@@ -405,8 +402,7 @@ describe("Dataverse", () => {
     test("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios
-        // biome-ignore lint/complexity/useRegexLiterals: initial biome migration
-        .onGet(new RegExp("repository/ajax/testRepository/.*"))
+        .onGet(/repository\/ajax\/testRepository\/.*/)
 
         .reply(200, "Success! Test connection OK!");
       render(

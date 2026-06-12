@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
 import MaterialsTable from "./MaterialsTable";
 

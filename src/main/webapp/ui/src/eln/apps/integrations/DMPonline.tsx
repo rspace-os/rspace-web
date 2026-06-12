@@ -7,8 +7,7 @@ import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useDmpOnlineEndpoint } from "../useDmpOnlineEndpoint";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DMPOnlineArgs = {
   integrationState: IntegrationStates["DMPONLINE"];
@@ -81,13 +80,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/dmponline/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/dmponline/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

@@ -3,8 +3,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import useStores from "../../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Barcode, BarcodeFormat } from "../../../util/barcode";
+import type { Barcode, BarcodeFormat } from "../../../util/barcode";
 import BarcodeScannerSkeleton, { type BarcodeInput } from "./BarcodeScannerSkeleton";
 
 // scan once per second

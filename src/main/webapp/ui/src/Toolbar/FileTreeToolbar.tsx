@@ -1,8 +1,6 @@
 import Box from "@mui/material/Box";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { createRoot } from "react-dom/client";
 import BaseToolbar from "../components/BaseToolbar";
 import TreeSort from "../components/TreeSort";
@@ -69,6 +67,6 @@ export default function FileTreeToolbar() {
 }
 
 const domContainer = document.getElementById("fileTreeToolbar");
-// biome-ignore lint/style/noNonNullAssertion: pragmatic jsx->tsx conversion
+// biome-ignore lint/style/noNonNullAssertion: initial biome migration
 const root = createRoot(domContainer!);
 root.render(<FileTreeToolbar />);

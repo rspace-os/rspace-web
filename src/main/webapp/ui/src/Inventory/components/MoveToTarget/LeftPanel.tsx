@@ -1,7 +1,5 @@
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import ContainerModel from "../../../stores/models/ContainerModel";

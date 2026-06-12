@@ -6,8 +6,7 @@ import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useClustermarketEndpoint } from "../useClustermarket";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ClustermarketArgs = {
   integrationState: IntegrationStates["CLUSTERMARKET"];
@@ -104,13 +103,7 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/clustermarket/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/clustermarket/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

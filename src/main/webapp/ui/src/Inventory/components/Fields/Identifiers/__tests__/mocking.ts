@@ -1,9 +1,6 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alert } from "../../../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier, type IdentifierAttrs } from "../../../../../stores/definitions/Identifier";
+import type React from "react";
+import type { Alert } from "../../../../../stores/contexts/Alert";
+import type { Identifier, IdentifierAttrs } from "../../../../../stores/definitions/Identifier";
 
 type TestRecordType = "sample" | "container"; // render for subSample like for sample
 

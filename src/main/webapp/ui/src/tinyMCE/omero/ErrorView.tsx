@@ -1,7 +1,5 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { ErrorReason, type ErrorReasonType } from "./Enums";
 
 type ErrorViewProps = {

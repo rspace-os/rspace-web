@@ -1,7 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import materialTheme from "../../../../../theme";

@@ -1,24 +1,15 @@
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Order } from "../../util/types";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "./BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Basket } from "./Basket";
+import type RsSet from "../../util/set";
+import type { Order } from "../../util/types";
+import type { GlobalId, Id } from "./BaseRecord";
+import type { Basket } from "./Basket";
 import type { Action, InventoryRecord } from "./InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type Username } from "./Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Sample } from "./Sample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SubSample } from "./SubSample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowLabel } from "./Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type TreeView } from "./TreeView";
+import type { Person, Username } from "./Person";
+import type { Sample } from "./Sample";
+import type { SubSample } from "./SubSample";
+import type { AdjustableTableRowLabel } from "./Tables";
+import type { TreeView } from "./TreeView";
 
 export type SearchView = "LIST" | "TREE" | "CARD" | "IMAGE" | "GRID";
 export const TYPE_LABEL = {

@@ -1,6 +1,5 @@
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import docLinks from "../../assets/DocLinks";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
@@ -11,24 +10,13 @@ import { getErrorMessage } from "../../util/error";
 import { sleep } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
+import type { Factory } from "../definitions/Factory";
 import type { Field } from "../definitions/Field";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type CreateOption,
-  type InventoryRecord,
-  type LockStatus,
-  type RecordType,
-} from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordDetails } from "../definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs } from "../definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Template } from "../definitions/Template";
+import type { CreateOption, InventoryRecord, LockStatus, RecordType } from "../definitions/InventoryRecord";
+import type { RecordDetails } from "../definitions/Record";
+import type { CoreFetcherArgs } from "../definitions/Search";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Template } from "../definitions/Template";
 import getRootStore from "../stores/RootStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {

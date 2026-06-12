@@ -14,16 +14,15 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import GlobalId from "../../components/GlobalId";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
 import UserDetails from "../../components/UserDetails";
 import NameWithBadge from "../../Inventory/components/NameWithBadge";
 import RecordLocation from "../../Inventory/components/RecordLocation";
 import { hasQuantity } from "../../stores/models/HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
+import type { ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import UsedQuantityField from "./UsedQuantityField";
 
@@ -123,19 +122,13 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
   const multipleSelectOptions = [
     {
       name: "None",
-      handler: () =>
-        editableMaterials
-          .filter((m) => m.selected)
-          // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-          .forEach((m) => handleSelect(m)),
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+      handler: () => editableMaterials.filter((m) => m.selected).forEach((m) => handleSelect(m)),
     },
     {
       name: "All",
-      handler: () =>
-        editableMaterials
-          .filter((m) => !m.selected)
-          // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-          .forEach((m) => handleSelect(m)),
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+      handler: () => editableMaterials.filter((m) => !m.selected).forEach((m) => handleSelect(m)),
     },
     {
       name: "Invert",

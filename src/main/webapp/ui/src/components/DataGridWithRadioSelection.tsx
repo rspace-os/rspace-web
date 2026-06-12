@@ -1,13 +1,12 @@
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { Radio } from "@mui/material";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
   DataGrid,
   type DataGridProps,
   GRID_CHECKBOX_SELECTION_COL_DEF,
-  GridColDef,
-  GridRenderCellParams,
-  GridRowId,
+  type GridColDef,
+  type GridRenderCellParams,
+  type GridRowId,
   type GridValidRowModel,
   useGridApiRef,
 } from "@mui/x-data-grid";
@@ -76,8 +75,7 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
           <Radio
             color="primary"
             checked={isSelected}
-            // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-            onChange={(event: unknown, selected: boolean | null) => {
+            onChange={(_event: unknown, selected: boolean | null) => {
               if (selected === null) {
                 handleSelectionChange(null);
                 return;

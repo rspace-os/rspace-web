@@ -347,7 +347,7 @@ const baseTheme = createTheme({
 export default createTheme({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  ...(baseTheme as any as MuiThemeOptions),
+    ...(baseTheme as any as MuiThemeOptions),
   components: {
     MuiFormLabel: {
       styleOverrides: {

@@ -5,10 +5,8 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { Optional } from "../../util/optional";
 import useOauthToken from "../auth/useOauthToken";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Group } from "./useGroups";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GroupMember } from "./useUserDetails";
+import type { Group } from "./useGroups";
+import type { GroupMember } from "./useUserDetails";
 
 export type ShareOption = (Group & { optionType: "GROUP" }) | (GroupMember & { optionType: "USER" });
 

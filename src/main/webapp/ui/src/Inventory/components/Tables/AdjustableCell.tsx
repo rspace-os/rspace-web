@@ -1,19 +1,14 @@
 import TableCell from "@mui/material/TableCell";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import GlobalId from "../../../components/GlobalId";
 import TagListing from "../../../components/Tags/TagListing";
 import UserDetails from "../../../components/UserDetails";
 import { RecordLink } from "../../../Inventory/components/RecordLink";
 import RecordLocation from "../../../Inventory/components/RecordLocation";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type AdjustableTableRow,
-  type AdjustableTableRowLabel,
-  type CellContent,
-} from "../../../stores/definitions/Tables";
+import type { AdjustableTableRow, AdjustableTableRowLabel, CellContent } from "../../../stores/definitions/Tables";
 
 type AdjustableCellArgs<T extends AdjustableTableRowLabel> = {
   dataSource: AdjustableTableRow<T>;

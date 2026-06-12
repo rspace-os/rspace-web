@@ -1,8 +1,6 @@
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { ThemeProvider } from "@mui/material/styles";
 import { render } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
 import RadioField from "../../RadioField";

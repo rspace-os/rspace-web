@@ -2,8 +2,7 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import useStores from "../../../stores/use-stores";
 import { menuIDs } from "../../../util/menuIDs";

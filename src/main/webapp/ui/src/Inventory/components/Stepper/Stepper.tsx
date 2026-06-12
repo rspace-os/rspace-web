@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import Alert from "@mui/material/Alert";
+import type Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -8,8 +7,7 @@ import React, { type ReactNode, useContext, useEffect, useState } from "react";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../stores/definitions/Factory";
+import type { Factory } from "../../../stores/definitions/Factory";
 import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../../stores/use-stores";
 import type { URL } from "../../../util/types";

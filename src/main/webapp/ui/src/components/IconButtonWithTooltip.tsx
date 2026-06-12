@@ -32,7 +32,7 @@ const IconButtonWithTooltip = React.forwardRef<HTMLButtonElement, IconButtonWith
   ({ title, icon, ariaLabel, ...rest }: IconButtonWithTooltipArgs, ref) => {
     return (
       // biome-ignore lint/a11y/useValidAriaValues: initial biome migration
-      <CustomTooltip title={title} aria-label="">
+<CustomTooltip title={title} aria-label="">
         <IconButton color="inherit" aria-label={ariaLabel ?? title} {...rest} ref={ref}>
           {icon}
         </IconButton>

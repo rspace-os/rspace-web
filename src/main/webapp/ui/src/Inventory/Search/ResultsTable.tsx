@@ -9,11 +9,9 @@ import React, { useContext } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import SearchContext from "../../stores/contexts/Search";
 import { hasRequiredPermissions } from "../../stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { menuIDs } from "../../util/menuIDs";
+import type { menuIDs } from "../../util/menuIDs";
 import { paginationOptions } from "../../util/table";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SplitButtonOption } from "../components/ContextMenu/ContextMenuSplitButton";
+import type { SplitButtonOption } from "../components/ContextMenu/ContextMenuSplitButton";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import CustomTableHead from "./components/CustomTableHead";
 import ResultRow from "./components/ResultRow";

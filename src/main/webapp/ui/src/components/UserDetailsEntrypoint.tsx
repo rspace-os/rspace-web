@@ -27,8 +27,6 @@ function getPosition(position?: string): Position {
       return ["top", "right"];
     case "bottom_left":
       return ["bottom", "left"];
-    // biome-ignore lint/complexity/noUselessSwitchCase: initial biome migration
-    case "bottom_right":
     default:
       return ["bottom", "right"];
   }

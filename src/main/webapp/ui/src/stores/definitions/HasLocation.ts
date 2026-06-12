@@ -1,9 +1,6 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Container } from "./Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { InventoryRecord } from "./InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Person } from "./Person";
+import type { Container } from "./Container";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { Person } from "./Person";
 
 /**
  * This is used to mark implementations of the HasLocation interface so that at

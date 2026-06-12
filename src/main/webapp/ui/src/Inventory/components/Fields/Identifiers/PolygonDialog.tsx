@@ -6,8 +6,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GeoLocation } from "../../../../stores/definitions/GeoLocation";
+import type { GeoLocation } from "../../../../stores/definitions/GeoLocation";
 import PolygonCard from "./PolygonCard";
 
 type PolygonDialogArgs = {

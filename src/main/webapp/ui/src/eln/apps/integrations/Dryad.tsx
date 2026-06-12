@@ -7,8 +7,7 @@ import DryadIcon from "../../../assets/branding/dryad/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useDryadEndpoint } from "../useDryad";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DryadArgs = {
   integrationState: IntegrationStates["DRYAD"];
@@ -106,13 +105,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/dryad/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/dryad/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

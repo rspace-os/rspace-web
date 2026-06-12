@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import TextField, { TextFieldProps } from "@mui/material/TextField";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import type React from "react";
 import NoValue from "../../components/NoValue";
 
@@ -85,8 +84,7 @@ export default function NumberField({
            */
           inputMode: "text",
           lang: "en", // force dot in decimal numbers in compatible browsers
-          // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-          ["aria-label"]: ariaLabel,
+          "aria-label": ariaLabel,
           ...slotProps?.htmlInput,
         },
       }}

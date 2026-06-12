@@ -21,8 +21,7 @@ describe("formatFileSize", () => {
            * passing, but simply wasn't being as rigorous as it ought to be.
            */
 
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          new RegExp("[0-9]{1,3}(\\.[0-9]{1," + Math.max(dp, 1) + "})? .?B"),
+          new RegExp(`[0-9]{1,3}(\\.[0-9]{1,${Math.max(dp, 1)}})? .?B`),
         );
       }),
     );

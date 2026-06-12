@@ -1,15 +1,11 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Filestore, GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
+import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
 import * as ArrayUtils from "@/util/ArrayUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "@/util/set";
+import type RsSet from "@/util/set";
 
 declare global {
   interface RSGlobal {
@@ -22,8 +18,7 @@ declare global {
   }
 }
 
-// biome-ignore lint/complexity/useArrowFunction: initial biome migration
-parent.tinymce.PluginManager.add("gallery", function (editor) {
+parent.tinymce.PluginManager.add("gallery", (editor) => {
   function* renderGallery(domContainer: HTMLElement): Generator<
     {
       open: boolean;
@@ -102,10 +97,8 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
     div.id = "tinymce-gallery";
     document.body.appendChild(div);
   }
-  const galleryRenderer = renderGallery(
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-    document.getElementById("tinymce-gallery")!,
-  );
+  // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+  const galleryRenderer = renderGallery(document.getElementById("tinymce-gallery")!);
   galleryRenderer.next({ open: false });
 
   const openGalleryAction = () => {

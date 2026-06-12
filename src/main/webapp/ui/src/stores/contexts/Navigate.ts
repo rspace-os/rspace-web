@@ -1,8 +1,6 @@
 import React, { type Context } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "react-router-dom";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { Location } from "react-router-dom";
+import type { URL } from "../../util/types";
 
 export type UseLocation = Location;
 

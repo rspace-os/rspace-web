@@ -1,10 +1,8 @@
 import Box from "@mui/material/Box";
 import type React from "react";
 import FormField from "../../../components/Inputs/FormField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasUneditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { HasUneditableFields } from "../../../stores/definitions/Editable";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import Breadcrumbs from "../Breadcrumbs";
 
 export default function Location<

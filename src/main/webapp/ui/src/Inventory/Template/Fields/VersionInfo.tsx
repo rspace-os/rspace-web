@@ -5,8 +5,7 @@ import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import GlobalId from "../../../components/GlobalId";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Template } from "../../../stores/definitions/Template";
+import type { Template } from "../../../stores/definitions/Template";
 
 type VersionInfoArgs = {
   template: Template;

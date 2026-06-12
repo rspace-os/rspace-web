@@ -3,8 +3,7 @@
  */
 
 import { screen } from "@testing-library/react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { describe, expect, test, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { render } from "@/__tests__/customQueries";

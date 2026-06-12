@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";

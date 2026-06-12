@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Axis } from "@/stores/definitions/container/types";
+import type { Axis } from "@/stores/definitions/container/types";
 import { match } from "@/util/Util";
 
 export const encodeA1Z26 = (num: number): string => String.fromCharCode(64 + num);

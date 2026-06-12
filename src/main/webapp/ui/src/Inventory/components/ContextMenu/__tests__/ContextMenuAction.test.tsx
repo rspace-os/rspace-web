@@ -1,8 +1,7 @@
 import MenuList from "@mui/material/MenuList";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import fc from "fast-check";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { describe, expect, test, vi } from "vitest";
 import ContextMenuAction from "../ContextMenuAction";
 
@@ -19,14 +18,8 @@ describe("ContextMenuAction", () => {
     render(
       <OuterComponent onKeyDown={onKeyDown}>
         <MenuList>
-          <ContextMenuAction
-            as="menuitem"
-            onClick={() => {}}
-            // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-            icon={<></>}
-            label="Foo"
-            disabledHelp=""
-          >
+          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
+          <ContextMenuAction as="menuitem" onClick={() => {}} icon={<></>} label="Foo" disabledHelp="">
             <InnerComponent />
           </ContextMenuAction>
         </MenuList>

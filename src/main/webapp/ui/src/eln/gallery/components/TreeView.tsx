@@ -14,8 +14,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as FetchingData from "../../../util/fetchingData";
 import * as MapUtils from "../../../util/MapUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Optional } from "../../../util/optional";
+import type { Optional } from "../../../util/optional";
 import { type GallerySection, SELECTED_OR_FOCUS_BORDER } from "../common";
 import usePrimaryAction from "../primaryActionHooks";
 import { folderDestination, useGalleryActions } from "../useGalleryActions";

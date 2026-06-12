@@ -3,8 +3,6 @@ import "@/__tests__/__mocks__/useOauthToken";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import axios from "@/common/axios";
 import Alerts from "../../../components/Alerts/Alerts";
 import RsSet from "../../../util/set";
@@ -17,7 +15,7 @@ describe("useGalleryActions", () => {
       const { duplicateFiles } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-        <button
+<button
           onClick={() => {
             void duplicateFiles(
               new RsSet([
@@ -103,7 +101,7 @@ describe("useGalleryActions", () => {
       const { deleteFiles } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-        <button
+<button
           onClick={() => {
             void deleteFiles(
               new RsSet([
@@ -189,7 +187,7 @@ describe("useGalleryActions", () => {
       const { moveFiles } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-        <button
+<button
           onClick={() => {
             void moveFiles(
               "Images",
@@ -277,7 +275,7 @@ describe("useGalleryActions", () => {
       const { changeDescription } = useGalleryActions();
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
-        <button
+<button
           onClick={() => {
             void changeDescription(
               new LocalGalleryFile({

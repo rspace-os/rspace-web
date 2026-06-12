@@ -1,6 +1,5 @@
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UseState } from "../../util/types";
+import type { UseState } from "../../util/types";
 
 /**
  * Like useState, but synchronised with local storage.

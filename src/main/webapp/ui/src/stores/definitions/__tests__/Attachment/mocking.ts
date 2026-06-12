@@ -1,10 +1,8 @@
 /*
  */
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../../Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../BaseRecord";
+import type { Attachment } from "../../Attachment";
+import type { GlobalId } from "../../BaseRecord";
 
 export const mockAttachment = ({ setImageLink }: { setImageLink?: () => Promise<void> }): Attachment => {
   return {

@@ -6,12 +6,9 @@ import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
 import Alerts from "@/components/Alerts/Alerts";
 import { DialogBoundary } from "@/components/DialogBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GalleryFile } from "@/eln/gallery/useGalleryListing";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Result from "@/util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "@/util/set";
+import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
+import type Result from "@/util/result";
+import type RsSet from "@/util/set";
 import GalleryPicker from "../../eln/gallery/picker";
 
 const queryClient = new QueryClient();

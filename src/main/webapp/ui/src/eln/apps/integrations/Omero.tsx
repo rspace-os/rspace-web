@@ -6,8 +6,7 @@ import React, { useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
 import OmeroIcon from "../../../assets/branding/omero/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type OmeroArgs = {
   integrationState: IntegrationStates["OMERO"];

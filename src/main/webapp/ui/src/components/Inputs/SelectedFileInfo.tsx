@@ -5,8 +5,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import { useTheme } from "@mui/material/styles";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { match } from "../../util/Util";
 
 function StatusChip({

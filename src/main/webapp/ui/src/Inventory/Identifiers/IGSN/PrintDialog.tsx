@@ -23,8 +23,7 @@ import { Optional } from "../../../util/optional";
 import ContextDialog from "../../components/ContextMenu/ContextDialog";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import PrintContents, { PreviewPrintItem } from "../../components/Print/PrintContents";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier } from "../../useIdentifiers";
+import type { Identifier } from "../../useIdentifiers";
 
 export type PrinterType = "GENERIC" | "LABEL";
 export type PrintLayout = "BASIC" | "FULL";

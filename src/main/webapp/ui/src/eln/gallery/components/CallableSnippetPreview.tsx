@@ -7,8 +7,7 @@ import axios from "@/common/axios";
 import { Dialog } from "@/components/DialogBoundary";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import { getErrorMessage } from "@/util/error";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GalleryFile } from "../useGalleryListing";
+import type { GalleryFile } from "../useGalleryListing";
 
 const SnippetPreviewContext = React.createContext((_file: GalleryFile) => {});
 

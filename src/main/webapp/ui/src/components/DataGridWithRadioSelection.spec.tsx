@@ -1,12 +1,7 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GridRowId } from "@mui/x-data-grid";
+import fs from "node:fs/promises";
+import type { GridRowId } from "@mui/x-data-grid";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
-import fs from "fs/promises";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Download } from "playwright-core";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
+import type { Download } from "playwright-core";
 import {
   ControlledDataGridWithRadioSelectionExample,
   DataGridWithFeatures,

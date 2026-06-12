@@ -7,8 +7,7 @@ import { useState } from "react";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import ImagePreview, { type PreviewSize } from "../../../../components/ImagePreview";
 import { mkAlert } from "../../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../../../../stores/definitions/Attachment";
+import type { Attachment } from "../../../../stores/definitions/Attachment";
 import useStores from "../../../../stores/use-stores";
 
 type PreviewArgs = {

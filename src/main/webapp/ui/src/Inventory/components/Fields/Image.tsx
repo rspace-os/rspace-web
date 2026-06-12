@@ -1,15 +1,13 @@
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { Alert } from "@mui/material";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import ImageField from "../../../components/Inputs/ImageField";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import { capImageAt1MB } from "../../../util/images";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BlobUrl } from "../../../util/types";
+import type { BlobUrl } from "../../../util/types";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const CANVAS_ID = "previewCanvas";
@@ -25,8 +23,7 @@ function Image<
   const { search } = useContext(SearchContext);
   const isFieldEditable = fieldOwner.isFieldEditable("image");
   let tooManytoBatchThis = false;
-  // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-  if (search && search.batchEditingRecords) {
+  if (search?.batchEditingRecords) {
     tooManytoBatchThis = search.batchEditingRecords.size > MAX;
   }
   const disabled = !isFieldEditable;

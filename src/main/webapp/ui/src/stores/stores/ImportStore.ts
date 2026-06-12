@@ -1,6 +1,5 @@
 import { action, makeObservable, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import Import, { type State } from "../models/ImportModel";
 import type { RootStore } from "./RootStore";
 

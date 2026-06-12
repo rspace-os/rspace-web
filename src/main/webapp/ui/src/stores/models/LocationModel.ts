@@ -1,14 +1,9 @@
 import { action, computed, makeObservable, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container, type Location } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasLocation } from "../definitions/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Search } from "../definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SubSample } from "../definitions/SubSample";
+import type { Container, Location } from "../definitions/Container";
+import type { HasLocation } from "../definitions/HasLocation";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
+import type { Search } from "../definitions/Search";
+import type { SubSample } from "../definitions/SubSample";
 import getRootStore from "../stores/RootStore";
 import ContainerModel from "./ContainerModel";
 import InventoryBaseRecord from "./InventoryBaseRecord";
@@ -166,10 +161,7 @@ export default class LocationModel implements Location {
   }
 
   get hasContent(): boolean {
-    return Boolean(
-      // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-      this.content && this.content.globalId && !this.content.deleted,
-    );
+    return Boolean(this.content?.globalId && !this.content.deleted);
   }
 
   get uniqueColor(): string {

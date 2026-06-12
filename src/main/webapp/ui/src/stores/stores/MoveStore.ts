@@ -3,19 +3,15 @@ import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/I
 import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
 import { Optional } from "../../util/optional";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Panel } from "../../util/types";
+import type { Panel } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
 import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container, type Location } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { HasLocation } from "../definitions/HasLocation";
+import type { Container, Location } from "../definitions/Container";
+import type { HasLocation } from "../definitions/HasLocation";
 import { type InventoryRecord, recordTypeToApiRecordType } from "../definitions/InventoryRecord";
 import ContainerModel from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "../models/InventoryBaseRecord";
+import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import SubSampleModel from "../models/SubSampleModel";

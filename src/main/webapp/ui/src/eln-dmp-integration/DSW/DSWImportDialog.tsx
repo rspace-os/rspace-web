@@ -8,14 +8,12 @@ import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GridRowId } from "@mui/x-data-grid";
+import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import docLinks from "../../assets/DocLinks";
@@ -88,8 +86,7 @@ function DSWImportDialogContent({
   const getDMPs = async () => {
     setFetching(true);
 
-    // biome-ignore lint/style/useConst: initial biome migration
-    let allPlans: Array<DswProjectWithOrigin> = [];
+    const allPlans: Array<DswProjectWithOrigin> = [];
     try {
       const r = await axios.get<{
         success: true;
@@ -100,8 +97,7 @@ function DSWImportDialogContent({
       if (r.data.success) {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         Object.entries(r.data.data).map(([, project]) => {
-          // biome-ignore lint/style/useConst: initial biome migration
-          let projectWithAlias: DswProjectWithOrigin = {
+          const projectWithAlias: DswProjectWithOrigin = {
             createdAt: project.createdAt,
             description: project.description,
             id: project.uuid,
@@ -120,10 +116,7 @@ function DSWImportDialogContent({
         setDMPs(allPlans);
       } else {
         setFetching(false);
-        // biome-ignore lint/style/useConst: initial biome migration
-        let errorMsg =
-          // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-          r.data && r.data.error && r.data.error.errorMessages ? r.data.error.errorMessages[0] : null;
+        const errorMsg = r.data?.error?.errorMessages ? r.data.error.errorMessages[0] : null;
         addAlert(
           mkAlert({
             title: "Unable to load projects.",

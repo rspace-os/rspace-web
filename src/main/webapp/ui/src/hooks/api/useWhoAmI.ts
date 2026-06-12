@@ -1,9 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Person, PersonAttrs } from "@/stores/definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Fetched } from "@/util/fetchingData";
+import type { Person, PersonAttrs } from "@/stores/definitions/Person";
+import type { Fetched } from "@/util/fetchingData";
 import useOauthToken from "../auth/useOauthToken";
 
 /**

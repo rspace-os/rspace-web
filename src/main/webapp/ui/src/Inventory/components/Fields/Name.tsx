@@ -1,16 +1,12 @@
 import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import FormLabel from "@mui/material/FormLabel";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { Heading } from "@/components/DynamicHeadingLevel";
 import GlobalId from "../../../components/GlobalId";
 import StringField from "../../../components/Inputs/StringField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../../stores/definitions/Record";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { Record } from "../../../stores/definitions/Record";
 import FormField from "../../components/Inputs/FormField";
 
 const MIN = 2;

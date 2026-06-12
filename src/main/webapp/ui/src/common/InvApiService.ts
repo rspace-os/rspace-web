@@ -1,10 +1,7 @@
 import { when } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AxiosResponse } from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Id } from "../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ApiRecordType } from "../stores/definitions/InventoryRecord";
+import type { AxiosResponse } from "@/common/axios";
+import type { Id } from "../stores/definitions/BaseRecord";
+import type { ApiRecordType } from "../stores/definitions/InventoryRecord";
 import getRootStore from "../stores/stores/RootStore";
 import ApiServiceBase from "./ApiServiceBase";
 

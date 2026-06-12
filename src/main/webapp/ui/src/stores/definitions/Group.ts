@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK } from "../../util/types";
+import type { _LINK } from "../../util/types";
 import type { GlobalId, Id } from "./BaseRecord";
 
 /**

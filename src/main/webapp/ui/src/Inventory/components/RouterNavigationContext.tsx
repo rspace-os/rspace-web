@@ -1,10 +1,8 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useLocation, useNavigate as useReactRouterNavigate } from "react-router-dom";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 
 type RouterNavigationContextArgs = {
   children: ReactNode;

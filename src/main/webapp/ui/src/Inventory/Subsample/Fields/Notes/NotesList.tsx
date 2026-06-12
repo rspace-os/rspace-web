@@ -4,8 +4,7 @@ import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import { observer } from "mobx-react-lite";
 import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SubSampleModel from "../../../../stores/models/SubSampleModel";
+import type SubSampleModel from "../../../../stores/models/SubSampleModel";
 import NoteItem from "./NoteItem";
 
 type NotesListArgs = {

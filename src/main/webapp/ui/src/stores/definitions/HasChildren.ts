@@ -1,7 +1,6 @@
 //@flow
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "./InventoryRecord";
+import type { InventoryRecord } from "./InventoryRecord";
 
 /**
  * Defines a generic tree data structure for Inventory records. Each class that

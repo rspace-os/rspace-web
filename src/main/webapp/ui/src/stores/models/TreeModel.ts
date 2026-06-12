@@ -1,17 +1,12 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import { UserCancelledAction } from "../../util/error";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasChildren } from "../definitions/HasChildren";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord, type RecordType } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type TreeView } from "../definitions/TreeView";
+import type { GlobalId } from "../definitions/BaseRecord";
+import type { HasChildren } from "../definitions/HasChildren";
+import type { InventoryRecord, RecordType } from "../definitions/InventoryRecord";
+import type { TreeView } from "../definitions/TreeView";
 import getRootStore from "../stores/RootStore";
 import InventoryBaseRecord from "./InventoryBaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Search from "./Search";
+import type Search from "./Search";
 
 export type TreeAttrs = {
   treeHolder: Search;

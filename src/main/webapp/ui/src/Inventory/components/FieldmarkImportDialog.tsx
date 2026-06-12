@@ -13,12 +13,7 @@ import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import {
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  GridRowId,
-  GridToolbarColumnsButton,
-  GridToolbarContainer,
-} from "@mui/x-data-grid";
+import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
 import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
@@ -33,8 +28,7 @@ import { Dialog } from "../../components/DialogBoundary";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
+import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import { DataGridColumn } from "../../util/table";

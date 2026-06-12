@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Note } from "../../SubSampleModel";
+import type { Note } from "../../SubSampleModel";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({

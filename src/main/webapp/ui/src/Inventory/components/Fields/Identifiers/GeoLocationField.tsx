@@ -17,8 +17,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ComponentType, lazy, type ReactNode, Suspense, useState } from "react";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
-// biome-ignore lint/style/useImportType: initial biome migration
-import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
+import type GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 import AmberNumberField from "./AmberNumberField";
 import PolygonDialog from "./PolygonDialog";
 
@@ -447,18 +446,12 @@ const GeoLocationField = ({
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
                     <InputWrapper label="Latitude">
-                      {geoLocationPoint.pointLatitude
-                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                          String(geoLocationPoint.pointLatitude) + "˚"
-                        : "-"}
+                      {geoLocationPoint.pointLatitude ? `${String(geoLocationPoint.pointLatitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="Longitude">
-                      {geoLocationPoint.pointLongitude
-                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                          String(geoLocationPoint.pointLongitude) + "˚"
-                        : "-"}
+                      {geoLocationPoint.pointLongitude ? `${String(geoLocationPoint.pointLongitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                 </Grid>
@@ -502,34 +495,22 @@ const GeoLocationField = ({
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
                     <InputWrapper label="North Latitude">
-                      {geoLocationBox.northBoundLatitude
-                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                          String(geoLocationBox.northBoundLatitude) + "˚"
-                        : "-"}
+                      {geoLocationBox.northBoundLatitude ? `${String(geoLocationBox.northBoundLatitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="West Longitude">
-                      {geoLocationBox.westBoundLongitude
-                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                          String(geoLocationBox.westBoundLongitude) + "˚"
-                        : "-"}
+                      {geoLocationBox.westBoundLongitude ? `${String(geoLocationBox.westBoundLongitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="South Latitude">
-                      {geoLocationBox.southBoundLatitude
-                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                          String(geoLocationBox.southBoundLatitude) + "˚"
-                        : "-"}
+                      {geoLocationBox.southBoundLatitude ? `${String(geoLocationBox.southBoundLatitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="East Longitude">
-                      {geoLocationBox.eastBoundLongitude
-                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                          String(geoLocationBox.eastBoundLongitude) + "˚"
-                        : "-"}
+                      {geoLocationBox.eastBoundLongitude ? `${String(geoLocationBox.eastBoundLongitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                 </Grid>

@@ -3,10 +3,8 @@ import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../../util/fetchingData";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Optional } from "../../../util/optional";
+import type * as FetchingData from "../../../util/fetchingData";
+import type { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import { stableSort } from "../../../util/table";
@@ -198,8 +196,7 @@ export default function useIrods(
           const api = axios.create({
             baseURL: "/api/v1/gallery/irods",
             headers: {
-              // biome-ignore lint/style/useTemplate: initial biome migration
-              Authorization: "Bearer " + (await getToken()),
+              Authorization: `Bearer ${await getToken()}`,
             },
           });
           const response = await api.post<"">(cl, {
@@ -227,8 +224,7 @@ export default function useIrods(
           const api = axios.create({
             baseURL: "/api/v1/gallery/irods",
             headers: {
-              // biome-ignore lint/style/useTemplate: initial biome migration
-              Authorization: "Bearer " + (await getToken()),
+              Authorization: `Bearer ${await getToken()}`,
             },
           });
           const response = await api.post<"">(ml, {
@@ -268,8 +264,7 @@ export default function useIrods(
       const api = axios.create({
         baseURL: "/api/v1/gallery/irods",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
       const { data } = await api.get<unknown>("/", {

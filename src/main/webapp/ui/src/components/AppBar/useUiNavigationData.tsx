@@ -1,8 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../../hooks/auth/useOauthToken";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../util/fetchingData";
+import type * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 
@@ -117,8 +116,7 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
       const token = await getToken();
       const { data } = await axios.get<unknown>("/api/v1/userDetails/uiNavigationData", {
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + token,
+          Authorization: `Bearer ${token}`,
         },
       });
       Parsers.isObject(data)

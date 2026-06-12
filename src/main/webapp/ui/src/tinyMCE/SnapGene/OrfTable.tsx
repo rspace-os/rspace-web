@@ -17,7 +17,7 @@ import LoadingCircular from "../../components/LoadingCircular";
 import { getSorting, paginationOptions, stableSort } from "../../util/table";
 import type { Order } from "../../util/types";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
 
 const readingFrameOptions = {
@@ -61,7 +61,7 @@ const headCells = [
   },
 ];
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OrfTable(props: any) {
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
@@ -71,9 +71,9 @@ export default function OrfTable(props: any) {
 
   const [readingFrameOption, setReadingFrameOption] = React.useState("ALL");
   const [oldReadingFrameOption, setOldReadingFrameOption] = React.useState("ALL");
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [results, setResults] = React.useState<Array<any>>([]);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [filteredResults, setFilteredResults] = React.useState<Array<any>>([]);
 
   const fetchData = () => {
@@ -110,11 +110,11 @@ export default function OrfTable(props: any) {
     updateDisabled();
   }, [readingFrameOption, oldReadingFrameOption]);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const filterResults = (passed_results?: Array<any>) => {
     const used_results = passed_results || results; // in case the results are not set yet
     const to_include = readingFrameOptions[readingFrameOption as keyof typeof readingFrameOptions].filter;
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     const filtered = used_results.filter((r: any) => to_include.includes(r.readingFrame));
     setFilteredResults(filtered);
   };
@@ -123,16 +123,14 @@ export default function OrfTable(props: any) {
     setReadingFrameOption(value);
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  const handleRequestSort = (event: React.MouseEvent<HTMLSpanElement>, property: string) => {
+  const handleRequestSort = (_event: React.MouseEvent<HTMLSpanElement>, property: string) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
     setPage(0);
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -142,8 +140,7 @@ export default function OrfTable(props: any) {
   };
 
   const updateDisabled = () => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    props.setDisabled(readingFrameOption == oldReadingFrameOption);
+    props.setDisabled(readingFrameOption === oldReadingFrameOption);
   };
 
   const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredResults.length - page * rowsPerPage);
@@ -166,7 +163,7 @@ export default function OrfTable(props: any) {
                 <TableBody>
                   {stableSort(filteredResults, getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                     .map((result: any) => (
                       <TableRow hover tabIndex={-1} key={result.id}>
                         <TableCell align="left">{result.fullRangeBegin}</TableCell>

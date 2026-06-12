@@ -1,8 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, test, vi } from "vitest";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FieldModelAttrs } from "../../FieldModel";
+import type { FieldModelAttrs } from "../../FieldModel";
 import { makeMockTemplate } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle

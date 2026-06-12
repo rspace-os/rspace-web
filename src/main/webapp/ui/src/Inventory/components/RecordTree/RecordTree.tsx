@@ -3,8 +3,7 @@ import { getTreeItemUtilityClass, treeItemClasses } from "@mui/x-tree-view/TreeI
 import { observer } from "mobx-react-lite";
 import React, { type SyntheticEvent, useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
 import Node from "./Node";
 
 const tappedToggleIcon = (event: SyntheticEvent) => !(event.target as HTMLElement).closest(`.${treeItemClasses.label}`);

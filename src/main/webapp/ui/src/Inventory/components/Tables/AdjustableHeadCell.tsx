@@ -10,8 +10,7 @@ import StyledMenu from "@/components/StyledMenu";
 import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../../util/set";
+import type RsSet from "../../../util/set";
 import SortableProperty, { type SortProperty } from "./SortableProperty";
 
 type AdjustableHeadCellArgs<T extends AdjustableTableRowLabel> = {

@@ -1,10 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GlobalId } from "@/stores/definitions/BaseRecord";
+import type { GlobalId } from "@/stores/definitions/BaseRecord";
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../ContainerModel";
+import type ContainerModel from "../../ContainerModel";
 import MemoisedFactory from "../MemoisedFactory";
 
 vi.mock("../../../stores/RootStore", () => ({

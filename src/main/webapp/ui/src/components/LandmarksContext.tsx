@@ -1,5 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import type React from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 interface Landmark {
   name: string;

@@ -1,6 +1,5 @@
 import { inputBaseClasses } from "@mui/material/InputBase";
-// biome-ignore lint/style/useImportType: initial biome migration
-import TextField, { TextFieldProps } from "@mui/material/TextField";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import type React from "react";
 import NoValue from "../../components/NoValue";
 

@@ -1,10 +1,8 @@
 import AddBoxIcon from "@mui/icons-material/AddBox";
-// biome-ignore lint/style/useImportType: initial biome migration
-import MenuItem from "@mui/material/MenuItem";
+import type MenuItem from "@mui/material/MenuItem";
 import { Observer } from "mobx-react-lite";
 import React, { forwardRef } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { match } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";

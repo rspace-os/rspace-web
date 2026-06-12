@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { describe, expect, test } from "vitest";
 
 import useViewportDimensions from "../useViewportDimensions";

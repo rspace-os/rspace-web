@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
+import Snackbar, { type SnackbarCloseReason } from "@mui/material/Snackbar";
 import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -17,11 +16,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
   const { isViewportVerySmall } = useViewportDimensions();
   const { removeAlert } = useContext(AlertContext);
 
-  const handleClose = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event?: Event | React.SyntheticEvent,
-    reason?: SnackbarCloseReason,
-  ): void => {
+  const handleClose = (_event?: Event | React.SyntheticEvent, reason?: SnackbarCloseReason): void => {
     if (reason !== "clickaway") removeAlert(alert);
   };
 

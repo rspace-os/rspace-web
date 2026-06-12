@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useState } from "react";
+import { useState } from "react";
 import { describe, expect, test } from "vitest";
 import { StepperPanelHeader, setFormSectionError, useFormSectionError } from "../StepperPanelHeader";
 import "@/__tests__/__mocks__/matchMedia";
@@ -10,8 +9,7 @@ import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { action, makeObservable, observable } from "mobx";
 import FormSectionsContext from "../../../../stores/contexts/FormSections";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import materialTheme from "../../../../theme";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 
@@ -47,8 +45,7 @@ function DummyFormSection({ result }: { result: DummyResult }) {
       <FormSectionsContext.Provider
         value={{
           isExpanded: () => open,
-          // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-          setExpanded: (recordType, sectionName, value) => setOpen(value),
+          setExpanded: (_recordType, _sectionName, value) => setOpen(value),
           setAllExpanded: () => {},
         }}
       >

@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Field } from "./Field";
+import type { Field } from "./Field";
 import type { Sample } from "./Sample";
 
 export interface Template extends Sample {

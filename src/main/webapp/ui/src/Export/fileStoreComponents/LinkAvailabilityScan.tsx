@@ -14,8 +14,7 @@ import { useState } from "react";
 import LoadingFade from "../../components/LoadingFade";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { formatFileSize } from "../../util/files";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FileSystem } from "../common";
+import type { FileSystem } from "../common";
 
 type FoundLinksListingArgs = {
   scanResultsPresent: boolean;
@@ -100,8 +99,7 @@ export default function LinkAvailabilityScan({
                 const issues = Object.entries(fileSystem.checkedNfsLinkMessages);
                 const checkedFiles = ArrayUtils.filterNull(fileSystem.checkedNfsLinks);
                 return (
-                  // biome-ignore lint/style/useTemplate: initial biome migration
-                  <div key={"skippedLinks" + fileSystem.id}>
+                  <div key={`skippedLinks${fileSystem.id}`}>
                     {issues.length > 0 ? (
                       <div>
                         <h3>Skipped files from {fileSystem.name}</h3>
@@ -115,10 +113,7 @@ export default function LinkAvailabilityScan({
                           <TableBody>
                             {issues.map((file) => {
                               return (
-                                <TableRow
-                                  // biome-ignore lint/style/useTemplate: initial biome migration
-                                  key={"skippedLink" + fileSystem.id + file[0]}
-                                >
+                                <TableRow key={`skippedLink${fileSystem.id}${file[0]}`}>
                                   <TableCell component="th" scope="row">
                                     {file[0]}
                                   </TableCell>

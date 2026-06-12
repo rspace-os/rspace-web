@@ -1,14 +1,12 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ContainerType } from "@/stores/definitions/container/types";
+import type { ContainerType } from "@/stores/definitions/container/types";
 import RadioField, {
   OptionExplanation,
   OptionHeading,
   type RadioOption,
 } from "../../../../components/Inputs/RadioField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../../../stores/models/ContainerModel";
+import type ContainerModel from "../../../../stores/models/ContainerModel";
 import FormField from "../../../components/Inputs/FormField";
 import LocationsImageField from "../LocationsImageField";
 import GridDimensionsAndLayout from "./GridDimensionsAndLayout";

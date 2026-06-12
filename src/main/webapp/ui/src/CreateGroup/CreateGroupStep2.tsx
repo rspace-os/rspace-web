@@ -13,9 +13,9 @@ import CreatableSelect from "react-select/creatable";
 import axios from "@/common/axios";
 import materialTheme from "../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class createGroupStep2 extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -28,7 +28,7 @@ class createGroupStep2 extends React.Component<any, any> {
       emailValidation: true,
     };
   }
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleChange = (event: any) => {
     //Check to see if self nominated or not
     const nominatePi = event.target.value !== this.props.currentUser;
@@ -53,10 +53,8 @@ class createGroupStep2 extends React.Component<any, any> {
     this.setState({
       emailValidation: emailTest,
     });
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    const selfService = $("#selfServiceLabGroup").length != 0;
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    const projectGroup = $("#projectGroup").length != 0;
+    const selfService = $("#selfServiceLabGroup").length !== 0;
+    const projectGroup = $("#projectGroup").length !== 0;
     const url =
       (selfService && !projectGroup ? `/selfServiceLabGroup/` : projectGroup ? /projectGroup/ : `/cloud/ajax/`) +
       `searchPublicUserInfoList?term=${value}`;
@@ -75,10 +73,10 @@ class createGroupStep2 extends React.Component<any, any> {
       });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleSelect = (user: any) => {
     if (user === null) {
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       this.setState((prevState: any) => ({
         radioOptions: {
           ...prevState.radioOptions,
@@ -92,7 +90,7 @@ class createGroupStep2 extends React.Component<any, any> {
         emailValidation: emailTest,
       });
 
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       this.setState((prevState: any) => ({
         radioOptions: {
           ...prevState.radioOptions,
@@ -102,7 +100,7 @@ class createGroupStep2 extends React.Component<any, any> {
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   displayExistingUsers = (userList: any) => {
     const display = [];
     for (let i = 0; i < userList.length; i++) {

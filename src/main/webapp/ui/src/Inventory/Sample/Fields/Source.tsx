@@ -1,10 +1,8 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SampleSource } from "../../../stores/definitions/Sample";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { SampleSource } from "../../../stores/definitions/Sample";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
 const OPTIONS: Array<RadioOption<"LAB_CREATED" | "VENDOR_SUPPLIED" | "OTHER">> = [

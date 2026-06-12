@@ -1,8 +1,7 @@
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../../stores/definitions/Person";
+import type { Person } from "../../stores/definitions/Person";
 import SampleModel from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
 import { capitaliseJustFirstChar } from "../../util/Util";

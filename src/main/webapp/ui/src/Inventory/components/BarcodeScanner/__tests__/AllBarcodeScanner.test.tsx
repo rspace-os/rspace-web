@@ -6,8 +6,7 @@ import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
 import { sleep } from "../../../../util/Util";
 import AllBarcodeScanner from "../AllBarcodeScanner";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeInput } from "../BarcodeScannerSkeleton";
+import type { BarcodeInput } from "../BarcodeScannerSkeleton";
 
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {

@@ -9,8 +9,7 @@ import Stack from "@mui/material/Stack";
 import React from "react";
 import { Document, Page } from "react-pdf";
 import { incrementForever, take } from "../../../util/iterators";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Optional } from "../../../util/optional";
+import type { Optional } from "../../../util/optional";
 import usePrimaryAction, {
   useAsposePreviewOfGalleryFile,
   useImagePreviewOfGalleryFile,
@@ -33,8 +32,7 @@ import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL as Url } from "../../../util/types";
+import type { URL as Url } from "../../../util/types";
 import { useFolderOpen } from "./OpenFolderProvider";
 import ResetZoomIcon from "./ResetZoomIcon";
 

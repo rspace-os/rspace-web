@@ -1,7 +1,6 @@
 import React, { type Context } from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../util/fetchingData";
+import type * as FetchingData from "../../util/fetchingData";
 import * as MapUtils from "../../util/MapUtils";
 
 /**

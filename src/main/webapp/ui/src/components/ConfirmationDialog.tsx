@@ -31,7 +31,7 @@ export interface ConfirmActionPayload {
   variant: string;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   // biome-ignore lint/complexity/noBannedTypes: initial biome migration
-  callback: Function;
+    callback: Function;
 }
 
 export function ConfirmationDialog({
@@ -76,10 +76,7 @@ export function ConfirmationDialog({
     <dialog>
       <form onSubmit={handleSubmit}>
         <Dialog open={open} onClose={handleCloseDialog} fullWidth aria-labelledby={formTitle}>
-          <DialogTitle id={formTitle}>
-            {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-            <>{title}</>
-          </DialogTitle>
+          <DialogTitle id={formTitle}>{title}</DialogTitle>
           <DialogContent sx={{ overscrollBehavior: "contain" }}>
             {typeof consequences === "string" ? (
               <Typography variant="subtitle1" gutterBottom dangerouslySetInnerHTML={{ __html: consequences }} />

@@ -11,15 +11,8 @@ import type { Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ApiRecordType, type InventoryRecord } from "@/stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type ExportFileType,
-  type ExportMode,
-  type ExportOptions,
-  type OptionalContent,
-} from "@/stores/definitions/Search";
+import type { ApiRecordType, InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import type { ExportFileType, ExportMode, ExportOptions, OptionalContent } from "@/stores/definitions/Search";
 import { toTitleCase } from "@/util/Util";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
@@ -105,8 +98,7 @@ export const ExportOptionsWrapper = ({
           {exportType === "userData"
             ? "Exporting all items owned by the user."
             : `Exporting ${exportType === "contextMenu" ? "selected" : "all list items"}: ${exportedRecordTypes
-                // biome-ignore lint/style/useTemplate: initial biome migration
-                .map((t) => toTitleCase(t) + "s")
+                .map((t) => `${toTitleCase(t)}s`)
                 .join(", ")}.`}
         </Typography>
       </DialogContentText>

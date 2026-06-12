@@ -1,22 +1,15 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { getErrorMessage } from "@/util/error";
 import ApiService from "../../common/InvApiService";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordDetails } from "../../stores/definitions/Record";
+import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { RecordDetails } from "../../stores/definitions/Record";
 import { justFilenameExtension } from "../../util/files";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK, type URL as Url } from "../../util/types";
+import type { _LINK, URL as Url } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../definitions/Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type LinkableRecord } from "../definitions/LinkableRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../definitions/Person";
+import type { Attachment } from "../definitions/Attachment";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { LinkableRecord } from "../definitions/LinkableRecord";
+import type { Person } from "../definitions/Person";
 import getRootStore from "../stores/RootStore";
 
 type AttachmentId = number | null;

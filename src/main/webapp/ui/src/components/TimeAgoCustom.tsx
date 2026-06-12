@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import TimeAgo, { Formatter } from "react-timeago";
+import TimeAgo, { type Formatter } from "react-timeago";
 import { makeIntlFormatter } from "react-timeago/defaultFormatter";
 import { isoToLocale } from "@/util/Util";
 
@@ -38,8 +37,7 @@ const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
   };
 
   // display "time ago" if less than 30 days ago
-  // biome-ignore lint/complexity/useDateNow: initial biome migration
-  if (Date.parse(time) + 30 * 24 * 60 * 60 * 1000 > new Date().getTime()) {
+  if (Date.parse(time) + 30 * 24 * 60 * 60 * 1000 > Date.now()) {
     // Not sure what's causing this
     return <TimeAgo date={time} formatter={customFormatter} />;
   }

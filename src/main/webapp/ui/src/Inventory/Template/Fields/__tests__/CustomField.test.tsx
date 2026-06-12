@@ -3,8 +3,6 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import materialTheme from "../../../../theme";
 import CustomField from "../CustomField";

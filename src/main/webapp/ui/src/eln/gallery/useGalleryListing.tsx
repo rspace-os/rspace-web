@@ -10,8 +10,7 @@ import { incrementForever, take } from "../../util/iterators";
 import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL as UrlType } from "../../util/types";
+import type { URL as UrlType } from "../../util/types";
 import { GALLERY_SECTION, type GallerySection, gallerySectionCollectiveNoun, parseGallerySection } from "./common";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
 import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
@@ -229,8 +228,7 @@ export function chemistryFilePreview(file: GalleryFile): Result<string> {
  * have thumbnails to represent all files of that type.
  */
 function generateIconSrc(
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  name: string,
+  _name: string,
   type: string,
   extension: string | null,
   thumbnailId: number | null,
@@ -384,8 +382,7 @@ export class LocalGalleryFile implements GalleryFile {
         const { data: blob } = await axios.get<Blob>(`/api/v1/files/${idToString(this.id).elseThrow()}/file`, {
           responseType: "blob",
           headers: {
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            Authorization: "Bearer " + token,
+            Authorization: `Bearer ${token}`,
           },
         });
         const url = URL.createObjectURL(blob);
@@ -707,8 +704,7 @@ export class RemoteFile implements GalleryFile {
             params: urlSearchParams,
             responseType: "blob",
             headers: {
-              // biome-ignore lint/style/useTemplate: initial biome migration
-              Authorization: "Bearer " + token,
+              Authorization: `Bearer ${token}`,
             },
           },
         );
@@ -979,8 +975,7 @@ export function useGalleryListing({
       axios.create({
         baseURL: "/api/v1",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + token,
+          Authorization: `Bearer ${token}`,
         },
       }),
     ),
@@ -1112,26 +1107,22 @@ export function useGalleryListing({
     const metadata = {} as Record<string, string>;
     Parsers.getValueWithKey("chemString")(obj).do((chemString) => {
       Parsers.isString(chemString).do((str) => {
-        // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-        metadata["chemString"] = str;
+        metadata.chemString = str;
       });
     });
     Parsers.getValueWithKey("dmpLink")(obj).do((dmpLink) => {
       Parsers.isString(dmpLink).do((str) => {
-        // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-        metadata["dmpLink"] = str;
+        metadata.dmpLink = str;
       });
     });
     Parsers.getValueWithKey("dmpSource")(obj).do((dmpSource) => {
       Parsers.isString(dmpSource).do((str) => {
-        // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-        metadata["dmpSource"] = str;
+        metadata.dmpSource = str;
       });
     });
     Parsers.getValueWithKey("doiLink")(obj).do((doiLink) => {
       Parsers.isString(doiLink).do((str) => {
-        // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-        metadata["doiLink"] = str;
+        metadata.doiLink = str;
       });
     });
     return metadata;
@@ -1439,8 +1430,7 @@ export function useGalleryListing({
             Parsers.objectPath(["response", "data", "message"], e)
               .flatMap(Parsers.isString)
               .flatMap((message) =>
-                // biome-ignore lint/complexity/useRegexLiterals: initial biome migration
-                new RegExp("Call '/login' endpoint first?").test(message)
+                /Call '\/login' endpoint first?/.test(message)
                   ? Result.Ok(true)
                   : Result.Error([new Error("Not a login error")]),
               ),
@@ -1505,9 +1495,7 @@ export function useGalleryListing({
           pageNumber: "0",
           sortOrder,
           orderBy,
-          foldersOnly:
-            // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-            foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
+          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
         }),
       });
 
@@ -1557,9 +1545,7 @@ export function useGalleryListing({
           pageNumber: `${page + 1}`,
           sortOrder,
           orderBy,
-          foldersOnly:
-            // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-            foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
+          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
         }),
       });
 
@@ -1629,9 +1615,7 @@ export function useGalleryListing({
                     pageNumber: `${p}`,
                     sortOrder,
                     orderBy,
-                    foldersOnly:
-                      // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-                      foldersOnly !== null && Boolean(foldersOnly) ? "true" : "false",
+                    foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
                   }),
                 })
                 .then(({ data }) => {

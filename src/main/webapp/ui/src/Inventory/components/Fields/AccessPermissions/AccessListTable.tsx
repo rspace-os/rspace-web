@@ -10,8 +10,7 @@ import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useState } from "react";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Group, type SharedWithGroup } from "../../../../stores/definitions/Group";
+import type { Group, SharedWithGroup } from "../../../../stores/definitions/Group";
 import GroupsField from "../../Inputs/GroupsField";
 
 type AccessListTableArgs = {

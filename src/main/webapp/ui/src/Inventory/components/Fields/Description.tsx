@@ -1,8 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import TextField from "../../../components/Inputs/TextField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MAX_LENGTH = 250;

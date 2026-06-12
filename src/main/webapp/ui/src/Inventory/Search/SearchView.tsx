@@ -2,8 +2,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import SearchContext from "../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { menuIDs } from "../../util/menuIDs";
+import type { menuIDs } from "../../util/menuIDs";
 import GridView from "../Container/Content/GridView/ContentGrid";
 import ImageView from "../Container/Content/ImageView/PreviewImage";
 import EmptyListing from "./components/EmptyListing";

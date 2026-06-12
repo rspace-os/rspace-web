@@ -113,29 +113,26 @@ function PreviewImage(): React.ReactNode {
         />
         {container.initializedLocations && !container.loading && (
           <>
-            {img && imageDimensions ? (
-              container.locations?.map((location) => (
-                <LocationWrapper
-                  key={`${location.coordX}-${location.coordY}`}
-                  location={location}
-                  parentRect={imageDimensions}
-                >
-                  <LocationContent
+            {img && imageDimensions
+              ? container.locations?.map((location) => (
+                  <LocationWrapper
+                    key={`${location.coordX}-${location.coordY}`}
                     location={location}
-                    container={container}
-                    /*
-                     * PreviewImage is not keyboard accessible (although it ought
-                     * to be to be compliant with the WCAG standard. As such,
-                     * there is never a time when the locations have focus.
-                     */
-                    hasFocus={false}
-                  />
-                </LocationWrapper>
-              ))
-            ) : (
-              // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-              <>{container.globalId && <EmptyListing parentGlobalId={container.globalId} />}</>
-            )}
+                    parentRect={imageDimensions}
+                  >
+                    <LocationContent
+                      location={location}
+                      container={container}
+                      /*
+                       * PreviewImage is not keyboard accessible (although it ought
+                       * to be to be compliant with the WCAG standard. As such,
+                       * there is never a time when the locations have focus.
+                       */
+                      hasFocus={false}
+                    />
+                  </LocationWrapper>
+                ))
+              : container.globalId && <EmptyListing parentGlobalId={container.globalId} />}
             <Dragger container={container} parentRef={imgRef} />
           </>
         )}

@@ -9,8 +9,7 @@ import type React from "react";
 import { useState } from "react";
 import axios from "@/common/axios";
 import LoadingFade from "../components/LoadingFade";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FileSystemId } from "./common";
+import type { FileSystemId } from "./common";
 
 type FileStoreLoginArgs = {
   hideCancelButton: boolean;

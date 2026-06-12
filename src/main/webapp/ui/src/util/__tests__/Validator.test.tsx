@@ -2,8 +2,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { observable, runInAction } from "mobx";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { describe, expect, test } from "vitest";
 import { mkValidator, type Validator } from "../Validator";
 

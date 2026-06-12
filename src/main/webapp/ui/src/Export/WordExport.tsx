@@ -7,8 +7,7 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useId } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PageSize } from "./common";
+import type { PageSize } from "./common";
 
 export type WordExportDetails = {
   exportFormat: "WORD";

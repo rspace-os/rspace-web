@@ -1,8 +1,6 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GlobalId, Id } from "./BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "./InventoryRecord";
+import type { InventoryRecord } from "./InventoryRecord";
 
 export type ExtraFieldType = "Text" | "Number";
 

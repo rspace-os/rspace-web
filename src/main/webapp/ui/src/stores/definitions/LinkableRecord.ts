@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 import type { BaseRecord, RecordIconData } from "./BaseRecord";
 
 /**

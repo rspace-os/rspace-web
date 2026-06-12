@@ -5,8 +5,7 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";

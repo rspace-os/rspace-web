@@ -1,16 +1,13 @@
 import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
 import StringField from "../../../components/Inputs/StringField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MIN = 2;

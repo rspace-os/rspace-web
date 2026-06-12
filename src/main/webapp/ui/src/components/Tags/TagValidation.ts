@@ -8,8 +8,7 @@
  * ================
  */
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../stores/definitions/Tag";
+import type { Tag } from "../../stores/definitions/Tag";
 import { lift2 } from "../../util/optional";
 
 /**

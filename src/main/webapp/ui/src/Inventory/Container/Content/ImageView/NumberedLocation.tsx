@@ -2,8 +2,7 @@ import Badge from "@mui/material/Badge";
 import SvgIcon from "@mui/material/SvgIcon";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 type NumberedLocationArgs = {
   number: number;

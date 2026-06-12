@@ -11,8 +11,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FileSystem } from "../common";
+import type { FileSystem } from "../common";
 import FileStoreLogin from "../FileStoreLogin";
 
 type LoginStatusArgs = {
@@ -68,8 +67,7 @@ export default function LoginStatus({ fileSystems, fileStoreCheck }: LoginStatus
         <DialogTitle>File Systems login status</DialogTitle>
         <DialogContent>
           {fileSystems.map((fileStore) => (
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            <div key={"filestoreLogin" + fileStore.id}>
+            <div key={`filestoreLogin${fileStore.id}`}>
               <Table>
                 <TableHead>
                   <TableRow>

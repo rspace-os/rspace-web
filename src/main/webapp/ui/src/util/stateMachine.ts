@@ -100,9 +100,8 @@ export default class StateMachine<T extends string> {
   }
 
   assertCurrentState(states: RsSet<T> | T): void {
-    if (!(states instanceof RsSet))
-      // biome-ignore lint/correctness/noVoidTypeReturn: initial biome migration
-      return this.assertCurrentState(new RsSet([states]));
+    // biome-ignore lint/correctness/noVoidTypeReturn: initial biome migration
+    if (!(states instanceof RsSet)) return this.assertCurrentState(new RsSet([states]));
     if (!states.isSubsetOf(this.states))
       throw new Error(
         `Invalid: ${this.setOfStatesToString(states)} is not a subset of ${this.setOfStatesToString(this.states)}`,

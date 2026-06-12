@@ -31,14 +31,8 @@ import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../../../componen
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type Identifier,
-  type IdentifierField,
-  type IGSNPublishingState,
-} from "../../../../stores/definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { Identifier, IdentifierField, IGSNPublishingState } from "../../../../stores/definitions/Identifier";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
 import { capitaliseJustFirstChar, match } from "../../../../util/Util";
@@ -108,28 +102,25 @@ const IdentifierWrapper = observer(
                       }}
                     />
                   ) : (
-                    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-                    <>
-                      <TextField
-                        size="small"
-                        variant="standard"
-                        fullWidth
-                        id={`IdentifierField-${f.key}`}
-                        disabled={!editable || fixedValue(f)}
-                        value={f.value ?? ""}
-                        placeholder={editable ? `Enter value for ${f.key}` : "None"}
-                        onChange={({ target: { value } }) => handleUpdate(f, value)}
-                        error={editable && isFieldInvalid(f)}
-                        helperText={
-                          editable && isFieldInvalid(f)
-                            ? "In order to publish the identifier, a valid value is required."
-                            : null
-                        }
-                        slotProps={{
-                          inputLabel: { shrink: true },
-                        }}
-                      />
-                    </>
+                    <TextField
+                      size="small"
+                      variant="standard"
+                      fullWidth
+                      id={`IdentifierField-${f.key}`}
+                      disabled={!editable || fixedValue(f)}
+                      value={f.value ?? ""}
+                      placeholder={editable ? `Enter value for ${f.key}` : "None"}
+                      onChange={({ target: { value } }) => handleUpdate(f, value)}
+                      error={editable && isFieldInvalid(f)}
+                      helperText={
+                        editable && isFieldInvalid(f)
+                          ? "In order to publish the identifier, a valid value is required."
+                          : null
+                      }
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
+                    />
                   )}
                 </InputWrapper>
               </FormControl>

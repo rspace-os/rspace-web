@@ -1,12 +1,9 @@
 import { useDraggable } from "@dnd-kit/core";
 import Badge from "@mui/material/Badge";
 import React, { type ReactNode } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container, type Location } from "../../../../stores/definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
+import type { Container, Location } from "../../../../stores/definitions/Container";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import { useHelpers } from "./common";
 

@@ -7,8 +7,7 @@ import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { toTitleCase } from "@/util/Util";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PrintOptions } from "./PrintDialog";
+import type { PrintOptions } from "./PrintDialog";
 
 const itemPxWidths = {
   small: "110px",

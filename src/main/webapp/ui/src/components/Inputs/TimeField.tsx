@@ -4,8 +4,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { format, isValid, parse } from "date-fns";
 import { enGB } from "date-fns/locale";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import NoValue from "../../components/NoValue";
 
 export type TimeFieldArgs = {

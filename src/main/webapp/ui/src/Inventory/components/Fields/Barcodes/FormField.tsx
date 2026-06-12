@@ -1,14 +1,10 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import docLinks from "../../../../assets/DocLinks";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../../stores/definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Factory } from "../../../../stores/definitions/Factory";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import BatchFormField from "../../Inputs/BatchFormField";
 import FieldCard from "./FieldCard";
 

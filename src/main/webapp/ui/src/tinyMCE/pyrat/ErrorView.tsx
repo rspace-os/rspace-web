@@ -1,12 +1,8 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import docLinks from "../../assets/DocLinks";
 import { ErrorReason } from "./Enums";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function ErrorView({ errorReason }: { errorReason: any }) {
   return (
     <Alert severity="error">

@@ -1,35 +1,21 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
+import { type GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
 import { layoutToLabel } from "@/util/labels";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { lift2, Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GlobalId } from "../definitions/BaseRecord";
+import type { GlobalId } from "../definitions/BaseRecord";
 import type { Container, Location } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Factory } from "../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
+import type { Factory } from "../definitions/Factory";
 import {
-  HasLocation,
-  HasLocationEditableFields,
+  type HasLocation,
+  type HasLocationEditableFields,
   HasLocationMarker,
-  HasLocationUneditableFields,
+  type HasLocationUneditableFields,
 } from "../definitions/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Person } from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AdjustableTableRowOptions } from "../definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord, {
-  InventoryBaseRecordEditableFields,
-  InventoryBaseRecordUneditableFields,
-} from "./InventoryBaseRecord";
+import type { Person } from "../definitions/Person";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import type InventoryBaseRecord from "./InventoryBaseRecord";
+import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -37,8 +23,9 @@ import InventoryBaseRecord, {
  * class provides the state and methods common to all of these Inventory
  * records.
  */
-// biome-ignore lint/suspicious/noExplicitAny: mixin constructor constraint must use any[] to be extendable
-export function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+export  function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
   return class extends Base implements HasLocation {
     [HasLocationMarker] = true as const;
 
@@ -265,8 +252,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
  * Checks if a given object has a location.
  */
 export function hasLocation<T extends object>(input: T): Optional<HasLocation & T> {
-  // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-  return input.hasOwnProperty(HasLocationMarker) ? Optional.present(input as HasLocation & T) : Optional.empty();
+  return Object.hasOwn(input, HasLocationMarker) ? Optional.present(input as HasLocation & T) : Optional.empty();
 }
 
 /**
@@ -274,7 +260,6 @@ export function hasLocation<T extends object>(input: T): Optional<HasLocation & 
  */
 export function* filterForThoseWithLocations<T extends object>(input: Iterable<T>): Iterable<HasLocation & T> {
   for (const val of input) {
-    // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-    if (val.hasOwnProperty(HasLocationMarker)) yield val as HasLocation & T;
+    if (Object.hasOwn(val, HasLocationMarker)) yield val as HasLocation & T;
   }
 }

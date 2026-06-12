@@ -10,12 +10,9 @@ import docLinks from "../../../../assets/DocLinks";
 import ChooseToEdit from "../../../../components/Inputs/ChooseToEdit";
 import FormControl from "../../../../components/Inputs/FormControl";
 import { OptionExplanation, OptionHeading } from "../../../../components/Inputs/RadioField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Group, type SharedWithGroup } from "../../../../stores/definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SharingMode } from "../../../../stores/definitions/InventoryRecord";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Group, SharedWithGroup } from "../../../../stores/definitions/Group";
+import type { SharingMode } from "../../../../stores/definitions/InventoryRecord";
 import InventoryBaseRecordCollection from "../../../../stores/models/InventoryBaseRecordCollection";
 import AccessListTable from "./AccessListTable";
 import OwnersGroupsTable from "./OwnersGroupsTable";

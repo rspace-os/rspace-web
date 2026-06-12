@@ -114,13 +114,10 @@ if (typeof HTMLCanvasElement !== "undefined") {
     return null;
   };
 
-  // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-  HTMLCanvasElement.prototype.toDataURL = function () {
-    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
-  };
+  HTMLCanvasElement.prototype.toDataURL = () =>
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
 
-  // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-  HTMLCanvasElement.prototype.toBlob = function (callback: BlobCallback) {
+  HTMLCanvasElement.prototype.toBlob = (callback: BlobCallback) => {
     // Create a 1x1 pixel PNG blob
     const bytes = [
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,

@@ -6,18 +6,15 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Basket } from "../../../stores/definitions/Basket";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { Basket } from "../../../stores/definitions/Basket";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { NEW_BASKET } from "../../../stores/models/Basket";
 import useStores from "../../../stores/use-stores";
 import ContextDialog from "../ContextMenu/ContextDialog";

@@ -47,8 +47,7 @@ export default function UserList({ listTitle, onSelect, selected, users }: UserL
   );
 
   const isSelected = (u: User) => {
-    // biome-ignore lint/complexity/useIndexOf: initial biome migration
-    return selected.findIndex((s) => s === u.username) !== -1;
+    return selected.indexOf(u.username) !== -1;
   };
 
   function userLabel(u: User) {

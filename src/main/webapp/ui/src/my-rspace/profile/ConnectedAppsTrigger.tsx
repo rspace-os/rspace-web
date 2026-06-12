@@ -7,9 +7,8 @@ import { createRoot } from "react-dom/client";
 import materialTheme from "../../theme";
 import ConnectedAppsTable from "./ConnectedAppsTable";
 
-// biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-export default function ConnectedAppsTrigger(props: any) {
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+export default function ConnectedAppsTrigger(_props: any) {
   const [open, setOpen] = React.useState(false);
 
   const handleOpen = () => {

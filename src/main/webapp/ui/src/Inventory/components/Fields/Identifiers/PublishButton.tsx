@@ -1,7 +1,6 @@
 import React from "react";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier } from "../../../../stores/definitions/Identifier";
+import type { Identifier } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type PublishButtonArgs = {

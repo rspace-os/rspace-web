@@ -12,8 +12,7 @@ import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import FormSectionsContext, { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
 import { preventEventBubbling } from "../../../util/Util";
 
 export type FormSectionError = [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>];

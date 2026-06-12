@@ -12,12 +12,12 @@ import React, { useEffect, useState } from "react";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: (...args: any[]) => string;
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: any) {
   const [bioOntologiesAllowedStatus, setBioOntologiesAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -67,8 +67,8 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
   }
 
   /* BioPortal Ontologies are not supported on the community version */
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  function DisabledBioOntologiesButton(props: any) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    function DisabledBioOntologiesButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (isCloud) {
@@ -90,23 +90,20 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function BioOntologiesButton(props: any) {
     return (
       <>
         {!isCloud && canManageOntologies && (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>
-            <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-              {props.mode} BioPortal Ontologies
-            </Button>
-          </>
+          <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
+            {props.mode} BioPortal Ontologies
+          </Button>
         )}
       </>
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function DialogButtons(props: any) {
     return (
       <>

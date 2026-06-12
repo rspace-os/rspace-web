@@ -1,7 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { containerAttrs, makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
@@ -45,7 +43,7 @@ describe("useNavigateHelpers", () => {
         const { navigateToRecord } = useNavigateHelpers();
         return (
           // biome-ignore lint/a11y/useButtonType: initial biome migration
-          <button
+<button
             onClick={() => {
               void navigateToRecord(mockContainer);
             }}
@@ -77,7 +75,7 @@ describe("useNavigateHelpers", () => {
         const { navigateToSearch } = useNavigateHelpers();
         return (
           // biome-ignore lint/a11y/useButtonType: initial biome migration
-          <button
+<button
             onClick={() => {
               navigateToSearch(mockSearchParams);
             }}

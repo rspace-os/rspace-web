@@ -9,8 +9,7 @@ import { LOGO_COLOR } from "../../../assets/branding/egnyte";
 import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type EgnyteArgs = {
   integrationState: IntegrationStates["EGNYTE"];

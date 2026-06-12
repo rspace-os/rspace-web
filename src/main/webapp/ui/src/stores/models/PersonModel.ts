@@ -1,25 +1,13 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { WorkbenchId } from "@/stores/definitions/container/types";
+import type { WorkbenchId } from "@/stores/definitions/container/types";
 import { getErrorMessage } from "@/util/error";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK } from "../../util/types";
+import type { _LINK } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type Email,
-  type Person,
-  type PersonAttrs,
-  type PersonId,
-  type PersonName,
-  type Username,
-} from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportOptions } from "../definitions/Search";
+import type { Container } from "../definitions/Container";
+import type { Email, Person, PersonAttrs, PersonId, PersonName, Username } from "../definitions/Person";
+import type { ExportOptions } from "../definitions/Search";
 import getRootStore from "../stores/RootStore";
 
 export default class PersonModel implements Person {

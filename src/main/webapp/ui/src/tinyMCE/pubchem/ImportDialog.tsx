@@ -1,8 +1,7 @@
 import React from "react";
 import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
 import AnalyticsContext from "@/stores/contexts/Analytics";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Editor } from ".";
+import type { Editor } from ".";
 import CompoundSearchDialog from "./CompoundSearchDialog";
 
 /**

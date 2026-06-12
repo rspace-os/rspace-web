@@ -1,10 +1,8 @@
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "@/stores/definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ContentSummary } from "@/stores/definitions/container/types";
+import type { Container } from "@/stores/definitions/Container";
+import type { ContentSummary } from "@/stores/definitions/container/types";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
 type CountChipArgs = {

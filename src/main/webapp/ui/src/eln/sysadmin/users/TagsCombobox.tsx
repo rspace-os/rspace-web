@@ -9,16 +9,17 @@ import ListItemText from "@mui/material/ListItemText";
 import Popover from "@mui/material/Popover";
 import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import useAutocomplete, { AutocompleteCloseReason, AutocompleteGroupedOption } from "@mui/material/useAutocomplete";
+import useAutocomplete, {
+  type AutocompleteCloseReason,
+  type AutocompleteGroupedOption,
+} from "@mui/material/useAutocomplete";
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { VariableSizeList } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import axios from "@/common/axios";
 import { checkUserInputString, helpText, isAllowed } from "../../../components/Tags/TagValidation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../../util/set";
+import type RsSet from "../../../util/set";
 import { stableSort } from "../../../util/table";
 
 /*
@@ -117,7 +118,7 @@ function OptionsListing({
 
     return (
       // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
-      <li
+<li
         {...getOptionProps({ option, index })}
         style={{
           padding: "8px",
@@ -302,8 +303,7 @@ function TagsComboboxContent({
       return option.value;
     },
     filterOptions: (x) => x,
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    onInputChange: (event, newInputValue, reason) => {
+    onInputChange: (_event, newInputValue, reason) => {
       if (reason === "input") {
         setFilter(newInputValue);
       }

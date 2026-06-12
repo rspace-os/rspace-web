@@ -1,11 +1,10 @@
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../../stores/definitions/Record";
+import type { Record } from "../../../stores/definitions/Record";
 import useStores from "../../../stores/use-stores";
 import Layout2x1Dialog from "../Layout/Layout2x1Dialog";
 import NameWithBadge from "../NameWithBadge";

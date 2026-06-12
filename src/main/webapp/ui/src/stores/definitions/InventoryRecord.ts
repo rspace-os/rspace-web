@@ -1,34 +1,19 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BlobUrl } from "../../util/types";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "./Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord } from "./Barcode";
+import type React from "react";
+import type { BlobUrl } from "../../util/types";
+import type { Alert } from "../contexts/Alert";
+import type { Attachment } from "./Attachment";
+import type { BarcodeRecord } from "./Barcode";
 import type { GlobalId, Id } from "./BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "./Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Editable } from "./Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraField, type ExtraFieldAttrs } from "./ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "./Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasChildren } from "./HasChildren";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier } from "./Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ReadAccessLevel, type Record } from "./Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs } from "./Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowOptions } from "./Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "./Tag";
+import type { Container } from "./Container";
+import type { Editable } from "./Editable";
+import type { ExtraField, ExtraFieldAttrs } from "./ExtraField";
+import type { Factory } from "./Factory";
+import type { HasChildren } from "./HasChildren";
+import type { Identifier } from "./Identifier";
+import type { ReadAccessLevel, Record } from "./Record";
+import type { CoreFetcherArgs } from "./Search";
+import type { AdjustableTableRowOptions } from "./Tables";
+import type { Tag } from "./Tag";
 
 export type State = "create" | "edit" | "preview";
 export type Action = "LIMITED_READ" | "READ" | "UPDATE" | "CHANGE_OWNER";
@@ -237,13 +222,9 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * When new data is available, typically by making a GET request, the
    * instance of InventoryRecord can be repopulated with this method.
    */
-  populateFromJson(
-    factory: Factory,
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    params: any,
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    defaultParams: any | null,
-  ): void;
+  
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+populateFromJson(factory: Factory, params: any, defaultParams: any | null): void;
 
   /*
    * After some set of other Records have been modified, it may be desirable to
@@ -315,8 +296,9 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * to assert as such for each implementation.
    */
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  readonly paramsForBackend: any;
+  
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+readonly  paramsForBackend: any;
 
   /*
    * Many of the classes of Inventory records are analogous to physical objects
@@ -334,8 +316,9 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * various UI elements that the user has made changes.
    */
 
-  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
-  setAttributesDirty({}): void;
+  
+// biome-ignore lint/correctness/noEmptyPattern: initial biome migration
+setAttributesDirty({}): void;
 
   /*
    * The UI SHOULD display clear error and success messages when significant

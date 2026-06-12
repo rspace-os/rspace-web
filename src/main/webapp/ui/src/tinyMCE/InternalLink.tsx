@@ -23,8 +23,7 @@ import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import UserDetails from "../components/UserDetails";
 import materialTheme from "../theme";
 import { getSorting, paginationOptions, stableSort } from "../util/table";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Order } from "../util/types";
+import type { Order } from "../util/types";
 
 type RevisionVersion = RevisionIdentifier;
 type RevisionSortKey = "version" | "name" | "ownerFullName" | "modificationDate";

@@ -44,8 +44,7 @@ describe("setActiveResult", () => {
 
       expect(mockFetch).toHaveBeenCalled();
       // Use non-null assertion since we know we set the locations in the mock
-      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-      expect(container.locations!.length).toBe(1);
+      expect(container.locations?.length).toBe(1);
     });
   });
 });

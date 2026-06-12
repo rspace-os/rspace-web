@@ -1,8 +1,7 @@
 import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { CurrentRecord, InTrash, RecordLink, TopLink } from "./RecordLink";

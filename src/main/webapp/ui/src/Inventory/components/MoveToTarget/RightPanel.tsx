@@ -3,8 +3,6 @@ import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
 import { menuIDs } from "../../../util/menuIDs";
@@ -21,8 +19,7 @@ const Title = observer(() => {
   if (activeResult.isWorkbench && activeResult.ownerLabel && peopleStore.currentUser?.bench?.globalId) {
     const ownerPrefix =
       activeResult.globalId === peopleStore.currentUser.bench.globalId ? "My" : `${activeResult.ownerLabel}'s`;
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    return ownerPrefix + " Bench";
+    return `${ownerPrefix} Bench`;
   }
   return <NameWithBadge record={activeResult} />;
 });

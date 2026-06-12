@@ -2,8 +2,7 @@ import BorderInnerIcon from "@mui/icons-material/BorderInner";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../../stores/models/ContainerModel";
+import type ContainerModel from "../../../stores/models/ContainerModel";
 
 const DRAGGER_SIZE = 24;
 
@@ -24,10 +23,8 @@ function Dragger({ container, parentRef }: DraggerArgs): React.ReactNode {
   const selectionHeight = Math.abs(container.selectionEnd.y - container.selectionStart.y) + DRAGGER_SIZE / 2;
 
   const renderCondition = () =>
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
     Boolean(parentRef.current) &&
-    container &&
-    container.selectionMode &&
+    container?.selectionMode &&
     Math.abs(container.selectionStart.y - container.selectionEnd.y) > DRAGGER_SIZE / 2 &&
     Math.abs(container.selectionStart.x - container.selectionEnd.x) > 0;
 

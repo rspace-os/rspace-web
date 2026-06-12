@@ -36,15 +36,9 @@ import NoValue from "../../../components/NoValue";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Id } from "../../../stores/definitions/BaseRecord";
+import type { Id } from "../../../stores/definitions/BaseRecord";
 import { type Container, cTypeToDefaultSearchView } from "../../../stores/definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type CreateFrom,
-  type CreateOptionParameter,
-  type InventoryRecord,
-} from "../../../stores/definitions/InventoryRecord";
+import type { CreateFrom, CreateOptionParameter, InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import Search from "../../../stores/models/Search";
 import { menuIDs } from "../../../util/menuIDs";
@@ -308,9 +302,7 @@ const NewSubsampleQuantity = observer(
                  * prohibited from submitting if the field is empty.
                  */
                 const newValue = parseFloat(target.value);
-                if (target.checkValidity())
-                  // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-                  state.quantity = isNaN(newValue) ? "" : newValue;
+                if (target.checkValidity()) state.quantity = Number.isNaN(newValue) ? "" : newValue;
               });
             }}
             variant="outlined"
@@ -574,10 +566,8 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
                   </FormControl>
                 </StepContent>
               </Step>
-              {/** biome-ignore lint/complexity/useOptionalChain: initial biome migration */}
-              {selectedCreateOptionIndex !== null &&
-                existingRecord.createOptions[selectedCreateOptionIndex].parameters &&
-                existingRecord.createOptions[selectedCreateOptionIndex].parameters.map(
+              {selectedCreateOptionIndex &&
+                existingRecord.createOptions[selectedCreateOptionIndex].parameters?.map(
                   ({ label, explanation, state, validState }, index) => (
                     <ParameterField
                       label={label}

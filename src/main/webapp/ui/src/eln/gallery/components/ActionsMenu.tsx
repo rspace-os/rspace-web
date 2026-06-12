@@ -43,10 +43,8 @@ import * as FetchingData from "../../../util/fetchingData";
 import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../../util/types";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GallerySection } from "../common";
+import type { URL } from "../../../util/types";
+import type { GallerySection } from "../common";
 import {
   useAsposePreviewOfGalleryFile,
   useCollaboraEdit,
@@ -1020,8 +1018,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                 .elseThrow();
               const newFile = new File(
                 [newBlob],
-                // biome-ignore lint/style/useTemplate: initial biome migration
-                file.transformFilename((name) => name + "_edited"),
+                file.transformFilename((name) => `${name}_edited`),
                 {
                   type: newBlob.type,
                 },

@@ -6,8 +6,7 @@ import TablePagination from "@mui/material/TablePagination";
 import { type ChangeEvent, useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
 import ConnectedAppsTableRow from "@/my-rspace/profile/ConnectedAppsTableRow";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ConnectedOAuthApp } from "@/my-rspace/profile/types";
+import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getSorting, paginationOptions, stableSort } from "@/util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";

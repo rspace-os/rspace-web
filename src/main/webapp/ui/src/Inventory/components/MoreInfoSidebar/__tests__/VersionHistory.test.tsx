@@ -1,10 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { render } from "@/__tests__/customQueries";
 import InvApiService from "../../../../common/InvApiService";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";

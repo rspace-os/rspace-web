@@ -42,73 +42,70 @@ const Form = observer(({ handleSearch }: FormArgs) => {
   const { inputRef, textTooWide } = useIsTextWiderThanField();
 
   return (
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-    <>
-      <Box
-        component="form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSearch();
-        }}
-        sx={{ width: "100%" }}
-      >
-        <TextField
-          data-test-id="s-search-input-normal"
-          placeholder="Search"
-          value={search.fetcher.query ?? ""}
-          onChange={handleChange}
-          sx={{ flexGrow: 1 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <IconButton
-                    aria-label="Search"
-                    data-test-id="s-search-submit"
-                    onClick={onSearch}
-                    size="small"
-                    edge="start"
-                  >
-                    <SearchOutlinedIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-              ...(search.fetcher.query
-                ? {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <CustomTooltip title="Clear search">
-                          <IconButton
-                            size="small"
-                            data-test-id="reset-search"
-                            aria-label="close"
-                            color="inherit"
-                            onClick={handleReset}
-                          >
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        </CustomTooltip>
-                      </InputAdornment>
-                    ),
-                  }
-                : {}),
-            },
+    <Box
+      component="form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSearch();
+      }}
+      sx={{ width: "100%" }}
+    >
+      <TextField
+        data-test-id="s-search-input-normal"
+        placeholder="Search"
+        value={search.fetcher.query ?? ""}
+        onChange={handleChange}
+        sx={{ flexGrow: 1 }}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <IconButton
+                  aria-label="Search"
+                  data-test-id="s-search-submit"
+                  onClick={onSearch}
+                  size="small"
+                  edge="start"
+                >
+                  <SearchOutlinedIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+            ...(search.fetcher.query
+              ? {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CustomTooltip title="Clear search">
+                        <IconButton
+                          size="small"
+                          data-test-id="reset-search"
+                          aria-label="close"
+                          color="inherit"
+                          onClick={handleReset}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </CustomTooltip>
+                    </InputAdornment>
+                  ),
+                }
+              : {}),
+          },
 
-            htmlInput: {
-              "aria-label": "Search",
-              type: "search",
-              ref: inputRef,
-            },
-          }}
-        />
-        <SearchDialog
-          visible={textTooWide.orElse(false)}
-          onSubmit={onSearch}
-          query={search.fetcher.query ?? ""}
-          setQuery={handleChange}
-        />
-      </Box>
-    </>
+          htmlInput: {
+            "aria-label": "Search",
+            type: "search",
+            ref: inputRef,
+          },
+        }}
+      />
+      <SearchDialog
+        visible={textTooWide.orElse(false)}
+        onSubmit={onSearch}
+        query={search.fetcher.query ?? ""}
+        setQuery={handleChange}
+      />
+    </Box>
   );
 });
 

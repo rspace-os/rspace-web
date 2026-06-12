@@ -7,13 +7,12 @@ import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
 import TextField from "@mui/material/TextField";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
   DataGrid,
-  DataGridProps,
-  GridRowId,
-  GridRowSelectionModel,
-  GridSlotProps,
+  type DataGridProps,
+  type GridRowId,
+  type GridRowSelectionModel,
+  type GridSlotProps,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   GridToolbarExportContainer,

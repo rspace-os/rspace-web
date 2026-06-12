@@ -1,12 +1,10 @@
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../../stores/definitions/Person";
+import type { Person } from "../../stores/definitions/Person";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import useStores from "../../stores/use-stores";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";

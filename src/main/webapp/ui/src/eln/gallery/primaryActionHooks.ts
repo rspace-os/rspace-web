@@ -2,8 +2,7 @@ import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 import { supportedAsposeFile } from "./components/CallableAsposePreview";
 import useCollabora from "./useCollabora";
 import { chemistryFilePreview, type GalleryFile } from "./useGalleryListing";
@@ -66,8 +65,7 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
       .map(() => file.globalId)
       .flatMap(Parsers.isNotBottom)
       .map((globalId) => {
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        return "/collaboraOnline/" + globalId + "/edit";
+        return `/collaboraOnline/${globalId}/edit`;
       });
   };
 }
@@ -94,8 +92,7 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
       .map(() => file.globalId)
       .flatMap(Parsers.isNotBottom)
       .map((globalId) => {
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        return "/officeOnline/" + globalId + "/view";
+        return `/officeOnline/${globalId}/view`;
       });
   };
 }

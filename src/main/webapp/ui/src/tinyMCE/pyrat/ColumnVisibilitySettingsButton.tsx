@@ -1,16 +1,14 @@
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import ExpandCollapseIcon from "../../components/ExpandCollapseIcon";
 
 export default function ColumnVisibilitySettingsButton({
   showSettings,
   setShowSettings,
 }: {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   showSettings: any;
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   setShowSettings: any;
 }) {
   return (

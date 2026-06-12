@@ -5,15 +5,11 @@
  * https://testing-library.com/docs/react-testing-library/setup#add-custom-queries
  */
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import { getQueriesForElement, queries, type RenderOptions, render, within } from "@testing-library/react";
+import { type getQueriesForElement, queries, type RenderOptions, render, within } from "@testing-library/react";
 
 export function getIndexOfTableCell(tablerow: HTMLElement, name: string | RegExp): number {
   const cell = within(tablerow).getByRole("columnheader", { name });
-  // biome-ignore lint/complexity/useIndexOf: initial biome migration
-  return within(tablerow)
-    .getAllByRole("columnheader")
-    .findIndex((c) => c === cell);
+  return within(tablerow).getAllByRole("columnheader").indexOf(cell);
 }
 
 /**

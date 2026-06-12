@@ -7,14 +7,12 @@ const useResizeObserver = ({
   callback: () => void;
   element: { current: HTMLElement | null };
 }) => {
-  // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-  const current = element && element.current;
+  const current = element?.current;
 
   const observer = useRef<ResizeObserver | null>(null);
 
   const observe = () => {
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    if (element && element.current && observer.current) {
+    if (element?.current && observer.current) {
       observer.current.observe(element.current);
     }
   };

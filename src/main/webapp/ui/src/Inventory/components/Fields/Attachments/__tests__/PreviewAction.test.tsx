@@ -1,13 +1,5 @@
-import {
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  act,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { mockAttachment } from "../../../../../stores/definitions/__tests__/Attachment/mocking";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";

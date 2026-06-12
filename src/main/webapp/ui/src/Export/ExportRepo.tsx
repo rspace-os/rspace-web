@@ -1,6 +1,5 @@
 import Alert from "@mui/material/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
+import type { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
@@ -15,20 +14,16 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { DEFAULT_STATE } from "@/Export/constants";
+import type { DEFAULT_STATE } from "@/Export/constants";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
 import { mapNullable } from "../util/Util";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Validator } from "../util/Validator";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type DMPUserInternalId, type Person, type Repo, type RepoDetails } from "./repositories/common";
+import type { Validator } from "../util/Validator";
+import type { DMPUserInternalId, Person, Repo, RepoDetails } from "./repositories/common";
 import DataverseRepo from "./repositories/DataverseRepo";
 import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import DryadRepo from "./repositories/DryadRepo";
 import FigshareRepo from "./repositories/FigshareRepo";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "./repositories/Tags";
+import type { Tag } from "./repositories/Tags";
 import ZenodoRepo from "./repositories/ZenodoRepo";
 
 const STANDARD_VALIDATIONS = {
@@ -97,18 +92,15 @@ const DmpSelector = observer(
           </Grid>
           <Grid size={12}>
             <Collapse in={state.linkDMP} component="div" collapsedSize={0}>
-              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-              <>
-                <DMPTableSmall
-                  plans={dmps}
-                  selectedPlans={state.selectedPlans}
-                  addSelectedPlan={addSelectedPlan}
-                  removeSelectedPlan={removeSelectedPlan}
-                />
-                {repo.repoName === "app.zenodo" && state.selectedPlans.length > 1 && (
-                  <Alert severity="error">Only one DMP can be associated with an export to Zenodo.</Alert>
-                )}
-              </>
+              <DMPTableSmall
+                plans={dmps}
+                selectedPlans={state.selectedPlans}
+                addSelectedPlan={addSelectedPlan}
+                removeSelectedPlan={removeSelectedPlan}
+              />
+              {repo.repoName === "app.zenodo" && state.selectedPlans.length > 1 && (
+                <Alert severity="error">Only one DMP can be associated with an export to Zenodo.</Alert>
+              )}
             </Collapse>
           </Grid>
         </Grid>
@@ -289,8 +281,7 @@ function ExportRepo({
   };
 
   const handleFetchCrossrefFunder = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.SyntheticEvent<Element, Event>,
+    _event: React.SyntheticEvent<Element, Event>,
     searchTerm: string,
     reason: AutocompleteInputChangeReason,
   ) => {

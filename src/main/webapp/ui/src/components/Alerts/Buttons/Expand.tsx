@@ -1,8 +1,7 @@
 // @flow strict
 
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import ExpandCollapseIcon from "../../ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 
@@ -13,13 +12,7 @@ type ExpandButtonArgs = {
   size?: "small" | "medium" | "large";
 };
 
-function ExpandButton({
-  // biome-ignore lint/complexity/noUselessRename: initial biome migration
-  ariaLabel: ariaLabel,
-  expanded,
-  setExpanded,
-  size = "medium",
-}: ExpandButtonArgs): React.ReactNode {
+function ExpandButton({ ariaLabel, expanded, setExpanded, size = "medium" }: ExpandButtonArgs): React.ReactNode {
   return (
     <IconButtonWithTooltip
       ariaLabel={ariaLabel}

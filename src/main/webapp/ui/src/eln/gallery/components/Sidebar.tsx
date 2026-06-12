@@ -17,8 +17,7 @@ import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import DSWAccentMenuItem, { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { Drawer, Menu } from "../../../components/DialogBoundary";
 import DrawerTab from "../../../components/DrawerTab";
@@ -38,12 +37,10 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
+import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
 import { type GallerySection, gallerySectionIcon, gallerySectionLabel } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Id } from "../useGalleryListing";
+import type { Id } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 
 const UploadMenuItem = ({
@@ -245,8 +242,7 @@ const AddFilestoreMenuItem = ({
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
@@ -363,12 +359,9 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
         >("allIntegrations");
         if (states.data.success) {
           const data = states.data.data;
-          const configs = Object.entries(data.DSW.options).map(
-            // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-            ([optionsId, config]) => {
-              return config as DswConfig;
-            },
-          );
+          const configs = Object.entries(data.DSW.options).map(([_optionsId, config]) => {
+            return config as DswConfig;
+          });
           setDswConnections(configs);
         }
       } catch (e) {
@@ -388,11 +381,8 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
       {showDmpAssistant && <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />}
       {showDmponline && <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />}
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
-      {/** biome-ignore lint/complexity/useOptionalChain: initial biome migration */}
       {showDsw &&
-        dswConnections &&
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-        dswConnections.map((connection, index) => {
+        dswConnections?.map((connection, _index) => {
           return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection} />;
         })}
     </>

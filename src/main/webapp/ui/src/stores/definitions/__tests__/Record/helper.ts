@@ -1,8 +1,6 @@
 import fc, { type Arbitrary } from "fast-check";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type GlobalIdPrefix, type Id } from "../../BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record as Foo } from "../../Record";
+import type { GlobalId, GlobalIdPrefix, Id } from "../../BaseRecord";
+import type { Record as Foo } from "../../Record";
 import { arbitraryPerson } from "../Person/helper";
 
 export const arbitraryId: Arbitrary<Id> = fc.integer({ min: 1 }).map((n) => n as number | null);

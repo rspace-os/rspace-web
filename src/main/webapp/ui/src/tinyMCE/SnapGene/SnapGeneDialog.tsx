@@ -14,9 +14,9 @@ import EnzymeTable from "./EnzymeTable";
 import FastaView from "./FastaView";
 import OrfTable from "./OrfTable";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const $: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
 
 function a11yProps(index: number) {
@@ -26,7 +26,7 @@ function a11yProps(index: number) {
   };
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SnapGeneDialog(props: any) {
   const [open, setOpen] = React.useState(true);
   const [tab, setTab] = React.useState(0);
@@ -43,8 +43,7 @@ export default function SnapGeneDialog(props: any) {
     $(".snapgene-dialog").remove(); // clean up after dialog is closed
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  const switchTab = (e: React.SyntheticEvent, value: number) => {
+  const switchTab = (_e: React.SyntheticEvent, value: number) => {
     setTab(value);
   };
 
@@ -68,16 +67,12 @@ export default function SnapGeneDialog(props: any) {
               <Tab label="ORF table" {...a11yProps(3)} />
             </Tabs>
           </Grid>
-          {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-          {tab == 0 && <DnaPreview id={props.id} clicked={clicked["0"]} setDisabled={(d) => setDisabled(d)} />}
-          {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-          {tab == 1 && (
+          {tab === 0 && <DnaPreview id={props.id} clicked={clicked["0"]} setDisabled={(d) => setDisabled(d)} />}
+          {tab === 1 && (
             <EnzymeTable id={props.id} clicked={clicked["1"]} setDisabled={(d: boolean) => setDisabled(d)} />
           )}
-          {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-          {tab == 2 && <FastaView id={props.id} clicked={clicked["2"]} setDisabled={(d) => setDisabled(d)} />}
-          {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-          {tab == 3 && <OrfTable id={props.id} clicked={clicked["3"]} setDisabled={(d: boolean) => setDisabled(d)} />}
+          {tab === 2 && <FastaView id={props.id} clicked={clicked["2"]} setDisabled={(d) => setDisabled(d)} />}
+          {tab === 3 && <OrfTable id={props.id} clicked={clicked["3"]} setDisabled={(d: boolean) => setDisabled(d)} />}
         </Grid>
       </DialogContent>
       <DialogActions>
@@ -92,7 +87,7 @@ export default function SnapGeneDialog(props: any) {
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 $(document).on("click", ".snapGenePanel .previewActionLink", (e: any) => {
   e.preventDefault();
   const target_id = $(e.target).parent().parent()[0].getAttribute("bioid");
@@ -100,7 +95,7 @@ $(document).on("click", ".snapGenePanel .previewActionLink", (e: any) => {
   renderDialog(target_id);
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 $(document).on("click", ".imageThumbnail", (e: any) => {
   if (window.localStorage.getItem("snapgene-available") === "true") {
     const target = $(e.target).parent();
@@ -117,7 +112,7 @@ document.addEventListener("open-dna-info", (e) => {
   renderDialog((e as CustomEvent).detail);
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function renderDialog(target_id: any) {
   $(document.body).append("<span class='snapgene-dialog'></span>");
   const container = $(".snapgene-dialog")[0];

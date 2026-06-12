@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../util/types";
+import type { URL } from "../util/types";
 
 const mkDocLink = (pageId: string, hash: string = ""): URL =>
   `https://researchspace.helpdocs.io/article/${pageId}#${hash}`;

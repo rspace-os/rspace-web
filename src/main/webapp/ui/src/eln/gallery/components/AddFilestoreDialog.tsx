@@ -64,8 +64,7 @@ function FilesystemSelectionStep(props: {
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
@@ -194,8 +193,7 @@ function TreeListing({
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
@@ -294,12 +292,7 @@ function FolderSelectionStep(props: {
           onExpandedItemsChange={(_event, nodeIds) => {
             setExpandedItems(nodeIds);
           }}
-          onItemSelectionToggle={(
-            // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-            event,
-            itemId: string | ReadonlyArray<string>,
-            selected,
-          ) => {
+          onItemSelectionToggle={(_event, itemId: string | ReadonlyArray<string>, selected) => {
             if (!(typeof itemId === "string")) return;
             const selectedFolder: string = itemId;
             if (!selected) return;
@@ -420,8 +413,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),

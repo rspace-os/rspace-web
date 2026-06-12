@@ -4,8 +4,7 @@ import type React from "react";
 import { useContext } from "react";
 import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type DeletedItems } from "../../../stores/definitions/Search";
+import type { DeletedItems } from "../../../stores/definitions/Search";
 
 type StatusFilterArgs = {
   anchorEl: HTMLElement | null;

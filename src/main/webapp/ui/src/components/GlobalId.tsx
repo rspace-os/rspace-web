@@ -4,8 +4,7 @@ import type React from "react";
 import { useContext } from "react";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import NavigateContext from "../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type LinkableRecord } from "../stores/definitions/LinkableRecord";
+import type { LinkableRecord } from "../stores/definitions/LinkableRecord";
 import RecordIcon from "./RecordTypeIcon";
 
 type GlobalIdArgs = {

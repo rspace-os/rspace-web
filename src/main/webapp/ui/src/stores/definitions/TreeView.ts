@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "./BaseRecord";
+import type { GlobalId } from "./BaseRecord";
 import type { InventoryRecord, RecordType } from "./InventoryRecord";
 
 /*

@@ -363,8 +363,7 @@ function GalleryFileInFolder() {
       const token = await getToken();
       const { data } = await axios.get<unknown>(`/api/v1/files/${fileIdParam}`, {
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + token,
+          Authorization: `Bearer ${token}`,
         },
       });
       setFolderId(

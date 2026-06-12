@@ -2,11 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AjaxOperationFailureResponseSchema } from "@/modules/common/api/schema";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { groupQueryKeys } from "@/modules/groups/queries";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
+import type {
   AddRaidIdentifierAssociationResponse,
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  AssociateRaidIdentifierRequestBody,
   DeleteRaidIdentifierAssociationResponse,
 } from "@/modules/raid/schema";
 

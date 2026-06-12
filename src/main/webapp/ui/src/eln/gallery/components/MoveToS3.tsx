@@ -82,8 +82,7 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
     } else {
       const recordIds: ReadonlyArray<number> = (selectedIds ?? []).flatMap((id) => {
         const n = parseInt(id, 10);
-        // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-        return isNaN(n) ? [] : [n];
+        return Number.isNaN(n) ? [] : [n];
       });
       const op = retainSourceCopy ? "copy" : "move";
       void (retainSourceCopy ? selectedFilestore.copy(recordIds) : selectedFilestore.move(recordIds))

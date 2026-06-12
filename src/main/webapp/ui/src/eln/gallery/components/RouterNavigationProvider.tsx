@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { useLocation, useNavigate as useReactRouterNavigate } from "react-router-dom";
 import NavigateContext from "../../../stores/contexts/Navigate";
 

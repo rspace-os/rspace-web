@@ -2,8 +2,6 @@ import { chipClasses } from "@mui/material/Chip";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";

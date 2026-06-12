@@ -11,8 +11,7 @@ export function capImageAt1MB(file: Blob, dataURL: string, canvasId: string): Pr
       const areaScaleFactor = Math.min(1, _1MB / file.size);
       const lengthScaleFactor = Math.sqrt(areaScaleFactor);
       const image = new Image();
-      // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-      image.onload = function () {
+      image.onload = () => {
         const ctx = canvas.getContext("2d");
         if (ctx === null) return reject(new Error("Could not get canvas context"));
         ctx.clearRect(0, 0, canvas.width, canvas.height);

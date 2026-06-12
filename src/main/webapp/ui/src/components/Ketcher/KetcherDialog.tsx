@@ -1,8 +1,7 @@
 import "ketcher-react/dist/index.css";
 
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
-// biome-ignore lint/style/useImportType: initial biome migration
-import { createTheme, ThemeOptions } from "@mui/material";
+import { createTheme, type ThemeOptions } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -13,14 +12,12 @@ import { paperClasses } from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Ketcher } from "ketcher-core";
+import type { Ketcher } from "ketcher-core";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import React, { useMemo, useRef, useState } from "react";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ValidatingSubmitButton, { IsValid, ValidationResult } from "../ValidatingSubmitButton";
+import ValidatingSubmitButton, { IsValid, type ValidationResult } from "../ValidatingSubmitButton";
 
 declare global {
   interface Window {

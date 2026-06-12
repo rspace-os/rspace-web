@@ -4,10 +4,8 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import CustomTooltip from "../../../components/CustomTooltip";
 import FormControl from "../../../components/Inputs/FormControl";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FieldModelAttrs } from "../../../stores/models/FieldModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import TemplateModel from "../../../stores/models/TemplateModel";
+import type { FieldModelAttrs } from "../../../stores/models/FieldModel";
+import type TemplateModel from "../../../stores/models/TemplateModel";
 
 const EMPTY_FIELD: FieldModelAttrs = {
   name: "",

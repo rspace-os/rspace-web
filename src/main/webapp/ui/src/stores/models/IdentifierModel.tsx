@@ -15,32 +15,26 @@
  * ============================================================================
  */
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { getErrorMessage } from "@/util/error";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InvApiService from "../../common/InvApiService";
+import type InvApiService from "../../common/InvApiService";
 import type { RadioOption } from "../../components/Inputs/RadioField";
 import * as ArrayUtils from "../../util/ArrayUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK, type URL } from "../../util/types";
+import type { _LINK, URL } from "../../util/types";
 import { type Alert, mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GeoLocation, type GeoLocationPolygon } from "../definitions/GeoLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type AlternateIdentifier,
-  type CreatorType,
-  type DropdownOption,
-  type Identifier,
-  type IdentifierAttrs,
-  type IdentifierDate,
-  type IdentifierDescription,
-  type IdentifierField,
-  type IdentifierSubject,
-  type IGSNPublishingState,
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { GeoLocation, GeoLocationPolygon } from "../definitions/GeoLocation";
+import type {
+  AlternateIdentifier,
+  CreatorType,
+  DropdownOption,
+  Identifier,
+  IdentifierAttrs,
+  IdentifierDate,
+  IdentifierDescription,
+  IdentifierField,
+  IdentifierSubject,
+  IGSNPublishingState,
 } from "../definitions/Identifier";
 import GeoLocationModel from "./GeoLocationModel";
 

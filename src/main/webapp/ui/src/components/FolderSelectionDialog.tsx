@@ -6,8 +6,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FolderTreeNode } from "../hooks/api/useFolders";
+import type { FolderTreeNode } from "../hooks/api/useFolders";
 import FolderTree from "./FolderTree";
 
 type FolderSelectionDialogProps = {

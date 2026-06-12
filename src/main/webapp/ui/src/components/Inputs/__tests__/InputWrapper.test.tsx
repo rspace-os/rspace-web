@@ -1,14 +1,11 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import materialTheme from "../../../theme";
 import InputWrapper from "../InputWrapper";
 
 const expectText = (text: string) => (container: Element) => {
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  expect(container).toHaveTextContent("Nothing here" + text);
+  expect(container).toHaveTextContent(`Nothing here${text}`);
 };
 const expectNothing = expectText("");
 const expectHelpText = expectText("help");

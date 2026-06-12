@@ -1,7 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { SimpleCarousel } from "./Carousel.story";
 
 const feature = test.extend<{

@@ -1,7 +1,6 @@
 import React from "react";
 import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../../util/types";
+import type { URL } from "../../../util/types";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the

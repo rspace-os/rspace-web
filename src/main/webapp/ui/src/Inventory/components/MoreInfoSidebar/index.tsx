@@ -7,8 +7,7 @@ import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import type { Factory } from "../../../stores/definitions/Factory";
 import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";

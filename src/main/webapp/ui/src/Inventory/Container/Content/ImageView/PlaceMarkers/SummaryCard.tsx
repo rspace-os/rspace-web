@@ -8,10 +8,8 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../../../stores/definitions/Container";
+import type React from "react";
+import type { Location } from "../../../../../stores/definitions/Container";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { preventEventBubbling } from "../../../../../util/Util";
 import useNavigateHelpers from "../../../../useNavigateHelpers";

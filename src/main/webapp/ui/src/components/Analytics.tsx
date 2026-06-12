@@ -52,11 +52,10 @@ function loadIntercom({
 
       // Segment tracking
       // The following code is copied from https://segment.com/docs/connections/sources/catalog/libraries/website/javascript/quickstart/
-      // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-      (function () {
+      (() => {
         // Create a queue, but don't obliterate an existing one!
         // biome-ignore lint/suspicious/noAssignInExpressions: initial biome migration
-        var analytics = (window.analytics = window.analytics || []);
+                var analytics = (window.analytics = window.analytics || []);
         // If the real analytics.js is already on the page return.
         if (analytics.initialize) return;
         // If the snippet was invoked already show an error.
@@ -96,14 +95,12 @@ function loadIntercom({
         // for methods in Analytics.js so that you never have to wait
         // for it to load to actually record data. The `method` is
         // stored as the first argument, so we can replay the data.
-        // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-        analytics.factory = function (method) {
-          // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-          return function (...args) {
+        analytics.factory =
+          (method) =>
+          (...args) => {
             analytics.push([method, ...args]);
             return analytics;
           };
-        };
         // For each of our methods, generate a queueing stub.
         for (let i = 0; i < analytics.methods.length; i++) {
           const key = analytics.methods[i];
@@ -112,8 +109,7 @@ function loadIntercom({
         }
         // Define a method to load Analytics.js from our CDN,
         // and that will be sure to only ever load it once.
-        // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-        analytics.load = function (key, options) {
+        analytics.load = (key, options) => {
           // Create an async script element based on your key.
           const script = document.createElement("script");
           script.type = "text/javascript";

@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonAttrs } from "../../../definitions/Person";
+import type { PersonAttrs } from "../../../definitions/Person";
 
 export const personAttrs = (attrs?: Readonly<Partial<PersonAttrs>>): PersonAttrs => ({
   id: 1,

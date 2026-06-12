@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/experimental-ct-react";
 import * as Jwt from "jsonwebtoken";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { clickWhenInViewport } from "@/__tests__/playwright/viewport";
 import type { emptyObject } from "../util/types";
 import { TestFolderTreeExample } from "./FolderTree.story";
@@ -51,8 +49,7 @@ const feature = test.extend<{
         await page.route("/userform/ajax/inventoryOauthToken", (route) => {
           const payload = {
             iss: "http://localhost:8080",
-            // biome-ignore lint/complexity/useDateNow: initial biome migration
-            iat: new Date().getTime(),
+            iat: Date.now(),
             exp: Math.floor(Date.now() / 1000) + 300,
             refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
           };
@@ -174,8 +171,7 @@ const feature = test.extend<{
         });
         await page.route("**/api/v1/folders/tree/100**", async (route) => {
           const url = new URL(route.request().url());
-          // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-          const pageNumber = parseInt(url.searchParams.get("pageNumber") || "0");
+          const pageNumber = parseInt(url.searchParams.get("pageNumber") || "0", 10);
           if (pageNumber === 0) {
             await route.fulfill({
               status: 200,

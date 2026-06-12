@@ -4,8 +4,7 @@ import type React from "react";
 import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
 import { hasQuantity } from "../../stores/models/HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
+import type { ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
 
 type UsedQuantityFieldArgs = {
   material: Material;
@@ -30,8 +29,7 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): React.Rea
 
   const getNumericValue = () => {
     if (material.selected && mixedSelectedCategories) return "0";
-    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-    if (isNaN(Number(list.additionalQuantity?.numericValue))) return "";
+    if (Number.isNaN(Number(list.additionalQuantity?.numericValue))) return "";
     if (material.selected && list.additionalQuantity) return list.additionalQuantity.numericValue;
     return "0";
   };

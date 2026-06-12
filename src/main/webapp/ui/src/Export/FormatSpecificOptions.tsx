@@ -1,7 +1,6 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Validator } from "../util/Validator";
+import type React from "react";
+import { useEffect, useState } from "react";
+import type { Validator } from "../util/Validator";
 import HtmlXmlExport, { type HtmlXmlExportDetailsArgs } from "./HtmlXmlExport";
 import PdfExport, { type PdfExportDetails, type PdfExportDetailsArgs } from "./PdfExport";
 import WordExport, { type WordExportDetails, type WordExportDetailsArgs } from "./WordExport";

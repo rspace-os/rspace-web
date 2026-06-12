@@ -2,12 +2,10 @@ import { describe, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render, screen, within } from "@testing-library/react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderOfLists";
 import { IsValid } from "../../components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
@@ -160,7 +158,7 @@ describe("Form Section Order", () => {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    window.scrollTo = vi.fn() as any;
+        window.scrollTo = vi.fn() as any;
     assertConsistentOrderOfLists(
       new Map([
         [

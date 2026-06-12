@@ -1,8 +1,6 @@
 import React, { type Context } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Search } from "../definitions/Search";
+import type { Record } from "../definitions/Record";
+import type { Search } from "../definitions/Search";
 import getRootStore from "../stores/RootStore";
 
 /*

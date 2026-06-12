@@ -1,8 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import { render } from "@testing-library/react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
 import StringField from "../StringField";

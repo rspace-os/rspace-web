@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../set";
+import type RsSet from "../../set";
 import { arbRsSet, arbSubsetOf } from "./helpers";
 
 describe("isSupersetOf", () => {

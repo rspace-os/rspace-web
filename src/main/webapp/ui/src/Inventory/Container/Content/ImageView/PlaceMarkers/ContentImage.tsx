@@ -1,16 +1,14 @@
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useLayoutEffect, useRef, useState } from "react";
+import type React from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Draggable from "../../../../../components/Draggable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../../../stores/definitions/Container";
+import type { Location } from "../../../../../stores/definitions/Container";
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import LocationModel from "../../../../../stores/models/LocationModel";
 import useStores from "../../../../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Point } from "../../../../../util/types";
+import type { Point } from "../../../../../util/types";
 import { clamp } from "../../../../../util/Util";
 import NumberedLocation from "../NumberedLocation";
 

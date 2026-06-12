@@ -2,12 +2,11 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useEffect, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel, { ContainerCollection } from "../../stores/models/ContainerModel";
+import type ContainerModel from "../../stores/models/ContainerModel";
+import { ContainerCollection } from "../../stores/models/ContainerModel";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
 import useStores from "../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import AccessPermissions from "../components/Fields/AccessPermissions";

@@ -4,11 +4,10 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SampleModel, { SampleCollection } from "../../stores/models/SampleModel";
+import type SampleModel from "../../stores/models/SampleModel";
+import { SampleCollection } from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import AccessPermissions from "../components/Fields/AccessPermissions";

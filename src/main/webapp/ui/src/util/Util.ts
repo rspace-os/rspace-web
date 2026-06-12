@@ -59,11 +59,8 @@ export const mapObject = <K extends string | number | symbol, V, W>(
   f: (k: K, v: V) => W,
   obj: Record<K, V>,
 ): Record<K, W> =>
-  (Object.keys(obj) as Array<K>).reduce(
-    // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
-    (acc, k) => ({ [k]: f(k, obj[k]), ...acc }),
-    {} as Record<K, W>,
-  );
+  // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
+  (Object.keys(obj) as Array<K>).reduce((acc, k) => ({ [k]: f(k, obj[k]), ...acc }), {} as Record<K, W>);
 
 /**
  * Apply a function to each key and value in an object and return a new object
@@ -157,8 +154,7 @@ export const dropProperty = <Key extends string, Rest extends Record<Key, unknow
  *   matcher(anythingElse); // 9
  */
 export function match<T, U>(pairs: Array<[(t: T) => boolean, U]>): (t: T) => U {
-  // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-  return function (inputs: T): U {
+  return (inputs: T): U => {
     for (const [predicate, output] of pairs) {
       if (predicate(inputs)) return output;
     }

@@ -11,13 +11,10 @@ import * as ArrayUtils from "@/util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { menuIDs } from "../../../util/menuIDs";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import type { menuIDs } from "../../../util/menuIDs";
 import ContextMenu from "../../components/ContextMenu/ContextMenu";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import SortableProperty, { type SortProperty } from "../../components/Tables/SortableProperty";
 
@@ -99,19 +96,16 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
             )}
           </>
         ) : (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>
-            <TableCell variant="head" colSpan={cols} sx={{ p: "6px !important", pt: "0px !important" }}>
-              <ContextMenu
-                menuID={contextMenuId}
-                selectedResults={search.selectedResults}
-                onSelectOptions={onSelectOptions}
-                forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
-                paddingTop
-                basketSearch={search.fetcher.basketSearch}
-              />
-            </TableCell>
-          </>
+          <TableCell variant="head" colSpan={cols} sx={{ p: "6px !important", pt: "0px !important" }}>
+            <ContextMenu
+              menuID={contextMenuId}
+              selectedResults={search.selectedResults}
+              onSelectOptions={onSelectOptions}
+              forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
+              paddingTop
+              basketSearch={search.fetcher.basketSearch}
+            />
+          </TableCell>
         )}
       </TableRow>
     </TableHead>

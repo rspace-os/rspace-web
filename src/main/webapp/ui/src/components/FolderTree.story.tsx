@@ -3,8 +3,7 @@ import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FolderTreeNode } from "../hooks/api/useFolders";
+import type { FolderTreeNode } from "../hooks/api/useFolders";
 import materialTheme from "../theme";
 import FolderTree from "./FolderTree";
 

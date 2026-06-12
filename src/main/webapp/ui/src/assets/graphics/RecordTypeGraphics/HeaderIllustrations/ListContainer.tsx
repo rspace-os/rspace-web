@@ -1,10 +1,9 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 function ListContainer(): React.ReactNode {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
-    <svg
+<svg
       version="1.1"
       style={{ height: 83, opacity: 0.7, position: "absolute", bottom: -28, width: 83 }}
       width="200px"

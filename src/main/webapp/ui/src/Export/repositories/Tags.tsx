@@ -13,8 +13,7 @@ import InputWrapper from "../../components/Inputs/InputWrapper";
 import NoValue from "../../components/NoValue";
 import AddTag from "../../components/Tags/AddTag";
 import TagListing from "../../components/Tags/TagListing";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../stores/definitions/Editable";
+import type { HasEditableFields } from "../../stores/definitions/Editable";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { Optional } from "../../util/optional";
 

@@ -12,10 +12,8 @@ import DateField from "../../../../components/Inputs/DateField";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../../components/RemoveButton";
 import { newGeoLocation } from "../../../../stores/definitions/GeoLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IdentifierField } from "../../../../stores/definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { IdentifierField } from "../../../../stores/definitions/Identifier";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 import { RECOMMENDED_FIELDS_LABELS, subFields, subFieldsForNew } from "../../../../stores/models/IdentifierModel";
 import { capitaliseJustFirstChar } from "../../../../util/Util";
@@ -203,13 +201,11 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   subFields(field.value[i]).map((sf) => (
                     <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
                       <Grid sx={{ minWidth: "150px" }}>
-                        {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-                        <>{RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}:</>
+                        {RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}:
                       </Grid>
                       <Grid>
                         {sf.value ? (
-                          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-                          <>{String(sf.value)}</>
+                          String(sf.value)
                         ) : (
                           <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
                             None
@@ -244,13 +240,8 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                 </Select>
               </FormControl>
             ) : (
-              // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-              <>
-                {
-                  // @ts-expect-error - field.value[i].type exists
-                  capitaliseJustFirstChar(field.value[i].type.toLowerCase())
-                }
-              </>
+              // biome-ignore lint/suspicious/noExplicitAny: field.value is an untyped array (see @ts-expect-error usages elsewhere in this file)
+              capitaliseJustFirstChar((field.value as any)[i].type.toLowerCase())
             )}
           </Grid>
         )}

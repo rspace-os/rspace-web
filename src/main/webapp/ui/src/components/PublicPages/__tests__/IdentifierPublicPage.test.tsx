@@ -2,8 +2,6 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import axios from "@/common/axios";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
 import IdentifierPublicPage from "../IdentifierPublicPage";

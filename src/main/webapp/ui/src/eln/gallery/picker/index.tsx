@@ -19,10 +19,8 @@ import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import { DisableDragAndDropByDefault } from "../../../hooks/ui/useFileImportDragAndDrop";
 import Result from "../../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GallerySection } from "../common";
+import type RsSet from "../../../util/set";
+import type { GallerySection } from "../common";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";

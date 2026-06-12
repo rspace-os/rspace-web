@@ -23,12 +23,9 @@ import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
 import NoValue from "../../../components/NoValue";
 import UserDetails from "../../../components/UserDetails";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Document, type DocumentAttrs } from "../../../stores/definitions/Document";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../stores/definitions/Factory";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
+import type { Document, DocumentAttrs } from "../../../stores/definitions/Document";
+import type { Factory } from "../../../stores/definitions/Factory";
 import RsSet, { unionWith } from "../../../util/set";
 
 type State =

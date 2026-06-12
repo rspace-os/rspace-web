@@ -76,8 +76,7 @@ const typeMapping: Record<string, string> = {
 };
 
 // @TODO pass this down from React
-// biome-ignore lint/style/useConst: initial biome migration
-let chemistryAvailable = false;
+const chemistryAvailable = false;
 
 export function getFieldIdFromTextFieldId(textFieldId: string) {
   return textFieldId.slice("rtf_".length);

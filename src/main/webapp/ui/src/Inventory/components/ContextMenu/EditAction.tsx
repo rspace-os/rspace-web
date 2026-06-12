@@ -1,17 +1,15 @@
 import { Observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { forwardRef } from "react";
+import type React from "react";
+import { forwardRef } from "react";
 import DoubleEditIcon from "../../../assets/graphics/DoubleEditIcon";
 import SingleEditIcon from "../../../assets/graphics/SingleEditIcon";
 import { mkAlert } from "../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord, type LockStatus } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord, LockStatus } from "../../../stores/definitions/InventoryRecord";
 import { RecordLockedError } from "../../../stores/models/InventoryBaseRecord";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage, UserCancelledAction } from "../../../util/error";
 import RsSet from "../../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AllSettled } from "../../../util/types";
+import type { AllSettled } from "../../../util/types";
 import { match, partitionAllSettled } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 

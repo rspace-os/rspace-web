@@ -2,8 +2,7 @@ import TableCell from "@mui/material/TableCell";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useRef } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../../stores/definitions/Container";
+import type { Location } from "../../../../stores/definitions/Container";
 import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
 

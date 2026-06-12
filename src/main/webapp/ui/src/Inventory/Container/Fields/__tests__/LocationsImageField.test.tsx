@@ -1,16 +1,12 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import ImageField from "../../../../components/Inputs/ImageField";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../../../stores/models/ContainerModel";
+import type ContainerModel from "../../../../stores/models/ContainerModel";
 import { type MockStores, makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import type { StoreContainer } from "../../../../stores/stores/RootStore";
 import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import LocationsImageField from "../LocationsImageField";
@@ -125,12 +121,9 @@ describe("LocationImageField", () => {
     test("be a call to setImage.", () => {
       const rootStore = mockRootStore()[0];
       const setImageSpy = vi
-        .spyOn(
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-          rootStore.searchStore.activeResult! as any,
-          "setImage",
-        )
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+                .spyOn(rootStore.searchStore.activeResult! as any, "setImage")
         .mockImplementation(() => async () => {});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -153,19 +146,13 @@ describe("LocationImageField", () => {
     });
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
-      const addScopedToastSpy = vi.spyOn(
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+            const addScopedToastSpy = vi.spyOn(rootStore.searchStore.activeResult! as any, "addScopedToast");
+      const setImageSpy = vi
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        rootStore.searchStore.activeResult! as any,
-        "addScopedToast",
-      );
-      const setImageSpy = vi
-        .spyOn(
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-          rootStore.searchStore.activeResult! as any,
-          "setImage",
-        )
+                .spyOn(rootStore.searchStore.activeResult! as any, "setImage")
         .mockImplementation(() => async () => {});
       let setPreviewImageFunction: () => void;
       const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert").mockImplementation(({ onActionClick }) => {
@@ -190,18 +177,12 @@ describe("LocationImageField", () => {
     });
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
-      vi.spyOn(
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        rootStore.searchStore.activeResult! as any,
-        "setImage",
-      ).mockImplementation(() => async () => {});
-      const addScopedToastSpy = vi.spyOn(
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        rootStore.searchStore.activeResult! as any,
-        "addScopedToast",
-      );
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+            vi.spyOn(rootStore.searchStore.activeResult! as any, "setImage").mockImplementation(() => async () => {});
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+            const addScopedToastSpy = vi.spyOn(rootStore.searchStore.activeResult! as any, "addScopedToast");
       container.image = "theBlobUrlOfSomeImage";
 
       const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert");

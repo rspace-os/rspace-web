@@ -13,13 +13,7 @@ import {
   useUpdateStoichiometryMutation,
 } from "@/modules/stoichiometry/mutations";
 import { getStoichiometry, stoichiometryQueryKeys, useGetStoichiometryQuery } from "@/modules/stoichiometry/queries";
-import type {
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  ExistingMoleculeUpdate,
-  NewMolecule,
-  RsChemElement,
-  StoichiometryRequest,
-} from "@/modules/stoichiometry/schema";
+import type { RsChemElement, StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import { toEditableMolecules } from "@/tinyMCE/stoichiometry/editableMolecules";
 import type { StoichiometryTableController } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";

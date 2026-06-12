@@ -1,5 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
@@ -42,13 +42,7 @@ export default function MainSearchNavigationContext({ children }: MainSearchNavi
       );
     }
 
-    if (
-      !search.activeResult &&
-      // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-      Boolean(search.filteredResults.length) &&
-      !uiStore.isVerySmall &&
-      !uiStore.isSmall
-    ) {
+    if (!search.activeResult && search.filteredResults.length && !uiStore.isVerySmall && !uiStore.isSmall) {
       try {
         await search.setActiveResult();
         uiStore.setVisiblePanel("right");

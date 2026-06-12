@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import * as React from "react";
 import { mergeSx } from "@/modules/common/utils/styles";
 

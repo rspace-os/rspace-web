@@ -471,7 +471,7 @@ describe("useEditableStoichiometryTable", () => {
       expect(latestValue?.allMolecules).toHaveLength(6);
     });
 
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const addedReagents = latestValue!.allMolecules.filter(
       ({ name, id }) => (name === "New Water" || name === "Acetic acid") && typeof id === "number",
     );
@@ -502,7 +502,7 @@ describe("useEditableStoichiometryTable", () => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
 
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
     let updatedRow: EditableMolecule | undefined;
 
@@ -538,7 +538,7 @@ describe("useEditableStoichiometryTable", () => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
 
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
     let returnedRow: EditableMolecule | undefined;
 
@@ -547,7 +547,7 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     expect(returnedRow).toEqual(originalRow);
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.allMolecules.find(({ id }) => id === 6)?.role).toBe("PRODUCT");
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "Error updating row:",
@@ -585,7 +585,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(3);
     });
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const remainingMolecules = latestValue!.allMolecules;
     expect(remainingMolecules.find(({ id }) => id === moleculeId)).toBeUndefined();
   });
@@ -618,7 +618,7 @@ describe("useEditableStoichiometryTable", () => {
       latestValue?.tableController.deleteReagent(moleculeId);
     });
 
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const moleculesAfterDeleteAttempt = latestValue!.allMolecules;
     expect(moleculesAfterDeleteAttempt).toHaveLength(4);
     expect(moleculesAfterDeleteAttempt.find(({ id }) => id === moleculeId)).toBeDefined();
@@ -652,7 +652,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(3);
     });
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.allMolecules.find(({ id }) => id === 7)).toBeUndefined();
   });
 
@@ -682,7 +682,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.hasChanges).toBe(false);
 
     act(() => {
@@ -703,10 +703,8 @@ describe("useEditableStoichiometryTable", () => {
       latestValue?.tableController.pickInventoryLink(5, 999, "SS999");
     });
 
-    expect(
-      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-      latestValue!.allMolecules.find((molecule) => molecule.id === 5),
-    ).toMatchObject({
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    expect(latestValue!.allMolecules.find((molecule) => molecule.id === 5)).toMatchObject({
       inventoryLink: null,
       deletedInventoryLink: {
         inventoryItemGlobalId: "SS123",
@@ -750,7 +748,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.hasChanges).toBe(false);
 
     act(() => {
@@ -903,10 +901,8 @@ describe("useEditableStoichiometryTable", () => {
       id: 5,
       inventoryLink: null,
     });
-    expect(
-      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-      latestValue!.allMolecules.find((molecule) => molecule.id === 5),
-    ).toMatchObject({
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    expect(latestValue!.allMolecules.find((molecule) => molecule.id === 5)).toMatchObject({
       inventoryLink: null,
       savedInventoryLink: null,
       deletedInventoryLink: null,
@@ -949,12 +945,8 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     act(() => {
-      latestValue?.tableController.processRowUpdate(
-        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        { ...newMolecule!, role: "PRODUCT" },
-        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        newMolecule!,
-      );
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+      latestValue?.tableController.processRowUpdate({ ...newMolecule!, role: "PRODUCT" }, newMolecule!);
     });
 
     await act(async () => {

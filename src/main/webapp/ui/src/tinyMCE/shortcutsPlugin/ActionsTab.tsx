@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import React from "react";
 import { humanize } from "../../util/shortcuts";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function ActionsTab(props: any) {
   return Object.keys(props.actionShortcuts).map((k) => (
     <React.Fragment key={k}>
@@ -20,12 +20,8 @@ export default function ActionsTab(props: any) {
           label=""
           id={k}
           value={humanize(props.actionShortcuts[k])}
-          // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-          error={props.hasError && k == props.selectedKey}
-          helperText={
-            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            k == props.selectedKey && props.hasError ? props.errorMessage : null
-          }
+          error={props.hasError && k === props.selectedKey}
+          helperText={k === props.selectedKey && props.hasError ? props.errorMessage : null}
           onKeyDown={(e) => props.detectShortcut(k, e)}
           onKeyUp={props.onKeyUp}
           margin="dense"

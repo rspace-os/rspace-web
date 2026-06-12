@@ -28,11 +28,9 @@ import AlertsContext, { mkAlert } from "@/stores/contexts/Alert";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/workspace";
 import useDocuments from "../hooks/api/useDocuments";
-// biome-ignore lint/style/useImportType: initial biome migration
-import useFolders, { FolderTreeNode } from "../hooks/api/useFolders";
+import useFolders, { type FolderTreeNode } from "../hooks/api/useFolders";
 import useGroups from "../hooks/api/useGroups";
-// biome-ignore lint/style/useImportType: initial biome migration
-import useShare, { getParentFolderName, NewShare, ShareInfo, ShareOption } from "../hooks/api/useShare";
+import useShare, { getParentFolderName, type NewShare, type ShareInfo, type ShareOption } from "../hooks/api/useShare";
 import useUserDetails from "../hooks/api/useUserDetails";
 import useWhoAmI from "../hooks/api/useWhoAmI";
 import AnalyticsContext from "../stores/contexts/Analytics";
@@ -476,10 +474,8 @@ export function ShareDialog({
         const newLocationId = shareFolderChanges.get(shareId)?.id;
         if (newPermission !== "UNSHARE") {
           // Find the original share to get its details
-          // biome-ignore lint/complexity/useFlatMap: initial biome migration
           const originalShare = Array.from(shareData.values())
-            .map((s) => s.directShares)
-            .flat()
+            .flatMap((s) => s.directShares)
             .find((share) => share.shareId.toString() === shareId);
 
           if (originalShare) {
@@ -498,8 +494,6 @@ export function ShareDialog({
                 destinationFolderId: newLocationId,
                 ...(originalShare.grandparentId != null ? { currentGrandparentId: originalShare.grandparentId } : {}),
               });
-              // biome-ignore lint/complexity/noUselessContinue: initial biome migration
-              continue;
             }
           }
         }
@@ -511,8 +505,7 @@ export function ShareDialog({
           id: parseInt(globalId.replace(/\D/g, ""), 10),
           shares,
         }))
-        // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-        .filter(({ id, shares }) => !isNaN(id) && shares.length > 0);
+        .filter(({ id, shares }) => !Number.isNaN(id) && shares.length > 0);
 
       for (const { id, shares } of creations) {
         await createShare(id, shares);

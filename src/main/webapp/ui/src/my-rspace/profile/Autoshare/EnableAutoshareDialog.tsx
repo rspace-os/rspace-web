@@ -15,9 +15,9 @@ import React from "react";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare function getValidationErrorString(...args: any[]): string;
 
 function EnableAutoshareDialog({
@@ -28,7 +28,7 @@ function EnableAutoshareDialog({
   isSwitch,
   isSwitchDisabled,
   switchDisabledReason,
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
@@ -71,7 +71,7 @@ function EnableAutoshareDialog({
         callback();
         RS.confirm(msg, "notice", async ? 7000 : 3000);
       })
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
         RS.confirm(
           error.response.data || "Something went wrong. Please, contact support if the issue persists.",
@@ -84,7 +84,7 @@ function EnableAutoshareDialog({
       });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleChange = (e: any) => {
     setFolderName(e.target.value);
   };
@@ -149,7 +149,7 @@ function EnableAutoshareDialog({
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function WrappedEnableAutosharingDialog(props: any) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>

@@ -22,20 +22,16 @@ import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import FileField from "../../../../components/Inputs/FileField";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import { useDeploymentProperty } from "../../../../hooks/api/useDeploymentProperty";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../../../../stores/definitions/Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { Attachment } from "../../../../stores/definitions/Attachment";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { newAttachment, newGalleryAttachment } from "../../../../stores/models/AttachmentModel";
 import useStores from "../../../../stores/use-stores";
 import * as FetchingData from "../../../../util/fetchingData";
 import { justFilenameExtension } from "../../../../util/files";
 import * as Parser from "../../../../util/parsers";
 import Result from "../../../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BlobUrl } from "../../../../util/types";
+import type { BlobUrl } from "../../../../util/types";
 import { match } from "../../../../util/Util";
 import AttachmentTableRow from "./AttachmentTableRow";
 
@@ -147,7 +143,7 @@ const FileSelector = ({
       />
       {galleryDialogOpen && (
         // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-        <React.Suspense fallback={<></>}>
+<React.Suspense fallback={<></>}>
           <GalleryPicker
             open={true}
             onClose={() => {
@@ -212,22 +208,19 @@ const FilesCard = observer(
           }}
           subheader="Attach files of any type, e.g. images, documents, or chemistry files."
           action={
-            // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-            <>
-              <CustomTooltip
-                title={match<void, string>([
-                  [() => attachments.length === 0, "No current attachments"],
-                  [() => open, "Hide attachment listing"],
-                  [() => true, "Show attachment listing"],
-                ])()}
-              >
-                <IconButton onClick={() => setOpen(!open)} disabled={attachments.length === 0}>
-                  <Badge color="primary" badgeContent={attachments.length}>
-                    <ExpandCollapseIcon open={open} />
-                  </Badge>
-                </IconButton>
-              </CustomTooltip>
-            </>
+            <CustomTooltip
+              title={match<void, string>([
+                [() => attachments.length === 0, "No current attachments"],
+                [() => open, "Hide attachment listing"],
+                [() => true, "Show attachment listing"],
+              ])()}
+            >
+              <IconButton onClick={() => setOpen(!open)} disabled={attachments.length === 0}>
+                <Badge color="primary" badgeContent={attachments.length}>
+                  <ExpandCollapseIcon open={open} />
+                </Badge>
+              </IconButton>
+            </CustomTooltip>
           }
         />
         {editable && (

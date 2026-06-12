@@ -3,8 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { Button, Stack } from "@mui/material";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { Suspense, useState } from "react";
+import { Suspense, useState } from "react";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import RaidConnectionsAddForm from "@/my-rspace/profile/RaidConnections/RaidConnectionsAddForm";

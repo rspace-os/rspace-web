@@ -3,8 +3,7 @@ import Fade from "@mui/material/Fade";
 import { paperClasses } from "@mui/material/Paper";
 import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import React from "react";
 import type { Progress } from "@/util/progress";
 import Result from "../util/result";

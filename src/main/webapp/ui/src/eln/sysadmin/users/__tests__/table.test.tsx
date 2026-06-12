@@ -4,8 +4,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { render, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import { UsersPage } from "@/eln/sysadmin/users";

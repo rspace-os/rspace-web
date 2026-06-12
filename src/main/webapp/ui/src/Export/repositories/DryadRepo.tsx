@@ -1,12 +1,10 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import Autocomplete, { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
+import Autocomplete, { type AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
 import Grid from "@mui/material/Grid";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import Users from "../ExportRepoUser";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type Repo, type StandardValidations } from "./common";
+import type { Person, Repo, StandardValidations } from "./common";
 
 /**
  * Boolean flags for the valid state of the Dryad metadata fields.

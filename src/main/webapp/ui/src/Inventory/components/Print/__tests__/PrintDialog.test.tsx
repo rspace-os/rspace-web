@@ -1,13 +1,10 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { beforeAll, describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { type MockStores, makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import type { StoreContainer } from "../../../../stores/stores/RootStore";
 import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import { persistedBarcode1 } from "./mocking";
@@ -80,8 +77,7 @@ describe("Print Tests", () => {
     test("renders, content responds to clicked options", async () => {
       await renderDialog();
       const globalId = mockContainer.globalId;
-      // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-      const location = "Location:";
+      const _location = "Location:";
 
       if (!globalId) throw new Error("Missing globalId");
       // on default "full" option elements are rendered, on "basic" they are not

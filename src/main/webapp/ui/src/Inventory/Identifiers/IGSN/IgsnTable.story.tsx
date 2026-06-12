@@ -3,8 +3,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import materialTheme from "../../../theme";
 import RsSet from "../../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier } from "../../useIdentifiers";
+import type { Identifier } from "../../useIdentifiers";
 import IgsnTable from "./IgsnTable";
 
 export function SimpleIgsnTable() {

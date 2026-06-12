@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import AllBarcodeScanner from "./AllBarcodeScanner";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeInput } from "./BarcodeScannerSkeleton";
+import type { BarcodeInput } from "./BarcodeScannerSkeleton";
 import QrCodeScanner from "./QrCodeScanner";
 
 type BarcodeScannerArgs = {

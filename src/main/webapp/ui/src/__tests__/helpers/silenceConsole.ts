@@ -60,9 +60,10 @@ export const silenceProcessOutput = (streams: ProcessStream[], matchers: Matcher
       return [];
     }
     const originalWrite = target.write.bind(target);
-    const spy = vi.spyOn(target, "write").mockImplementation(
+    const spy = vi
+      .spyOn(target, "write")
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      (chunk: unknown, encoding?: any, callback?: () => void) => {
+      .mockImplementation((chunk: unknown, encoding?: any, callback?: () => void) => {
         const text = String(chunk);
         if (shouldSilence([text], normalizedMatchers)) {
           if (typeof callback === "function") {
@@ -72,8 +73,7 @@ export const silenceProcessOutput = (streams: ProcessStream[], matchers: Matcher
         }
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         return originalWrite(chunk as any, encoding, callback);
-      },
-    );
+      });
     return [() => spy.mockRestore()];
   });
 

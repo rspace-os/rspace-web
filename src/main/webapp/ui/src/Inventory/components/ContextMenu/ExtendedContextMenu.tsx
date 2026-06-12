@@ -3,12 +3,11 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useLayoutEffect, useRef, useState } from "react";
+import type React from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import StyledMenu from "../../../components/StyledMenu";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContextMenu, { type ContextMenuArgs } from "./ContextMenu";
 import ContextMenuButton from "./ContextMenuButton";
 import ContextMenuSplitButton, { type SplitButtonOption } from "./ContextMenuSplitButton";
@@ -66,10 +65,8 @@ function ExtendedContextMenu({
       },
       { root, threshold: 0.1 },
     );
-    root
-      .querySelectorAll<HTMLElement>("[data-idx]")
-      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-      .forEach((el) => io.observe(el));
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, [prefixActions.length]);
 

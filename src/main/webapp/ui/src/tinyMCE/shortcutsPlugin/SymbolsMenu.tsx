@@ -13,13 +13,12 @@ function a11yProps(index: string | number) {
   };
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SymbolsMenu(props: any) {
   const [tab, setTab] = React.useState(0);
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  const switchTab = (e: any, value: number) => {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const switchTab = (_e: any, value: number) => {
     setTab(value);
   };
 
@@ -53,7 +52,7 @@ export default function SymbolsMenu(props: any) {
           </Tabs>
         </Grid>
         <Grid size={9}>
-          {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+          {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
           {symbols().map((symbol: any) => (
             <Tooltip title={symbol[1]} aria-label={symbol[1]} key={symbol[0]}>
               <Button onClick={() => props.onNewShortcut(symbol)} sx={{ fontSize: "18px", minWidth: "45px" }}>

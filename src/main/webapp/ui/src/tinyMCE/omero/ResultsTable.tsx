@@ -15,16 +15,13 @@ import type { OmeroDataTypes, OmeroItem } from "./OmeroTypes";
 
 function getLinkToOmero(item: OmeroItem, omero_web_url: string): string {
   if (item.type !== "plateAcquisition") {
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    return omero_web_url + "webclient/?show=" + item.type + "-" + item.id;
+    return `${omero_web_url}webclient/?show=${item.type}-${item.id}`;
   }
   if (!item.fake) {
     //fake plate acquisitions use the plate ID
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    return omero_web_url + "webclient/?show=acquisition-" + item.id;
+    return `${omero_web_url}webclient/?show=acquisition-${item.id}`;
   }
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  return omero_web_url + "webclient/?show=plate-" + item.id;
+  return `${omero_web_url}webclient/?show=plate-${item.id}`;
 }
 
 // Row background colour by item type
@@ -165,11 +162,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
         return <React.Fragment key={key}>{well}</React.Fragment>;
       });
     };
-    function handleRequestSort(
-      // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-      event: React.MouseEvent<HTMLSpanElement>,
-      property: string,
-    ): void {
+    function handleRequestSort(_event: React.MouseEvent<HTMLSpanElement>, property: string): void {
       const isDesc = orderBy === findOrderByTerm(property) && order === Order.desc;
       setOrder(isDesc ? Order.asc : Order.desc);
       const orderByValue = findOrderByTerm(property);
@@ -199,8 +192,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     const makeOnClick = (item: OmeroItem) => {
       return (): void => {
         toggleSelected(item);
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        onRowClick(item.type + "_" + item.id);
+        onRowClick(`${item.type}_${item.id}`);
       };
     };
     return (
@@ -224,8 +216,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                 if (event.target.checked) {
                   const newSelected = results
                     .filter((item: OmeroItem) => !item.gridShown)
-                    // biome-ignore lint/style/useTemplate: initial biome migration
-                    .map((item) => item.type + "_" + item.id);
+                    .map((item) => `${item.type}_${item.id}`);
                   return setSelectedItemIds(newSelected);
                 }
                 setSelectedItemIds([]);
@@ -242,9 +233,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                 .filter((item) => !(item.hide || item.hideAsIndirectDescendant))
                 .filter((item) => item.type !== "well sample" && item.type !== "well")
                 .map((item, index) => {
-                  const isItemSelected =
-                    // biome-ignore lint/style/useTemplate: initial biome migration
-                    selectedItemIds.indexOf(item.type + "_" + item.id) !== -1;
+                  const isItemSelected = selectedItemIds.indexOf(`${item.type}_${item.id}`) !== -1;
                   const labelId = `item-search-results-checkbox-${index}`;
                   const nameAnchorHref = `#${item.type}_name_display_${item.id}`;
                   return (
@@ -354,8 +343,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   </a>
                                 ) : item.type === "plateAcquisition" ? (
                                   <div>
-                                    {/** biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration */}
-                                    {item.samplesUrls?.map((url, pos) => (
+                                    {item.samplesUrls?.map((_url, pos) => (
                                       <div key={pos}>
                                         <a
                                           href={nameAnchorHref}
@@ -389,11 +377,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         data-testid={`${item.type}_show_grid_${item.id}`}
                                         sx={{ fontWeight: "bold" }}
                                       >
-                                        show image grid{" "}
-                                        {item.childCounts !== 0
-                                          ? // biome-ignore lint/style/useTemplate: initial biome migration
-                                            " [" + item.childCounts + "] "
-                                          : " [1]"}
+                                        show image grid {item.childCounts !== 0 ? ` [${item.childCounts}] ` : " [1]"}
                                       </Box>
                                     </a>
                                   </div>
@@ -458,11 +442,9 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   >
                                     {getFetchText(item)}{" "}
                                     {isDataSetOrPlateAcquistion(item)
-                                      ? // biome-ignore lint/style/useTemplate: initial biome migration
-                                        "[" + item.addedChildren.length + "]"
+                                      ? `[${item.addedChildren.length}]`
                                       : item.childCounts !== 0
-                                        ? // biome-ignore lint/style/useTemplate: initial biome migration
-                                          "[" + item.childCounts + "]"
+                                        ? `[${item.childCounts}]`
                                         : "[1]"}
                                   </a>
                                 )}
@@ -474,8 +456,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   sx={{ fontWeight: "bold" }}
                                 >
                                   <a href={`#${item.parentType}_name_display_${item.parentId}`}>
-                                    {/** biome-ignore lint/style/useTemplate: initial biome migration */}
-                                    {" -> parent_" + item.parentType}
+                                    {` -> parent_${item.parentType}`}
                                   </a>
                                 </Box>
                               )}

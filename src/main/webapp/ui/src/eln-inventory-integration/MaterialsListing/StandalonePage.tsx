@@ -1,5 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect } from "react";
+import type React from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
 import useStores from "../../stores/use-stores";

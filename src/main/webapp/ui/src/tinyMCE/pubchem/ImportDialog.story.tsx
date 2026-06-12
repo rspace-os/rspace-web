@@ -29,10 +29,8 @@ export function ImportDialogStory(): React.ReactNode {
                 id: "rtf_1",
                 ui: {
                   registry: {
-                    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-                    addMenuItem: (menuItemIdentifier, options) => {},
-                    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-                    addButton: (buttonIdentifier, options) => {},
+                    addMenuItem: (_menuItemIdentifier, _options) => {},
+                    addButton: (_buttonIdentifier, _options) => {},
                   },
                 },
                 execCommand: (command, ui, value) => {

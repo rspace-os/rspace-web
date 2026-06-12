@@ -21,8 +21,7 @@ import React from "react";
 import { Link as ReactRouterLink } from "react-router-dom";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import GlobalId from "../../../components/GlobalId";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Search } from "../../../stores/definitions/Search";
+import type { Search } from "../../../stores/definitions/Search";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
 import { modulo } from "../../../util/Util";
 import BarcodesField from "../../components/Fields/Barcodes/FormField";
@@ -98,141 +97,138 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
 
   return (
     <Wrapper>
-      {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-      <>
-        <Card
-          role="region"
-          aria-label="Subsample details"
-          id={cardId}
-          variant="outlined"
+      <Card
+        role="region"
+        aria-label="Subsample details"
+        id={cardId}
+        variant="outlined"
+        sx={{
+          border: `2px solid ${theme.palette.record.subSample.bg}`,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        }}
+      >
+        <AppBar
+          position="relative"
           sx={{
-            border: `2px solid ${theme.palette.record.subSample.bg}`,
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
+            backgroundColor: theme.palette.record.subSample.bg,
+            boxShadow: "none",
           }}
         >
-          <AppBar
-            position="relative"
+          <Toolbar
+            variant="dense"
+            disableGutters
             sx={{
-              backgroundColor: theme.palette.record.subSample.bg,
-              boxShadow: "none",
+              /*
+               * CSS Layers would be a better approach, but those are only
+               * supported with MUI v6. Instead we use this hack: we repeat
+               * the class selector twice thereby giving it a higher
+               * specificity than any other class-based selector used in the
+               * theme.
+               */
+              "&&": {
+                px: 1.5,
+              },
             }}
           >
-            <Toolbar
-              variant="dense"
-              disableGutters
-              sx={{
-                /*
-                 * CSS Layers would be a better approach, but those are only
-                 * supported with MUI v6. Instead we use this hack: we repeat
-                 * the class selector twice thereby giving it a higher
-                 * specificity than any other class-based selector used in the
-                 * theme.
-                 */
-                "&&": {
-                  px: 1.5,
-                },
-              }}
-            >
-              {subsample.name}
-              <Box sx={{ flexGrow: 1 }}></Box>
-              <GlobalId record={subsample} />
-            </Toolbar>
-          </AppBar>
-          <CardContent>
-            <Stack spacing={2}>
-              <LocationField fieldOwner={subsample} />
-              <ImageField fieldOwner={subsample} alt={`What the subsample, ${subsample.name}, looks like`} />
-              <QuantityField
-                fieldOwner={subsample}
-                quantityCategory={subsample.quantityCategory}
-                onErrorStateChange={() => {}}
-              />
-              <Description fieldOwner={subsample} onErrorStateChange={() => {}} />
-              <FormField
-                label="Barcodes"
-                value={null}
-                renderInput={() => (
-                  <BarcodesField fieldOwner={subsample} factory={subsample.factory} connectedItem={subsample} />
-                )}
-              />
-              <Notes record={subsample} onErrorStateChange={() => {}} />
-            </Stack>
-          </CardContent>
-          <CardActions>
-            <Typography align="center" sx={{ width: "100%" }}>
-              <Link component={ReactRouterLink} to={subsample.permalinkURL || ""}>
-                See full details of <strong>{subsample.name}</strong>
-              </Link>
-            </Typography>
-          </CardActions>
-        </Card>
-        <MobileStepper
-          variant="text"
-          steps={search.count}
-          activeStep={index + search.fetcher.pageSize * search.fetcher.pageNumber}
-          position="static"
-          sx={{
-            backgroundColor: theme.palette.record.subSample.lighter,
-            borderBottomLeftRadius: "4px",
-            borderBottomRightRadius: "4px",
-            border: `2px solid ${theme.palette.record.subSample.bg}`,
-            borderTop: "none",
-            color: alpha(darken(theme.palette.record.subSample.bg, 0.5), 0.7),
-            fontWeight: "700",
-            letterSpacing: "0.03em",
-            [`& .${buttonClasses.root}`]: {
-              [`& .${svgIconClasses.root}`]: {
-                color: theme.palette.record.subSample.bg,
-              },
-              [`&.${buttonClasses.disabled}`]: {
-                opacity: 0.3,
-              },
+            {subsample.name}
+            <Box sx={{ flexGrow: 1 }}></Box>
+            <GlobalId record={subsample} />
+          </Toolbar>
+        </AppBar>
+        <CardContent>
+          <Stack spacing={2}>
+            <LocationField fieldOwner={subsample} />
+            <ImageField fieldOwner={subsample} alt={`What the subsample, ${subsample.name}, looks like`} />
+            <QuantityField
+              fieldOwner={subsample}
+              quantityCategory={subsample.quantityCategory}
+              onErrorStateChange={() => {}}
+            />
+            <Description fieldOwner={subsample} onErrorStateChange={() => {}} />
+            <FormField
+              label="Barcodes"
+              value={null}
+              renderInput={() => (
+                <BarcodesField fieldOwner={subsample} factory={subsample.factory} connectedItem={subsample} />
+              )}
+            />
+            <Notes record={subsample} onErrorStateChange={() => {}} />
+          </Stack>
+        </CardContent>
+        <CardActions>
+          <Typography align="center" sx={{ width: "100%" }}>
+            <Link component={ReactRouterLink} to={subsample.permalinkURL || ""}>
+              See full details of <strong>{subsample.name}</strong>
+            </Link>
+          </Typography>
+        </CardActions>
+      </Card>
+      <MobileStepper
+        variant="text"
+        steps={search.count}
+        activeStep={index + search.fetcher.pageSize * search.fetcher.pageNumber}
+        position="static"
+        sx={{
+          backgroundColor: theme.palette.record.subSample.lighter,
+          borderBottomLeftRadius: "4px",
+          borderBottomRightRadius: "4px",
+          border: `2px solid ${theme.palette.record.subSample.bg}`,
+          borderTop: "none",
+          color: alpha(darken(theme.palette.record.subSample.bg, 0.5), 0.7),
+          fontWeight: "700",
+          letterSpacing: "0.03em",
+          [`& .${buttonClasses.root}`]: {
+            [`& .${svgIconClasses.root}`]: {
+              color: theme.palette.record.subSample.bg,
             },
-          }}
-          nextButton={
-            <Button
-              aria-controls={cardId}
-              size="small"
-              onClick={() => {
-                void (async () => {
-                  setProcessingCardNav(true);
-                  try {
-                    if (index + 1 > search.filteredResults.length - 1)
-                      await search.setPage(search.fetcher.pageNumber + 1);
-                    await search.setActiveResult(search.filteredResults[(index + 1) % search.fetcher.pageSize]);
-                  } finally {
-                    setProcessingCardNav(false);
-                  }
-                })();
-              }}
-              disabled={index + search.fetcher.pageSize * search.fetcher.pageNumber + 1 >= search.count}
-            >
-              <KeyboardArrowRight />
-            </Button>
-          }
-          backButton={
-            <Button
-              aria-controls={cardId}
-              size="small"
-              onClick={() => {
-                void (async () => {
-                  setProcessingCardNav(true);
-                  try {
-                    if (index === 0) await search.setPage(search.fetcher.pageNumber - 1);
-                    await search.setActiveResult(search.filteredResults[modulo(index - 1, search.fetcher.pageSize)]);
-                  } finally {
-                    setProcessingCardNav(false);
-                  }
-                })();
-              }}
-              disabled={index + search.fetcher.pageSize * search.fetcher.pageNumber === 0}
-            >
-              <KeyboardArrowLeft />
-            </Button>
-          }
-        />
-      </>
+            [`&.${buttonClasses.disabled}`]: {
+              opacity: 0.3,
+            },
+          },
+        }}
+        nextButton={
+          <Button
+            aria-controls={cardId}
+            size="small"
+            onClick={() => {
+              void (async () => {
+                setProcessingCardNav(true);
+                try {
+                  if (index + 1 > search.filteredResults.length - 1)
+                    await search.setPage(search.fetcher.pageNumber + 1);
+                  await search.setActiveResult(search.filteredResults[(index + 1) % search.fetcher.pageSize]);
+                } finally {
+                  setProcessingCardNav(false);
+                }
+              })();
+            }}
+            disabled={index + search.fetcher.pageSize * search.fetcher.pageNumber + 1 >= search.count}
+          >
+            <KeyboardArrowRight />
+          </Button>
+        }
+        backButton={
+          <Button
+            aria-controls={cardId}
+            size="small"
+            onClick={() => {
+              void (async () => {
+                setProcessingCardNav(true);
+                try {
+                  if (index === 0) await search.setPage(search.fetcher.pageNumber - 1);
+                  await search.setActiveResult(search.filteredResults[modulo(index - 1, search.fetcher.pageSize)]);
+                } finally {
+                  setProcessingCardNav(false);
+                }
+              })();
+            }}
+            disabled={index + search.fetcher.pageSize * search.fetcher.pageNumber === 0}
+          >
+            <KeyboardArrowLeft />
+          </Button>
+        }
+      />
     </Wrapper>
   );
 }

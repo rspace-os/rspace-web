@@ -3,8 +3,7 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import Users from "../ExportRepoUser";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type Repo, type StandardValidations } from "./common";
+import type { Person, Repo, StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
 
 type DataverseArgs = {
@@ -131,13 +130,11 @@ export default function DataverseRepo({
             fullWidth
             value={metadataLanguage}
           >
-            {/** biome-ignore lint/complexity/useOptionalChain: initial biome migration */}
-            {repo.metadataLanguages &&
-              repo.metadataLanguages.map((option) => (
-                <MenuItem key={option.title} value={option.locale}>
-                  {option.title}
-                </MenuItem>
-              ))}
+            {repo.metadataLanguages?.map((option) => (
+              <MenuItem key={option.title} value={option.locale}>
+                {option.title}
+              </MenuItem>
+            ))}
           </TextField>
         </Grid>
       )}

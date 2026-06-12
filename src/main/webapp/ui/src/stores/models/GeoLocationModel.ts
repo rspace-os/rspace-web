@@ -13,13 +13,12 @@
  * ============================================================================
  */
 import { action, computed, makeObservable, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type GeoLocation,
-  type GeoLocationAttrs,
-  type GeoLocationBox,
-  type GeoLocationPolygon,
-  type PolygonPoint,
+import type {
+  GeoLocation,
+  GeoLocationAttrs,
+  GeoLocationBox,
+  GeoLocationPolygon,
+  PolygonPoint,
 } from "../definitions/GeoLocation";
 
 export const pointComplete = (point: PolygonPoint): boolean => {
@@ -79,11 +78,9 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
   get isValid(): boolean {
     return this.points.every(({ polygonPoint }) => {
       if (polygonPoint.pointLatitude === "") return false;
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      if (isNaN(parseFloat(polygonPoint.pointLatitude))) return false;
+      if (Number.isNaN(parseFloat(polygonPoint.pointLatitude))) return false;
       if (polygonPoint.pointLongitude === "") return false;
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      if (isNaN(parseFloat(polygonPoint.pointLongitude))) return false;
+      if (Number.isNaN(parseFloat(polygonPoint.pointLongitude))) return false;
       return true;
     });
   }

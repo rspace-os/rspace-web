@@ -2,12 +2,10 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Panel } from "../../../util/types";
+import type { Panel } from "../../../util/types";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import Stepper from "./Stepper";
 import TopLevelButton from "./TopLevelButton";

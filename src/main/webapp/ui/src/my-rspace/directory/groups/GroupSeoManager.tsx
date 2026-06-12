@@ -12,20 +12,13 @@ import React, { useEffect, useState } from "react";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: (...args: any[]) => string;
 
-function GroupSeoManager({
-  groupId,
-  groupDisplayName,
-  isCloud,
-  isLabGroup,
-  isGroupSeoAllowed,
-  canManagePublish,
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-}: any) {
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGroupSeoAllowed, canManagePublish }: any) {
   const [seoAllowedStatus, setSeoAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -74,8 +67,8 @@ function GroupSeoManager({
   }
 
   /* Publication is not supported on collaboration groups and the community version */
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  function DisabledSEOButton(props: any) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    function DisabledSEOButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (!isLabGroup) {
@@ -102,23 +95,20 @@ function GroupSeoManager({
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function SEOButton(props: any) {
     return (
       <>
         {isLabGroup && !isCloud && isGroupSeoAllowed && canManagePublish && (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>
-            <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-              {props.mode} published seo
-            </Button>
-          </>
+          <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
+            {props.mode} published seo
+          </Button>
         )}
       </>
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function DialogButtons(props: any) {
     return (
       <>

@@ -22,7 +22,7 @@ import { DataGridColumn } from "../../../util/table";
 
 const KetcherDialog = React.lazy(() => import("../../../components/Ketcher/KetcherDialog"));
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -43,7 +43,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     setShowKetcherDialog(isOpen);
   }, [isOpen]);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const fetchData = (page: any, smiles: any) => {
     setLoading(true);
     const requestBody = {
@@ -64,8 +64,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
         });
       })
       .catch((error) => {
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        setErrorMessage("Error fetching search results: " + error.message);
+        setErrorMessage(`Error fetching search results: ${error.message}`);
       })
       .finally(() => {
         setLoading(false);
@@ -91,13 +90,13 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
   };
 
   const [isValid, setIsValid] = useState(IsValid());
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const validate = (ketcher: any) => {
     if (!ketcher) {
       setIsValid(IsValid());
       return;
     }
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     ketcher.getKet().then((ketData: any) => {
       const molecules = Object.keys(JSON.parse(ketData)).filter((key) => key.startsWith("mol"));
       if (molecules.length === 0) {
@@ -116,10 +115,10 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleInsert = (ketcher: any) => {
     setShowKetcherDialog(false);
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     ketcher.getSmiles().then((smiles: any) => {
       setSearchSmiles(smiles);
       fetchData(0, smiles);
@@ -130,12 +129,9 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
   const columns = [
     DataGridColumn.newColumnWithValueGetter(
       "preview",
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       ({ breadcrumb, chemId }: any) =>
-        breadcrumb.startsWith("/Gallery")
-          ? "/images/icons/chemistry-file.png"
-          : // biome-ignore lint/style/useTemplate: initial biome migration
-            "/chemical/getImageChem/" + chemId + "/1",
+        breadcrumb.startsWith("/Gallery") ? "/images/icons/chemistry-file.png" : `/chemical/getImageChem/${chemId}/1`,
       {
         headerName: "Preview",
         renderCell: (params) => (
@@ -152,7 +148,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     ),
     DataGridColumn.newColumnWithValueGetter(
       "name",
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       ({ breadcrumb, globalId, recordName }: any) => {
         if (breadcrumb.startsWith("/Gallery")) {
           return {
@@ -253,7 +249,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
               </Box>
             ) : (
               <DataGrid
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 columns={columns as any}
                 rows={searchResults}
                 initialState={{
@@ -272,7 +268,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
                 localeText={{
                   noRowsLabel: "No Search Results",
                 }}
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 getRowId={(row: any) => row.chemId}
                 paginationMode="server"
                 pageSizeOptions={[itemsPerPage]}

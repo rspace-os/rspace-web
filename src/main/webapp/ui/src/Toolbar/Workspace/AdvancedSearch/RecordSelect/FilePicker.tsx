@@ -56,9 +56,9 @@ class FilePicker extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   removeFile = (file_id: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => {
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       const selected = produce(prevState.selectedFiles, (draft: any) => {
         const idx = draft.indexOf(file_id);
         if (idx !== -1) {
@@ -123,8 +123,7 @@ class FilePicker extends React.Component<any, any> {
         <Dialog open={this.state.dialogOpen} onClose={this.closeDialog} maxWidth="sm" fullWidth={true}>
           <DialogTitle id="form-dialog-title">
             {this.state.globalSelect.length} record
-            {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-            {this.state.globalSelect.length != 1 ? "s" : ""} selected
+            {this.state.globalSelect.length !== 1 ? "s" : ""} selected
           </DialogTitle>
           <DialogContent>
             <List component="nav" aria-labelledby="nested-list-subheader">

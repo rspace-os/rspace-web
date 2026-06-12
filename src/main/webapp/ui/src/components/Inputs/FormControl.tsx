@@ -74,8 +74,7 @@ function CustomFormControl({
   "data-test-id": dataTestId,
   required,
   explanation,
-  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-  ["aria-label"]: ariaLabel,
+  "aria-label": ariaLabel,
   flexWrap = "initial",
   disabled,
 }: FormControlArgs): React.ReactNode {

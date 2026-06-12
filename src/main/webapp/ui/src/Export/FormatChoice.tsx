@@ -14,12 +14,9 @@ import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
 import { Optional } from "../util/optional";
 import * as Parsers from "../util/parsers";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Validator } from "../util/Validator";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportSelection } from "./common";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Repo } from "./repositories/common";
+import type { Validator } from "../util/Validator";
+import type { ExportSelection } from "./common";
+import type { Repo } from "./repositories/common";
 
 export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
 

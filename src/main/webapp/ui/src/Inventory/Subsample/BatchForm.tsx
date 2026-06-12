@@ -3,11 +3,10 @@ import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useEffect, useState } from "react";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SubSampleModel, { SubSampleCollection } from "../../stores/models/SubSampleModel";
+import type SubSampleModel from "../../stores/models/SubSampleModel";
+import { SubSampleCollection } from "../../stores/models/SubSampleModel";
 import useStores from "../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import BarcodesField from "../components/Fields/Barcodes/FormField";

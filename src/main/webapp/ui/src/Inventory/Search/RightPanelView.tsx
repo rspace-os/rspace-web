@@ -1,13 +1,11 @@
 import Box from "@mui/material/Box";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Theme } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode } from "react";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { useLandmark } from "../../components/LandmarksContext";
 import LoadingCircular from "../../components/LoadingCircular";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordType } from "../../stores/definitions/InventoryRecord";
+import type { RecordType } from "../../stores/definitions/InventoryRecord";
 import useStores from "../../stores/use-stores";
 import { UserCancelledAction } from "../../util/error";
 import ContainerBatchForm from "../Container/BatchForm";
@@ -82,12 +80,7 @@ function RightPanelView(): ReactNode {
 
   React.useEffect(() => {
     void (async () => {
-      if (
-        !searchStore.activeResult &&
-        // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-        Boolean(searchStore.search.filteredResults.length) &&
-        !isSingleColumnLayout
-      ) {
+      if (!searchStore.activeResult && searchStore.search.filteredResults.length && !isSingleColumnLayout) {
         try {
           await searchStore.search.setActiveResult();
           uiStore.setVisiblePanel("right");
@@ -128,8 +121,7 @@ function RightPanelView(): ReactNode {
     if (!activeResult) return noActiveResult();
 
     // show nothing if record has not yet been full loaded
-    // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-    if (Boolean(activeResult.id) && Boolean(activeResult.noFullDetails)) return null;
+    if (activeResult.id && activeResult.noFullDetails) return null;
 
     if (activeResult.recordType === "sample") {
       if (activeResult.id) return <SampleForm />;

@@ -7,8 +7,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ConnectedOAuthApp } from "@/my-rspace/profile/types";
+import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 
 const ConnectedAppsTableRow = ({
   app,

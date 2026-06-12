@@ -182,8 +182,7 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
           {/** biome-ignore lint/a11y/useAltText: initial biome migration */}
           <img
             id={item.id}
-            // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-            className={item["class"]}
+            className={item.class}
             src={item.src}
             width={item.width}
             height={item.height}

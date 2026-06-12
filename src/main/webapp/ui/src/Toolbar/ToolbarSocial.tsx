@@ -11,9 +11,9 @@ import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const SLACK: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const MSTEAMS: any;
 
 /**
@@ -85,8 +85,7 @@ export default function ToolbarSocial(props: ToolbarSocialProps) {
           <FontAwesomeIcon icon={faPaperPlane} />
         </IconButton>
       </Tooltip>
-      {/** biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration */}
-      {window.hasOwnProperty("SLACK") && SLACK && props.showExternal && (
+      {Object.hasOwn(window, "SLACK") && SLACK && props.showExternal && (
         <Tooltip title="Send message on Slack" enterDelay={300}>
           <IconButton
             color="inherit"
@@ -100,8 +99,7 @@ export default function ToolbarSocial(props: ToolbarSocialProps) {
           </IconButton>
         </Tooltip>
       )}
-      {/** biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration */}
-      {window.hasOwnProperty("MSTEAMS") && MSTEAMS && props.showExternal && (
+      {Object.hasOwn(window, "MSTEAMS") && MSTEAMS && props.showExternal && (
         <Tooltip title="Send message on MicrosoftTeams" enterDelay={300}>
           <IconButton
             data-test-id="toolbar-send-message-teams"

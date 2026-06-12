@@ -6,13 +6,10 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
 import { cleanup, render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import "@testing-library/jest-dom/vitest";
 import { ThemeProvider } from "@mui/material/styles";
 import { IsValid } from "../../components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";

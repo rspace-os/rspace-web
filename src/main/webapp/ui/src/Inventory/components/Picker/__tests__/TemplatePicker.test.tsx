@@ -10,8 +10,7 @@ import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, type Mock, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AxiosResponse } from "@/common/axios";
+import type { AxiosResponse } from "@/common/axios";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

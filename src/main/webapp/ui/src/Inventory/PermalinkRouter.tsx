@@ -1,12 +1,11 @@
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import NavigateContext from "../stores/contexts/Navigate";
 import { globalIdPatterns, inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PermalinkType } from "../stores/definitions/Search";
+import type { PermalinkType } from "../stores/definitions/Search";
 import { match } from "../util/Util";
 import SearchRouter from "./Search/SearchRouter";
 
@@ -26,12 +25,10 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
   if (urlSearchParams.has("version")) {
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     version = parseInt(urlSearchParams.get("version")!, 10);
-    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-    if (isNaN(version)) return <h1>Invalid version parameter</h1>;
+    if (Number.isNaN(version)) return <h1>Invalid version parameter</h1>;
   }
 
-  // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-  if (isNaN(parseInt(id, 10))) {
+  if (Number.isNaN(parseInt(id, 10))) {
     const recordType = match<PermalinkType, keyof typeof inventoryRecordTypeLabels>([
       [(t) => t === "sample", "sample"],
       [(t) => t === "container", "container"],

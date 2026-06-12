@@ -1,11 +1,5 @@
 import axios, { type AxiosPromise } from "@/common/axios";
-import type {
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  BOOKING_TYPE,
-  BookingDetails,
-  BookingsList,
-  EquipmentDetails,
-} from "./ClustermarketData";
+import type { BookingDetails, BookingsList, EquipmentDetails } from "./ClustermarketData";
 import { BookingType } from "./Enums";
 
 const getBookingsList = async (): AxiosPromise<BookingsList> => {

@@ -11,8 +11,7 @@ import ExternalWorkflowDialog from "@/eln/eln-external-workflows/ExternalWorkflo
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import { ErrorReason } from "./Enums";
 import ErrorView from "./ErrorView";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalaxyDataSummary } from "./GalaxyData";
+import type { GalaxyDataSummary } from "./GalaxyData";
 
 export type ExternalWorkflowInvocationsArgs = {
   fieldId: string | null;
@@ -43,14 +42,11 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
    * Always attempt to fetch data from Galaxy once, to cover shared documents, user changing browser or user erasing local storage
    * setShouldCheckForGalaxyData and setButtonVisible will be reset to true if a user ever uploads data from this document field to Galaxy
    */
-  const [shouldCheckForGalaxyData, setShouldCheckForGalaxyData] =
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    useLocalStorage("checkForGalaxyData_" + fieldId, true);
-  const [galaxyDataFoundInRSpace, setGalaxyDataFoundInRSpace] = useLocalStorage(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "galaxyDataFound_" + fieldId,
-    false,
+  const [shouldCheckForGalaxyData, setShouldCheckForGalaxyData] = useLocalStorage(
+    `checkForGalaxyData_${fieldId}`,
+    true,
   );
+  const [galaxyDataFoundInRSpace, setGalaxyDataFoundInRSpace] = useLocalStorage(`galaxyDataFound_${fieldId}`, false);
   const [querying, setQuerying] = useState(false);
   const [buttonVisible, setButtonVisible] = useState(false);
   const [galaxyDataSummary, setGalaxyDataSummary] = useState<Array<GalaxyDataSummary>>([]);
@@ -155,23 +151,18 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
 
   const getGalaxyData = async (): Promise<Array<GalaxyDataSummary>> => {
     const { data } = await axios.get<Array<GalaxyDataSummary>>(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "/apps/galaxy/getSummaryGalaxyDataForRSpaceField/" + fieldId,
+      `/apps/galaxy/getSummaryGalaxyDataForRSpaceField/${fieldId}`,
     );
     return data;
   };
   const getGalaxyDataExists = async (): Promise<boolean> => {
-    const { data } = await axios.get<boolean>(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "/apps/galaxy/galaxyDataExists/" + fieldId,
-    );
+    const { data } = await axios.get<boolean>(`/apps/galaxy/galaxyDataExists/${fieldId}`);
     return data;
   };
 
   const getGalaxyDataCount = async (): Promise<InvocationsAndDataCount> => {
     const { data } = await axios.get<InvocationsAndDataCount>(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "/apps/galaxy/getGalaxyInvocationCountForRSpaceField/" + fieldId,
+      `/apps/galaxy/getGalaxyInvocationCountForRSpaceField/${fieldId}`,
     );
     return data;
   };
@@ -238,37 +229,34 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
         </>
       )}
       {querying && invocationsAndDataCount.dataCount === 0 && (
-        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-        <>
-          <Box
-            sx={{
-              position: "absolute",
-              top: BUTTON_TOP,
-              right: BUTTON_RIGHT,
-              bottom: BUTTON_BOTTOM,
-              pointerEvents: "none",
-              "@media print": { display: "none" },
-              zIndex: 2,
-            }}
+        <Box
+          sx={{
+            position: "absolute",
+            top: BUTTON_TOP,
+            right: BUTTON_RIGHT,
+            bottom: BUTTON_BOTTOM,
+            pointerEvents: "none",
+            "@media print": { display: "none" },
+            zIndex: 2,
+          }}
+        >
+          <Badge
+            badgeContent={invocationsAndDataCount.invocationCount}
+            color="primary"
+            sx={{ position: "sticky", top: BUTTON_TOP, zIndex: 1, pointerEvents: "auto" }}
+            slotProps={{ badge: { style: { transform: "none" } } }}
           >
-            <Badge
-              badgeContent={invocationsAndDataCount.invocationCount}
-              color="primary"
-              sx={{ position: "sticky", top: BUTTON_TOP, zIndex: 1, pointerEvents: "auto" }}
-              slotProps={{ badge: { style: { transform: "none" } } }}
+            <Fab
+              disabled={true}
+              size="medium"
+              aria-label="Please wait, loading computational workflows associated with this field"
+              aria-haspopup="menu"
+              sx={{ zIndex: "initial" }}
             >
-              <Fab
-                disabled={true}
-                size="medium"
-                aria-label="Please wait, loading computational workflows associated with this field"
-                aria-haspopup="menu"
-                sx={{ zIndex: "initial" }}
-              >
-                <WorkFlowIcon width="100%" viewBox="0 0 225 225" enableBackground="new 0 0 225 225"></WorkFlowIcon>
-              </Fab>
-            </Badge>
-          </Box>
-        </>
+              <WorkFlowIcon width="100%" viewBox="0 0 225 225" enableBackground="new 0 0 225 225"></WorkFlowIcon>
+            </Fab>
+          </Badge>
+        </Box>
       )}
     </>
   );
@@ -276,7 +264,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
 
 export const WorkFlowIcon = createSvgIcon(
   // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
-  <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
     <g>
       <circle cx="5.055" cy="3.51" r="2.332" fill="#fff" />
       <circle cx="5.154" cy="10" r="2.332" fill="#fff" />

@@ -10,15 +10,11 @@ import StringField from "../../../../components/Inputs/StringField";
 import TextField from "../../../../components/Inputs/TextField";
 import TimeField from "../../../../components/Inputs/TimeField";
 import UriField from "../../../../components/Inputs/UriField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Field } from "../../../../stores/definitions/Field";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Sample } from "../../../../stores/definitions/Sample";
+import type { GalleryFile } from "../../../../eln/gallery/useGalleryListing";
+import type { Field } from "../../../../stores/definitions/Field";
+import type { Sample } from "../../../../stores/definitions/Sample";
 import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
+import type InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
 import FormField from "../../../components/Inputs/FormField";
 

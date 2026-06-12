@@ -1,7 +1,6 @@
 import { runInAction } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
+import type { AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import ImportModel from "../../ImportModel";

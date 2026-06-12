@@ -9,8 +9,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext, useEffect, useState } from "react";
+import type React from "react";
+import { useContext, useEffect, useState } from "react";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 import docLinks from "../../assets/DocLinks";
@@ -140,8 +140,7 @@ function App(): React.ReactNode {
         setAllStates(
           observable({
             tag: "success",
-            // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-            value: mapObject((k, v) => observable(v), await allIntegrations()),
+            value: mapObject((_k, v) => observable(v), await allIntegrations()),
           }) as FetchingData.Fetched<IntegrationStates>,
         );
       } catch (e) {

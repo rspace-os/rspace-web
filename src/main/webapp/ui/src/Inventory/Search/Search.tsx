@@ -2,12 +2,10 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import docLinks from "../../assets/DocLinks";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SearchView } from "../../stores/definitions/Search";
+import type { SearchView } from "../../stores/definitions/Search";
 import Searchbar from "./components/Searchbar";
 import SearchDisplayControls from "./components/SearchDisplayControls";
 import SearchFeedback from "./components/SearchFeedback";

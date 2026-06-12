@@ -1,10 +1,9 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 function VisualContainer(): React.ReactNode {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
-    <svg
+<svg
       version="1.1"
       x="0px"
       y="0px"

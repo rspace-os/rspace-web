@@ -1,7 +1,5 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GridColDef } from "@mui/x-data-grid";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Order } from "./types";
+import type { GridColDef } from "@mui/x-data-grid";
+import type { Order } from "./types";
 import { mapObject } from "./Util";
 
 export function desc<T extends string, U>(a: { [K in T]: U }, b: { [K in T]: U }, orderBy: T): -1 | 0 | 1 {
@@ -43,12 +41,8 @@ export function getSorting<T extends string, U>(
   ) => -1 | 0 | 1;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-const transformObject = <T, U extends keyof T, V>(
-  obj: T,
-  map: { [K in U]: (t: T) => V },
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-): { [K in U]: V } => mapObject((k, v) => v(obj), map);
+const _transformObject = <T, U extends keyof T, V>(obj: T, map: { [K in U]: (t: T) => V }): { [K in U]: V } =>
+  mapObject((_k, v) => v(obj), map);
 
 /**
  * Returns a value for the `pageSizeOptions` prop of pagination controls; the

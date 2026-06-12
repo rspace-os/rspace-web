@@ -8,8 +8,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
 import PeopleIcon from "../../assets/graphics/PeopleIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../stores/definitions/Record";
+import type { Record } from "../../stores/definitions/Record";
 
 type InfoBadgeArgs = {
   inline?: boolean;

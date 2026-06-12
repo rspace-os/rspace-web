@@ -1,8 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
-  GetAvailableRaidListResponse,
+  type GetAvailableRaidListResponse,
   GetAvailableRaidListResponseSchema,
   type IntegrationRaidInfo,
   IntegrationRaidInfoResponseSchema,

@@ -1,9 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import ApiService from "../../common/InvApiService";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 import type {
   BarcodeRecord,
   Deleted,
@@ -11,8 +9,7 @@ import type {
   GeneratedBarcodeAttrs,
   PersistedBarcodeAttrs,
 } from "../definitions/Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Id } from "../definitions/BaseRecord";
+import type { Id } from "../definitions/BaseRecord";
 
 function fetchImage(url: URL, description: string): Promise<File> {
   return ApiService.query<Blob>(url, new URLSearchParams(), true).then(({ data }) => {

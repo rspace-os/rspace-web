@@ -129,8 +129,7 @@ const TreeItemContent = ({
 
         setTotalHits(response.totalHits);
         setCurrentPage(pageNumber);
-        // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-      } catch (err) {
+      } catch (_err) {
         setError(true);
       } finally {
         setIsLoading(false);
@@ -155,8 +154,7 @@ const TreeItemContent = ({
         setFolders((prev) => [newFolder, ...prev]);
         onFolderCreated?.(newFolder, folder.id);
         setIsDialogOpen(false);
-        // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-      } catch (err) {
+      } catch (_err) {
         // Error is handled by the hook
       } finally {
         setIsCreatingFolder(false);
@@ -264,8 +262,7 @@ export default function FolderTree({
 
         setTotalHits(response.totalHits);
         setCurrentPage(pageNumber);
-        // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-      } catch (err) {
+      } catch (_err) {
         setError(true);
       } finally {
         setIsLoading(false);
@@ -282,8 +279,7 @@ export default function FolderTree({
           const newFolder = folderDetailsAsTreeNode(response);
           setRootFolders([newFolder]);
         })
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-        .catch((err) => {
+        .catch((_err) => {
           setError(true);
         });
     } else {
@@ -320,8 +316,7 @@ export default function FolderTree({
         setSelectedFolder(newFolder);
         onFolderSelect?.(newFolder);
         setIsDialogOpen(false);
-        // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-      } catch (err) {
+      } catch (_err) {
         // Error is handled by the hook
       } finally {
         setIsCreatingFolder(false);
@@ -349,8 +344,7 @@ export default function FolderTree({
                         const newFolder = folderDetailsAsTreeNode(response);
                         setRootFolders([newFolder]);
                       })
-                      // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-                      .catch((err) => {
+                      .catch((_err) => {
                         setError(true);
                       });
                   } else {

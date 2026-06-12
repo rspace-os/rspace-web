@@ -2,16 +2,14 @@ import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactNode, useContext } from "react";
+import { type ReactNode, useContext } from "react";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import DescriptionList from "../../components/DescriptionList";
 import GlobalId from "../../components/GlobalId";
 import TableCellBlank from "../../components/TableCellBlank";
 import TagListing from "../../components/Tags/TagListing";
 import NavigateContext from "../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../stores/definitions/Record";
+import type { Record } from "../../stores/definitions/Record";
 import useStores from "../../stores/use-stores";
 import { formatFileSize } from "../../util/files";
 import ContentsChips from "../Container/Content/ContentsChips";

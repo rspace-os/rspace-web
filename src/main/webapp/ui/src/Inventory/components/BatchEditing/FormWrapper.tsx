@@ -1,10 +1,8 @@
 import Box from "@mui/material/Box";
 import type { ReactNode } from "react";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Editable } from "../../../stores/definitions/Editable";
+import type { AllowedFormTypes } from "../../../stores/contexts/FormSections";
+import type { Editable } from "../../../stores/definitions/Editable";
 import CommonEditActions from "../CommonEditActions";
 import Toolbar from "../Toolbar/Toolbar";
 

@@ -226,8 +226,7 @@ describe("StoichiometryTableGrid", () => {
     expect(createObjectURLSpy).toHaveBeenCalledOnce();
     expect(blob).toBeDefined();
 
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-    const csv = await blob!.text();
+    const csv = await blob?.text();
 
     expect(csv).toContain("Inventory Link");
     expect(csv).toContain("SS123");
@@ -266,7 +265,6 @@ describe("StoichiometryTableGrid", () => {
 
     expect(createObjectURLSpy).toHaveBeenCalledOnce();
     expect(blob).toBeDefined();
-    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-    await expect(blob!.text()).resolves.toContain("SS999");
+    await expect(blob?.text()).resolves.toContain("SS999");
   });
 });

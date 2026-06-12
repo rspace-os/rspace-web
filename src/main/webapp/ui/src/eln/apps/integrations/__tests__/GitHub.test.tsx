@@ -1,14 +1,11 @@
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import { Optional } from "../../../../util/optional";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import GitHub, { type GitHubConnectedMessage } from "../GitHub";
 
 import "@/__tests__/__mocks__/matchMedia";

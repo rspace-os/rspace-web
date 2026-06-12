@@ -5,28 +5,19 @@ const getOmeroDataList = (dataTypeChoice: string): AxiosPromise<OmeroDataList> =
   if (dataTypeChoice === "Projects And Screens") {
     return axios.get("/apps/omero/projects");
   }
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  return axios.get("/apps/omero/projects/?dataType=" + dataTypeChoice);
+  return axios.get(`/apps/omero/projects/?dataType=${dataTypeChoice}`);
 };
 
 const getImagesList = (id: number, fetchLarge: boolean): AxiosPromise<OmeroDataList> => {
-  return axios.get(
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    "/apps/omero/images/" + id + "/?fetchLarge=" + String(fetchLarge),
-  );
+  return axios.get(`/apps/omero/images/${id}/?fetchLarge=${String(fetchLarge)}`);
 };
 
-const getDataSetsList = (id: number): AxiosPromise<OmeroDataList> =>
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  axios.get("/apps/omero/datasets/" + id);
+const getDataSetsList = (id: number): AxiosPromise<OmeroDataList> => axios.get(`/apps/omero/datasets/${id}`);
 
-const getPlatesList = (id: number): AxiosPromise<OmeroDataList> =>
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  axios.get("/apps/omero/plates/" + id);
+const getPlatesList = (id: number): AxiosPromise<OmeroDataList> => axios.get(`/apps/omero/plates/${id}`);
 
 const getPlateAcquisitionsList = (id: number): AxiosPromise<OmeroDataList> =>
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  axios.get("/apps/omero/plateAcquisitions/" + id);
+  axios.get(`/apps/omero/plateAcquisitions/${id}`);
 
 const getWellsList = (
   id: number,
@@ -38,8 +29,7 @@ const getWellsList = (
 };
 
 const getAnnotationsList = (id: number, type: OmeroDataTypes): AxiosPromise<Array<string>> =>
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  axios.get("/apps/omero/annotations/" + id + "?type=" + type);
+  axios.get(`/apps/omero/annotations/${id}?type=${type}`);
 
 const getFullImage = (id: number, parentID: number, fetchLarge: boolean): AxiosPromise<OmeroItem> =>
   axios.get(`/apps/omero/image/${parentID}/${id}/?fetchLarge=${String(fetchLarge)}`);

@@ -1,9 +1,6 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { HasLocation } from "../../stores/definitions/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import type React from "react";
+import type { HasLocation } from "../../stores/definitions/HasLocation";
+import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
 import { Optional } from "../../util/optional";
 import { InTrash, RecordLink, TopLink } from "./RecordLink";

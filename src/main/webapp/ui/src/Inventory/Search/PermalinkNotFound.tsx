@@ -6,8 +6,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Permalink, type PermalinkType } from "../../stores/definitions/Search";
+import type { Permalink, PermalinkType } from "../../stores/definitions/Search";
 
 const TYPE_LABELS: Record<PermalinkType, string> = {
   sample: "sample",

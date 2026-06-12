@@ -5,8 +5,7 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons/faTimes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import Chip, { chipClasses } from "@mui/material/Chip";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import Divider, { dividerClasses } from "@mui/material/Divider";
+import { dividerClasses } from "@mui/material/Divider";
 import { formLabelClasses } from "@mui/material/FormLabel";
 import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import { inputClasses } from "@mui/material/Input";
@@ -82,7 +81,7 @@ class SimpleSearch extends React.Component<any, any> {
 
   // with the current configuration, we assume that only one query will be received
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  setQueries = (queries: any) => {
+    setQueries = (queries: any) => {
     if (!queries.length) return;
 
     const query = queries[0];
@@ -103,8 +102,7 @@ class SimpleSearch extends React.Component<any, any> {
       })
       .then((response) => {
         const integration = response.data.data;
-        // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-        if (integration && integration.available && integration.enabled) {
+        if (integration?.available && integration.enabled) {
           FILTERS.chemical = "Chemical";
         }
       });
@@ -270,11 +268,10 @@ class SimpleSearch extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   removeRecord = (record_id: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      selectedRecords: prevState.selectedRecords.filter((r: any) => r != record_id),
+      selectedRecords: prevState.selectedRecords.filter((r: any) => r !== record_id),
     }));
   };
 
@@ -344,7 +341,7 @@ class SimpleSearch extends React.Component<any, any> {
                   data-test-id="s-search-filtered"
                   label={FILTERS[this.state.filter]}
                   clickable={!this.props.advancedOpen}
-                  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                   variant={(this.props.advancedOpen ? "default" : "outlined") as any}
                   color={this.props.advancedOpen ? "default" : "primary"}
                   aria-haspopup="true"
@@ -371,8 +368,7 @@ class SimpleSearch extends React.Component<any, any> {
                     onClick={() => this.handleSelect(key)}
                     key={key}
                     sx={{ minHeight: "25px" }}
-                    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-                    selected={this.state.filter == key}
+                    selected={this.state.filter === key}
                   >
                     {FILTERS[key]}
                   </MenuItem>
@@ -388,23 +384,17 @@ class SimpleSearch extends React.Component<any, any> {
                   slotProps={{ input: { "aria-label": "Search" } }}
                 />
               )}
-              {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-              {this.state.filter == "owner" && (
+              {this.state.filter === "owner" && (
                 <UserSelect
                   updateSelected={this.handleSelectAutocomplete}
-                  selected={
-                    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-                    this.state.filter == "owner" ? this.state.term : null
-                  }
+                  selected={this.state.filter === "owner" ? this.state.term : null}
                   testId="s-search-input-user"
                 />
               )}
-              {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-              {this.state.filter == "tag" && (
+              {this.state.filter === "tag" && (
                 <TagSelect
                   updateSelected={this.handleSelectAutocomplete}
-                  // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-                  selected={this.state.filter == "tag" ? this.state.term : null}
+                  selected={this.state.filter === "tag" ? this.state.term : null}
                   testId="s-search-input-tag"
                 />
               )}
@@ -457,7 +447,7 @@ class SimpleSearch extends React.Component<any, any> {
           <ScopeDialog
             open={this.state.recordsDialog}
             selectedRecords={this.state.selectedRecords}
-            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             removeRecord={(r: any) => this.removeRecord(r)}
             submit={this.submit}
             searchEverywhere={this.searchEverywhere}

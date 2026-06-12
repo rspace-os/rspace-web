@@ -1,7 +1,7 @@
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import SearchContext from "../../stores/contexts/Search";
 import { DEFAULT_SEARCH } from "../../stores/models/Fetcher/CoreFetcher";
 import LoadingList from "../components/FetchOnScroll/LoadingList";

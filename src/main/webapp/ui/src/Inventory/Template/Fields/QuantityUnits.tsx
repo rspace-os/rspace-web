@@ -7,11 +7,9 @@ import FormControl from "../../../components/Inputs/FormControl";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import TemplateModel from "../../../stores/models/TemplateModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UnitCategory } from "../../../stores/stores/UnitStore";
+import type { UnitCategory } from "../../../stores/stores/UnitStore";
 import useStores from "../../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UseState } from "../../../util/types";
+import type { UseState } from "../../../util/types";
 
 function FormBoxWithLabel({ children, label }: { children: React.ReactNode; label: string }): React.ReactNode {
   return (
@@ -76,8 +74,7 @@ function QuantityUnits(): React.ReactNode {
   const handleChange = ({ target: { value } }: { target: { value: string | null; name: string } }) => {
     if (value) {
       activeResult.setAttributesDirty({
-        // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-        defaultUnitId: parseInt(value),
+        defaultUnitId: parseInt(value, 10),
       });
     }
   };

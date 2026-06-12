@@ -10,8 +10,7 @@ import { useContext } from "react";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import { hasRequiredPermissions, type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import useStores from "../../../stores/use-stores";
 import { UserCancelledAction } from "../../../util/error";
 import { match } from "../../../util/Util";

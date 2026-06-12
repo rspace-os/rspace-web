@@ -1,7 +1,6 @@
 import TextField from "@mui/material/TextField";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ColumnFieldMap } from "../../../stores/models/ImportModel";
+import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 
 type FieldNameStringFieldArgs = {
   columnFieldMap: ColumnFieldMap;

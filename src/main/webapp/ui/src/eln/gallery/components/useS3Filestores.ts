@@ -3,8 +3,7 @@ import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../../util/fetchingData";
+import type * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 
@@ -124,8 +123,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         const api = axios.create({
           baseURL: "/api/v1/gallery",
           headers: {
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            Authorization: "Bearer " + (await getToken()),
+            Authorization: `Bearer ${await getToken()}`,
           },
         });
         const response = await api.post<unknown>(`/filestores/${id}/${operation}`, { recordIds });
@@ -162,8 +160,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         const api = axios.create({
           baseURL: "/api/v1/gallery",
           headers: {
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            Authorization: "Bearer " + (await getToken()),
+            Authorization: `Bearer ${await getToken()}`,
           },
         });
         for (const { sourceFilestoreId, sourcePath } of sources) {
@@ -218,8 +215,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
       const api = axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
       const { data } = await api.get<unknown>("/filestores");

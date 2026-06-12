@@ -130,8 +130,7 @@ const StoichiometryTableInventoryLinkCell = ({
 
   const handlePickerAddition = (records: Array<InventoryRecord>) => {
     const [record] = records;
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    if (!record || !record.id) {
+    if (!record?.id) {
       return;
     }
     const inventoryItemGlobalId = record.globalId;

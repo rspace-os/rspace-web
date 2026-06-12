@@ -1,8 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { action, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
@@ -16,10 +15,8 @@ import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { render, within } from "@/__tests__/customQueries";
 import { makeMockSubSample, subSampleAttrsArbitrary } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SubSampleModel from "../../../../stores/models/SubSampleModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import type SubSampleModel from "../../../../stores/models/SubSampleModel";
+import type { StoreContainer } from "../../../../stores/stores/RootStore";
 import * as ArrayUtils from "../../../../util/ArrayUtils";
 
 vi.mock("../../../Search/SearchView", () => ({

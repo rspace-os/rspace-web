@@ -11,8 +11,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { paperClasses } from "@mui/material/Paper";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ColumnsPanelTrigger, GridSlotProps, Toolbar, useGridApiContext } from "@mui/x-data-grid";
+import { ColumnsPanelTrigger, type GridSlotProps, Toolbar, useGridApiContext } from "@mui/x-data-grid";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import createAccentedTheme from "@/accentedTheme";
@@ -63,232 +62,228 @@ const StoichiometryTableToolbar = ({
     ? "Save the stoichiometry table before updating inventory stock."
     : "";
   return (
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-    <>
-      <Toolbar
-        style={{
-          width: "100%",
-        }}
-      >
-        {editable && (
-          <>
-            <Button
-              aria-label="Add Chemical"
-              startIcon={<AddIcon />}
-              onClick={(e) => setAddReagentMenuAnchorEl(e.currentTarget)}
-              size="small"
-              sx={{
-                mr: 1,
-              }}
-            >
-              Add Chemical
-            </Button>
-            <Tooltip title={inventoryUpdateDisabledTooltip}>
-              <span>
-                <Button
-                  aria-label="Update Inventory Stock"
-                  size="small"
-                  sx={{
-                    mr: 1,
-                  }}
-                  disabled={hasChanges}
-                  onClick={() => {
-                    setInventoryUpdateDialogOpen(true);
-                  }}
-                >
-                  Update Inventory Stock
-                </Button>
-              </span>
-            </Tooltip>
-            <Menu
-              open={Boolean(addReagantMenuAnchorEl)}
-              anchorEl={addReagantMenuAnchorEl}
-              onClose={() => setAddReagentMenuAnchorEl(null)}
-              sx={
-                // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-                Boolean(addReagantMenuAnchorEl)
-                  ? {
-                      [`& .${paperClasses.root}`]: {
-                        transform: "translate(0px, 4px) !important",
-                      },
-                    }
-                  : {}
-              }
-              slotProps={{
-                list: {
-                  disablePadding: true,
-                  "aria-label": "add chemical menu",
-                },
-              }}
-            >
-              <AccentMenuItem
-                title="PubChem"
-                subheader="Import compound from PubChem"
-                backgroundColor={PUBCHEM_ACCENT_COLOR.background}
-                foregroundColor={PUBCHEM_ACCENT_COLOR.backgroundContrastText}
-                avatar={<CardMedia image={PubChemLogo} />}
-                onClick={() => {
-                  setPubchemDialogOpen(true);
-                  setAddReagentMenuAnchorEl(null);
-                }}
-              />
-
-              <AccentMenuItem
-                title="Gallery"
-                subheader="Import compound from Gallery"
-                backgroundColor={GALLERY_COLOR.main}
-                foregroundColor={GALLERY_COLOR.contrastText}
-                avatar={
-                  <FileIcon
-                    sx={{
-                      width: "28px",
-                      height: "28px",
-                    }}
-                  />
-                }
-                onClick={() => {
-                  setGalleryDialogOpen(true);
-                  setAddReagentMenuAnchorEl(null);
-                }}
-              />
-              <AccentMenuItem
-                title="Manually"
-                subheader="Manually enter SMILES"
-                backgroundColor={CHEMISTRY_COLOR.background}
-                foregroundColor={CHEMISTRY_COLOR.backgroundContrastText}
-                avatar={<EditIcon />}
-                onClick={() => {
-                  setAddReagentSmilesDialogOpen(true);
-                  setAddReagentMenuAnchorEl(null);
-                }}
-              />
-            </Menu>
-            <StoichiometryAddReagentDialog
-              open={addReagentSmilesDialogOpen}
-              onClose={() => {
-                setAddReagentSmilesDialogOpen(false);
-              }}
-              onAddReagent={(smilesString, name) => {
-                void onAddReagent(smilesString, name, "manual");
-              }}
-            />
-            <StoichiometryInventoryUpdateDialog
-              open={inventoryUpdateDialogOpen}
-              molecules={allMolecules}
-              linkedInventoryQuantityInfoByGlobalId={linkedInventoryQuantityInfoByGlobalId}
-              onSave={onUpdateInventoryStock}
-              onClose={() => {
-                setInventoryUpdateDialogOpen(false);
-              }}
-            />
-            <ThemeProvider theme={createAccentedTheme(PUBCHEM_ACCENT_COLOR)}>
-              <CompoundSearchDialog
-                open={pubchemDialogOpen}
-                onClose={() => {
-                  setPubchemDialogOpen(false);
-                  setAddReagentMenuAnchorEl(null);
-                }}
-                onCompoundsSelected={(compounds) => {
-                  void (async () => {
-                    for (const c of compounds) {
-                      await onAddReagent(c.smiles, c.name, "pubchem");
-                    }
-                  })();
-                }}
-                title="Insert from PubChem"
-                submitButtonText="Insert"
-                showPubChemInfo
-                allowMultipleSelection
-              />
-            </ThemeProvider>
-            {galleryDialogOpen && (
-              <MemoryRouter>
-                <LandmarksProvider>
-                  <React.Suspense
-                    fallback={
-                      <Backdrop
-                        open
-                        sx={{
-                          color: "#fff",
-                          zIndex: 1,
-                        }}
-                      >
-                        <CircularProgress color="inherit" aria-label="Loading gallery picker" />
-                      </Backdrop>
-                    }
-                  >
-                    <GalleryPicker
-                      open={true}
-                      onClose={() => {
-                        setGalleryDialogOpen(false);
-                      }}
-                      onSubmit={(files) => {
-                        void (async () => {
-                          for (const file of files) {
-                            await Parsers.getValueWithKey("chemString")(file.metadata)
-                              .flatMap(Parsers.isString)
-                              .doAsync((smiles) => {
-                                return onAddReagent(smiles, filenameExceptExtension(file.name), "gallery");
-                              });
-                          }
-                          setGalleryDialogOpen(false);
-                        })();
-                      }}
-                      validateSelection={(file) => {
-                        if (file.type !== "Chemistry")
-                          return Result.Error([new Error("Only chemistry files can be added to stoichiometry tables")]);
-                        return Result.Ok(null);
-                      }}
-                    />
-                  </React.Suspense>
-                </LandmarksProvider>
-              </MemoryRouter>
-            )}
-          </>
-        )}
-        <Box
-          sx={{
-            flexGrow: 1,
-          }}
-        ></Box>
-        <ColumnsPanelTrigger aria-label="Columns" size="small">
-          Columns
-        </ColumnsPanelTrigger>
-        <Button
-          aria-label="Export"
-          size="small"
-          onClick={(event) => {
-            setExportMenuAnchorEl(event.currentTarget);
-          }}
-        >
-          Export
-        </Button>
-        <Menu
-          open={Boolean(exportMenuAnchorEl)}
-          anchorEl={exportMenuAnchorEl}
-          onClose={() => {
-            setExportMenuAnchorEl(null);
-          }}
-          slotProps={{
-            paper: {
-              role: "tooltip",
-            },
-          }}
-        >
-          <MenuItem
-            onClick={() => {
-              setExportMenuAnchorEl(null);
-              apiRef.current?.exportDataAsCsv({
-                allColumns: true,
-                getRowsToExport: () => allMolecules.map((molecule) => molecule.id),
-              });
+    <Toolbar
+      style={{
+        width: "100%",
+      }}
+    >
+      {editable && (
+        <>
+          <Button
+            aria-label="Add Chemical"
+            startIcon={<AddIcon />}
+            onClick={(e) => setAddReagentMenuAnchorEl(e.currentTarget)}
+            size="small"
+            sx={{
+              mr: 1,
             }}
           >
-            Export to CSV
-          </MenuItem>
-        </Menu>
-      </Toolbar>
-    </>
+            Add Chemical
+          </Button>
+          <Tooltip title={inventoryUpdateDisabledTooltip}>
+            <span>
+              <Button
+                aria-label="Update Inventory Stock"
+                size="small"
+                sx={{
+                  mr: 1,
+                }}
+                disabled={hasChanges}
+                onClick={() => {
+                  setInventoryUpdateDialogOpen(true);
+                }}
+              >
+                Update Inventory Stock
+              </Button>
+            </span>
+          </Tooltip>
+          <Menu
+            open={Boolean(addReagantMenuAnchorEl)}
+            anchorEl={addReagantMenuAnchorEl}
+            onClose={() => setAddReagentMenuAnchorEl(null)}
+            sx={
+              addReagantMenuAnchorEl
+                ? {
+                    [`& .${paperClasses.root}`]: {
+                      transform: "translate(0px, 4px) !important",
+                    },
+                  }
+                : {}
+            }
+            slotProps={{
+              list: {
+                disablePadding: true,
+                "aria-label": "add chemical menu",
+              },
+            }}
+          >
+            <AccentMenuItem
+              title="PubChem"
+              subheader="Import compound from PubChem"
+              backgroundColor={PUBCHEM_ACCENT_COLOR.background}
+              foregroundColor={PUBCHEM_ACCENT_COLOR.backgroundContrastText}
+              avatar={<CardMedia image={PubChemLogo} />}
+              onClick={() => {
+                setPubchemDialogOpen(true);
+                setAddReagentMenuAnchorEl(null);
+              }}
+            />
+
+            <AccentMenuItem
+              title="Gallery"
+              subheader="Import compound from Gallery"
+              backgroundColor={GALLERY_COLOR.main}
+              foregroundColor={GALLERY_COLOR.contrastText}
+              avatar={
+                <FileIcon
+                  sx={{
+                    width: "28px",
+                    height: "28px",
+                  }}
+                />
+              }
+              onClick={() => {
+                setGalleryDialogOpen(true);
+                setAddReagentMenuAnchorEl(null);
+              }}
+            />
+            <AccentMenuItem
+              title="Manually"
+              subheader="Manually enter SMILES"
+              backgroundColor={CHEMISTRY_COLOR.background}
+              foregroundColor={CHEMISTRY_COLOR.backgroundContrastText}
+              avatar={<EditIcon />}
+              onClick={() => {
+                setAddReagentSmilesDialogOpen(true);
+                setAddReagentMenuAnchorEl(null);
+              }}
+            />
+          </Menu>
+          <StoichiometryAddReagentDialog
+            open={addReagentSmilesDialogOpen}
+            onClose={() => {
+              setAddReagentSmilesDialogOpen(false);
+            }}
+            onAddReagent={(smilesString, name) => {
+              void onAddReagent(smilesString, name, "manual");
+            }}
+          />
+          <StoichiometryInventoryUpdateDialog
+            open={inventoryUpdateDialogOpen}
+            molecules={allMolecules}
+            linkedInventoryQuantityInfoByGlobalId={linkedInventoryQuantityInfoByGlobalId}
+            onSave={onUpdateInventoryStock}
+            onClose={() => {
+              setInventoryUpdateDialogOpen(false);
+            }}
+          />
+          <ThemeProvider theme={createAccentedTheme(PUBCHEM_ACCENT_COLOR)}>
+            <CompoundSearchDialog
+              open={pubchemDialogOpen}
+              onClose={() => {
+                setPubchemDialogOpen(false);
+                setAddReagentMenuAnchorEl(null);
+              }}
+              onCompoundsSelected={(compounds) => {
+                void (async () => {
+                  for (const c of compounds) {
+                    await onAddReagent(c.smiles, c.name, "pubchem");
+                  }
+                })();
+              }}
+              title="Insert from PubChem"
+              submitButtonText="Insert"
+              showPubChemInfo
+              allowMultipleSelection
+            />
+          </ThemeProvider>
+          {galleryDialogOpen && (
+            <MemoryRouter>
+              <LandmarksProvider>
+                <React.Suspense
+                  fallback={
+                    <Backdrop
+                      open
+                      sx={{
+                        color: "#fff",
+                        zIndex: 1,
+                      }}
+                    >
+                      <CircularProgress color="inherit" aria-label="Loading gallery picker" />
+                    </Backdrop>
+                  }
+                >
+                  <GalleryPicker
+                    open={true}
+                    onClose={() => {
+                      setGalleryDialogOpen(false);
+                    }}
+                    onSubmit={(files) => {
+                      void (async () => {
+                        for (const file of files) {
+                          await Parsers.getValueWithKey("chemString")(file.metadata)
+                            .flatMap(Parsers.isString)
+                            .doAsync((smiles) => {
+                              return onAddReagent(smiles, filenameExceptExtension(file.name), "gallery");
+                            });
+                        }
+                        setGalleryDialogOpen(false);
+                      })();
+                    }}
+                    validateSelection={(file) => {
+                      if (file.type !== "Chemistry")
+                        return Result.Error([new Error("Only chemistry files can be added to stoichiometry tables")]);
+                      return Result.Ok(null);
+                    }}
+                  />
+                </React.Suspense>
+              </LandmarksProvider>
+            </MemoryRouter>
+          )}
+        </>
+      )}
+      <Box
+        sx={{
+          flexGrow: 1,
+        }}
+      ></Box>
+      <ColumnsPanelTrigger aria-label="Columns" size="small">
+        Columns
+      </ColumnsPanelTrigger>
+      <Button
+        aria-label="Export"
+        size="small"
+        onClick={(event) => {
+          setExportMenuAnchorEl(event.currentTarget);
+        }}
+      >
+        Export
+      </Button>
+      <Menu
+        open={Boolean(exportMenuAnchorEl)}
+        anchorEl={exportMenuAnchorEl}
+        onClose={() => {
+          setExportMenuAnchorEl(null);
+        }}
+        slotProps={{
+          paper: {
+            role: "tooltip",
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            setExportMenuAnchorEl(null);
+            apiRef.current?.exportDataAsCsv({
+              allColumns: true,
+              getRowsToExport: () => allMolecules.map((molecule) => molecule.id),
+            });
+          }}
+        >
+          Export to CSV
+        </MenuItem>
+      </Menu>
+    </Toolbar>
   );
 };
 export default StoichiometryTableToolbar;

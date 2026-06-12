@@ -5,10 +5,8 @@ import IconButton from "@mui/material/IconButton";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../../stores/definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../../util/set";
+import type { Record } from "../../../stores/definitions/Record";
+import type RsSet from "../../../util/set";
 import SimpleRecordsTable from "../SimpleRecordsTable";
 
 type BatchEditingItemsTableArgs<RecordLike extends Record> = {

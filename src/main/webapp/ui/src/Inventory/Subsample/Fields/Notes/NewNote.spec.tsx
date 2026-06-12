@@ -1,14 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { NewNoteStory } from "./NewNote.story";
 
 const createCallbackSpy = () => {
   let called = false;
 
-  // biome-ignore lint/style/useConst: initial biome migration
-  let allCalls: Array<Array<unknown>> = [];
+  const allCalls: Array<Array<unknown>> = [];
   const handler = (...args: Array<unknown>) => {
     called = true;
     allCalls.push(args);
@@ -166,8 +163,7 @@ const feature = test.extend<{
   },
   When: async ({ page }, use) => {
     await use({
-      // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-      "the user types in the note field": async (text: string) => {
+      "the user types in the note field": async (_text: string) => {
         const frame = page.frameLocator("iframe");
         await frame.locator('body[contenteditable="true"]').pressSequentially("Your note text here");
       },
@@ -333,19 +329,16 @@ test.describe("NewNote", () => {
     });
     await Then["there should not be an error message"]();
   });
-  feature(
-    "Resets field after successful note creation",
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    async ({ Given, When, Then, page }) => {
-      const { onErrorStateChangeSpy } = await Given["that the new note field has been mounted"]();
-      await Given["that the user has typed some text"]("Test note content");
-      await When["the user clicks the create note button"]();
-      await Then["the note field should be empty"]();
-      await Then["onErrorStateChange should be called with"](false, {
-        onErrorStateChangeSpy,
-      });
-    },
-  );
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
+  feature("Resets field after successful note creation", async ({ Given, When, Then, page }) => {
+    const { onErrorStateChangeSpy } = await Given["that the new note field has been mounted"]();
+    await Given["that the user has typed some text"]("Test note content");
+    await When["the user clicks the create note button"]();
+    await Then["the note field should be empty"]();
+    await Then["onErrorStateChange should be called with"](false, {
+      onErrorStateChangeSpy,
+    });
+  });
   feature("Handles non-editable state correctly", async ({ Given, Then }) => {
     await Given["that the new note field has been mounted with non-editable record"]();
     await Then["the create note button should be enabled"]();

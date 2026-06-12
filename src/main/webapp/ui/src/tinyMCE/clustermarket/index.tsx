@@ -1,5 +1,3 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
 import { getSorting, stableSort } from "../../util/table";
@@ -9,15 +7,15 @@ import Clustermarket, { getHeaders, getOrder, getOrderBy, getSelectedBookings } 
 
 document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-clustermarket");
-  // biome-ignore lint/style/noNonNullAssertion: pragmatic jsx->tsx conversion
+  // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   const root = createRoot(domContainer!);
   root.render(
     <Analytics>
       <Clustermarket
         {...({
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           clustermarket_web_url: (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url,
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         } as any)}
       />
     </Analytics>,
@@ -39,7 +37,7 @@ function createTinyMceTable() {
     tableHeader.appendChild(columnName);
   });
   clustermarketTable.appendChild(tableHeader);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   stableSort(getSelectedBookings(), getSorting(getOrder() as Order, getOrderBy())).forEach((booking: any) => {
     const row = document.createElement("tr");
 
@@ -50,7 +48,7 @@ function createTinyMceTable() {
       if (headerCell.id === "bookingID") {
         const link = document.createElement("a");
         link.href =
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url +
           "accounts/" +
           booking.labID +
@@ -62,7 +60,7 @@ function createTinyMceTable() {
       } else if (headerCell.id === "equipmentName") {
         const link = document.createElement("a");
         link.href =
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url +
           "accounts/" +
           booking.labID +
@@ -82,8 +80,7 @@ function createTinyMceTable() {
 }
 
 parent.tinymce.activeEditor?.on("clustermarket-insert", () => {
-  // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-  if (parent && parent.tinymce) {
+  if (parent?.tinymce) {
     const ed = parent.tinymce.activeEditor;
 
     if (getSelectedBookings().length > 0) {

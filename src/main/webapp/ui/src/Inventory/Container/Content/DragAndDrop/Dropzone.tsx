@@ -2,12 +2,10 @@ import { useDroppable } from "@dnd-kit/core";
 import CrossIcon from "@mui/icons-material/Clear";
 import TickIcon from "@mui/icons-material/Done";
 import Box from "@mui/material/Box";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Theme } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { forwardRef, type ReactNode } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../../stores/definitions/Container";
+import type { Location } from "../../../../stores/definitions/Container";
 import { mkDroppableId, useHelpers } from "./common";
 
 const allowedColor = (

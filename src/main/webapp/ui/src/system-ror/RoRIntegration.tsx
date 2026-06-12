@@ -87,10 +87,7 @@ function RoRIntegration(): React.ReactNode {
   const updateRor = async () => {
     const updatedRoR = candidateRor.replaceAll("/", RSPACE_ROR_FORWARD_SLASH_DELIM);
     try {
-      const response: RSpaceApiResponse = await axios.post(
-        // biome-ignore lint/style/useTemplate: initial biome migration
-        "/system/ror/rorForID/" + updatedRoR,
-      );
+      const response: RSpaceApiResponse = await axios.post(`/system/ror/rorForID/${updatedRoR}`);
       if (response.data.exceptionMessage) {
         const message: string = response.data.exceptionMessage;
         setErrorMessage(parseRorError(message));
@@ -122,10 +119,7 @@ function RoRIntegration(): React.ReactNode {
     if (rorID) {
       const searchTerm = rorID.replaceAll("/", RSPACE_ROR_FORWARD_SLASH_DELIM);
       try {
-        const response: { data: RoRApiResponse } = await axios.get(
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          "/system/ror/rorForID/" + searchTerm,
-        );
+        const response: { data: RoRApiResponse } = await axios.get(`/system/ror/rorForID/${searchTerm}`);
         if (response.data.exceptionMessage) {
           setErrorMessage(parseRorError(response.data.exceptionMessage));
           setRorDetails(null);
@@ -159,8 +153,7 @@ function RoRIntegration(): React.ReactNode {
   }, [candidateRor]);
 
   const getDisplayName = (): string | null => {
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    if (rorDetails && rorDetails.names) {
+    if (rorDetails?.names) {
       return rorDetails.names.filter((name) => name.types.includes("ror_display")).map((name) => name.value)[0];
     }
     return null;
@@ -184,132 +177,129 @@ function RoRIntegration(): React.ReactNode {
   const showUnlinkAction = (rorMatchesCandidateRor() || (Boolean(ror) && !candidateRor)) && !errorMessage;
 
   return (
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-    <>
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={materialTheme}>
-          <div>
-            <h1>Research Organization Registry (ROR) Integration</h1>
-            <RorHelpText>
-              By associating a{" "}
-              <a target="_blank" rel="noreferrer" href="https://ror.org">
-                ROR ID
-              </a>{" "}
-              with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your
-              research organisation. All research outputs with a DOI will automatically include the ROR ID in their
-              affiliation metadata.
-            </RorHelpText>
-          </div>
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <div>
+          <h1>Research Organization Registry (ROR) Integration</h1>
           <RorHelpText>
-            <h2>Institutional ROR ID</h2>
+            By associating a{" "}
+            <a target="_blank" rel="noreferrer" href="https://ror.org">
+              ROR ID
+            </a>{" "}
+            with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your
+            research organisation. All research outputs with a DOI will automatically include the ROR ID in their
+            affiliation metadata.
           </RorHelpText>
-          {!ror && (
-            <GenericsearchBar
-              handleSearch={handleSearch}
-              placeholder={"https://ror.org/038xqyz77"}
-              searchToolTip={"Search Registry"}
-            />
-          )}
-          {!rorDetails && (
-            <RorHelpText>
-              You can search the{" "}
-              <a target="_blank" rel="noreferrer" href="https://ror.org/search">
-                ROR registry
-              </a>{" "}
-              to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a{" "}
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform"
-              >
-                curation request form.
-              </a>
-            </RorHelpText>
-          )}
-          {showLinkAction && (
-            <RorHelpText>
-              ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.
-            </RorHelpText>
-          )}
-          {showUnlinkAction && (
-            <RorHelpText>
-              A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association.
-              Future published or updated DOIs will not include the ROR ID.
-            </RorHelpText>
-          )}
-          {rorDetails && (
-            <>
-              <RorDetails>
-                {" "}
-                <h2>
-                  <a target="_blank" rel="noreferrer" href={rorDetails.id}>
-                    {rorDetails.id}
-                  </a>
-                </h2>
-              </RorDetails>
-              <RorDetails>
-                {" "}
-                <h2>{getDisplayName()}</h2>
-              </RorDetails>
-              {rorDetails.locations.map((location, index) => {
-                const cityCountry = `${location.geonames_details.name}, ${location.geonames_details.country_name}`;
-                return (
-                  <RorDetails
-                    key={`${location.geonames_details.name}-${location.geonames_details.country_name}-${index}`}
-                  >
-                    <h5>{cityCountry}</h5>
-                  </RorDetails>
-                );
-              })}
-              {rorDetails.links.map((link, index) => (
-                <RorDetails key={`${link.value}-${index}`}>
-                  <h5>
-                    <a target="_blank" rel="noreferrer" href={link.value}>
-                      {link.value}
-                    </a>
-                  </h5>
+        </div>
+        <RorHelpText>
+          <h2>Institutional ROR ID</h2>
+        </RorHelpText>
+        {!ror && (
+          <GenericsearchBar
+            handleSearch={handleSearch}
+            placeholder={"https://ror.org/038xqyz77"}
+            searchToolTip={"Search Registry"}
+          />
+        )}
+        {!rorDetails && (
+          <RorHelpText>
+            You can search the{" "}
+            <a target="_blank" rel="noreferrer" href="https://ror.org/search">
+              ROR registry
+            </a>{" "}
+            to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a{" "}
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform"
+            >
+              curation request form.
+            </a>
+          </RorHelpText>
+        )}
+        {showLinkAction && (
+          <RorHelpText>
+            ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.
+          </RorHelpText>
+        )}
+        {showUnlinkAction && (
+          <RorHelpText>
+            A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association.
+            Future published or updated DOIs will not include the ROR ID.
+          </RorHelpText>
+        )}
+        {rorDetails && (
+          <>
+            <RorDetails>
+              {" "}
+              <h2>
+                <a target="_blank" rel="noreferrer" href={rorDetails.id}>
+                  {rorDetails.id}
+                </a>
+              </h2>
+            </RorDetails>
+            <RorDetails>
+              {" "}
+              <h2>{getDisplayName()}</h2>
+            </RorDetails>
+            {rorDetails.locations.map((location, index) => {
+              const cityCountry = `${location.geonames_details.name}, ${location.geonames_details.country_name}`;
+              return (
+                <RorDetails
+                  key={`${location.geonames_details.name}-${location.geonames_details.country_name}-${index}`}
+                >
+                  <h5>{cityCountry}</h5>
                 </RorDetails>
-              ))}
-              <RorDetails>
-                <h5>Status: {rorDetails.status}</h5>
+              );
+            })}
+            {rorDetails.links.map((link, index) => (
+              <RorDetails key={`${link.value}-${index}`}>
+                <h5>
+                  <a target="_blank" rel="noreferrer" href={link.value}>
+                    {link.value}
+                  </a>
+                </h5>
               </RorDetails>
-            </>
-          )}
-          {errorMessage && <Alert severity={getSeverity(errorMessage)}>{errorMessage}</Alert>}
-          {errorMessage && getSeverity(errorMessage) === "error" && (
-            <RorHelpText>
-              Please ensure the ROR ID is one of the following formats:
-              <RorErrorHelpText>https://ror.org/02mhbdp94</RorErrorHelpText>,{" "}
-              <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>, <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
-            </RorHelpText>
-          )}
-          {showLinkAction && (
-            <Button
-              color="primary"
-              data-test-id="ror-link"
-              variant="contained"
-              sx={{ marginTop: "10px" }}
-              onClick={() => void updateRor()}
-              startIcon={<FontAwesomeIcon icon={faPlus} />}
-            >
-              Link
-            </Button>
-          )}
-          {showUnlinkAction && (
-            <Button
-              color="primary"
-              data-test-id="ror-link"
-              variant="contained"
-              sx={{ marginTop: "10px" }}
-              onClick={() => void deleteRor()}
-              startIcon={<FontAwesomeIcon icon={faMinus} />}
-            >
-              UnLink
-            </Button>
-          )}
-        </ThemeProvider>
-      </StyledEngineProvider>
-    </>
+            ))}
+            <RorDetails>
+              <h5>Status: {rorDetails.status}</h5>
+            </RorDetails>
+          </>
+        )}
+        {errorMessage && <Alert severity={getSeverity(errorMessage)}>{errorMessage}</Alert>}
+        {errorMessage && getSeverity(errorMessage) === "error" && (
+          <RorHelpText>
+            Please ensure the ROR ID is one of the following formats:
+            <RorErrorHelpText>https://ror.org/02mhbdp94</RorErrorHelpText>,{" "}
+            <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>, <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
+          </RorHelpText>
+        )}
+        {showLinkAction && (
+          <Button
+            color="primary"
+            data-test-id="ror-link"
+            variant="contained"
+            sx={{ marginTop: "10px" }}
+            onClick={() => void updateRor()}
+            startIcon={<FontAwesomeIcon icon={faPlus} />}
+          >
+            Link
+          </Button>
+        )}
+        {showUnlinkAction && (
+          <Button
+            color="primary"
+            data-test-id="ror-link"
+            variant="contained"
+            sx={{ marginTop: "10px" }}
+            onClick={() => void deleteRor()}
+            startIcon={<FontAwesomeIcon icon={faMinus} />}
+          >
+            UnLink
+          </Button>
+        )}
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }
 

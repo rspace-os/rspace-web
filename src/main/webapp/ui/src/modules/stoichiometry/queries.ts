@@ -1,9 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { resolveToken, TokenParams } from "@/modules/common/utils/auth";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { StoichiometryResponse, StoichiometryResponseSchema } from "@/modules/stoichiometry/schema";
+import { resolveToken, type TokenParams } from "@/modules/common/utils/auth";
+import { type StoichiometryResponse, StoichiometryResponseSchema } from "@/modules/stoichiometry/schema";
 import { STOICHIOMETRY_API_BASE_URL, toStoichiometryError } from "@/modules/stoichiometry/utils";
 
 export type GetStoichiometryParams = {

@@ -1,7 +1,6 @@
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import { Optional } from "../../util/optional";
@@ -272,13 +271,7 @@ export default function FormField<T>({
   const explanationId = React.useId();
 
   const lengthLabel = (): Optional<string> => {
-    if (
-      // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-      Boolean(error) &&
-      typeof helperText === "string" &&
-      helperText.length > 0
-    )
-      return Optional.empty();
+    if (error && typeof helperText === "string" && helperText.length > 0) return Optional.empty();
     if (disabled === true) return Optional.empty();
     if (typeof value !== "string") return Optional.empty();
     if (typeof maxLength === "undefined") return Optional.empty();

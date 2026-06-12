@@ -11,8 +11,7 @@ import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GridRowId } from "@mui/x-data-grid";
+import type { GridRowId } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
@@ -29,8 +28,7 @@ import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/Val
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { DataGridColumn, paginationOptions } from "../../util/table";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UseState } from "../../util/types";
+import type { UseState } from "../../util/types";
 import { importPlan } from "./ImportIntoGallery";
 import { fetchPlanSummaries, type PlanSummary, type SearchParameters } from "./PlanSummary";
 

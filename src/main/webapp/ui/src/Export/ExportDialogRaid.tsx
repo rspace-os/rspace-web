@@ -8,10 +8,7 @@ import type { SwitchProps } from "@mui/material/Switch";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { DEFAULT_STATE } from "@/Export/constants";
+import type { DEFAULT_STATE } from "@/Export/constants";
 import type { RepoDetails } from "@/Export/repositories/common";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";

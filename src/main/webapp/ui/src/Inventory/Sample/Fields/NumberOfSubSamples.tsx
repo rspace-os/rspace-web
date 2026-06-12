@@ -5,8 +5,8 @@ import type React from "react";
 import { useState } from "react";
 import NumberField from "../../../components/Inputs/NumberField";
 import RadioField, { OptionExplanation, OptionHeading } from "../../../components/Inputs/RadioField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SampleModel, { type SubSampleTargetLocation } from "../../../stores/models/SampleModel";
+import type SampleModel from "../../../stores/models/SampleModel";
+import type { SubSampleTargetLocation } from "../../../stores/models/SampleModel";
 import FormField from "../../components/Inputs/FormField";
 
 const MIN = 2;

@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import PageNotFoundScreen from "../components/Layout/PageNotFoundScreen";
 import IGSNs from "./IGSN";

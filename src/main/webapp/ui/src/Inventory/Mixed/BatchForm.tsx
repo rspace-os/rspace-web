@@ -4,13 +4,11 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
+import type InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { MixedInventoryBaseRecordCollection } from "../../stores/models/InventoryBaseRecordCollection";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import useStores from "../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
 import FormWrapper from "../components/BatchEditing/FormWrapper";
 import AccessPermissions from "../components/Fields/AccessPermissions";

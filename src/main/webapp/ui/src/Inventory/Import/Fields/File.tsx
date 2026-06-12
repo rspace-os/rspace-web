@@ -1,8 +1,7 @@
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import RemoveButton from "@/components/RemoveButton";
 import TitledBox from "@/components/TitledBox";
 import FileField from "../../../components/Inputs/FileField";

@@ -10,7 +10,7 @@ function MyBenchIcon({ size, color }: MyBenchIconArgs): React.ReactNode {
   const theme = useTheme();
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
-    <svg
+<svg
       version="1.1"
       id="Layer_1"
       xmlns="http://www.w3.org/2000/svg"

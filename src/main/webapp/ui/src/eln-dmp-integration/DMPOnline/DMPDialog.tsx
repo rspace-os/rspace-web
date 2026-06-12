@@ -8,8 +8,7 @@ import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, GridRowId } from "@mui/x-data-grid";
+import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from "@mui/x-data-grid";
 import React from "react";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";

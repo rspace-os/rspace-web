@@ -12,17 +12,17 @@ import React, { useEffect } from "react";
 import axios from "@/common/axios";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const $: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const workspaceSettings: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const reloadFileTreeBrowser: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getAndDisplayWorkspaceResults: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: any;
 
 export default function NewNotebook() {
@@ -38,7 +38,7 @@ export default function NewNotebook() {
     });
   }, []);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function validateForm(e: any) {
     e.preventDefault();
 
@@ -63,9 +63,9 @@ export default function NewNotebook() {
       url: `/workspace/ajax/create_folder/${workspaceSettings.parentFolderId}`,
       data: bodyFormData,
       config: { headers: { "Content-Type": "multipart/form-data" } },
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     } as any)
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .then((response: any) => {
         if (response.data) {
           reloadFileTreeBrowser();
@@ -86,7 +86,7 @@ export default function NewNotebook() {
       });
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const focusUsernameInputField = (input: any) => {
     if (input) {
       setTimeout(() => input.focus(), 100);
@@ -118,10 +118,7 @@ export default function NewNotebook() {
             control={
               <Checkbox
                 checked={navigateAfterCreate}
-                onChange={(e) =>
-                  // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-                  setNavigateAfterCreate(e.target.value != "true")
-                }
+                onChange={(e) => setNavigateAfterCreate(e.target.value !== "true")}
                 value={navigateAfterCreate}
                 color="primary"
                 data-test-id="new-folder-navigate"

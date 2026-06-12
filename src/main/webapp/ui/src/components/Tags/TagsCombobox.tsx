@@ -9,19 +9,18 @@ import ListItemText from "@mui/material/ListItemText";
 import Popover from "@mui/material/Popover";
 import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import useAutocomplete, { AutocompleteCloseReason, AutocompleteGroupedOption } from "@mui/material/useAutocomplete";
+import useAutocomplete, {
+  type AutocompleteCloseReason,
+  type AutocompleteGroupedOption,
+} from "@mui/material/useAutocomplete";
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { VariableSizeList as List, VariableSizeList } from "react-window";
+import { VariableSizeList as List, type VariableSizeList } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../stores/definitions/Tag";
+import type { Tag } from "../../stores/definitions/Tag";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { lift3, Optional } from "../../util/optional";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import { stableSort } from "../../util/table";
 import { FINAL_DATA_SIGNAL, parseEncodedTags, SMALL_DATASET_SIGNAL } from "./ParseEncodedTagStrings";
 import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./TagValidation";
@@ -149,7 +148,7 @@ function OptionsListing({
 
     return (
       // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
-      <li
+<li
         key={key}
         {...optionProps}
         style={{
@@ -475,8 +474,7 @@ function TagsComboboxContent<
       return option.value;
     },
     filterOptions: (x) => x,
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    onInputChange: (event, newInputValue, reason) => {
+    onInputChange: (_event, newInputValue, reason) => {
       setPage(0);
       setReachedEnd(false);
       if (reason === "input") {

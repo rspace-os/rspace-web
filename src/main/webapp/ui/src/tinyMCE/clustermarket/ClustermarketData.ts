@@ -97,8 +97,7 @@ const getEquipment = (id: number, equipmentDetails: Array<EquipmentDetails>): Eq
 const formatDate = (date: string) => {
   const dateTime = date.split("T");
   const roundedTime = dateTime[1].split(".");
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  return dateTime[0] + " " + roundedTime[0];
+  return `${dateTime[0]} ${roundedTime[0]}`;
 };
 
 const getBookingSummary = (id: string, bookingsList: BookingsList) => {

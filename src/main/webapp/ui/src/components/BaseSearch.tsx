@@ -35,8 +35,7 @@ function BaseSearch(props: {
   };
 
   useEffect(() => {
-    // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-    document.addEventListener("reset-search-input", function () {
+    document.addEventListener("reset-search-input", () => {
       setSearch("");
     });
   }, []);

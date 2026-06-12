@@ -8,8 +8,7 @@ import type React from "react";
 import { useContext, useEffect } from "react";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { match } from "../../../util/Util";
 import NameWithBadge from "../NameWithBadge";
 import NavigateToNode from "./NavigateToNode";

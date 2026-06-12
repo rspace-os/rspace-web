@@ -2,8 +2,6 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import type { MockInstance } from "@vitest/spy";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Galaxy, { type AttachedRecords } from "../Galaxy";
@@ -15,7 +13,7 @@ const activeEditorMock = {
   storedFunction: () => {},
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   // biome-ignore lint/complexity/noBannedTypes: initial biome migration
-  on: function (eventName: string, targetFunction: () => {}) {
+    on: function (eventName: string, targetFunction: () => {}) {
     this.storedEventName = eventName;
     this.storedFunction = targetFunction;
   },

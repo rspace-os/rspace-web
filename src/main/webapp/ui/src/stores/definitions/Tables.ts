@@ -1,11 +1,7 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "./InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "./Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "./Tag";
+import type React from "react";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { Person } from "./Person";
+import type { Tag } from "./Tag";
 
 export type AdjustableTableRowLabel = string;
 export type CellContent =

@@ -1,7 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";

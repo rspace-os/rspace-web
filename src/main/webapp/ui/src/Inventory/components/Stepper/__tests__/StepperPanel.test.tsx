@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useState } from "react";
+import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
 import StepperPanel from "../StepperPanel";
 import "@/__tests__/__mocks__/matchMedia";
@@ -67,8 +66,7 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-              <></>
+              <div />
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>,
@@ -89,8 +87,7 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-              <></>
+              <div />
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>,
@@ -113,16 +110,14 @@ describe("StepperPanel", () => {
           <FormSectionsContext.Provider
             value={{
               isExpanded: () => open,
-              // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-              setExpanded: (recordType, sectionName, value) => {
+              setExpanded: (_recordType, _sectionName, value) => {
                 setOpen(value);
               },
               setAllExpanded,
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-              <></>
+              <div />
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>
@@ -152,8 +147,7 @@ describe("StepperPanel", () => {
         <ThemeProvider theme={materialTheme}>
           <SynchroniseFormSections>
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-              <></>
+              <div />
             </StepperPanel>
           </SynchroniseFormSections>
         </ThemeProvider>,

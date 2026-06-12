@@ -11,13 +11,10 @@ import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { Link } from "react-router-dom";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ColumnFieldMap } from "../../../stores/models/ImportModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ImportRecordType } from "../../../stores/stores/ImportStore";
+import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
+import type { ImportRecordType } from "../../../stores/stores/ImportStore";
 import useStores from "../../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../../util/types";
+import type { URL } from "../../../util/types";
 import OverlayLoadingSpinner from "../../components/OverlayLoadingSpinner";
 import Row from "./ColumnFieldMapRow";
 import TableCell from "./TableCell";

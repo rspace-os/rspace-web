@@ -1,7 +1,6 @@
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import TableSortLabel from "@mui/material/TableSortLabel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 type CustomTableSortLabelArgs = Omit<React.ComponentProps<typeof TableSortLabel>, "IconComponent">;
 

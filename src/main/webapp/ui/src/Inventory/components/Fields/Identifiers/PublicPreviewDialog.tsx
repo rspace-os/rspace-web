@@ -13,10 +13,8 @@ import { lazy, Suspense } from "react";
 import docLinks from "../../../../assets/DocLinks";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier } from "../../../../stores/definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { Identifier } from "../../../../stores/definitions/Identifier";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import PublishButton from "./PublishButton";
 

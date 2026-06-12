@@ -5,8 +5,8 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
 import NoValue from "../../components/NoValue";
 import ImagePreview from "../ImagePreview";

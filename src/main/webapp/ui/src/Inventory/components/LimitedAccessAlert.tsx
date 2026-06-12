@@ -1,9 +1,7 @@
 import Alert from "@mui/material/Alert";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../../stores/definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ReadAccessLevel } from "../../stores/definitions/Record";
+import type { Person } from "../../stores/definitions/Person";
+import type { ReadAccessLevel } from "../../stores/definitions/Record";
 
 /**
  * This component shows a pinned alert that explains to the user that they do

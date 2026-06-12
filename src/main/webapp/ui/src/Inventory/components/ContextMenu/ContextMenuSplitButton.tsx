@@ -39,8 +39,7 @@ export default function ContextMenuSplitButton({
     if (options[index].selection) options[index].selection();
   };
   const handleClose = (event: Event) => {
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    if (anchorRef.current && anchorRef.current.contains(event.target as Node)) {
+    if (anchorRef.current?.contains(event.target as Node)) {
       return;
     }
     setOpen(false);

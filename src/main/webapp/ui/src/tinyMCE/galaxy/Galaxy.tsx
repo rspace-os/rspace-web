@@ -8,8 +8,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { DataGrid, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
+import { DataGrid, type GridRowId, type GridRowSelectionModel } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import React, { useEffect, useState } from "react";
 import axios from "@/common/axios";
@@ -38,8 +37,7 @@ export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
 function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-  (parent as any).tinymce.activeEditor?.on("galaxy-used", function () {
+  (parent as any).tinymce.activeEditor?.on("galaxy-used", () => {
     setDoUpload(true);
   });
 
@@ -216,40 +214,36 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
       <ThemeProvider theme={materialTheme}>
         <HeadingContext level={3}>
           {historyId && (
-            // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-            <>
-              <TitledBox title="View Workflow in Galaxy" border>
-                <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-                  <p>Your new history can be viewed here: </p>
-                  <p>
-                    <a
-                      href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
-                      target="galaxyWithHistory"
-                      rel="noreferrer noopener"
-                    >
-                      {historyName}
-                    </a>{" "}
-                    (Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History'){" "}
-                  </p>
-                  <p>
-                    <strong>
-                      {" "}
-                      The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation'
-                      metadata.
-                    </strong>
-                  </p>
-                  <p>
-                    <strong>
-                      {" "}
-                      Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear
-                      in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the
-                      data being updated whenever you click on this 'workflow' icon. The badge count on the workflow
-                      icon indicates how many Galaxy Invocations are using the uploaded data.
-                    </strong>
-                  </p>
-                </Stack>
-              </TitledBox>
-            </>
+            <TitledBox title="View Workflow in Galaxy" border>
+              <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
+                <p>Your new history can be viewed here: </p>
+                <p>
+                  <a
+                    href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
+                    target="galaxyWithHistory"
+                    rel="noreferrer noopener"
+                  >
+                    {historyName}
+                  </a>{" "}
+                  (Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History'){" "}
+                </p>
+                <p>
+                  <strong>
+                    {" "}
+                    The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.
+                  </strong>
+                </p>
+                <p>
+                  <strong>
+                    {" "}
+                    Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear
+                    in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data
+                    being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon
+                    indicates how many Galaxy Invocations are using the uploaded data.
+                  </strong>
+                </p>
+              </Stack>
+            </TitledBox>
           )}
           {!historyId && (
             <>

@@ -1,14 +1,10 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import fc, { type Command } from "fast-check";
+import fc from "fast-check";
 import { describe, test, vi } from "vitest";
 import { mkAlert } from "../../../contexts/Alert";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import InventoryBaseRecord from "../../InventoryBaseRecord";
 import { AddScopedToastCommand } from "./addScopedToast";
 import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Model } from "./common";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/RootStore", () => ({

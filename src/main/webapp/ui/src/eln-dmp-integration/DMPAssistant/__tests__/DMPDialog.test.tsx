@@ -1,8 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";

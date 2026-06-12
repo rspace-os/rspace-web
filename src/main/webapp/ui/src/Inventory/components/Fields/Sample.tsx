@@ -4,10 +4,8 @@ import Typography from "@mui/material/Typography";
 import React from "react";
 import FormField from "../../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasUneditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Sample } from "../../../stores/definitions/Sample";
+import type { HasUneditableFields } from "../../../stores/definitions/Editable";
+import type { Sample } from "../../../stores/definitions/Sample";
 import { RecordLink } from "../RecordLink";
 
 export default function SampleField<

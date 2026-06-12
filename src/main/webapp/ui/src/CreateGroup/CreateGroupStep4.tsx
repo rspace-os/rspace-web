@@ -1,14 +1,10 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const createGroupStep4 = (props: any) => {
-  // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-  const selfService = $("#selfServiceLabGroup").length != 0;
-  // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-  const projectGroup = $("#projectGroup").length != 0;
+  const selfService = $("#selfServiceLabGroup").length !== 0;
+  const projectGroup = $("#projectGroup").length !== 0;
   return (
     <Box sx={{ padding: "0 25px 10px 25px" }}>
       <h3>Summary</h3>

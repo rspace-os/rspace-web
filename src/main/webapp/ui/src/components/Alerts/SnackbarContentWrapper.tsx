@@ -14,11 +14,9 @@ import SnackbarContent, { snackbarContentClasses } from "@mui/material/SnackbarC
 import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { forwardRef, useId } from "react";
+import { forwardRef, useId } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alert as AlertType } from "../../stores/contexts/Alert";
+import type { Alert as AlertType } from "../../stores/contexts/Alert";
 import GlobalId from "../GlobalId";
 import DismissButton from "./Buttons/Dismiss";
 import ExpandButton from "./Buttons/Expand";

@@ -3,8 +3,6 @@ import "@/__tests__/__mocks__/matchMedia";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import DMPDialog from "../DMPDialog";

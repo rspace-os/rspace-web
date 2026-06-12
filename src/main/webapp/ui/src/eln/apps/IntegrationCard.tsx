@@ -14,18 +14,15 @@ import Link from "@mui/material/Link";
 import { radioClasses } from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import { svgIconClasses } from "@mui/material/SvgIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { createTheme, ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
+import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography, { typographyClasses } from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { forwardRef, useContext, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Hsl } from "../../accentedTheme";
+import type { Hsl } from "../../accentedTheme";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationState } from "./useIntegrationsEndpoint";
+import type { IntegrationState } from "./useIntegrationsEndpoint";
 
 function hsl(hue: number, saturation: number, lightness: number, opacity: number) {
   // lightness is reduced so that all text meets WCAG2.1 AAA guidelines

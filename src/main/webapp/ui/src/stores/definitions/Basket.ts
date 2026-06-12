@@ -1,8 +1,6 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 import type { BaseRecord, GlobalId, Id } from "./BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "./InventoryRecord";
+import type { InventoryRecord } from "./InventoryRecord";
 
 /**
  * @module Basket

@@ -8,8 +8,7 @@ import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PageSize } from "./common";
+import type { PageSize } from "./common";
 
 export type PdfExportDetails = {
   exportFormat: "PDF";

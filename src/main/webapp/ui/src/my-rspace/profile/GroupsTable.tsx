@@ -20,9 +20,9 @@ import AutoshareStatus from "./Autoshare/AutoshareStatus";
 // altering the original runtime behaviour.
 declare function setPage(n: number): void;
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function GroupsTable(props: any) {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [groups, setGroups] = React.useState<any[]>([]);
   const [isCurrentlySharing, setIsCurrentlySharing] = React.useState(false);
   const [order, setOrder] = React.useState<Order>("desc");
@@ -37,8 +37,7 @@ export default function GroupsTable(props: any) {
     const url = `/userform/ajax/userGroupInfo/${props.userId}`;
 
     axios.get(url).then((response) => {
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      if (response.status != 200 || response.data.exceptionMessage) {
+      if (response.status !== 200 || response.data.exceptionMessage) {
         setGroups([]);
         setFetchSuccess(false);
       } else {
@@ -62,9 +61,8 @@ export default function GroupsTable(props: any) {
     });
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  const handleRequestSort = (event: any, property: any) => {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const handleRequestSort = (_event: any, property: any) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
@@ -107,7 +105,7 @@ export default function GroupsTable(props: any) {
                   rowCount={0}
                 />
                 <TableBody>
-                  {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+                  {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
                   {stableSort(groups, getSorting(order, orderBy)).map((group: any) => (
                     <TableRow hover tabIndex={-1} key={group.groupDisplayName}>
                       <TableCell align="left">

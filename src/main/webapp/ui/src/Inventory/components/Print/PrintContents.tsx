@@ -2,12 +2,9 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { Fragment, forwardRef } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Optional } from "../../../util/optional";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PrintOptions } from "./PrintDialog";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
+import type { Optional } from "../../../util/optional";
+import type { PrintOptions } from "./PrintDialog";
 
 export type PrintLabelContents = {
   itemLabel: string;

@@ -7,12 +7,10 @@ import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import ListItemText from "@mui/material/ListItemText";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import GlobalId from "../../components/GlobalId";
 import NoValue from "../../components/NoValue";
-// biome-ignore lint/style/useImportType: initial biome migration
-import TemplateModel from "../../stores/models/TemplateModel";
+import type TemplateModel from "../../stores/models/TemplateModel";
 
 type OneItemListArgs = {
   avatar: React.ReactNode;

@@ -3,8 +3,7 @@ import { inputBaseClasses } from "@mui/material";
 import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
 import Link from "@mui/material/Link";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { SelectChangeEvent } from "@mui/material/Select";
+import type { SelectChangeEvent } from "@mui/material/Select";
 import { textFieldClasses } from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
@@ -12,8 +11,7 @@ import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SampleModel from "../../../stores/models/SampleModel";
+import type SampleModel from "../../../stores/models/SampleModel";
 import useStores from "../../../stores/use-stores";
 import { Optional } from "../../../util/optional";
 import FormField from "../../components/Inputs/FormField";
@@ -119,12 +117,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
           }}
         >
           <FormField
-            label={`Quantity${
-              (sample.newSampleSubSamplesCount ?? 2) > 1
-                ? // biome-ignore lint/style/useTemplate: initial biome migration
-                  " per " + alias.alias
-                : ""
-            }`}
+            label={`Quantity${(sample.newSampleSubSamplesCount ?? 2) > 1 ? ` per ${alias.alias}` : ""}`}
             explanation="Quantity units can also be changed by editing templates."
             value={amount}
             error={!valid}

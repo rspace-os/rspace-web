@@ -8,8 +8,7 @@
 
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 type CustomTooltipArgs = {
   title: string;
@@ -25,10 +24,8 @@ export default function CustomTooltip({
   enterDelay = 200,
   children,
   block = false,
-  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-  ["aria-hidden"]: ariaHidden,
-  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-  ["aria-label"]: ariaLabel,
+  "aria-hidden": ariaHidden,
+  "aria-label": ariaLabel,
 }: CustomTooltipArgs): React.ReactNode {
   return (
     <Tooltip

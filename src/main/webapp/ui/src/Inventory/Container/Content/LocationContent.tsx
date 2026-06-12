@@ -5,10 +5,8 @@ import { Observer, observer } from "mobx-react-lite";
 import React from "react";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container, type Location } from "../../../stores/definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { Container, Location } from "../../../stores/definitions/Container";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import InfoBadge from "../../components/InfoBadge";
 import InfoCard from "../../components/InfoCard";
 import * as DragAndDrop from "./DragAndDrop";

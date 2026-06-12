@@ -113,8 +113,7 @@ export default function useUiPreference<T>(
           ...old,
           [key]: {
             value: newValue,
-            // biome-ignore lint/complexity/useDateNow: initial biome migration
-            time: new Date().getTime(),
+            time: Date.now(),
           },
         };
       });
@@ -132,8 +131,7 @@ export default function useUiPreference<T>(
               value: newValue,
               // we save the time so that we have the option of implementing an
               // eviction polciy in the future
-              // biome-ignore lint/complexity/useDateNow: initial biome migration
-              time: new Date().getTime(),
+              time: Date.now(),
             },
           }),
         );

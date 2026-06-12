@@ -16,7 +16,7 @@ import axios from "@/common/axios";
 import NewFolder from "./Workspace/Misc/NewFolder";
 import NewNotebook from "./Workspace/Misc/NewNotebook";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const configurePermittedActions: any;
 
 /**

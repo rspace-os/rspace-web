@@ -4,8 +4,7 @@ import { useState } from "react";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/other";
 import theme from "../theme";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ValidatingSubmitButton, { IsInvalid, IsValid, ValidationResult } from "./ValidatingSubmitButton";
+import ValidatingSubmitButton, { IsInvalid, IsValid, type ValidationResult } from "./ValidatingSubmitButton";
 
 /**
  * A simple example of how to use ValidatingSubmitButton

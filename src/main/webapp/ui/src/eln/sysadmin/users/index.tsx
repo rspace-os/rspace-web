@@ -49,15 +49,14 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
   ColumnsPanelTrigger,
   DataGrid,
   Toolbar as DataGridToolbar,
-  GridColumnVisibilityModel,
-  GridRowSelectionModel,
-  GridSlotProps,
-  GridSortModel,
+  type GridColumnVisibilityModel,
+  type GridRowSelectionModel,
+  type GridSlotProps,
+  type GridSortModel,
   GridToolbarExportContainer,
   useGridApiContext,
 } from "@mui/x-data-grid";
@@ -82,8 +81,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Optional } from "../../../util/optional";
+import type { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import RsSet, { flattenWithIntersection } from "../../../util/set";
@@ -117,7 +115,7 @@ declare module "@mui/x-data-grid" {
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
   // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
-  <div
+<div
     onKeyDown={(e) => {
       e.stopPropagation();
     }}
@@ -300,7 +298,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
   const [searchTerm, setSearchTerm] = React.useState("");
   return (
     // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-    <form
+<form
       role="search"
       onSubmit={(e) => {
         e.preventDefault();

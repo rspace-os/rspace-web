@@ -23,14 +23,14 @@ import SocialActions from "../ToolbarSocial";
 
 declare global {
   interface Window {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     renderToolbar: (newProps?: any) => void;
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class NotebookToolbar extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -164,9 +164,9 @@ class NotebookToolbar extends React.Component<any, any> {
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let rootNode: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let domContainer: any;
 
 /*
@@ -184,7 +184,7 @@ let prevProps = {
   },
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 window.renderToolbar = (newProps: any) => {
   if (!rootNode) {
     domContainer = document.getElementById("toolbar2");

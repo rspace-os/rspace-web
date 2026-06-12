@@ -17,10 +17,10 @@ import React, { useRef } from "react";
 import axios from "@/common/axios";
 import materialTheme from "../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OAuthDialog(props: any) {
   const [open, setOpen] = React.useState(false);
   const [appName, setAppName] = React.useState("");
@@ -29,9 +29,9 @@ export default function OAuthDialog(props: any) {
   const [created, setCreated] = React.useState(false);
   const [clientId, setClientId] = React.useState("");
   const [unhashedClientSecret, setUnhashedClientSecret] = React.useState("");
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const clientIdRef = useRef<any>(null);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const clientSecretRef = useRef<any>(null);
 
   const handleClickOpen = () => {
@@ -52,19 +52,19 @@ export default function OAuthDialog(props: any) {
     resetForm();
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleChange = (e: any) => {
     setAppName(e.target.value);
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleSubmit = (e: any) => {
     e.preventDefault();
     if (isNameValid()) {
       const url = `/userform/ajax/oAuthApps/${appName}`;
       axios
         .post(url)
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .then((response: any) => {
           response = response.data;
           if (response.success) {
@@ -75,8 +75,7 @@ export default function OAuthDialog(props: any) {
               clientId: response.data.clientId,
               appName,
             });
-            // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-          } else if (response.hasOwnProperty("exceptionMessage")) {
+          } else if (Object.hasOwn(response, "exceptionMessage")) {
             RS.confirm(response.exceptionMessage, "warning", "infinite");
           } else {
             RS.confirm(
@@ -86,7 +85,7 @@ export default function OAuthDialog(props: any) {
             );
           }
         })
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .catch((error: any) => {
           RS.confirm(error.response.data, "warning", "infinite");
         });
@@ -108,9 +107,8 @@ export default function OAuthDialog(props: any) {
     return true;
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  const copyToClipboard = (e: any, id: number) => {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const copyToClipboard = (_e: any, id: number) => {
     if (id === 1) {
       clientIdRef.current.select();
     } else {
@@ -124,13 +122,12 @@ export default function OAuthDialog(props: any) {
       } else {
         RS.confirm("Couldn't copy to clipboard. Try again manually.", "warning", 5000);
       }
-      // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
-    } catch (err) {
+    } catch (_err) {
       RS.confirm("Couldn't copy to clipboard. Try again manually.", "warning", 5000);
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const focusInputField = (input: any) => {
     if (input) {
       setTimeout(() => input.focus(), 100);

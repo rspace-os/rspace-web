@@ -6,8 +6,7 @@ import { Route, Routes } from "react-router-dom";
 import { useLandmark } from "../../components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { getSavedGlobalId, globalIdPatterns } from "../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs } from "../../stores/definitions/Search";
+import type { CoreFetcherArgs } from "../../stores/definitions/Search";
 import { hasLocation } from "../../stores/models/HasLocation";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import useStores from "../../stores/use-stores";

@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { hasLocation } from "../../../stores/models/HasLocation";

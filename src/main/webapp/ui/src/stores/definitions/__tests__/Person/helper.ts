@@ -1,8 +1,6 @@
 import fc, { type Arbitrary } from "fast-check";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "../../Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../../Person";
+import type { Container } from "../../Container";
+import type { Person } from "../../Person";
 
 export const arbitraryPerson: Arbitrary<Person> = fc
   .record<Omit<Person, "fullName" | "label">>({

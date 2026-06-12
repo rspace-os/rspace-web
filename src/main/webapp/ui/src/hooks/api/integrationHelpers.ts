@@ -5,8 +5,7 @@
 
 import React from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../util/fetchingData";
+import type * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 

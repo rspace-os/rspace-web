@@ -154,11 +154,7 @@ export default function ChemCard(props: ChemCardProps) {
         if (response.data.data) {
           setChem(response.data.data);
         } else {
-          console.warn(
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            "error when retrieving info for chem elem " + props.item.id,
-            response.data.error,
-          );
+          console.warn(`error when retrieving info for chem elem ${props.item.id}`, response.data.error);
         }
       })
       .catch((error: unknown): void => {
@@ -197,8 +193,7 @@ export default function ChemCard(props: ChemCardProps) {
             {chemical.role}
           </TableCell>
         </TableRow>
-        {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
-        {chemical.name != "" && <PropertyRow label="Name" value={chemical.name} />}
+        {chemical.name !== "" && <PropertyRow label="Name" value={chemical.name} />}
         {properties.map((property, index) => (
           <PropertyRow key={`${keyPrefix}-prop-${index}`} label={property.label} value={property.value} />
         ))}

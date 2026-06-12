@@ -1,11 +1,9 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import "photoswipe/dist/photoswipe.css";
 import { Global } from "@emotion/react";
 import Box from "@mui/material/Box";
 import { Gallery, Item } from "react-photoswipe-gallery";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../util/types";
+import type { URL } from "../util/types";
 
 function escapeHtml(unsafe: string) {
   return unsafe

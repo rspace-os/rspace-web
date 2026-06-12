@@ -1,9 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { createRoot } from "react-dom/client";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ExportSelection } from "@/Export/common";
+import type { ExportSelection } from "@/Export/common";
 import Alerts from "../components/Alerts/Alerts";
 import Analytics from "../components/Analytics";
 import ExportDialog from "./ExportDialog";

@@ -14,19 +14,13 @@ import axios from "@/common/axios";
 import materialTheme from "../../../../theme";
 import AdditionalInfo from "./AdditionalInfo";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: (...args: any[]) => string;
 
-function GroupAutoshareManager({
-  groupId,
-  groupDisplayName,
-  isCloud,
-  isLabGroup,
-  isGroupAutoshareAllowed,
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-}: any) {
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGroupAutoshareAllowed }: any) {
   const [autoshareStatus, setAutoshareStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -78,8 +72,8 @@ function GroupAutoshareManager({
   }
 
   /* Autosharing is not supported on collaboration groups and the community version */
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  function DisabledAutoshareButton(props: any) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    function DisabledAutoshareButton(props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
 
@@ -106,23 +100,20 @@ function GroupAutoshareManager({
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function AutoshareButton(props: any) {
     return (
       <>
         {isLabGroup && !isCloud && isGroupAutoshareAllowed && (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>
-            <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-              {props.mode} autosharing
-            </Button>
-          </>
+          <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
+            {props.mode} autosharing
+          </Button>
         )}
       </>
     );
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function DialogButtons(props: any) {
     return (
       <>
@@ -185,7 +176,7 @@ function GroupAutoshareManager({
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function WrappedGroupAutoshareManager(props: any) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>

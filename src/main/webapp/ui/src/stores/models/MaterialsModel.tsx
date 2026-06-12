@@ -1,6 +1,4 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -9,26 +7,18 @@ import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { HasLocation } from "../definitions/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportOptions } from "../definitions/Search";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
+import type { ExportOptions } from "../definitions/Search";
 import { fromCommonUnit, toCommonUnit } from "../definitions/Units";
 import getRootStore from "../stores/RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UnitCategory } from "../stores/UnitStore";
+import type { UnitCategory } from "../stores/UnitStore";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import MemoisedFactory from "./Factory/MemoisedFactory";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { filterForThoseWithLocations, hasLocation } from "./HasLocation";
+import { filterForThoseWithLocations } from "./HasLocation";
 import { filterForThoseWithQuantities, hasQuantity } from "./HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SampleAttrs } from "./SampleModel";
+import type { SampleAttrs } from "./SampleModel";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 
@@ -138,8 +128,7 @@ export class Material {
       const r = this.invRec;
       if (this.originalInventoryId === null) throw new Error("originalInventoryId has not been initialised");
       const revertedDelta = fromCommonUnit(
-        // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-        this.updateInventoryQuantity && !isNaN(this.usedQuantityDelta) ? this.usedQuantityDelta : 0,
+        this.updateInventoryQuantity && !Number.isNaN(this.usedQuantityDelta) ? this.usedQuantityDelta : 0,
         this.originalInventoryId,
       );
       if (this.originalInventoryValue === null) throw new Error("originalInventoryValue has not been initialised");
@@ -189,10 +178,8 @@ export class Material {
   setUsedQuantity(additionalValue: number, unitId: number) {
     if (this.invRec instanceof SubSampleModel) {
       /* store difference (from original) */
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      const newDelta = isNaN(additionalValue) ? 0 : toCommonUnit(additionalValue, unitId);
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      this.updateDelta(isNaN(additionalValue) ? 0 : additionalValue, unitId);
+      const newDelta = Number.isNaN(additionalValue) ? 0 : toCommonUnit(additionalValue, unitId);
+      this.updateDelta(Number.isNaN(additionalValue) ? 0 : additionalValue, unitId);
 
       /* update used quantity value */
       if (this.originalUsedValue === null) throw new Error("originalUsedValue has not been initialised");
@@ -229,8 +216,7 @@ export class Material {
 
   get usedQuantityChanged(): boolean {
     // can be negative too
-    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-    return !isNaN(this.usedQuantityDelta) && this.usedQuantityDelta !== 0;
+    return !Number.isNaN(this.usedQuantityDelta) && this.usedQuantityDelta !== 0;
   }
 
   quantityUnitLabel(unitId: number | null): string {
@@ -566,7 +552,7 @@ export class ListOfMaterials {
       this.resetUsedQuantityChanges();
       /* reset materials selection */
       // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-      this.selectedMaterials.forEach((m) => m.toggleSelected());
+            this.selectedMaterials.forEach((m) => m.toggleSelected());
 
       getRootStore().uiStore.addAlert(
         mkAlert({

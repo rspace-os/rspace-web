@@ -1,7 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import DryadRepo from "../DryadRepo";

@@ -4,14 +4,12 @@ import { faFlask } from "@fortawesome/free-solid-svg-icons/faFlask";
 import { faImage } from "@fortawesome/free-solid-svg-icons/faImage";
 import { faPaperclip } from "@fortawesome/free-solid-svg-icons/faPaperclip";
 import { faVials } from "@fortawesome/free-solid-svg-icons/faVials";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { FontAwesomeIcon, FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
+import { FontAwesomeIcon, type FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
 import { useTheme } from "@mui/material/styles";
 import type React from "react";
 import BenchIcon from "../assets/graphics/RecordTypeGraphics/Icons/Bench";
 import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordIconData } from "../stores/definitions/BaseRecord";
+import type { RecordIconData } from "../stores/definitions/BaseRecord";
 import { toTitleCase } from "../util/Util";
 import CustomTooltip from "./CustomTooltip";
 
@@ -26,8 +24,7 @@ type RecordTypeIconArgs = {
 export default function RecordTypeIcon({
   record,
   color, // Empty string signifies default styling
-  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-  ["aria-hidden"]: ariaHidden,
+  "aria-hidden": ariaHidden,
   disableTooltip = false,
   style,
 }: RecordTypeIconArgs): React.ReactNode {
@@ -79,8 +76,7 @@ export default function RecordTypeIcon({
       icon = <FontAwesomeIcon size="1x" icon={faImage} color={color ?? theme.palette.record.gallery.fg} />;
       break;
     default:
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      throw new Error("Unknown icon " + record.iconName);
+      throw new Error(`Unknown icon ${record.iconName}`);
   }
 
   if (disableTooltip || record.recordTypeLabel === "") return icon;

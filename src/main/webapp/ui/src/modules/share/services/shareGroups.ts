@@ -1,8 +1,6 @@
 import { getGroupById } from "@/modules/groups/queries";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GroupInfo } from "@/modules/groups/schema";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { getShareListing, ShareListingParams } from "@/modules/share/queries";
+import type { GroupInfo } from "@/modules/groups/schema";
+import { getShareListing, type ShareListingParams } from "@/modules/share/queries";
 import { findCommonGroups } from "@/modules/share/utils";
 
 export async function getCommonGroupsInShares(

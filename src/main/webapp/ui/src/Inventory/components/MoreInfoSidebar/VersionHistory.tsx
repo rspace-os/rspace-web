@@ -19,8 +19,7 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import ApiService from "../../../common/InvApiService";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { getErrorMessage } from "../../../util/error";
 import { isoToLocale } from "../../../util/Util";
 

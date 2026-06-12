@@ -1,24 +1,17 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { UnparsableString } from "../../util/error";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL as URLType } from "../../util/types";
+import type { URL as URLType } from "../../util/types";
 import { pick } from "../../util/unsafeUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../definitions/Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Field, type FieldType, type Option, type OptionValue } from "../definitions/Field";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Sample } from "../definitions/Sample";
+import type { Attachment } from "../definitions/Attachment";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { Field, FieldType, Option, OptionValue } from "../definitions/Field";
+import type { Sample } from "../definitions/Sample";
 import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAttachment } from "./AttachmentModel";
 import { apiStringToFieldType, type FieldType as FieldTypeSymbol } from "./FieldTypes";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "./InventoryBaseRecord";
+import type InventoryBaseRecord from "./InventoryBaseRecord";
 
 const formatOption = (option: OptionValue): Option => ({
   value: option,
@@ -160,8 +153,7 @@ export default class FieldModel implements Field {
     }
 
     if (params.type === "number") {
-      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
-      if (isNaN(params.content as number)) params.content = "";
+      if (Number.isNaN(params.content as number)) params.content = "";
       if (params.content !== "") {
         params.content = parseFloat(params.content as string);
       }

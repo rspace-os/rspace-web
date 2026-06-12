@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../stores/definitions/Tag";
+import type { Tag } from "../../stores/definitions/Tag";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { lift3, Optional } from "../../util/optional";
 

@@ -2,8 +2,6 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import ApiService from "../../../../../common/InvApiService";
 import { fieldAttrs } from "../../../../../stores/models/__tests__/FieldModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
@@ -15,8 +13,7 @@ import { sleep } from "../../../../../util/Util";
 import Template from "../Template";
 import "@/__tests__/__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AxiosResponse } from "@/common/axios";
+import type { AxiosResponse } from "@/common/axios";
 
 vi.mock("../../../../../common/InvApiService", () => ({
   default: {
@@ -99,8 +96,7 @@ describe("Template", () => {
   describe("When a template is chosen", () => {
     test("all of the template's fields should be copied to the sample.", async () => {
       const user = userEvent.setup();
-      // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-      vi.spyOn(ApiService, "query").mockImplementation((endpoint, params) => {
+      vi.spyOn(ApiService, "query").mockImplementation((_endpoint, params) => {
         if (params.get("resultType") === "TEMPLATE") {
           return Promise.resolve({
             data: {

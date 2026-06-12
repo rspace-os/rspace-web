@@ -12,12 +12,12 @@ import GroupPublishManager from "./GroupPublishManager";
 import GroupSeoManager from "./GroupSeoManager";
 import MyLabGroupsDialog from "./MyLabGroupsDialog";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class MyLabGroups extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   membersDialog: React.RefObject<any>;
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -85,8 +85,7 @@ class MyLabGroups extends React.Component<any, any> {
             )}
             {this.state.canManageAutoshare && (
               <GroupAutoshareManager
-                // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-                groupId={parseInt(this.state.groupId)}
+                groupId={parseInt(this.state.groupId, 10)}
                 groupDisplayName={this.state.groupDisplayName}
                 isCloud={this.state.isCloud}
                 isLabGroup={this.state.isLabGroup}
@@ -95,8 +94,7 @@ class MyLabGroups extends React.Component<any, any> {
             )}
             {
               <GroupPublishManager
-                // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-                groupId={parseInt(this.state.groupId)}
+                groupId={parseInt(this.state.groupId, 10)}
                 groupDisplayName={this.state.groupDisplayName}
                 isCloud={this.state.isCloud}
                 isLabGroup={this.state.isLabGroup}
@@ -106,8 +104,7 @@ class MyLabGroups extends React.Component<any, any> {
             }
             {
               <GroupSeoManager
-                // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-                groupId={parseInt(this.state.groupId)}
+                groupId={parseInt(this.state.groupId, 10)}
                 groupDisplayName={this.state.groupDisplayName}
                 isCloud={this.state.isCloud}
                 isLabGroup={this.state.isLabGroup}
@@ -117,16 +114,14 @@ class MyLabGroups extends React.Component<any, any> {
             }
             {
               <GroupOntologiesManager
-                // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-                groupId={parseInt(this.state.groupId)}
+                groupId={parseInt(this.state.groupId, 10)}
                 isCloud={this.state.isCloud}
                 canManageOntologies={this.state.canManageOntologies}
               />
             }
             {
               <GroupBioOntologiesManager
-                // biome-ignore lint/correctness/useParseIntRadix: initial biome migration
-                groupId={parseInt(this.state.groupId)}
+                groupId={parseInt(this.state.groupId, 10)}
                 isCloud={this.state.isCloud}
                 canManageOntologies={this.state.canManageOntologies}
               />

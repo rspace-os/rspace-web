@@ -1,6 +1,4 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import Omero from "../Omero";
 

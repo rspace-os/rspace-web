@@ -60,11 +60,7 @@ export const SimpleTreeExample = ({
 }) => {
   const [selectedItem, setSelectedItem] = useState<TreeItemData | null>(null);
 
-  const handleSelectionChange = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.SyntheticEvent | null,
-    item: TreeItemData | null,
-  ) => {
+  const handleSelectionChange = (_event: React.SyntheticEvent | null, item: TreeItemData | null) => {
     setSelectedItem(item);
     onSelectionChange(item ? [item] : []);
   };
@@ -93,11 +89,7 @@ export const MultiSelectTreeExample = ({
 }) => {
   const [selectedItems, setSelectedItems] = useState<TreeItemData[]>([]);
 
-  const handleSelectionChange = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.SyntheticEvent | null,
-    items: TreeItemData[],
-  ) => {
+  const handleSelectionChange = (_event: React.SyntheticEvent | null, items: TreeItemData[]) => {
     setSelectedItems(items);
     onSelectionChange(items);
   };
@@ -141,11 +133,7 @@ export const ExpandableTreeExample = ({
 }) => {
   const [expandedItems, setExpandedItems] = useState<TreeItemData[]>([]);
 
-  const handleExpansionChange = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.SyntheticEvent | null,
-    items: TreeItemData[],
-  ) => {
+  const handleExpansionChange = (_event: React.SyntheticEvent | null, items: TreeItemData[]) => {
     setExpandedItems(items);
     onExpansionChange(items);
   };
@@ -203,20 +191,12 @@ export const ControlledTreeExample = ({
   const [selectedItem, setSelectedItem] = useState<TreeItemData | null>(null);
   const [expandedItems, setExpandedItems] = useState<TreeItemData[]>([]);
 
-  const handleSelectionChange = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.SyntheticEvent | null,
-    item: TreeItemData | null,
-  ) => {
+  const handleSelectionChange = (_event: React.SyntheticEvent | null, item: TreeItemData | null) => {
     setSelectedItem(item);
     onSelectionChange(item ? [item] : []);
   };
 
-  const handleExpansionChange = (
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    event: React.SyntheticEvent | null,
-    items: TreeItemData[],
-  ) => {
+  const handleExpansionChange = (_event: React.SyntheticEvent | null, items: TreeItemData[]) => {
     setExpandedItems(items);
     onExpansionChange(items);
   };

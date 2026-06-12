@@ -1,7 +1,5 @@
 import { typographyClasses } from "@mui/material/Typography";
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { Heading, HeadingContext } from "../DynamicHeadingLevel";

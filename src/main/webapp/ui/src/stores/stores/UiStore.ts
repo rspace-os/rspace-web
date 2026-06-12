@@ -1,14 +1,11 @@
 import { action, computed, makeObservable, observable } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { isMobile } from "react-device-detect";
 import theme from "../../theme";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Panel } from "../../util/types";
+import type { Panel } from "../../util/types";
 import { match } from "../../util/Util";
 import { pick } from "../../util/unsafeUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alert } from "../contexts/Alert";
+import type { Alert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
 
 type ConfirmationDialogProps = {

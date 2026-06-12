@@ -27,11 +27,8 @@ describe("tinymceRS_scrollHandler", () => {
     harness = bootstrapLegacyEditorHarness();
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     loadLegacyEditorScript("tinymceRS_scrollHandler.js");
-    scrollHandler = harness.RS.tinymceScrollHandler as Record<
-      string,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      (...args: Array<any>) => any
-    >;
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    scrollHandler = harness.RS.tinymceScrollHandler as Record<string, (...args: Array<any>) => any>;
   });
 
   afterEach(() => {
@@ -105,13 +102,10 @@ describe("tinymceRS_scrollHandler", () => {
     });
 
     const originalOffset = harness.$.fn.offset;
-    // biome-ignore lint/complexity/useArrowFunction: initial biome migration
-    harness.$.fn.offset = function () {
-      return {
-        left: 0,
-        top: 260,
-      };
-    } as JQuery["offset"];
+    harness.$.fn.offset = (() => ({
+      left: 0,
+      top: 260,
+    })) as JQuery["offset"];
 
     const callback = scrollHandler.getScrollToCallback($target, "131150");
     callback?.();

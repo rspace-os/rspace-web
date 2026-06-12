@@ -1,10 +1,7 @@
 import { action, computed, makeObservable, override } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs, type DynamicFetcher as DynamicFetcherInterface } from "../../definitions/Search";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { CoreFetcherArgs, DynamicFetcher as DynamicFetcherInterface } from "../../definitions/Search";
 import CoreFetcher from "./CoreFetcher";
 
 /**

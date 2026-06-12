@@ -2,8 +2,7 @@ import PostAddIcon from "@mui/icons-material/PostAdd";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { match } from "../../../util/Util";
 import AddToBasketDialog from "../Baskets/AddToBasketDialog";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";

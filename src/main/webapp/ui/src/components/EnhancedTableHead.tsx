@@ -1,13 +1,11 @@
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Order } from "../util/types";
+import type { Order } from "../util/types";
 import TableSortLabel from "./TableSortLabel";
 
 export type Cell<COLUMN_ID_TYPE extends React.Key> = {

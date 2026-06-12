@@ -1,7 +1,6 @@
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import useStores from "../../../stores/use-stores";
 
 type TemplateNameArgs = {
@@ -23,11 +22,7 @@ function TemplateName({ disabled }: TemplateNameArgs): ReactNode {
       value={importStore.importData?.templateName ?? ""}
       helperText={error ? "A name for the new template is required and should be no longer than 255 characters." : ""}
       onChange={({ target }) => {
-        if (
-          target instanceof HTMLInputElement &&
-          // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-          Boolean(importStore.importData)
-        )
+        if (target instanceof HTMLInputElement && importStore.importData)
           importStore.importData?.setTemplateName(target.value);
       }}
     />

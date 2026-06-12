@@ -2,8 +2,7 @@
 
 import { getByKey } from "../../util/optional";
 import { type GlobalId, globalIdToInventoryRecordTypeLabel } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type LinkableRecord } from "../definitions/LinkableRecord";
+import type { LinkableRecord } from "../definitions/LinkableRecord";
 
 /**
  * This is a LinkableRecord that can be constructed from just a Global Id. It

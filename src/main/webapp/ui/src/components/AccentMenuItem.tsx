@@ -3,8 +3,7 @@ import { cardMediaClasses } from "@mui/material/CardMedia";
 import MenuItem, { menuItemClasses } from "@mui/material/MenuItem";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { typographyClasses } from "@mui/material/Typography";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { alpha, SxProps, Theme } from "@mui/system";
+import { alpha, type SxProps, type Theme } from "@mui/system";
 import React from "react";
 
 type AccentMenuItemSlotProps = {
@@ -44,8 +43,9 @@ type AccentMenuItemArgs = {
    * Use these properties to make the menu item a link.
    */
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  component?: React.ElementType<any>;
+  
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+component?: React.ElementType<any>;
   href?: string;
 
   /*

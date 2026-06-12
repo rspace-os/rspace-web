@@ -1,17 +1,13 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { createRoot } from "react-dom/client";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { getSorting, stableSort } from "../../util/table";
 // eslint-disable-next-line no-duplicate-imports
 import Omero, { getHeaders, getOrder, getOrderBy, getSelectedItems } from "./Omero";
 import { omeroSort } from "./ResultsTable";
 
 document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-omero");
-  // biome-ignore lint/style/noNonNullAssertion: pragmatic jsx->tsx conversion
+  // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   const root = createRoot(domContainer!);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   root.render(<Omero omero_web_url={(parent.tinymce.activeEditor as any)?.settings.omero_web_url} />);
 });
 
@@ -36,7 +32,7 @@ function createTinyMceTable() {
     headersWithNotes.forEach((headerCell) => {
       const cell = document.createElement("td");
 
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       const textContent = (item as any)[headerCell.id];
       if (headerCell.id === "path") {
         setCellContents(cell, "path", item);
@@ -54,24 +50,18 @@ function createTinyMceTable() {
   return omeroTable;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const setCellContents = (cell: HTMLTableCellElement, type: string, item: any) => {
   hideUnwantedLinks(item);
   if (type === "description") {
-    const dtRestToFormat = document.querySelector(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "[id=" + item.type + "_rest_description_" + item.id + "]",
-    );
+    const dtRestToFormat = document.querySelector(`[id=${item.type}_rest_description_${item.id}]`);
     if (dtRestToFormat) {
       dtRestToFormat.outerHTML = dtRestToFormat.outerHTML.replace(
         /class.+?restOfDescription/,
         'style="font-weight:lighter;font-size:0.9em;font-family:Verdana"',
       );
     }
-    const dtFirstToFormat = document.querySelector(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "[id=" + item.type + "_first_description_" + item.id + "]",
-    );
+    const dtFirstToFormat = document.querySelector(`[id=${item.type}_first_description_${item.id}]`);
     if (dtFirstToFormat) {
       dtFirstToFormat.outerHTML = dtFirstToFormat.outerHTML.replace(
         /class.+?firstDescription/,
@@ -79,10 +69,7 @@ const setCellContents = (cell: HTMLTableCellElement, type: string, item: any) =>
       );
     }
   } else if (type === "path") {
-    const dtNameToFormat = document.querySelector(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "[id=" + item.type + "_name_display_" + item.id + "]",
-    );
+    const dtNameToFormat = document.querySelector(`[id=${item.type}_name_display_${item.id}]`);
     if (dtNameToFormat) {
       dtNameToFormat.outerHTML = dtNameToFormat.outerHTML.replace(
         /class.+?nameText/,
@@ -93,8 +80,7 @@ const setCellContents = (cell: HTMLTableCellElement, type: string, item: any) =>
   const path = document.querySelector(
     `[id=${CSS.escape(type)}_tablecell_${CSS.escape(item.type)}${CSS.escape(item.id)}]`,
   );
-  // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-  if (path && path.innerHTML) {
+  if (path?.innerHTML) {
     cell.innerHTML = path.innerHTML;
     if (item.wellDetails) {
       cell.style.whiteSpace = "nowrap";
@@ -102,7 +88,7 @@ const setCellContents = (cell: HTMLTableCellElement, type: string, item: any) =>
   }
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const hideUnwantedLinks = (item: any) => {
   const ids = [
     "_fetch_children_",
@@ -115,12 +101,8 @@ const hideUnwantedLinks = (item: any) => {
   ];
   // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
   ids.map((id) => {
-    const idElement = document.querySelector(
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "[id=" + CSS.escape(item.type) + id + CSS.escape(item.id) + "]",
-    );
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    if (idElement && idElement.innerHTML) {
+    const idElement = document.querySelector(`[id=${CSS.escape(item.type)}${id}${CSS.escape(item.id)}]`);
+    if (idElement?.innerHTML) {
       idElement.innerHTML = "";
       idElement.outerHTML = "";
     }
@@ -128,8 +110,7 @@ const hideUnwantedLinks = (item: any) => {
 };
 
 parent.tinymce.activeEditor?.on("omero-insert", () => {
-  // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-  if (parent && parent.tinymce) {
+  if (parent?.tinymce) {
     const ed = parent.tinymce.activeEditor;
 
     if (getSelectedItems().length > 0) {

@@ -7,12 +7,9 @@ import DropdownButton from "../../../components/DropdownButton";
 import TagsCombobox from "../../../components/Tags/TagsCombobox";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../../stores/definitions/Tag";
-// biome-ignore lint/style/useImportType: initial biome migration
-import BasketModel from "../../../stores/models/Basket";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SavedSearch } from "../../../stores/stores/SearchStore";
+import type { Tag } from "../../../stores/definitions/Tag";
+import type BasketModel from "../../../stores/models/Basket";
+import type { SavedSearch } from "../../../stores/stores/SearchStore";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
 import { dropProperty, isInventoryPermalink } from "../../../util/Util";

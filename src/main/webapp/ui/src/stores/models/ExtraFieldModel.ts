@@ -1,13 +1,9 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraField, type ExtraFieldAttrs, type ExtraFieldType } from "../definitions/ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "./InventoryBaseRecord";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { ExtraField, ExtraFieldAttrs, ExtraFieldType } from "../definitions/ExtraField";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
+import type InventoryBaseRecord from "./InventoryBaseRecord";
 
 export default class ExtraFieldModel implements ExtraField {
   // @ts-expect-error Set by the call to setAttributes

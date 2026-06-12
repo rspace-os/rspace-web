@@ -37,8 +37,7 @@ import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import LoadingCircular from "../../../components/LoadingCircular";
 import * as Parsers from "../../../util/parsers";
 import { getSorting, paginationOptions, stableSort } from "../../../util/table";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Order } from "../../../util/types";
+import type { Order } from "../../../util/types";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import ResetZoomIcon from "./ResetZoomIcon";
 
@@ -243,17 +242,14 @@ function RestrictionSites({
     }>,
   ) => {
     setEnzymeList(
-      // biome-ignore lint/complexity/useFlatMap: initial biome migration
-      list
-        .map((enzyme) =>
-          enzyme.hits.map((hit) => ({
-            name: enzyme.name,
-            id: enzyme.id,
-            topCutPosition: hit.topCutPosition,
-            bottomCutPosition: hit.bottomCutPosition,
-          })),
-        )
-        .flat(),
+      list.flatMap((enzyme) =>
+        enzyme.hits.map((hit) => ({
+          name: enzyme.name,
+          id: enzyme.id,
+          topCutPosition: hit.topCutPosition,
+          bottomCutPosition: hit.bottomCutPosition,
+        })),
+      ),
     );
   };
 

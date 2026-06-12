@@ -1,8 +1,7 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 import type { Editable } from "../../stores/definitions/Editable";
 import useStores from "../../stores/use-stores";

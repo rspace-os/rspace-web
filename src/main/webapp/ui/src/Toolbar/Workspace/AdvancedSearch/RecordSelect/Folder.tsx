@@ -37,7 +37,7 @@ class Folder extends React.Component<any, any> {
 
     if (!oldProps.selected && newProps.selected) {
       this.setState({
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         selectedFiles: this.state.subfiles.map((file: any) => file.globalId),
       });
     } else if (oldProps.parentSelected && !newProps.parentSelected && oldProps.selected && !newProps.selected) {
@@ -53,8 +53,8 @@ class Folder extends React.Component<any, any> {
       })
       .then((response) => {
         const selectedFiles = this.props.selected
-          ? // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-            response.data.ajaxReturnObject.data.map((f: any) => f.globalId)
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          ? response.data.ajaxReturnObject.data.map((f: any) => f.globalId)
           : response.data.ajaxReturnObject.data
               // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               .map((f: any) => f.globalId)
@@ -69,8 +69,7 @@ class Folder extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   openFolder = (event: any) => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (event.target.tagName.toUpperCase() != "INPUT") {
+    if (event.target.tagName.toUpperCase() !== "INPUT") {
       this.setState({ open: !this.state.open });
     }
   };
@@ -90,13 +89,10 @@ class Folder extends React.Component<any, any> {
       this.setState({ selectedFiles: [], open: false });
       this.props.updateSelected(
         [],
-        [this.props.folder.globalId].concat(
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          this.state.subfiles.map((file: any) => file.globalId),
-        ),
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        [this.props.folder.globalId].concat(this.state.subfiles.map((file: any) => file.globalId)),
       );
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    } else if (this.props.level == 1 && !this.state.subfiles.length) {
+    } else if (this.props.level === 1 && !this.state.subfiles.length) {
       if (this.props.selected) this.props.updateSelected([], [this.props.folder.globalId]);
       else this.props.updateSelected([this.props.folder.globalId], []);
     }
@@ -106,19 +102,17 @@ class Folder extends React.Component<any, any> {
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   updateSubfilesSelect = (file_id: any, selected: any) => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    if (selected && this.state.selectedFiles.indexOf(file_id) == -1) {
+    if (selected && this.state.selectedFiles.indexOf(file_id) === -1) {
       this.setState(
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         (prevState: any) => ({
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           selectedFiles: produce(prevState.selectedFiles, (draft: any) => {
             draft.push(file_id);
           }),
         }),
         () => {
-          // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-          if (this.state.subfiles.length == this.state.selectedFiles.length) {
+          if (this.state.subfiles.length === this.state.selectedFiles.length) {
             this.props.onSelectChange(this.props.folder.globalId, true);
             this.props.updateSelected(
               [this.props.folder.globalId],
@@ -136,9 +130,9 @@ class Folder extends React.Component<any, any> {
       );
     } else if (!selected) {
       this.setState(
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         (prevState: any) => ({
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           selectedFiles: produce(prevState.selectedFiles, (draft: any) => {
             const idx = draft.indexOf(file_id);
             if (idx !== -1) {
@@ -198,23 +192,20 @@ class Folder extends React.Component<any, any> {
         {/* @ts-expect-error pragmatic jsx->tsx conversion: `button` prop removed from ListItem in MUI v9 */}
         <ListItem button onClick={this.openFolder} data-test-id={`open-folder-${this.props.folder.globalId}`}>
           <ListItemIcon>
-            {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-            <>
-              <Checkbox
-                indeterminate={this.state.selectedFiles.length > 0 && !this.props.selected}
-                color="primary"
-                edge="start"
-                checked={this.props.selected}
-                onChange={this.updateSelfSelect}
-                sx={{ padding: 0 }}
-                data-test-id={`select-folder-${this.props.folder.globalId}`}
-              />
-              {this.props.folder.notebook ? (
-                <FontAwesomeIcon icon={faBook} size="2x" />
-              ) : (
-                <FontAwesomeIcon icon={faFolder} size="2x" />
-              )}
-            </>
+            <Checkbox
+              indeterminate={this.state.selectedFiles.length > 0 && !this.props.selected}
+              color="primary"
+              edge="start"
+              checked={this.props.selected}
+              onChange={this.updateSelfSelect}
+              sx={{ padding: 0 }}
+              data-test-id={`select-folder-${this.props.folder.globalId}`}
+            />
+            {this.props.folder.notebook ? (
+              <FontAwesomeIcon icon={faBook} size="2x" />
+            ) : (
+              <FontAwesomeIcon icon={faFolder} size="2x" />
+            )}
           </ListItemIcon>
           <ListItemText primary={this.props.folder.name} />
           {this.state.subfiles.length > 0 &&
@@ -223,7 +214,7 @@ class Folder extends React.Component<any, any> {
         {this.state.subfiles.length > 0 && (
           <Collapse in={this.state.open} timeout="auto" unmountOnExit>
             <List disablePadding component="div" sx={{ paddingLeft: `${15 * this.props.level}px` }}>
-              {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+              {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
               {this.state.subfiles.map((subfile: any) => this.renderFile(subfile))}
             </List>
           </Collapse>

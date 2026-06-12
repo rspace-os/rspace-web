@@ -7,8 +7,7 @@
  */
 import { useTheme } from "@mui/material/styles";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 
 function CustomToggleButtonGroup(props: React.ComponentProps<typeof ToggleButtonGroup>): React.ReactNode {
   const theme = useTheme();

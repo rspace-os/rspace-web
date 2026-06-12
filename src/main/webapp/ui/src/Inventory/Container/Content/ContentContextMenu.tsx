@@ -2,13 +2,12 @@ import OpenInBrowserIcon from "@mui/icons-material/OpenInBrowser";
 import SelectAllIcon from "@mui/icons-material/SelectAll";
 import Badge from "@mui/material/Badge";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { match } from "../../../util/Util";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import ExtendedContextMenu from "../../components/ContextMenu/ExtendedContextMenu";
 import useNavigateHelpers from "../../useNavigateHelpers";
 

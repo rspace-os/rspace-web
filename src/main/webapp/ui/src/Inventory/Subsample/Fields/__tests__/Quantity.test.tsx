@@ -1,11 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Quantity as QuantityType } from "../../../../stores/definitions/HasQuantity";
 import materialTheme from "../../../../theme";
 import Quantity from "../Quantity";
 

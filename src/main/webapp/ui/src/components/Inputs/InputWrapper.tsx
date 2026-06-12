@@ -1,7 +1,6 @@
 import FormHelperText from "@mui/material/FormHelperText";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import FormControl from "./FormControl";
 
 export type InputWrapperArgs = {

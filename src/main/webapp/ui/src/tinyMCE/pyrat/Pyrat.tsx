@@ -34,14 +34,14 @@ import Filter from "./Filter";
 import FilterButton from "./FilterButton";
 import ResultsTable from "./ResultsTable";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const tinymce: any;
 
 function useAuthenticatedServers() {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [servers, setServers] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [error, setError] = React.useState<any>(null);
 
   useEffect(() => {
@@ -70,11 +70,11 @@ function useAuthenticatedServers() {
                 }),
               ),
             )
-            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             .elseThrow() as any[],
         );
       })
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
         setError(error);
         console.error("Failed to fetch servers", error);
@@ -106,14 +106,14 @@ const TABLE_HEADER_CELLS = [
   { id: "responsible_fullname", numeric: false, label: "Responsible" },
 ];
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let VISIBLE_HEADER_CELLS: any[] = [];
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let PYRAT_URL: any = null;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let PYRAT_ALIAS: any = null;
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; setSelectedAnimals: any }) {
   const pyrat = axios.create({
     baseURL: "/apps/pyrat",
@@ -153,7 +153,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       value: "",
       query: `licenses?serverAlias=${serverAlias}&k=license_id&k=license_number&s=license_id:asc&license_number=`,
       enumObj: {},
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       renderFunc: ({ license_id, license_number }: { license_id: any; license_number: any }) => [
         license_id,
         { label: license_number, value: license_id },
@@ -164,7 +164,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       value: "",
       query: `users?serverAlias=${serverAlias}&k=userid&k=fullname&s=username:asc&fullname=`,
       enumObj: {},
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       renderFunc: ({ userid, fullname }: { userid: any; fullname: any }) => [
         userid,
         { label: fullname, value: userid },
@@ -175,7 +175,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       value: "",
       query: `projects?serverAlias=${serverAlias}&k=id&k=name&s=id:asc&status=active&status=inactive&name=`,
       enumObj: {},
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       renderFunc: ({ id, name }: { id: any; name: any }) => [id, { label: name, value: id }],
     },
   });
@@ -227,7 +227,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     },
   });
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [animals, setAnimals] = useState<any[]>([]);
   const [fetchDone, setFetchDone] = useState(false);
   const [errorReason, setErrorReason] = useState(ErrorReason.None);
@@ -239,7 +239,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     TABLE_HEADER_CELLS.map((cell) => cell.id),
   );
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<any[]>([]);
   const [order, setOrder] = useLocalStorage("pyratSearchOrder", Order.desc);
   const [orderBy, setOrderBy] = useLocalStorage("pyratSearchOrderBy", "eartag_or_id");
@@ -248,13 +248,13 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   const [rowsPerPage, setRowsPerPage] = useLocalStorage("pyratRowsPerPage", 10);
   const [count, setCount] = useState(0);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleChangePage = (newPage: any) => {
     setPage(newPage);
     fetchAnimals();
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleRowsPerPageChange = (pageSize: any) => {
     setRowsPerPage(pageSize);
     handleChangePage(0);
@@ -262,14 +262,13 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
 
   useEffect(() => {
     pyrat
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      .get("version?serverAlias=" + serverAlias)
+      .get(`version?serverAlias=${serverAlias}`)
       .then((response) => {
         if (response.data.api_version !== SUPPORTED_PYRAT_API_VERSION) {
           setErrorReason(ErrorReason.APIVersion);
         }
       })
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
         handlePyratError(error);
       });
@@ -283,7 +282,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       .then((response) => {
         if (response.data) {
           const enumObj = response.data.reduce(
-            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             (acc: any, building: any) => {
               acc[building.full_name] = building.building_id;
               return acc;
@@ -300,7 +299,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
           });
         }
       })
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
         handlePyratError(error);
       });
@@ -313,29 +312,24 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     const collection = AnimalType.Animal === filterSpecial.animal_type.value ? "animals" : "pups";
 
     pyrat
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      .get(`${collection}?` + makeQueryString)
+      .get(`${collection}?${makeQueryString}`)
       .then((response) => {
         if (response.data) {
           const animals = response.data;
 
           // Not done at render time as "animals" is reused for inserting TinyMCE table
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-          animals.forEach((animal: any) => {
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                    animals.forEach((animal: any) => {
             // projects contain a lot of metadata that should not be displayed
             if (animal.projects) {
-              // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               animal.projects = animal.projects.map((project: any) => project.project_label).join(", ");
             }
 
             if (animal.mutations) {
               animal.mutations = animal.mutations
-                .map(
-                  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-                  (mutation: any) =>
-                    // biome-ignore lint/style/useTemplate: initial biome migration
-                    mutation.mutationname + " " + mutation.mutationgrade,
-                )
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                .map((mutation: any) => `${mutation.mutationname} ${mutation.mutationgrade}`)
                 .join(", ");
             }
           });
@@ -343,7 +337,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
           setAnimals(animals);
 
           setCount(
-            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             getHeader(response as any, "x-total-count")
               .flatMap(parseInteger)
               .orElseGet(([error]) => {
@@ -352,7 +346,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
           );
         }
       })
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
         handlePyratError(error);
       })
@@ -369,10 +363,9 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   const makeQueryString = useMemo(() => {
     const params = [filterSpecial.animal_state.value.map((state) => `&state=${state}`).join("")];
 
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     for (const [key, { value }] of Object.entries(filterMultiReq) as [string, any][]) {
-      // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-      if (value && value.value) {
+      if (value?.value) {
         params.push(`&${key}=${value.value}`);
       }
     }
@@ -402,11 +395,11 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   );
 
   React.useEffect(() => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     setSelectedAnimals(animals.filter((animal: any) => selectedAnimalIds.includes(animal.eartag_or_id)));
   }, [animals, selectedAnimalIds, setSelectedAnimals]);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function handlePyratError(error: any) {
     if (error.message === "Network Error") {
       setErrorReason(ErrorReason.NetworkError);
@@ -425,12 +418,12 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     }
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function handleOptionsFilterChange(filterKey: any, input: any) {
     if (new Set(Object.keys(filterMultiReq)).has(filterKey)) {
       (async () => {
         try {
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           const multiReq = filterMultiReq as Record<string, any>;
           const response = await pyrat.get(`${multiReq[filterKey].query}${input}`);
 
@@ -458,22 +451,19 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
         <ColumnVisibilitySettingsButton showSettings={showSettings} setShowSettings={setShowSettings} />
       </Grid>
       {showFilter && (
-        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-        <>
-          <Grid size={12}>
-            <Filter
-              filter={filter}
-              setFilter={setFilter}
-              filterMultiReq={filterMultiReq}
-              setFilterMultiReq={setFilterMultiReq}
-              filterSpecial={filterSpecial}
-              setFilterSpecial={setFilterSpecial}
-              filterCounter={filterCounter}
-              setFilterCounter={setFilterCounter}
-              onOptionsFilterChange={handleOptionsFilterChange}
-            />
-          </Grid>
-        </>
+        <Grid size={12}>
+          <Filter
+            filter={filter}
+            setFilter={setFilter}
+            filterMultiReq={filterMultiReq}
+            setFilterMultiReq={setFilterMultiReq}
+            filterSpecial={filterSpecial}
+            setFilterSpecial={setFilterSpecial}
+            filterCounter={filterCounter}
+            setFilterCounter={setFilterCounter}
+            onOptionsFilterChange={handleOptionsFilterChange}
+          />
+        </Grid>
       )}
       {showSettings && (
         <Grid size={12}>
@@ -508,15 +498,15 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClose: any }) {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [serverAlias, setServerAlias] = React.useState<any>(null);
   const servers = useAuthenticatedServers();
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [selectedAnimals, setSelectedAnimals] = React.useState<any[]>([]);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   FetchingData.getSuccessValue(servers as any).do((servers: any) => {
     if (servers.length === 1) {
       PYRAT_URL = servers[0].url;
@@ -537,12 +527,12 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
       />
       <DialogTitle>Insert from PyRAT</DialogTitle>
       <DialogContent>
-        {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+        {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
         {FetchingData.match(servers as any, {
           loading: () => <CircularProgress />,
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           error: (error: any) => <Typography color="error">{error.message}</Typography>,
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           success: (servers: any) => {
             if (servers.length === 1)
               return <PyratListing serverAlias={servers[0].alias} setSelectedAnimals={setSelectedAnimals} />;
@@ -554,7 +544,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
                 </Typography>
                 <List>
                   <Divider />
-                  {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+                  {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
                   {servers.map((server: any) => (
                     <>
                       <ListItem disablePadding key={server.alias}>
@@ -596,9 +586,9 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
 }
 
 class PyratPlugin {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(editor: any) {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     function* renderPyrat(domContainer: any): Generator<void, void, any> {
       const root = createRoot(domContainer);
       while (true) {
@@ -667,7 +657,7 @@ class PyratPlugin {
 }
 tinymce.PluginManager.add("pyrat", PyratPlugin);
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function createTinyMceTable(selectedAnimals: any[]) {
   const pyratTable = document.createElement("table");
   pyratTable.setAttribute("data-tableSource", "pyrat");
@@ -703,11 +693,11 @@ function createTinyMceTable(selectedAnimals: any[]) {
   });
   pyratTable.appendChild(tableHeader);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   selectedAnimals.forEach((animal: any) => {
     const row = document.createElement("tr");
 
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     VISIBLE_HEADER_CELLS.forEach((headerCell: any) => {
       const cell = document.createElement("td");
 

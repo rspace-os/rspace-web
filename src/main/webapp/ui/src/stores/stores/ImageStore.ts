@@ -1,7 +1,6 @@
 import axios from "@/common/axios";
 import JwtService from "../../common/JwtService";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BlobUrl, type URL as URLType } from "../../util/types";
+import type { BlobUrl, URL as URLType } from "../../util/types";
 import type { RootStore } from "./RootStore";
 
 /*

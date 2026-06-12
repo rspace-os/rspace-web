@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Either, Left, Right } from "purify-ts/Either";
+import { type Either, Left, Right } from "purify-ts/Either";
 import * as v from "valibot";
 import { ValiError } from "valibot";
 

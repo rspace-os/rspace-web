@@ -6,8 +6,7 @@ import type React from "react";
 import { useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import ContainerModel from "../../stores/models/ContainerModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
+import type InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 
 type HistoricalVersionAlertArgs = {
   record: InventoryBaseRecord;

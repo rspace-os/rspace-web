@@ -1,6 +1,5 @@
 import fc, { type Arbitrary } from "fast-check";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ContainerAttrs } from "../../ContainerModel";
+import type { ContainerAttrs } from "../../ContainerModel";
 import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 import SubSampleModel, { type SubSampleAttrs } from "../../SubSampleModel";
 import { makeMockContainer } from "../ContainerModel/mocking";

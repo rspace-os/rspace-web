@@ -2,8 +2,7 @@ import OpenWithIcon from "@mui/icons-material/OpenWith";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
 import { match } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";

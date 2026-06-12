@@ -3,8 +3,7 @@ import { describe, expect, test } from "vitest";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
 import { unionWith } from "../../../../util/set";
 import LocationModel from "../../LocationModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SubSampleAttrs } from "../../SubSampleModel";
+import type { SubSampleAttrs } from "../../SubSampleModel";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockSubSample, subSampleAttrsArbitrary } from "../SubSampleModel/mocking";
 import { containerAttrs, makeMockContainer } from "./mocking";

@@ -1,12 +1,9 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RouterFixture } from "@playwright/experimental-ct-core";
+import type { RouterFixture } from "@playwright/experimental-ct-core";
 import { expect, type MountResult, test } from "@playwright/experimental-ct-react";
 import fc from "fast-check";
 import * as Jwt from "jsonwebtoken";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GallerySection } from "./common";
+import type React from "react";
+import type { GallerySection } from "./common";
 import { GalleryStory } from "./index.story";
 
 type GivenSteps = {
@@ -154,8 +151,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      // biome-ignore lint/complexity/useDateNow: initial biome migration
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
       refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };

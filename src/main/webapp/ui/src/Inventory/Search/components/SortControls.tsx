@@ -7,12 +7,10 @@ import { useContext, useState } from "react";
 import DropdownButton from "../../../components/DropdownButton";
 import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
 import { match, toTitleCase } from "../../../util/Util";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SortProperty } from "../../components/Tables/SortableProperty";
+import type { SortProperty } from "../../components/Tables/SortableProperty";
 
 const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
   <SvgIcon
@@ -66,36 +64,33 @@ function SortControls(): React.ReactNode {
 
   const disabled = search.searchView === "IMAGE" || search.searchView === "GRID";
   return (
-    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-    <>
-      <DropdownButton
-        name={<SortAZIcon disabled={disabled} />}
-        onClick={handleClick}
-        disabled={disabled}
-        title={disabled ? `Cannot sort ${toTitleCase(search.searchView)} view.` : "Sort by"}
-      >
-        <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
-          {sortProperties.map(({ key, label, adjustColumn }) => {
-            return (
-              <MenuItem
-                key={key}
-                onClick={() =>
-                  setOrder({
-                    key,
-                    label,
-                    adjustColumn,
-                  })
-                }
-                selected={search.fetcher.isCurrentSort(key)}
-                aria-current={search.fetcher.isCurrentSort(key)}
-              >
-                <ListItemText primary={menuItemLabel(key, label)} />
-              </MenuItem>
-            );
-          })}
-        </StyledMenu>
-      </DropdownButton>
-    </>
+    <DropdownButton
+      name={<SortAZIcon disabled={disabled} />}
+      onClick={handleClick}
+      disabled={disabled}
+      title={disabled ? `Cannot sort ${toTitleCase(search.searchView)} view.` : "Sort by"}
+    >
+      <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
+        {sortProperties.map(({ key, label, adjustColumn }) => {
+          return (
+            <MenuItem
+              key={key}
+              onClick={() =>
+                setOrder({
+                  key,
+                  label,
+                  adjustColumn,
+                })
+              }
+              selected={search.fetcher.isCurrentSort(key)}
+              aria-current={search.fetcher.isCurrentSort(key)}
+            >
+              <ListItemText primary={menuItemLabel(key, label)} />
+            </MenuItem>
+          );
+        })}
+      </StyledMenu>
+    </DropdownButton>
   );
 }
 

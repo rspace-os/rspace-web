@@ -4,8 +4,7 @@ import AlertTitle from "@mui/material/AlertTitle";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SvgIcon from "@mui/material/SvgIcon";
+import type SvgIcon from "@mui/material/SvgIcon";
 import React from "react";
 import { ErrorReason } from "./Enums";
 

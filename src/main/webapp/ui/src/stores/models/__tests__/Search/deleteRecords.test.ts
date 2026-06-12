@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call */
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { describe, expect, test, vi } from "vitest";
 import InvApiService, { type BulkEndpointRecordSerialisation } from "../../../../common/InvApiService";
 import { mkAlert } from "../../../contexts/Alert";
@@ -51,17 +50,14 @@ describe("action: deleteRecords", () => {
       });
       const search = new Search({ factory });
 
-      const searchSpy = vi
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        .spyOn(search.fetcher as any, "search")
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        .mockImplementation((...args: any[]) => {
-          // Call the callback with empty results if it exists
-          if (args[1] && typeof args[1] === "function") {
-            args[1]([]);
-          }
-          return Promise.resolve();
-        });
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      const searchSpy = vi.spyOn(search.fetcher as any, "search").mockImplementation((...args: any[]) => {
+        // Call the callback with empty results if it exists
+        if (args[1] && typeof args[1] === "function") {
+          args[1]([]);
+        }
+        return Promise.resolve();
+      });
 
       await search.deleteRecords([makeMockContainer()]);
       /*
@@ -113,17 +109,14 @@ describe("action: deleteRecords", () => {
       });
       const search = new Search({ factory });
 
-      vi
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        .spyOn(search.fetcher as any, "search")
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        .mockImplementation((...args: any[]) => {
-          // Call the callback with empty results if it exists
-          if (args[1] && typeof args[1] === "function") {
-            args[1]([]);
-          }
-          return Promise.resolve();
-        });
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      vi.spyOn(search.fetcher as any, "search").mockImplementation((...args: any[]) => {
+        // Call the callback with empty results if it exists
+        if (args[1] && typeof args[1] === "function") {
+          args[1]([]);
+        }
+        return Promise.resolve();
+      });
 
       await search.deleteRecords([makeMockContainer()]);
       expect(mkAlert).toHaveBeenCalledWith(

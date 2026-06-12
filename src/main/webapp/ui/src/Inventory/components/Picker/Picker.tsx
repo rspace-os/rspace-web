@@ -9,12 +9,9 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect } from "react";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs, type SearchView as SearchViewType } from "../../../stores/definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Search from "../../../stores/models/Search";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { CoreFetcherArgs, SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import type Search from "../../../stores/models/Search";
 import { menuIDs } from "../../../util/menuIDs";
 import SearchComponent from "../../Search/Search";
 import SearchViewComponent from "../../Search/SearchView";
@@ -166,21 +163,18 @@ function InventoryPicker({
       </SearchContext.Provider>
       {showActions && (
         <CardActions>
-          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-          <>
-            <Button
-              variant="contained"
-              color="callToAction"
-              disableElevation
-              onClick={() => {
-                handleAddition(selectedRecords);
-              }}
-              disabled={selectedRecords.length === 0 || hasDisallowedSelection}
-            >
-              Choose
-            </Button>
-            <Button onClick={handleCancel}>Cancel</Button>
-          </>
+          <Button
+            variant="contained"
+            color="callToAction"
+            disableElevation
+            onClick={() => {
+              handleAddition(selectedRecords);
+            }}
+            disabled={selectedRecords.length === 0 || hasDisallowedSelection}
+          >
+            Choose
+          </Button>
+          <Button onClick={handleCancel}>Cancel</Button>
         </CardActions>
       )}
     </Card>

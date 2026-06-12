@@ -1,19 +1,14 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "@/theme";
 import "@/__tests__/__mocks__/matchMedia";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RaidIntegrationCard, { RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
-// biome-ignore lint/style/useImportType: initial biome migration
-import AlertContext, { Alert } from "@/stores/contexts/Alert";
+import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
+import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
+import AlertContext, { type Alert } from "@/stores/contexts/Alert";
 
 const mockSaveAppOptions = vi.fn();
 const mockDeleteAppOptions = vi.fn();

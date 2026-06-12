@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AxiosResponse, type InternalAxiosRequestConfig } from "@/common/axios";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/RootStore";
 import { sampleAttrs } from "../SampleModel/mocking";

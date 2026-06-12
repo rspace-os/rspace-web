@@ -21,33 +21,22 @@ import axios from "@/common/axios";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class GroupEditBar extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
       toast: false,
       editing: false,
       group_id: domContainer.getAttribute("data-group-id"),
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      can_edit: domContainer.getAttribute("data-can-edit") == "true",
+      can_edit: domContainer.getAttribute("data-can-edit") === "true",
       profile_text: domContainer.getAttribute("data-profile-text"),
-      pi_can_edit_permission:
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        domContainer.getAttribute("data-can-editpieditallchioce") == "true",
-      pi_can_edit_value:
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        domContainer.getAttribute("data-pieditallchoicevalue") == "true",
-      profile_hiding_enabled:
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        domContainer.getAttribute("data-profile-hiding-enabled") == "true",
-      can_hide_profile:
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        domContainer.getAttribute("data-can-hide-group-profile") == "true",
-      profile_is_hidden:
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        domContainer.getAttribute("data-group-private-profile") == "true",
+      pi_can_edit_permission: domContainer.getAttribute("data-can-editpieditallchioce") === "true",
+      pi_can_edit_value: domContainer.getAttribute("data-pieditallchoicevalue") === "true",
+      profile_hiding_enabled: domContainer.getAttribute("data-profile-hiding-enabled") === "true",
+      can_hide_profile: domContainer.getAttribute("data-can-hide-group-profile") === "true",
+      profile_is_hidden: domContainer.getAttribute("data-group-private-profile") === "true",
       default_text: "There is no profile information for this group.",
       errorMessage: "",
     };
@@ -55,17 +44,17 @@ class GroupEditBar extends React.Component<any, any> {
     this.handleChange = this.handleChange.bind(this);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleChange(event: any) {
     this.setState({ profile_text: event.target.value });
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleSwitch = (name: any) => (event: any) => {
     this.setState({ [name]: event.target.checked });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   submitForm = (event: any) => {
     event.preventDefault();
     let data = new FormData(),
@@ -77,8 +66,7 @@ class GroupEditBar extends React.Component<any, any> {
         axios
           .post(`/groups/editProfile/${this.state.group_id}`, data)
           .then((response) => {
-            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-            if (response.data.data == "Edit profile ok") {
+            if (response.data.data === "Edit profile ok") {
               this.setState({ editing: false });
             } else {
               this.handleError(response.data.exceptionMessage);
@@ -92,18 +80,14 @@ class GroupEditBar extends React.Component<any, any> {
 
     if (
       this.state.pi_can_edit_permission &&
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      this.state.pi_can_edit_value !=
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        (domContainer.getAttribute("data-pieditallchoicevalue") == "true")
+      this.state.pi_can_edit_value !== (domContainer.getAttribute("data-pieditallchoicevalue") === "true")
     ) {
       data = new FormData();
       data.set("canPIEditAll", this.state.pi_can_edit_value);
       promises.push(
         axios
           .post(`/groups/ajax/admin/changePiCanEditAll/${this.state.group_id}`, data)
-          // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-          .then((response) => {})
+          .then((_response) => {})
           .catch((error) => {
             this.handleError(error);
           }),
@@ -113,18 +97,14 @@ class GroupEditBar extends React.Component<any, any> {
     if (
       this.state.can_hide_profile &&
       this.state.profile_hiding_enabled &&
-      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      this.state.profile_is_hidden !=
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        (domContainer.getAttribute("data-group-private-profile") == "true")
+      this.state.profile_is_hidden !== (domContainer.getAttribute("data-group-private-profile") === "true")
     ) {
       data = new FormData();
       data.set("hideProfile", this.state.profile_is_hidden);
       promises.push(
         axios
           .post(`/groups/ajax/admin/changeHideProfileSetting/${this.state.group_id}`, data)
-          // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-          .then((response) => {})
+          .then((_response) => {})
           .catch((error) => {
             this.handleError(error);
           }),
@@ -136,7 +116,7 @@ class GroupEditBar extends React.Component<any, any> {
     });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleError = (error: any) => {
     this.setState({
       toast: true,
@@ -209,7 +189,7 @@ class GroupEditBar extends React.Component<any, any> {
                             checked: this.state.pi_can_edit_value,
                             margin: "dense",
                             "data-test-id": "pi-can-edit",
-                            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                           } as any)}
                         />
                       }
@@ -230,7 +210,7 @@ class GroupEditBar extends React.Component<any, any> {
                             checked: this.state.profile_is_hidden,
                             margin: "dense",
                             "data-test-id": "profile-is-hidden",
-                            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                           } as any)}
                         />
                       }
@@ -264,7 +244,7 @@ class GroupEditBar extends React.Component<any, any> {
               {...({
                 onClose: this.closeToast,
                 message: this.state.errorMessage,
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               } as any)}
             />
           </Snackbar>

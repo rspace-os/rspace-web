@@ -3,10 +3,8 @@
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Box from "@mui/material/Box";
 import Button, { buttonClasses } from "@mui/material/Button";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SxProps } from "@mui/system";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type { SxProps } from "@mui/system";
+import type React from "react";
 import CustomTooltip from "./CustomTooltip";
 
 type DropdownButtonArgs = {

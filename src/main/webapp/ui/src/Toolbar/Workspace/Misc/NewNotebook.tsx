@@ -10,9 +10,9 @@ import React, { useEffect } from "react";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const $: any;
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const workspaceSettings: any;
 
 export default function NewNotebook() {
@@ -28,7 +28,7 @@ export default function NewNotebook() {
     });
   }, []);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function validateForm(e: any) {
     e.preventDefault();
     if (name.trim().length === 0 || name.match(/\//)) {
@@ -43,18 +43,14 @@ export default function NewNotebook() {
     setLoading(true);
     const form = $("<form></form>");
     form.attr("method", "POST");
-    form.attr(
-      "action",
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      "/workspace/create_notebook/" + workspaceSettings.parentFolderId,
-    );
+    form.attr("action", `/workspace/create_notebook/${workspaceSettings.parentFolderId}`);
     form.append($(`<input name="notebookNameField" value="${name}"/>`).attr("type", "hidden"));
     $("body").append(form);
     form.submit();
     trackEvent("user:create:notebook:workspace");
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const focusUsernameInputField = (input: any) => {
     if (input) {
       setTimeout(() => input.focus(), 100);

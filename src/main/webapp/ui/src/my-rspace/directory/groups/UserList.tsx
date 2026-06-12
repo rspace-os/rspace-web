@@ -10,9 +10,9 @@ import TextField from "@mui/material/TextField";
 import React from "react";
 import { stripDiacritics } from "../../../util/StringUtils";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class UserList extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -20,26 +20,20 @@ class UserList extends React.Component<any, any> {
     };
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleSearch = (event: any) => {
     this.props.searchUsers(event.target.value);
     this.setState({ searchTerm: event.target.value });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   isSelected = (user: any) => {
-    return (
-      this.props.selected.findIndex(
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-        // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-        (selected: any) => selected.username == user.username,
-        // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-      ) != -1
-    );
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    return this.props.selected.findIndex((selected: any) => selected.username === user.username) !== -1;
   };
 
   visibleUsers = () => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     return this.props.users.filter((user: any) =>
       stripDiacritics(`${user.username} ${user.displayName ? user.displayName : user.fullName}`)
         .toUpperCase()
@@ -74,12 +68,12 @@ class UserList extends React.Component<any, any> {
             }}
           />
           <List dense component="div" role="list" sx={{ height: "350px", overflowY: "auto" }}>
-            {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+            {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
             {this.visibleUsers().map((user: any) => (
               <ListItem
                 key={user.username}
                 role="listitem"
-                // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 {...({ button: true } as any)}
                 onClick={() => this.props.handleSelect(user)}
               >

@@ -1,8 +1,6 @@
 import Box from "@mui/material/Box";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type State } from "../../stores/definitions/InventoryRecord";
+import type React from "react";
+import type { State } from "../../stores/definitions/InventoryRecord";
 import RecordStatus from "./Toolbar/RecordStatus";
 
 type StickyStatusArgs = {

@@ -1,19 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { resolveToken, TokenParams } from "@/modules/common/utils/auth";
+import { resolveToken, type TokenParams } from "@/modules/common/utils/auth";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
   DeleteStoichiometryResponseSchema,
-  MoleculeInfo,
+  type MoleculeInfo,
   MoleculeInfoSchema,
   StockDeductionRequestSchema,
-  StockDeductionResult,
+  type StockDeductionResult,
   StockDeductionResultSchema,
-  StoichiometryRequest,
+  type StoichiometryRequest,
   StoichiometryRequestSchema,
-  StoichiometryResponse,
+  type StoichiometryResponse,
   StoichiometryResponseSchema,
 } from "@/modules/stoichiometry/schema";
 import { STOICHIOMETRY_API_BASE_URL, toStoichiometryError } from "@/modules/stoichiometry/utils";

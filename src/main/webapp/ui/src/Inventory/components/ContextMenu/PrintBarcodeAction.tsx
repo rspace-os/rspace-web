@@ -1,8 +1,7 @@
 import PrintIcon from "@mui/icons-material/Print";
 import { Observer } from "mobx-react-lite";
 import React, { type ComponentType, forwardRef, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
 import { match } from "../../../util/Util";
 import PrintDialog from "../Print/PrintDialog";

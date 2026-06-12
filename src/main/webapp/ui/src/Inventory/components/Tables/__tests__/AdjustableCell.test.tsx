@@ -1,10 +1,7 @@
 import { render } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import RecordLocation from "../../../../Inventory/components/RecordLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRow, type CellContent } from "../../../../stores/definitions/Tables";
+import type { AdjustableTableRow, CellContent } from "../../../../stores/definitions/Tables";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import AdjustableCell from "../AdjustableCell";
 

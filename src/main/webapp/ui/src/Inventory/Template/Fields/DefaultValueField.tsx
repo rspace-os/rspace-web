@@ -4,13 +4,10 @@ import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "../../../eln/gallery/useGalleryListing";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Option } from "../../../stores/definitions/Field";
+import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
+import type { Option } from "../../../stores/definitions/Field";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
-// biome-ignore lint/style/useImportType: initial biome migration
-import FieldModel from "../../../stores/models/FieldModel";
+import type FieldModel from "../../../stores/models/FieldModel";
 import { hasOptions } from "../../../stores/models/FieldTypes";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { match } from "../../../util/Util";
@@ -170,33 +167,30 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
           : null
       }
     >
-      {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-      <>
-        {custom}
-        {hasOptions(field.fieldType) && editing && (
-          <Box sx={{ display: "inline", mt: 1 }}>
-            <Button
-              color="primary"
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                field.setAttributesDirty({
-                  options: [
-                    ...field.options,
-                    {
-                      value: "",
-                      label: "",
-                      editing: true,
-                    },
-                  ],
-                });
-              }}
-            >
-              Add Value
-            </Button>
-          </Box>
-        )}
-      </>
+      {custom}
+      {hasOptions(field.fieldType) && editing && (
+        <Box sx={{ display: "inline", mt: 1 }}>
+          <Button
+            color="primary"
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              field.setAttributesDirty({
+                options: [
+                  ...field.options,
+                  {
+                    value: "",
+                    label: "",
+                    editing: true,
+                  },
+                ],
+              });
+            }}
+          >
+            Add Value
+          </Button>
+        </Box>
+      )}
     </InputWrapper>
   );
 }

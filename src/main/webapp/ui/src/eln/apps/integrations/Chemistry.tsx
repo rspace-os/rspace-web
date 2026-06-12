@@ -3,8 +3,7 @@ import React from "react";
 import { LOGO_COLOR } from "../../../assets/branding/chemistry";
 import ChemistryIcon from "../../../assets/branding/chemistry/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ChemistryArgs = {
   integrationState: IntegrationStates["CHEMISTRY"];

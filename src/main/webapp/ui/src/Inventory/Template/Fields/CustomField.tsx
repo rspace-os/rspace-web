@@ -8,8 +8,7 @@ import type React from "react";
 import { useId } from "react";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../components/RemoveButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import FieldModel from "../../../stores/models/FieldModel";
+import type FieldModel from "../../../stores/models/FieldModel";
 import { FIELD_LABEL, type FieldType, FieldTypes, fieldTypeToApiString } from "../../../stores/models/FieldTypes";
 import { match, toYesNo } from "../../../util/Util";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
@@ -51,18 +50,15 @@ const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: bo
   return (
     <InputWrapper label="Mandatory">
       {editing ? (
-        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-        <>
-          <Switch
-            checked={field.mandatory}
-            onChange={({ target: { checked } }) => {
-              field.setAttributesDirty({
-                mandatory: checked,
-              });
-            }}
-            edge="start"
-          />
-        </>
+        <Switch
+          checked={field.mandatory}
+          onChange={({ target: { checked } }) => {
+            field.setAttributesDirty({
+              mandatory: checked,
+            });
+          }}
+          edge="start"
+        />
       ) : (
         toYesNo(field.mandatory)
       )}

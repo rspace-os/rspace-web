@@ -1,8 +1,7 @@
 import { computed, makeObservable, observable, override } from "mobx";
 import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Factory } from "../definitions/Factory";
+import type { Factory } from "../definitions/Factory";
 import {
   type HasQuantity,
   type HasQuantityEditableFields,
@@ -10,16 +9,11 @@ import {
   type HasQuantityUneditableFields,
   type Quantity,
 } from "../definitions/HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AdjustableTableRowOptions } from "../definitions/Tables";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UnitCategory } from "../stores/UnitStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import InventoryBaseRecord, {
-  InventoryBaseRecordEditableFields,
-  InventoryBaseRecordUneditableFields,
-} from "./InventoryBaseRecord";
+import type { UnitCategory } from "../stores/UnitStore";
+import type InventoryBaseRecord from "./InventoryBaseRecord";
+import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -31,7 +25,7 @@ export const getQuantityUnitLabel = (q: Quantity | null): string =>
   q ? (getRootStore().unitStore.getUnit(q.unitId)?.label ?? "...") : "";
 export const getLabel = (q: Quantity | null): string => (q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "");
 
-// biome-ignore lint/suspicious/noExplicitAny: mixin constructor constraint must use any[] to be extendable
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export function HasQuantityMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
   return class extends Base implements HasQuantity {
     [HasQuantityMarker] = true as const;
@@ -117,8 +111,7 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
  * Checks if a given object has a quantity.
  */
 export function hasQuantity<T extends object>(input: T): Optional<HasQuantity & T> {
-  // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-  return input.hasOwnProperty(HasQuantityMarker) ? Optional.present(input as HasQuantity & T) : Optional.empty();
+  return Object.hasOwn(input, HasQuantityMarker) ? Optional.present(input as HasQuantity & T) : Optional.empty();
 }
 
 /**
@@ -126,7 +119,6 @@ export function hasQuantity<T extends object>(input: T): Optional<HasQuantity & 
  */
 export function* filterForThoseWithQuantities<T extends object>(input: Iterable<T>): Iterable<HasQuantity & T> {
   for (const val of input) {
-    // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-    if (val.hasOwnProperty(HasQuantityMarker)) yield val as HasQuantity & T;
+    if (Object.hasOwn(val, HasQuantityMarker)) yield val as HasQuantity & T;
   }
 }

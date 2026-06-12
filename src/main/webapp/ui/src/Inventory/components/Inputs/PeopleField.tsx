@@ -5,10 +5,9 @@ import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useContext, useEffect, useState } from "react";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type Username } from "../../../stores/definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import PersonModel, { sortPeople } from "../../../stores/models/PersonModel";
+import type { Person, Username } from "../../../stores/definitions/Person";
+import type PersonModel from "../../../stores/models/PersonModel";
+import { sortPeople } from "../../../stores/models/PersonModel";
 import useStores from "../../../stores/use-stores";
 import RsSet, { nullishToSingleton, unionWith } from "../../../util/set";
 

@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AxiosResponse } from "@/common/axios";
+import type { AxiosResponse } from "@/common/axios";
 import ApiService from "../../../../common/InvApiService";
 import { ExistingAttachment } from "../../AttachmentModel";
 

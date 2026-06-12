@@ -1,10 +1,7 @@
 import { makeObservable, observable, override, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CacheFetcher as CacheFetcherInterface, type CoreFetcherArgs } from "../../definitions/Search";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { CacheFetcher as CacheFetcherInterface, CoreFetcherArgs } from "../../definitions/Search";
 import CoreFetcher from "./CoreFetcher";
 
 export default class CacheFetcher extends CoreFetcher implements CacheFetcherInterface {

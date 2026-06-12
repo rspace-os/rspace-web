@@ -24,8 +24,7 @@ export function formatFileSize(bytes: number | null | undefined, decimalPlaces: 
     "QB",
   ];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  // biome-ignore lint/style/useExponentiationOperator: initial biome migration
-  const rounded = parseFloat((bytes / Math.pow(k, i)).toFixed(decimalPlaces));
+  const rounded = parseFloat((bytes / k ** i).toFixed(decimalPlaces));
   return `${rounded} ${sizes[i]}`;
 }
 

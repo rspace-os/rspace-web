@@ -2,8 +2,8 @@
 
 import CssBaseline from "@mui/material/CssBaseline";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect } from "react";
+import type React from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Confirm from "./components/Confirm";
 import ConfirmProvider from "./components/ConfirmProvider";

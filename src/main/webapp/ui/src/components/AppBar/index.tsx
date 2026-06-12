@@ -34,15 +34,13 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Person } from "@/stores/definitions/Person";
+import type { Person } from "@/stores/definitions/Person";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
 import { ACCENT_COLOR as SYSADMIN_COLOR } from "../../assets/branding/rspace/sysadmin";
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../../assets/branding/rspace/workspace";
-// biome-ignore lint/style/useImportType: initial biome migration
-import docLinks from "../../assets/DocLinks";
+import type docLinks from "../../assets/DocLinks";
 import JwtService from "../../common/JwtService";
 import useWhoAmI from "../../hooks/api/useWhoAmI";
 import useSessionStorage from "../../hooks/browser/useSessionStorage";
@@ -60,8 +58,7 @@ import HelpLinkIcon from "../HelpLinkIcon";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import AboutRSpaceDialog from "./AboutRSpaceDialog";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SidebarToggle from "./SidebarToggle";
+import type SidebarToggle from "./SidebarToggle";
 import useUiNavigationData, { type UiNavigationData } from "./useUiNavigationData";
 
 declare global {
@@ -261,7 +258,7 @@ const DynamicAvatar = ({
 };
 const OrcidIcon = () => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
-  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
     <g>
       <g id="Layer_1">
         <g>
@@ -515,8 +512,7 @@ function GalleryAppBar({
                 aria-controls="app-menu"
                 {...(appMenuAnchorEl
                   ? {
-                      // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                      ["aria-expanded"]: "true",
+                      "aria-expanded": "true",
                     }
                   : {})}
                 onClick={(event) => {
@@ -660,8 +656,7 @@ function GalleryAppBar({
                 aria-controls="account-menu"
                 {...(accountMenuAnchorEl
                   ? {
-                      // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-                      ["aria-expanded"]: "true",
+                      "aria-expanded": "true",
                     }
                   : {})}
               />

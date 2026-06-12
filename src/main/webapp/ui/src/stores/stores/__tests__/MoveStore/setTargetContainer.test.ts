@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { containerAttrs, makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import Search from "../../../models/Search";
+import type Search from "../../../models/Search";
 import MoveStore from "../../MoveStore";
 import type { RootStore } from "../../RootStore";
 

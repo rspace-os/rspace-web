@@ -1,6 +1,5 @@
 import React, { type Context } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordType } from "../definitions/InventoryRecord";
+import type { RecordType } from "../definitions/InventoryRecord";
 
 export type AllowedFormTypes = RecordType | "mixed";
 

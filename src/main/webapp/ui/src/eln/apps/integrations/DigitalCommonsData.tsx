@@ -6,8 +6,7 @@ import DcdIcon from "../../../assets/branding/digitalcommonsdata/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useDigitalCommonsDataEndpoint } from "../useDigitalCommonsDataEndpoint";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DigitalCommonsDataArgs = {
   integrationState: IntegrationStates["DIGITALCOMMONSDATA"];
@@ -81,13 +80,7 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/digitalcommonsdata/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/digitalcommonsdata/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

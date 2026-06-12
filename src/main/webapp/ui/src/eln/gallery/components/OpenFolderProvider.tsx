@@ -1,6 +1,5 @@
 import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "../useGalleryListing";
+import type { GalleryFile } from "../useGalleryListing";
 
 /**
  * There are various ways to open a folder in a listing:

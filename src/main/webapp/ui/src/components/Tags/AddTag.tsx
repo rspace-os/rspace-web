@@ -2,8 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import Chip from "@mui/material/Chip";
 import type React from "react";
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Optional } from "../../util/optional";
+import type { Optional } from "../../util/optional";
 import RsSet from "../../util/set";
 import TagsCombobox from "./TagsCombobox";
 

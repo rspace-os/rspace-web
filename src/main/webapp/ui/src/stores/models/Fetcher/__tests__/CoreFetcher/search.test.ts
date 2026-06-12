@@ -1,12 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../../common/InvApiService";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../../definitions/Factory";
+import type { Factory } from "../../../../definitions/Factory";
 import CoreFetcher from "../../CoreFetcher";
 import "@/__tests__/assertUrlSearchParams";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 
 vi.mock("../../../../stores/RootStore", () => ({
   default: () => ({

@@ -24,8 +24,7 @@ describe("hslToHex", () => {
     fc.assert(
       fc.property(fc.tuple(fc.nat(359), fc.nat(100)), ([hue, lightness]) => {
         const matches = hslToHex(hue, 0, lightness).match(/^#(?<r>..)(?<g>..)(?<b>..)/);
-        // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-        if (!matches || !matches.groups) throw new Error("Invalid rgb hex string");
+        if (!matches?.groups) throw new Error("Invalid rgb hex string");
         const { r, g, b } = matches.groups;
         expect(r).toEqual(g);
         expect(g).toEqual(b);

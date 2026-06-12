@@ -7,10 +7,8 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SampleModel from "../../../stores/models/SampleModel";
+import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import type SampleModel from "../../../stores/models/SampleModel";
 import { menuIDs } from "../../../util/menuIDs";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import Search from "../../Search/Search";

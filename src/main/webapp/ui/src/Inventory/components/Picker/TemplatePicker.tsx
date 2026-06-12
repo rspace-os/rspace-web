@@ -1,10 +1,8 @@
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Sample } from "@/stores/definitions/Sample";
+import type { Sample } from "@/stores/definitions/Sample";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
 import Search from "../../../stores/models/Search";
 import TemplateModel from "../../../stores/models/TemplateModel";

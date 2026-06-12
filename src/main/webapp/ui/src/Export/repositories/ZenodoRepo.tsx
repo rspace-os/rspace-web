@@ -2,8 +2,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useEffect } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type StandardValidations } from "./common";
+import type { Person, StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
 
 /*

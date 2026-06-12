@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import ApiServiceBase from "../../../common/ApiServiceBase";
@@ -19,19 +18,15 @@ const TriggersSearchNavigate = ({ skipToParentContext }: TriggersSearchNavigateA
   const { useNavigate } = React.useContext(NavigateContext);
 
   const navigate = useNavigate();
-  return (
-    // biome-ignore lint/a11y/useButtonType: initial biome migration
-    <button onClick={() => navigate("/inventory/search?query=foo", { skipToParentContext })}>Click me!</button>
-  );
+  // biome-ignore lint/a11y/useButtonType: initial biome migration
+  return <button onClick={() => navigate("/inventory/search?query=foo", { skipToParentContext })}>Click me!</button>;
 };
 const TriggersPermalinkNavigate = () => {
   const { useNavigate } = React.useContext(NavigateContext);
 
   const navigate = useNavigate();
-  return (
-    // biome-ignore lint/a11y/useButtonType: initial biome migration
-    <button onClick={() => navigate("/inventory/container/1")}>Click me!</button>
-  );
+  // biome-ignore lint/a11y/useButtonType: initial biome migration
+  return <button onClick={() => navigate("/inventory/container/1")}>Click me!</button>;
 };
 describe("InnerSearchNavigationContext", () => {
   test("navigate calls should update the search parameters.", () => {

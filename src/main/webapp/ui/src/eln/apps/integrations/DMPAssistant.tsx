@@ -7,8 +7,7 @@ import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import { useDmpAssistantEndpoint } from "../useDmpAssistantEndpoint";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DMPAssistantArgs = {
   integrationState: IntegrationStates["DMPASSISTANT"];
@@ -77,13 +76,7 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/dmpassistant/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/dmpassistant/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

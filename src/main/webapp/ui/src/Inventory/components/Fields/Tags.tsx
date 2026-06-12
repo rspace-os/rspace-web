@@ -4,10 +4,8 @@ import { useContext } from "react";
 import AddTag from "../../../components/Tags/AddTag";
 import TagListing from "../../../components/Tags/TagListing";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../../../stores/definitions/Tag";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { Tag } from "../../../stores/definitions/Tag";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import BatchFormField from "../Inputs/BatchFormField";
 

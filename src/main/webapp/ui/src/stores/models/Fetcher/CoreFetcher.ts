@@ -10,12 +10,9 @@ import { filterObject, match, omitNull } from "../../../util/Util";
 import { pick } from "../../../util/unsafeUtils";
 import { mkAlert } from "../../contexts/Alert";
 import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type Username } from "../../definitions/Person";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { Person, Username } from "../../definitions/Person";
 import {
   type CoreFetcherArgs,
   type DeletedItems,
@@ -393,8 +390,7 @@ export default class CoreFetcher {
           await this.search(
             {
               ..._params,
-              // biome-ignore lint/style/useTemplate: initial biome migration
-              query: params.query + "*",
+              query: `${params.query}*`,
             },
             storeResults,
           );

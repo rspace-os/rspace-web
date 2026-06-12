@@ -49,8 +49,8 @@ type InputRef = React.Ref<HTMLDivElement>;
 
 function NoOptionsMessage(props: TagNoticeProps) {
   return (
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-    <Typography color="textSecondary" sx={{ p: "8px 16px" }} {...(props.innerProps as any)}>
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+<Typography color="textSecondary" sx={{ p: "8px 16px" }} {...(props.innerProps as any)}>
       {props.children}
     </Typography>
   );
@@ -83,7 +83,7 @@ function Control(props: TagControlProps) {
             children,
             ...innerProps,
           },
-          // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         } as any,
       }}
     />
@@ -95,12 +95,12 @@ function Option(props: TagOptionProps) {
     <ListItemButton
       data-test-id={`a-search-tag-option-${props.children}`}
       className="dropdown-item"
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       ref={props.innerRef as any}
       selected={props.isFocused}
       component="div"
       sx={{ fontWeight: props.isSelected ? 500 : 400 }}
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       {...(props.innerProps as any)}
     >
       {props.children}
@@ -140,7 +140,7 @@ function Menu(props: TagMenuProps) {
         left: 0,
         right: 0,
       }}
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       {...(props.innerProps as any)}
     >
       {props.children}

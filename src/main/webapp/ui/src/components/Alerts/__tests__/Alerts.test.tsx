@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useContext, useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { describe, expect, test } from "vitest";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 

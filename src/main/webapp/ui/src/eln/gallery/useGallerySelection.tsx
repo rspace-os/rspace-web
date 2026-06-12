@@ -1,8 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import React from "react";
 import RsSet from "../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GalleryFile } from "./useGalleryListing";
+import type { GalleryFile } from "./useGalleryListing";
 
 /*
  * We use a Map even though the interface exposed by this module is more akin

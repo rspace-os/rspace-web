@@ -1,8 +1,6 @@
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
+import type React from "react";
+import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
 import { layoutToLabels } from "@/util/labels";
 import GridContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/GridContainer";
 import ListContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/ListContainer";
@@ -13,49 +11,28 @@ import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK, type BlobUrl, type Point, type URL } from "../../util/types";
+import type { _LINK, BlobUrl, Point, URL } from "../../util/types";
 import { clamp, match } from "../../util/Util";
 import { pick } from "../../util/unsafeUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeAttrs } from "../definitions/Barcode";
+import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import { type Container, cTypeToDefaultSearchView, type Location } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields, type HasUneditableFields } from "../definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SharedWithGroup } from "../definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { SharedWithGroup } from "../definitions/Group";
+import type { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
 import type { IdentifierAttrs } from "../definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type Action,
-  type CreateOption,
-  type InventoryRecord,
-  type RecordType,
-  type SharingMode,
-} from "../definitions/InventoryRecord";
+import type { Action, CreateOption, InventoryRecord, RecordType, SharingMode } from "../definitions/InventoryRecord";
 import { mapPermissioned, type Permissioned } from "../definitions/PermissionedData";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonAttrs } from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordDetails } from "../definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AllowedTypeFilters, type CoreFetcherArgs, type Search as SearchInterface } from "../definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SubSample } from "../definitions/SubSample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../definitions/Tag";
+import type { PersonAttrs } from "../definitions/Person";
+import type { RecordDetails } from "../definitions/Record";
+import type { AllowedTypeFilters, CoreFetcherArgs, Search as SearchInterface } from "../definitions/Search";
+import type { SubSample } from "../definitions/SubSample";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Tag } from "../definitions/Tag";
 import getRootStore from "../stores/RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AttachmentJson } from "./AttachmentModel";
+import type { AttachmentJson } from "./AttachmentModel";
 import { HasLocationMixin } from "./HasLocation";
 import InventoryBaseRecord, {
   defaultEditableResultFields,
@@ -817,8 +794,7 @@ export default class ContainerModel
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const renderAvailableLocations = (): string | null => {
       if (!this.availableLocations.isAccessible) return null;
-      // biome-ignore lint/suspicious/noGlobalIsFinite: initial biome migration
-      if (isFinite(this.availableLocations.value)) return `${this.availableLocations.value}`;
+      if (Number.isFinite(this.availableLocations.value)) return `${this.availableLocations.value}`;
       return "Unlimited";
     };
 

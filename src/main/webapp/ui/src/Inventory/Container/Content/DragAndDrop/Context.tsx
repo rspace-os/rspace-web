@@ -2,14 +2,10 @@ import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSen
 import { runInAction } from "mobx";
 import React from "react";
 import AlertContext, { type Alert, mkAlert } from "../../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container, type Location } from "../../../../stores/definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasLocation } from "../../../../stores/definitions/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
+import type { Container, Location } from "../../../../stores/definitions/Container";
+import type { HasLocation } from "../../../../stores/definitions/HasLocation";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import { type DroppableId, useContainerHelpers } from "./common";
 
@@ -50,8 +46,9 @@ export function Context({ children, container, supportKeyboard, supportMultiple 
      * required to move by a whole column/row.
      */
     coordinateGetter: (e: KeyboardEvent, { currentCoordinates }) => {
-      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-      const { width, height } = (e.target as HTMLElement).closest("td")!.getBoundingClientRect();
+      const rect = (e.target as HTMLElement).closest("td")?.getBoundingClientRect();
+      const width = rect?.width ?? 0;
+      const height = rect?.height ?? 0;
       switch (e.code) {
         case "ArrowRight":
           return {

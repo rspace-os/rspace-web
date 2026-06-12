@@ -11,8 +11,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { FormEventHandler, MouseEventHandler, useState } from "react";
+import React, { type FormEventHandler, type MouseEventHandler, useState } from "react";
 import { LOGO_COLOR } from "@/assets/branding/raid";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { Optional } from "@/util/optional";
@@ -41,8 +40,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   useBroadcastChannel<RaidConnectedMessage>(RAID_CONNECTION_CHANNEL, (e: MessageEvent<RaidConnectedMessage>) => {
-    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-    if (!e.data || e.data.type !== "RAID_CONNECTED" || !e.data.alias) {
+    if (e.data?.type !== "RAID_CONNECTED" || !e.data.alias) {
       console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
       return;
     }
@@ -243,9 +241,8 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                         <form
                           action={`/apps/raid/connect/${server.alias}`}
                           method="POST"
-                          // biome-ignore lint/security/noBlankTarget: initial biome migration
                           target="_blank"
-                          rel="opener"
+                          rel="noopener opener"
                         >
                           <Button type="submit">Connect</Button>
                         </form>
@@ -254,9 +251,8 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                           onSubmit={handleDisconnect(server.alias)}
                           action={`/apps/raid/connect/${server.alias}`}
                           method="DELETE"
-                          // biome-ignore lint/security/noBlankTarget: initial biome migration
                           target="_blank"
-                          rel="opener"
+                          rel="noopener opener"
                         >
                           <Button type="submit">Disconnect</Button>
                         </form>

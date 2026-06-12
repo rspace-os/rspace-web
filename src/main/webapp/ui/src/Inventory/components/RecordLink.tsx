@@ -3,8 +3,7 @@ import { emphasize, type Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { type MouseEvent, useContext } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";

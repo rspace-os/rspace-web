@@ -2,8 +2,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import ChoiceField, { type ChoiceOption } from "../../../components/Inputs/ChoiceField";
 import { mapPermissioned, orElseIfNoAccess } from "../../../stores/definitions/PermissionedData";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel from "../../../stores/models/ContainerModel";
+import type ContainerModel from "../../../stores/models/ContainerModel";
 import FormField from "../../components/Inputs/FormField";
 
 type CanStoreArgs = {

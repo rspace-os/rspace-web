@@ -26,8 +26,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import axios from "@/common/axios";
 import * as ArrayUtils from "../util/ArrayUtils";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "./repositories/common";
+import type { Person } from "./repositories/common";
 
 const VALIDATIONS = {
   nameCheck: false,

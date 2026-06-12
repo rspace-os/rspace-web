@@ -47,8 +47,7 @@ type DataGridStubProps<Row> = {
     toolbar?: Record<string, unknown>;
   };
   apiRef?: React.MutableRefObject<{ exportDataAsCsv: () => void } | null>;
-  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-  ["aria-label"]?: string;
+  "aria-label"?: string;
 };
 
 const GridApiContext = React.createContext<React.MutableRefObject<{
@@ -289,13 +288,13 @@ export function DataGrid<Row>({
             <div role="row">
               {checkboxSelection ? (
                 // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
-                <div role="columnheader">{localeText?.checkboxSelectionHeaderName ?? "Select"}</div>
+// biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+<div role="columnheader">{localeText?.checkboxSelectionHeaderName ?? "Select"}</div>
               ) : null}
               {visibleColumns.map((column, index) => (
                 // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
-                <div role="columnheader" key={column.field ?? column.headerName ?? index}>
+// biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+<div role="columnheader" key={column.field ?? column.headerName ?? index}>
                   {typeof column.renderHeader === "function"
                     ? column.renderHeader()
                     : (column.headerName ?? column.field ?? "")}
@@ -304,8 +303,8 @@ export function DataGrid<Row>({
             </div>
             {rows.length === 0 ? (
               // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-              // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
-              <div role="row">
+// biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+<div role="row">
                 {/** biome-ignore lint/a11y/useSemanticElements: initial biome migration */}
                 {/** biome-ignore lint/a11y/useFocusableInteractive: initial biome migration */}
                 <div role="gridcell">{localeText?.noRowsLabel ?? "No rows"}</div>
@@ -315,17 +314,14 @@ export function DataGrid<Row>({
               const id = getRowId ? getRowId(row) : rowIndex;
               return (
                 // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
-                <div role="row" key={String(id)}>
+// biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+<div role="row" key={String(id)}>
                   {checkboxSelection ? (
                     // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                    // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
-                    <div role="gridcell">
+// biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+<div role="gridcell">
                       <input
                         type="checkbox"
-                        // biome-ignore lint/a11y/useAriaPropsForRole: initial biome migration
-                        // biome-ignore lint/a11y/noRedundantRoles: initial biome migration
-                        role="checkbox"
                         aria-label="Select row"
                         checked={selectedIds.has(id)}
                         onChange={(event) => toggleRow(id, event.target.checked)}
@@ -345,8 +341,8 @@ export function DataGrid<Row>({
                         : toText(value);
                     return (
                       // biome-ignore lint/a11y/useSemanticElements: initial biome migration
-                      // biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
-                      <div role="gridcell" key={`${String(id)}-${column.field ?? columnIndex}`}>
+// biome-ignore lint/a11y/useFocusableInteractive: initial biome migration
+<div role="gridcell" key={`${String(id)}-${column.field ?? columnIndex}`}>
                         {content}
                       </div>
                     );

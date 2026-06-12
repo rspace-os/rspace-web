@@ -1,13 +1,9 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactElement } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { ReactElement } from "react";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { menuIDs } from "../../../util/menuIDs";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import AddToBasketAction from "./AddToBasketAction";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ContextMenuRenderOptions } from "./ContextMenuAction";
+import type { ContextMenuRenderOptions } from "./ContextMenuAction";
 import CreateAction from "./CreateAction";
 import DeleteAction from "./DeleteAction";
 import DuplicateAction from "./DuplicateAction";

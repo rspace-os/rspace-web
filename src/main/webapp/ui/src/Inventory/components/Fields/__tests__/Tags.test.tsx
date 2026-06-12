@@ -1,8 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render } from "@testing-library/react";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";

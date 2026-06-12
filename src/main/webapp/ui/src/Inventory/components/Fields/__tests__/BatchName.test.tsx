@@ -1,11 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useState } from "react";
+import { useState } from "react";
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BatchName as BatchNameType } from "../../../../stores/models/InventoryBaseRecordCollection";
+import type { BatchName as BatchNameType } from "../../../../stores/models/InventoryBaseRecordCollection";
 import materialTheme from "../../../../theme";
 import BatchName from "../BatchName";
 

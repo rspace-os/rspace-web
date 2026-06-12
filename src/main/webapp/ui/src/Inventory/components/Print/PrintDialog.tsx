@@ -237,8 +237,7 @@ function PrintDialog({
         printCopies: printOptions.printCopies,
       });
     },
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    onPrintError: (errorLocation, error) => {
+    onPrintError: (_errorLocation, error) => {
       uiStore.addAlert(
         mkAlert({
           title: "Print error.",

@@ -20,10 +20,7 @@ const supportedLanguageNames = new Set(supportedLanguages.flatMap(({ name, alias
 const notebookPlugins = [createKatexPlugin()];
 
 function getFieldButton(fieldId: string | null): HTMLElement | null {
-  return fieldId == null
-    ? null
-    : // biome-ignore lint/style/useTemplate: initial biome migration
-      document.getElementById("jupyter_notebooks_button_" + fieldId);
+  return fieldId == null ? null : document.getElementById(`jupyter_notebooks_button_${fieldId}`);
 }
 
 function showElement(element: HTMLElement, defaultDisplay = "block") {
@@ -113,12 +110,10 @@ function getAttachmentRecordId(attachment: Element, isNotebook: boolean): string
  * invoked on page load of a notebook page by journal.js event dispatch
  */
 
-// biome-ignore lint/complexity/useArrowFunction: initial biome migration
-window.addEventListener("jupyterNotebooks-init", function () {
+window.addEventListener("jupyterNotebooks-init", () => {
   loadUIOnPageLoad(true);
 });
-// biome-ignore lint/complexity/useArrowFunction: initial biome migration
-window.addEventListener("jupyter_viewer_click", function (event) {
+window.addEventListener("jupyter_viewer_click", (event) => {
   const { detail } = event as CustomEvent<{ id: string | number }>;
 
   // alert(event.detail.id);
@@ -162,18 +157,14 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
     const fieldId = wrapperDiv.getAttribute("data-field-id");
     const attachedFileIds = getAttachedFilesByParsingEmbeddedText(isForNotebookPage, fieldId);
     for (const attachedFileId of attachedFileIds) {
-      // biome-ignore lint/style/useTemplate: initial biome migration
-      const rootDivId = "rootDiv_" + attachedFileId;
+      const rootDivId = `rootDiv_${attachedFileId}`;
       const rootDiv = document.createElement("div");
 
       rootDiv.id = rootDivId;
       wrapperDiv.append(rootDiv);
 
       void (async () => {
-        const { data } = await axios.get<Ipynb>(
-          // biome-ignore lint/style/useTemplate: initial biome migration
-          "/Streamfile/" + attachedFileId,
-        );
+        const { data } = await axios.get<Ipynb>(`/Streamfile/${attachedFileId}`);
         const root = createRoot(rootDiv);
 
         function App() {
@@ -181,8 +172,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
             <Box sx={{ margin: "4rem 2rem", border: "1px solid black" }}>
               <Notebook
                 ipynb={data}
-                // biome-ignore lint/style/useTemplate: initial biome migration
-                filename={attachedFileId + ".ipynb"}
+                filename={`${attachedFileId}.ipynb`}
                 language={getNotebookLanguage(data)}
                 languages={supportedLanguages}
                 plugins={notebookPlugins}
@@ -220,8 +210,7 @@ function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: strin
 }
 
 function thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(attachment: Element, fieldId: string | null) {
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const buttonId = "jupyter_notebooks_button_" + fieldId;
+  const buttonId = `jupyter_notebooks_button_${fieldId}`;
   const matches = getJupyterDivsUntil(
     attachment.previousElementSibling,
     (element) => element.id === buttonId,
@@ -246,8 +235,7 @@ function getTextFieldHtml(fieldId: string | null): string {
     return "";
   }
 
-  // biome-ignore lint/style/useTemplate: initial biome migration
-  const textField = document.getElementById("rtf_" + fieldId);
+  const textField = document.getElementById(`rtf_${fieldId}`);
 
   if (
     textField instanceof HTMLInputElement ||

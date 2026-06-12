@@ -1,7 +1,6 @@
 import { render, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import { Optional } from "../../../util/optional";

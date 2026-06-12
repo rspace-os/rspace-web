@@ -6,10 +6,8 @@ import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import StyledMenu from "../../../components/StyledMenu";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import contextActions from "./ContextActions";
 
 type ContextAction = {
@@ -94,10 +92,8 @@ function ContextMenu({
       },
       { root, threshold: 1 },
     );
-    root
-      .querySelectorAll<HTMLElement>("[data-idx]")
-      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-      .forEach((el) => io.observe(el));
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, [buttonList.length, selectedResults]);
 

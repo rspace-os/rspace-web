@@ -1,7 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { sampleAttrs } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../stores/models/__tests__/SubSampleModel/mocking";

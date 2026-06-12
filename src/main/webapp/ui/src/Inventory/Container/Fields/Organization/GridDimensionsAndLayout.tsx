@@ -7,8 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import type React from "react";
 import { useId, useState } from "react";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container } from "../../../../stores/definitions/Container";
+import type { Container } from "../../../../stores/definitions/Container";
 import GridDimensions from "./GridDimensions";
 import GridLayoutConfig from "./GridLayoutConfig";
 

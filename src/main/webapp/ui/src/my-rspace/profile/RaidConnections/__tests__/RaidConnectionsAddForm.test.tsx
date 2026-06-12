@@ -6,8 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import materialTheme from "@/theme";
 import RaidConnectionsAddForm from "../RaidConnectionsAddForm";
 import "@/__tests__/__mocks__/matchMedia";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { GetAvailableRaidListResponse } from "@/modules/raid/schema";
+import type { GetAvailableRaidListResponse } from "@/modules/raid/schema";
 
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
 const mockMutateAsync = vi.fn();

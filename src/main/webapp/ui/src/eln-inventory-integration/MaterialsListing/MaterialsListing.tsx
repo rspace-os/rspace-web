@@ -20,8 +20,7 @@ import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/in
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
 import Analytics from "../../components/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ElnFieldId } from "../../stores/models/MaterialsModel";
+import type { ElnFieldId } from "../../stores/models/MaterialsModel";
 import useStores from "../../stores/use-stores";
 import materialTheme from "../../theme";
 import MaterialsDialog from "./MaterialsDialog";

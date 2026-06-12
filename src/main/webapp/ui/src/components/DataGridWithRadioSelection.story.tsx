@@ -1,12 +1,5 @@
 import Box from "@mui/material/Box";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  ExportCsv,
-  GridColDef,
-  GridRowId,
-  Toolbar,
-} from "@mui/x-data-grid";
+import type { GridColDef, GridRowId } from "@mui/x-data-grid";
 import React from "react";
 import { DataGridWithRadioSelection } from "./DataGridWithRadioSelection";
 

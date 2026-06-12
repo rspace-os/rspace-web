@@ -1,8 +1,5 @@
 import { formHelperTextClasses } from "@mui/material/FormHelperText";
 import { inputClasses } from "@mui/material/Input";
-// biome-ignore lint/style/useImportType: initial biome migration
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { type SxProps, type Theme } from "@mui/material/styles";
 import type { ComponentType } from "react";
 import NumberField, { type NumberFieldArgs } from "../../../../components/Inputs/NumberField";
 

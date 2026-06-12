@@ -1,12 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { beforeEach, describe, expect, test } from "vitest";
 import axios from "@/common/axios";
 
-// biome-ignore lint/style/useImportType: initial biome migration
-import ExternalWorkflowInvocations, { InvocationsAndDataCount } from "../ExternalWorkflowInvocations";
+import ExternalWorkflowInvocations, { type InvocationsAndDataCount } from "../ExternalWorkflowInvocations";
 
 const mockAxios = new MockAdapter(axios);
 const GalaxyDataSummary = {

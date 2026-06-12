@@ -68,6 +68,3 @@ expect.extend({
     return { pass: false, message: () => "" };
   },
 });
-
-// biome-ignore lint/complexity/noUselessEmptyExport: initial biome migration
-export {};

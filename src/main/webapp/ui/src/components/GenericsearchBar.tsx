@@ -5,8 +5,8 @@ import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import InputBase, { inputBaseClasses } from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import CustomTooltip from "./CustomTooltip";
 
 type FormArgs = {

@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../definitions/BaseRecord";
+import type { GlobalId } from "../../../definitions/BaseRecord";
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
 import { makeMockSample, sampleAttrs } from "../../__tests__/SampleModel/mocking";

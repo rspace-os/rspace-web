@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../../definitions/Factory";
+import type { Factory } from "../../../definitions/Factory";
 import SampleModel from "../../SampleModel";
 import SubSampleModel from "../../SubSampleModel";
 import { subsampleAttrs } from "../SubSampleModel/mocking";

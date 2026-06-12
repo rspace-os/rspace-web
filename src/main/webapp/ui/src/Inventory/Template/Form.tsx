@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person } from "../../stores/definitions/Person";
+import type { Person } from "../../stores/definitions/Person";
 import TemplateModel from "../../stores/models/TemplateModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";

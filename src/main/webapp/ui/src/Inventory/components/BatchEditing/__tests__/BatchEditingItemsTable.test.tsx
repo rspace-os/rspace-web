@@ -1,7 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import { arbitraryRecord } from "../../../../stores/definitions/__tests__/Record/helper";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";

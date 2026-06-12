@@ -16,10 +16,8 @@ import { useCallback, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import docLinks from "../../../../assets/DocLinks";
 import { mkAlert } from "../../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import ContextDialog from "../../ContextMenu/ContextDialog";
 import { useIsSingleColumnLayout } from "../../Layout/Layout2x1";
@@ -171,8 +169,7 @@ function PrintDialog({
     onAfterPrint: () => {
       handleClose();
     },
-    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-    onPrintError: (errorLocation, error) => {
+    onPrintError: (_errorLocation, error) => {
       uiStore.addAlert(
         mkAlert({
           title: "Print error.",

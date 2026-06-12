@@ -24,8 +24,7 @@ import SubSampleModel from "../../../stores/models/SubSampleModel";
 import useStores from "../../../stores/use-stores";
 import { UserCancelledAction } from "../../../util/error";
 import { menuIDs } from "../../../util/menuIDs";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BlobUrl } from "../../../util/types";
+import type { BlobUrl } from "../../../util/types";
 import { preventEventBubbling } from "../../../util/Util";
 import ContentsChips from "../../Container/Content/ContentsChips";
 import contextActions from "../ContextMenu/ContextActions";
@@ -235,8 +234,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
         ) : null
       }
       onClick={() => {
-        // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-        if (disabled || Boolean(anchorEl) || cardIsGreyedOut) {
+        if (disabled || anchorEl || cardIsGreyedOut) {
           return;
         }
         if (isChild ?? false) {

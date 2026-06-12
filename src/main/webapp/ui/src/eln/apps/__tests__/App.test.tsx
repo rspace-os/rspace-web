@@ -3,8 +3,6 @@ import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
 import { render, screen } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import App from "../App";
 import "@/__tests__/assertSemanticHeadings";
 import { ThemeProvider } from "@mui/material/styles";

@@ -8,8 +8,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { OAuthApp } from "@/my-rspace/profile/types";
+import type { OAuthApp } from "@/my-rspace/profile/types";
 
 const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clientId: string) => Promise<void> }) => {
   const [open, setOpen] = useState(false);

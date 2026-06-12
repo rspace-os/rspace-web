@@ -6,8 +6,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import TextField from "../../../../components/Inputs/TextField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SubSampleModel from "../../../../stores/models/SubSampleModel";
+import type SubSampleModel from "../../../../stores/models/SubSampleModel";
 import FormField from "../../../components/Inputs/FormField";
 
 type NewNoteArgs = {

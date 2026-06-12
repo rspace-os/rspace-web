@@ -1,8 +1,7 @@
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../../stores/definitions/Container";
+import type { Location } from "../../../../stores/definitions/Container";
 import * as DragAndDrop from "../DragAndDrop";
 
 type LocationWrapperArgs = {
@@ -30,8 +29,7 @@ function LocationWrapper({ children, parentRect, location }: LocationWrapperArgs
   const positionY = () => Math.round((location.coordY / 1000) * parentRect.height) - locationMarkerOffset.y;
 
   useEffect(() => {
-    // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-    if (parentRect.hasOwnProperty("width")) {
+    if (Object.hasOwn(parentRect, "width")) {
       location.setPosition(positionX(), positionY());
       location.setDimensions(55, 55);
     }

@@ -11,40 +11,29 @@ import RsSet from "../../util/set";
 import { mapObject, match, omitNull, sameKeysAndValues } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import { type GlobalId, getSavedGlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Basket } from "../definitions/Basket";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Editable } from "../definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Quantity } from "../definitions/HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ApiRecordType, type InventoryRecord } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, type Username } from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Sample } from "../definitions/Sample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type AllowedTypeFilters,
-  type CacheFetcher as CacheFetcherInterface,
-  type CoreFetcherArgs,
-  type CoreFetcher as CoreFetcherInterface,
-  type DeletedItems,
-  type DynamicFetcher as DynamicFetcherInterface,
-  type ExportOptions,
-  type ResultType,
-  type Search as SearchInterface,
-  type SearchView,
-  type UiConfig,
+import type { Basket } from "../definitions/Basket";
+import type { Editable } from "../definitions/Editable";
+import type { Factory } from "../definitions/Factory";
+import type { Quantity } from "../definitions/HasQuantity";
+import type { ApiRecordType, InventoryRecord } from "../definitions/InventoryRecord";
+import type { Person, Username } from "../definitions/Person";
+import type { Sample } from "../definitions/Sample";
+import type {
+  AllowedTypeFilters,
+  CacheFetcher as CacheFetcherInterface,
+  CoreFetcherArgs,
+  CoreFetcher as CoreFetcherInterface,
+  DeletedItems,
+  DynamicFetcher as DynamicFetcherInterface,
+  ExportOptions,
+  ResultType,
+  Search as SearchInterface,
+  SearchView,
+  UiConfig,
 } from "../definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SubSample } from "../definitions/SubSample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowLabel } from "../definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type TreeView } from "../definitions/TreeView";
+import type { SubSample } from "../definitions/SubSample";
+import type { AdjustableTableRowLabel } from "../definitions/Tables";
+import type { TreeView } from "../definitions/TreeView";
 import getRootStore from "../stores/RootStore";
 import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
@@ -53,8 +42,7 @@ import DynamicFetcher from "./Fetcher/DynamicFetcher";
 import InventoryBaseRecord from "./InventoryBaseRecord";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type TemplateAttrs } from "./TemplateModel";
+import type { TemplateAttrs } from "./TemplateModel";
 import TreeModel, { type TreeAttrs } from "./TreeModel";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
@@ -474,7 +462,7 @@ export default class Search implements SearchInterface {
               record: factory.newRecord({
                 ...ss,
                 sample: s,
-                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               } as any as Record<string, unknown> & { globalId: GlobalId }),
             })),
             actionLabel: "Move all to trash",

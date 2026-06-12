@@ -4,8 +4,7 @@ import { IsInvalid, IsValid, type ValidationResult } from "../../components/Vali
 import { getErrorMessage } from "../../util/error";
 import RsSet, { unionWith } from "../../util/set";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../definitions/InventoryRecord";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
 import {
   type ElnDocumentId,
   type ElnFieldId,

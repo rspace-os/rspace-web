@@ -4,8 +4,7 @@ import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Group } from "../../../stores/definitions/Group";
+import type { Group } from "../../../stores/definitions/Group";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
 

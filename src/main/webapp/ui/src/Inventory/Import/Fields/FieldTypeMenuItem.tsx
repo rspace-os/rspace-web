@@ -11,8 +11,8 @@ import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { Observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { forwardRef, useState } from "react";
+import type React from "react";
+import { forwardRef, useState } from "react";
 import { FIELD_DATA, type FieldType, hasOptions } from "../../../stores/models/FieldTypes";
 import useStores from "../../../stores/use-stores";
 import { preventEventBubbling } from "../../../util/Util";

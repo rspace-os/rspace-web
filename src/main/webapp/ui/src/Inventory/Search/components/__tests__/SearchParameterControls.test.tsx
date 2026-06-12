@@ -10,8 +10,7 @@ import SearchParameterControls from "../SearchParameterControls";
 import "@/__tests__/__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
 
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { describe, expect, type Mock, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {},

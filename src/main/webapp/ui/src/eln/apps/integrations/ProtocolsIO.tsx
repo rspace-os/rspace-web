@@ -5,8 +5,7 @@ import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 import { useProtocolsioEndpoint } from "../useProtocolsio";
 
 type ProtocolsIOArgs = {
@@ -104,13 +103,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/protocolsio/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/protocolsio/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

@@ -1,5 +1,3 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { createRoot } from "react-dom/client";
 import ExternalWorkflowInvocations from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
 
@@ -13,8 +11,7 @@ import ExternalWorkflowInvocations from "@/eln/eln-external-workflows/ExternalWo
  * invoked on page load of a notebook page by journal.js event dispatch
  */
 
-// biome-ignore lint/complexity/useArrowFunction: initial biome migration
-window.addEventListener("extWorkFlows-init", function () {
+window.addEventListener("extWorkFlows-init", () => {
   loadUIOnPageLoad(true);
 });
 /**

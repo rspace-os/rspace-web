@@ -1,6 +1,4 @@
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import CustomToggleButton from "../../components/CustomToggleButton";
 import CustomToggleButtonGroup from "../../components/CustomToggleButtonGroup";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -10,11 +8,11 @@ function ColumnVisibilitySettings({
   setVisibleColumnIds,
   allTableHeaderCells,
 }: {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   visibleColumnIds: any;
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   setVisibleColumnIds: any;
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   allTableHeaderCells: any;
 }) {
   const { width } = useViewportDimensions();
@@ -27,7 +25,7 @@ function ColumnVisibilitySettings({
       onChange={(_, columns) => setVisibleColumnIds(columns)}
       aria-label="Select visible columns"
     >
-      {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+      {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
       {allTableHeaderCells.map((cell: any) => (
         <CustomToggleButton key={cell.id} value={cell.id} aria-label={cell.label}>
           {cell.label}

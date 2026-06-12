@@ -1,8 +1,8 @@
 import Alert, { alertClasses } from "@mui/material/Alert";
 import LinearProgress from "@mui/material/LinearProgress";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 import { match } from "@/util/Util";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";

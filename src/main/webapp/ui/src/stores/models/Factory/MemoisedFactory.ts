@@ -1,15 +1,10 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Document, type DocumentAttrs } from "../../definitions/Document";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { GlobalId } from "../../definitions/BaseRecord";
+import type { Document, DocumentAttrs } from "../../definitions/Document";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
 import type { PersonAttrs, PersonId } from "../../definitions/Person";
 import InventoryBaseRecord from "../InventoryBaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import PersonModel from "../PersonModel";
+import type PersonModel from "../PersonModel";
 import AlwaysNewFactory from "./AlwaysNewFactory";
 
 /**

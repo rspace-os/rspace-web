@@ -2,8 +2,7 @@ import HelpIcon from "@mui/icons-material/Help";
 import IconButton from "@mui/material/IconButton";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { useTheme } from "@mui/material/styles";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import type { URL } from "../util/types";
 import CustomTooltip from "./CustomTooltip";
 

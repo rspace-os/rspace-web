@@ -13,9 +13,9 @@ import Select from "react-select";
 import axios from "@/common/axios";
 import materialTheme from "../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class createGroupStep3 extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = {
@@ -29,7 +29,7 @@ class createGroupStep3 extends React.Component<any, any> {
     this.handleDelete = this.handleDelete.bind(this);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleBlur = (event: any) => {
     if (this.state.newUserEmailCheck === false || event.target.value === "") {
       return;
@@ -38,7 +38,7 @@ class createGroupStep3 extends React.Component<any, any> {
     const email = event.target.value;
     const arrayName = event.target.name;
 
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
       [arrayName]: [...prevState[arrayName], email],
     }));
@@ -46,23 +46,23 @@ class createGroupStep3 extends React.Component<any, any> {
     event.target.value = "";
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleEnter = (event: any) => {
     if (event.key === "Enter") {
       this.handleBlur(event);
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleSelect = (user: any) => {
     const email = user.value;
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     this.setState((prevState: any) => ({
       existingUsers: [...prevState.existingUsers, email],
     }));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleDelete = (name: any, type: any) => {
     const selectedUsers = [...this.state[type]];
     const result = selectedUsers.filter((word) => word !== name);
@@ -82,7 +82,7 @@ class createGroupStep3 extends React.Component<any, any> {
           <Chip
             label={emailList[i].slice(0, 20)}
             onDelete={() => this.handleDelete(emailList[i], type)}
-            // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             {...({ name: emailList[i], value: emailList[i] } as any)}
             color="primary"
           />
@@ -98,10 +98,8 @@ class createGroupStep3 extends React.Component<any, any> {
       return;
     }
 
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    const selfService = $("#selfServiceLabGroup").length != 0;
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    const projectGroup = $("#projectGroup").length != 0;
+    const selfService = $("#selfServiceLabGroup").length !== 0;
+    const projectGroup = $("#projectGroup").length !== 0;
     const url =
       (selfService && !projectGroup ? `/selfServiceLabGroup/` : projectGroup ? /projectGroup/ : `/cloud/ajax/`) +
       `searchPublicUserInfoList?term=${value}`;
@@ -121,7 +119,7 @@ class createGroupStep3 extends React.Component<any, any> {
       });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   displayExistingUsers = (userList: any) => {
     const display = [];
     for (let i = 0; i < userList.length; i++) {
@@ -135,7 +133,7 @@ class createGroupStep3 extends React.Component<any, any> {
     });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   emailValidation = (event: any) => {
     const emailTest = EmailValidator.validate(event.target.value);
     this.setState({
@@ -150,9 +148,8 @@ class createGroupStep3 extends React.Component<any, any> {
     });
   }
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  componentDidUpdate(prevProps: any, prevState: any) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  componentDidUpdate(_prevProps: any, prevState: any) {
     //If the user list has changed update main state on CreateGroup.js
     if (this.state.existingUsers !== prevState.existingUsers || this.state.newUsers !== prevState.newUsers) {
       this.props.updateInvitedMembers(this.state.existingUsers, this.state.newUsers);
@@ -161,8 +158,7 @@ class createGroupStep3 extends React.Component<any, any> {
 
   render() {
     const existingUsersDisplay = this.buildUserDisplay("existingUsers");
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    const selfService = $("#selfServiceLabGroup").length != 0;
+    const selfService = $("#selfServiceLabGroup").length !== 0;
     const newUsersDisplay = selfService ? false : this.buildUserDisplay("newUsers");
 
     return (
@@ -177,7 +173,7 @@ class createGroupStep3 extends React.Component<any, any> {
                     {" "}
                     <p className="bootstrap-custom-flat"> type at least 3 characters</p>
                     <Select
-                      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                       {...({ style: { marginTop: "36.5px", paddingBottom: "6px" } } as any)}
                       name="existingUsers"
                       options={this.state.returnedUserList}

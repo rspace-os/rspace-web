@@ -1,9 +1,5 @@
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-  // biome-ignore lint/style/noRestrictedImports: initial biome migration
-} from "@mui/material";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import createAccentedTheme from "@/accentedTheme";
@@ -13,8 +9,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { Optional } from "@/util/optional";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { dummyId } from "../useGalleryListing";
 import Sidebar from "./Sidebar";

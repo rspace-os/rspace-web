@@ -5,12 +5,10 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "@/common/axios";
 import Alerts from "../../components/Alerts/Alerts";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportSelection } from "../common";
+import type { ExportSelection } from "../common";
 import ExportDialog from "../ExportDialog";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 
@@ -423,10 +421,7 @@ describe("ExportDialog", () => {
               await waitFor(() => {
                 expect(screen.getByRole("textbox")).toBeVisible();
               });
-              expect(screen.getByRole("textbox")).toHaveValue(
-                // biome-ignore lint/style/useTemplate: initial biome migration
-                selection.groupName + " - all work",
-              );
+              expect(screen.getByRole("textbox")).toHaveValue(`${selection.groupName} - all work`);
             }),
             { numRuns: 1 },
           );
@@ -445,10 +440,7 @@ describe("ExportDialog", () => {
               await waitFor(() => {
                 expect(screen.getByRole("textbox")).toBeVisible();
               });
-              expect(screen.getByRole("textbox")).toHaveValue(
-                // biome-ignore lint/style/useTemplate: initial biome migration
-                selection.username + " - all work",
-              );
+              expect(screen.getByRole("textbox")).toHaveValue(`${selection.username} - all work`);
             }),
             { numRuns: 1 },
           );

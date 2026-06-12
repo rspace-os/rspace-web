@@ -5,8 +5,7 @@ import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 import { useNextcloudEndpoint } from "../useNextcloud";
 
 type NextCloudArgs = {
@@ -100,13 +99,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/nextcloud/connect"
-                method="POST"
-                // biome-ignore lint/security/noBlankTarget: initial biome migration
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/nextcloud/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

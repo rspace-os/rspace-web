@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 // The element type of MUI's array-form sx prop
 type SxItem = boolean | Exclude<SxProps<Theme>, ReadonlyArray<unknown>>;

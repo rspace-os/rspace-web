@@ -215,8 +215,7 @@ export default function useChemicalImport(): {
     const fullHeight = 500;
     const previewWidth = 250;
     const previewHeight = 250;
-    // biome-ignore lint/complexity/useDateNow: initial biome migration
-    const milliseconds = new Date().getTime();
+    const milliseconds = Date.now();
     const json = {
       id,
       ecatChemFileId: chemFileId,

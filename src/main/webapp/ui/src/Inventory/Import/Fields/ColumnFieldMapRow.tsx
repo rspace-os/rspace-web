@@ -13,8 +13,7 @@ import { useState } from "react";
 import CustomTooltip from "../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import { FIELD_DATA } from "../../../stores/models/FieldTypes";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { ColumnFieldMap, Fields, getTypeOfField } from "../../../stores/models/ImportModel";
+import { type ColumnFieldMap, Fields, getTypeOfField } from "../../../stores/models/ImportModel";
 import { match, toTitleCase } from "../../../util/Util";
 import FieldNameStringField from "./FieldNameStringField";
 import FieldMenuItem from "./FieldSelectMenuItem";

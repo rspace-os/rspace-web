@@ -14,10 +14,8 @@ import useViewportDimensions from "../../../hooks/browser/useViewportDimensions"
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as FetchingData from "../../../util/fetchingData";
 import Result from "../../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import RsSet from "../../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GallerySection } from "../common";
+import type RsSet from "../../../util/set";
+import type { GallerySection } from "../common";
 import { folderDestination, rootDestination, useGalleryActions } from "../useGalleryActions";
 import { type GalleryFile, useGalleryListing } from "../useGalleryListing";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";

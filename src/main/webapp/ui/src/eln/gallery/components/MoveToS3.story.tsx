@@ -1,5 +1,3 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import Alerts from "@/components/Alerts/Alerts";
 import MoveToS3 from "./MoveToS3";
 

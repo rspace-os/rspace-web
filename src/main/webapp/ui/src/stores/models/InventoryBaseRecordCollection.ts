@@ -2,12 +2,9 @@ import { action, computed, makeObservable, observable, override } from "mobx";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import { match } from "../../util/Util";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SharedWithGroup } from "../definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { areSameTag, Tag } from "../definitions/Tag";
+import type { HasEditableFields } from "../definitions/Editable";
+import type { SharedWithGroup } from "../definitions/Group";
+import { areSameTag, type Tag } from "../definitions/Tag";
 import { truncateIsoTimestamp } from "../definitions/Units";
 import { PersistedBarcode } from "./Barcode";
 import type InventoryBaseRecord from "./InventoryBaseRecord";

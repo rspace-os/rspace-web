@@ -1,5 +1,4 @@
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React, { type ReactNode, useContext } from "react";
+import { type ReactNode, useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
 

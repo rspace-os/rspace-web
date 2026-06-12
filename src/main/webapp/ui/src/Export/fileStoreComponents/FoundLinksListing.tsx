@@ -11,8 +11,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useState } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type FileSystem } from "../common";
+import type { FileSystem } from "../common";
 
 type FoundLinksListingArgs = {
   // The total number of files found across all of the filestores
@@ -45,8 +44,7 @@ export default function FoundLinksListing({ filesCount, fileSystems }: FoundLink
         <DialogTitle>Filestore links found in exported content</DialogTitle>
         <DialogContent>
           {fileSystems.map((fileStore) => (
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            <div key={"foundLinks" + fileStore.id}>
+            <div key={`foundLinks${fileStore.id}`}>
               <h3>{fileStore.name}</h3>
               <Table>
                 <TableHead>
@@ -58,8 +56,7 @@ export default function FoundLinksListing({ filesCount, fileSystems }: FoundLink
                 </TableHead>
                 <TableBody>
                   {fileStore.foundNfsLinks.map((file) => (
-                    // biome-ignore lint/style/useTemplate: initial biome migration
-                    <TableRow key={"foundLinks" + fileStore.id + file.path}>
+                    <TableRow key={`foundLinks${fileStore.id}${file.path}`}>
                       <TableCell component="th" scope="row">
                         {file.path}
                       </TableCell>

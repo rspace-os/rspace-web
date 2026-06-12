@@ -1,5 +1,4 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import CustomTableCell from "../../Search/components/TableCell";
 
 type TableCellArgs = React.ComponentProps<typeof CustomTableCell> & {

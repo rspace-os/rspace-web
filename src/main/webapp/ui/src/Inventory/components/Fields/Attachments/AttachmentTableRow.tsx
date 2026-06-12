@@ -12,14 +12,11 @@ import React, { type ReactNode, useId, useState } from "react";
 import ChemistryIcon from "../../../../assets/graphics/ChemistryIcon";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import { mkAlert } from "../../../../stores/contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../../../../stores/definitions/Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Attachment } from "../../../../stores/definitions/Attachment";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import useStores from "../../../../stores/use-stores";
 import { capImageAt1MB } from "../../../../util/images";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BlobUrl } from "../../../../util/types";
+import type { BlobUrl } from "../../../../util/types";
 import DeleteButton from "../../DeleteButton";
 import NameWithBadge from "../../NameWithBadge";
 import Preview from "./PreviewAction";

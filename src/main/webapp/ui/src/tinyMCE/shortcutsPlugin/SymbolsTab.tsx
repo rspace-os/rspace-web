@@ -5,20 +5,19 @@ import React, { useEffect, useRef } from "react";
 import { humanize } from "../../util/shortcuts";
 import SymbolsMenu from "./SymbolsMenu";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SymbolsTab(props: any) {
   const shortcutsEndRef = useRef<HTMLDivElement>(null);
   const [isFirst, setIsFirst] = React.useState(true);
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const label = (code: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     const reducer = (accumulator: any[], currentValue: string) =>
       accumulator.concat(props.config.symbols[currentValue]);
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     const all_symbols: any[] = Object.keys(props.config.symbols).reduce(reducer, []);
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    return all_symbols.find((s) => s[0] == code)[1];
+    return all_symbols.find((s) => s[0] === code)[1];
   };
 
   const scrollToBottom = () => {
@@ -49,12 +48,8 @@ export default function SymbolsTab(props: any) {
               variant="standard"
               fullWidth
               value={humanize(props.symbolShortcuts[key]) || ""}
-              // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-              error={props.hasError && key == props.selectedKey}
-              helperText={
-                // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-                key == props.selectedKey && props.hasError ? props.errorMessage : null
-              }
+              error={props.hasError && key === props.selectedKey}
+              helperText={key === props.selectedKey && props.hasError ? props.errorMessage : null}
               onKeyDown={(e) => props.detectShortcut(key, e)}
               onKeyUp={props.onKeyUp}
               margin="dense"

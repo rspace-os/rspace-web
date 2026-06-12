@@ -1,8 +1,6 @@
 import { render, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
 import axios from "@/common/axios";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";

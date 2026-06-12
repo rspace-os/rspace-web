@@ -1,7 +1,6 @@
 import React, { type Context, createContext } from "react";
 import { take } from "../../util/iterators";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type LinkableRecord } from "../definitions/LinkableRecord";
+import type { LinkableRecord } from "../definitions/LinkableRecord";
 
 type AlertVariant = "success" | "warning" | "error" | "notice";
 

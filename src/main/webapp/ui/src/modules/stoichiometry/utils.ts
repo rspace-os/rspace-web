@@ -1,9 +1,7 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import { RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
+import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 import { parse } from "@/modules/common/queries/parseOrThrow";
-// biome-ignore lint/style/useImportType: initial biome migration
 import {
-  StoichiometryMessageErrorResponse,
+  type StoichiometryMessageErrorResponse,
   StoichiometryMessageErrorResponseSchema,
 } from "@/modules/stoichiometry/schema";
 

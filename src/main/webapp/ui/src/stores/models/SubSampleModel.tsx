@@ -1,64 +1,38 @@
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import ApiService from "../../common/InvApiService";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
 import RsSet from "../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK } from "../../util/types";
+import type { _LINK } from "../../util/types";
 import { pick } from "../../util/unsafeUtils";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeAttrs } from "../definitions/Barcode";
+import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields, type HasUneditableFields } from "../definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type HasQuantityEditableFields,
-  type HasQuantityUneditableFields,
-  type Quantity,
-} from "../definitions/HasQuantity";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
+import type { HasQuantityEditableFields, HasQuantityUneditableFields, Quantity } from "../definitions/HasQuantity";
 import type { IdentifierAttrs } from "../definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type Action,
-  type CreateOption,
-  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
-  type InventoryRecord,
-  type RecordType,
-} from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonAttrs, type PersonId } from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordDetails } from "../definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alias, type Sample } from "../definitions/Sample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SubSample } from "../definitions/SubSample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Action, CreateOption, RecordType } from "../definitions/InventoryRecord";
+import type { PersonAttrs, PersonId } from "../definitions/Person";
+import type { RecordDetails } from "../definitions/Record";
+import type { Alias, Sample } from "../definitions/Sample";
+import type { SubSample } from "../definitions/SubSample";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AttachmentJson } from "./AttachmentModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
+import type { AttachmentJson } from "./AttachmentModel";
+import type ContainerModel from "./ContainerModel";
+import type { ContainerAttrs } from "./ContainerModel";
 import { HasLocationMixin } from "./HasLocation";
 import { getUnitId, getValue, HasQuantityMixin } from "./HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
 import InventoryBaseRecord, {
   defaultEditableResultFields,
   defaultVisibleResultFields,
-  InventoryBaseRecordEditableFields,
-  InventoryBaseRecordUneditableFields,
+  type InventoryBaseRecordEditableFields,
+  type InventoryBaseRecordUneditableFields,
   RESULT_FIELDS,
 } from "./InventoryBaseRecord";
 import InventoryBaseRecordCollection, {

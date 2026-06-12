@@ -8,18 +8,15 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { KeyboardEvent, MouseEvent, useContext, useEffect, useRef, useState } from "react";
+import React, { type KeyboardEvent, type MouseEvent, useContext, useEffect, useRef, useState } from "react";
 import SearchContext from "../../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Location } from "../../../../stores/definitions/Container";
+import type { Location } from "../../../../stores/definitions/Container";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import { preventEventBubbling } from "../../../../util/Util";
 import * as DragAndDrop from "../DragAndDrop";
 import Dragger from "../Dragger";
 import LocationContent from "../LocationContent";
-// biome-ignore lint/style/useImportType: initial biome migration
-import GridCell, { GridCellArgs } from "./GridCell";
+import GridCell, { type GridCellArgs } from "./GridCell";
 
 type Coord = {
   x: number;

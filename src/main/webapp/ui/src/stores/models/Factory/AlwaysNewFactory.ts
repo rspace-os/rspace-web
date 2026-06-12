@@ -1,31 +1,20 @@
-// biome-ignore lint/style/useImportType: initial biome migration
-import InvApiService from "../../../common/InvApiService";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord, type PersistedBarcodeAttrs } from "../../definitions/Barcode";
+import type InvApiService from "../../../common/InvApiService";
+import type { BarcodeRecord, PersistedBarcodeAttrs } from "../../definitions/Barcode";
 import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Document, type DocumentAttrs } from "../../definitions/Document";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Identifier, type IdentifierAttrs } from "../../definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { InventoryRecord } from "../../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonAttrs } from "../../definitions/Person";
+import type { Document, DocumentAttrs } from "../../definitions/Document";
+import type { Factory } from "../../definitions/Factory";
+import type { Identifier, IdentifierAttrs } from "../../definitions/Identifier";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { PersonAttrs } from "../../definitions/Person";
 import { PersistedBarcode } from "../Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import ContainerModel, { ContainerAttrs } from "../ContainerModel";
+import ContainerModel, { type ContainerAttrs } from "../ContainerModel";
 import { newDocument } from "../Document";
 import IdentifierModel from "../IdentifierModel";
 import InventoryBaseRecord from "../InventoryBaseRecord";
 import PersonModel from "../PersonModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SampleModel, { SampleAttrs } from "../SampleModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SubSampleModel, { SubSampleAttrs } from "../SubSampleModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import TemplateModel, { TemplateAttrs } from "../TemplateModel";
+import SampleModel, { type SampleAttrs } from "../SampleModel";
+import SubSampleModel, { type SubSampleAttrs } from "../SubSampleModel";
+import TemplateModel, { type TemplateAttrs } from "../TemplateModel";
 
 /**
  * A Factory that has no state and always instantiates a new object whenever it

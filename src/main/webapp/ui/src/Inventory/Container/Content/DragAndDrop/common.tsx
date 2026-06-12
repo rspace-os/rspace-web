@@ -1,8 +1,6 @@
 import { useDndContext } from "@dnd-kit/core";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Container, type Location } from "../../../../stores/definitions/Container";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
+import type { Container, Location } from "../../../../stores/definitions/Container";
 
 /*
  * Specifically a string of the form "<coordX>,<coordY>".

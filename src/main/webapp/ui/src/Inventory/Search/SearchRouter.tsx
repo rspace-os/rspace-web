@@ -6,8 +6,7 @@ import { UiPreferences } from "../../hooks/api/useUiPreference";
 import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext, { type UseLocation } from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs } from "../../stores/definitions/Search";
+import type { CoreFetcherArgs } from "../../stores/definitions/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../stores/use-stores";
 import { getErrorMessage, UserCancelledAction } from "../../util/error";

@@ -1,11 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../../stores/definitions/Editable";
+import type { HasEditableFields } from "../../../../../stores/definitions/Editable";
 import { CELSIUS, type Temperature } from "../../../../../stores/definitions/Units";
 import materialTheme from "../../../../../theme";
 import StorageTemperature from "../../StorageTemperature";

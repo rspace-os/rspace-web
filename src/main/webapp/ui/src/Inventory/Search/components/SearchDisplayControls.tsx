@@ -4,8 +4,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SearchView } from "../../../stores/definitions/Search";
+import type { SearchView } from "../../../stores/definitions/Search";
 import SortControls from "./SortControls";
 import ToggleView from "./ToggleView";
 

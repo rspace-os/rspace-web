@@ -1,12 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test } from "vitest";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alias as AliasType } from "../../../../stores/definitions/Sample";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Alias as AliasType } from "../../../../stores/definitions/Sample";
 import materialTheme from "../../../../theme";
 import Alias from "../Alias";
 

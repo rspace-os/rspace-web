@@ -1,8 +1,8 @@
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import type FieldModel from "../../../stores/models/FieldModel";
 import { match } from "../../../util/Util";

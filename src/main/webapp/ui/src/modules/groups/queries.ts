@@ -1,7 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { Either } from "purify-ts/Either";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
+import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 import { parse, parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { GroupInfoSchema } from "@/modules/groups/schema";
 

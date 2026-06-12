@@ -1,10 +1,8 @@
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import ExpandCollapseIcon from "../../components/ExpandCollapseIcon";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function FilterButton({ showFilter, setShowFilter }: { showFilter: any; setShowFilter: any }) {
   return (
     <>

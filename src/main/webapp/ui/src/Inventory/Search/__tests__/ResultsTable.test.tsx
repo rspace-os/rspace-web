@@ -4,12 +4,9 @@ import "@/__tests__/__mocks__/resizeObserver";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import * as React from "react";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { containerAttrs, makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
 import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";

@@ -10,8 +10,7 @@ import { useContext, useEffect, useState } from "react";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Record } from "../../../stores/definitions/Record";
+import type { Record } from "../../../stores/definitions/Record";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import useStores from "../../../stores/use-stores";
 import { match } from "../../../util/Util";

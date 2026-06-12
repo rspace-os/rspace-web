@@ -3,8 +3,6 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { sleep } from "../../util/Util";
 import ImageEditingDialog from "../ImageEditingDialog";
@@ -93,8 +91,7 @@ describe("ImageEditingDialog", () => {
             expect(image.naturalHeight).toBeGreaterThan(0);
           });
           const rotateButton = screen.getByRole("button", {
-            // biome-ignore lint/style/useTemplate: initial biome migration
-            name: "rotate " + direction,
+            name: `rotate ${direction}`,
           });
           for (let i = 0; i < number; i++) {
             await user.click(rotateButton);

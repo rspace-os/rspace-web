@@ -10,12 +10,9 @@ import { formatFileSize } from "../util/files";
 import { sum } from "../util/iterators";
 import { Optional } from "../util/optional";
 import RsSet, { flattenWithUnion } from "../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type UseState } from "../util/types";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Validator } from "../util/Validator";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExportSelection, type FileLink, type FileSystem, type FolderLink, type MixedLink } from "./common";
+import type { UseState } from "../util/types";
+import type { Validator } from "../util/Validator";
+import type { ExportSelection, FileLink, FileSystem, FolderLink, MixedLink } from "./common";
 import FileFilters from "./fileStoreComponents/FileFilters";
 import FoundLinksListing from "./fileStoreComponents/FoundLinksListing";
 import LinkAvailabilityScan from "./fileStoreComponents/LinkAvailabilityScan";

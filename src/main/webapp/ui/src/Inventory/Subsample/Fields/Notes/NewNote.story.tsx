@@ -37,10 +37,7 @@ export function NewNoteStory({
           <NewNote
             // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             record={mockSubSample as any}
-            onErrorStateChange={
-              // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-              onErrorStateChange ?? ((hasError: boolean) => {})
-            }
+            onErrorStateChange={onErrorStateChange ?? ((_hasError: boolean) => {})}
           />
         </Alerts>
       </ThemeProvider>

@@ -56,9 +56,7 @@ const DialogContent = observer(
       GITHUB_CONNECTION_CHANNEL,
       (e: MessageEvent<GitHubConnectedMessage>) => {
         if (
-          // biome-ignore lint/complexity/useOptionalChain: initial biome migration
-          !e.data ||
-          e.data.type !== "GITHUB_CONNECTED" ||
+          e.data?.type !== "GITHUB_CONNECTED" ||
           typeof e.data.authToken !== "string" ||
           e.data.authToken.length === 0
         ) {

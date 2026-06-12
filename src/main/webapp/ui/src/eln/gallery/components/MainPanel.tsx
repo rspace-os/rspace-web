@@ -58,8 +58,7 @@ import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { getByKey, Optional } from "../../../util/optional";
+import { getByKey, type Optional } from "../../../util/optional";
 import RsSet from "../../../util/set";
 import { match } from "../../../util/Util";
 import {
@@ -71,8 +70,7 @@ import {
   SELECTED_OR_FOCUS_BORDER,
 } from "../common";
 import usePrimaryAction from "../primaryActionHooks";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Destination, folderDestination, rootDestination, useGalleryActions } from "../useGalleryActions";
+import { type Destination, folderDestination, rootDestination, useGalleryActions } from "../useGalleryActions";
 import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import ActionsMenu from "./ActionsMenu";
@@ -494,8 +492,7 @@ const FileCard = observer(
           : {}),
       };
       const inGroupBeingDraggedStyle =
-        // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
-        Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
+        dndContext.active?.data.current?.fileBeingMoved &&
         (selection.includes(dndContext.active?.data.current?.fileBeingMoved as GalleryFile)
           ? selection.includes(file)
           : file.id === (dndContext.active?.data.current?.fileBeingMoved as GalleryFile).id)

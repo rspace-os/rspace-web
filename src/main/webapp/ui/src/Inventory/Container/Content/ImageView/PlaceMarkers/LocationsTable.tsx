@@ -9,16 +9,14 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { type MouseEvent } from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../../../../../stores/definitions/Container";
+import type { Location } from "../../../../../stores/definitions/Container";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { preventEventBubbling } from "../../../../../util/Util";
 import InfoBadge from "../../../../components/InfoBadge";
 import InfoCard from "../../../../components/InfoCard";
 import { LOCATION_TAPPED_EVENT } from "../../../Fields/LocationsImageMarkersDialog";
 import NumberedLocation from "../NumberedLocation";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type TappedLocationData } from "./ContentImage";
+import type { TappedLocationData } from "./ContentImage";
 
 type LocationsTableArgs = {
   locations: Array<Location>;

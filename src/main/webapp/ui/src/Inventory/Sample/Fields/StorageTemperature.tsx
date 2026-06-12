@@ -1,8 +1,7 @@
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import { CELSIUS, type Temperature } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 import SpecifiedStorageTemperature from "./SpecifiedStorageTemperature";

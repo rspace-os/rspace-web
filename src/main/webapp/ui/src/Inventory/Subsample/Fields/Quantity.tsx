@@ -9,12 +9,9 @@ import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
 import NavigateContext from "../../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Quantity } from "../../../stores/definitions/HasQuantity";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Sample } from "../../../stores/definitions/Sample";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { Quantity } from "../../../stores/definitions/HasQuantity";
+import type { Sample } from "../../../stores/definitions/Sample";
 import { getLabel, getUnitId, getValue } from "../../../stores/models/HasQuantity";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
@@ -149,49 +146,45 @@ function QuantityField<
           )}
         />
       ) : (
-        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-        <>
-          <CustomBatchFormField
-            label="Quantity"
-            value={quantityLabel}
-            disabled
-            setDisabled={(checked) => {
-              fieldOwner.setFieldEditable("quantity", checked);
-            }}
-            canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
-            noValueLabel={fieldOwner.noValueLabel.quantity}
-            renderInput={({ value, disabled }) => (
-              <>
-                <StringField disabled={disabled} value={value} />
-                {parentSample?.globalId && (
-                  <Typography variant="caption">
-                    <Link
-                      href={`/inventory/search?parentGlobalId=${parentSample.globalId}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (parentSample.globalId)
-                          navigate(`/inventory/search?parentGlobalId=${parentSample.globalId}`);
-                      }}
-                    >
-                      {parentSample.subSamplesCount === 1 ? (
-                        `The parent sample only has one ${parentSample.subSampleAlias.alias}.`
-                      ) : (
-                        <>
-                          There {parentSample.subSamplesCount === 2 ? "is" : "are"} {parentSample.subSamplesCount - 1}{" "}
-                          other{" "}
-                          {parentSample.subSamplesCount === 2
-                            ? parentSample.subSampleAlias.alias
-                            : parentSample.subSampleAlias.plural}
-                          .
-                        </>
-                      )}
-                    </Link>
-                  </Typography>
-                )}
-              </>
-            )}
-          />
-        </>
+        <CustomBatchFormField
+          label="Quantity"
+          value={quantityLabel}
+          disabled
+          setDisabled={(checked) => {
+            fieldOwner.setFieldEditable("quantity", checked);
+          }}
+          canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
+          noValueLabel={fieldOwner.noValueLabel.quantity}
+          renderInput={({ value, disabled }) => (
+            <>
+              <StringField disabled={disabled} value={value} />
+              {parentSample?.globalId && (
+                <Typography variant="caption">
+                  <Link
+                    href={`/inventory/search?parentGlobalId=${parentSample.globalId}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (parentSample.globalId) navigate(`/inventory/search?parentGlobalId=${parentSample.globalId}`);
+                    }}
+                  >
+                    {parentSample.subSamplesCount === 1 ? (
+                      `The parent sample only has one ${parentSample.subSampleAlias.alias}.`
+                    ) : (
+                      <>
+                        There {parentSample.subSamplesCount === 2 ? "is" : "are"} {parentSample.subSamplesCount - 1}{" "}
+                        other{" "}
+                        {parentSample.subSamplesCount === 2
+                          ? parentSample.subSampleAlias.alias
+                          : parentSample.subSampleAlias.plural}
+                        .
+                      </>
+                    )}
+                  </Link>
+                </Typography>
+              )}
+            </>
+          )}
+        />
       )}
     </>
   );

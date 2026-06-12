@@ -1,7 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
+import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { type GalleryFile, idToString } from "./useGalleryListing";

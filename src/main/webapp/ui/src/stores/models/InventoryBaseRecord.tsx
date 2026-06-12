@@ -1,13 +1,10 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AxiosProgressEvent } from "@/common/axios";
+import type React from "react";
+import type { AxiosProgressEvent } from "@/common/axios";
 import ApiService from "../../common/InvApiService";
 import { decodeTagString, encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SortProperty } from "../../Inventory/components/Tables/SortableProperty";
+import type { SortProperty } from "../../Inventory/components/Tables/SortableProperty";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "../../util/error";
 import { capImageAt1MB } from "../../util/images";
@@ -19,54 +16,37 @@ import type { _LINK, BlobUrl, URL as URLType } from "../../util/types";
 import { isoToLocale, match, sameKeysAndValues } from "../../util/Util";
 import { pick } from "../../util/unsafeUtils";
 import { type Alert, mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../definitions/Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcode";
+import type { Attachment } from "../definitions/Attachment";
+import type { BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Location } from "../definitions/Container";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields, type HasUneditableFields } from "../definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraField, type ExtraFieldAttrs } from "../definitions/ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SharedWithGroup } from "../definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Identifier, type IdentifierAttrs } from "../definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type Action,
-  type ApiRecordType,
-  type CreateOption,
-  type InventoryRecord,
-  type LockStatus,
-  type RecordType,
-  type SharingMode,
-  type State,
+import type { Location } from "../definitions/Container";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraField, ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { SharedWithGroup } from "../definitions/Group";
+import type { Identifier, IdentifierAttrs } from "../definitions/Identifier";
+import type {
+  Action,
+  ApiRecordType,
+  CreateOption,
+  InventoryRecord,
+  LockStatus,
+  RecordType,
+  SharingMode,
+  State,
 } from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Person, PersonAttrs } from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ReadAccessLevel, type RecordDetails, type Thumbnail } from "../definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs } from "../definitions/Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRow, type AdjustableTableRowOptions } from "../definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Tag } from "../definitions/Tag";
+import type { Person, PersonAttrs } from "../definitions/Person";
+import type { ReadAccessLevel, RecordDetails, Thumbnail } from "../definitions/Record";
+import type { CoreFetcherArgs } from "../definitions/Search";
+import type { AdjustableTableRow, AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Tag } from "../definitions/Tag";
 import getRootStore from "../stores/RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { AttachmentJson, newExistingAttachment } from "./AttachmentModel";
+import { type AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ContainerInContainerParams } from "./ContainerModel";
+import type { ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import IdentifierModel from "./IdentifierModel";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SampleInContainerParams } from "./SampleModel";
+import type { SampleInContainerParams } from "./SampleModel";
 
 export type InventoryBaseRecordEditableFields = {
   /*
@@ -861,7 +841,7 @@ export default class InventoryBaseRecord
       } else {
         // canceling
         // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-        let lockReleased;
+                let lockReleased;
         if (this.state === "edit") {
           lockReleased = await this.releaseLock(silent);
         }
@@ -1104,8 +1084,9 @@ export default class InventoryBaseRecord
    * this analytics event
    */
 
-  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
-  get dataAttachedToRecordCreatedAnaylticsEvent(): {} {
+  
+// biome-ignore lint/complexity/noBannedTypes: initial biome migration
+get  dataAttachedToRecordCreatedAnaylticsEvent(): {} {
     return {
       type: this.recordType,
     };
@@ -1213,8 +1194,7 @@ export default class InventoryBaseRecord
   }
 
   isFieldVisible(field: string): boolean {
-    // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-    if (this.editing || this.id === null || !this.hasOwnProperty(field)) {
+    if (this.editing || this.id === null || !Object.hasOwn(this, field)) {
       return this.currentlyVisibleFields.has(field);
     }
     return (

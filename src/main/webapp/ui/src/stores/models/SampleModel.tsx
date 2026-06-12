@@ -1,6 +1,5 @@
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
-// biome-ignore lint/style/useImportType: initial biome migration
-import React from "react";
+import type React from "react";
 import { getErrorMessage } from "@/util/error";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import ApiService from "../../common/InvApiService";
@@ -10,73 +9,44 @@ import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type _LINK } from "../../util/types";
+import type { _LINK } from "../../util/types";
 import { match } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Attachment } from "../definitions/Attachment";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type BarcodeAttrs } from "../definitions/Barcode";
+import type { Attachment } from "../definitions/Attachment";
+import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, getSavedGlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type HasEditableFields, type HasUneditableFields } from "../definitions/Editable";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Factory } from "../definitions/Factory";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
 import type { Field } from "../definitions/Field";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type SharedWithGroup } from "../definitions/Group";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type HasQuantityEditableFields,
-  type HasQuantityUneditableFields,
-  type Quantity,
-} from "../definitions/HasQuantity";
+import type { SharedWithGroup } from "../definitions/Group";
+import type { HasQuantityEditableFields, HasQuantityUneditableFields, Quantity } from "../definitions/HasQuantity";
 import type { IdentifierAttrs } from "../definitions/Identifier";
-// biome-ignore lint/style/useImportType: initial biome migration
-import {
-  type Action,
-  type CreateOption,
-  type InventoryRecord,
-  type RecordType,
-  type SharingMode,
-} from "../definitions/InventoryRecord";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type PersonAttrs } from "../definitions/Person";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type RecordDetails } from "../definitions/Record";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Alias, type Sample, type SampleSource } from "../definitions/Sample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type CoreFetcherArgs } from "../definitions/Search";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import { SubSample } from "../definitions/SubSample";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type Template } from "../definitions/Template";
+import type { Action, CreateOption, InventoryRecord, RecordType, SharingMode } from "../definitions/InventoryRecord";
+import type { PersonAttrs } from "../definitions/Person";
+import type { RecordDetails } from "../definitions/Record";
+import type { Alias, Sample, SampleSource } from "../definitions/Sample";
+import type { CoreFetcherArgs } from "../definitions/Search";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Template } from "../definitions/Template";
 import { CELSIUS, type Temperature, validateTemperature } from "../definitions/Units";
 import { HasQuantityMixin } from "../models/HasQuantity";
 import getRootStore from "../stores/RootStore";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type AttachmentJson } from "./AttachmentModel";
+import type { AttachmentJson } from "./AttachmentModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
-// biome-ignore lint/style/useImportType: initial biome migration
 import InventoryBaseRecord, {
   defaultEditableResultFields,
   defaultVisibleResultFields,
-  InventoryBaseRecordEditableFields,
-  InventoryBaseRecordUneditableFields,
+  type InventoryBaseRecordEditableFields,
+  type InventoryBaseRecordUneditableFields,
   RESULT_FIELDS,
 } from "./InventoryBaseRecord";
 import InventoryBaseRecordCollection, {
   type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import Search from "./Search";
-// biome-ignore lint/style/useImportType: initial biome migration
-import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
+import type SubSampleModel from "./SubSampleModel";
+import type { SubSampleAttrs } from "./SubSampleModel";
 
 type SampleEditableFields = HasQuantityEditableFields &
   InventoryBaseRecordEditableFields & {

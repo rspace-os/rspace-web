@@ -30,7 +30,7 @@ describe("action: setDeletedItems", () => {
           headers: {},
           // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
           // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          config: {} as any,
+                    config: {} as any,
         }),
       );
       void search.setPage(1);

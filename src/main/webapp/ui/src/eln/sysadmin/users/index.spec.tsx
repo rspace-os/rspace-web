@@ -1,11 +1,7 @@
+import fs from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/experimental-ct-react";
-// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
-import fs from "fs/promises";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { Download } from "playwright-core";
-// biome-ignore lint/correctness/noUnusedImports: initial biome migration
-import React from "react";
+import type { Download } from "playwright-core";
 import PDF_CONFIG from "./__tests__/pdfConfig.json";
 import USER_LISTING from "./__tests__/userListing.json";
 import { UsersPageWithProviders } from "./UsersPage.story";
@@ -148,8 +144,7 @@ const feature = test.extend<{
         await expect(grid).toBeVisible();
         const columnHeadings = grid.getByRole("columnheader");
         const headings = await columnHeadings.allTextContents();
-        // biome-ignore lint/complexity/useIndexOf: initial biome migration
-        const usageIndex = headings.findIndex((heading) => heading === "Usage");
+        const usageIndex = headings.indexOf("Usage");
 
         expect(usageIndex).toBeGreaterThan(-1);
         await expect(grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex)).toHaveText("362.01 kB");

@@ -21,10 +21,10 @@ const headCells = [
   { id: "timestamp", numeric: true, label: "Time" },
 ];
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function GroupActivity(props: any) {
   const [fetched, setFetched] = React.useState(false);
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [activities, setActivities] = React.useState<any[] | null>([]);
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");
@@ -46,9 +46,8 @@ export default function GroupActivity(props: any) {
       });
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
-  const handleRequestSort = (event: any, property: any) => {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const handleRequestSort = (_event: any, property: any) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
@@ -76,7 +75,7 @@ export default function GroupActivity(props: any) {
                   rowCount={0}
                 />
                 <TableBody>
-                  {/* biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion */}
+                  {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
                   {stableSort(activities ?? [], getSorting(order, orderBy)).map((row: any, index) => {
                     return (
                       <TableRow data-test-id="row" hover tabIndex={-1} key={`${row.timestamp}-${index}`}>

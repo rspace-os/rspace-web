@@ -5,9 +5,9 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import materialTheme from "../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class CreateGroupStep1 extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
     this.state = { value: "" };
@@ -15,7 +15,7 @@ class CreateGroupStep1 extends React.Component<any, any> {
     this.handleChange = this.handleChange.bind(this);
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleChange = (event: any) => {
     //Remove spaces before group name if it has any.
     if (!event.target.value.replace(/\s/g, "").length) {

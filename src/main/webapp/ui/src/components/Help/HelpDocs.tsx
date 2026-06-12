@@ -97,9 +97,7 @@ function HelpDocs() {
       };
     }
 
-    // biome-ignore lint/style/useTemplate: initial biome migration
-    // biome-ignore lint/complexity/useDateNow: initial biome migration
-    loadScript("https://lighthouse.helpdocs.io/load?t=" + new Date().getTime());
+    loadScript(`https://lighthouse.helpdocs.io/load?t=${Date.now()}`);
   }
 
   const hasExtraHelpLinks = uiNavigationData.tag === "success" && uiNavigationData.value.extraHelpLinks.length > 0;
@@ -225,17 +223,13 @@ function HelpDocs() {
           horizontal: "left",
         }}
       >
-        {hasExtraHelpLinks && (
-          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
-          <>
-            {uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
-              <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
-                <ListItemIcon>&nbsp;</ListItemIcon>
-                <ListItemText>{label}</ListItemText>
-              </MenuItem>
-            ))}
-          </>
-        )}
+        {hasExtraHelpLinks &&
+          uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
+            <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
+              <ListItemIcon>&nbsp;</ListItemIcon>
+              <ListItemText>{label}</ListItemText>
+            </MenuItem>
+          ))}
         <Divider />
         <MenuItem onClick={handleHelpButtonClicked}>
           <ListItemIcon>

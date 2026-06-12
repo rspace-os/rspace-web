@@ -17,7 +17,7 @@ import LoadingCircular from "../../components/LoadingCircular";
 import { getSorting, paginationOptions, stableSort } from "../../util/table";
 import type { Order } from "../../util/types";
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
 
 const enzymeSetOptions = {
@@ -44,7 +44,7 @@ const headCells = [
   },
 ];
 
-// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function EnzymeTable(props: any) {
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
@@ -53,7 +53,7 @@ export default function EnzymeTable(props: any) {
   const [loading, setLoading] = React.useState(true);
   const [enzymeSet, setEnzymeSet] = React.useState("UNIQUE_SIX_PLUS");
   const [oldEnzymeSet, setOldEnzymeSet] = React.useState("UNIQUE_SIX_PLUS");
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [enzymeList, setEnzymeList] = React.useState<Array<any>>([]);
 
   const fetchEnzymes = () => {
@@ -89,16 +89,14 @@ export default function EnzymeTable(props: any) {
     setEnzymeSet(value);
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  const handleRequestSort = (event: React.MouseEvent<HTMLSpanElement>, property: string) => {
+  const handleRequestSort = (_event: React.MouseEvent<HTMLSpanElement>, property: string) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
     setPage(0);
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -107,11 +105,11 @@ export default function EnzymeTable(props: any) {
     setPage(0);
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const generateEnzymeList = (list: Array<any>) => {
-    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     const new_list = list.map((enzyme: any) => {
-      // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       return enzyme.hits.map((hit: any) => {
         return {
           name: enzyme.name,
@@ -125,8 +123,7 @@ export default function EnzymeTable(props: any) {
   };
 
   const updateDisabled = () => {
-    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
-    props.setDisabled(enzymeSet == oldEnzymeSet);
+    props.setDisabled(enzymeSet === oldEnzymeSet);
   };
 
   const emptyRows = rowsPerPage - Math.min(rowsPerPage, enzymeList.length - page * rowsPerPage);
@@ -149,7 +146,7 @@ export default function EnzymeTable(props: any) {
                 <TableBody>
                   {stableSort(enzymeList, getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+                    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                     .map((enzyme: any) => (
                       <TableRow
                         hover

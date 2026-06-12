@@ -6,10 +6,8 @@ import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useEffect, useState } from "react";
 import FormField from "../../../../components/Inputs/FormField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ExtraField } from "../../../../stores/definitions/ExtraField";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { ExtraField } from "../../../../stores/definitions/ExtraField";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { match } from "../../../../util/Util";
 import { pick } from "../../../../util/unsafeUtils";
 

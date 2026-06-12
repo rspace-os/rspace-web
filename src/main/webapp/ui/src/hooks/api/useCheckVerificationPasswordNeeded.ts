@@ -1,7 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-// biome-ignore lint/style/useImportType: initial biome migration
-import * as FetchingData from "../../util/fetchingData";
+import type * as FetchingData from "../../util/fetchingData";
 
 export default function useCheckVerificationPasswordNeeded(): FetchingData.Fetched<boolean> {
   const [isNeeded, setIsNeeded] = React.useState<FetchingData.Fetched<boolean>>({ tag: "loading" });

@@ -14,11 +14,9 @@ import HelpLinkIcon from "../../components/HelpLinkIcon";
 import SubmitSpinner from "../../components/SubmitSpinnerButton";
 import TitledBox from "../../components/TitledBox";
 import NavigateContext from "../../stores/contexts/Navigate";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type ImportRecordType } from "../../stores/stores/ImportStore";
+import type { ImportRecordType } from "../../stores/stores/ImportStore";
 import useStores from "../../stores/use-stores";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
 import { capitaliseJustFirstChar } from "../../util/Util";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
 import FileForImport from "./Fields/File";

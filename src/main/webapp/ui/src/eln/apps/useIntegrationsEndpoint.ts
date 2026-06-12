@@ -6,8 +6,7 @@ import { getByKey, Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
-// biome-ignore lint/style/useImportType: initial biome migration
-import { type emptyObject } from "../../util/types";
+import type { emptyObject } from "../../util/types";
 
 /*
  * This module provide the functionality for interacting with the
@@ -141,8 +140,7 @@ export type IntegrationStates = {
     >
   >;
   GOOGLEDRIVE: IntegrationState<{
-    // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-    ["googledrive.linking.enabled"]: Optional<boolean>;
+    "googledrive.linking.enabled": Optional<boolean>;
   }>;
   MSTEAMS: IntegrationState<
     Array<
@@ -265,8 +263,7 @@ function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
           Result.first(parseString("LIVE", option), parseString("VERSIONED", option), parseString("ASK", option)),
         )
         .toOptional(),
-      // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-      ["box.api.enabled"]: parseCredentialBoolean(data.options, "box.api.enabled"),
+      "box.api.enabled": parseCredentialBoolean(data.options, "box.api.enabled"),
     },
   };
 }
@@ -537,8 +534,7 @@ function decodeGoogleDrive(data: FetchedState): IntegrationStates["GOOGLEDRIVE"]
   return {
     mode: parseState(data),
     credentials: {
-      // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-      ["googledrive.linking.enabled"]: parseCredentialBoolean(data.options, "googledrive.linking.enabled"),
+      "googledrive.linking.enabled": parseCredentialBoolean(data.options, "googledrive.linking.enabled"),
     },
   };
 }
@@ -829,12 +825,10 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
         }),
         ...creds["box.api.enabled"]
           .map((token) => ({
-            // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-            ["box.api.enabled"]: token,
+            "box.api.enabled": token,
           }))
           .orElse({
-            // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-            ["box.api.enabled"]: "",
+            "box.api.enabled": "",
           }),
       },
     };
@@ -1105,8 +1099,7 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
       options: {
         ...creds["googledrive.linking.enabled"]
           .map((enabled) => ({
-            // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
-            ["googledrive.linking.enabled"]: enabled,
+            "googledrive.linking.enabled": enabled,
           }))
           .orElse({}),
       },
