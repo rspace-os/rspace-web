@@ -63,7 +63,7 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
     int startPosition = pgCrit.getFirstResultIndex();
     int maxResult = pgCrit.getResultsPerPage();
 
-    // raw discriminator-column anchor (like DTYPE in the instrument DAOs): keeps the WHERE clause
+    // raw DTYPE discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
     // non-empty when deletedOption=INCLUDE makes the deleted fragment blank; redundant with the
     // discriminator Hibernate adds for the concrete entity
     Query<Long> countQueryBase =
@@ -71,7 +71,7 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
             .getCurrentSession()
             .createQuery(
                 "select count(s) from SampleTemplate s where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " template=1 ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='SampleTemplate' ")
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
@@ -87,7 +87,7 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
             .getCurrentSession()
             .createQuery(
                 "from SampleTemplate where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " template=1 ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='SampleTemplate' ")
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
                 SampleTemplate.class)
