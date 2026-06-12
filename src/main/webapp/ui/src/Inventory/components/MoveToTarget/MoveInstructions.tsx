@@ -1,19 +1,21 @@
-import React, { useContext, useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import RecordDetails from "../RecordDetails";
-import { match } from "../../../util/Util";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import SearchContext from "../../../stores/contexts/Search";
 import Stack from "@mui/material/Stack";
-import ContainerModel from "../../../stores/models/ContainerModel";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect, useState } from "react";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Record } from "../../../stores/definitions/Record";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import useStores from "../../../stores/use-stores";
+import { match } from "../../../util/Util";
+import RecordDetails from "../RecordDetails";
 
 function MoveInstructions(): React.ReactNode {
   const { scopedResult } = useContext(SearchContext);
@@ -26,12 +28,9 @@ function MoveInstructions(): React.ReactNode {
   const instruction = () => {
     const numOfSelectedResults = moveStore.selectedResults.length;
     const numOfSelectedLocations = moveStore.targetLocations?.length ?? 0;
-    const infiniteContainer =
-      container.cType === "LIST" || container.cType === "WORKBENCH";
+    const infiniteContainer = container.cType === "LIST" || container.cType === "WORKBENCH";
     const moreToSelect = numOfSelectedResults - numOfSelectedLocations;
-    const canStoreLabel = (
-      container.isWorkbench ? ["samples", "containers"] : container.canStore
-    ).join(" and ");
+    const canStoreLabel = (container.isWorkbench ? ["samples", "containers"] : container.canStore).join(" and ");
     const plural = (l: number) => `location${l === 1 ? "" : "s"}`;
     const placedLabel = `(${numOfSelectedLocations}/${numOfSelectedResults} placed)`;
     const {
@@ -46,10 +45,7 @@ function MoveInstructions(): React.ReactNode {
         action?: boolean;
       }
     >([
-      [
-        () => moveStore.loading || container.loading,
-        { message: "Loading...", severity: "info" },
-      ],
+      [() => moveStore.loading || container.loading, { message: "Loading...", severity: "info" }],
       [
         () => container.movingIntoItself,
         {
@@ -67,8 +63,7 @@ function MoveInstructions(): React.ReactNode {
       [
         () => !container.canEdit,
         {
-          message:
-            "You do not have permission to place items in this container.",
+          message: "You do not have permission to place items in this container.",
           severity: "error",
         },
       ],
@@ -81,10 +76,7 @@ function MoveInstructions(): React.ReactNode {
         },
       ],
       [
-        () =>
-          container.cType === "IMAGE" &&
-          Boolean(container.locationsImage) &&
-          container.locationsCount === 0,
+        () => container.cType === "IMAGE" && Boolean(container.locationsImage) && container.locationsCount === 0,
         {
           message:
             "This visual container doesn't yet have any marked locations into which items can be placed. Please edit first.",
@@ -108,18 +100,14 @@ function MoveInstructions(): React.ReactNode {
       [
         () => infiniteContainer,
         {
-          message: `Destination  selected (${
-            container.cType === "WORKBENCH" ? "Bench" : "Container"
-          }).`,
+          message: `Destination  selected (${container.cType === "WORKBENCH" ? "Bench" : "Container"}).`,
           severity: "success",
         },
       ],
       [
         () => numOfSelectedLocations === 0,
         {
-          message: `Select ${numOfSelectedResults} ${plural(
-            numOfSelectedResults
-          )}. ${placedLabel}`,
+          message: `Select ${numOfSelectedResults} ${plural(numOfSelectedResults)}. ${placedLabel}`,
           severity: "info",
           action: true,
         },
@@ -127,9 +115,7 @@ function MoveInstructions(): React.ReactNode {
       [
         () => moreToSelect !== 0,
         {
-          message: `Select ${moreToSelect} more ${plural(
-            moreToSelect
-          )}. ${placedLabel}`,
+          message: `Select ${moreToSelect} more ${plural(moreToSelect)}. ${placedLabel}`,
           severity: "info",
           action: true,
         },
@@ -169,17 +155,11 @@ function MoveInstructions(): React.ReactNode {
   }, [container.id, container.cType]);
 
   const nextSelection = (): Record | undefined => {
-    if (!moveStore.activeResult?.selectedLocations)
-      throw new Error("Destination container's locations must be known.");
-    const destinationSelectedLocations =
-      moveStore.activeResult.selectedLocations;
+    if (!moveStore.activeResult?.selectedLocations) throw new Error("Destination container's locations must be known.");
+    const destinationSelectedLocations = moveStore.activeResult.selectedLocations;
 
-    const selectedGlobalIds = destinationSelectedLocations.map(
-      (l) => l.content?.globalId
-    );
-    const firstNotPlaced = moveStore.selectedResults.find(
-      (r) => !selectedGlobalIds.includes(r.globalId)
-    );
+    const selectedGlobalIds = destinationSelectedLocations.map((l) => l.content?.globalId);
+    const firstNotPlaced = moveStore.selectedResults.find((r) => !selectedGlobalIds.includes(r.globalId));
     return firstNotPlaced;
   };
 
@@ -199,25 +179,20 @@ function MoveInstructions(): React.ReactNode {
 
   const { action } = instruction();
 
-  const showDragAndDropTip =
-    moveStore.sourceIsAlsoDestination && container.cType === "GRID";
+  const showDragAndDropTip = moveStore.sourceIsAlsoDestination && container.cType === "GRID";
 
   return (
     <Stack spacing={1}>
       {instructionAlert()}
       {action && expand && nextDetails()}
       {showDragAndDropTip && (
-        <Alert
-          severity="info"
-          sx={{ fontSize: "0.8rem", letterSpacing: "0.015em" }}
-        >
+        <Alert severity="info" sx={{ fontSize: "0.8rem", letterSpacing: "0.015em" }}>
           <AlertTitle sx={{ fontSize: "0.85rem" }}>
-            Tip: when rearranging the contents of grid containers you can simply
-            drag-and-drop them into their new locations.
+            Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new
+            locations.
           </AlertTitle>
-          Select one or more grid cells in the container&apos;s &quot;Locations
-          and Content&quot; section and then tap and hold to enter drag-and-drop
-          mode.
+          Select one or more grid cells in the container&apos;s &quot;Locations and Content&quot; section and then tap
+          and hold to enter drag-and-drop mode.
         </Alert>
       )}
     </Stack>

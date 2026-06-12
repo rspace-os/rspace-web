@@ -1,10 +1,10 @@
-import { type ComponentType } from "react";
-import { type SxProps, type Theme } from "@mui/material/styles";
 import { formHelperTextClasses } from "@mui/material/FormHelperText";
 import { inputClasses } from "@mui/material/Input";
-import NumberField, {
-  type NumberFieldArgs,
-} from "../../../../components/Inputs/NumberField";
+// biome-ignore lint/style/useImportType: initial biome migration
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import { type SxProps, type Theme } from "@mui/material/styles";
+import type { ComponentType } from "react";
+import NumberField, { type NumberFieldArgs } from "../../../../components/Inputs/NumberField";
 
 const AmberNumberField: ComponentType<NumberFieldArgs> = (props) => {
   const sx = props.sx;
@@ -22,10 +22,9 @@ const AmberNumberField: ComponentType<NumberFieldArgs> = (props) => {
        */
       sx={[
         (theme) => ({
-          [`& .${inputClasses.error}::after, & .${inputClasses.error}::before`]:
-            {
-              borderBottomColor: theme.palette.warning.main,
-            },
+          [`& .${inputClasses.error}::after, & .${inputClasses.error}::before`]: {
+            borderBottomColor: theme.palette.warning.main,
+          },
           [`& .${formHelperTextClasses.root}.${formHelperTextClasses.error}`]: {
             color: theme.palette.warning.main,
           },

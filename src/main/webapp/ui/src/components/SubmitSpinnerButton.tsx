@@ -1,18 +1,12 @@
-import React from "react";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import type { SxProps, Theme } from "@mui/material/styles";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { observer } from "mobx-react-lite";
-import {
-  type Progress,
-  asPercentageString,
-  ariaValueNow,
-  ariaValueMin,
-  ariaValueMax,
-} from "@/util/progress";
+import type React from "react";
 import { mergeSx } from "@/modules/common/utils/styles";
+import { ariaValueMax, ariaValueMin, ariaValueNow, asPercentageString, type Progress } from "@/util/progress";
 
 type SubmitSpinnerButtonArgs = {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -59,12 +53,7 @@ function SubmitSpinnerButton({
           opacity: loading ? 1 : 0,
         }}
       >
-        <FontAwesomeIcon
-          icon={faSpinner}
-          spin
-          size="lg"
-          style={{ marginRight: "10px" }}
-        />
+        <FontAwesomeIcon icon={faSpinner} spin size="lg" style={{ marginRight: "10px" }} />
       </Box>
       {progress !== null && typeof progress !== "undefined" ? (
         <Box
@@ -83,9 +72,7 @@ function SubmitSpinnerButton({
           aria-valuemax={ariaValueMax()}
         />
       ) : null}
-      <Box sx={{ display: "flex", opacity: loading ? 0 : 1 }}>
-        {label}
-      </Box>
+      <Box sx={{ display: "flex", opacity: loading ? 0 : 1 }}>{label}</Box>
     </Button>
   );
 }

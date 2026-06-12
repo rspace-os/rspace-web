@@ -1,26 +1,25 @@
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
+import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import ContextMenu from "../../components/ContextMenu/ContextMenu";
-import SearchContext from "../../../stores/contexts/Search";
-import SelectAllIcon from "@mui/icons-material/SelectAll";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-import { menuIDs } from "../../../util/menuIDs";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import AdjustableHeadCell from "@/Inventory/components/Tables/AdjustableHeadCell";
-import SortableProperty, {
-  type SortProperty,
-} from "../../components/Tables/SortableProperty";
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import {
-  sortProperties,
-  isSortable,
-} from "@/stores/models/InventoryBaseRecord";
+import { isSortable, sortProperties } from "@/stores/models/InventoryBaseRecord";
 import * as ArrayUtils from "@/util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
+import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { menuIDs } from "../../../util/menuIDs";
+import ContextMenu from "../../components/ContextMenu/ContextMenu";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
+import SortableProperty, { type SortProperty } from "../../components/Tables/SortableProperty";
 
 type TableHeadArgs = {
   selectedCount: number;
@@ -29,12 +28,7 @@ type TableHeadArgs = {
   contextMenuId: (typeof menuIDs)[keyof typeof menuIDs];
 };
 
-function CustomTableHead({
-  selectedCount,
-  onSelectOptions,
-  toggleAll,
-  contextMenuId,
-}: TableHeadArgs): React.ReactNode {
+function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMenuId }: TableHeadArgs): React.ReactNode {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
@@ -54,10 +48,9 @@ function CustomTableHead({
     throw new Error("mainColumn is not a sortable property");
   });
 
-  const handleAdjustableColumnChange =
-    (index: number) => (newColumn: AdjustableTableRowLabel) => {
-      search.setAdjustableColumn(newColumn, index);
-    };
+  const handleAdjustableColumnChange = (index: number) => (newColumn: AdjustableTableRowLabel) => {
+    search.setAdjustableColumn(newColumn, index);
+  };
 
   return (
     <TableHead>
@@ -106,19 +99,14 @@ function CustomTableHead({
             )}
           </>
         ) : (
+          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           <>
-            <TableCell
-              variant="head"
-              colSpan={cols}
-              sx={{ p: "6px !important", pt: "0px !important" }}
-            >
+            <TableCell variant="head" colSpan={cols} sx={{ p: "6px !important", pt: "0px !important" }}>
               <ContextMenu
                 menuID={contextMenuId}
                 selectedResults={search.selectedResults}
                 onSelectOptions={onSelectOptions}
-                forceDisabled={
-                  search.processingContextActions ? "Action In Progress" : ""
-                }
+                forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
                 paddingTop
                 basketSearch={search.fetcher.basketSearch}
               />

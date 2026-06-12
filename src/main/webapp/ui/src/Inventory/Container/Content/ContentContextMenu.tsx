@@ -1,14 +1,16 @@
-import ExtendedContextMenu from "../../components/ContextMenu/ExtendedContextMenu";
-import SelectAllIcon from "@mui/icons-material/SelectAll";
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
-import SearchContext from "../../../stores/contexts/Search";
 import OpenInBrowserIcon from "@mui/icons-material/OpenInBrowser";
-import useNavigateHelpers from "../../useNavigateHelpers";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-import { match } from "../../../util/Util";
-import ContainerModel from "../../../stores/models/ContainerModel";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
 import Badge from "@mui/material/Badge";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React, { useContext } from "react";
+import SearchContext from "../../../stores/contexts/Search";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import { match } from "../../../util/Util";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import ExtendedContextMenu from "../../components/ContextMenu/ExtendedContextMenu";
+import useNavigateHelpers from "../../useNavigateHelpers";
 
 function ContentContextMenu(): React.ReactNode {
   const { navigateToRecord } = useNavigateHelpers();
@@ -16,32 +18,25 @@ function ContentContextMenu(): React.ReactNode {
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
   const container: ContainerModel = scopedResult;
-  if (!container.locations || !container.selectedLocations)
-    throw new Error("Locations of container must be known.");
+  if (!container.locations || !container.selectedLocations) throw new Error("Locations of container must be known.");
   const locations = container.locations;
   const selectedLocations = container.selectedLocations;
 
   const selectedResults = search.selectedResults;
 
-  const selectedSubsampleLocations = selectedLocations.filter(
-    (l) => l.content?.recordType === "subSample",
-  );
+  const selectedSubsampleLocations = selectedLocations.filter((l) => l.content?.recordType === "subSample");
 
   const onSelectOptions: Array<SplitButtonOption> = [
     {
       text: "All locations",
       selection: () => {
-        locations
-          .filter((l) => !l.content || !search.alwaysFilterOut(l.content))
-          .map((l) => l.toggleSelected(true));
+        locations.filter((l) => !l.content || !search.alwaysFilterOut(l.content)).map((l) => l.toggleSelected(true));
       },
     },
     {
       text: "Siblings of selected subsample",
       selection: () => {
-        selectedSubsampleLocations.map((l) =>
-          l.siblings.map((s) => s.toggleSelected(true)),
-        );
+        selectedSubsampleLocations.map((l) => l.siblings.map((s) => s.toggleSelected(true)));
       },
     },
     {
@@ -94,11 +89,7 @@ function ContentContextMenu(): React.ReactNode {
       key: "select",
       options: onSelectOptions,
       icon: (
-        <Badge
-          badgeContent={selectedLocations.length}
-          color="primary"
-          max={Infinity}
-        >
+        <Badge badgeContent={selectedLocations.length} color="primary" max={Infinity}>
           <SelectAllIcon fontSize="small" />
         </Badge>
       ),
@@ -111,9 +102,7 @@ function ContentContextMenu(): React.ReactNode {
       menuID="content"
       prefixActions={prefixActions}
       selectedResults={selectedResults}
-      forceDisabled={
-        search.processingContextActions ? "Action In Progress" : ""
-      }
+      forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
     />
   );
 }

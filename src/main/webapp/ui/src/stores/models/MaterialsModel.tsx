@@ -1,34 +1,36 @@
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import { toCommonUnit, fromCommonUnit } from "../definitions/Units";
-import RsSet from "../../util/set";
-import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
-import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
-import { type SampleAttrs } from "./SampleModel";
-import getRootStore from "../stores/RootStore";
-import MemoisedFactory from "./Factory/MemoisedFactory";
-import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
-import { mkAlert } from "../contexts/Alert";
-import Search from "./Search";
-import {
-  action,
-  observable,
-  computed,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import React from "react";
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-import { GlobalId, type Id } from "../definitions/BaseRecord";
-import { type ExportOptions } from "../definitions/Search";
-import { type UnitCategory } from "../stores/UnitStore";
 import { showToastWhilstPending } from "../../util/alerts";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-import { getErrorMessage } from "@/util/error";
-import { filterForThoseWithLocations, hasLocation } from "./HasLocation";
+import RsSet from "../../util/set";
+import { mkAlert } from "../contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GlobalId, type Id } from "../definitions/BaseRecord";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import { HasLocation } from "../definitions/HasLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ExportOptions } from "../definitions/Search";
+import { fromCommonUnit, toCommonUnit } from "../definitions/Units";
+import getRootStore from "../stores/RootStore";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type UnitCategory } from "../stores/UnitStore";
+import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
+import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
+import MemoisedFactory from "./Factory/MemoisedFactory";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import { filterForThoseWithLocations, hasLocation } from "./HasLocation";
 import { filterForThoseWithQuantities, hasQuantity } from "./HasQuantity";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SampleAttrs } from "./SampleModel";
+import Search from "./Search";
+import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 
 export type ListOfMaterialsId = number | null;
 export type ElnFieldId = number;
@@ -68,9 +70,7 @@ export class Material {
   usedQuantityDelta: number = 0;
   selected: boolean = false;
 
-  constructor(
-    attrs: MaterialAttrs & { updateInventoryQuantity?: boolean | null }
-  ) {
+  constructor(attrs: MaterialAttrs & { updateInventoryQuantity?: boolean | null }) {
     makeObservable(this, {
       invRec: observable,
       usedQuantity: observable,
@@ -136,25 +136,17 @@ export class Material {
     // based on checkbox, update store before/without saving, to display an immediate estimate
     if (this.invRec instanceof SubSampleModel && this.usedQuantity) {
       const r = this.invRec;
-      if (this.originalInventoryId === null)
-        throw new Error("originalInventoryId has not been initialised");
+      if (this.originalInventoryId === null) throw new Error("originalInventoryId has not been initialised");
       const revertedDelta = fromCommonUnit(
-        this.updateInventoryQuantity && !isNaN(this.usedQuantityDelta)
-          ? this.usedQuantityDelta
-          : 0,
-        this.originalInventoryId
+        // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
+        this.updateInventoryQuantity && !isNaN(this.usedQuantityDelta) ? this.usedQuantityDelta : 0,
+        this.originalInventoryId,
       );
-      if (this.originalInventoryValue === null)
-        throw new Error("originalInventoryValue has not been initialised");
-      const revertedOriginalInventoryValue = fromCommonUnit(
-        this.originalInventoryValue,
-        this.originalInventoryId
-      );
+      if (this.originalInventoryValue === null) throw new Error("originalInventoryValue has not been initialised");
+      const revertedOriginalInventoryValue = fromCommonUnit(this.originalInventoryValue, this.originalInventoryId);
       if (r.quantity) {
         const q = r.quantity;
-        q.numericValue = parseFloat(
-          (revertedOriginalInventoryValue - revertedDelta).toFixed(3)
-        );
+        q.numericValue = parseFloat((revertedOriginalInventoryValue - revertedDelta).toFixed(3));
       }
     }
   }
@@ -162,14 +154,9 @@ export class Material {
   cancelChange() {
     const usedQ = this.usedQuantity;
     if (usedQ) {
-      if (this.originalUsedValue === null)
-        throw new Error("originalUsedValue has not been initialised");
-      if (this.originalUsedId === null)
-        throw new Error("originalUsedId has not been initialised");
-      usedQ.numericValue = fromCommonUnit(
-        this.originalUsedValue,
-        this.originalUsedId
-      );
+      if (this.originalUsedValue === null) throw new Error("originalUsedValue has not been initialised");
+      if (this.originalUsedId === null) throw new Error("originalUsedId has not been initialised");
+      usedQ.numericValue = fromCommonUnit(this.originalUsedValue, this.originalUsedId);
       usedQ.unitId = this.originalUsedId;
       this.usedQuantityDelta = 0;
       this.updateQuantityEstimate();
@@ -181,23 +168,13 @@ export class Material {
       const usedQ = this.usedQuantity;
       const r = this.invRec;
       if (r instanceof SubSampleModel && usedQ) {
-        this.setOriginalValues(
-          usedQ.numericValue,
-          usedQ.unitId,
-          r.quantityValue,
-          r.quantityUnitId
-        );
+        this.setOriginalValues(usedQ.numericValue, usedQ.unitId, r.quantityValue, r.quantityUnitId);
       }
     } else if (cancel) this.cancelChange();
     this.editing = value;
   }
 
-  setOriginalValues(
-    usedValue: number,
-    usedId: number,
-    invValue: number,
-    invId: number
-  ) {
+  setOriginalValues(usedValue: number, usedId: number, invValue: number, invId: number) {
     this.originalUsedValue = toCommonUnit(usedValue, usedId);
     this.originalUsedId = usedId;
     this.originalInventoryValue = toCommonUnit(invValue, invId);
@@ -212,23 +189,17 @@ export class Material {
   setUsedQuantity(additionalValue: number, unitId: number) {
     if (this.invRec instanceof SubSampleModel) {
       /* store difference (from original) */
-      const newDelta = isNaN(additionalValue)
-        ? 0
-        : toCommonUnit(additionalValue, unitId);
+      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
+      const newDelta = isNaN(additionalValue) ? 0 : toCommonUnit(additionalValue, unitId);
+      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
       this.updateDelta(isNaN(additionalValue) ? 0 : additionalValue, unitId);
 
       /* update used quantity value */
-      if (this.originalUsedValue === null)
-        throw new Error("originalUsedValue has not been initialised");
-      if (this.originalUsedId === null)
-        throw new Error("originalUsedId has not been initialised");
-      if (this.usedQuantity === null)
-        throw new Error("usedQuantity has not been initialised");
+      if (this.originalUsedValue === null) throw new Error("originalUsedValue has not been initialised");
+      if (this.originalUsedId === null) throw new Error("originalUsedId has not been initialised");
+      if (this.usedQuantity === null) throw new Error("usedQuantity has not been initialised");
       const newValue = this.originalUsedValue + newDelta;
-      this.usedQuantity.numericValue = fromCommonUnit(
-        newValue,
-        this.originalUsedId
-      );
+      this.usedQuantity.numericValue = fromCommonUnit(newValue, this.originalUsedId);
     }
   }
 
@@ -236,8 +207,7 @@ export class Material {
     const r = this.invRec;
     if (r instanceof SubSampleModel) {
       const roundedDelta = parseFloat(this.usedQuantityDelta.toFixed(3)) ?? 0;
-      if (this.originalInventoryValue === null)
-        throw new Error("originalInventoryValue has not been initialised");
+      if (this.originalInventoryValue === null) throw new Error("originalInventoryValue has not been initialised");
       const remainingAmount = this.originalInventoryValue;
       return roundedDelta <= remainingAmount;
     }
@@ -246,9 +216,7 @@ export class Material {
   }
 
   get enoughLeft(): boolean {
-    return this.editing && this.updateInventoryQuantity
-      ? this.enoughInventoryQuantity
-      : true;
+    return this.editing && this.updateInventoryQuantity ? this.enoughInventoryQuantity : true;
   }
 
   toggleSelected(): void {
@@ -261,6 +229,7 @@ export class Material {
 
   get usedQuantityChanged(): boolean {
     // can be negative too
+    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
     return !isNaN(this.usedQuantityDelta) && this.usedQuantityDelta !== 0;
   }
 
@@ -273,9 +242,7 @@ export class Material {
 
   get usedQuantityLabel(): string {
     return this.usedQuantity
-      ? `${this.usedQuantity.numericValue} ${this.quantityUnitLabel(
-          this.usedQuantity.unitId
-        )}`
+      ? `${this.usedQuantity.numericValue} ${this.quantityUnitLabel(this.usedQuantity.unitId)}`
       : "";
   }
 
@@ -290,11 +257,7 @@ export class Material {
   }
 
   get canEditQuantity(): boolean {
-    return (
-      this.invRec instanceof SubSampleModel &&
-      this.invRec.canEdit &&
-      !this.invRec.deleted
-    );
+    return this.invRec instanceof SubSampleModel && this.invRec.canEdit && !this.invRec.deleted;
   }
 }
 
@@ -371,20 +334,13 @@ export class ListOfMaterials {
       (m) =>
         new Material({
           ...m,
-          invRec: factory.newRecord(
-            m.invRec as Record<string, unknown> & { globalId: GlobalId }
-          ),
-        })
+          invRec: factory.newRecord(m.invRec as Record<string, unknown> & { globalId: GlobalId }),
+        }),
     );
     this.setLoading(false);
     this.pickerSearch = new Search({
       uiConfig: {
-        allowedTypeFilters: new Set([
-          "SUBSAMPLE",
-          "SAMPLE",
-          "CONTAINER",
-          "ALL",
-        ]),
+        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "ALL"]),
         selectionMode: "MULTIPLE",
       },
       factory: new MemoisedFactory(),
@@ -419,9 +375,7 @@ export class ListOfMaterials {
 
   updatePickerSearch() {
     this.pickerSearch.alwaysFilterOut = (result) =>
-      new RsSet(this.materials)
-        .map((mat) => mat.invRec.globalId)
-        .has(result.globalId) || !result.usableInLoM;
+      new RsSet(this.materials).map((mat) => mat.invRec.globalId).has(result.globalId) || !result.usableInLoM;
   }
 
   /*
@@ -444,9 +398,7 @@ export class ListOfMaterials {
       this.description === other.description,
       this.elnFieldId === other.elnFieldId,
       this.materials.length === other.materials.length &&
-        ArrayUtils.zipWith(this.materials, other.materials, (x, y) =>
-          x.isEqual(y)
-        ).every((x) => x),
+        ArrayUtils.zipWith(this.materials, other.materials, (x, y) => x.isEqual(y)).every((x) => x),
     ].every((x) => x);
   }
 
@@ -478,18 +430,15 @@ export class ListOfMaterials {
               r instanceof SubSampleModel && r.quantity !== null
                 ? { unitId: r.quantity.unitId, numericValue: 0 }
                 : null,
-          })
+          }),
       ),
     ];
     this.updatePickerSearch();
   }
 
   removeMaterial(material: Material): void {
-    const i = this.materials.findIndex(
-      (m) => m.invRec.globalId === material.invRec.globalId
-    );
-    if (i === -1)
-      throw new Error("Provided material is not in the list of materials");
+    const i = this.materials.findIndex((m) => m.invRec.globalId === material.invRec.globalId);
+    if (i === -1) throw new Error("Provided material is not in the list of materials");
     this.materials.splice(i, 1);
     this.updatePickerSearch();
   }
@@ -514,16 +463,11 @@ export class ListOfMaterials {
   }
 
   get isValid(): boolean {
-    return (
-      this.materials.length > 0 &&
-      this.name.length <= 255 &&
-      this.description.length <= 255
-    );
+    return this.materials.length > 0 && this.name.length <= 255 && this.description.length <= 255;
   }
 
   get validAdditionalAmount(): boolean {
-    if (this.additionalQuantity)
-      return this.additionalQuantity.numericValue >= 0;
+    if (this.additionalQuantity) return this.additionalQuantity.numericValue >= 0;
     return true;
   }
 
@@ -536,9 +480,9 @@ export class ListOfMaterials {
   }
 
   get selectedCategories(): Set<UnitCategory> {
-    return new RsSet(
-      filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))
-    ).map((r) => r.quantityCategory);
+    return new RsSet(filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))).map(
+      (r) => r.quantityCategory,
+    );
   }
 
   get mixedSelectedCategories(): boolean {
@@ -546,34 +490,24 @@ export class ListOfMaterials {
   }
 
   trackInventoryRecordsUpdate() {
-    if (
-      this.materials.some(
-        (m) => m.updateInventoryQuantity && m.usedQuantityDelta
-      )
-    ) {
-      getRootStore().trackingStore.trackEvent(
-        "ListOfMaterialsInventoryQuantityEdited",
-        {
-          lomid: this.id,
-          elnFieldId: this.elnFieldId,
-        }
-      );
+    if (this.materials.some((m) => m.updateInventoryQuantity && m.usedQuantityDelta)) {
+      getRootStore().trackingStore.trackEvent("ListOfMaterialsInventoryQuantityEdited", {
+        lomid: this.id,
+        elnFieldId: this.elnFieldId,
+      });
     }
   }
 
   async create(): Promise<void> {
     this.setLoading(true);
     try {
-      const { data } = await InvApiService.post<{ id: Id }>(
-        `listOfMaterials`,
-        this.paramsForBackend
-      );
+      const { data } = await InvApiService.post<{ id: Id }>(`listOfMaterials`, this.paramsForBackend);
       this.id = data.id; // making list 'not new'
       getRootStore().uiStore.addAlert(
         mkAlert({
           message: `${this.name} was successfully created.`,
           variant: "success",
-        })
+        }),
       );
       this.trackInventoryRecordsUpdate();
       getRootStore().trackingStore.trackEvent("ListOfMaterialsCreated", {
@@ -581,9 +515,7 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const data = Parsers.objectPath(["response", "data"], error)
-        .flatMap(Parsers.isObject)
-        .flatMap(Parsers.isNotNull);
+      const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
         .flatMap(Parsers.getValueWithKey("errors"))
         .flatMap(Parsers.isArray)
@@ -594,7 +526,7 @@ export class ListOfMaterials {
         .orElseTry(() =>
           Parsers.isObject(error)
             .flatMap(Parsers.isNotNull)
-            .flatMap((e) => Parsers.getValueWithKey("message")(e))
+            .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
         .orElse("Unknown reason.");
@@ -607,7 +539,7 @@ export class ListOfMaterials {
             title: e,
             variant: "error",
           })),
-        })
+        }),
       );
       console.error(`Error creating new List of Materials`, error);
       throw error;
@@ -627,23 +559,20 @@ export class ListOfMaterials {
     const id = this.id;
     this.setLoading(true);
     try {
-      await InvApiService.update<void>(
-        `listOfMaterials`,
-        id,
-        this.paramsForBackend
-      );
+      await InvApiService.update<void>(`listOfMaterials`, id, this.paramsForBackend);
       /* reset list additional quantity */
       this.setAdditionalQuantity(null);
       /* reset or hasListChanged fails */
       this.resetUsedQuantityChanges();
       /* reset materials selection */
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       this.selectedMaterials.forEach((m) => m.toggleSelected());
 
       getRootStore().uiStore.addAlert(
         mkAlert({
           message: `${this.name} was successfully updated.`,
           variant: "success",
-        })
+        }),
       );
       this.trackInventoryRecordsUpdate();
       getRootStore().trackingStore.trackEvent("ListOfMaterialsUpdated", {
@@ -651,9 +580,7 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const data = Parsers.objectPath(["response", "data"], error)
-        .flatMap(Parsers.isObject)
-        .flatMap(Parsers.isNotNull);
+      const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
         .flatMap(Parsers.getValueWithKey("errors"))
         .flatMap(Parsers.isArray)
@@ -664,7 +591,7 @@ export class ListOfMaterials {
         .orElseTry(() =>
           Parsers.isObject(error)
             .flatMap(Parsers.isNotNull)
-            .flatMap((e) => Parsers.getValueWithKey("message")(e))
+            .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
         .orElse("Unknown reason.");
@@ -677,7 +604,7 @@ export class ListOfMaterials {
             title: e,
             variant: "error",
           })),
-        })
+        }),
       );
       console.error(`Error updating List of Materials ${this.id}`, error);
       Parsers.objectPath(["response", "status"], error)
@@ -700,21 +627,18 @@ export class ListOfMaterials {
       "Are you sure you want to delete this list?",
       "This list and information about used quantities will not be available anymore. The inventory items will not be affected by this action.",
       "Yes",
-      "No"
+      "No",
     );
     if (!confirmation) return confirmation;
 
     this.setLoading(true);
     try {
-      await showToastWhilstPending(
-        `Deleting ${this.name}...`,
-        InvApiService.delete<void>(`listOfMaterials`, id)
-      );
+      await showToastWhilstPending(`Deleting ${this.name}...`, InvApiService.delete<void>(`listOfMaterials`, id));
       getRootStore().uiStore.addAlert(
         mkAlert({
           message: `${this.name} was successfully deleted.`,
           variant: "success",
-        })
+        }),
       );
       getRootStore().trackingStore.trackEvent("ListOfMaterialsDeleted", {
         id,
@@ -727,7 +651,7 @@ export class ListOfMaterials {
           title: `Something went wrong while deleting ${this.name}`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error(`Error deleting List of Materials ${this.id}`, error);
       throw error;
@@ -742,12 +666,7 @@ export class ListOfMaterials {
 
     this.setLoading(true);
     try {
-      const {
-        exportMode,
-        includeSubsamplesInSample,
-        includeContainerContent,
-        resultFileType,
-      } = exportOptions;
+      const { exportMode, includeSubsamplesInSample, includeContainerContent, resultFileType } = exportOptions;
       const globalIds = [`LM${id}`];
       const params = new FormData();
       params.append(
@@ -761,22 +680,18 @@ export class ListOfMaterials {
           ...(includeSubsamplesInSample === null
             ? {}
             : {
-                includeSubsamplesInSample:
-                  includeSubsamplesInSample === "INCLUDE",
+                includeSubsamplesInSample: includeSubsamplesInSample === "INCLUDE",
               }),
           ...(includeContainerContent === null
             ? {}
             : {
                 includeContainerContent: includeContainerContent === "INCLUDE",
               }),
-        })
+        }),
       );
       const { data } = await showToastWhilstPending(
         `Exporting ${this.name}...`,
-        InvApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
-          "export",
-          params
-        )
+        InvApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -792,9 +707,7 @@ export class ListOfMaterials {
         elnFieldId: this.elnFieldId,
       });
     } catch (error) {
-      const data = Parsers.objectPath(["response", "data"], error)
-        .flatMap(Parsers.isObject)
-        .flatMap(Parsers.isNotNull);
+      const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
         .flatMap(Parsers.getValueWithKey("errors"))
         .flatMap(Parsers.isArray)
@@ -805,7 +718,7 @@ export class ListOfMaterials {
         .orElseTry(() =>
           Parsers.isObject(error)
             .flatMap(Parsers.isNotNull)
-            .flatMap((e) => Parsers.getValueWithKey("message")(e))
+            .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
         .orElse("Unknown reason.");
@@ -818,7 +731,7 @@ export class ListOfMaterials {
             title: e,
             variant: "error",
           })),
-        })
+        }),
       );
       console.error(`Error exporting List of Materials ${this.id}`, error);
       Parsers.objectPath(["response", "status"], error)
@@ -838,15 +751,9 @@ export class ListOfMaterials {
     if (!peopleStore.currentUser) throw new Error("Current user is not known.");
     const currentUser = peopleStore.currentUser;
 
-    const allMaterials = new RsSet(
-      filterForThoseWithLocations(this.materials.map((m) => m.invRec))
-    );
-    const parentIsBench = allMaterials.filter((r) =>
-      r.isDirectlyOnWorkbenchOfUser(currentUser)
-    );
-    const parentIsOnBench = allMaterials
-      .filter((r) => r.isOnWorkbenchOfUser(currentUser))
-      .subtract(parentIsBench);
+    const allMaterials = new RsSet(filterForThoseWithLocations(this.materials.map((m) => m.invRec)));
+    const parentIsBench = allMaterials.filter((r) => r.isDirectlyOnWorkbenchOfUser(currentUser));
+    const parentIsOnBench = allMaterials.filter((r) => r.isOnWorkbenchOfUser(currentUser)).subtract(parentIsBench);
 
     let moving = allMaterials.subtract(parentIsBench).subtract(parentIsOnBench);
     if (
@@ -865,7 +772,7 @@ export class ListOfMaterials {
           Do you want to move them to your bench?
         </>,
         "Yes",
-        "No"
+        "No",
       ))
     ) {
       moving = moving.union(parentIsOnBench);

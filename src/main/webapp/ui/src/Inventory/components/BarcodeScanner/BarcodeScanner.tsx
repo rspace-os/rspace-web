@@ -1,8 +1,8 @@
-import React from "react";
-import QrCodeScanner from "./QrCodeScanner";
-import AllBarcodeScanner from "./AllBarcodeScanner";
 import { observer } from "mobx-react-lite";
+import AllBarcodeScanner from "./AllBarcodeScanner";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type BarcodeInput } from "./BarcodeScannerSkeleton";
+import QrCodeScanner from "./QrCodeScanner";
 
 type BarcodeScannerArgs = {
   onClose: () => void;
@@ -18,17 +18,9 @@ function BarcodeScanner({ onClose, onScan, buttonPrefix }: BarcodeScannerArgs) {
   const barcodeDetectorApiSupported = "BarcodeDetector" in window;
 
   return barcodeDetectorApiSupported ? (
-    <AllBarcodeScanner
-      onClose={onClose}
-      onScan={onScan}
-      buttonPrefix={buttonPrefix}
-    />
+    <AllBarcodeScanner onClose={onClose} onScan={onScan} buttonPrefix={buttonPrefix} />
   ) : (
-    <QrCodeScanner
-      onClose={onClose}
-      onScan={onScan}
-      buttonPrefix={buttonPrefix}
-    />
+    <QrCodeScanner onClose={onClose} onScan={onScan} buttonPrefix={buttonPrefix} />
   );
 }
 

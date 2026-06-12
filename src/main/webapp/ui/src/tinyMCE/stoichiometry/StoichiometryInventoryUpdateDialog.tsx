@@ -1,10 +1,15 @@
-import React from "react";
-import { useMutation } from "@tanstack/react-query";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import List from "@mui/material/List";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
@@ -14,16 +19,13 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { useMutation } from "@tanstack/react-query";
+import React from "react";
 import { Dialog } from "@/components/DialogBoundary";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import { getInventoryUpdateEligibility } from "@/tinyMCE/stoichiometry/utils";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import AlertTitle from "@mui/material/AlertTitle";
-import ListItem from "@mui/material/ListItem";
-import List from "@mui/material/List";
-import Box from "@mui/material/Box";
 export type InventoryStockUpdateResult = {
   refreshedStoichiometry?: {
     id: number;
@@ -39,32 +41,18 @@ export type InventoryStockUpdateResult = {
 type StoichiometryInventoryUpdateDialogProps = {
   open: boolean;
   molecules: ReadonlyArray<EditableMolecule>;
-  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
-    string,
-    InventoryQuantityQueryResult
-  >;
-  onSave?: (
-    selectedMoleculeIds: number[],
-  ) => Promise<InventoryStockUpdateResult>;
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<string, InventoryQuantityQueryResult>;
+  onSave?: (selectedMoleculeIds: number[]) => Promise<InventoryStockUpdateResult>;
   onClose: () => void;
 };
 function getDefaultValues(
   molecules: ReadonlyArray<EditableMolecule>,
-  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
-    string,
-    InventoryQuantityQueryResult
-  >,
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<string, InventoryQuantityQueryResult>,
 ): number[] {
   return molecules
     .filter((molecule) => {
-      const eligibility = getInventoryUpdateEligibility(
-        molecule,
-        linkedInventoryQuantityInfoByGlobalId,
-      );
-      return (
-        eligibility.disabledReason === null &&
-        molecule.inventoryLink?.stockDeducted !== true
-      );
+      const eligibility = getInventoryUpdateEligibility(molecule, linkedInventoryQuantityInfoByGlobalId);
+      return eligibility.disabledReason === null && molecule.inventoryLink?.stockDeducted !== true;
     })
     .map(({ id }) => id);
 }
@@ -77,9 +65,7 @@ export default function StoichiometryInventoryUpdateDialog({
 }: StoichiometryInventoryUpdateDialogProps): React.ReactNode {
   const titleId = React.useId();
   const wasOpenRef = React.useRef(false);
-  const [selectedMoleculeIds, setSelectedMoleculeIds] = React.useState<
-    number[]
-  >([]);
+  const [selectedMoleculeIds, setSelectedMoleculeIds] = React.useState<number[]>([]);
   const saveMutation = useMutation({
     mutationFn: async (moleculeIds: number[]) => {
       if (!onSave) {
@@ -90,8 +76,7 @@ export default function StoichiometryInventoryUpdateDialog({
       return onSave(moleculeIds);
     },
   });
-  const failedResults =
-    saveMutation.data?.results.filter(({ success }) => !success) ?? [];
+  const failedResults = saveMutation.data?.results.filter(({ success }) => !success) ?? [];
   const saveFeedback =
     saveMutation.isSuccess && failedResults.length > 0
       ? "Current stock amounts were refreshed. Re-select any remaining molecules to retry."
@@ -114,29 +99,18 @@ export default function StoichiometryInventoryUpdateDialog({
       ).join(" ") || null
     );
   })();
-  const hasInvalidSelectedRows = selectedMoleculeIds.some(
-    (selectedMoleculeId) => {
-      const selectedMolecule = molecules.find(
-        ({ id }) => id === selectedMoleculeId,
-      );
-      if (!selectedMolecule) {
-        return true;
-      }
-      return (
-        getInventoryUpdateEligibility(
-          selectedMolecule,
-          linkedInventoryQuantityInfoByGlobalId,
-        ).disabledReason !== null
-      );
-    },
-  );
-  const selectionError = hasInvalidSelectedRows
-    ? "Re-select any invalid molecules before saving."
-    : null;
-  const resetDialogState = React.useCallback(() => {
-    setSelectedMoleculeIds(
-      getDefaultValues(molecules, linkedInventoryQuantityInfoByGlobalId),
+  const hasInvalidSelectedRows = selectedMoleculeIds.some((selectedMoleculeId) => {
+    const selectedMolecule = molecules.find(({ id }) => id === selectedMoleculeId);
+    if (!selectedMolecule) {
+      return true;
+    }
+    return (
+      getInventoryUpdateEligibility(selectedMolecule, linkedInventoryQuantityInfoByGlobalId).disabledReason !== null
     );
+  });
+  const selectionError = hasInvalidSelectedRows ? "Re-select any invalid molecules before saving." : null;
+  const resetDialogState = React.useCallback(() => {
+    setSelectedMoleculeIds(getDefaultValues(molecules, linkedInventoryQuantityInfoByGlobalId));
     saveMutation.reset();
   }, [linkedInventoryQuantityInfoByGlobalId, molecules, saveMutation]);
   React.useEffect(() => {
@@ -174,13 +148,7 @@ export default function StoichiometryInventoryUpdateDialog({
     } catch {
       setSelectedMoleculeIds([]);
     }
-  }, [
-    handleClose,
-    hasInvalidSelectedRows,
-    onSave,
-    saveMutation,
-    selectedMoleculeIds,
-  ]);
+  }, [handleClose, hasInvalidSelectedRows, onSave, saveMutation, selectedMoleculeIds]);
   return (
     <Dialog
       open={open}
@@ -211,8 +179,7 @@ export default function StoichiometryInventoryUpdateDialog({
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
-              Select the molecules from this stoichiometry table whose linked
-              inventory stock should be updated.
+              Select the molecules from this stoichiometry table whose linked inventory stock should be updated.
             </Typography>
             <Alert
               severity="warning"
@@ -229,23 +196,17 @@ export default function StoichiometryInventoryUpdateDialog({
               <AlertTitle>WARNING: This action is irreversible</AlertTitle>
 
               <Typography variant="body2" gutterBottom>
-                <strong>
-                  This will permanently reduce inventory quantities.
-                </strong>
+                <strong>This will permanently reduce inventory quantities.</strong>
               </Typography>
               <Typography variant="body2" gutterBottom>
-                Stock cannot be automatically replenished if you change
-                quantities later, delete this stoichiometry table, delete the
-                document, or unlink samples.
+                Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry
+                table, delete the document, or unlink samples.
               </Typography>
               <Typography variant="body2">
-                Only proceed if you have actually used these materials in your
-                experiment.
+                Only proceed if you have actually used these materials in your experiment.
               </Typography>
             </Alert>
-            {selectionError && (
-              <Alert severity="warning">{selectionError}</Alert>
-            )}
+            {selectionError && <Alert severity="warning">{selectionError}</Alert>}
             {saveFeedback && <Alert severity="info">{saveFeedback}</Alert>}
             {saveError && <Alert severity="error">{saveError}</Alert>}
             <TableContainer
@@ -282,15 +243,10 @@ export default function StoichiometryInventoryUpdateDialog({
                 </TableHead>
                 <TableBody>
                   {molecules.map((molecule) => {
-                    const eligibility = getInventoryUpdateEligibility(
-                      molecule,
-                      linkedInventoryQuantityInfoByGlobalId,
-                    );
-                    const { disabledReason, helperText, stockDisplay } =
-                      eligibility;
+                    const eligibility = getInventoryUpdateEligibility(molecule, linkedInventoryQuantityInfoByGlobalId);
+                    const { disabledReason, helperText, stockDisplay } = eligibility;
                     const disabled = disabledReason !== null;
-                    const selected =
-                      !disabled && selectedMoleculeIds.includes(molecule.id);
+                    const selected = !disabled && selectedMoleculeIds.includes(molecule.id);
                     return (
                       <StoichiometryInventoryUpdateMoleculeRow
                         key={molecule.id}
@@ -305,9 +261,7 @@ export default function StoichiometryInventoryUpdateDialog({
                           }
                           saveMutation.reset();
                           setSelectedMoleculeIds((currentIds) =>
-                            selected
-                              ? currentIds.filter((id) => id !== molecule.id)
-                              : [...currentIds, molecule.id],
+                            selected ? currentIds.filter((id) => id !== molecule.id) : [...currentIds, molecule.id],
                           );
                         }}
                       />
@@ -326,11 +280,7 @@ export default function StoichiometryInventoryUpdateDialog({
             type="submit"
             variant="contained"
             color="callToAction"
-            disabled={
-              selectedMoleculeIds.length === 0 ||
-              hasInvalidSelectedRows ||
-              saveMutation.isPending
-            }
+            disabled={selectedMoleculeIds.length === 0 || hasInvalidSelectedRows || saveMutation.isPending}
           >
             {saveMutation.isPending ? "Saving..." : "Save"}
           </Button>

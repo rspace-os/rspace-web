@@ -1,7 +1,8 @@
 import axios from "@/common/axios";
-import type { RootStore } from "./RootStore";
 import JwtService from "../../common/JwtService";
-import { type URL as URLType, type BlobUrl } from "../../util/types";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type BlobUrl, type URL as URLType } from "../../util/types";
+import type { RootStore } from "./RootStore";
 
 /*
  * A single, centralised image store for fetching and processing images,

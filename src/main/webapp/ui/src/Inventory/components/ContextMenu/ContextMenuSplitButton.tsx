@@ -1,14 +1,15 @@
-import React, { useState, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
-import Box from "@mui/material/Box";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Tooltip from "@mui/material/Tooltip";
-import StyledMenu from "../../../components/StyledMenu";
-import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import type React from "react";
+import { useRef, useState } from "react";
+import StyledMenu from "../../../components/StyledMenu";
 export type SplitButtonOption = {
   text: string;
   selection?: () => void;
@@ -38,6 +39,7 @@ export default function ContextMenuSplitButton({
     if (options[index].selection) options[index].selection();
   };
   const handleClose = (event: Event) => {
+    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
     if (anchorRef.current && anchorRef.current.contains(event.target as Node)) {
       return;
     }
@@ -45,6 +47,8 @@ export default function ContextMenuSplitButton({
   };
   return (
     <ClickAwayListener onClickAway={handleTooltipClose}>
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration */}
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: initial biome migration */}
       <div onClick={() => disabledHelp !== "" && setHelpOpen(true)}>
         <Tooltip
           onClose={handleTooltipClose}
@@ -79,13 +83,7 @@ export default function ContextMenuSplitButton({
                   disabled={disabledHelp !== ""}
                   variant="text"
                   color="standardIcon"
-                  startIcon={
-                    loading ? (
-                      <FontAwesomeIcon icon="spinner" spin size="sm" />
-                    ) : (
-                      icon
-                    )
-                  }
+                  startIcon={loading ? <FontAwesomeIcon icon="spinner" spin size="sm" /> : icon}
                 >
                   <Box
                     component="span"
@@ -118,11 +116,7 @@ export default function ContextMenuSplitButton({
                   <ArrowDropDownIcon fontSize="small" />
                 </Button>
               </ButtonGroup>
-              <StyledMenu
-                anchorEl={anchorRef.current}
-                open={open}
-                onClose={handleClose}
-              >
+              <StyledMenu anchorEl={anchorRef.current} open={open} onClose={handleClose}>
                 {options.map((option, index) => (
                   <MenuItem
                     key={index}

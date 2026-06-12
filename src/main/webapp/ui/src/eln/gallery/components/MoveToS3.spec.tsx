@@ -1,13 +1,14 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import * as Jwt from "jsonwebtoken";
 import AxeBuilder from "@axe-core/playwright";
 import { backdropClasses } from "@mui/material/Backdrop";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
 import {
-  MoveToS3DialogWithOneFile,
-  MoveToS3DialogWithTwoFiles,
   MoveToS3DialogInTransferMode,
   MoveToS3DialogInTransferModeWithTwoFiles,
+  MoveToS3DialogWithOneFile,
+  MoveToS3DialogWithTwoFiles,
 } from "./MoveToS3.story";
 
 const S3_FILESTORE = {
@@ -74,96 +75,64 @@ const feature = test.extend<{
       "the Move to S3 dialog in transfer mode is mounted": async () => {
         await mount(<MoveToS3DialogInTransferMode />);
       },
-      "the Move to S3 dialog in transfer mode with two files is mounted":
-        async () => {
-          await mount(<MoveToS3DialogInTransferModeWithTwoFiles />);
-        },
+      "the Move to S3 dialog in transfer mode with two files is mounted": async () => {
+        await mount(<MoveToS3DialogInTransferModeWithTwoFiles />);
+      },
     });
   },
   When: async ({ page }, use) => {
     await use({
-      "the user opens the filestore dropdown and selects 'My S3 Bucket'":
-        async () => {
-          await page
-            .getByRole("button", { name: /select a filestore/i })
-            .click();
-          await page.getByRole("menuitem", { name: /my s3 bucket/i }).click();
-        },
+      "the user opens the filestore dropdown and selects 'My S3 Bucket'": async () => {
+        await page.getByRole("button", { name: /select a filestore/i }).click();
+        await page.getByRole("menuitem", { name: /my s3 bucket/i }).click();
+      },
       "the user checks 'Retain a copy in RSpace'": async () => {
-        await page
-          .getByRole("checkbox", { name: /retain a copy in rspace/i })
-          .click();
+        await page.getByRole("checkbox", { name: /retain a copy in rspace/i }).click();
       },
       "the user checks 'Retain a copy on source bucket'": async () => {
-        await page
-          .getByRole("checkbox", { name: /retain a copy on source bucket/i })
-          .click();
+        await page.getByRole("checkbox", { name: /retain a copy on source bucket/i }).click();
       },
       "the user clicks the submit button": async () => {
-        await page
-          .getByRole("button", { name: /^(move|copy|transfer)$/i })
-          .click();
+        await page.getByRole("button", { name: /^(move|copy|transfer)$/i }).click();
       },
     });
   },
   Then: async ({ page, networkRequests }, use) => {
     await use({
       "the dialog title 'Move to S3' should be visible": async () => {
-        await expect(
-          page.getByRole("heading", { name: /move to s3/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("heading", { name: /move to s3/i })).toBeVisible({ timeout: 5000 });
       },
       "the submit button should be disabled": async () => {
-        await page
-          .getByRole("button", { name: /select a filestore/i })
-          .waitFor({ timeout: 5000 });
+        await page.getByRole("button", { name: /select a filestore/i }).waitFor({ timeout: 5000 });
         await page.getByRole("button", { name: /^move$/i }).click();
-        await expect(
-          page.getByText(/a destination filestore is required/i),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/a destination filestore is required/i)).toBeVisible({ timeout: 5000 });
         // Dismiss the validation popover by clicking its backdrop
         await page.locator(`.${backdropClasses.root}`).last().click();
       },
       "the submit button should be enabled": async () => {
-        await expect(page.getByRole("button", { name: /^move$/i })).toBeVisible(
-          { timeout: 5000 },
-        );
+        await expect(page.getByRole("button", { name: /^move$/i })).toBeVisible({ timeout: 5000 });
       },
       "the submit button should say 'Move'": async () => {
-        await expect(page.getByRole("button", { name: /^move$/i })).toBeVisible(
-          { timeout: 5000 },
-        );
+        await expect(page.getByRole("button", { name: /^move$/i })).toBeVisible({ timeout: 5000 });
       },
       "the submit button should say 'Copy'": async () => {
-        await expect(page.getByRole("button", { name: /^copy$/i })).toBeVisible(
-          { timeout: 5000 },
-        );
+        await expect(page.getByRole("button", { name: /^copy$/i })).toBeVisible({ timeout: 5000 });
       },
       "the submit button should say 'Transfer'": async () => {
-        await expect(
-          page.getByRole("button", { name: /^transfer$/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /^transfer$/i })).toBeVisible({ timeout: 5000 });
       },
       "the transfer button should be disabled": async () => {
-        await page
-          .getByRole("button", { name: /select a filestore/i })
-          .waitFor({ timeout: 5000 });
+        await page.getByRole("button", { name: /select a filestore/i }).waitFor({ timeout: 5000 });
         await page.getByRole("button", { name: /^transfer$/i }).click();
-        await expect(
-          page.getByText(/a destination filestore is required/i),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/a destination filestore is required/i)).toBeVisible({ timeout: 5000 });
         // Dismiss the validation popover by clicking its backdrop
         await page.locator(`.${backdropClasses.root}`).last().click();
       },
       "the transfer button should be enabled": async () => {
-        await expect(
-          page.getByRole("button", { name: /^transfer$/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /^transfer$/i })).toBeVisible({ timeout: 5000 });
       },
       "the 'no S3 filestore' message should be visible": async () => {
-        await expect(
-          page.getByText(/no s3 filestore has been configured/i),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/no s3 filestore has been configured/i)).toBeVisible({ timeout: 5000 });
       },
       "the 'retain on source' checkbox should be visible": async () => {
         await expect(
@@ -200,9 +169,7 @@ const feature = test.extend<{
         });
       },
       "the dialog title 'Transfer to S3' should be visible": async () => {
-        await expect(
-          page.getByRole("heading", { name: /transfer to s3/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("heading", { name: /transfer to s3/i })).toBeVisible({ timeout: 5000 });
       },
       "there shouldn't be any axe violations": async () => {
         const accessibilityScanResults = await new AxeBuilder({
@@ -210,15 +177,13 @@ const feature = test.extend<{
         }).analyze();
         expect(
           accessibilityScanResults.violations.filter(
-            (v) =>
-              v.id !== "landmark-one-main" &&
-              v.id !== "page-has-heading-one" &&
-              v.id !== "region",
+            (v) => v.id !== "landmark-one-main" && v.id !== "page-has-heading-one" && v.id !== "region",
           ),
         ).toEqual([]);
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
@@ -253,10 +218,10 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -319,20 +284,17 @@ test.describe("MoveToS3", () => {
   });
 
   test.describe("Empty state", () => {
-    feature(
-      "When no filestores are configured shows a 'no S3 filestore' message",
-      async ({ Given, Then, router }) => {
-        await router.route("/api/v1/gallery/filestores", (route) =>
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([]),
-          }),
-        );
-        await Given["the Move to S3 dialog with one file is mounted"]();
-        await Then["the 'no S3 filestore' message should be visible"]();
-      },
-    );
+    feature("When no filestores are configured shows a 'no S3 filestore' message", async ({ Given, Then, router }) => {
+      await router.route("/api/v1/gallery/filestores", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        }),
+      );
+      await Given["the Move to S3 dialog with one file is mounted"]();
+      await Then["the 'no S3 filestore' message should be visible"]();
+    });
 
     feature(
       "When only non-S3 filestores are configured shows a 'no S3 filestore' message",
@@ -351,18 +313,13 @@ test.describe("MoveToS3", () => {
   });
 
   test.describe("Submit button state", () => {
-    feature(
-      "Submit button is disabled until a filestore is selected",
-      async ({ Given, When, Then }) => {
-        await Given["the Move to S3 dialog with one file is mounted"]();
-        await Then["the dialog title 'Move to S3' should be visible"]();
-        await Then["the submit button should be disabled"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
-        await Then["the submit button should be enabled"]();
-      },
-    );
+    feature("Submit button is disabled until a filestore is selected", async ({ Given, When, Then }) => {
+      await Given["the Move to S3 dialog with one file is mounted"]();
+      await Then["the dialog title 'Move to S3' should be visible"]();
+      await Then["the submit button should be disabled"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
+      await Then["the submit button should be enabled"]();
+    });
 
     feature(
       "Submit button label switches from 'Move' to 'Copy' when retain-copy is checked",
@@ -377,191 +334,135 @@ test.describe("MoveToS3", () => {
   });
 
   test.describe("API calls", () => {
-    feature(
-      "Selecting a filestore and clicking Move calls the move endpoint",
-      async ({ Given, When, Then }) => {
-        await Given["the Move to S3 dialog with one file is mounted"]();
-        await Then["the dialog title 'Move to S3' should be visible"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
-        await When["the user clicks the submit button"]();
-        await Then["a success alert should be visible"]();
-        Then["the move endpoint should have been called"]();
-      },
-    );
+    feature("Selecting a filestore and clicking Move calls the move endpoint", async ({ Given, When, Then }) => {
+      await Given["the Move to S3 dialog with one file is mounted"]();
+      await Then["the dialog title 'Move to S3' should be visible"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
+      await When["the user clicks the submit button"]();
+      await Then["a success alert should be visible"]();
+      Then["the move endpoint should have been called"]();
+    });
 
-    feature(
-      "Checking 'Retain a copy' and clicking Copy calls the copy endpoint",
-      async ({ Given, When, Then }) => {
-        await Given["the Move to S3 dialog with one file is mounted"]();
-        await Then["the dialog title 'Move to S3' should be visible"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
-        await When["the user checks 'Retain a copy in RSpace'"]();
-        await When["the user clicks the submit button"]();
-        await Then["a copy success alert should be visible"]();
-        Then["the copy endpoint should have been called"]();
-      },
-    );
+    feature("Checking 'Retain a copy' and clicking Copy calls the copy endpoint", async ({ Given, When, Then }) => {
+      await Given["the Move to S3 dialog with one file is mounted"]();
+      await Then["the dialog title 'Move to S3' should be visible"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
+      await When["the user checks 'Retain a copy in RSpace'"]();
+      await When["the user clicks the submit button"]();
+      await Then["a copy success alert should be visible"]();
+      Then["the copy endpoint should have been called"]();
+    });
 
-    feature(
-      "The correct record IDs are sent to the move endpoint",
-      async ({ Given, When, Then, page }) => {
-        await Given["the Move to S3 dialog with two files is mounted"]();
-        await Then["the dialog title 'Move to S3' should be visible"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
+    feature("The correct record IDs are sent to the move endpoint", async ({ Given, When, Then, page }) => {
+      await Given["the Move to S3 dialog with two files is mounted"]();
+      await Then["the dialog title 'Move to S3' should be visible"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
 
-        const moveRequestPromise = page.waitForRequest(
-          /\/api\/v1\/gallery\/filestores\/1\/move/,
-        );
-        await When["the user clicks the submit button"]();
-        const moveRequest = await moveRequestPromise;
-        await Then["a success alert should be visible"]();
-        expect(
-          (moveRequest.postDataJSON() as { recordIds: unknown }).recordIds,
-        ).toEqual(expect.arrayContaining([123, 456]));
-      },
-    );
+      const moveRequestPromise = page.waitForRequest(/\/api\/v1\/gallery\/filestores\/1\/move/);
+      await When["the user clicks the submit button"]();
+      const moveRequest = await moveRequestPromise;
+      await Then["a success alert should be visible"]();
+      expect((moveRequest.postDataJSON() as { recordIds: unknown }).recordIds).toEqual(
+        expect.arrayContaining([123, 456]),
+      );
+    });
   });
 
   test.describe("Transfer mode", () => {
-    feature(
-      "Should have no axe violations in transfer mode",
-      async ({ Given, Then, page }) => {
-        test.setTimeout(30000);
-        // Emulate reduced motion so the dialog is at final opacity when axe
-        // scans (otherwise the fade-in trips axe's color-contrast check).
-        await page.emulateMedia({ reducedMotion: "reduce" });
-        await Given["the Move to S3 dialog in transfer mode is mounted"]();
-        await Then["the dialog title 'Transfer to S3' should be visible"]();
-        await Then["there shouldn't be any axe violations"]();
-      },
-    );
+    feature("Should have no axe violations in transfer mode", async ({ Given, Then, page }) => {
+      test.setTimeout(30000);
+      // Emulate reduced motion so the dialog is at final opacity when axe
+      // scans (otherwise the fade-in trips axe's color-contrast check).
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await Given["the Move to S3 dialog in transfer mode is mounted"]();
+      await Then["the dialog title 'Transfer to S3' should be visible"]();
+      await Then["there shouldn't be any axe violations"]();
+    });
 
-    feature(
-      "Transfer mode shows 'Transfer' button and 'retain on source bucket' checkbox",
-      async ({ Given, Then }) => {
-        await Given["the Move to S3 dialog in transfer mode is mounted"]();
-        await Then["the dialog title 'Transfer to S3' should be visible"]();
-        await Then["the submit button should say 'Transfer'"]();
-        await Then["the 'retain on source' checkbox should be visible"]();
-      },
-    );
+    feature("Transfer mode shows 'Transfer' button and 'retain on source bucket' checkbox", async ({ Given, Then }) => {
+      await Given["the Move to S3 dialog in transfer mode is mounted"]();
+      await Then["the dialog title 'Transfer to S3' should be visible"]();
+      await Then["the submit button should say 'Transfer'"]();
+      await Then["the 'retain on source' checkbox should be visible"]();
+    });
 
-    feature(
-      "Transfer button is disabled until a destination filestore is selected",
-      async ({ Given, When, Then }) => {
-        await Given["the Move to S3 dialog in transfer mode is mounted"]();
-        await Then["the dialog title 'Transfer to S3' should be visible"]();
-        await Then["the transfer button should be disabled"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
-        await Then["the transfer button should be enabled"]();
-      },
-    );
+    feature("Transfer button is disabled until a destination filestore is selected", async ({ Given, When, Then }) => {
+      await Given["the Move to S3 dialog in transfer mode is mounted"]();
+      await Then["the dialog title 'Transfer to S3' should be visible"]();
+      await Then["the transfer button should be disabled"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
+      await Then["the transfer button should be enabled"]();
+    });
 
     feature(
       "Clicking Transfer calls the transfer endpoint and shows a success alert",
       async ({ Given, When, Then }) => {
         await Given["the Move to S3 dialog in transfer mode is mounted"]();
         await Then["the dialog title 'Transfer to S3' should be visible"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
+        await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
         await When["the user clicks the submit button"]();
         await Then["a transfer success alert should be visible"]();
         Then["the transfer endpoint should have been called"]();
       },
     );
 
-    feature(
-      "Transfer sends correct body with deleteSource=true by default",
-      async ({ Given, When, page }) => {
-        await Given["the Move to S3 dialog in transfer mode is mounted"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
+    feature("Transfer sends correct body with deleteSource=true by default", async ({ Given, When, page }) => {
+      await Given["the Move to S3 dialog in transfer mode is mounted"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
 
-        const transferRequestPromise = page.waitForRequest(
-          /\/api\/v1\/gallery\/filestores\/2\/transfer/,
-        );
-        await When["the user clicks the submit button"]();
-        const transferRequest = await transferRequestPromise;
-        expect(transferRequest.postDataJSON()).toMatchObject({
-          sourcePath: "/data/file.jpg",
-          destFilestoreId: 1,
-          destPath: "file.jpg",
-          deleteSource: true,
+      const transferRequestPromise = page.waitForRequest(/\/api\/v1\/gallery\/filestores\/2\/transfer/);
+      await When["the user clicks the submit button"]();
+      const transferRequest = await transferRequestPromise;
+      expect(transferRequest.postDataJSON()).toMatchObject({
+        sourcePath: "/data/file.jpg",
+        destFilestoreId: 1,
+        destPath: "file.jpg",
+        deleteSource: true,
+      });
+    });
+
+    feature("Checking 'Retain a copy on source bucket' sends deleteSource=false", async ({ Given, When, page }) => {
+      await Given["the Move to S3 dialog in transfer mode is mounted"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
+      await When["the user checks 'Retain a copy on source bucket'"]();
+
+      const transferRequestPromise = page.waitForRequest(/\/api\/v1\/gallery\/filestores\/2\/transfer/);
+      await When["the user clicks the submit button"]();
+      const transferRequest = await transferRequestPromise;
+      expect(transferRequest.postDataJSON()).toMatchObject({
+        deleteSource: false,
+      });
+    });
+
+    feature("All source paths are sent to the transfer endpoint for multiple files", async ({ Given, When, page }) => {
+      await Given["the Move to S3 dialog in transfer mode with two files is mounted"]();
+      await When["the user opens the filestore dropdown and selects 'My S3 Bucket'"]();
+
+      const capturedBodies: unknown[] = [];
+      await page.route(/\/api\/v1\/gallery\/filestores\/2\/transfer/, async (route) => {
+        capturedBodies.push(route.request().postDataJSON());
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(OPERATION_SUCCESS_RESPONSE),
         });
-      },
-    );
+      });
 
-    feature(
-      "Checking 'Retain a copy on source bucket' sends deleteSource=false",
-      async ({ Given, When, page }) => {
-        await Given["the Move to S3 dialog in transfer mode is mounted"]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
-        await When["the user checks 'Retain a copy on source bucket'"]();
-
-        const transferRequestPromise = page.waitForRequest(
-          /\/api\/v1\/gallery\/filestores\/2\/transfer/,
-        );
-        await When["the user clicks the submit button"]();
-        const transferRequest = await transferRequestPromise;
-        expect(transferRequest.postDataJSON()).toMatchObject({
-          deleteSource: false,
-        });
-      },
-    );
-
-    feature(
-      "All source paths are sent to the transfer endpoint for multiple files",
-      async ({ Given, When, page }) => {
-        await Given[
-          "the Move to S3 dialog in transfer mode with two files is mounted"
-        ]();
-        await When[
-          "the user opens the filestore dropdown and selects 'My S3 Bucket'"
-        ]();
-
-        const capturedBodies: unknown[] = [];
-        await page.route(
-          /\/api\/v1\/gallery\/filestores\/2\/transfer/,
-          async (route) => {
-            capturedBodies.push(route.request().postDataJSON());
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify(OPERATION_SUCCESS_RESPONSE),
-            });
-          },
-        );
-
-        await When["the user clicks the submit button"]();
-        await expect(
-          page.getByText(/successfully transferred/i).first(),
-        ).toBeVisible({ timeout: 5000 });
-        expect(capturedBodies).toHaveLength(2);
-        expect(capturedBodies).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              sourcePath: "/data/file1.jpg",
-              destPath: "file1.jpg",
-            }),
-            expect.objectContaining({
-              sourcePath: "/data/file2.jpg",
-              destPath: "file2.jpg",
-            }),
-          ]),
-        );
-      },
-    );
+      await When["the user clicks the submit button"]();
+      await expect(page.getByText(/successfully transferred/i).first()).toBeVisible({ timeout: 5000 });
+      expect(capturedBodies).toHaveLength(2);
+      expect(capturedBodies).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            sourcePath: "/data/file1.jpg",
+            destPath: "file1.jpg",
+          }),
+          expect.objectContaining({
+            sourcePath: "/data/file2.jpg",
+            destPath: "file2.jpg",
+          }),
+        ]),
+      );
+    });
   });
 });

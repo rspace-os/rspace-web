@@ -1,20 +1,20 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import * as Jwt from "jsonwebtoken";
-
 import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
 // Import the story components
 import {
-  ActionsMenuWithNonFolder,
   ActionsMenuWithFolder,
-  ActionsMenuWithMultipleFiles,
-  ActionsMenuWithSnippet,
   ActionsMenuWithMixedSelection,
+  ActionsMenuWithMultipleFiles,
   ActionsMenuWithMultipleSnippets,
-  ActionsMenuWithSnippetMissingGlobalId,
-  ActionsMenuWithSnippetInSharedFolderOwnedBySelf,
+  ActionsMenuWithNonFolder,
+  ActionsMenuWithSnippet,
   ActionsMenuWithSnippetInSharedFolderOwnedByOther,
+  ActionsMenuWithSnippetInSharedFolderOwnedBySelf,
   ActionsMenuWithSnippetInSystemSharedFolder,
+  ActionsMenuWithSnippetMissingGlobalId,
 } from "./ActionsMenu.story";
 
 const feature = test.extend<{
@@ -82,22 +82,18 @@ const feature = test.extend<{
       "the actions menu with multiple snippets is mounted": async () => {
         await mount(<ActionsMenuWithMultipleSnippets />);
       },
-      "the actions menu with a snippet missing global ID is mounted":
-        async () => {
-          await mount(<ActionsMenuWithSnippetMissingGlobalId />);
-        },
-      "the actions menu with a snippet in a shared folder owned by the current user is mounted":
-        async () => {
-          await mount(<ActionsMenuWithSnippetInSharedFolderOwnedBySelf />);
-        },
-      "the actions menu with a snippet in a shared folder owned by another user is mounted":
-        async () => {
-          await mount(<ActionsMenuWithSnippetInSharedFolderOwnedByOther />);
-        },
-      "the actions menu with a snippet in a system shared folder is mounted":
-        async () => {
-          await mount(<ActionsMenuWithSnippetInSystemSharedFolder />);
-        },
+      "the actions menu with a snippet missing global ID is mounted": async () => {
+        await mount(<ActionsMenuWithSnippetMissingGlobalId />);
+      },
+      "the actions menu with a snippet in a shared folder owned by the current user is mounted": async () => {
+        await mount(<ActionsMenuWithSnippetInSharedFolderOwnedBySelf />);
+      },
+      "the actions menu with a snippet in a shared folder owned by another user is mounted": async () => {
+        await mount(<ActionsMenuWithSnippetInSharedFolderOwnedByOther />);
+      },
+      "the actions menu with a snippet in a system shared folder is mounted": async () => {
+        await mount(<ActionsMenuWithSnippetInSystemSharedFolder />);
+      },
     });
   },
   When: async ({ page }, use) => {
@@ -127,53 +123,35 @@ const feature = test.extend<{
   Then: async ({ page, networkRequests, consoleErrors }, use) => {
     await use({
       "the actions menu should be visible": async () => {
-        await expect(
-          page.getByRole("button", { name: /actions/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /actions/i })).toBeVisible({ timeout: 5000 });
       },
       "the Open option should not be visible": async () => {
-        await expect(
-          page.getByRole("menuitem", { name: /open/i }),
-        ).not.toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("menuitem", { name: /open/i })).not.toBeVisible({ timeout: 5000 });
       },
       "the Open option should be visible": async () => {
-        await expect(page.getByRole("menuitem", { name: /open/i })).toBeVisible(
-          { timeout: 5000 },
-        );
+        await expect(page.getByRole("menuitem", { name: /open/i })).toBeVisible({ timeout: 5000 });
       },
       "the Download option should be disabled": async () => {
-        await expect(
-          page.getByRole("menuitem", { name: /download/i }),
-        ).toBeDisabled({ timeout: 5000 });
+        await expect(page.getByRole("menuitem", { name: /download/i })).toBeDisabled({ timeout: 5000 });
       },
       "the Share option should be visible": async () => {
-        await expect(page.getByRole("menuitem", { name: /share/i })).toBeVisible(
-          { timeout: 5000 },
-        );
+        await expect(page.getByRole("menuitem", { name: /share/i })).toBeVisible({ timeout: 5000 });
       },
       "the Share option should be disabled": async () => {
-        await expect(page.getByRole("menuitem", { name: /share/i })).toBeDisabled(
-          {
-            timeout: 5000,
-          },
-        );
+        await expect(page.getByRole("menuitem", { name: /share/i })).toBeDisabled({
+          timeout: 5000,
+        });
       },
       "the Share option should be enabled": async () => {
-        await expect(page.getByRole("menuitem", { name: /share/i })).toBeEnabled(
-          {
-            timeout: 5000,
-          },
-        );
+        await expect(page.getByRole("menuitem", { name: /share/i })).toBeEnabled({
+          timeout: 5000,
+        });
       },
       "the share dialog for the selected snippet should be visible": async () => {
-        await expect(
-          page.getByRole("dialog", { name: /Share My Snippet/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("dialog", { name: /Share My Snippet/i })).toBeVisible({ timeout: 5000 });
       },
       "the share dialog for two snippets should be visible": async () => {
-        await expect(
-          page.getByRole("dialog", { name: /Share 2 snippets/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("dialog", { name: /Share 2 snippets/i })).toBeVisible({ timeout: 5000 });
       },
       "share info should be requested for both selected snippets": () => {
         const requestedPaths = networkRequests.map((url) => url.pathname);
@@ -181,22 +159,18 @@ const feature = test.extend<{
         expect(requestedPaths).toContain("/api/v1/share/document/5");
         return Promise.resolve();
       },
-      "the Share disabled reason for missing global IDs should be visible":
-        async () => {
-          const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
-          await expect(shareMenuItem).toContainText(
-            /Cannot share snippets that are missing global IDs\./i,
-            { timeout: 5000 },
-          );
-        },
-      "the Share disabled reason for shared folder ownership should be visible":
-        async () => {
-          const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
-          await expect(shareMenuItem).toContainText(
-            /Only owners of the snippet can change its share settings\./i,
-            { timeout: 5000 },
-          );
-        },
+      "the Share disabled reason for missing global IDs should be visible": async () => {
+        const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
+        await expect(shareMenuItem).toContainText(/Cannot share snippets that are missing global IDs\./i, {
+          timeout: 5000,
+        });
+      },
+      "the Share disabled reason for shared folder ownership should be visible": async () => {
+        const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
+        await expect(shareMenuItem).toContainText(/Only owners of the snippet can change its share settings\./i, {
+          timeout: 5000,
+        });
+      },
       "the Share disabled loading reason should be visible": async () => {
         const shareMenuItem = page.getByRole("menuitem", { name: /share/i });
         await expect(shareMenuItem).toContainText(/Loading user information\.\.\./i, {
@@ -208,10 +182,7 @@ const feature = test.extend<{
           page.getByRole("alert").filter({
             hasText: /Shares updated successfully\./i,
           }),
-        ).toContainText(
-          /Shares updated successfully\./i,
-          { timeout: 5000 },
-        );
+        ).toContainText(/Shares updated successfully\./i, { timeout: 5000 });
       },
       "the share dialog should close": async () => {
         await expect(page.getByRole("dialog", { name: /Share/i })).not.toBeVisible({
@@ -235,8 +206,7 @@ const feature = test.extend<{
              * 4. Content not in landmarks is expected in component testing context
              */
             return (
-              v.description !==
-                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
               v.id !== "region"
@@ -245,35 +215,28 @@ const feature = test.extend<{
         ).toEqual([]);
       },
       "the 'Move to S3' option should be visible": async () => {
-        await expect(
-          page.getByRole("menuitem", { name: /move to s3/i }),
-        ).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("menuitem", { name: /move to s3/i })).toBeVisible({ timeout: 5000 });
       },
       "the 'Move to iRODS' option should not be in the document": async () => {
-        await expect(
-          page.getByRole("menuitem", { name: /move to irods/i }),
-        ).not.toBeAttached({ timeout: 5000 });
+        await expect(page.getByRole("menuitem", { name: /move to irods/i })).not.toBeAttached({ timeout: 5000 });
       },
       "the 'Move to S3' option should not be in the document": async () => {
-        await expect(
-          page.getByRole("menuitem", { name: /move to s3/i }),
-        ).not.toBeAttached({ timeout: 5000 });
+        await expect(page.getByRole("menuitem", { name: /move to s3/i })).not.toBeAttached({ timeout: 5000 });
       },
       "there shouldn't be any MUI styling errors": async () => {
-        const muiErrors = consoleErrors.filter((msg) =>
-          /MUI.*Unsupported|MUI error #9/i.test(msg),
-        );
+        const muiErrors = consoleErrors.filter((msg) => /MUI.*Unsupported|MUI error #9/i.test(msg));
         expect(muiErrors).toHaveLength(0);
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   consoleErrors: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
   page.on("request", (request) => {
@@ -290,7 +253,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
         analyticsEnabled: false,
       }),
     });
-
   });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
@@ -298,7 +260,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-
   });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -306,7 +267,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
       contentType: "application/json",
       body: JSON.stringify(false),
     });
-
   });
   await router.route("/collaboraOnline/supportedExts", (route) => {
     return route.fulfill({
@@ -314,7 +274,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-
   });
   await router.route("/integration/integrationInfo?name=RAID", (route) => {
     return route.fulfill({
@@ -334,7 +293,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
         },
       }),
     });
-
   });
   await router.route("/officeOnline/supportedExts", (route) => {
     return route.fulfill({
@@ -342,7 +300,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-
   });
   await router.route("/export/ajax/defaultPDFConfig", (route) => {
     return route.fulfill({
@@ -352,7 +309,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
         data: { pageSize: "A4" },
       }),
     });
-
   });
   await router.route("/gallery/getUploadedFiles*", (route) => {
     return route.fulfill({
@@ -367,7 +323,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
         },
       }),
     });
-
   });
   await router.route("**/*.svg", (route) => {
     return route.fulfill({
@@ -375,15 +330,14 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
       contentType: "image/svg+xml",
       body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
     });
-
   });
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -544,7 +498,6 @@ feature.beforeEach(async ({ router, page, networkRequests, consoleErrors }) => {
       body: "",
     });
   });
-
 });
 feature.afterEach(({ networkRequests, consoleErrors }) => {
   networkRequests.splice(0, networkRequests.length);
@@ -567,35 +520,23 @@ test.describe("ActionsMenu", () => {
       await Given["the actions menu with a non-folder is mounted"]();
       await Then["there shouldn't be any axe violations"]();
     });
-
   });
   test.describe("File menu options", () => {
-    feature(
-      "When the selected file isn't a folder, open should not be visible",
-      async ({ Given, When, Then }) => {
-        await Given["the actions menu with a non-folder is mounted"]();
-        await When["the user clicks the actions menu button"]();
-        await Then["the Open option should not be visible"]();
-      },
-
-    );
-    feature(
-      "When the selected file is a folder, open should be visible",
-      async ({ Given, When, Then }) => {
-        await Given["the actions menu with a folder is mounted"]();
-        await When["the user clicks the actions menu button"]();
-        await Then["the Open option should be visible"]();
-      },
-
-    );
-    feature(
-      "When the selected file is a snippet, download should be disabled",
-      async ({ Given, When, Then }) => {
-        await Given["the actions menu with a snippet is mounted"]();
-        await When["the user clicks the actions menu button"]();
-        await Then["the Download option should be disabled"]();
-      },
-    );
+    feature("When the selected file isn't a folder, open should not be visible", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a non-folder is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await Then["the Open option should not be visible"]();
+    });
+    feature("When the selected file is a folder, open should be visible", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a folder is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await Then["the Open option should be visible"]();
+    });
+    feature("When the selected file is a snippet, download should be disabled", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a snippet is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await Then["the Download option should be disabled"]();
+    });
     feature(
       "Share should always be visible and enabled when only snippets are selected",
       async ({ Given, When, Then }) => {
@@ -614,44 +555,29 @@ test.describe("ActionsMenu", () => {
         await Then["the Share option should be disabled"]();
       },
     );
-    feature(
-      "Share should open dialog for a single snippet",
-      async ({ Given, When, Then }) => {
-        await Given["the actions menu with a snippet is mounted"]();
-        await When["the user clicks the actions menu button"]();
-        await When["the user selects 'Share' from the menu"]();
-        await Then["the share dialog for the selected snippet should be visible"]();
-      },
-    );
-    feature(
-      "Share should pass all selected snippets to the dialog",
-      async ({ Given, When, Then }) => {
-        await Given["the actions menu with multiple snippets is mounted"]();
-        await When["the user clicks the actions menu button"]();
-        await When["the user selects 'Share' from the menu"]();
-        await Then["the share dialog for two snippets should be visible"]();
-        await Then["share info should be requested for both selected snippets"]();
-      },
-    );
-    feature(
-      "Share should be disabled when snippet global ID is missing",
-      async ({ Given, When, Then }) => {
-        await Given[
-          "the actions menu with a snippet missing global ID is mounted"
-        ]();
-        await When["the user clicks the actions menu button"]();
-        await Then["the Share option should be disabled"]();
-        await Then[
-          "the Share disabled reason for missing global IDs should be visible"
-        ]();
-      },
-    );
+    feature("Share should open dialog for a single snippet", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a snippet is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await When["the user selects 'Share' from the menu"]();
+      await Then["the share dialog for the selected snippet should be visible"]();
+    });
+    feature("Share should pass all selected snippets to the dialog", async ({ Given, When, Then }) => {
+      await Given["the actions menu with multiple snippets is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await When["the user selects 'Share' from the menu"]();
+      await Then["the share dialog for two snippets should be visible"]();
+      await Then["share info should be requested for both selected snippets"]();
+    });
+    feature("Share should be disabled when snippet global ID is missing", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a snippet missing global ID is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await Then["the Share option should be disabled"]();
+      await Then["the Share disabled reason for missing global IDs should be visible"]();
+    });
     feature(
       "Share should be enabled when the current user owns a snippet in a shared folder",
       async ({ Given, When, Then }) => {
-        await Given[
-          "the actions menu with a snippet in a shared folder owned by the current user is mounted"
-        ]();
+        await Given["the actions menu with a snippet in a shared folder owned by the current user is mounted"]();
         await When["the user clicks the actions menu button"]();
         await Then["the Share option should be visible"]();
         await Then["the Share option should be enabled"]();
@@ -660,31 +586,20 @@ test.describe("ActionsMenu", () => {
     feature(
       "Share should be disabled when another user owns a snippet in a shared folder",
       async ({ Given, When, Then }) => {
-        await Given[
-          "the actions menu with a snippet in a shared folder owned by another user is mounted"
-        ]();
+        await Given["the actions menu with a snippet in a shared folder owned by another user is mounted"]();
         await When["the user clicks the actions menu button"]();
         await Then["the Share option should be visible"]();
         await Then["the Share option should be disabled"]();
-        await Then[
-          "the Share disabled reason for shared folder ownership should be visible"
-        ]();
+        await Then["the Share disabled reason for shared folder ownership should be visible"]();
       },
     );
-    feature(
-      "Share should not be enabled for a snippet in a system shared folder",
-      async ({ Given, When, Then }) => {
-        await Given[
-          "the actions menu with a snippet in a system shared folder is mounted"
-        ]();
-        await When["the user clicks the actions menu button"]();
-        await Then["the Share option should be visible"]();
-        await Then["the Share option should be disabled"]();
-        await Then[
-          "the Share disabled reason for shared folder ownership should be visible"
-        ]();
-      },
-    );
+    feature("Share should not be enabled for a snippet in a system shared folder", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a snippet in a system shared folder is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await Then["the Share option should be visible"]();
+      await Then["the Share option should be disabled"]();
+      await Then["the Share disabled reason for shared folder ownership should be visible"]();
+    });
     feature(
       "Share should be disabled while the current user details are still loading",
       async ({ Given, When, Then, router }) => {
@@ -720,18 +635,15 @@ test.describe("ActionsMenu", () => {
         if (releaseWhoAmIResponse) releaseWhoAmIResponse();
       },
     );
-    feature(
-      "Saving a gallery share should show success alert and close dialog",
-      async ({ Given, When, Then }) => {
-        await Given["the actions menu with a snippet is mounted"]();
-        await When["the user clicks the actions menu button"]();
-        await When["the user selects 'Share' from the menu"]();
-        await When["the user selects Bob from share recipient dropdown"]();
-        await When["the user saves the share dialog"]();
-        await Then["a share success alert should be visible"]();
-        await Then["the share dialog should close"]();
-      },
-    );
+    feature("Saving a gallery share should show success alert and close dialog", async ({ Given, When, Then }) => {
+      await Given["the actions menu with a snippet is mounted"]();
+      await When["the user clicks the actions menu button"]();
+      await When["the user selects 'Share' from the menu"]();
+      await When["the user selects Bob from share recipient dropdown"]();
+      await When["the user saves the share dialog"]();
+      await Then["a share success alert should be visible"]();
+      await Then["the share dialog should close"]();
+    });
   });
   test.describe("S3 menu item", () => {
     feature(

@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import ContextDialog from "../ContextMenu/ContextDialog";
 import DialogTitle from "@mui/material/DialogTitle";
-import Alert from "@mui/material/Alert";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+// biome-ignore lint/style/useImportType: initial biome migration
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import React, { useEffect, useState } from "react";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
-import useStores from "../../../stores/use-stores";
+import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Basket } from "../../../stores/definitions/Basket";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { NEW_BASKET } from "../../../stores/models/Basket";
-import { type Basket } from "../../../stores/definitions/Basket";
-import TextField from "@mui/material/TextField";
-import {
-  type GlobalId,
-  getSavedGlobalId,
-} from "../../../stores/definitions/BaseRecord";
+import useStores from "../../../stores/use-stores";
+import ContextDialog from "../ContextMenu/ContextDialog";
 
 type AddToBasketDialogArgs = {
   openAddToBasketDialog: boolean;
@@ -38,9 +38,7 @@ function AddToBasketDialog({
 }: AddToBasketDialogArgs): React.ReactNode {
   const { searchStore } = useStores();
 
-  const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([
-    NEW_BASKET,
-  ]);
+  const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([NEW_BASKET]);
   const [targetBasket, setTargetBasket] = useState<Basket>(NEW_BASKET);
   const [newBasketName, setNewBasketName] = useState<string>("");
   const [error, setError] = useState<boolean>(false);
@@ -51,8 +49,7 @@ function AddToBasketDialog({
     });
   }, []);
 
-  const noDuplicates = (): boolean =>
-    !searchStore.savedBaskets.map((b) => b.name).includes(newBasketName);
+  const noDuplicates = (): boolean => !searchStore.savedBaskets.map((b) => b.name).includes(newBasketName);
   const validLength = (): boolean => newBasketName.length <= 32;
   const validNewName = (): boolean => noDuplicates() && validLength();
 
@@ -60,9 +57,7 @@ function AddToBasketDialog({
     setError(!validNewName());
   }, [newBasketName]);
 
-  const itemIds: Array<GlobalId> = selectedResults.map((r) =>
-    getSavedGlobalId(r),
-  );
+  const itemIds: Array<GlobalId> = selectedResults.map((r) => getSavedGlobalId(r));
   const selectedCount = selectedResults.length;
   const itemString = selectedCount > 1 ? "Items" : "Item";
 
@@ -85,12 +80,7 @@ function AddToBasketDialog({
   const basketSelectorLabel = React.useId();
 
   return (
-    <ContextDialog
-      open={openAddToBasketDialog}
-      onClose={handleClose}
-      maxWidth="xs"
-      fullWidth
-    >
+    <ContextDialog open={openAddToBasketDialog} onClose={handleClose} maxWidth="xs" fullWidth>
       <DialogTitle>{`Adding ${itemString} to Basket`}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
@@ -100,9 +90,7 @@ function AddToBasketDialog({
               labelId={basketSelectorLabel}
               value={`${targetBasket.id ?? undefined}`}
               onChange={(event: SelectChangeEvent<string>) => {
-                const selectedBasket = targetBaskets.find(
-                  (b) => `${b.id}` === event.target.value,
-                );
+                const selectedBasket = targetBaskets.find((b) => `${b.id}` === event.target.value);
                 if (selectedBasket) {
                   setTargetBasket(selectedBasket);
                 }
@@ -146,9 +134,7 @@ function AddToBasketDialog({
               />
             </FormControl>
           )}
-          <Alert severity="info">
-            {`This action will not change the location of the ${itemString}.`}
-          </Alert>
+          <Alert severity="info">{`This action will not change the location of the ${itemString}.`}</Alert>
         </Stack>
       </DialogContent>
       <DialogActions>

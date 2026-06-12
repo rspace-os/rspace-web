@@ -1,13 +1,14 @@
-import React, { type ReactNode, type ComponentType } from "react";
-import { observer } from "mobx-react-lite";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import PolygonCard from "./PolygonCard";
+import { observer } from "mobx-react-lite";
+import type { ComponentType, ReactNode } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GeoLocation } from "../../../../stores/definitions/GeoLocation";
+import PolygonCard from "./PolygonCard";
 
 type PolygonDialogArgs = {
   open: boolean;
@@ -17,13 +18,7 @@ type PolygonDialogArgs = {
   doUpdateIdentifiers: () => void;
 };
 
-function PolygonDialog({
-  open,
-  setOpen,
-  editable,
-  geoLocation,
-  doUpdateIdentifiers,
-}: PolygonDialogArgs): ReactNode {
+function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifiers }: PolygonDialogArgs): ReactNode {
   const handleClose = () => {
     setOpen(false);
   };
@@ -33,11 +28,7 @@ function PolygonDialog({
       <DialogTitle>Geolocation Polygon</DialogTitle>
       <DialogContent>
         <FormControl component="fieldset" fullWidth>
-          <PolygonCard
-            editable={editable}
-            geoLocation={geoLocation}
-            doUpdateIdentifiers={doUpdateIdentifiers}
-          />
+          <PolygonCard editable={editable} geoLocation={geoLocation} doUpdateIdentifiers={doUpdateIdentifiers} />
         </FormControl>
       </DialogContent>
       <DialogActions>

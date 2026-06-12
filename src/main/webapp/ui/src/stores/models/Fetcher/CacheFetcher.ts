@@ -1,16 +1,13 @@
-import { observable, override, makeObservable, runInAction } from "mobx";
-import CoreFetcher from "./CoreFetcher";
-import {
-  type CoreFetcherArgs,
-  type CacheFetcher as CacheFetcherInterface,
-} from "../../definitions/Search";
+import { makeObservable, observable, override, runInAction } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Factory } from "../../definitions/Factory";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type CacheFetcher as CacheFetcherInterface, type CoreFetcherArgs } from "../../definitions/Search";
+import CoreFetcher from "./CoreFetcher";
 
-export default class CacheFetcher
-  extends CoreFetcher
-  implements CacheFetcherInterface
-{
+export default class CacheFetcher extends CoreFetcher implements CacheFetcherInterface {
   cachedResults: Array<InventoryRecord> = [];
   cachedPageSize: number = 0;
 
@@ -60,9 +57,7 @@ export default class CacheFetcher
        * list/card/tree view because then the locations would appear empty.
        */
       runInAction(() => {
-        this.cachedResults = this.cachedResults.length
-          ? this.cachedResults
-          : this.results;
+        this.cachedResults = this.cachedResults.length ? this.cachedResults : this.results;
         this.cachedResults.map((r) => r.toggleSelected(false));
         this.cachedPageSize = this.cachedPageSize || this.pageSize;
       });
@@ -83,15 +78,10 @@ export default class CacheFetcher
       }
     });
 
-    return this.search(params, (results: Array<InventoryRecord>) =>
-      this.setResults(results)
-    );
+    return this.search(params, (results: Array<InventoryRecord>) => this.setResults(results));
   }
 
-  async search(
-    params: CoreFetcherArgs | null = null,
-    storeResults: (results: Array<InventoryRecord>) => void
-  ) {
+  async search(params: CoreFetcherArgs | null = null, storeResults: (results: Array<InventoryRecord>) => void) {
     if (params?.query || params?.resultType || params?.owner) {
       await super.search(params, storeResults);
     } else {

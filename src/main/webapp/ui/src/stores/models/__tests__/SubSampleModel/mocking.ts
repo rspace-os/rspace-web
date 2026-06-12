@@ -1,16 +1,15 @@
+import fc, { type Arbitrary } from "fast-check";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ContainerAttrs } from "../../ContainerModel";
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 import SubSampleModel, { type SubSampleAttrs } from "../../SubSampleModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
-import { type ContainerAttrs } from "../../ContainerModel";
 import { makeMockSample } from "../SampleModel/mocking";
-import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
-import fc, { type Arbitrary } from "fast-check";
 
 /*
  * Note that providing a sample is required
  */
-export const subsampleAttrs = (
-  attrs?: Readonly<Partial<SubSampleAttrs>>
-): SubSampleAttrs => ({
+export const subsampleAttrs = (attrs?: Readonly<Partial<SubSampleAttrs>>): SubSampleAttrs => ({
   id: 1,
   type: "SUBSAMPLE",
   globalId: "SS1",
@@ -36,9 +35,7 @@ export const subsampleAttrs = (
   ...attrs,
 });
 
-export const makeMockSubSample = (
-  attrs?: Readonly<Partial<SubSampleAttrs>>
-): SubSampleModel => {
+export const makeMockSubSample = (attrs?: Readonly<Partial<SubSampleAttrs>>): SubSampleModel => {
   const sample = makeMockSample();
   const subsample = new SubSampleModel(new AlwaysNewFactory(), {
     ...subsampleAttrs(attrs),
@@ -49,9 +46,7 @@ export const makeMockSubSample = (
   return subsample;
 };
 
-export const makeMockSubSampleWithParentContainer = (
-  attrs?: Readonly<Partial<SubSampleAttrs>>
-): SubSampleModel => {
+export const makeMockSubSampleWithParentContainer = (attrs?: Readonly<Partial<SubSampleAttrs>>): SubSampleModel => {
   const container = makeMockContainer({
     id: 2,
     globalId: "IC2",
@@ -82,31 +77,29 @@ export const makeMockSubSampleWithParentContainer = (
  * an instanceof SubSampleModel is required then call `makeMockSubSample`
  * inside of the Property testing, passing the randomly generated attrs.
  */
-export const subSampleAttrsArbitrary: Arbitrary<SubSampleAttrs> = fc
-  .nat(1000)
-  .chain((id) =>
-    fc.record({
-      id: fc.constant(id),
-      type: fc.constant("SUBSAMPLE"),
-      globalId: fc.constant(`SS${id}`),
-      name: fc.string({ minLength: 2, maxLength: 20 }),
-      permittedActions: fc.constant(["UPDATE", "CHANGE_OWNER"]),
-      quantity: fc.constant({ numericValue: 1, unitId: 3 }),
-      extraFields: fc.constant([]),
-      description: fc.constant(""),
-      tags: fc.constant(null),
-      parentContainers: fc.constant([]),
-      parentLocation: fc.constant(null),
-      lastNonWorkbenchParent: fc.constant(null),
-      lastMoveDate: fc.constant(null),
-      owner: fc.constant(null),
-      created: fc.constant(null),
-      deleted: fc.constant(false),
-      lastModified: fc.constant(null),
-      modifiedByFullName: fc.constant(null),
-      attachments: fc.constant([]),
-      barcodes: fc.constant([]),
-      identifiers: fc.constant([]),
-      _links: fc.constant([]),
-    })
-  );
+export const subSampleAttrsArbitrary: Arbitrary<SubSampleAttrs> = fc.nat(1000).chain((id) =>
+  fc.record({
+    id: fc.constant(id),
+    type: fc.constant("SUBSAMPLE"),
+    globalId: fc.constant(`SS${id}`),
+    name: fc.string({ minLength: 2, maxLength: 20 }),
+    permittedActions: fc.constant(["UPDATE", "CHANGE_OWNER"]),
+    quantity: fc.constant({ numericValue: 1, unitId: 3 }),
+    extraFields: fc.constant([]),
+    description: fc.constant(""),
+    tags: fc.constant(null),
+    parentContainers: fc.constant([]),
+    parentLocation: fc.constant(null),
+    lastNonWorkbenchParent: fc.constant(null),
+    lastMoveDate: fc.constant(null),
+    owner: fc.constant(null),
+    created: fc.constant(null),
+    deleted: fc.constant(false),
+    lastModified: fc.constant(null),
+    modifiedByFullName: fc.constant(null),
+    attachments: fc.constant([]),
+    barcodes: fc.constant([]),
+    identifiers: fc.constant([]),
+    _links: fc.constant([]),
+  }),
+);

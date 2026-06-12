@@ -1,11 +1,11 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTheme } from "@mui/material/styles";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
 
 function ExpandCollapseIcon({ open }: { open: boolean }): React.ReactNode {
   const theme = useTheme();
-  const transition = window.matchMedia("(prefers-reduced-motion: reduce)")
-    .matches
+  const transition = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ? "initial"
     : theme.transitions.iconTransformations;
   return (

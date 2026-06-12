@@ -1,82 +1,55 @@
 import axios, { type AxiosPromise } from "@/common/axios";
 import type { OmeroDataList, OmeroDataTypes, OmeroItem } from "./OmeroTypes";
 
-const getOmeroDataList = (
-  dataTypeChoice: string
-): AxiosPromise<OmeroDataList> => {
+const getOmeroDataList = (dataTypeChoice: string): AxiosPromise<OmeroDataList> => {
   if (dataTypeChoice === "Projects And Screens") {
     return axios.get("/apps/omero/projects");
   }
+  // biome-ignore lint/style/useTemplate: initial biome migration
   return axios.get("/apps/omero/projects/?dataType=" + dataTypeChoice);
 };
 
-const getImagesList = (
-  id: number,
-  fetchLarge: boolean
-): AxiosPromise<OmeroDataList> => {
+const getImagesList = (id: number, fetchLarge: boolean): AxiosPromise<OmeroDataList> => {
   return axios.get(
-    "/apps/omero/images/" + id + "/?fetchLarge=" + String(fetchLarge)
+    // biome-ignore lint/style/useTemplate: initial biome migration
+    "/apps/omero/images/" + id + "/?fetchLarge=" + String(fetchLarge),
   );
 };
 
 const getDataSetsList = (id: number): AxiosPromise<OmeroDataList> =>
+  // biome-ignore lint/style/useTemplate: initial biome migration
   axios.get("/apps/omero/datasets/" + id);
 
 const getPlatesList = (id: number): AxiosPromise<OmeroDataList> =>
+  // biome-ignore lint/style/useTemplate: initial biome migration
   axios.get("/apps/omero/plates/" + id);
 
 const getPlateAcquisitionsList = (id: number): AxiosPromise<OmeroDataList> =>
+  // biome-ignore lint/style/useTemplate: initial biome migration
   axios.get("/apps/omero/plateAcquisitions/" + id);
 
 const getWellsList = (
   id: number,
   parentid: number,
   fetchLarge: boolean,
-  wellIndex: number
+  wellIndex: number,
 ): AxiosPromise<OmeroDataList> => {
-  return axios.get(
-    "/apps/omero/wells/" +
-      parentid +
-      "/" +
-      id +
-      "/?fetchLarge=" +
-      String(fetchLarge) +
-      "&wellIndex=" +
-      wellIndex
-  );
+  return axios.get(`/apps/omero/wells/${parentid}/${id}/?fetchLarge=${String(fetchLarge)}&wellIndex=${wellIndex}`);
 };
 
-const getAnnotationsList = (
-  id: number,
-  type: OmeroDataTypes
-): AxiosPromise<Array<string>> =>
+const getAnnotationsList = (id: number, type: OmeroDataTypes): AxiosPromise<Array<string>> =>
+  // biome-ignore lint/style/useTemplate: initial biome migration
   axios.get("/apps/omero/annotations/" + id + "?type=" + type);
 
-const getFullImage = (
-  id: number,
-  parentID: number,
-  fetchLarge: boolean
-): AxiosPromise<OmeroItem> =>
-  axios.get(
-    "/apps/omero/image/" +
-      parentID +
-      "/" +
-      id +
-      "/?fetchLarge=" +
-      String(fetchLarge)
-  );
+const getFullImage = (id: number, parentID: number, fetchLarge: boolean): AxiosPromise<OmeroItem> =>
+  axios.get(`/apps/omero/image/${parentID}/${id}/?fetchLarge=${String(fetchLarge)}`);
 
-export const getOmeroData = async (
-  dataTypeChoice: string
-): Promise<OmeroDataList> => {
+export const getOmeroData = async (dataTypeChoice: string): Promise<OmeroDataList> => {
   const projectsList = (await getOmeroDataList(dataTypeChoice)).data;
   return projectsList;
 };
 
-export const getImages = async (
-  id: number,
-  fetchLarge: boolean
-): Promise<OmeroDataList> => {
+export const getImages = async (id: number, fetchLarge: boolean): Promise<OmeroDataList> => {
   const imagesList = (await getImagesList(id, fetchLarge)).data;
   return imagesList;
 };
@@ -89,26 +62,17 @@ export const getPlates = async (id: number): Promise<OmeroDataList> => {
   return platesList;
 };
 
-export const getPlateAcquisitions = async (
-  id: number
-): Promise<OmeroDataList> => {
+export const getPlateAcquisitions = async (id: number): Promise<OmeroDataList> => {
   const plateAcquisitionsList = (await getPlateAcquisitionsList(id)).data;
   return plateAcquisitionsList;
 };
 
-export const getAnnotations = async (
-  id: number,
-  type: OmeroDataTypes
-): Promise<Array<string>> => {
+export const getAnnotations = async (id: number, type: OmeroDataTypes): Promise<Array<string>> => {
   const annotationsList = (await getAnnotationsList(id, type)).data;
   return annotationsList;
 };
 
-export const getImage = async (
-  id: number,
-  parentID: number,
-  fetchLarge: boolean
-): Promise<OmeroItem> => {
+export const getImage = async (id: number, parentID: number, fetchLarge: boolean): Promise<OmeroItem> => {
   const fullImage = (await getFullImage(id, parentID, fetchLarge)).data;
   return fullImage;
 };
@@ -117,10 +81,8 @@ export const getWells = async (
   plateAcquisitionID: number,
   plateID: number,
   fetchLarge: boolean,
-  wellIndex: number
+  wellIndex: number,
 ): Promise<OmeroDataList> => {
-  const imagesList = (
-    await getWellsList(plateAcquisitionID, plateID, fetchLarge, wellIndex)
-  ).data;
+  const imagesList = (await getWellsList(plateAcquisitionID, plateID, fetchLarge, wellIndex)).data;
   return imagesList;
 };

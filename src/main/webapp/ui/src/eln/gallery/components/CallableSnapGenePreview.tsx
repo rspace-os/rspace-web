@@ -1,45 +1,46 @@
-import React from "react";
-import { type GalleryFile, idToString } from "../useGalleryListing";
-import { Dialog } from "../../../components/DialogBoundary";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import IconButton from "@mui/material/IconButton";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import ResetZoomIcon from "./ResetZoomIcon";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import Switch from "@mui/material/Switch";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Box from "@mui/material/Box";
-import { ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../../accentedTheme";
-import AppBar from "../../../components/AppBar";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
 import Drawer from "@mui/material/Drawer";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormLabel from "@mui/material/FormLabel";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import axios from "@/common/axios";
+import MenuItem from "@mui/material/MenuItem";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import { ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import React from "react";
+import axios from "@/common/axios";
+import createAccentedTheme from "../../../accentedTheme";
+import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
+import AppBar from "../../../components/AppBar";
+import { Dialog } from "../../../components/DialogBoundary";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import LoadingCircular from "../../../components/LoadingCircular";
-import Grid from "@mui/material/Grid";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import { stableSort, getSorting, paginationOptions } from "../../../util/table";
-import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
 import * as Parsers from "../../../util/parsers";
+import { getSorting, paginationOptions, stableSort } from "../../../util/table";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Order } from "../../../util/types";
+import { type GalleryFile, idToString } from "../useGalleryListing";
+import ResetZoomIcon from "./ResetZoomIcon";
 
 function DnaPreview({
   show,
@@ -70,9 +71,7 @@ function DnaPreview({
       setImage(
         `/molbiol/dna/png/${idToString(file.id).elseThrow()}?linear=${
           linear ? "true" : "false"
-        }&showEnzymes=${showEnzymes ? "true" : "false"}&showORFs=${
-          showORFs ? "true" : "false"
-        }`,
+        }&showEnzymes=${showEnzymes ? "true" : "false"}&showORFs=${showORFs ? "true" : "false"}`,
       );
     } catch (e) {
       if (e instanceof Error) setError(e.message);
@@ -94,44 +93,24 @@ function DnaPreview({
       aria-labelledby={idOfDnaPreviewTab}
     >
       <Stack direction="row" spacing={1}>
-        <Select
-          value={linear}
-          onChange={(e) => setLinear(e.target.value === "true")}
-          size="small"
-        >
+        <Select value={linear} onChange={(e) => setLinear(e.target.value === "true")} size="small">
           <MenuItem value={"false"}>Circular</MenuItem>
           <MenuItem value={"true"}>Linear</MenuItem>
         </Select>
         <FormControlLabel
-          control={
-            <Switch
-              checked={showEnzymes}
-              onChange={({ target: { checked } }) => setShowEnzymes(checked)}
-            />
-          }
+          control={<Switch checked={showEnzymes} onChange={({ target: { checked } }) => setShowEnzymes(checked)} />}
           label="Show restriction sites"
         />
         <FormControlLabel
-          control={
-            <Switch
-              checked={showORFs}
-              onChange={({ target: { checked } }) => setShowORFs(checked)}
-            />
-          }
+          control={<Switch checked={showORFs} onChange={({ target: { checked } }) => setShowORFs(checked)} />}
           label="Show ORFs"
         />
         <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup>
-          <IconButton
-            onClick={() => setZoom((z) => z * 1.1)}
-            aria-label="zoom in"
-          >
+          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label="zoom in">
             <ZoomInIcon />
           </IconButton>
-          <IconButton
-            onClick={() => setZoom((z) => z / 1.1)}
-            aria-label="zoom out"
-          >
+          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label="zoom out">
             <ZoomOutIcon />
           </IconButton>
           <IconButton onClick={() => setZoom(1)} aria-label="reset zoom">
@@ -172,10 +151,7 @@ function DnaPreview({
             x: currentOffset.x - cursorOffset.x,
             y: currentOffset.y - cursorOffset.y,
           };
-          thisNode.scrollTo(
-            scrollPos.scrollLeft - moved.x,
-            scrollPos.scrollTop - moved.y,
-          );
+          thisNode.scrollTo(scrollPos.scrollLeft - moved.x, scrollPos.scrollTop - moved.y);
         }}
         onMouseUp={() => {
           setCursorOffset(null);
@@ -267,6 +243,7 @@ function RestrictionSites({
     }>,
   ) => {
     setEnzymeList(
+      // biome-ignore lint/complexity/useFlatMap: initial biome migration
       list
         .map((enzyme) =>
           enzyme.hits.map((hit) => ({
@@ -284,9 +261,7 @@ function RestrictionSites({
     setLoading(true);
 
     try {
-      const url = `/molbiol/dna/enzymes/${idToString(
-        file.id,
-      ).elseThrow()}?enzymeSet=${enzymeSet}`;
+      const url = `/molbiol/dna/enzymes/${idToString(file.id).elseThrow()}?enzymeSet=${enzymeSet}`;
       const response = await axios.get<{
         enzymes: ReadonlyArray<{
           id: number;
@@ -299,9 +274,7 @@ function RestrictionSites({
       }>(url);
       generateEnzymeList(response.data.enzymes);
     } catch (e) {
-      Parsers.objectPath(["response", "data"], e)
-        .flatMap(Parsers.isString)
-        .do(setError);
+      Parsers.objectPath(["response", "data"], e).flatMap(Parsers.isString).do(setError);
     } finally {
       setLoading(false);
     }
@@ -329,8 +302,7 @@ function RestrictionSites({
     setPage(0);
   };
 
-  const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, enzymeList.length - page * rowsPerPage);
+  const emptyRows = rowsPerPage - Math.min(rowsPerPage, enzymeList.length - page * rowsPerPage);
 
   return (
     <Grid
@@ -365,12 +337,8 @@ function RestrictionSites({
                         key={`${enzyme.name}-${enzyme.id}-${enzyme.topCutPosition}-${enzyme.bottomCutPosition}`}
                       >
                         <TableCell align="left">{enzyme.name}</TableCell>
-                        <TableCell align="right">
-                          {enzyme.bottomCutPosition}
-                        </TableCell>
-                        <TableCell align="right">
-                          {enzyme.topCutPosition}
-                        </TableCell>
+                        <TableCell align="right">{enzyme.bottomCutPosition}</TableCell>
+                        <TableCell align="right">{enzyme.topCutPosition}</TableCell>
                       </TableRow>
                     ))}
                   {emptyRows > 0 && (
@@ -405,11 +373,7 @@ function RestrictionSites({
             value={enzymeSet}
             onChange={(event) => setEnzymeSet(event.target.value)}
           >
-            {(
-              Object.keys(enzymeSetOptions) as Array<
-                keyof typeof enzymeSetOptions
-              >
-            ).map((key) => (
+            {(Object.keys(enzymeSetOptions) as Array<keyof typeof enzymeSetOptions>).map((key) => (
               <FormControlLabel
                 value={key}
                 key={key}
@@ -445,9 +409,7 @@ function ViewAsFasta({
           setSequence(response.data);
         })
         .catch((e) => {
-          Parsers.objectPath(["response", "data"], e)
-            .flatMap(Parsers.isString)
-            .do(setSequence);
+          Parsers.objectPath(["response", "data"], e).flatMap(Parsers.isString).do(setSequence);
         });
     } catch (e) {
       if (e instanceof Error) {
@@ -518,33 +480,20 @@ type Orf = {
   translation: string;
 };
 
-function OrfTable({
-  show,
-  file,
-  idOfOrfTableTab,
-}: {
-  show: boolean;
-  file: GalleryFile;
-  idOfOrfTableTab: string;
-}) {
+function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: GalleryFile; idOfOrfTableTab: string }) {
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [loading, setLoading] = React.useState(true);
-  const [readingFrameOption, setReadingFrameOption] =
-    React.useState<keyof typeof readingFrameOptions>("ALL");
+  const [readingFrameOption, setReadingFrameOption] = React.useState<keyof typeof readingFrameOptions>("ALL");
   const [results, setResults] = React.useState<ReadonlyArray<Orf>>([]);
-  const [filteredResults, setFilteredResults] = React.useState<
-    ReadonlyArray<Orf>
-  >([]);
+  const [filteredResults, setFilteredResults] = React.useState<ReadonlyArray<Orf>>([]);
   const [error, setError] = React.useState<null | string>(null);
 
   const filterResults = (passedResults: ReadonlyArray<Orf>) => {
     const toInclude = readingFrameOptions[readingFrameOption].filter;
-    const filtered = passedResults.filter((r) =>
-      toInclude.includes(r.readingFrame),
-    );
+    const filtered = passedResults.filter((r) => toInclude.includes(r.readingFrame));
     setFilteredResults(filtered);
   };
 
@@ -559,9 +508,7 @@ function OrfTable({
       setResults(response.data.ORFs);
       filterResults(response.data.ORFs);
     } catch (e) {
-      Parsers.objectPath(["response", "data"], e)
-        .flatMap(Parsers.isString)
-        .do(setError);
+      Parsers.objectPath(["response", "data"], e).flatMap(Parsers.isString).do(setError);
     } finally {
       setLoading(false);
     }
@@ -592,9 +539,7 @@ function OrfTable({
     setPage(0);
   };
 
-  const emptyRows =
-    rowsPerPage -
-    Math.min(rowsPerPage, filteredResults.length - page * rowsPerPage);
+  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredResults.length - page * rowsPerPage);
 
   return (
     <Grid
@@ -624,18 +569,10 @@ function OrfTable({
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((result) => (
                       <TableRow hover tabIndex={-1} key={result.id}>
-                        <TableCell align="left">
-                          {result.fullRangeBegin}
-                        </TableCell>
-                        <TableCell align="left">
-                          {result.fullRangeEnd}
-                        </TableCell>
-                        <TableCell align="left">
-                          {result.molecularWeight}
-                        </TableCell>
-                        <TableCell align="left">
-                          {result.readingFrame}
-                        </TableCell>
+                        <TableCell align="left">{result.fullRangeBegin}</TableCell>
+                        <TableCell align="left">{result.fullRangeEnd}</TableCell>
+                        <TableCell align="left">{result.molecularWeight}</TableCell>
+                        <TableCell align="left">{result.readingFrame}</TableCell>
                         <TableCell align="left">{result.translation}</TableCell>
                       </TableRow>
                     ))}
@@ -669,17 +606,9 @@ function OrfTable({
             aria-label="Enzyme type"
             name="enzymeSet"
             value={readingFrameOption}
-            onChange={(event) =>
-              setReadingFrameOption(
-                event.target.value as keyof typeof readingFrameOptions,
-              )
-            }
+            onChange={(event) => setReadingFrameOption(event.target.value as keyof typeof readingFrameOptions)}
           >
-            {(
-              Object.keys(readingFrameOptions) as Array<
-                keyof typeof readingFrameOptions
-              >
-            ).map((key) => (
+            {(Object.keys(readingFrameOptions) as Array<keyof typeof readingFrameOptions>).map((key) => (
               <FormControlLabel
                 value={key}
                 key={key}
@@ -719,9 +648,7 @@ export function useSnapGenePreview(): {
    */
   openSnapGenePreview: (file: GalleryFile) => void;
 } {
-  const { setFile: openSnapGenePreview } = React.useContext(
-    SnapGenePreviewContext,
-  );
+  const { setFile: openSnapGenePreview } = React.useContext(SnapGenePreviewContext);
   return {
     openSnapGenePreview,
   };
@@ -734,11 +661,7 @@ export function useSnapGenePreview(): {
  *   const { openSnapGenePreview } = useSnapGenePreview();
  *   openSnapGenePreview(dnaFile);
  */
-export function CallableSnapGenePreview({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
+export function CallableSnapGenePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
   const idOfDnaPreviewTab = React.useId();
@@ -746,10 +669,7 @@ export function CallableSnapGenePreview({
   const idOfViewAsFastaTab = React.useId();
   const idOfOrfTableTab = React.useId();
 
-  function switchTab(
-    _e: unknown,
-    value: "DNA preview" | "Restriction sites" | "View as FASTA" | "ORF table",
-  ) {
+  function switchTab(_e: unknown, value: "DNA preview" | "Restriction sites" | "View as FASTA" | "ORF table") {
     setTab(value);
   }
 
@@ -799,10 +719,7 @@ export function CallableSnapGenePreview({
                   aria-selected={tab === "DNA preview"}
                   id={idOfDnaPreviewTab}
                 >
-                  <ListItemButton
-                    selected={tab === "DNA preview"}
-                    onClick={(e) => switchTab(e, "DNA preview")}
-                  >
+                  <ListItemButton selected={tab === "DNA preview"} onClick={(e) => switchTab(e, "DNA preview")}>
                     <ListItemText primary="DNA Preview" />
                   </ListItemButton>
                 </ListItem>
@@ -827,10 +744,7 @@ export function CallableSnapGenePreview({
                   aria-selected={tab === "View as FASTA"}
                   id={idOfViewAsFastaTab}
                 >
-                  <ListItemButton
-                    selected={tab === "View as FASTA"}
-                    onClick={(e) => switchTab(e, "View as FASTA")}
-                  >
+                  <ListItemButton selected={tab === "View as FASTA"} onClick={(e) => switchTab(e, "View as FASTA")}>
                     <ListItemText primary="FASTA" />
                   </ListItemButton>
                 </ListItem>
@@ -841,36 +755,21 @@ export function CallableSnapGenePreview({
                   aria-selected={tab === "ORF table"}
                   id={idOfOrfTableTab}
                 >
-                  <ListItemButton
-                    selected={tab === "ORF table"}
-                    onClick={(e) => switchTab(e, "ORF table")}
-                  >
+                  <ListItemButton selected={tab === "ORF table"} onClick={(e) => switchTab(e, "ORF table")}>
                     <ListItemText primary="ORF Table" />
                   </ListItemButton>
                 </ListItem>
               </Drawer>
               <Stack spacing={1} sx={{ flexGrow: 1, minWidth: 0 }}>
                 <DialogContent>
-                  <DnaPreview
-                    show={tab === "DNA preview"}
-                    file={file}
-                    idOfDnaPreviewTab={idOfDnaPreviewTab}
-                  />
+                  <DnaPreview show={tab === "DNA preview"} file={file} idOfDnaPreviewTab={idOfDnaPreviewTab} />
                   <RestrictionSites
                     show={tab === "Restriction sites"}
                     file={file}
                     idOfRestrictionSitesTab={idOfRestrictionSitesTab}
                   />
-                  <ViewAsFasta
-                    show={tab === "View as FASTA"}
-                    file={file}
-                    idOfViewAsFastaTab={idOfViewAsFastaTab}
-                  />
-                  <OrfTable
-                    show={tab === "ORF table"}
-                    file={file}
-                    idOfOrfTableTab={idOfOrfTableTab}
-                  />
+                  <ViewAsFasta show={tab === "View as FASTA"} file={file} idOfViewAsFastaTab={idOfViewAsFastaTab} />
+                  <OrfTable show={tab === "ORF table"} file={file} idOfOrfTableTab={idOfOrfTableTab} />
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setFile(null)}>Close</Button>

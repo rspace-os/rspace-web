@@ -4,9 +4,7 @@ import type { PropsWithChildren, ReactNode } from "react";
 
 type MuiCssLayerProviderProps = PropsWithChildren<unknown>;
 
-export function MuiCssLayerProvider({
-  children,
-}: MuiCssLayerProviderProps): ReactNode {
+export function MuiCssLayerProvider({ children }: MuiCssLayerProviderProps): ReactNode {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       {children}
@@ -14,9 +12,7 @@ export function MuiCssLayerProvider({
   );
 }
 
-export function createMuiCssLayerCache(
-  options: Parameters<typeof createCache>[0],
-): EmotionCache {
+export function createMuiCssLayerCache(options: Parameters<typeof createCache>[0]): EmotionCache {
   const cache = createCache(options);
   const originalInsert = cache.insert;
 

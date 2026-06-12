@@ -1,23 +1,23 @@
-import React from "react";
-import Portal from "@mui/material/Portal";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import Alerts from "../../components/Alerts/Alerts";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import axios from "@/common/axios";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import Analytics from "../../components/Analytics";
 import DialogContentText from "@mui/material/DialogContentText";
-import TextField from "@mui/material/TextField";
-import ValidatingSubmitButton from "@/components/ValidatingSubmitButton";
-import Result from "@/util/result";
-import AnalyticsContext from "@/stores/contexts/Analytics";
+import DialogTitle from "@mui/material/DialogTitle";
+import Portal from "@mui/material/Portal";
 import { ThemeProvider } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import React from "react";
 import createAccentedTheme from "@/accentedTheme";
+import axios from "@/common/axios";
+import ValidatingSubmitButton from "@/components/ValidatingSubmitButton";
+import AnalyticsContext from "@/stores/contexts/Analytics";
+import Result from "@/util/result";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
+import Alerts from "../../components/Alerts/Alerts";
+import Analytics from "../../components/Analytics";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 export default function Wrapper(): React.ReactNode {
   return (
@@ -74,10 +74,7 @@ const RenameDialog = () => {
       const formData = new FormData();
       formData.append("recordId", documentId);
       formData.append("newName", newName);
-      const { data } = await axios.post(
-        "/workspace/editor/structuredDocument/ajax/rename",
-        formData,
-      );
+      const { data } = await axios.post("/workspace/editor/structuredDocument/ajax/rename", formData);
       if (data.data === "Success") {
         addAlert(
           mkAlert({
@@ -164,9 +161,7 @@ const RenameDialog = () => {
               void handleSubmit();
             }}
             validationResult={
-              newName.length === 0
-                ? Result.Error([new Error("Empty name is not permitted.")])
-                : Result.Ok(null)
+              newName.length === 0 ? Result.Error([new Error("Empty name is not permitted.")]) : Result.Ok(null)
             }
           >
             Rename

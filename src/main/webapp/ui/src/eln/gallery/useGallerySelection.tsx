@@ -1,7 +1,8 @@
+import { action, computed, makeObservable, observable } from "mobx";
 import React from "react";
-import { type GalleryFile } from "./useGalleryListing";
-import { makeObservable, action, observable, computed } from "mobx";
 import RsSet from "../../util/set";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GalleryFile } from "./useGalleryListing";
 
 /*
  * We use a Map even though the interface exposed by this module is more akin
@@ -23,9 +24,7 @@ class Selection {
 
   private onlyAllowSingleSelection: boolean;
 
-  constructor({
-    onlyAllowSingleSelection = false,
-  }: { onlyAllowSingleSelection?: boolean } = {}) {
+  constructor({ onlyAllowSingleSelection = false }: { onlyAllowSingleSelection?: boolean } = {}) {
     makeObservable(this, {
       _state: observable,
       isEmpty: computed,
@@ -76,9 +75,7 @@ class Selection {
     return [
       fileCount > 0 ? `${fileCount} file${fileCount > 1 ? "s" : ""}` : "",
       fileCount > 0 && folderCount > 0 ? ", " : "",
-      folderCount > 0
-        ? `${folderCount} folder${folderCount > 1 ? "s" : ""}`
-        : "",
+      folderCount > 0 ? `${folderCount} folder${folderCount > 1 ? "s" : ""}` : "",
       " selected",
     ].join("");
   }
@@ -86,9 +83,7 @@ class Selection {
 
 const DEFAULT_SELECTION_CONTEXT: Selection = new Selection();
 
-const SelectionContext: React.Context<Selection> = React.createContext(
-  DEFAULT_SELECTION_CONTEXT
-);
+const SelectionContext: React.Context<Selection> = React.createContext(DEFAULT_SELECTION_CONTEXT);
 
 /**
  * A provider component for scoping the selection of the GalleryFiles to a
@@ -100,11 +95,7 @@ export const GallerySelection = ({
 }: {
   children: React.ReactNode;
   onlyAllowSingleSelection?: boolean;
-}): React.ReactNode => (
-  <SelectionContext.Provider value={new Selection(rest)}>
-    {children}
-  </SelectionContext.Provider>
-);
+}): React.ReactNode => <SelectionContext.Provider value={new Selection(rest)}>{children}</SelectionContext.Provider>;
 
 /**
  * Hook for getting the nearest Selection.

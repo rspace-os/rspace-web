@@ -1,6 +1,9 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GlobalId, type Id } from "./BaseRecord";
-import { type Record } from "./Record";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type PersonAttrs } from "./Person";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Record } from "./Record";
 
 /**
  * A simple definition of an ELN document, sufficient for use in Inventory.

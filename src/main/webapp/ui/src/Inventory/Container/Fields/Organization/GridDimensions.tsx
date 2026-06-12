@@ -1,18 +1,20 @@
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
+import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+// biome-ignore lint/style/useImportType: initial biome migration
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React, { useState } from "react";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import NumberField from "../../../../components/Inputs/NumberField";
-import React, { useState } from "react";
-import useStores from "../../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import FormHelperText from "@mui/material/FormHelperText";
 import ContainerModel from "../../../../stores/models/ContainerModel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
-import Divider from "@mui/material/Divider";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
+import useStores from "../../../../stores/use-stores";
 import { mapObject } from "../../../../util/Util";
 
 const minGridSize = 1;
@@ -62,19 +64,13 @@ function GridDimensions(): React.ReactNode {
   const [validRows, setValidRows] = useState(true);
   const [commonSize, setCommonSize] = useState<CommonSizeIndex>("custom");
 
-  if (!activeResult || !(activeResult instanceof ContainerModel))
-    throw new Error("ActiveResult must be a Container");
+  if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
   const gridLayout = activeResult.gridLayout;
-  if (activeResult.cType !== "GRID" || !gridLayout)
-    throw new Error("Container must be a Grid Container");
+  if (activeResult.cType !== "GRID" || !gridLayout) throw new Error("Container must be a Grid Container");
 
   const [columnsNumber, setColumnsNumber] = useState<number>(1);
 
-  const handleChangeColumns = ({
-    target,
-  }: {
-    target: { value: string; checkValidity: () => boolean };
-  }) => {
+  const handleChangeColumns = ({ target }: { target: { value: string; checkValidity: () => boolean } }) => {
     setCommonSize("custom");
     setColumnsNumber(parseInt(target.value, 10));
     if (!target.checkValidity() || target.value === "") {
@@ -96,11 +92,7 @@ function GridDimensions(): React.ReactNode {
 
   const [rowsNumber, setRowsNumber] = useState(1);
 
-  const handleChangeRows = ({
-    target,
-  }: {
-    target: { value: string; checkValidity: () => boolean };
-  }) => {
+  const handleChangeRows = ({ target }: { target: { value: string; checkValidity: () => boolean } }) => {
     setCommonSize("custom");
     setRowsNumber(parseInt(target.value, 10));
     if (!target.checkValidity() || target.value === "") {
@@ -120,9 +112,7 @@ function GridDimensions(): React.ReactNode {
     }
   };
 
-  const handleChooseCommonSize = (
-    event: SelectChangeEvent<CommonSizeIndex>,
-  ) => {
+  const handleChooseCommonSize = (event: SelectChangeEvent<CommonSizeIndex>) => {
     const value = event.target.value;
     const size = commonSizes[value];
     setCommonSize(value);
@@ -197,9 +187,7 @@ function GridDimensions(): React.ReactNode {
                 step: 1,
               },
               input: {
-                startAdornment: (
-                  <InputAdornment position="start">Rows</InputAdornment>
-                ),
+                startAdornment: <InputAdornment position="start">Rows</InputAdornment>,
               },
             }}
           />
@@ -233,9 +221,7 @@ function GridDimensions(): React.ReactNode {
                 step: 1,
               },
               input: {
-                startAdornment: (
-                  <InputAdornment position="start">Columns</InputAdornment>
-                ),
+                startAdornment: <InputAdornment position="start">Columns</InputAdornment>,
               },
             }}
           />

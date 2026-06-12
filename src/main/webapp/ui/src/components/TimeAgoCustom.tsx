@@ -1,7 +1,7 @@
-import TimeAgo from "react-timeago";
-import { isoToLocale } from "@/util/Util";
-import { Formatter } from "react-timeago";
+// biome-ignore lint/style/useImportType: initial biome migration
+import TimeAgo, { Formatter } from "react-timeago";
 import { makeIntlFormatter } from "react-timeago/defaultFormatter";
+import { isoToLocale } from "@/util/Util";
 
 type UserDetailsArgs = {
   time: string;
@@ -9,47 +9,26 @@ type UserDetailsArgs = {
 };
 
 const intlFormatter = makeIntlFormatter({
-  locale: 'en-US',
-  localeMatcher: 'best fit',
-  numberingSystem: 'latn',
-  style: 'long',
-  numeric: 'auto',
+  locale: "en-US",
+  localeMatcher: "best fit",
+  numberingSystem: "latn",
+  style: "long",
+  numeric: "auto",
 });
 
 const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
-  const customFormatter: Formatter = (
-    value,
-    unit,
-    suffix,
-    epochMilliseconds,
-    nextFormatter,
-    now,
-  ) => {
+  const customFormatter: Formatter = (value, unit, suffix, epochMilliseconds, nextFormatter, now) => {
     if (unit === "second") {
       return "< 1 minute ago";
     }
 
     if (typeof formatter === "function") {
-      return formatter(
-        value,
-        unit,
-        suffix,
-        epochMilliseconds,
-        nextFormatter,
-        now,
-      );
+      return formatter(value, unit, suffix, epochMilliseconds, nextFormatter, now);
     }
 
     if (typeof nextFormatter === "function") {
       try {
-        return nextFormatter(
-          value,
-          unit,
-          suffix,
-          epochMilliseconds,
-          intlFormatter,
-          now,
-        );
+        return nextFormatter(value, unit, suffix, epochMilliseconds, intlFormatter, now);
       } catch {
         return `${value} ${unit}${suffix}`;
       }
@@ -59,12 +38,13 @@ const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
   };
 
   // display "time ago" if less than 30 days ago
+  // biome-ignore lint/complexity/useDateNow: initial biome migration
   if (Date.parse(time) + 30 * 24 * 60 * 60 * 1000 > new Date().getTime()) {
     // Not sure what's causing this
     return <TimeAgo date={time} formatter={customFormatter} />;
   }
   // display actual date otherwise
   return <>{isoToLocale(time)}</>;
-}
+};
 
 export default TimeAgoCustom;

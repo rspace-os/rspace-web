@@ -1,30 +1,28 @@
-import React from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
-import Result from "../../../util/result";
-import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
-import Box from "@mui/material/Box";
+import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
-import TreeView from "./TreeView";
-import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
-import * as FetchingData from "../../../util/fetchingData";
-import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import {
-  useGalleryActions,
-  rootDestination,
-  folderDestination,
-} from "../useGalleryActions";
-import RsSet from "../../../util/set";
-import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-import { type GallerySection } from "../common";
 import { observer } from "mobx-react-lite";
-import PlaceholderLabel from "./PlaceholderLabel";
+import React from "react";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as FetchingData from "../../../util/fetchingData";
+import Result from "../../../util/result";
+// biome-ignore lint/style/useImportType: initial biome migration
+import RsSet from "../../../util/set";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GallerySection } from "../common";
+import { folderDestination, rootDestination, useGalleryActions } from "../useGalleryActions";
+import { type GalleryFile, useGalleryListing } from "../useGalleryListing";
+import { GallerySelection, useGallerySelection } from "../useGallerySelection";
+import PlaceholderLabel from "./PlaceholderLabel";
+import TreeView from "./TreeView";
 
 type MoveDialogArgs = {
   open: boolean;
@@ -41,13 +39,7 @@ type MoveDialogArgs = {
 };
 
 const MoveDialog = observer(
-  ({
-    open,
-    onClose,
-    section,
-    selectedFiles,
-    refreshListing,
-  }: MoveDialogArgs): React.ReactNode => {
+  ({ open, onClose, section, selectedFiles, refreshListing }: MoveDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
 
@@ -59,14 +51,13 @@ const MoveDialog = observer(
       }),
       [section],
     );
-    const { galleryListing, refreshListing: refreshListingInsideDialog } =
-      useGalleryListing({
-        listingOf,
-        searchTerm: "",
-        orderBy: "name",
-        sortOrder: "ASC",
-        foldersOnly: true,
-      });
+    const { galleryListing, refreshListing: refreshListingInsideDialog } = useGalleryListing({
+      listingOf,
+      searchTerm: "",
+      orderBy: "name",
+      sortOrder: "ASC",
+      foldersOnly: true,
+    });
     const { moveFiles } = useGalleryActions();
     const selection = useGallerySelection();
 
@@ -79,12 +70,8 @@ const MoveDialog = observer(
 
     function computeValidation() {
       const files = selection.asSet();
-      if (files.isEmpty)
-        return Result.Error<null>([new Error("No folder is selected.")]);
-      if (files.size > 1)
-        return Result.Error<null>([
-          new Error("More than one folder is selected."),
-        ]);
+      if (files.isEmpty) return Result.Error<null>([new Error("No folder is selected.")]);
+      if (files.size > 1) return Result.Error<null>([new Error("More than one folder is selected.")]);
       return Result.Ok(null);
     }
 
@@ -171,18 +158,9 @@ const MoveDialog = observer(
                   try {
                     const destinationFolder = selection
                       .asSet()
-                      .only.toResult(
-                        () =>
-                          new Error(
-                            "Impossible; submit button requires a selection of one",
-                          ),
-                      )
+                      .only.toResult(() => new Error("Impossible; submit button requires a selection of one"))
                       .elseThrow();
-                    await moveFiles(
-                      section,
-                      folderDestination(destinationFolder),
-                      selectedFiles,
-                    );
+                    await moveFiles(section, folderDestination(destinationFolder), selectedFiles);
                     void refreshListing();
                     onClose();
                     trackEvent("user:moved:files:gallery", {
@@ -212,9 +190,7 @@ const MoveDialog = observer(
  * immediately.
  */
 
-export default (
-  props: Omit<MoveDialogArgs, "selectedFiles">,
-): React.ReactNode => {
+export default (props: Omit<MoveDialogArgs, "selectedFiles">): React.ReactNode => {
   const selection = useGallerySelection();
   return (
     <GallerySelection onlyAllowSingleSelection>

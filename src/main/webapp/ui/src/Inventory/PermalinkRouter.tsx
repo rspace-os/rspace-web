@@ -1,15 +1,14 @@
-import SearchRouter from "./Search/SearchRouter";
 import { observer } from "mobx-react-lite";
-import { useParams, Navigate } from "react-router-dom";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React, { useContext } from "react";
-import { type PermalinkType } from "../stores/definitions/Search";
-import NavigateContext from "../stores/contexts/Navigate";
+import { Navigate, useParams } from "react-router-dom";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
-import {
-  inventoryRecordTypeLabels,
-  globalIdPatterns,
-} from "../stores/definitions/BaseRecord";
+import NavigateContext from "../stores/contexts/Navigate";
+import { globalIdPatterns, inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type PermalinkType } from "../stores/definitions/Search";
 import { match } from "../util/Util";
+import SearchRouter from "./Search/SearchRouter";
 
 type PermalinkRouterArgs = {
   type: PermalinkType;
@@ -25,15 +24,15 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
 
   let version = null;
   if (urlSearchParams.has("version")) {
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     version = parseInt(urlSearchParams.get("version")!, 10);
+    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
     if (isNaN(version)) return <h1>Invalid version parameter</h1>;
   }
 
+  // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
   if (isNaN(parseInt(id, 10))) {
-    const recordType = match<
-      PermalinkType,
-      keyof typeof inventoryRecordTypeLabels
-    >([
+    const recordType = match<PermalinkType, keyof typeof inventoryRecordTypeLabels>([
       [(t) => t === "sample", "sample"],
       [(t) => t === "container", "container"],
       [(t) => t === "subsample", "subsample"],
@@ -51,13 +50,7 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
       const versionSuffix = /v(\d+)$/i.exec(id);
       if (versionSuffix) urlSearchParams.set("version", versionSuffix[1]);
       return (
-        <Navigate
-          to={`/inventory/${type}/${parseInt(
-            id.slice(2),
-            10
-          )}?${urlSearchParams.toString()}`}
-          replace={true}
-        />
+        <Navigate to={`/inventory/${type}/${parseInt(id.slice(2), 10)}?${urlSearchParams.toString()}`} replace={true} />
       );
     }
     /*
@@ -69,7 +62,7 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
       mkAlert({
         message: `"${id}" is not a valid ${inventoryRecordTypeLabels[recordType]} id.`,
         variant: "error",
-      })
+      }),
     );
     return <Navigate to="/inventory" replace={true} />;
   }

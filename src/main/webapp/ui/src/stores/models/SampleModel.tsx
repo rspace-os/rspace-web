@@ -1,90 +1,82 @@
+import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import { getErrorMessage } from "@/util/error";
+import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import ApiService from "../../common/InvApiService";
-import {
-  action,
-  computed,
-  observable,
-  override,
-  makeObservable,
-  runInAction,
-} from "mobx";
+import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { blobToBase64 } from "../../util/files";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import RsSet from "../../util/set";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type _LINK } from "../../util/types";
 import { match } from "../../util/Util";
-import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { mkAlert } from "../contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Attachment } from "../definitions/Attachment";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type BarcodeAttrs } from "../definitions/Barcode";
+import { type GlobalId, getSavedGlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type HasEditableFields, type HasUneditableFields } from "../definitions/Editable";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Factory } from "../definitions/Factory";
+import type { Field } from "../definitions/Field";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SharedWithGroup } from "../definitions/Group";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
-  type Quantity,
   type HasQuantityEditableFields,
   type HasQuantityUneditableFields,
+  type Quantity,
 } from "../definitions/HasQuantity";
-import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
+import type { IdentifierAttrs } from "../definitions/Identifier";
+// biome-ignore lint/style/useImportType: initial biome migration
+import {
+  type Action,
+  type CreateOption,
+  type InventoryRecord,
+  type RecordType,
+  type SharingMode,
+} from "../definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type PersonAttrs } from "../definitions/Person";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type RecordDetails } from "../definitions/Record";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Alias, type Sample, type SampleSource } from "../definitions/Sample";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type CoreFetcherArgs } from "../definitions/Search";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import { SubSample } from "../definitions/SubSample";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type AdjustableTableRowOptions } from "../definitions/Tables";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Template } from "../definitions/Template";
+import { CELSIUS, type Temperature, validateTemperature } from "../definitions/Units";
+import { HasQuantityMixin } from "../models/HasQuantity";
 import getRootStore from "../stores/RootStore";
-import { mkAlert } from "../contexts/Alert";
-import Search from "./Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type AttachmentJson } from "./AttachmentModel";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+// biome-ignore lint/style/useImportType: initial biome migration
 import InventoryBaseRecord, {
-  RESULT_FIELDS,
-  defaultVisibleResultFields,
   defaultEditableResultFields,
+  defaultVisibleResultFields,
   InventoryBaseRecordEditableFields,
   InventoryBaseRecordUneditableFields,
+  RESULT_FIELDS,
 } from "./InventoryBaseRecord";
-import { type Factory } from "../definitions/Factory";
 import InventoryBaseRecordCollection, {
   type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
-import RsSet from "../../util/set";
-import { blobToBase64 } from "../../util/files";
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import { type AttachmentJson } from "./AttachmentModel";
-import { type CoreFetcherArgs } from "../definitions/Search";
-import {
-  type Id,
-  type GlobalId,
-  getSavedGlobalId,
-  inventoryRecordTypeLabels,
-} from "../definitions/BaseRecord";
-import { type RecordDetails } from "../definitions/Record";
-import {
-  type InventoryRecord,
-  type RecordType,
-  type Action,
-  type SharingMode,
-  type CreateOption,
-} from "../definitions/InventoryRecord";
-import { type _LINK } from "../../util/types";
-import { type PersonAttrs } from "../definitions/Person";
-import {
-  type HasEditableFields,
-  type HasUneditableFields,
-} from "../definitions/Editable";
-import { type Template } from "../definitions/Template";
-import { type Attachment } from "../definitions/Attachment";
-import {
-  type Sample,
-  type Alias,
-  type SampleSource,
-} from "../definitions/Sample";
-import {
-  CELSIUS,
-  type Temperature,
-  validateTemperature,
-} from "../definitions/Units";
-import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
-import React from "react";
-import { type BarcodeAttrs } from "../definitions/Barcode";
-import { type SharedWithGroup } from "../definitions/Group";
-import type { IdentifierAttrs } from "../definitions/Identifier";
-import type { Field } from "../definitions/Field";
-import {
-  IsInvalid,
-  IsValid,
-  allAreValid,
-  type ValidationResult,
-} from "../../components/ValidatingSubmitButton";
-import * as Parsers from "../../util/parsers";
-import Result from "../../util/result";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import { getErrorMessage } from "@/util/error";
-import { SubSample } from "../definitions/SubSample";
-import { HasQuantityMixin } from "../models/HasQuantity";
+import Search from "./Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 
 type SampleEditableFields = HasQuantityEditableFields &
   InventoryBaseRecordEditableFields & {
@@ -95,8 +87,7 @@ type SampleEditableFields = HasQuantityEditableFields &
     subSampleAlias: Alias;
   };
 
-type SampleUneditableFields = HasQuantityUneditableFields &
-  InventoryBaseRecordUneditableFields;
+type SampleUneditableFields = HasQuantityUneditableFields & InventoryBaseRecordUneditableFields;
 
 export type SubSampleTargetLocation = {
   containerId: Id;
@@ -191,29 +182,25 @@ const FIELDS: Set<string> = new Set([
   "sampleSource",
   "subSampleAlias",
 ]);
+
 export { FIELDS as SAMPLE_FIELDS };
-const defaultVisibleFields: Set<string> = new Set([
-  ...FIELDS,
-  ...defaultVisibleResultFields,
-]);
+
+const defaultVisibleFields: Set<string> = new Set([...FIELDS, ...defaultVisibleResultFields]);
+
 export { defaultVisibleFields as defaultVisibleSampleFields };
-const defaultEditableFields: Set<string> = new Set([
-  ...defaultEditableResultFields,
-]);
+
+const defaultEditableFields: Set<string> = new Set([...defaultEditableResultFields]);
+
 export { defaultEditableFields as defaultEditableSampleFields };
 
 export default class SampleModel
   extends HasQuantityMixin(InventoryBaseRecord)
-  implements
-    Sample,
-    HasEditableFields<SampleEditableFields>,
-    HasUneditableFields<SampleUneditableFields>
+  implements Sample, HasEditableFields<SampleEditableFields>, HasUneditableFields<SampleUneditableFields>
 {
   subSamplesCount: number = 0;
   subSamples: Array<SubSampleModel> = [];
   newSampleSubSamplesCount: number | null = 1;
-  newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation> | null =
-    null;
+  newSampleSubSampleTargetLocations: Array<SubSampleTargetLocation> | null = null;
   // @ts-expect-error storageTempMin is initialised by populateFromJson
   storageTempMin: Temperature | null;
   // @ts-expect-error storageTempMax is initialised by populateFromJson
@@ -317,18 +304,13 @@ export default class SampleModel
     });
   }
 
-  populateFromJson(
-    factory: Factory,
-    passedParams: object,
-    defaultParams: object = {},
-  ) {
+  populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}) {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = {
       ...defaultParams,
       ...passedParams,
     } as SampleAttrs & { template: Template | null | false };
-    if (typeof params.subSamplesCount === "number")
-      this.subSamplesCount = params.subSamplesCount;
+    if (typeof params.subSamplesCount === "number") this.subSamplesCount = params.subSamplesCount;
     this.subSamples = (params.subSamples ?? []).map((s) => {
       const newRecord = factory.newRecord({
         ...s,
@@ -393,11 +375,7 @@ export default class SampleModel
           if (this.templateId) {
             const templateId = this.templateId;
             getRootStore()
-              .searchStore.getTemplate(
-                templateId,
-                this.templateVersion,
-                this.factory.newFactory(),
-              )
+              .searchStore.getTemplate(templateId, this.templateVersion, this.factory.newFactory())
               .then((template) => {
                 runInAction(() => {
                   this.template = template;
@@ -454,21 +432,14 @@ export default class SampleModel
       params.subSamples = this.subSamples.map((s) => ({
         ...s.paramsForBackend,
       }));
-    if (this.currentlyEditableFields.has("subSampleQuantity"))
-      params.quantity = quantity;
-    if (this.currentlyEditableFields.has("storageTempMin"))
-      params.storageTempMin = this.storageTempMin;
-    if (this.currentlyEditableFields.has("storageTempMax"))
-      params.storageTempMax = this.storageTempMax;
+    if (this.currentlyEditableFields.has("subSampleQuantity")) params.quantity = quantity;
+    if (this.currentlyEditableFields.has("storageTempMin")) params.storageTempMin = this.storageTempMin;
+    if (this.currentlyEditableFields.has("storageTempMax")) params.storageTempMax = this.storageTempMax;
     if (this.currentlyEditableFields.has("fields")) params.fields = fields;
-    if (this.currentlyEditableFields.has("expiryDate"))
-      params.expiryDate = this.expiryDate;
-    if (this.currentlyEditableFields.has("sampleSource"))
-      params.sampleSource = this.sampleSource;
-    if (this.currentlyEditableFields.has("quantity"))
-      params.quantity = quantity;
-    if (this.currentlyEditableFields.has("template") && this.template)
-      params.templateId = this.template.id;
+    if (this.currentlyEditableFields.has("expiryDate")) params.expiryDate = this.expiryDate;
+    if (this.currentlyEditableFields.has("sampleSource")) params.sampleSource = this.sampleSource;
+    if (this.currentlyEditableFields.has("quantity")) params.quantity = quantity;
+    if (this.currentlyEditableFields.has("template") && this.template) params.templateId = this.template.id;
     return params;
   }
 
@@ -486,15 +457,11 @@ export default class SampleModel
 
   async saveAttachments(newRecord?: InventoryRecord): Promise<void> {
     if (newRecord) {
-      if (!(newRecord instanceof SampleModel))
-        throw new TypeError("Expecting SampleModel");
+      if (!(newRecord instanceof SampleModel)) throw new TypeError("Expecting SampleModel");
       const sample: Sample = newRecord;
       if (!sample.globalId) throw new TypeError("Global ID is required");
       const globalId = sample.globalId;
-      await Promise.all([
-        super.saveAttachments(),
-        this.saveFieldAttachments(globalId, sample.fields),
-      ]);
+      await Promise.all([super.saveAttachments(), this.saveFieldAttachments(globalId, sample.fields)]);
     } else {
       await Promise.all([super.saveAttachments(), this.saveFieldAttachments()]);
     }
@@ -504,13 +471,8 @@ export default class SampleModel
    * Whenever a sample's modifications are saved, any modified attachments must
    * be submitted to the API individually.
    */
-  async saveFieldAttachments(
-    newResultGlobalId?: GlobalId,
-    newFields?: Array<Field>,
-  ): Promise<void> {
-    const findGlobalIdOfField = (
-      attachment: Attachment,
-    ): GlobalId | null | undefined => {
+  async saveFieldAttachments(newResultGlobalId?: GlobalId, newFields?: Array<Field>): Promise<void> {
+    const findGlobalIdOfField = (attachment: Attachment): GlobalId | null | undefined => {
       const field = this.fields.find((f) => f.attachment === attachment);
       if (!field) throw new Error("Could not find field");
       if (!newResultGlobalId) return field.globalId;
@@ -521,18 +483,13 @@ export default class SampleModel
       this.fields
         .filter((f) => Boolean(f.attachment))
         // handle removal of correct field attachment
-        .map((f) =>
-          f.attachment?.removed ? f.originalAttachment : f.attachment,
-        ),
+        .map((f) => (f.attachment?.removed ? f.originalAttachment : f.attachment)),
     );
 
     await Promise.all(
       fieldAttachments.map((attachment) => {
         const g = findGlobalIdOfField(attachment);
-        if (!g)
-          return Promise.reject(
-            new Error("Could not find Global Id for a field"),
-          );
+        if (!g) return Promise.reject(new Error("Could not find Global Id for a field"));
         return attachment.save(g);
       }),
     );
@@ -545,10 +502,7 @@ export default class SampleModel
     switch (this.state) {
       case "edit":
         this.setEditable(FIELDS, true);
-        this.setEditable(
-          new Set(["template", "quantity", "subSamplesCount"]),
-          false,
-        );
+        this.setEditable(new Set(["template", "quantity", "subSamplesCount"]), false);
         this.setVisible(new Set(["quantity", "template", "subsamples"]), false);
         this.setEditableExtraFields(this.extraFields, true);
         break;
@@ -614,10 +568,7 @@ export default class SampleModel
 
     if (!template) {
       this.overrideName(DEFAULT_SAMPLE.name);
-      this.overrideTemp(
-        DEFAULT_SAMPLE.storageTempMin,
-        DEFAULT_SAMPLE.storageTempMax,
-      );
+      this.overrideTemp(DEFAULT_SAMPLE.storageTempMin, DEFAULT_SAMPLE.storageTempMax);
       this.overrideFields([]);
       this.overrideSource(DEFAULT_SAMPLE.sampleSource);
       this.setAttributes({
@@ -653,6 +604,7 @@ export default class SampleModel
     }
   }
 
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   async sampleCreationParams(includeContentForFields: Set<Id>): Promise<{}> {
     const newBase64Image = this.image
       ? await fetch(this.image)
@@ -691,23 +643,16 @@ export default class SampleModel
     return Parsers.isNotBottom(this.quantity)
       .flatMap(({ numericValue }) => Parsers.isNumber(numericValue))
       .mapError(() => new Error("Quantity is invalid."))
-      .flatMap((value) =>
-        value < 0 ? IsInvalid("Quantity must be a positive value.") : IsValid(),
-      );
+      .flatMap((value) => (value < 0 ? IsInvalid("Quantity must be a positive value.") : IsValid()));
   }
 
   validate(): ValidationResult {
     const validateNewSubSamplesCount = () => {
       const newSampleSubSamplesCount = this.newSampleSubSamplesCount;
-      if (
-        newSampleSubSamplesCount === null ||
-        typeof newSampleSubSamplesCount === "undefined"
-      )
+      if (newSampleSubSamplesCount === null || typeof newSampleSubSamplesCount === "undefined")
         return IsInvalid("Number of subsamples is invalid.");
-      if (newSampleSubSamplesCount <= 0)
-        return IsInvalid("Number of subsamples must be a positive value.");
-      if (newSampleSubSamplesCount > 100)
-        return IsInvalid("Number of subsamples cannot exceed 100.");
+      if (newSampleSubSamplesCount <= 0) return IsInvalid("Number of subsamples must be a positive value.");
+      if (newSampleSubSamplesCount > 100) return IsInvalid("Number of subsamples cannot exceed 100.");
       return IsValid();
     };
 
@@ -730,12 +675,8 @@ export default class SampleModel
       validateNewSubSamplesCount(),
       validateFields(),
       this.validateQuantity(),
-      validateTemperature(this.storageTempMin).mapError(
-        () => new Error("Minimum temperature is invalid."),
-      ),
-      validateTemperature(this.storageTempMax).mapError(
-        () => new Error("Maximum temperature is invalid."),
-      ),
+      validateTemperature(this.storageTempMin).mapError(() => new Error("Minimum temperature is invalid.")),
+      validateTemperature(this.storageTempMax).mapError(() => new Error("Maximum temperature is invalid.")),
       validateExpiryDate(),
     ]);
   }
@@ -751,10 +692,7 @@ export default class SampleModel
   async updateToLatestTemplate(): Promise<void> {
     if (!this.id) throw new Error("Does not have an id.");
     try {
-      await ApiService.post<void>(
-        `samples/${this.id}/actions/updateToLatestTemplateVersion`,
-        {},
-      );
+      await ApiService.post<void>(`samples/${this.id}/actions/updateToLatestTemplateVersion`, {});
       getRootStore().uiStore.addAlert(
         mkAlert({
           message: "Sample updated to latest template successfully.",
@@ -779,9 +717,7 @@ export default class SampleModel
   }
 
   contextMenuDisabled(): string | null {
-    const searchShowsSelection = new Set(["LIST", "GRID", "IMAGE"]).has(
-      this.search.searchView,
-    );
+    const searchShowsSelection = new Set(["LIST", "GRID", "IMAGE"]).has(this.search.searchView);
     return (
       super.contextMenuDisabled() ??
       (this.hasSelectedSubsample && searchShowsSelection
@@ -794,14 +730,7 @@ export default class SampleModel
     return [
       ...super.fieldNamesInUse,
       ...this.fields.filter((f) => f.name).map((f) => f.name),
-      ...[
-        "Sample Template",
-        "Expiry Date",
-        "Source",
-        "Storage Temperature",
-        "Total Quantity",
-        "Subsamples",
-      ],
+      ...["Sample Template", "Expiry Date", "Source", "Storage Temperature", "Total Quantity", "Subsamples"],
     ];
   }
 
@@ -922,14 +851,8 @@ export default class SampleModel
   }
 
   get inContainerParams(): SampleInContainerParams {
-    if (!this.newSampleSubSamplesCount)
-      throw new Error("Subsamples count must be known.");
-    if (
-      !(
-        this.newSampleSubSampleTargetLocations &&
-        this.newSampleSubSampleTargetLocations.length > 0
-      )
-    )
+    if (!this.newSampleSubSamplesCount) throw new Error("Subsamples count must be known.");
+    if (!(this.newSampleSubSampleTargetLocations && this.newSampleSubSampleTargetLocations.length > 0))
       throw new Error("Target locations must be known.");
     const firstLocation = this.newSampleSubSampleTargetLocations[0];
     return {
@@ -941,13 +864,11 @@ export default class SampleModel
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
-    let splitExplanation =
-      "Subsamples will be created by dividing the existing subsample quantity amongst them.";
+    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them.";
     if (this.subSamples.length > 1)
       splitExplanation =
         "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
-    if (!this.canEdit)
-      splitExplanation = "You do not have permission to edit this sample.";
+    if (!this.canEdit) splitExplanation = "You do not have permission to edit this sample.";
 
     return [
       {
@@ -969,9 +890,7 @@ export default class SampleModel
             explanation:
               "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
             state: this.createOptionsParametersState.newSubsamplesQuantity,
-            validState: () =>
-              this.createOptionsParametersState.newSubsamplesQuantity
-                .quantity !== "",
+            validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
           },
         ],
         disabled: !this.canEdit,
@@ -980,17 +899,13 @@ export default class SampleModel
           this.createOptionsParametersState.newSubsamplesQuantity.quantity = 1;
         },
         onSubmit: () => {
-          if (!this.quantity)
-            throw new Error("Don't know what the sample's current quantity is");
+          if (!this.quantity) throw new Error("Don't know what the sample's current quantity is");
           const unitId = this.quantity.unitId;
           return getRootStore().searchStore.search.createNewSubsamples({
             sample: this,
-            numberOfNewSubsamples:
-              this.createOptionsParametersState.newSubsamplesCount.count,
+            numberOfNewSubsamples: this.createOptionsParametersState.newSubsamplesCount.count,
             quantityPerSubsample: {
-              numericValue:
-                this.createOptionsParametersState.newSubsamplesQuantity
-                  .quantity,
+              numericValue: this.createOptionsParametersState.newSubsamplesQuantity.quantity,
               unitId,
             },
           });
@@ -1003,8 +918,7 @@ export default class SampleModel
         parameters: [
           {
             label: "Number of new subsamples",
-            explanation:
-              "The total number of subsamples wanted, including the source (between 2 and 100)",
+            explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
             state: this.createOptionsParametersState.split,
             validState: () =>
               this.createOptionsParametersState.split.copies >= 2 &&
@@ -1015,10 +929,7 @@ export default class SampleModel
           this.createOptionsParametersState.split.copies = 2;
         },
         onSubmit: () => {
-          if (this.subSamples.length !== 1)
-            throw new Error(
-              "Can only split samples when there is one subsample",
-            );
+          if (this.subSamples.length !== 1) throw new Error("Can only split samples when there is one subsample");
           return getRootStore().searchStore.search.splitRecord(
             this.createOptionsParametersState.split.copies,
             this.subSamples[0],
@@ -1027,16 +938,13 @@ export default class SampleModel
       },
       {
         label: "Template",
-        explanation:
-          "Create a template from this sample, to easily create similar samples.",
+        explanation: "Create a template from this sample, to easily create similar samples.",
         parameters: [
           {
             label: "Name",
-            explanation:
-              "A name for the new template. At least two characters.",
+            explanation: "A name for the new template. At least two characters.",
             state: this.createOptionsParametersState.name,
-            validState: () =>
-              this.createOptionsParametersState.name.value.length >= 2,
+            validState: () => this.createOptionsParametersState.name.value.length >= 2,
           },
           {
             label: "Field default values",
@@ -1102,8 +1010,7 @@ export class SampleCollection
 
   get allSameTemperatures(): boolean {
     const allTemperaturesUnspecified =
-      this.records.every((s) => !s.storageTempMin) &&
-      this.records.every((s) => !s.storageTempMax);
+      this.records.every((s) => !s.storageTempMin) && this.records.every((s) => !s.storageTempMax);
     const setOfTemperatures = new RsSet(
       this.records.map((s) => ({
         min: s.storageTempMin,
@@ -1128,23 +1035,15 @@ export class SampleCollection
      * Note that these two sets may contain multiple objects modelling the same
      * temperature range as sets define quality using `===`.
      */
-    const currentStorageTemperatureMin = new RsSet(
-      this.records.map((r) => r.storageTempMin),
-    );
-    const currentStorageTemperatureMax = new RsSet(
-      this.records.map((r) => r.storageTempMax),
-    );
+    const currentStorageTemperatureMin = new RsSet(this.records.map((r) => r.storageTempMin));
+    const currentStorageTemperatureMax = new RsSet(this.records.map((r) => r.storageTempMax));
 
     return {
       ...super.fieldValues,
       sampleSource: currentSources.first ?? "",
       expiryDate: currentExpiryDates.first ?? null,
-      storageTempMin: allSameTemperatures
-        ? currentStorageTemperatureMin.first
-        : null,
-      storageTempMax: allSameTemperatures
-        ? currentStorageTemperatureMax.first
-        : null,
+      storageTempMin: allSameTemperatures ? currentStorageTemperatureMin.first : null,
+      storageTempMax: allSameTemperatures ? currentStorageTemperatureMax.first : null,
 
       // Not supported when batch editing
       quantity: null,
@@ -1158,8 +1057,7 @@ export class SampleCollection
     const currentSources = new RsSet(this.records.map((r) => r.sampleSource));
     const currentExpiryDates = new RsSet(this.records.map((r) => r.expiryDate));
     const allTemperaturesUnspecified =
-      this.records.every((s) => !s.storageTempMin) &&
-      this.records.every((s) => !s.storageTempMax);
+      this.records.every((s) => !s.storageTempMin) && this.records.every((s) => !s.storageTempMax);
     const allSameTemperatures = this.allSameTemperatures;
 
     const temperatureLabel = match<void, string | null>([

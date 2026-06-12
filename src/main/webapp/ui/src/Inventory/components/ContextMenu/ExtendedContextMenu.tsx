@@ -1,17 +1,17 @@
-import ContextMenu, { type ContextMenuArgs } from "./ContextMenu";
-import ContextMenuButton from "./ContextMenuButton";
-import ContextMenuSplitButton, {
-  type SplitButtonOption,
-} from "./ContextMenuSplitButton";
-import Divider from "@mui/material/Divider";
-import Box from "@mui/material/Box";
-import MenuItem from "@mui/material/MenuItem";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import React, { useLayoutEffect, useRef, useState } from "react";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React, { useLayoutEffect, useRef, useState } from "react";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import StyledMenu from "../../../components/StyledMenu";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import ContextMenu, { type ContextMenuArgs } from "./ContextMenu";
+import ContextMenuButton from "./ContextMenuButton";
+import ContextMenuSplitButton, { type SplitButtonOption } from "./ContextMenuSplitButton";
 
 type ExtendedContextMenuArgs = {
   prefixActions: Array<
@@ -35,14 +35,7 @@ type ExtendedContextMenuArgs = {
   onSelectOptions?: Array<SplitButtonOption>;
   menuID: string;
   basketSearch?: boolean;
-} & Omit<
-  ContextMenuArgs,
-  | "selectedResults"
-  | "menuID"
-  | "onSelectOptions"
-  | "basketSearch"
-  | "paddingTop"
->;
+} & Omit<ContextMenuArgs, "selectedResults" | "menuID" | "onSelectOptions" | "basketSearch" | "paddingTop">;
 
 function ExtendedContextMenu({
   prefixActions,
@@ -75,6 +68,7 @@ function ExtendedContextMenu({
     );
     root
       .querySelectorAll<HTMLElement>("[data-idx]")
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       .forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, [prefixActions.length]);
@@ -155,9 +149,7 @@ function ExtendedContextMenu({
               key={action.key}
               disabled={action.disabledHelp !== ""}
               onClick={(e) => {
-                action.onClick?.(
-                  e as unknown as React.MouseEvent<HTMLButtonElement>,
-                );
+                action.onClick?.(e as unknown as React.MouseEvent<HTMLButtonElement>);
                 setAnchorEl(null);
               }}
             >

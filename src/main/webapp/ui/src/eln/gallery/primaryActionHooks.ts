@@ -1,47 +1,31 @@
-import Result from "../../util/result";
-import * as Parsers from "../../util/parsers";
-import * as FetchingData from "../../util/fetchingData";
-import { type GalleryFile, chemistryFilePreview } from "./useGalleryListing";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
-import useCollabora from "./useCollabora";
-import useOfficeOnline from "./useOfficeOnline";
-import { supportedAsposeFile } from "./components/CallableAsposePreview";
+import * as FetchingData from "../../util/fetchingData";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type URL } from "../../util/types";
+import { supportedAsposeFile } from "./components/CallableAsposePreview";
+import useCollabora from "./useCollabora";
+import { chemistryFilePreview, type GalleryFile } from "./useGalleryListing";
+import useOfficeOnline from "./useOfficeOnline";
 
-const dnaFileExtensions = [
-  "fa",
-  "gb",
-  "gbk",
-  "fasta",
-  "fa",
-  "dna",
-  "seq",
-  "sbd",
-  "embl",
-  "ab1",
-];
+const dnaFileExtensions = ["fa", "gb", "gbk", "fasta", "fa", "dna", "seq", "sbd", "embl", "ab1"];
 /**
  * Hook that provides a function that can be used to check if a file can be
  * previewed as a DNA sequence in SnapGene. If it can, then a function that
  * returns null is returned.
  */
-export function useSnapGenePreviewOfGalleryFile(): (
-  file: GalleryFile,
-) => Result<null> {
+export function useSnapGenePreviewOfGalleryFile(): (file: GalleryFile) => Result<null> {
   const snapGeneEnabled = useDeploymentProperty("snapgene.available");
   return (file) => {
-    if (!file.extension)
-      return Result.Error([new Error("File extension is missing")]);
-    if (!dnaFileExtensions.includes(file.extension))
-      return Result.Error([new Error("The file is not a DNA file")]);
+    if (!file.extension) return Result.Error([new Error("File extension is missing")]);
+    if (!dnaFileExtensions.includes(file.extension)) return Result.Error([new Error("The file is not a DNA file")]);
     return FetchingData.getSuccessValue(snapGeneEnabled)
       .flatMap(Parsers.isString)
       .flatMap((str) =>
         str === "ALLOWED"
           ? Result.Ok(null)
-          : Result.Error([
-              new Error("The system admin has not made SnapGene available"),
-            ]),
+          : Result.Error([new Error("The system admin has not made SnapGene available")]),
       );
   };
 }
@@ -51,9 +35,7 @@ export function useSnapGenePreviewOfGalleryFile(): (
  * previewed as an image. If it can, then a function that produces a URL to
  * image file of such a preview is returned.
  */
-export function useImagePreviewOfGalleryFile(): (
-  file: GalleryFile,
-) => Result<() => Promise<URL>> {
+export function useImagePreviewOfGalleryFile(): (file: GalleryFile) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
     return chemistryFilePreview(file)
@@ -79,15 +61,12 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
       .flatMap((extension) =>
         supportedCollaboraExts.has(extension)
           ? Result.Ok(null)
-          : Result.Error([
-              new Error(
-                "Selected file's extension is not supported by collabora",
-              ),
-            ]),
+          : Result.Error([new Error("Selected file's extension is not supported by collabora")]),
       )
       .map(() => file.globalId)
       .flatMap(Parsers.isNotBottom)
       .map((globalId) => {
+        // biome-ignore lint/style/useTemplate: initial biome migration
         return "/collaboraOnline/" + globalId + "/edit";
       });
   };
@@ -110,15 +89,12 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
       .flatMap((extension) =>
         supportedOfficeOnlineExts.has(extension)
           ? Result.Ok(null)
-          : Result.Error([
-              new Error(
-                "Selected file's extension is not supported by office online",
-              ),
-            ]),
+          : Result.Error([new Error("Selected file's extension is not supported by office online")]),
       )
       .map(() => file.globalId)
       .flatMap(Parsers.isNotBottom)
       .map((globalId) => {
+        // biome-ignore lint/style/useTemplate: initial biome migration
         return "/officeOnline/" + globalId + "/view";
       });
   };
@@ -128,14 +104,10 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
  * Hook that returns a function that can be used to check if a file is a PDF.
  * If it is, then a function that produces a URL to the PDF file is returned.
  */
-export function usePdfPreviewOfGalleryFile(): (
-  file: GalleryFile,
-) => Result<() => Promise<URL>> {
+export function usePdfPreviewOfGalleryFile(): (file: GalleryFile) => Result<() => Promise<URL>> {
   return (file) => {
-    if (file.extension !== "pdf")
-      return Result.Error([new Error("The file is not a PDF")]);
-    if (!file.downloadHref)
-      return Result.Error([new Error("URL to download is missing")]);
+    if (file.extension !== "pdf") return Result.Error([new Error("The file is not a PDF")]);
+    if (!file.downloadHref) return Result.Error([new Error("URL to download is missing")]);
     return Result.Ok(file.downloadHref);
   };
 }
@@ -144,9 +116,7 @@ export function usePdfPreviewOfGalleryFile(): (
  * Hook that returns a function that can be used to check if a file can be
  * previewed by having Aspose generate a PDF.
  */
-export function useAsposePreviewOfGalleryFile(): (
-  file: GalleryFile,
-) => Result<null> {
+export function useAsposePreviewOfGalleryFile(): (file: GalleryFile) => Result<null> {
   const asposeEnabled = useDeploymentProperty("aspose.enabled");
   return (file) => {
     return FetchingData.getSuccessValue(asposeEnabled)
@@ -208,9 +178,7 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
           ],
         })),
       )
-      .orElseTry(() =>
-        canShowSnippet(file).map(() => ({ tag: "snippet" as const })),
-      )
+      .orElseTry(() => canShowSnippet(file).map(() => ({ tag: "snippet" as const })))
       .orElseTry(() =>
         canEditWithCollabora(file).map((url) => ({
           tag: "collabora" as const,
@@ -235,7 +203,5 @@ export default function usePrimaryAction(): (file: GalleryFile) => Result<
           file,
         })),
       )
-      .orElseTry(() =>
-        canPreviewWithAspose(file).map(() => ({ tag: "aspose" as const })),
-      );
+      .orElseTry(() => canPreviewWithAspose(file).map(() => ({ tag: "aspose" as const })));
 }

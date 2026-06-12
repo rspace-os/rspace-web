@@ -1,14 +1,14 @@
-import axios, {
-  type AxiosRequestConfig,
-  type AxiosInstance,
-  type AxiosResponse,
-  type AxiosError,
-} from "@/common/axios";
 import { when } from "mobx";
-import getRootStore from "../stores/stores/RootStore";
-import JwtService from "./JwtService";
-import { sleep } from "../util/Util";
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+} from "@/common/axios";
 import { mkAlert } from "../stores/contexts/Alert";
+import getRootStore from "../stores/stores/RootStore";
+import { sleep } from "../util/Util";
+import JwtService from "./JwtService";
 
 type JSON = unknown;
 
@@ -33,12 +33,12 @@ class ApiServiceBase {
 
     api.interceptors.response.use(
       (response) => response,
-      (...args) => this.on401Retry(...args)
+      (...args) => this.on401Retry(...args),
     );
     // Global because in some places we use axios instead of this.api for requesting /api/v1/
     axios.interceptors.response.use(
       (response) => response,
-      (...args) => this.on401Retry(...args)
+      (...args) => this.on401Retry(...args),
     );
   }
 
@@ -49,9 +49,7 @@ class ApiServiceBase {
       error.response.status === 401 &&
       !(error.config.data && !error.config.data.__isRetryRequest)
     ) {
-      if (
-        /\/userform\/ajax\/inventoryOauthToken/.test(error.request.responseURL)
-      ) {
+      if (/\/userform\/ajax\/inventoryOauthToken/.test(error.request.responseURL)) {
         /*
          * Prevent the immediate infinite loop caused by a 401 on
          * /inventoryOauthToken resulting in another call to authenticate(),
@@ -71,6 +69,7 @@ class ApiServiceBase {
       error.config.data = { __isRetryRequest: true };
 
       error.config.headers.Authorization =
+        // biome-ignore lint/style/useTemplate: initial biome migration
         "Bearer " + (JwtService.getToken() ?? "");
 
       if (getRootStore().authStore.isAuthenticated) {
@@ -83,6 +82,7 @@ class ApiServiceBase {
   setAuthorizationHeader() {
     // for when you use the bearer token
     this.api.defaults.headers.common = {
+      // biome-ignore lint/style/useTemplate: initial biome migration
       Authorization: "Bearer " + (JwtService.getToken() ?? ""),
     };
 
@@ -90,23 +90,16 @@ class ApiServiceBase {
     // this.api.defaults.headers.common.apiKey = getToken();
   }
 
-  query<T>(
-    resource: string,
-    params: URLSearchParams,
-    isBlob: boolean = false
-  ): Promise<AxiosResponse<T>> {
+  query<T>(resource: string, params: URLSearchParams, isBlob: boolean = false): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() =>
       this.api.get<T>(resource, {
         params,
         responseType: isBlob ? "blob" : "json",
-      })
+      }),
     );
   }
 
-  get<T>(
-    resource: string,
-    slug: string | number = ""
-  ): Promise<AxiosResponse<T>> {
+  get<T>(resource: string, slug: string | number = ""): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.get<T>(`${resource}/${slug}`);
     });
@@ -115,7 +108,7 @@ class ApiServiceBase {
   post<T>(
     resource: string,
     params: object | FormData,
-    config?: AxiosRequestConfig<unknown>
+    config?: AxiosRequestConfig<unknown>,
   ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.post<T>(`${resource}`, params, config);
@@ -126,7 +119,7 @@ class ApiServiceBase {
     resource: string,
     slug: string | number,
     params: JSON,
-    config?: AxiosRequestConfig<unknown>
+    config?: AxiosRequestConfig<unknown>,
   ): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.put<T>(`${resource}/${slug}`, params, config);
@@ -139,10 +132,7 @@ class ApiServiceBase {
     });
   }
 
-  delete<T>(
-    resource: string,
-    slug: string | number
-  ): Promise<AxiosResponse<T>> {
+  delete<T>(resource: string, slug: string | number): Promise<AxiosResponse<T>> {
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
       return this.api.delete(`${resource}/${slug ? slug : ""}`);
     });

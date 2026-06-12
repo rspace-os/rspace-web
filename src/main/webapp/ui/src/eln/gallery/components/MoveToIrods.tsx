@@ -1,35 +1,36 @@
-import React from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../../accentedTheme";
-import Dialog from "@mui/material/Dialog";
-import Typography from "@mui/material/Typography";
-import AppBar from "../../../components/AppBar";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import Link from "@mui/material/Link";
-import Box from "@mui/material/Box";
-import FormField from "../../../components/Inputs/FormField";
-import MenuItem from "@mui/material/MenuItem";
-import Menu from "@mui/material/Menu";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItem from "@mui/material/ListItem";
-import List from "@mui/material/List";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import ChoiceField from "../../../components/Inputs/ChoiceField";
-import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import useIrods, { type IrodsLocation } from "./useIrods";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import * as FetchingData from "../../../util/fetchingData";
-import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
-import Result from "../../../util/result";
-import docLinks from "../../../assets/DocLinks";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import React from "react";
+import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
+import docLinks from "../../../assets/DocLinks";
+import AppBar from "../../../components/AppBar";
+import ChoiceField from "../../../components/Inputs/ChoiceField";
+import FormField from "../../../components/Inputs/FormField";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as FetchingData from "../../../util/fetchingData";
+import Result from "../../../util/result";
+import useIrods, { type IrodsLocation } from "./useIrods";
 
 type MoveCopyDialogArgs = {
   selectedIds: ReadonlyArray<string>;
@@ -37,17 +38,11 @@ type MoveCopyDialogArgs = {
   setDialogOpen: (open: boolean) => void;
 };
 
-function MoveCopyDialog({
-  selectedIds,
-  dialogOpen,
-  setDialogOpen,
-}: MoveCopyDialogArgs) {
+function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDialogArgs) {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const irods = useIrods(selectedIds);
-  const [locationsAnchorEl, setLocationsAnchorEl] =
-    React.useState<HTMLElement | null>(null);
-  const [selectedDestination, setSelectedDestination] =
-    React.useState<IrodsLocation | null>(null);
+  const [locationsAnchorEl, setLocationsAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [selectedDestination, setSelectedDestination] = React.useState<IrodsLocation | null>(null);
   const [keepCopyInRspace, setKeepCopyInRspace] = React.useState(false);
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -57,32 +52,21 @@ function MoveCopyDialog({
    * After the first authenticated request in a session, the server caches the
    * credentials so that it is not necessary re-type password over and over.
    */
-  const [showUsernamePasswordForm, setShowUsernamePasswordForm] =
-    React.useState(true);
+  const [showUsernamePasswordForm, setShowUsernamePasswordForm] = React.useState(true);
 
   function validateState(): Result<null> {
     return Result.all(
-      irods.tag === "loading"
-        ? Result.Error<null>([new Error("Loading available locations")])
-        : Result.Ok(null),
-      irods.tag === "error"
-        ? Result.Error([new Error(irods.error)])
-        : Result.Ok(null),
+      irods.tag === "loading" ? Result.Error<null>([new Error("Loading available locations")]) : Result.Ok(null),
+      irods.tag === "error" ? Result.Error([new Error(irods.error)]) : Result.Ok(null),
     )
       .flatMap(() =>
         Result.all(
-          selectedDestination
-            ? Result.Ok(null)
-            : Result.Error<null>([new Error("A destination is required.")]),
+          selectedDestination ? Result.Ok(null) : Result.Error<null>([new Error("A destination is required.")]),
           showUsernamePasswordForm && username === ""
-            ? Result.Error([
-                new Error("Username for iRODS server is required."),
-              ])
+            ? Result.Error([new Error("Username for iRODS server is required.")])
             : Result.Ok(null),
           showUsernamePasswordForm && password === ""
-            ? Result.Error([
-                new Error("Password for iRODS server is required."),
-              ])
+            ? Result.Error([new Error("Password for iRODS server is required.")])
             : Result.Ok(null),
         ),
       )
@@ -100,8 +84,7 @@ function MoveCopyDialog({
   }, [selectedIds]);
 
   const onSubmit = () => {
-    if (!selectedDestination)
-      throw new Error("A destination has not bee selected");
+    if (!selectedDestination) throw new Error("A destination has not bee selected");
     if (keepCopyInRspace) {
       selectedDestination.copy.do((c) => {
         setOperationInProgress(true);
@@ -189,32 +172,26 @@ function MoveCopyDialog({
                 error: (errorMsg) =>
                   errorMsg === "No iRODS filestore configured" ? (
                     <Alert severity="error">
-                      <AlertTitle>
-                        No iRODS filestore has been configured.
-                      </AlertTitle>
-                      Add a new one in the filestore section of the Gallery or
-                      speak to your system administrator.
+                      <AlertTitle>No iRODS filestore has been configured.</AlertTitle>
+                      Add a new one in the filestore section of the Gallery or speak to your system administrator.
                     </Alert>
                   ) : (
                     <Alert severity="error">
                       <AlertTitle>{errorMsg}</AlertTitle>
-                      Please check with your System Admin to ensure iRODS is
-                      correctly configured.
+                      Please check with your System Admin to ensure iRODS is correctly configured.
                     </Alert>
                   ),
                 success: ({ serverUrl, configuredLocations }) => (
                   <>
                     <Typography variant="body2">
                       You have selected {selectedIds.length} item
-                      {selectedIds.length > 1 && "s"} to move to the iRODS
-                      server{" "}
+                      {selectedIds.length > 1 && "s"} to move to the iRODS server{" "}
                       <Link target="_blank" href={serverUrl}>
                         {serverUrl}
                       </Link>
-                      . By default, the items will be added to iRODS and removed
-                      from RSpace. You will be able to link to the iRODS items
-                      inside of RSpace documents and include them into any
-                      exports through our iRODS integration.
+                      . By default, the items will be added to iRODS and removed from RSpace. You will be able to link
+                      to the iRODS items inside of RSpace documents and include them into any exports through our iRODS
+                      integration.
                     </Typography>
                     <ChoiceField
                       name="keep"
@@ -238,15 +215,10 @@ function MoveCopyDialog({
                           <List>
                             <ListItemButton
                               sx={{ maxWidth: "400px" }}
-                              onClick={(e) =>
-                                setLocationsAnchorEl(e.currentTarget)
-                              }
+                              onClick={(e) => setLocationsAnchorEl(e.currentTarget)}
                             >
                               <ListItemText
-                                primary={
-                                  selectedDestination?.name ??
-                                  "Select a destination"
-                                }
+                                primary={selectedDestination?.name ?? "Select a destination"}
                                 secondary={selectedDestination?.path ?? ""}
                               />
                               <KeyboardArrowDownIcon />
@@ -269,10 +241,7 @@ function MoveCopyDialog({
                                 }}
                                 sx={{ width: "400px" }}
                               >
-                                <ListItemText
-                                  primary={location.name}
-                                  secondary={location.path}
-                                />
+                                <ListItemText primary={location.name} secondary={location.path} />
                               </MenuItem>
                             ))}
                           </Menu>
@@ -310,10 +279,7 @@ function MoveCopyDialog({
                           iRODS login
                         </Box>
                         <Stack spacing={1}>
-                          <Typography variant="body2">
-                            Please provide your login credentials for{" "}
-                            {serverUrl}
-                          </Typography>
+                          <Typography variant="body2">Please provide your login credentials for {serverUrl}</Typography>
                           <FormField
                             label="Username"
                             value={username}
@@ -348,10 +314,7 @@ function MoveCopyDialog({
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => setDialogOpen(false)}
-              disabled={operationInProgress}
-            >
+            <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
               Cancel
             </Button>
             <ValidatingSubmitButton
@@ -381,18 +344,10 @@ const accentTheme = Object.freeze(createAccentedTheme(ACCENT_COLOR));
 /**
  * A dialog for copying or moving files to an iRODS server.
  */
-export default function Wrapper({
-  selectedIds,
-  dialogOpen,
-  setDialogOpen,
-}: WrapperArgs): React.ReactNode {
+export default function Wrapper({ selectedIds, dialogOpen, setDialogOpen }: WrapperArgs): React.ReactNode {
   return (
     <ThemeProvider theme={accentTheme}>
-      <MoveCopyDialog
-        selectedIds={selectedIds}
-        dialogOpen={dialogOpen}
-        setDialogOpen={setDialogOpen}
-      />
+      <MoveCopyDialog selectedIds={selectedIds} dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} />
     </ThemeProvider>
   );
 }

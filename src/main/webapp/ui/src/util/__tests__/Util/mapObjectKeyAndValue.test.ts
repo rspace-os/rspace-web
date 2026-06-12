@@ -1,9 +1,7 @@
-
-import { describe, expect, test } from 'vitest';
-import { mapObjectKeyAndValue } from "../../Util";
 import fc from "fast-check";
-
+import { describe, expect, test } from "vitest";
 import { incrementForever } from "../../iterators";
+import { mapObjectKeyAndValue } from "../../Util";
 
 const arbObjectKey = fc.string().filter((str) => str !== "__proto__");
 describe("mapObjectKeyAndValue", () => {
@@ -14,39 +12,27 @@ describe("mapObjectKeyAndValue", () => {
           mapObjectKeyAndValue(
             (k) => k,
             (_, v) => v,
-            obj
-          )
+            obj,
+          ),
         ).toEqual(obj);
-      })
+      }),
     );
-
   });
   test("When keyFunc returns a constant value, the returned object contains at most one key-value pair.", () => {
     fc.assert(
       fc.property(
-        fc.tuple(
-          fc.func<unknown[], unknown>(fc.anything()),
-          fc.dictionary(arbObjectKey, fc.anything())
-        ),
+        fc.tuple(fc.func<unknown[], unknown>(fc.anything()), fc.dictionary(arbObjectKey, fc.anything())),
         ([valueFunc, obj]) => {
-          expect(
-            Object.entries(mapObjectKeyAndValue(() => "foo", valueFunc, obj))
-              .length
-          ).toBeLessThanOrEqual(1);
-        }
-      )
+          expect(Object.entries(mapObjectKeyAndValue(() => "foo", valueFunc, obj)).length).toBeLessThanOrEqual(1);
+        },
+      ),
     );
-
   });
   test("If keyFunc returns unique values on every call, then the size of the output object will be the same as the input", () => {
-
     const keyGenerator = incrementForever();
     fc.assert(
       fc.property(
-        fc.tuple(
-          fc.func<unknown[], unknown>(fc.anything()),
-          fc.dictionary(arbObjectKey, fc.anything())
-        ),
+        fc.tuple(fc.func<unknown[], unknown>(fc.anything()), fc.dictionary(arbObjectKey, fc.anything())),
         ([valueFunc, obj]) => {
           expect(
             Object.entries(
@@ -54,13 +40,12 @@ describe("mapObjectKeyAndValue", () => {
                 // the -1 is just to satisfy TypeScript; incrementForever wont ever return a .value of null
                 () => `${keyGenerator.next().value ?? -1}`,
                 valueFunc,
-                obj
-              )
-            ).length
+                obj,
+              ),
+            ).length,
           ).toEqual(Object.entries(obj).length);
-        }
-      )
+        },
+      ),
     );
   });
 });
-

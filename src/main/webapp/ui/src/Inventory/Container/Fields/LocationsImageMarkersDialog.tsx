@@ -1,28 +1,27 @@
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
+import ViewHeadlineIcon from "@mui/icons-material/ViewHeadline";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import ContentImage, {
-  type TappedLocationData,
-} from "../Content/ImageView/PlaceMarkers/ContentImage";
 import DialogContentText from "@mui/material/DialogContentText";
 import Grid from "@mui/material/Grid";
-import LocationsTable from "../Content/ImageView/PlaceMarkers/LocationsTable";
-import React, { useEffect, createRef, useRef } from "react";
-import SummaryCard from "../Content/ImageView/PlaceMarkers/SummaryCard";
-import ViewAgendaOutlinedIcon from "@mui/icons-material/ViewAgendaOutlined";
-import ViewHeadlineIcon from "@mui/icons-material/ViewHeadline";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import Layout2x1Dialog from "../../components/Layout/Layout2x1Dialog";
+import Tabs from "@mui/material/Tabs";
+import { observer } from "mobx-react-lite";
+import React, { createRef, useEffect, useRef } from "react";
 import TitledBox from "../../../components/TitledBox";
-import ContainerModel from "../../../stores/models/ContainerModel";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Location } from "../../../stores/definitions/Container";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
+import Layout2x1Dialog from "../../components/Layout/Layout2x1Dialog";
+import ContentImage, { type TappedLocationData } from "../Content/ImageView/PlaceMarkers/ContentImage";
+import LocationsTable from "../Content/ImageView/PlaceMarkers/LocationsTable";
+import SummaryCard from "../Content/ImageView/PlaceMarkers/SummaryCard";
 
 export const COMPACT_VIEW = 0;
 
@@ -32,27 +31,18 @@ export const IMAGE_VIEW = 2;
 
 export const LOCATION_TAPPED_EVENT = "locationTapped";
 
-
 type LocationsImageMarkersDialogArgs = {
   open: boolean;
   close: () => void;
 };
 
-function LocationsImageMarkersDialog({
-  open,
-  close,
-}: LocationsImageMarkersDialogArgs): React.ReactNode {
+function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialogArgs): React.ReactNode {
   const { searchStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const activeResult = searchStore.activeResult;
-  if (!activeResult || !(activeResult instanceof ContainerModel))
-    throw new Error("ActiveResult must be a Container");
-  const [selected, setSelected] = React.useState<TappedLocationData | null>(
-    null,
-  );
-  const [rightView, setRightView] = React.useState<number>(
-    isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW,
-  );
+  if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
+  const [selected, setSelected] = React.useState<TappedLocationData | null>(null);
+  const [rightView, setRightView] = React.useState<number>(isSingleColumnLayout ? IMAGE_VIEW : COMPACT_VIEW);
   const cardParent = useRef<HTMLDivElement | null>(null);
   const tableParent = useRef<HTMLElement | null>(null);
 
@@ -60,31 +50,26 @@ function LocationsImageMarkersDialog({
     detail: { number: number };
   };
 
-  const listener =
-    (num: number, cardRef: React.RefObject<HTMLLIElement>) =>
-    (event: Event) => {
-      const customEvent = event as unknown as CustomEvent;
-      const tappedNum = customEvent.detail.number;
-      if (tappedNum === num && rightView === DETAILED_VIEW && cardRef.current) {
-        cardRef.current.scrollIntoView({
-          behavior: "smooth",
-        });
-      }
-    };
+  const listener = (num: number, cardRef: React.RefObject<HTMLLIElement>) => (event: Event) => {
+    const customEvent = event as unknown as CustomEvent;
+    const tappedNum = customEvent.detail.number;
+    if (tappedNum === num && rightView === DETAILED_VIEW && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  };
 
   const noMarkersWarning = () =>
     activeResult.locations === null ||
     typeof activeResult.locations === "undefined" ||
     activeResult.locations.length === 0 ? (
-      <Alert severity="warning">
-        No marked locations yet; click on the image to add a location marker.
-      </Alert>
+      <Alert severity="warning">No marked locations yet; click on the image to add a location marker.</Alert>
     ) : null;
 
   const onLocationTap = (mark: TappedLocationData) => {
     setSelected(mark);
-    if (isSingleColumnLayout && rightView === IMAGE_VIEW)
-      setRightView(DETAILED_VIEW);
+    if (isSingleColumnLayout && rightView === IMAGE_VIEW) setRightView(DETAILED_VIEW);
     const event = new CustomEvent(LOCATION_TAPPED_EVENT, {
       detail: { number: mark.number },
     });
@@ -101,13 +86,7 @@ function LocationsImageMarkersDialog({
     activeResult.deleteSortedLocation(number - 1);
   };
 
-  const Card = ({
-    location,
-    number,
-  }: {
-    location: Location;
-    number: number;
-  }) => {
+  const Card = ({ location, number }: { location: Location; number: number }) => {
     const cardRef = createRef<HTMLLIElement>();
     const l = listener(number, cardRef);
     const mark = { location, number, point: { left: 0, top: 0 } }; // point is unused, but necessary for type
@@ -117,8 +96,7 @@ function LocationsImageMarkersDialog({
       if (c) {
         c.addEventListener(LOCATION_TAPPED_EVENT, l);
       }
-      return () =>
-        c?.removeEventListener(LOCATION_TAPPED_EVENT, l);
+      return () => c?.removeEventListener(LOCATION_TAPPED_EVENT, l);
     });
 
     return (
@@ -143,8 +121,7 @@ function LocationsImageMarkersDialog({
           <DialogContentText>
             Tap on the image to add a location marker.
             <br />
-            Tap and hold on a marker, and then drag to adjust the marked
-            location.
+            Tap and hold on a marker, and then drag to adjust the marked location.
           </DialogContentText>
         </Grid>
         <Grid size={12}>
@@ -169,25 +146,10 @@ function LocationsImageMarkersDialog({
             indicatorColor="primary"
             textColor="primary"
           >
-            <Tab
-              icon={<ViewHeadlineIcon />}
-              label="Compact"
-              iconPosition="start"
-              value={COMPACT_VIEW}
-            />
-            <Tab
-              icon={<ViewAgendaOutlinedIcon />}
-              label="Detailed"
-              iconPosition="start"
-              value={DETAILED_VIEW}
-            />
+            <Tab icon={<ViewHeadlineIcon />} label="Compact" iconPosition="start" value={COMPACT_VIEW} />
+            <Tab icon={<ViewAgendaOutlinedIcon />} label="Detailed" iconPosition="start" value={DETAILED_VIEW} />
             {isSingleColumnLayout && (
-              <Tab
-                icon={<ImageOutlinedIcon />}
-                label="Image"
-                iconPosition="start"
-                value={IMAGE_VIEW}
-              />
+              <Tab icon={<ImageOutlinedIcon />} label="Image" iconPosition="start" value={IMAGE_VIEW} />
             )}
           </Tabs>
           {rightView === COMPACT_VIEW && (
@@ -205,17 +167,11 @@ function LocationsImageMarkersDialog({
           )}
           {rightView === DETAILED_VIEW && (
             <Box sx={{ pr: 1 }}>
-              <List
-                component="div"
-                ref={cardParent}
-                sx={{ mb: 1.25, flexWrap: "unset" }}
-              >
+              <List component="div" ref={cardParent} sx={{ mb: 1.25, flexWrap: "unset" }}>
                 {noMarkersWarning()}
-                {(activeResult.sortedLocations ?? []).map(
-                  (location: Location, index: number) => (
-                    <Card location={location} number={index + 1} key={index} />
-                  ),
-                )}
+                {(activeResult.sortedLocations ?? []).map((location: Location, index: number) => (
+                  <Card location={location} number={index + 1} key={index} />
+                ))}
               </List>
             </Box>
           )}

@@ -1,18 +1,13 @@
-import React from "react";
+import { Blob as NodeBlob } from "node:buffer";
+import { useGridApiContext } from "@mui/x-data-grid";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Blob as NodeBlob } from "node:buffer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useGridApiContext } from "@mui/x-data-grid";
 import StoichiometryTableGrid from "@/tinyMCE/stoichiometry/table/StoichiometryTableGrid";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
-  default: ({
-    allMolecules = [],
-  }: {
-    allMolecules?: Array<{ id: number }>;
-  }) => {
+  default: ({ allMolecules = [] }: { allMolecules?: Array<{ id: number }> }) => {
     const apiRef = useGridApiContext();
 
     return (
@@ -100,9 +95,7 @@ describe("StoichiometryTableGrid", () => {
   });
 
   it("always renders the Type dropdown when the role is editable", () => {
-    render(
-      <StoichiometryTableGrid editable allMolecules={[makeMolecule()]} />,
-    );
+    render(<StoichiometryTableGrid editable allMolecules={[makeMolecule()]} />);
 
     expect(
       screen.getByRole("combobox", {
@@ -112,13 +105,7 @@ describe("StoichiometryTableGrid", () => {
   });
 
   it("keeps the Type column non-editable when an active chemId is present", () => {
-    render(
-      <StoichiometryTableGrid
-        editable
-        allMolecules={[makeMolecule()]}
-        activeChemId={123}
-      />,
-    );
+    render(<StoichiometryTableGrid editable allMolecules={[makeMolecule()]} activeChemId={123} />);
 
     expect(
       screen.queryByRole("combobox", {
@@ -131,17 +118,9 @@ describe("StoichiometryTableGrid", () => {
 
   it("updates the molecule role when a new type is selected", async () => {
     const user = userEvent.setup();
-    const onProcessRowUpdate = vi.fn(
-      (newRow: EditableMolecule) => newRow,
-    );
+    const onProcessRowUpdate = vi.fn((newRow: EditableMolecule) => newRow);
 
-    render(
-      <StoichiometryTableGrid
-        editable
-        allMolecules={[makeMolecule()]}
-        onProcessRowUpdate={onProcessRowUpdate}
-      />,
-    );
+    render(<StoichiometryTableGrid editable allMolecules={[makeMolecule()]} onProcessRowUpdate={onProcessRowUpdate} />);
 
     await user.click(
       screen.getByRole("combobox", {
@@ -180,15 +159,12 @@ describe("StoichiometryTableGrid", () => {
       molecule: makeAgentMolecule(),
       buttonName: "Delete reagent Water",
     },
-  ])(
-    "shows an enabled delete button for $label rows when there is no active chemId",
-    ({ molecule, buttonName }) => {
-      render(<StoichiometryTableGrid editable allMolecules={[molecule]} />);
+  ])("shows an enabled delete button for $label rows when there is no active chemId", ({ molecule, buttonName }) => {
+    render(<StoichiometryTableGrid editable allMolecules={[molecule]} />);
 
-      expect(screen.getByRole("button", { name: buttonName })).toBeVisible();
-      expect(screen.getByRole("button", { name: buttonName })).toBeEnabled();
-    },
-  );
+    expect(screen.getByRole("button", { name: buttonName })).toBeVisible();
+    expect(screen.getByRole("button", { name: buttonName })).toBeEnabled();
+  });
 
   it.each([
     {
@@ -201,20 +177,11 @@ describe("StoichiometryTableGrid", () => {
       molecule: makeProductMolecule(),
       buttonName: "Delete reagent Cyclohexanone",
     },
-  ])(
-    "shows a disabled delete button for $label rows when an active chemId is present",
-    ({ molecule, buttonName }) => {
-      render(
-        <StoichiometryTableGrid
-          editable
-          allMolecules={[molecule]}
-          activeChemId={123}
-        />,
-      );
+  ])("shows a disabled delete button for $label rows when an active chemId is present", ({ molecule, buttonName }) => {
+    render(<StoichiometryTableGrid editable allMolecules={[molecule]} activeChemId={123} />);
 
-      expect(screen.getByRole("button", { name: buttonName })).toBeDisabled();
-    },
-  );
+    expect(screen.getByRole("button", { name: buttonName })).toBeDisabled();
+  });
 
   it.each([
     {
@@ -222,31 +189,22 @@ describe("StoichiometryTableGrid", () => {
       molecule: makeAgentMolecule(),
       buttonName: "Delete reagent Water",
     },
-  ])(
-    "shows an enabled delete button for $label rows when an active chemId is present",
-    ({ molecule, buttonName }) => {
-      render(
-        <StoichiometryTableGrid
-          editable
-          allMolecules={[molecule]}
-          activeChemId={123}
-        />,
-      );
+  ])("shows an enabled delete button for $label rows when an active chemId is present", ({ molecule, buttonName }) => {
+    render(<StoichiometryTableGrid editable allMolecules={[molecule]} activeChemId={123} />);
 
-      expect(screen.getByRole("button", { name: buttonName })).toBeEnabled();
-    },
-  );
+    expect(screen.getByRole("button", { name: buttonName })).toBeEnabled();
+  });
 
   it("exports linked inventory items as global IDs instead of object strings", async () => {
     const user = userEvent.setup();
     let blob: Blob | undefined;
 
-    const createObjectURLSpy = vi.spyOn(window.URL, "createObjectURL").mockImplementation(
-      (object: Blob | MediaSource) => {
+    const createObjectURLSpy = vi
+      .spyOn(window.URL, "createObjectURL")
+      .mockImplementation((object: Blob | MediaSource) => {
         blob = object as Blob;
         return "blob:stoichiometry-export";
-      },
-    );
+      });
 
     render(
       <StoichiometryTableGrid
@@ -268,6 +226,7 @@ describe("StoichiometryTableGrid", () => {
     expect(createObjectURLSpy).toHaveBeenCalledOnce();
     expect(blob).toBeDefined();
 
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const csv = await blob!.text();
 
     expect(csv).toContain("Inventory Link");
@@ -280,12 +239,12 @@ describe("StoichiometryTableGrid", () => {
     const user = userEvent.setup();
     let blob: Blob | undefined;
 
-    const createObjectURLSpy = vi.spyOn(window.URL, "createObjectURL").mockImplementation(
-      (object: Blob | MediaSource) => {
+    const createObjectURLSpy = vi
+      .spyOn(window.URL, "createObjectURL")
+      .mockImplementation((object: Blob | MediaSource) => {
         blob = object as Blob;
         return "blob:stoichiometry-export";
-      },
-    );
+      });
 
     render(
       <StoichiometryTableGrid
@@ -307,9 +266,7 @@ describe("StoichiometryTableGrid", () => {
 
     expect(createObjectURLSpy).toHaveBeenCalledOnce();
     expect(blob).toBeDefined();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     await expect(blob!.text()).resolves.toContain("SS999");
   });
 });
-
-
-

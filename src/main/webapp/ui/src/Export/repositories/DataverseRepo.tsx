@@ -1,8 +1,9 @@
-import React from "react";
-import Users from "../ExportRepoUser";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import type React from "react";
+import Users from "../ExportRepoUser";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Person, type Repo, type StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
 
@@ -130,6 +131,7 @@ export default function DataverseRepo({
             fullWidth
             value={metadataLanguage}
           >
+            {/** biome-ignore lint/complexity/useOptionalChain: initial biome migration */}
             {repo.metadataLanguages &&
               repo.metadataLanguages.map((option) => (
                 <MenuItem key={option.title} value={option.locale}>

@@ -1,8 +1,10 @@
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import { Gallery } from ".";
 import { MemoryRouter } from "react-router-dom";
-import { GallerySection } from "./common";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { Gallery } from ".";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GallerySection } from "./common";
 
 /**
  * Not exactly a reusable component, but a story that shows the different URL

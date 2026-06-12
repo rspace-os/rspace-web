@@ -1,11 +1,11 @@
-import React from "react";
-import ImportDialog from "./ImportDialog";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { ACCENT_COLOR } from "../../assets/branding/pubchem";
-import createAccentedTheme from "../../accentedTheme";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import React from "react";
 import Alerts from "@/components/Alerts/Alerts";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/pubchem";
+import ImportDialog from "./ImportDialog";
 
 /**
  * A basic example of how to use the ImportDialog component.
@@ -18,6 +18,7 @@ export function ImportDialogStory(): React.ReactNode {
         <ErrorBoundary>
           <Alerts>
             <h1>PubChem import example</h1>
+            {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
             <button onClick={() => setOpen(true)}>Open</button>
             <ImportDialog
               open={open}
@@ -28,7 +29,9 @@ export function ImportDialogStory(): React.ReactNode {
                 id: "rtf_1",
                 ui: {
                   registry: {
+                    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
                     addMenuItem: (menuItemIdentifier, options) => {},
+                    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
                     addButton: (buttonIdentifier, options) => {},
                   },
                 },

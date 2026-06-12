@@ -1,54 +1,43 @@
+import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import docLinks from "../../assets/DocLinks";
+import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
+import { getErrorMessage } from "../../util/error";
 import { sleep } from "../../util/Util";
+import { mkAlert } from "../contexts/Alert";
+import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Factory } from "../definitions/Factory";
+import type { Field } from "../definitions/Field";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
-  handleDetailedErrors,
-  handleDetailedSuccesses,
-} from "../../util/alerts";
-import {
-  type Id,
-  type GlobalId,
-  inventoryRecordTypeLabels,
-} from "../definitions/BaseRecord";
-import { type RecordDetails } from "../definitions/Record";
-import {
-  type RecordType,
+  type CreateOption,
   type InventoryRecord,
   type LockStatus,
-  type CreateOption,
+  type RecordType,
 } from "../definitions/InventoryRecord";
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
-import { mkAlert } from "../contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type RecordDetails } from "../definitions/Record";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type CoreFetcherArgs } from "../definitions/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type AdjustableTableRowOptions } from "../definitions/Tables";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Template } from "../definitions/Template";
+import getRootStore from "../stores/RootStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
-import { type Factory } from "../definitions/Factory";
 import SampleModel, {
-  SAMPLE_FIELDS,
-  defaultVisibleSampleFields,
   defaultEditableSampleFields,
+  defaultVisibleSampleFields,
+  SAMPLE_FIELDS,
   type SampleAttrs,
 } from "./SampleModel";
 import Search from "./Search";
-import {
-  action,
-  observable,
-  computed,
-  override,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import React from "react";
-import { type Template } from "../definitions/Template";
-import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
-import docLinks from "../../assets/DocLinks";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import type { Field } from "../definitions/Field";
-import {
-  IsInvalid,
-  IsValid,
-  type ValidationResult,
-} from "../../components/ValidatingSubmitButton";
-import { getErrorMessage } from "../../util/error";
 
 const mainSearch = () => getRootStore().searchStore.search;
 
@@ -99,10 +88,7 @@ const DEFAULT_TEMPLATE: TemplateAttrs = {
 };
 
 const FIELDS = new Set([...SAMPLE_FIELDS, "defaultUnitId"]);
-const defaultVisibleFields = new Set([
-  ...FIELDS,
-  ...defaultVisibleSampleFields,
-]);
+const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleSampleFields]);
 const defaultEditableFields = new Set([...defaultEditableSampleFields]);
 
 export default class TemplateModel extends SampleModel implements Template {
@@ -115,10 +101,7 @@ export default class TemplateModel extends SampleModel implements Template {
   latest: Template | null = null;
   icon: string | null = null;
 
-  constructor(
-    factory: Factory,
-    params: TemplateAttrs = { ...DEFAULT_TEMPLATE },
-  ) {
+  constructor(factory: Factory, params: TemplateAttrs = { ...DEFAULT_TEMPLATE }) {
     super(factory, params as unknown as SampleAttrs);
     makeObservable(this, {
       defaultUnitId: observable,
@@ -148,8 +131,7 @@ export default class TemplateModel extends SampleModel implements Template {
       validSubSampleAlias: computed,
     });
 
-    if (this.recordType === "sampleTemplate")
-      this.populateFromJson(factory, params, {});
+    if (this.recordType === "sampleTemplate") this.populateFromJson(factory, params, {});
 
     this.search = new Search({
       fetcherParams: {
@@ -167,11 +149,7 @@ export default class TemplateModel extends SampleModel implements Template {
     if (this.iconId) this.fetchIcon();
   }
 
-  populateFromJson(
-    factory: Factory,
-    params: object,
-    defaultParams: object = {},
-  ) {
+  populateFromJson(factory: Factory, params: object, defaultParams: object = {}) {
     super.populateFromJson(factory, params, defaultParams);
     params = { ...defaultParams, ...params };
     // @ts-expect-error We assume that params has this property
@@ -307,18 +285,12 @@ export default class TemplateModel extends SampleModel implements Template {
    */
   get paramsForBackend(): Record<string, unknown> {
     const params = super.paramsForBackend;
-    if (this.currentlyEditableFields.has("defaultUnitId"))
-      params.defaultUnitId = this.defaultUnitId;
-    if (this.currentlyEditableFields.has("subSampleAlias"))
-      params.subSampleAlias = this.subSampleAlias;
+    if (this.currentlyEditableFields.has("defaultUnitId")) params.defaultUnitId = this.defaultUnitId;
+    if (this.currentlyEditableFields.has("subSampleAlias")) params.subSampleAlias = this.subSampleAlias;
     return params;
   }
 
-  async setEditing(
-    value: boolean,
-    refresh?: boolean,
-    goToLatest?: boolean,
-  ): Promise<LockStatus> {
+  async setEditing(value: boolean, refresh?: boolean, goToLatest?: boolean): Promise<LockStatus> {
     refresh = refresh ?? true;
     goToLatest = goToLatest ?? true;
     if (value && goToLatest) {
@@ -339,11 +311,7 @@ export default class TemplateModel extends SampleModel implements Template {
     const id = this.id;
     if (!id) throw new Error("id is required.");
     // this.getLatest wont work because `this` thinks it is the latest
-    const latest = await getRootStore().searchStore.getTemplate(
-      id,
-      null,
-      this.factory.newFactory(),
-    );
+    const latest = await getRootStore().searchStore.getTemplate(id, null, this.factory.newFactory());
     await mainSearch().setActiveResult(latest); // should not error because active result can't be modified after update
     mainSearch().replaceResult(latest);
     return latest;
@@ -404,11 +372,9 @@ export default class TemplateModel extends SampleModel implements Template {
           />
         </>,
         <>
-          All of your samples created from this template will be updated to pick
-          up the structural changes that have been made to the template since
-          the sample was created or last updated, such as the addition, deletion
-          and reordering of fields, and the change to available options in
-          choice and radio fields.&nbsp;
+          All of your samples created from this template will be updated to pick up the structural changes that have
+          been made to the template since the sample was created or last updated, such as the addition, deletion and
+          reordering of fields, and the change to available options in choice and radio fields.&nbsp;
           <strong>This action cannot be undone.</strong>
         </>,
         "Update all",
@@ -422,10 +388,7 @@ export default class TemplateModel extends SampleModel implements Template {
           error: { errors: Array<string> };
           record: Record<string, unknown> & { globalId: GlobalId };
         }>;
-      }>(
-        `sampleTemplates/${id.toString()}/actions/updateSamplesToLatestTemplateVersion`,
-        {},
-      );
+      }>(`sampleTemplates/${id.toString()}/actions/updateSamplesToLatestTemplateVersion`, {});
       handleDetailedErrors(
         data.errorCount,
         data.results.map((response) => ({ response })),
@@ -452,27 +415,19 @@ export default class TemplateModel extends SampleModel implements Template {
           variant: "error",
         }),
       );
-      console.error(
-        "Could not update samples to latest template version.",
-        error,
-      );
+      console.error("Could not update samples to latest template version.", error);
     }
   }
 
   contextMenuDisabled(): string | null {
     return (
       super.contextMenuDisabled() ??
-      (this.historicalVersion
-        ? "Cannot modify a historical version of a template."
-        : null)
+      (this.historicalVersion ? "Cannot modify a historical version of a template." : null)
     );
   }
 
   get fieldNamesInUse(): Array<string> {
-    return [
-      ...super.fieldNamesInUse,
-      ...["Subsample Alias", "Quantity Units", "Fields", "Samples"],
-    ];
+    return [...super.fieldNamesInUse, ...["Subsample Alias", "Quantity Units", "Fields", "Samples"]];
   }
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
@@ -491,27 +446,14 @@ export default class TemplateModel extends SampleModel implements Template {
   }
 
   moveField(field: Field, newIndex: number): void {
-    if (newIndex < -1 || newIndex >= this.fields.length)
-      throw new Error(`Invalid new index: ${newIndex}`);
+    if (newIndex < -1 || newIndex >= this.fields.length) throw new Error(`Invalid new index: ${newIndex}`);
     if (newIndex === -1) newIndex = this.fields.length - 1;
 
     const oldIndex = this.fields.indexOf(field);
-    if (oldIndex === -1)
-      throw new Error(
-        `Could not find field with id '${
-          field.id ?? "NEW FIELD"
-        }' in this sample.`,
-      );
+    if (oldIndex === -1) throw new Error(`Could not find field with id '${field.id ?? "NEW FIELD"}' in this sample.`);
 
-    const without = [
-      ...this.fields.slice(0, oldIndex),
-      ...this.fields.slice(oldIndex + 1),
-    ];
-    const withAgain = [
-      ...without.slice(0, newIndex),
-      field,
-      ...without.slice(newIndex),
-    ];
+    const without = [...this.fields.slice(0, oldIndex), ...this.fields.slice(oldIndex + 1)];
+    const withAgain = [...without.slice(0, newIndex), field, ...without.slice(newIndex)];
     withAgain.forEach((f, i) => {
       f.columnIndex = i + 1;
     });
@@ -550,12 +492,7 @@ export default class TemplateModel extends SampleModel implements Template {
 
   get validSubSampleAlias(): boolean {
     return Object.values(this.subSampleAlias).every(
-      (v) =>
-        typeof v === "string" &&
-        v !== "custom" &&
-        v !== "customs" &&
-        v.length > 1 &&
-        v.length <= 30,
+      (v) => typeof v === "string" && v !== "custom" && v !== "customs" && v.length > 1 && v.length <= 30,
     );
   }
 
@@ -607,14 +544,12 @@ export default class TemplateModel extends SampleModel implements Template {
     return [
       {
         label: "Sample",
-        explanation:
-          "Tapping create will open the new sample form, with this template pre-populated.",
+        explanation: "Tapping create will open the new sample form, with this template pre-populated.",
         onReset: () => {
           // nothing to reset
         },
         onSubmit: async () => {
-          const newSample: SampleModel =
-            await getRootStore().searchStore.createNewSample();
+          const newSample: SampleModel = await getRootStore().searchStore.createNewSample();
           await newSample.setTemplate(this);
         },
       },

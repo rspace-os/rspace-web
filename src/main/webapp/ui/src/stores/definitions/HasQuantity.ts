@@ -1,4 +1,6 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type UnitCategory } from "../stores/UnitStore";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { AdjustableTableRowOptions } from "./Tables";
 
 /**

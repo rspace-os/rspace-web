@@ -1,21 +1,25 @@
+import { computed, makeObservable, observable, override } from "mobx";
+import { Optional } from "../../util/optional";
+import * as Parsers from "../../util/parsers";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Factory } from "../definitions/Factory";
 import {
-  HasQuantity,
+  type HasQuantity,
+  type HasQuantityEditableFields,
   HasQuantityMarker,
-  HasQuantityEditableFields,
-  HasQuantityUneditableFields,
+  type HasQuantityUneditableFields,
   type Quantity,
 } from "../definitions/HasQuantity";
-import * as Parsers from "../../util/parsers";
-import { Factory } from "../definitions/Factory";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { AdjustableTableRowOptions } from "../definitions/Tables";
+import getRootStore from "../stores/RootStore";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type UnitCategory } from "../stores/UnitStore";
+// biome-ignore lint/style/useImportType: initial biome migration
 import InventoryBaseRecord, {
   InventoryBaseRecordEditableFields,
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
-import { AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
-import { Optional } from "../../util/optional";
-import { computed, makeObservable, observable, override } from "mobx";
 
 /*
  * Some samples/subsamples don't have a quantity; these functions just provide
@@ -24,18 +28,17 @@ import { computed, makeObservable, observable, override } from "mobx";
 export const getUnitId = (q: Quantity | null): number => q?.unitId ?? 3;
 export const getValue = (q: Quantity | null): number => q?.numericValue || 0;
 export const getQuantityUnitLabel = (q: Quantity | null): string =>
-  q ? getRootStore().unitStore.getUnit(q.unitId)?.label ?? "..." : "";
-export const getLabel = (q: Quantity | null): string =>
-  q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "";
+  q ? (getRootStore().unitStore.getUnit(q.unitId)?.label ?? "...") : "";
+export const getLabel = (q: Quantity | null): string => (q ? `${getValue(q)} ${getQuantityUnitLabel(q)}` : "");
 
-export function HasQuantityMixin<
-  TBase extends new (...args: any[]) => InventoryBaseRecord
->(Base: TBase) {
+// biome-ignore lint/suspicious/noExplicitAny: mixin constructor constraint must use any[] to be extendable
+export function HasQuantityMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
   return class extends Base implements HasQuantity {
     [HasQuantityMarker] = true as const;
 
     quantity: Quantity | null;
 
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     constructor(...args: any[]) {
       super(...args);
       makeObservable(this, {
@@ -48,9 +51,7 @@ export function HasQuantityMixin<
         fieldValues: override,
       });
       const [, params] = args as [factory: Factory, params: object];
-      this.quantity = Parsers.getValueWithKey("quantity")(
-        params
-      ).elseThrow() as Quantity | null;
+      this.quantity = Parsers.getValueWithKey("quantity")(params).elseThrow() as Quantity | null;
     }
 
     get quantityCategory(): UnitCategory {
@@ -115,21 +116,17 @@ export function HasQuantityMixin<
 /**
  * Checks if a given object has a quantity.
  */
-export function hasQuantity<T extends object>(
-  input: T
-): Optional<HasQuantity & T> {
-  return input.hasOwnProperty(HasQuantityMarker)
-    ? Optional.present(input as HasQuantity & T)
-    : Optional.empty();
+export function hasQuantity<T extends object>(input: T): Optional<HasQuantity & T> {
+  // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
+  return input.hasOwnProperty(HasQuantityMarker) ? Optional.present(input as HasQuantity & T) : Optional.empty();
 }
 
 /**
  * Filters an iterable collection for those with quantities.
  */
-export function* filterForThoseWithQuantities<T extends object>(
-  input: Iterable<T>
-): Iterable<HasQuantity & T> {
+export function* filterForThoseWithQuantities<T extends object>(input: Iterable<T>): Iterable<HasQuantity & T> {
   for (const val of input) {
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
     if (val.hasOwnProperty(HasQuantityMarker)) yield val as HasQuantity & T;
   }
 }

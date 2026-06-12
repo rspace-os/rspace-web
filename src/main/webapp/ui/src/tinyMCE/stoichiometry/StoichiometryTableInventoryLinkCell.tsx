@@ -1,27 +1,27 @@
-import React, { useEffect, useState } from "react";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Chip, { chipClasses } from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import Dialog from "@mui/material/Dialog";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
+import { faClockRotateLeft } from "@fortawesome/free-solid-svg-icons/faClockRotateLeft";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
-import { faClockRotateLeft } from "@fortawesome/free-solid-svg-icons/faClockRotateLeft";
+import Box from "@mui/material/Box";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import { runInAction } from "mobx";
+import { observer } from "mobx-react";
+import { useEffect, useState } from "react";
+import InventoryPicker from "@/Inventory/components/Picker/Picker";
 import { RecordLink } from "@/Inventory/components/RecordLink";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
-import InventoryPicker from "@/Inventory/components/Picker/Picker";
-import Search from "@/stores/models/Search";
-import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
-import { observer } from "mobx-react";
-import { runInAction } from "mobx";
+import MemoisedFactory from "@/stores/models/Factory/MemoisedFactory";
+import Search from "@/stores/models/Search";
 
 const INVENTORY_PICKER_SEARCH_PARAMS = {
   query: "",
@@ -67,9 +67,7 @@ type StoichiometryTableInventoryLinkCellProps = {
   onUndoRemoveInventoryLink?: () => void;
 };
 
-function toLinkedSubsampleRecord(
-  inventoryLink: InventoryLink,
-): InventoryRecord {
+function toLinkedSubsampleRecord(inventoryLink: InventoryLink): InventoryRecord {
   const id = Number.parseInt(inventoryLink.inventoryItemGlobalId.slice(2), 10);
 
   return {
@@ -118,8 +116,7 @@ const StoichiometryTableInventoryLinkCell = ({
   useEffect(() => {
     runInAction(() => {
       pickerSearch.alwaysFilterOut = (result) =>
-        typeof result.globalId === "string" &&
-        linkedInventoryItemGlobalIdSet.has(result.globalId);
+        typeof result.globalId === "string" && linkedInventoryItemGlobalIdSet.has(result.globalId);
     });
   }, [linkedInventoryItemGlobalIdSet, pickerSearch]);
 
@@ -133,6 +130,7 @@ const StoichiometryTableInventoryLinkCell = ({
 
   const handlePickerAddition = (records: Array<InventoryRecord>) => {
     const [record] = records;
+    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
     if (!record || !record.id) {
       return;
     }
@@ -149,11 +147,7 @@ const StoichiometryTableInventoryLinkCell = ({
 
   if (isDeleted) {
     return (
-      <Stack
-        direction="row"
-        spacing={0.5}
-        sx={{ alignItems: "center", height: "100%" }}
-      >
+      <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", height: "100%" }}>
         {/* Font Size for the icon is necessary as MUI overrides FA font-size */}
         <Chip
           size="small"
@@ -190,45 +184,22 @@ const StoichiometryTableInventoryLinkCell = ({
   if (inventoryLink) {
     const record = toLinkedSubsampleRecord(inventoryLink);
     const showStockDeductedIndicator = inventoryLink.stockDeducted === true;
-    const showInsufficientStockIndicator =
-      showInsufficientStockWarning && !showStockDeductedIndicator;
+    const showInsufficientStockIndicator = showInsufficientStockWarning && !showStockDeductedIndicator;
 
     return (
-      <Stack
-        direction="row"
-        spacing={0.5}
-        sx={{ alignItems: "center", height: "100%" }}
-      >
-        <RecordLink
-          record={record}
-          disableNavigationContext={true}
-          hideRecordTypeTooltip={true}
-          newTab={true}
-        />
+      <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", height: "100%" }}>
+        <RecordLink record={record} disableNavigationContext={true} hideRecordTypeTooltip={true} newTab={true} />
         {showStockDeductedIndicator && (
           <Tooltip title="Stock deducted">
-            <Box
-              component="span"
-              sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}
-            >
-              <CheckCircleOutlineIcon
-                fontSize="small"
-                sx={{ color: "success.main" }}
-              />
+            <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}>
+              <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
             </Box>
           </Tooltip>
         )}
         {showInsufficientStockIndicator && (
           <Tooltip title="Insufficient Stock">
-            <Box
-              component="span"
-              sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}
-            >
-              <WarningAmberIcon
-                aria-label="Insufficient Stock"
-                fontSize="small"
-                sx={{ color: "warning.main" }}
-              />
+            <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}>
+              <WarningAmberIcon aria-label="Insufficient Stock" fontSize="small" sx={{ color: "warning.main" }} />
             </Box>
           </Tooltip>
         )}

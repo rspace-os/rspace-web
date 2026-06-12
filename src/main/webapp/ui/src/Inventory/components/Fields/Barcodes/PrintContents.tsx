@@ -1,13 +1,14 @@
-import React, { forwardRef } from "react";
-import type { BarcodeRecord } from "@/stores/definitions/Barcode";
-import { type PrintOptions } from "./PrintDialog";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { toTitleCase } from "@/util/Util";
+import { forwardRef } from "react";
+import type { BarcodeRecord } from "@/stores/definitions/Barcode";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import { toTitleCase } from "@/util/Util";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type PrintOptions } from "./PrintDialog";
 
 const itemPxWidths = {
   small: "110px",
@@ -87,11 +88,7 @@ export const PreviewPrintItem = ({
           sizePerTarget(),
         ]}
       >
-        <Grid
-          container
-          sx={[{ wordBreak: "break-word" }, { flexDirection: "column" }]}
-          spacing={1}
-        >
+        <Grid container sx={[{ wordBreak: "break-word" }, { flexDirection: "column" }]} spacing={1}>
           {imageLinks && (
             <>
               <Box
@@ -113,11 +110,7 @@ export const PreviewPrintItem = ({
           )}
           {printLayout === "FULL" && (
             <Grid>
-              <Grid
-                container
-                sx={[centeredTextSx, { fontSize: "11px" }, { flexDirection: "column" }]}
-                spacing={1}
-              >
+              <Grid container sx={[centeredTextSx, { fontSize: "11px" }, { flexDirection: "column" }]} spacing={1}>
                 <Grid>{item.description.split("//")[1]}</Grid>
                 <Grid>
                   <strong>Item:</strong>
@@ -126,8 +119,7 @@ export const PreviewPrintItem = ({
                 </Grid>
                 <Grid>
                   <strong>Location:</strong>{" "}
-                  {itemOwner instanceof ContainerModel ||
-                  itemOwner instanceof SubSampleModel
+                  {itemOwner instanceof ContainerModel || itemOwner instanceof SubSampleModel
                     ? (itemOwner.immediateParentContainer?.globalId ?? "-")
                     : "-"}
                 </Grid>
@@ -143,30 +135,20 @@ export const PreviewPrintItem = ({
       </Box>
       {/* force page break after item (when wrapper in display block) */}
       {printerType === "LABEL" && (
-        <Box
-          component="div"
-          sx={{ "@media print": { breakAfter: "always", pageBreakAfter: "always" } }}
-        ></Box>
+        <Box component="div" sx={{ "@media print": { breakAfter: "always", pageBreakAfter: "always" } }}></Box>
       )}
     </>
   );
 };
 
 const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
-  (
-    { printOptions, itemsToPrint, imageLinks, target }: PrintContentsArgs,
-    ref,
-  ) => {
+  ({ printOptions, itemsToPrint, imageLinks, target }: PrintContentsArgs, ref) => {
     return (
       <Grid
         ref={ref}
         container
         spacing={1}
-        sx={
-          printOptions.printerType === "LABEL"
-            ? [contentsWrapperSx, blockSx]
-            : contentsWrapperSx
-        }
+        sx={printOptions.printerType === "LABEL" ? [contentsWrapperSx, blockSx] : contentsWrapperSx}
       >
         {itemsToPrint.map(([item, itemOwner], i) => (
           <Grid key={i}>

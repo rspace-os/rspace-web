@@ -1,11 +1,11 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import Card from "./Card";
-import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
-
+import Card from "./Card";
 
 type CardListArgs = {
   records: Array<InventoryRecord>;

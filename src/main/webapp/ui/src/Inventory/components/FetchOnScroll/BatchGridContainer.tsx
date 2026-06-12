@@ -1,7 +1,8 @@
-import React from "react";
-import { Observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type SxProps, type Theme } from "@mui/material/styles";
+import { Observer } from "mobx-react-lite";
+import React from "react";
 import { mergeSx } from "@/modules/common/utils/styles";
 
 type BatchGridContainerArgs = {
@@ -9,26 +10,19 @@ type BatchGridContainerArgs = {
   sx?: SxProps<Theme>;
 };
 
-const BatchGridContainer = React.forwardRef<
-  React.ElementRef<typeof Grid>,
-  BatchGridContainerArgs
->(({ children, sx }, ref) => {
-  return (
-    <Observer>
-      {() => (
-        <Grid
-          container
-          spacing={2}
-          direction="row"
-          sx={mergeSx({ width: "100%", ml: -0.25, mb: 0 }, sx)}
-          ref={ref}
-        >
-          {children}
-        </Grid>
-      )}
-    </Observer>
-  );
-});
+const BatchGridContainer = React.forwardRef<React.ElementRef<typeof Grid>, BatchGridContainerArgs>(
+  ({ children, sx }, ref) => {
+    return (
+      <Observer>
+        {() => (
+          <Grid container spacing={2} direction="row" sx={mergeSx({ width: "100%", ml: -0.25, mb: 0 }, sx)} ref={ref}>
+            {children}
+          </Grid>
+        )}
+      </Observer>
+    );
+  },
+);
 
 BatchGridContainer.displayName = "BatchGridContainer";
 export default BatchGridContainer;

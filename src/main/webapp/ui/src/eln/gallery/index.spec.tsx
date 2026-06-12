@@ -1,27 +1,25 @@
-import { test, expect, MountResult } from "@playwright/experimental-ct-react";
-import React from "react";
-import { GalleryStory } from "./index.story";
-import * as Jwt from "jsonwebtoken";
-import fc from "fast-check";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type RouterFixture } from "@playwright/experimental-ct-core";
+import { expect, type MountResult, test } from "@playwright/experimental-ct-react";
+import fc from "fast-check";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { GallerySection } from "./common";
+import { GalleryStory } from "./index.story";
 
 type GivenSteps = {
-  "the Gallery is mounted": (
-    args?: {
-      url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
-    },
-  ) => Promise<MountResult>;
-
+  "the Gallery is mounted": (args?: {
+    url?: React.ComponentProps<typeof GalleryStory>["urlSuffix"];
+  }) => Promise<MountResult>;
 };
 type WhenSteps = {
   "the user taps on the 'Chemistry' section": () => Promise<void>;
-
 };
 type ThenSteps = {
   "the page title should be": (title: string) => Promise<void>;
   "there should be just one request to the server": () => Promise<void>;
-
 };
 const feature = test.extend<{
   Given: GivenSteps;
@@ -45,9 +43,7 @@ const feature = test.extend<{
       "the user taps on the 'Chemistry' section": async () => {
         await page.getByRole("button", { name: "Chemistry" }).click();
         await expect(
-          page
-            .getByRole("navigation", { name: "Breadcrumbs" })
-            .getByRole("button", { name: "Chemistry" }),
+          page.getByRole("navigation", { name: "Breadcrumbs" }).getByRole("button", { name: "Chemistry" }),
         ).toBeVisible();
       },
     });
@@ -69,10 +65,10 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 function property(name: string) {
   return {
@@ -82,11 +78,7 @@ function property(name: string) {
         IsOneOf,
       }: {
         IsAny: (
-          desc:
-            | "file id"
-            | "file name without extension"
-            | "folder id"
-            | "folder name",
+          desc: "file id" | "file name without extension" | "folder id" | "folder name",
           ...args: Array<unknown>
         ) => unknown;
         IsOneOf: (...options: Array<unknown>) => unknown;
@@ -134,26 +126,22 @@ function property(name: string) {
                 }
               },
               IsOneOf: (...options) => fc.constantFrom(...options),
-
             });
             await fc.assert(
-              fc.asyncProperty(
-                fc.record(letBindingsToArbitraries),
-                async (generated) => {
-                  try {
-                    await testFn(generated as T, {
-                      Given,
-                      Then,
-                      router,
-                    });
-                  } finally {
-                    if (mountedComponent) {
-                      await mountedComponent.unmount();
-                      mountedComponent = null;
-                    }
+              fc.asyncProperty(fc.record(letBindingsToArbitraries), async (generated) => {
+                try {
+                  await testFn(generated as T, {
+                    Given,
+                    Then,
+                    router,
+                  });
+                } finally {
+                  if (mountedComponent) {
+                    await mountedComponent.unmount();
+                    mountedComponent = null;
                   }
-                },
-              ),
+                }
+              }),
               { numRuns: 5 },
             );
           });
@@ -161,16 +149,15 @@ function property(name: string) {
       };
     },
   };
-
 }
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -304,16 +291,13 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         ],
       }),
     }),
-
   );
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
   });
-
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-
 });
 test.describe("Gallery", () => {
   test.describe("Should have a title that describes the current page", () => {
@@ -321,20 +305,14 @@ test.describe("Gallery", () => {
      * This an a11y requirement, under WCAG 2.2 criteria 2.4.2 Page Titled (A),
      * see https://www.w3.org/WAI/WCAG21/Understanding/page-titled.html
      */
-    feature(
-      "On `/gallery', the title should be 'Images | RSpace Gallery'",
-      async ({ Given, Then }) => {
-        await Given["the Gallery is mounted"]();
-        await Then["the page title should be"]("Images | RSpace Gallery");
-        /*
-         * The images is the default gallery section.
-         */
-      },
-
-    );
-    property(
-      "On '?mediaType={section}', the title should be '{section} | RSpace Gallery'",
-    )
+    feature("On `/gallery', the title should be 'Images | RSpace Gallery'", async ({ Given, Then }) => {
+      await Given["the Gallery is mounted"]();
+      await Then["the page title should be"]("Images | RSpace Gallery");
+      /*
+       * The images is the default gallery section.
+       */
+    });
+    property("On '?mediaType={section}', the title should be '{section} | RSpace Gallery'")
       .let(({ IsOneOf }) => ({
         section: IsOneOf(
           "Images",
@@ -362,7 +340,6 @@ test.describe("Gallery", () => {
         } else {
           await Then["the page title should be"](`${section} | RSpace Gallery`);
         }
-
       });
     property("On '/{id}', the title should be '{folder name} | RSpace Gallery'")
       .let(({ IsAny }) => ({
@@ -417,19 +394,13 @@ test.describe("Gallery", () => {
               ],
             }),
           }),
-
         );
         await Given["the Gallery is mounted"]({
           url: `/${id}`,
         });
-        await Then["the page title should be"](
-          `${folderName} | RSpace Gallery`,
-        );
-
+        await Then["the page title should be"](`${folderName} | RSpace Gallery`);
       });
-    property(
-      "On '/item/{id}', the title should be '{filename} | RSpace Gallery'",
-    )
+    property("On '/item/{id}', the title should be '{filename} | RSpace Gallery'")
       .let(({ IsAny }) => ({
         id: IsAny("file id") as number,
         filename: IsAny("file name without extension") as string,
@@ -451,276 +422,259 @@ test.describe("Gallery", () => {
               parentFolderId: 123,
             }),
           }),
-
         );
         await Given["the Gallery is mounted"]({
           url: `/item/${id}`,
         });
-        await Then["the page title should be"](
-          `${filename}.jpg | RSpace Gallery`,
-        );
+        await Then["the page title should be"](`${filename}.jpg | RSpace Gallery`);
       });
-
   });
   feature.describe("Network calls on state change", () => {
-    feature(
-      "Changing section should only make one request to the server",
-      async ({ Given, When, Then }) => {
-        await Given["the Gallery is mounted"]({
-          url: "?mediaType=Images",
-        });
-        await When["the user taps on the 'Chemistry' section"]();
-        await Then["there should be just one request to the server"]();
-      },
-    );
-    feature(
-      "Should handle simultaneous change in path and section",
-      async ({ Given, When, Then, router }) => {
-        await router.route("/api/v1/folders/*", (route) =>
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              id: 123,
-              globalId: `GF123`,
-              name: "some folder",
-              created: "2025-07-07T11:09:18.126Z",
-              lastModified: "2025-07-07T11:09:18.126Z",
-              parentFolderId: 131,
-              notebook: false,
-              systemFolder: false,
-              sharedFolder: false,
-              mediaType: "Images",
-              pathToRootFolder: [
-                {
-                  id: 131,
-                  globalId: "GF131",
-                  name: "Images",
-                  created: "2025-07-07T11:09:18.119Z",
-                  lastModified: "2025-07-07T11:09:18.119Z",
-                  parentFolderId: 130,
-                  notebook: false,
-                  systemFolder: false,
-                  sharedFolder: false,
-                  mediaType: "Images",
-                  pathToRootFolder: null,
-                  _links: [],
-                },
-                {
-                  id: 130,
-                  globalId: "GF130",
-                  name: "Gallery",
-                  created: "2025-07-07T11:09:18.112Z",
-                  lastModified: "2025-07-07T11:09:18.112Z",
-                  parentFolderId: 124,
-                  notebook: false,
-                  systemFolder: false,
-                  sharedFolder: false,
-                  mediaType: null,
-                  pathToRootFolder: null,
-                  _links: [],
-                },
-              ],
-            }),
+    feature("Changing section should only make one request to the server", async ({ Given, When, Then }) => {
+      await Given["the Gallery is mounted"]({
+        url: "?mediaType=Images",
+      });
+      await When["the user taps on the 'Chemistry' section"]();
+      await Then["there should be just one request to the server"]();
+    });
+    feature("Should handle simultaneous change in path and section", async ({ Given, When, Then, router }) => {
+      await router.route("/api/v1/folders/*", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: 123,
+            globalId: `GF123`,
+            name: "some folder",
+            created: "2025-07-07T11:09:18.126Z",
+            lastModified: "2025-07-07T11:09:18.126Z",
+            parentFolderId: 131,
+            notebook: false,
+            systemFolder: false,
+            sharedFolder: false,
+            mediaType: "Images",
+            pathToRootFolder: [
+              {
+                id: 131,
+                globalId: "GF131",
+                name: "Images",
+                created: "2025-07-07T11:09:18.119Z",
+                lastModified: "2025-07-07T11:09:18.119Z",
+                parentFolderId: 130,
+                notebook: false,
+                systemFolder: false,
+                sharedFolder: false,
+                mediaType: "Images",
+                pathToRootFolder: null,
+                _links: [],
+              },
+              {
+                id: 130,
+                globalId: "GF130",
+                name: "Gallery",
+                created: "2025-07-07T11:09:18.112Z",
+                lastModified: "2025-07-07T11:09:18.112Z",
+                parentFolderId: 124,
+                notebook: false,
+                systemFolder: false,
+                sharedFolder: false,
+                mediaType: null,
+                pathToRootFolder: null,
+                _links: [],
+              },
+            ],
           }),
-        );
-        await Given["the Gallery is mounted"]({
-          url: "/123",
-        });
-        await When["the user taps on the 'Chemistry' section"]();
-        await Then["there should be just one request to the server"]();
-      },
-    );
+        }),
+      );
+      await Given["the Gallery is mounted"]({
+        url: "/123",
+      });
+      await When["the user taps on the 'Chemistry' section"]();
+      await Then["there should be just one request to the server"]();
+    });
   });
 
   feature.describe("Sharing integration", () => {
-    feature(
-      "Saving a snippet share from Gallery should surface the success alert",
-      async ({ Given, page, router }) => {
-        await router.route("/gallery/getUploadedFiles*", (route) =>
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              data: {
-                parentId: 1,
-                items: {
-                  totalHits: 1,
-                  totalPages: 1,
-                  results: [
-                    {
-                      id: 3,
-                      oid: { idString: "SD3" },
-                      name: "My Snippet",
-                      ownerId: 1,
-                      ownerFullName: "Test User",
-                      ownerUsername: "testuser",
-                      description: null,
-                      creationDate: 1672531200,
-                      modificationDate: 1672531200,
-                      type: "Snippet",
-                      systemFolder: false,
-                      sharedFolder: false,
-                      extension: "txt",
-                      thumbnailId: null,
-                      size: 512,
-                      version: 1,
-                      originalImageOid: { idString: "SD3" },
-                    },
-                  ],
-                },
+    feature("Saving a snippet share from Gallery should surface the success alert", async ({ Given, page, router }) => {
+      await router.route("/gallery/getUploadedFiles*", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              parentId: 1,
+              items: {
+                totalHits: 1,
+                totalPages: 1,
+                results: [
+                  {
+                    id: 3,
+                    oid: { idString: "SD3" },
+                    name: "My Snippet",
+                    ownerId: 1,
+                    ownerFullName: "Test User",
+                    ownerUsername: "testuser",
+                    description: null,
+                    creationDate: 1672531200,
+                    modificationDate: 1672531200,
+                    type: "Snippet",
+                    systemFolder: false,
+                    sharedFolder: false,
+                    extension: "txt",
+                    thumbnailId: null,
+                    size: 512,
+                    version: 1,
+                    originalImageOid: { idString: "SD3" },
+                  },
+                ],
               },
-              error: null,
-              success: true,
-              errorMsg: null,
-            }),
+            },
+            error: null,
+            success: true,
+            errorMsg: null,
           }),
-        );
-        await router.route("/gallery/ajax/getLinkedDocuments/*", (route) =>
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              data: [],
-              error: null,
-              success: true,
-              errorMsg: null,
-            }),
+        }),
+      );
+      await router.route("/gallery/ajax/getLinkedDocuments/*", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: [],
+            error: null,
+            success: true,
+            errorMsg: null,
           }),
-        );
-        await router.route("/api/v1/userDetails/whoami", async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
+        }),
+      );
+      await router.route("/api/v1/userDetails/whoami", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: 1,
+            username: "testuser",
+            email: "test@example.com",
+            firstName: "Test",
+            lastName: "User",
+            hasPiRole: false,
+            hasSysAdminRole: false,
+            workbenchId: 1,
+          }),
+        });
+      });
+      await router.route("/api/v1/share/document/3", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            sharedDocId: 3,
+            sharedDocName: "My Snippet",
+            directShares: [],
+            notebookShares: [],
+          }),
+        });
+      });
+      await router.route("/api/v1/groups", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
               id: 1,
-              username: "testuser",
-              email: "test@example.com",
-              firstName: "Test",
-              lastName: "User",
+              globalId: "GP1",
+              name: "Alice and Bob's Group",
+              type: "LAB_GROUP",
+              sharedFolderId: 1,
+              sharedSnippetFolderId: 2,
+              members: [
+                { id: 1, username: "alice", role: "PI" },
+                { id: 2, username: "bob", role: "USER" },
+              ],
+              uniqueName: "aliceAndBobGroup",
+              _links: [],
+            },
+          ]),
+        });
+      });
+      await router.route("/api/v1/userDetails/groupMembers", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: 2,
+              username: "bob",
+              email: "bob@example.com",
+              firstName: "Bob",
+              lastName: "",
+              homeFolderId: 2,
+              workbenchId: 1,
               hasPiRole: false,
               hasSysAdminRole: false,
-              workbenchId: 1,
-            }),
-          });
+              _links: [],
+            },
+          ]),
         });
-        await router.route("/api/v1/share/document/3", async (route) => {
+      });
+      await router.route("/api/v1/folders/1*", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: 1,
+            globalId: "FL1",
+            name: "alice-bob",
+            created: "2025-09-09T12:05:14.109Z",
+            lastModified: "2025-09-09T12:05:14.109Z",
+            parentFolderId: 124,
+            notebook: false,
+            systemFolder: false,
+            sharedFolder: false,
+            mediaType: null,
+            pathToRootFolder: [],
+            _links: [],
+          }),
+        });
+      });
+      await router.route("/api/v1/share", async (route) => {
+        const request = route.request();
+        if (request.method() === "POST") {
           await route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
-              sharedDocId: 3,
-              sharedDocName: "My Snippet",
-              directShares: [],
-              notebookShares: [],
-            }),
-          });
-        });
-        await router.route("/api/v1/groups", async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([
-              {
-                id: 1,
-                globalId: "GP1",
-                name: "Alice and Bob's Group",
-                type: "LAB_GROUP",
-                sharedFolderId: 1,
-                sharedSnippetFolderId: 2,
-                members: [
-                  { id: 1, username: "alice", role: "PI" },
-                  { id: 2, username: "bob", role: "USER" },
-                ],
-                uniqueName: "aliceAndBobGroup",
-                _links: [],
-              },
-            ]),
-          });
-        });
-        await router.route("/api/v1/userDetails/groupMembers", async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([
-              {
-                id: 2,
-                username: "bob",
-                email: "bob@example.com",
-                firstName: "Bob",
-                lastName: "",
-                homeFolderId: 2,
-                workbenchId: 1,
-                hasPiRole: false,
-                hasSysAdminRole: false,
-                _links: [],
-              },
-            ]),
-          });
-        });
-        await router.route("/api/v1/folders/1*", async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              id: 1,
-              globalId: "FL1",
-              name: "alice-bob",
-              created: "2025-09-09T12:05:14.109Z",
-              lastModified: "2025-09-09T12:05:14.109Z",
-              parentFolderId: 124,
-              notebook: false,
-              systemFolder: false,
-              sharedFolder: false,
-              mediaType: null,
-              pathToRootFolder: [],
+              shareInfos: [],
+              failedShares: [],
               _links: [],
             }),
           });
+          return;
+        }
+        await route.fulfill({
+          status: 204,
+          body: "",
         });
-        await router.route("/api/v1/share", async (route) => {
-          const request = route.request();
-          if (request.method() === "POST") {
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({
-                shareInfos: [],
-                failedShares: [],
-                _links: [],
-              }),
-            });
-            return;
-          }
-          await route.fulfill({
-            status: 204,
-            body: "",
-          });
+      });
+      await router.route("/api/v1/share/*", async (route) => {
+        await route.fulfill({
+          status: 204,
+          body: "",
         });
-        await router.route("/api/v1/share/*", async (route) => {
-          await route.fulfill({
-            status: 204,
-            body: "",
-          });
-        });
+      });
 
-        await Given["the Gallery is mounted"]({ url: "?mediaType=Images" });
+      await Given["the Gallery is mounted"]({ url: "?mediaType=Images" });
 
-        await page.getByRole("gridcell", { name: "My Snippet" }).click();
-        await page.getByRole("button", { name: /actions/i }).click();
-        await page.getByRole("menuitem", { name: /share/i }).click();
+      await page.getByRole("gridcell", { name: "My Snippet" }).click();
+      await page.getByRole("button", { name: /actions/i }).click();
+      await page.getByRole("menuitem", { name: /share/i }).click();
 
-        const shareDialog = page.getByRole("dialog", { name: /Share My Snippet/i });
-        await shareDialog
-          .getByRole("combobox", { name: /Add RSpace users or groups/i })
-          .click();
-        await page.getByRole("option", { name: /^Bob/ }).click();
-        await shareDialog.getByRole("button", { name: /Save/i }).click();
+      const shareDialog = page.getByRole("dialog", { name: /Share My Snippet/i });
+      await shareDialog.getByRole("combobox", { name: /Add RSpace users or groups/i }).click();
+      await page.getByRole("option", { name: /^Bob/ }).click();
+      await shareDialog.getByRole("button", { name: /Save/i }).click();
 
-        await expect(page.locator('[data-test-id="toast-content"]')).toContainText(
-          /Shares updated successfully\./i,
-        );
-      },
-    );
+      await expect(page.locator('[data-test-id="toast-content"]')).toContainText(/Shares updated successfully\./i);
+    });
   });
 });

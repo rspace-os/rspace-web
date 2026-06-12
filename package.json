@@ -58,7 +58,6 @@
     "lefthook": "2.1.8",
     "lightningcss": "1.32.0",
     "playwright-core": "1.60.0",
-    "prop-types": "15.8.1",
     "rollup-plugin-visualizer": "7.0.1",
     "typescript": "6.0.3",
     "url": "0.11.4",

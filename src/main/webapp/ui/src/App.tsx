@@ -1,16 +1,17 @@
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import createAccentedTheme from "./accentedTheme";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
+import Analytics from "./components/Analytics";
+import { ERROR_MSG } from "./components/ErrorBoundary";
+import GoogleLoginProvider from "./components/GoogleLoginProvider";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
-import { ERROR_MSG } from "./components/ErrorBoundary";
-import Analytics from "./components/Analytics";
-import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
-import GoogleLoginProvider from "./components/GoogleLoginProvider";
-import createAccentedTheme from "./accentedTheme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
@@ -35,9 +36,9 @@ function App(): React.ReactNode {
   }, []);
 
   return loadingDone ? (
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
     <>
-      {(authStore.isAuthenticated || authStore.isSigningOut) &&
-      peopleStore.currentUser ? (
+      {(authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
         <>
           <GoogleLoginProvider />
           <StyledEngineProvider injectFirst enableCssLayer>

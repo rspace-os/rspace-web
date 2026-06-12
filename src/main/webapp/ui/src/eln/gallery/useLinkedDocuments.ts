@@ -1,9 +1,10 @@
 import React from "react";
 import axios from "@/common/axios";
-import { type GalleryFile, idToString } from "./useGalleryListing";
-import Result from "../../util/result";
-import * as Parsers from "../../util/parsers";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type LinkableRecord } from "../../stores/definitions/LinkableRecord";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import { type GalleryFile, idToString } from "./useGalleryListing";
 
 /**
  * An ELN document, to the extent that the Gallery needs to know to provide a
@@ -69,9 +70,7 @@ export default function useLinkedDocuments(file: GalleryFile): {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const { data } = await axios.get<unknown>(
-        `/gallery/ajax/getLinkedDocuments/${idToString(file.id).elseThrow()}`
-      );
+      const { data } = await axios.get<unknown>(`/gallery/ajax/getLinkedDocuments/${idToString(file.id).elseThrow()}`);
 
       Parsers.objectPath(["data"], data)
         .flatMap(Parsers.isArray)
@@ -82,9 +81,7 @@ export default function useLinkedDocuments(file: GalleryFile): {
                 .flatMap(Parsers.isNotNull)
                 .map((obj) => {
                   try {
-                    const id = Parsers.getValueWithKey("id")(obj)
-                      .flatMap(Parsers.isNumber)
-                      .elseThrow();
+                    const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow();
 
                     const globalId = Parsers.getValueWithKey("oid")(obj)
                       .flatMap(Parsers.isObject)
@@ -93,9 +90,7 @@ export default function useLinkedDocuments(file: GalleryFile): {
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
-                    const name = Parsers.getValueWithKey("name")(obj)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
+                    const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
 
                     return {
                       id,
@@ -114,9 +109,9 @@ export default function useLinkedDocuments(file: GalleryFile): {
                     setErrorMessage("Error loading linked documents.");
                     throw e;
                   }
-                })
-            )
-          )
+                }),
+            ),
+          ),
         )
         .do((docs) => {
           setDocuments(docs);
@@ -130,7 +125,6 @@ export default function useLinkedDocuments(file: GalleryFile): {
 
   React.useEffect(() => {
     void getLinkedDocuments();
-
   }, [file]);
 
   return {

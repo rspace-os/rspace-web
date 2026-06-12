@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
 
 type Props = { label: string };
@@ -9,10 +10,7 @@ type Props = { label: string };
  */
 export default function NoValue({ label }: Props): React.ReactNode {
   return (
-    <Box
-      component="span"
-      sx={{ color: "lightestGrey", fontStyle: "italic" }}
-    >
+    <Box component="span" sx={{ color: "lightestGrey", fontStyle: "italic" }}>
       {label}
     </Box>
   );

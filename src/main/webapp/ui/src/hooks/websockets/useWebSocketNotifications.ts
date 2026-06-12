@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import SockJS from "sockjs-client";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Client, IMessage } from "@stomp/stompjs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import SockJS from "sockjs-client";
 
 type Notification = {
   notificationCount: number;
@@ -12,15 +13,11 @@ type UseWebSocketNotificationsResult = Notification & {
   connectionStatus: "connecting" | "connected" | "error" | "disconnected";
 };
 
-export default function useWebSocketNotifications(
-  userId: string
-): UseWebSocketNotificationsResult {
-  const [lastNotification, setLastNotification] = useState<Notification | null>(
-    null
+export default function useWebSocketNotifications(userId: string): UseWebSocketNotificationsResult {
+  const [lastNotification, setLastNotification] = useState<Notification | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "error" | "disconnected">(
+    "connecting",
   );
-  const [connectionStatus, setConnectionStatus] = useState<
-    "connecting" | "connected" | "error" | "disconnected"
-  >("connecting");
   const clientRef = useRef<Client | null>(null);
 
   const handleNotification = useCallback((message: IMessage) => {

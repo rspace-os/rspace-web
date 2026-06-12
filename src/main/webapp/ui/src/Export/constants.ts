@@ -1,5 +1,6 @@
 import type { ExportSelection } from "@/Export/common";
 import type { ArchiveType } from "@/Export/FormatChoice";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { DEFAULT_REPO_CONFIG, Repo } from "@/Export/repositories/common";
 
 export type ExportConfig = {

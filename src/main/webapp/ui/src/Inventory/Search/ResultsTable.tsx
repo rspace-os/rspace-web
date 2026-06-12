@@ -1,21 +1,24 @@
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
-import SearchContext from "../../stores/contexts/Search";
-import { paginationOptions } from "../../util/table";
-import { menuIDs } from "../../util/menuIDs";
-import ResultRow from "./components/ResultRow";
+import Skeleton from "@mui/material/Skeleton";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TablePagination from "@mui/material/TablePagination";
-import CustomTableHead from "./components/CustomTableHead";
-import { type SplitButtonOption } from "../components/ContextMenu/ContextMenuSplitButton";
-import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
-import Skeleton from "@mui/material/Skeleton";
-import ScrollBox from "./ScrollBox";
-import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import TablePagination from "@mui/material/TablePagination";
+import TableRow from "@mui/material/TableRow";
+import { observer } from "mobx-react-lite";
+import React, { useContext } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import SearchContext from "../../stores/contexts/Search";
 import { hasRequiredPermissions } from "../../stores/definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { menuIDs } from "../../util/menuIDs";
+import { paginationOptions } from "../../util/table";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SplitButtonOption } from "../components/ContextMenu/ContextMenuSplitButton";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import CustomTableHead from "./components/CustomTableHead";
+import ResultRow from "./components/ResultRow";
+import ScrollBox from "./ScrollBox";
+
 const ResultRowSkeleton = () => {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
@@ -38,10 +41,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   const canSelectResult = React.useCallback(
     (record: (typeof search.filteredResults)[number]) =>
       !search.alwaysFilterOut(record) &&
-      hasRequiredPermissions(
-        record.permittedActions,
-        search.uiConfig?.requiredPermissions,
-      ),
+      hasRequiredPermissions(record.permittedActions, search.uiConfig?.requiredPermissions),
     [search],
   );
   const selectableResults = React.useCallback(
@@ -57,18 +57,21 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   const toggleAll = () => {
     const results = selectableResults();
     const selected = results.some((r) => r.selected === false);
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     results.forEach((r) => r.toggleSelected(selected));
   };
   const onSelectOptions: Array<SplitButtonOption> = [
     {
       text: "All",
       selection: () => {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         selectableResults().forEach((r) => r.toggleSelected(true));
       },
     },
     {
       text: "None",
       selection: () => {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         search.filteredResults.forEach((r) => r.toggleSelected(false));
       },
     },
@@ -88,9 +91,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       text: "Mine",
       selection: () => {
         search.filteredResults.forEach((r) => {
-          r.toggleSelected(
-            canSelectResult(r) && (r.currentUserIsOwner ?? false),
-          );
+          r.toggleSelected(canSelectResult(r) && (r.currentUserIsOwner ?? false));
         });
       },
     },
@@ -98,9 +99,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
       text: "Not Mine",
       selection: () => {
         search.filteredResults.forEach((r) => {
-          r.toggleSelected(
-            canSelectResult(r) && r.currentUserIsOwner === false,
-          ); // if currentUserIsOwner cannot be determined then don't select
+          r.toggleSelected(canSelectResult(r) && r.currentUserIsOwner === false); // if currentUserIsOwner cannot be determined then don't select
         });
       },
     },
@@ -126,11 +125,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   return (
     <>
       <ScrollBox overflowY="auto" overflowX="auto">
-        <Table
-          size="small"
-          aria-label="Search results"
-          stickyHeader
-        >
+        <Table size="small" aria-label="Search results" stickyHeader>
           <CustomTableHead
             selectedCount={search.selectedResults.length}
             onSelectOptions={onSelectOptions}
@@ -139,9 +134,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
           />
           <TableBody>
             {search.fetcher.loading
-              ? new Array<unknown>(search.fetcher.pageSize)
-                  .fill(null)
-                  .map((_, i) => <ResultRowSkeleton key={i} />)
+              ? new Array<unknown>(search.fetcher.pageSize).fill(null).map((_, i) => <ResultRowSkeleton key={i} />)
               : search.filteredResults.map((result) => (
                   <ResultRow
                     key={result.globalId}
@@ -162,15 +155,11 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
           rowsPerPage={Math.min(search.fetcher.pageSize, count)}
           page={Number(search.fetcher.pageNumber) || 0}
           onPageChange={(_event: unknown, page: number) => handleChangePage(page)}
-          onRowsPerPageChange={(e) =>
-            handleChangePageSize(Number(e.target.value))
-          }
+          onRowsPerPageChange={(e) => handleChangePageSize(Number(e.target.value))}
           slotProps={{
             select: {
               renderValue: (value: unknown) =>
-                typeof value === "number" && value < count
-                  ? value
-                  : `${String(value)} (All)`,
+                typeof value === "number" && value < count ? value : `${String(value)} (All)`,
             },
           }}
         />

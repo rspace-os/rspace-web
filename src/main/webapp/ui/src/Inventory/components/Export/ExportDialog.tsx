@@ -1,22 +1,19 @@
-import React, { useState } from "react";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import ContextDialog from "../ContextMenu/ContextDialog";
-import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-import RadioField, {
-  type RadioOption,
-} from "../../../components/Inputs/RadioField";
-import SubmitSpinner from "../../../components/SubmitSpinnerButton";
+import type { Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import {
-  type ApiRecordType,
-  type InventoryRecord,
-} from "@/stores/definitions/InventoryRecord";
+import type React from "react";
+import { useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ApiRecordType, type InventoryRecord } from "@/stores/definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
   type ExportFileType,
   type ExportMode,
@@ -24,8 +21,9 @@ import {
   type OptionalContent,
 } from "@/stores/definitions/Search";
 import { toTitleCase } from "@/util/Util";
-import Alert from "@mui/material/Alert";
-import type { Theme } from "@mui/material/styles";
+import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
+import SubmitSpinner from "../../../components/SubmitSpinnerButton";
+import ContextDialog from "../ContextMenu/ContextDialog";
 
 export type ExportType = "userData" | "contextMenu" | "listOfMaterials";
 
@@ -35,8 +33,7 @@ export function defaultExportOptions(
 ): ExportOptions {
   const exportedRecordTypes = new Set(selectedResults?.map(({ type }) => type));
   const showSamplesModule: boolean = exportedRecordTypes.has("SAMPLE");
-  const showContainersModule: boolean =
-    exportedRecordTypes.has("CONTAINER") || exportType === "userData";
+  const showContainersModule: boolean = exportedRecordTypes.has("CONTAINER") || exportType === "userData";
 
   return {
     exportMode: "FULL",
@@ -96,13 +93,10 @@ export const ExportOptionsWrapper = ({
     { value: "SINGLE_CSV", label: "Single CSV" },
   ];
 
-  const exportedRecordTypes: Array<ApiRecordType> = [
-    ...new Set(selectedResults?.map(({ type }) => type)),
-  ];
+  const exportedRecordTypes: Array<ApiRecordType> = [...new Set(selectedResults?.map(({ type }) => type))];
 
   const showSamplesModule: boolean = exportedRecordTypes.includes("SAMPLE");
-  const showContainersModule: boolean =
-    exportedRecordTypes.includes("CONTAINER") || exportType === "userData";
+  const showContainersModule: boolean = exportedRecordTypes.includes("CONTAINER") || exportType === "userData";
 
   return (
     <>
@@ -110,9 +104,8 @@ export const ExportOptionsWrapper = ({
         <Typography component="p" variant="body1" sx={{ mb: 2 }}>
           {exportType === "userData"
             ? "Exporting all items owned by the user."
-            : `Exporting ${
-                exportType === "contextMenu" ? "selected" : "all list items"
-              }: ${exportedRecordTypes
+            : `Exporting ${exportType === "contextMenu" ? "selected" : "all list items"}: ${exportedRecordTypes
+                // biome-ignore lint/style/useTemplate: initial biome migration
                 .map((t) => toTitleCase(t) + "s")
                 .join(", ")}.`}
         </Typography>
@@ -137,9 +130,7 @@ export const ExportOptionsWrapper = ({
             smallText={true}
           />
           <Alert severity="info">
-            {`All data, ${
-              exportOptions.exportMode === "FULL" ? "including" : "excluding"
-            } custom and template fields.`}
+            {`All data, ${exportOptions.exportMode === "FULL" ? "including" : "excluding"} custom and template fields.`}
           </Alert>
         </Box>
         {showSamplesModule && (
@@ -242,12 +233,7 @@ export default function ExportDialog({
   };
 
   return (
-    <ContextDialog
-      open={openExportDialog}
-      onClose={handleClose}
-      fullWidth
-      maxWidth="sm"
-    >
+    <ContextDialog open={openExportDialog} onClose={handleClose} fullWidth maxWidth="sm">
       <DialogTitle>Export Options</DialogTitle>
       <DialogContent>
         <ExportOptionsWrapper
@@ -261,12 +247,7 @@ export default function ExportDialog({
         <Button onClick={handleClose} disabled={false}>
           Cancel
         </Button>
-        <SubmitSpinner
-          onClick={onSubmitHandler}
-          disabled={false}
-          loading={false}
-          label="Export"
-        />
+        <SubmitSpinner onClick={onSubmitHandler} disabled={false} loading={false} label="Export" />
       </DialogActions>
     </ContextDialog>
   );

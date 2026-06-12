@@ -1,5 +1,6 @@
 import React, { type Context } from "react";
 import axios from "@/common/axios";
+// biome-ignore lint/style/useImportType: initial biome migration
 import * as FetchingData from "../../util/fetchingData";
 import * as MapUtils from "../../util/MapUtils";
 
@@ -16,8 +17,7 @@ import * as MapUtils from "../../util/MapUtils";
  * any component that uses this hook should be wrapped my this context to
  * ensure that test don't pollute one another with the shared state.
  */
-export const DeploymentPropertyContext: Context<Map<string, unknown>> =
-  React.createContext(new Map<string, unknown>());
+export const DeploymentPropertyContext: Context<Map<string, unknown>> = React.createContext(new Map<string, unknown>());
 
 /**
  * The RSpace product has a wide variety of configuration options that allow
@@ -82,9 +82,7 @@ export const DeploymentPropertyContext: Context<Map<string, unknown>> =
  *     );
  *   }
  */
-export function useDeploymentProperty(
-  name: string,
-): FetchingData.Fetched<unknown> {
+export function useDeploymentProperty(name: string): FetchingData.Fetched<unknown> {
   const map = React.useContext(DeploymentPropertyContext);
   const [value, setValue] = React.useState<FetchingData.Fetched<unknown>>(
     MapUtils.get<string, unknown>(map, name)
@@ -99,10 +97,9 @@ export function useDeploymentProperty(
     }
     void (async () => {
       try {
-        const { data } = await axios.get<unknown>(
-          `/deploymentproperties/ajax/property`,
-          { params: new URLSearchParams({ name }) },
-        );
+        const { data } = await axios.get<unknown>(`/deploymentproperties/ajax/property`, {
+          params: new URLSearchParams({ name }),
+        });
         setValue({ tag: "success", value: data });
         map.set(name, data);
       } catch (error) {
@@ -111,7 +108,6 @@ export function useDeploymentProperty(
         }
       }
     })();
-
   }, []);
 
   return value;

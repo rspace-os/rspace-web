@@ -1,5 +1,8 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Container } from "./Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { InventoryRecord } from "./InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Person } from "./Person";
 
 /**

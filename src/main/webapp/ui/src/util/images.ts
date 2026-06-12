@@ -3,11 +3,7 @@
  * All strings here are data URLs.
  * `canvas` must be a Canvas element, hidden, somewhere in the DOM.
  */
-export function capImageAt1MB(
-  file: Blob,
-  dataURL: string,
-  canvasId: string
-): Promise<string> {
+export function capImageAt1MB(file: Blob, dataURL: string, canvasId: string): Promise<string> {
   const canvas = document.getElementById(canvasId);
   if (canvas instanceof HTMLCanvasElement) {
     const _1MB = 1000000;
@@ -15,10 +11,10 @@ export function capImageAt1MB(
       const areaScaleFactor = Math.min(1, _1MB / file.size);
       const lengthScaleFactor = Math.sqrt(areaScaleFactor);
       const image = new Image();
+      // biome-ignore lint/complexity/useArrowFunction: initial biome migration
       image.onload = function () {
         const ctx = canvas.getContext("2d");
-        if (ctx === null)
-          return reject(new Error("Could not get canvas context"));
+        if (ctx === null) return reject(new Error("Could not get canvas context"));
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         image.width *= lengthScaleFactor;
         image.height *= lengthScaleFactor;

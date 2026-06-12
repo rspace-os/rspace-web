@@ -1,30 +1,29 @@
-import DescriptionList from "../../components/DescriptionList";
+import Avatar from "@mui/material/Avatar";
+import Grid from "@mui/material/Grid";
 import DOMPurify from "dompurify";
-import TableCellBlank from "../../components/TableCellBlank";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React, { type ReactNode, useContext } from "react";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import DescriptionList from "../../components/DescriptionList";
+import GlobalId from "../../components/GlobalId";
+import TableCellBlank from "../../components/TableCellBlank";
+import TagListing from "../../components/Tags/TagListing";
+import NavigateContext from "../../stores/contexts/Navigate";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Record } from "../../stores/definitions/Record";
 import useStores from "../../stores/use-stores";
 import { formatFileSize } from "../../util/files";
 import ContentsChips from "../Container/Content/ContentsChips";
 import Breadcrumbs from "./Breadcrumbs";
-import GlobalId from "../../components/GlobalId";
 import { RecordLink } from "./RecordLink";
-import Avatar from "@mui/material/Avatar";
-import Grid from "@mui/material/Grid";
-import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useContext } from "react";
-import TagListing from "../../components/Tags/TagListing";
-import NavigateContext from "../../stores/contexts/Navigate";
 
 type RecordDetailsArgs = {
   record: Record;
   hideName?: boolean;
 };
 
-function RecordDetails({
-  record,
-  hideName = false,
-}: RecordDetailsArgs): ReactNode {
+function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
@@ -63,11 +62,7 @@ function RecordDetails({
               : [
                   {
                     label: "Global ID",
-                    value: record.globalId ? (
-                      <GlobalId record={record} />
-                    ) : (
-                      <TableCellBlank />
-                    ),
+                    value: record.globalId ? <GlobalId record={record} /> : <TableCellBlank />,
                     reducedPadding: true,
                   },
                 ]),
@@ -87,17 +82,11 @@ function RecordDetails({
                   },
                 ]
               : []),
-            ...(record.readAccessLevel !== "public" &&
-            record.recordDetails.sample
+            ...(record.readAccessLevel !== "public" && record.recordDetails.sample
               ? [
                   {
                     label: "Sample",
-                    value: (
-                      <RecordLink
-                        record={record.recordDetails.sample}
-                        overflow
-                      />
-                    ),
+                    value: <RecordLink record={record.recordDetails.sample} overflow />,
                     reducedPadding: true,
                   },
                 ]
@@ -117,10 +106,7 @@ function RecordDetails({
                     value: (
                       <span
                         dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(
-                            record.recordDetails.description,
-                            { ADD_ATTR: ["target"] },
-                          ),
+                          __html: DOMPurify.sanitize(record.recordDetails.description, { ADD_ATTR: ["target"] }),
                         }}
                       ></span>
                     ),
@@ -134,9 +120,7 @@ function RecordDetails({
                     value: (
                       <TagListing
                         onClick={(tag) => {
-                          navigate(
-                            `/inventory/search?query=l: (tags:"${tag.value}")`,
-                          );
+                          navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
                         }}
                         tags={record.recordDetails.tags}
                         size="small"
@@ -148,32 +132,25 @@ function RecordDetails({
                   },
                 ]
               : []),
-            ...(record.readAccessLevel === "full" &&
-            record.recordDetails.contents
+            ...(record.readAccessLevel === "full" && record.recordDetails.contents
               ? [
                   {
                     label: "Contents",
-                    value: (
-                      <ContentsChips record={record.recordDetails.contents} />
-                    ),
+                    value: <ContentsChips record={record.recordDetails.contents} />,
                     reducedPadding: true,
                   },
                 ]
               : []),
-            ...(record.readAccessLevel !== "public" &&
-            record.recordDetails.location
+            ...(record.readAccessLevel !== "public" && record.recordDetails.location
               ? [
                   {
                     label: "Location",
-                    value: (
-                      <Breadcrumbs record={record.recordDetails.location} />
-                    ),
+                    value: <Breadcrumbs record={record.recordDetails.location} />,
                     reducedPadding: true,
                   },
                 ]
               : []),
-            ...(record.readAccessLevel === "full" &&
-            record.recordDetails.modified
+            ...(record.readAccessLevel === "full" && record.recordDetails.modified
               ? [
                   {
                     label: "Modified",
@@ -181,9 +158,7 @@ function RecordDetails({
                       <>
                         <TimeAgoCustom
                           time={record.recordDetails.modified[0]}
-                          formatter={(value, unit, suffix) =>
-                            `${value}${unit[0]} ${suffix}`
-                          }
+                          formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
                         />{" "}
                         by {record.recordDetails.modified[1]}
                       </>
@@ -211,9 +186,7 @@ function RecordDetails({
               ? [
                   {
                     label: "Gallery File",
-                    value: (
-                      <GlobalId record={record.recordDetails.galleryFile} />
-                    ),
+                    value: <GlobalId record={record.recordDetails.galleryFile} />,
                   },
                 ]
               : []),

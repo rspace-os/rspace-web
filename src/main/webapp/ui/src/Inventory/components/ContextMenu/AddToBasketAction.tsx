@@ -1,12 +1,12 @@
-import React, { forwardRef, useState } from "react";
-import ContextMenuAction, {
-  type ContextMenuRenderOptions,
-} from "./ContextMenuAction";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { Observer } from "mobx-react-lite";
-import { match } from "../../../util/Util";
+import type React from "react";
+import { forwardRef, useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { match } from "../../../util/Util";
 import AddToBasketDialog from "../Baskets/AddToBasketDialog";
+import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 
 type AddToBasketActionArgs = {
   as: ContextMenuRenderOptions;
@@ -15,14 +15,8 @@ type AddToBasketActionArgs = {
   selectedResults: Array<InventoryRecord>;
 };
 
-const AddToBasketAction = forwardRef<
-  React.ElementRef<typeof ContextMenuAction>,
-  AddToBasketActionArgs
->(
-  (
-    { as, closeMenu, disabled, selectedResults }: AddToBasketActionArgs,
-    ref
-  ) => {
+const AddToBasketAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, AddToBasketActionArgs>(
+  ({ as, closeMenu, disabled, selectedResults }: AddToBasketActionArgs, ref) => {
     const [openAddToBasketDialog, setOpenAddToBasketDialog] = useState(false);
 
     const handleOpen = () => {
@@ -31,10 +25,7 @@ const AddToBasketAction = forwardRef<
 
     const disabledHelp = match<void, string>([
       [() => disabled !== "", disabled],
-      [
-        () => selectedResults.some((r) => r.type === "SAMPLE_TEMPLATE"),
-        `Templates cannot be added to a Basket.`,
-      ],
+      [() => selectedResults.some((r) => r.type === "SAMPLE_TEMPLATE"), `Templates cannot be added to a Basket.`],
       [() => true, ""],
     ])();
 
@@ -61,7 +52,7 @@ const AddToBasketAction = forwardRef<
         )}
       </Observer>
     );
-  }
+  },
 );
 
 AddToBasketAction.displayName = "AddToBasketAction";

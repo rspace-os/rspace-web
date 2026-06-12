@@ -1,5 +1,6 @@
-import { type RecordType, type InventoryRecord } from "./InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GlobalId } from "./BaseRecord";
+import type { InventoryRecord, RecordType } from "./InventoryRecord";
 
 /*
  * This interfaces describes the data necessary for tree view

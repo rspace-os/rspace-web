@@ -1,16 +1,16 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-
-import { render, screen } from "@testing-library/react";
-import FileField from "../FileField";
 import Alert from "@mui/material/Alert";
 import { ThemeProvider } from "@mui/material/styles";
+
+import { render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
+import FileField from "../FileField";
 
 vi.mock("@mui/material/Alert", () => ({
   default: vi.fn(() => {
     return <div data-testid="Alert"></div>;
-
   }),
 }));
 describe("FileField", () => {
@@ -23,13 +23,8 @@ describe("FileField", () => {
     test("be an Alert on the page.", () => {
       render(
         <ThemeProvider theme={materialTheme}>
-          <FileField
-            onChange={() => {}}
-            name="foo"
-            accept="foo"
-            warningAlert="A warning alert."
-          />
-        </ThemeProvider>
+          <FileField onChange={() => {}} name="foo" accept="foo" warningAlert="A warning alert." />
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("Alert")).toBeInTheDocument();
       expect(Alert).toHaveBeenCalledWith(
@@ -37,7 +32,7 @@ describe("FileField", () => {
           children: "A warning alert.",
           severity: "warning",
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -62,4 +57,3 @@ describe("FileField", () => {
     expect(screen.getByText("after")).toBeInTheDocument();
   });
 });
-

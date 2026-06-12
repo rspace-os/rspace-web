@@ -1,14 +1,14 @@
-import type { RootStore } from "./RootStore";
-import Import, { type State } from "../models/ImportModel";
-import { action, observable, makeObservable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
 import RsSet from "../../util/set";
+import Import, { type State } from "../models/ImportModel";
+import type { RootStore } from "./RootStore";
 
 export type ImportRecordType = "SAMPLES" | "CONTAINERS" | "SUBSAMPLES";
 
 export const IMPORT_PATHNAME = "/inventory/import";
 
-export const isImportPage: () => boolean = () =>
-  window.location.pathname === IMPORT_PATHNAME;
+export const isImportPage: () => boolean = () => window.location.pathname === IMPORT_PATHNAME;
 
 export default class ImportStore {
   rootStore: RootStore;
@@ -24,14 +24,8 @@ export default class ImportStore {
     this.rootStore = rootStore;
 
     if (isImportPage()) {
-      const recordType = new URLSearchParams(window.location.search).get(
-        "recordType"
-      );
-      if (
-        recordType === "CONTAINERS" ||
-        recordType === "SAMPLES" ||
-        recordType === "SUBSAMPLES"
-      )
+      const recordType = new URLSearchParams(window.location.search).get("recordType");
+      if (recordType === "CONTAINERS" || recordType === "SAMPLES" || recordType === "SUBSAMPLES")
         this.initializeNewImport(recordType);
     }
   }

@@ -1,7 +1,9 @@
-import RecordStatus from "./Toolbar/RecordStatus";
-import React from "react";
 import Box from "@mui/material/Box";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type State } from "../../stores/definitions/InventoryRecord";
+import RecordStatus from "./Toolbar/RecordStatus";
 
 type StickyStatusArgs = {
   recordState: State;
@@ -11,10 +13,7 @@ type StickyStatusArgs = {
 /*
  * RecordStatus, with the additional styles to position it absolutely
  */
-export default function StickyStatus({
-  recordState,
-  deleted,
-}: StickyStatusArgs): React.ReactNode {
+export default function StickyStatus({ recordState, deleted }: StickyStatusArgs): React.ReactNode {
   return ["create", "edit"].includes(recordState) || deleted ? (
     <Box
       sx={{

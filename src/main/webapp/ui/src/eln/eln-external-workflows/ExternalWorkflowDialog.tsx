@@ -1,29 +1,30 @@
-import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Dialog from "@mui/material/Dialog";
+import { DataGrid } from "@mui/x-data-grid";
 import React from "react";
-import {DataGridColumn} from "@/util/table";
-import {DataGrid} from "@mui/x-data-grid";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
-import Link from "@mui/material/Link";
-import {
-  type GalaxyDataSummary
-} from "./GalaxyData";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import { JSX } from "react/jsx-runtime";
+import { DataGridColumn } from "@/util/table";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GalaxyDataSummary } from "./GalaxyData";
 
 export type ExternalWorkflowDialogArgs = {
   open: boolean;
   setOpen: (val: boolean) => void;
-  galaxySummaryReport: Array<GalaxyDataSummary>
+  galaxySummaryReport: Array<GalaxyDataSummary>;
 };
 
 function makeGalleryLinks(row: GalaxyDataSummary) {
   return row.galaxyDataNames.map((dataName) => (
     <React.Fragment key={dataName.id ?? dataName.fileName}>
       <Link
+        // biome-ignore lint/style/useTemplate: initial biome migration
         href={"/gallery/item/" + dataName.id}
         target="_blank"
         rel="noreferrer"
@@ -34,17 +35,15 @@ function makeGalleryLinks(row: GalaxyDataSummary) {
   ));
 }
 
-function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWorkflowDialogArgs) {
+function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: ExternalWorkflowDialogArgs) {
   return (
-
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
     <>
       <Dialog open={open} fullWidth maxWidth="xl">
         <DialogTitle>Galaxy WorkFlow Data</DialogTitle>
         <DialogContent>
           <Stack spacing={3}>
-            <Typography>
-              Data uploaded and Workflow Invocations using that data
-            </Typography>
+            <Typography>Data uploaded and Workflow Invocations using that data</Typography>
             <DataGrid
               getRowHeight={() => "auto"} //for text wrapping
               rows={galaxySummaryReport}
@@ -69,28 +68,21 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                     renderCell: ({ row }) => makeGalleryLinks(row),
                   },
                 ),
-                DataGridColumn.newColumnWithValueGetter(
-                  "Container",
-                  (wf: GalaxyDataSummary) => wf.galaxyHistoryName,
-                  {
-                    headerName: "Container/Galaxy History",
-                    flex: 1,
-                    resizable: true,
-                    renderCell: ({ row }) => (
-                      <Link
-                        href={
-                          row.galaxyBaseUrl +
-                          "/histories/view?id=" +
-                          row.galaxyHistoryId
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {row.galaxyBaseUrl + ": " + row.galaxyHistoryName}
-                      </Link>
-                    ),
-                  },
-                ),
+                DataGridColumn.newColumnWithValueGetter("Container", (wf: GalaxyDataSummary) => wf.galaxyHistoryName, {
+                  headerName: "Container/Galaxy History",
+                  flex: 1,
+                  resizable: true,
+                  renderCell: ({ row }) => (
+                    <Link
+                      href={`${row.galaxyBaseUrl}/histories/view?id=${row.galaxyHistoryId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {/** biome-ignore lint/style/useTemplate: initial biome migration */}
+                      {row.galaxyBaseUrl + ": " + row.galaxyHistoryName}
+                    </Link>
+                  ),
+                }),
                 DataGridColumn.newColumnWithValueGetter(
                   "Invocation",
                   (wf: GalaxyDataSummary) => wf.galaxyInvocationName,
@@ -100,11 +92,7 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                     resizable: true,
                     renderCell: ({ row }) => (
                       <Link
-                        href={
-                          row.galaxyBaseUrl +
-                          "/workflows/invocations/" +
-                          row.galaxyInvocationId
-                        }
+                        href={`${row.galaxyBaseUrl}/workflows/invocations/${row.galaxyInvocationId}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -123,24 +111,15 @@ function ExternalWorkflowDialog({open, setOpen, galaxySummaryReport}: ExternalWo
                     renderCell: ({ row }) => row.galaxyInvocationStatus,
                   },
                 ),
-                DataGridColumn.newColumnWithValueGetter(
-                  "Created",
-                  (wf: GalaxyDataSummary) => new Date(wf.createdOn),
-                  {
-                    headerName: "Invocation Created",
-                    flex: 1,
-                    resizable: true,
-                    renderCell: ({ row }) =>
-                      row.createdOn !== null
-                        ? new Date(row.createdOn).toLocaleString()
-                        : "",
-                  },
-                ),
+                DataGridColumn.newColumnWithValueGetter("Created", (wf: GalaxyDataSummary) => new Date(wf.createdOn), {
+                  headerName: "Invocation Created",
+                  flex: 1,
+                  resizable: true,
+                  renderCell: ({ row }) => (row.createdOn !== null ? new Date(row.createdOn).toLocaleString() : ""),
+                }),
               ]}
               loading={false}
-              getRowId={(row: GalaxyDataSummary) =>
-                row.galaxyHistoryName + row.createdOn
-              }
+              getRowId={(row: GalaxyDataSummary) => row.galaxyHistoryName + row.createdOn}
               density="compact"
               disableColumnFilter
               hideFooter

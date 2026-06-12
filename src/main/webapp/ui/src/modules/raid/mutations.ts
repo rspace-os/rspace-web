@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AjaxOperationFailureResponseSchema } from "@/modules/common/api/schema";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { groupQueryKeys } from "@/modules/groups/queries";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
   AddRaidIdentifierAssociationResponse,
+  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
   AssociateRaidIdentifierRequestBody,
   DeleteRaidIdentifierAssociationResponse,
 } from "@/modules/raid/schema";
-import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { AjaxOperationFailureResponseSchema } from "@/modules/common/api/schema";
-import { groupQueryKeys } from "@/modules/groups/queries";
 
 export const addRaidIdentifierAjax = async ({
   groupId,
@@ -50,13 +52,8 @@ export const useAddRaidIdentifierMutation = ({ groupId }: { groupId: string }) =
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      raidServerAlias,
-      raidIdentifier,
-    }: {
-      raidServerAlias: string;
-      raidIdentifier: string;
-    }) => addRaidIdentifierAjax({ groupId, raidServerAlias, raidIdentifier }),
+    mutationFn: ({ raidServerAlias, raidIdentifier }: { raidServerAlias: string; raidIdentifier: string }) =>
+      addRaidIdentifierAjax({ groupId, raidServerAlias, raidIdentifier }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: groupQueryKeys.groupById(groupId),
@@ -100,4 +97,4 @@ export const useRemoveRaidIdentifierMutation = ({ groupId }: { groupId: string }
       await queryClient.invalidateQueries({ queryKey: groupQueryKeys.groupById(groupId) });
     },
   });
-}
+};

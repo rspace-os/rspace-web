@@ -1,6 +1,6 @@
-import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import StoichiometryDialog from "@/tinyMCE/stoichiometry/dialog/StoichiometryDialog";
 
@@ -46,6 +46,7 @@ vi.mock("@/modules/stoichiometry/mutations", () => ({
 vi.mock("@/tinyMCE/stoichiometry/dialog/EditableStoichiometryDialogSection", () => ({
   default: (props: unknown) => {
     mockEditableSection(props);
+    // biome-ignore lint/a11y/useSemanticElements: initial biome migration
     return <div role="region" aria-label="Editable stoichiometry section" />;
   },
 }));
@@ -64,10 +65,7 @@ describe("StoichiometryDialog", () => {
     const onTableCreated = vi.fn();
 
     mockMutateCalculateStoichiometry.mockImplementation(
-      (
-        _variables: unknown,
-        options?: { onSuccess?: (result: { id: number; revision: number }) => void },
-      ) => {
+      (_variables: unknown, options?: { onSuccess?: (result: { id: number; revision: number }) => void }) => {
         options?.onSuccess?.({ id: 7, revision: 3 });
       },
     );
@@ -84,9 +82,7 @@ describe("StoichiometryDialog", () => {
       />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: "Calculate Stoichiometry" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Calculate Stoichiometry" }));
 
     expect(mockResetCalculateStoichiometry).toHaveBeenCalled();
     expect(mockMutateCalculateStoichiometry).toHaveBeenCalledTimes(1);
@@ -98,18 +94,13 @@ describe("StoichiometryDialog", () => {
     expect(options?.onSuccess).toEqual(expect.any(Function));
     expect(onTableCreated).toHaveBeenCalledWith(7, 3);
     await waitFor(() => {
-      expect(
-        screen.getByRole("region", { name: "Editable stoichiometry section" }),
-      ).toBeVisible();
+      expect(screen.getByRole("region", { name: "Editable stoichiometry section" })).toBeVisible();
     });
   });
 
   it("auto-creates the stoichiometry table on open when requested", async () => {
     mockMutateCalculateStoichiometry.mockImplementation(
-      (
-        _variables: unknown,
-        options?: { onSuccess?: (result: { id: number; revision: number }) => void },
-      ) => {
+      (_variables: unknown, options?: { onSuccess?: (result: { id: number; revision: number }) => void }) => {
         options?.onSuccess?.({ id: 8, revision: 4 });
       },
     );
@@ -130,10 +121,7 @@ describe("StoichiometryDialog", () => {
       expect(mockMutateCalculateStoichiometry).toHaveBeenCalledTimes(1);
     });
 
-    expect(mockMutateCalculateStoichiometry).toHaveBeenCalledWith(
-      { chemId: 12345, recordId: 1 },
-      expect.any(Object),
-    );
+    expect(mockMutateCalculateStoichiometry).toHaveBeenCalledWith({ chemId: 12345, recordId: 1 }, expect.any(Object));
   });
 
   it("renders the editable section immediately when stoichiometry already exists", () => {
@@ -148,12 +136,8 @@ describe("StoichiometryDialog", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("region", { name: "Editable stoichiometry section" }),
-    ).toBeVisible();
-    expect(
-      screen.queryByRole("button", { name: "Calculate Stoichiometry" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Editable stoichiometry section" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Calculate Stoichiometry" })).not.toBeInTheDocument();
     expect(mockEditableSection).toHaveBeenCalledWith(
       expect.objectContaining({
         currentStoichiometry: { id: 1, revision: 2 },

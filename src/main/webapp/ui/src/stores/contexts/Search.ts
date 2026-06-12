@@ -1,6 +1,8 @@
 import React, { type Context } from "react";
-import { type Search } from "../definitions/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Record } from "../definitions/Record";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Search } from "../definitions/Search";
 import getRootStore from "../stores/RootStore";
 
 /*
@@ -51,12 +53,9 @@ type SearchContextType = {
 
 const DEFAULT_SEARCH_CONTEXT = {
   search: getRootStore().searchStore.search as Search,
-  differentSearchForSettingActiveResult: getRootStore().searchStore
-    .search as Search,
+  differentSearchForSettingActiveResult: getRootStore().searchStore.search as Search,
 };
 
-const SearchContext: Context<SearchContextType> = React.createContext(
-  DEFAULT_SEARCH_CONTEXT
-);
+const SearchContext: Context<SearchContextType> = React.createContext(DEFAULT_SEARCH_CONTEXT);
 
 export default SearchContext;

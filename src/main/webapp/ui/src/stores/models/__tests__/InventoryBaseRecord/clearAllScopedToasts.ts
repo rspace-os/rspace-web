@@ -1,13 +1,16 @@
 /*
  */
-import { expect } from "vitest";
-import InventoryBaseRecord from "../../InventoryBaseRecord";
+
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Command } from "fast-check";
+import { expect } from "vitest";
+// biome-ignore lint/style/useImportType: initial biome migration
+import InventoryBaseRecord from "../../InventoryBaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Model } from "./common";
 
-export class ClearAllScopedToastsCommand
-  implements Command<Model, InventoryBaseRecord>
-{
+export class ClearAllScopedToastsCommand implements Command<Model, InventoryBaseRecord> {
+  // biome-ignore lint/complexity/noUselessConstructor: initial biome migration
   constructor() {}
 
   check(): boolean {
@@ -24,4 +27,3 @@ export class ClearAllScopedToastsCommand
     return "clearAllScopedToasts";
   }
 }
-

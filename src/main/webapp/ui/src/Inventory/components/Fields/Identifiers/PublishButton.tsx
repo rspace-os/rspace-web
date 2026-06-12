@@ -1,6 +1,7 @@
 import React from "react";
-import { type Identifier } from "../../../../stores/definitions/Identifier";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Identifier } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type PublishButtonArgs = {
@@ -8,10 +9,7 @@ type PublishButtonArgs = {
   disabled?: boolean;
 };
 
-export default function PublishButton({
-  identifier,
-  disabled,
-}: PublishButtonArgs): React.ReactNode {
+export default function PublishButton({ identifier, disabled }: PublishButtonArgs): React.ReactNode {
   const [publishing, setPublishing] = React.useState(false);
   const { uiStore } = useStores();
 

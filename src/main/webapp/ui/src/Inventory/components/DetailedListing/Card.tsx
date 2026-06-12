@@ -1,55 +1,47 @@
-import React, { useContext, useState } from "react";
-import { observer } from "mobx-react-lite";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import { useTheme } from "@mui/material/styles";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import PhotoIcon from "@mui/icons-material/Photo";
 import Box from "@mui/material/Box";
 import CardMedia from "@mui/material/CardMedia";
 import IconButton from "@mui/material/IconButton";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import { preventEventBubbling } from "../../../util/Util";
-import DescriptionList from "../../../components/DescriptionList";
-import { RecordLink } from "../RecordLink";
-import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import TimeAgoCustom from "@/components/TimeAgoCustom";
-import contextActions from "../ContextMenu/ContextActions";
-import { menuIDs } from "../../../util/menuIDs";
-import CardStructure from "./CardStructure";
-import PhotoIcon from "@mui/icons-material/Photo";
-import ContentsChips from "../../Container/Content/ContentsChips";
-import SearchContext from "../../../stores/contexts/Search";
-import useStores from "../../../stores/use-stores";
-import ImagePreview from "../../../components/ImagePreview";
-import StyledMenu from "../../../components/StyledMenu";
 import Portal from "@mui/material/Portal";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import { UserCancelledAction } from "../../../util/error";
+import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useState } from "react";
+import TimeAgoCustom from "@/components/TimeAgoCustom";
+import CustomTooltip from "../../../components/CustomTooltip";
+import DescriptionList from "../../../components/DescriptionList";
+import ImagePreview from "../../../components/ImagePreview";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import StyledMenu from "../../../components/StyledMenu";
 import UserDetails from "../../../components/UserDetails";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import SearchContext from "../../../stores/contexts/Search";
+import { hasRequiredPermissions, type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
+import useStores from "../../../stores/use-stores";
+import { UserCancelledAction } from "../../../util/error";
+import { menuIDs } from "../../../util/menuIDs";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type BlobUrl } from "../../../util/types";
-import CustomTooltip from "../../../components/CustomTooltip";
-import { hasRequiredPermissions } from "../../../stores/definitions/InventoryRecord";
+import { preventEventBubbling } from "../../../util/Util";
+import ContentsChips from "../../Container/Content/ContentsChips";
+import contextActions from "../ContextMenu/ContextActions";
+import { RecordLink } from "../RecordLink";
+import CardStructure from "./CardStructure";
 
-const REQUIRED_PERMISSIONS_TOOLTIP =
-  "You do not have permission to select this item.";
+const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
 
 type CardArgs = {
   record: InventoryRecord;
 };
 
-type ContentItem = React.ComponentProps<
-  typeof DescriptionList
->["content"][number];
+type ContentItem = React.ComponentProps<typeof DescriptionList>["content"][number];
 
 function RecordCard({ record }: CardArgs): React.ReactNode {
-  const {
-    search,
-    disabled,
-    isChild,
-    scopedResult,
-    differentSearchForSettingActiveResult,
-  } = useContext(SearchContext);
+  const { search, disabled, isChild, scopedResult, differentSearchForSettingActiveResult } = useContext(SearchContext);
   const { searchStore, uiStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -68,8 +60,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   };
 
   const navigateToResult = (r: InventoryRecord) => {
-    if (!scopedResult)
-      throw new Error("A scoped record has not been assigned to this search");
+    if (!scopedResult) throw new Error("A scoped record has not been assigned to this search");
     const params = searchStore.fetcher.generateNewQuery({
       parentGlobalId: scopedResult.globalId,
     });
@@ -80,9 +71,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   };
 
   const [link, setLink] = useState<BlobUrl | null>(null);
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null,
-  );
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
 
   const [fetching, setFetching] = useState(false);
 
@@ -103,17 +92,10 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   };
 
   const isFilteredOut = search.alwaysFilterOut(record);
-  const hasPermission = hasRequiredPermissions(
-    record.permittedActions,
-    search.uiConfig?.requiredPermissions,
-  );
+  const hasPermission = hasRequiredPermissions(record.permittedActions, search.uiConfig?.requiredPermissions);
   const cardIsGreyedOut = isFilteredOut || !hasPermission;
-  const filteredOutReason = isFilteredOut
-    ? search.uiConfig?.alwaysFilteredOutReason
-    : undefined;
-  const tooltipText =
-    filteredOutReason ??
-    (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
+  const filteredOutReason = isFilteredOut ? search.uiConfig?.alwaysFilteredOutReason : undefined;
+  const tooltipText = filteredOutReason ?? (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
 
   const menuItems = contextActions({
     selectedResults: [record],
@@ -123,8 +105,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     basketSearch: search.fetcher.basketSearch,
   })("menuitem");
 
-  const navigateOnClick =
-    !disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild);
+  const navigateOnClick = !disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild);
   const greyOut = cardIsGreyedOut && !tooltipText;
 
   const fullAccess = record.readAccessLevel === "full";
@@ -152,13 +133,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   if (record.owner) {
     contentItems.push({
       label: "Owner",
-      value: (
-        <UserDetails
-          userId={record.owner.id}
-          fullName={record.owner.fullName}
-          position={["bottom", "right"]}
-        />
-      ),
+      value: <UserDetails userId={record.owner.id} fullName={record.owner.fullName} position={["bottom", "right"]} />,
       reducedPadding: true,
     });
   }
@@ -184,9 +159,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
         transition: "filter .2s ease-in-out, opacity .2s ease-in-out",
         cursor: navigateOnClick ? "pointer" : "default",
         height: "100%",
-        ...(greyOut
-          ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 }
-          : {}),
+        ...(greyOut ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 } : {}),
       }}
       deleted={record.deleted}
       image={
@@ -220,22 +193,14 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
           </CardMedia>
         )
       }
-      headerAvatar={
-        <RecordTypeIcon
-          record={record}
-          color={record.deleted ? theme.palette.deletedGrey : undefined}
-        />
-      }
+      headerAvatar={<RecordTypeIcon record={record} color={record.deleted ? theme.palette.deletedGrey : undefined} />}
       title={record.name}
       subheader={record.cardTypeLabel}
       headerAction={
         <>
           <IconButton
             sx={{ p: 1 }}
-            onClick={preventEventBubbling(
-              (e: React.MouseEvent<HTMLButtonElement>) =>
-                setAnchorEl(e.currentTarget),
-            )}
+            onClick={preventEventBubbling((e: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(e.currentTarget))}
           >
             <MoreHorizIcon fontSize="small" />
           </IconButton>
@@ -245,9 +210,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
             onClose={() => setAnchorEl(null)}
             disableAutoFocusItem={true}
           >
-            {menuItems
-              .filter(({ hidden }) => !hidden)
-              .map(({ component }) => component)}
+            {menuItems.filter(({ hidden }) => !hidden).map(({ component }) => component)}
           </StyledMenu>
         </>
       }
@@ -264,9 +227,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
             <span>Modified </span>
             <TimeAgoCustom
               time={record.lastModified}
-              formatter={(value, unit, suffix) =>
-                `${value}${unit[0]} ${suffix}`
-              }
+              formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
             />
             <span> by </span>
             {record.modifiedByFullName}
@@ -274,6 +235,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
         ) : null
       }
       onClick={() => {
+        // biome-ignore lint/complexity/noExtraBooleanCast: initial biome migration
         if (disabled || Boolean(anchorEl) || cardIsGreyedOut) {
           return;
         }
@@ -290,20 +252,12 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     <>
       {link && (
         <Portal>
-          <ImagePreview
-            closePreview={closePreview}
-            link={link}
-            size={size}
-            setSize={setSize}
-          />
+          <ImagePreview closePreview={closePreview} link={link} size={size} setSize={setSize} />
         </Portal>
       )}
       {tooltipText ? (
         <CustomTooltip title={tooltipText}>
-          <Box
-            aria-disabled="true"
-            sx={{ filter: "grayscale(1)", opacity: 0.6 }}
-          >
+          <Box aria-disabled="true" sx={{ filter: "grayscale(1)", opacity: 0.6 }}>
             <Box sx={{ pointerEvents: "none" }}>{card}</Box>
           </Box>
         </CustomTooltip>

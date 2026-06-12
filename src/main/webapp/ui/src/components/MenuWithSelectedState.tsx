@@ -1,10 +1,11 @@
-import React from "react";
-import AccentMenuItem from "./AccentMenuItem";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Box from "@mui/material/Box";
 import Button, { buttonClasses } from "@mui/material/Button";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Menu from "@mui/material/Menu";
 import { paperClasses } from "@mui/material/Paper";
+import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import AccentMenuItem from "./AccentMenuItem";
 
 /**
  * This component renders a button that shows a regular label and a label for
@@ -44,10 +45,7 @@ export default function MenuWithSelectedState({
           },
         })}
       >
-        <Box
-          component="span"
-          sx={{ pl: 1.5, pt: 0.5, pb: 0.25, maxHeight: "100%" }}
-        >
+        <Box component="span" sx={{ pl: 1.5, pt: 0.5, pb: 0.25, maxHeight: "100%" }}>
           {label}:
         </Box>
         <Box
@@ -78,9 +76,7 @@ export default function MenuWithSelectedState({
           },
         }}
         sx={{
-          [`& .${paperClasses.root}`]: anchorEl
-            ? { transform: "translate(0px, 4px) !important" }
-            : {},
+          [`& .${paperClasses.root}`]: anchorEl ? { transform: "translate(0px, 4px) !important" } : {},
         }}
       >
         {children}

@@ -6,21 +6,19 @@
  * So as to be usable throughout the application this component MUST NOT have a
  * dependency on any global state.
  */
-import React from "react";
+
 import { useTheme } from "@mui/material/styles";
 import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
 
 type CustomToggleButtonProps = { title?: string; disabled?: boolean } & Omit<
   React.ComponentProps<typeof ToggleButton>,
   "title" | "disabled"
 >;
 
-function CustomToggleButton({
-  title = "",
-  disabled = false,
-  ...rest
-}: CustomToggleButtonProps): React.ReactNode {
+function CustomToggleButton({ title = "", disabled = false, ...rest }: CustomToggleButtonProps): React.ReactNode {
   const theme = useTheme();
   const button = (
     <ToggleButton

@@ -1,5 +1,5 @@
-import React from "react";
 import Box from "@mui/material/Box";
+import type React from "react";
 import FormControl from "../../../components/Inputs/FormControl";
 
 /*

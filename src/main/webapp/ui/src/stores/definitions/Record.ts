@@ -1,9 +1,15 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type URL } from "../../util/types";
-import { type Container } from "./Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Person } from "../definitions/Person";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Container } from "./Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "./InventoryRecord";
-import { type Tag } from "./Tag";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type LinkableRecord } from "./LinkableRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Tag } from "./Tag";
 
 export type ReadAccessLevel = "full" | "limited" | "public";
 

@@ -3,16 +3,18 @@
  * ID of Records
  */
 
-import { type Record } from "../../stores/definitions/Record";
-import Collapse from "@mui/material/Collapse";
-import React from "react";
-import Table from "@mui/material/Table";
-import TableHead from "@mui/material/TableHead";
-import TableBody from "@mui/material/TableBody";
-import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import GlobalId from "../../components/GlobalId";
 import CardContent from "@mui/material/CardContent";
+import Collapse from "@mui/material/Collapse";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import GlobalId from "../../components/GlobalId";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Record } from "../../stores/definitions/Record";
 
 type SimpleRecordsTableArgs = {
   open: boolean;
@@ -26,10 +28,7 @@ type SimpleRecordsTableArgs = {
   records: ReadonlyArray<Record>;
 };
 
-export default function SimpleRecordsTable({
-  open,
-  records,
-}: SimpleRecordsTableArgs): React.ReactNode {
+export default function SimpleRecordsTable({ open, records }: SimpleRecordsTableArgs): React.ReactNode {
   return (
     <Collapse in={open}>
       <CardContent sx={{ p: "0 !important" }}>
@@ -45,9 +44,7 @@ export default function SimpleRecordsTable({
               <TableRow key={r.globalId}>
                 {/* width: 1px and preventing wrapping is intended to reduce
                     the column width as much as possible */}
-                <TableCell sx={{ width: "1px", whiteSpace: "nowrap" }}>
-                  {r.name}
-                </TableCell>
+                <TableCell sx={{ width: "1px", whiteSpace: "nowrap" }}>{r.name}</TableCell>
                 <TableCell>
                   <GlobalId record={r} />
                 </TableCell>

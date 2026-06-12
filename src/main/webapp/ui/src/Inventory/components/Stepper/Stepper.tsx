@@ -1,21 +1,23 @@
-import { type URL } from "../../../util/types";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
+// biome-ignore lint/style/useImportType: initial biome migration
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode, useContext, useEffect, useState } from "react";
+import { HeadingContext } from "../../../components/DynamicHeadingLevel";
+import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import NavigateContext from "../../../stores/contexts/Navigate";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Factory } from "../../../stores/definitions/Factory";
+import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../../stores/use-stores";
+import type { URL } from "../../../util/types";
 import CommonEditActions from "../CommonEditActions";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import MoreInfoSidebar from "../MoreInfoSidebar";
 import Toolbar from "../Toolbar/Toolbar";
 import StepperActions from "./StepperActions";
-import Alert from "@mui/material/Alert";
-import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
-import React, { useEffect, useState, useContext, type ReactNode } from "react";
-import { type Factory } from "../../../stores/definitions/Factory";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import { generateUrlFromCoreFetcherArgs } from "../../../stores/models/Fetcher/CoreFetcher";
-import { HeadingContext } from "../../../components/DynamicHeadingLevel";
-import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
-import Stack from "@mui/material/Stack";
 
 type StepperArgs = {
   // The title string to be displayed in the top left corner of the form.
@@ -127,14 +129,7 @@ function _Stepper({
       >
         {titleText}
       </Typography>
-      {helpLink && (
-        <HelpLinkIcon
-          link={helpLink.link}
-          title={helpLink.title}
-          size="small"
-          color="white"
-        />
-      )}
+      {helpLink && <HelpLinkIcon link={helpLink.link} title={helpLink.title} size="small" color="white" />}
     </Stack>
   );
 
@@ -145,12 +140,9 @@ function _Stepper({
           onSubmit={() => {
             void (async () => {
               await activeResult.create();
-              navigate(
-                generateUrlFromCoreFetcherArgs(
-                  activeResult.showNewlyCreatedRecordSearchParams,
-                ),
-                { modifyVisiblePanel: false },
-              );
+              navigate(generateUrlFromCoreFetcherArgs(activeResult.showNewlyCreatedRecordSearchParams), {
+                modifyVisiblePanel: false,
+              });
             })();
           }}
         />
@@ -166,12 +158,7 @@ function _Stepper({
 
   return (
     <>
-      <Toolbar
-        title={Title}
-        record={activeResult}
-        recordType={activeResult.recordType}
-        stickyAlert={stickyAlert}
-      />
+      <Toolbar title={Title} record={activeResult} recordType={activeResult.recordType} stickyAlert={stickyAlert} />
       <Box sx={{ position: "relative", minHeight: 0, overflowY: "auto" }}>
         <HeadingContext level={3}>{children}</HeadingContext>
         <FooterActions />

@@ -1,60 +1,43 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
+import fs from "fs/promises";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Download } from "playwright-core";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import { UsersPageWithProviders } from "./UsersPage.story";
 import PDF_CONFIG from "./__tests__/pdfConfig.json";
 import USER_LISTING from "./__tests__/userListing.json";
-import fs from "fs/promises";
+import { UsersPageWithProviders } from "./UsersPage.story";
 
-import AxeBuilder from "@axe-core/playwright";
 declare global {
   interface RSGlobal {
     newFileStoresExportEnabled?: boolean;
-
   }
   interface Window {
     RS: RSGlobal;
   }
-
 }
 const feature = test.extend<{
   Given: {
     "the sysadmin is on the users page": () => Promise<void>;
-    "checkVerificationPasswordNeeded endpoint returns {value}": ({
-      value,
-    }: {
-      value: boolean;
-    }) => Promise<void>;
+    "checkVerificationPasswordNeeded endpoint returns {value}": ({ value }: { value: boolean }) => Promise<void>;
   };
   When: {
     "one row is selected": () => Promise<void>;
     "a CSV export is downloaded": () => Promise<Download>;
     "a CSV export of the selected rows is downloaded": () => Promise<Download>;
-    "user {username} is selected": ({
-      username,
-    }: {
-      username: string;
-    }) => Promise<void>;
+    "user {username} is selected": ({ username }: { username: string }) => Promise<void>;
     "Grant PI role action is performed": () => Promise<void>;
   };
   Then: {
-    "{CSV} should have a precise usage column": ({
-      csv,
-    }: {
-      csv: Download;
-    }) => Promise<void>;
+    "{CSV} should have a precise usage column": ({ csv }: { csv: Download }) => Promise<void>;
     "{CSV} should have the same number of columns as are available to view, except for 'Full Name'": ({
       csv,
     }: {
       csv: Download;
     }) => Promise<void>;
-    "{CSV} should have {count} rows": ({
-      csv,
-      count,
-    }: {
-      csv: Download;
-      count: number;
-    }) => Promise<void>;
+    "{CSV} should have {count} rows": ({ csv, count }: { csv: Download; count: number }) => Promise<void>;
     "A request to set a verification password is shown": () => Promise<void>;
     "A request to set a verification password is not shown": () => Promise<void>;
     "the usage should be shown in human-readable format": () => Promise<void>;
@@ -65,19 +48,14 @@ const feature = test.extend<{
       "the sysadmin is on the users page": async () => {
         await mount(<UsersPageWithProviders />);
       },
-      "checkVerificationPasswordNeeded endpoint returns {value}": async ({
-        value,
-      }) => {
-        await router.route(
-          "/vfpwd/ajax/checkVerificationPasswordNeeded",
-          async (route) => {
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({ data: value }),
-            });
-          },
-        );
+      "checkVerificationPasswordNeeded endpoint returns {value}": async ({ value }) => {
+        await router.route("/vfpwd/ajax/checkVerificationPasswordNeeded", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ data: value }),
+          });
+        });
       },
     });
   },
@@ -102,19 +80,18 @@ const feature = test.extend<{
         ]);
         return download;
       },
-      "a CSV export of the selected rows is downloaded":
-        async (): Promise<Download> => {
-          await page.getByRole("button", { name: /Export/ }).click();
-          const [download] = await Promise.all([
-            page.waitForEvent("download"),
-            page
-              .getByRole("menuitem", {
-                name: /Export selected rows to CSV/,
-              })
-              .click(),
-          ]);
-          return download;
-        },
+      "a CSV export of the selected rows is downloaded": async (): Promise<Download> => {
+        await page.getByRole("button", { name: /Export/ }).click();
+        const [download] = await Promise.all([
+          page.waitForEvent("download"),
+          page
+            .getByRole("menuitem", {
+              name: /Export selected rows to CSV/,
+            })
+            .click(),
+        ]);
+        return download;
+      },
       "user {username} is selected": async ({ username }): Promise<void> => {
         const row = page.getByRole("row", { name: new RegExp(username) });
         const checkbox = row.getByRole("checkbox");
@@ -134,20 +111,21 @@ const feature = test.extend<{
         expect(fileContents).toContain("362006");
         expect(fileContents).not.toContain("362.01 kB");
       },
-      "{CSV} should have the same number of columns as are available to view, except for 'Full Name'":
-        async ({ csv }) => {
-          await page.getByRole("button", { name: /Columns/ }).click();
-          const numberOfColumns = await page
-            .getByRole("checkbox", {
-              name: /^(?!Select all rows$|Select row$|Checkbox selection$|Show\/Hide All$|Full Name$).*$/,
-            })
-            .count();
-          const path = await csv.path();
-          const fileContents = await fs.readFile(path, "utf8");
-          const lines = fileContents.split("\n");
-          const header = lines[0].split(",");
-          expect(header.length).toBe(numberOfColumns);
-        },
+      "{CSV} should have the same number of columns as are available to view, except for 'Full Name'": async ({
+        csv,
+      }) => {
+        await page.getByRole("button", { name: /Columns/ }).click();
+        const numberOfColumns = await page
+          .getByRole("checkbox", {
+            name: /^(?!Select all rows$|Select row$|Checkbox selection$|Show\/Hide All$|Full Name$).*$/,
+          })
+          .count();
+        const path = await csv.path();
+        const fileContents = await fs.readFile(path, "utf8");
+        const lines = fileContents.split("\n");
+        const header = lines[0].split(",");
+        expect(header.length).toBe(numberOfColumns);
+      },
       "{CSV} should have {count} rows": async ({ csv, count }) => {
         const path = await csv.path();
         const fileContents = await fs.readFile(path, "utf8");
@@ -156,16 +134,12 @@ const feature = test.extend<{
       },
       "A request to set a verification password is not shown": async () => {
         await expect(
-          page.getByText(
-            "Please set your verification password in My RSpace before performing this action.",
-          ),
+          page.getByText("Please set your verification password in My RSpace before performing this action."),
         ).not.toBeVisible();
       },
       "A request to set a verification password is shown": async () => {
         await expect(
-          page.getByText(
-            "Please set your verification password in My RSpace before performing this action.",
-          ),
+          page.getByText("Please set your verification password in My RSpace before performing this action."),
         ).toBeVisible();
       },
       "the usage should be shown in human-readable format": async () => {
@@ -174,15 +148,12 @@ const feature = test.extend<{
         await expect(grid).toBeVisible();
         const columnHeadings = grid.getByRole("columnheader");
         const headings = await columnHeadings.allTextContents();
+        // biome-ignore lint/complexity/useIndexOf: initial biome migration
         const usageIndex = headings.findIndex((heading) => heading === "Usage");
 
         expect(usageIndex).toBeGreaterThan(-1);
-        await expect(
-          grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex),
-        ).toHaveText("362.01 kB");
-        await expect(
-          grid.getByRole("row").nth(3).getByRole("gridcell").nth(usageIndex),
-        ).toHaveText("0 B");
+        await expect(grid.getByRole("row").nth(2).getByRole("gridcell").nth(usageIndex)).toHaveText("362.01 kB");
+        await expect(grid.getByRole("row").nth(3).getByRole("gridcell").nth(usageIndex)).toHaveText("0 B");
       },
     });
   },
@@ -193,7 +164,6 @@ test.beforeEach(async ({ page, router }) => {
     window.RS = {
       newFileStoresExportEnabled: true,
     };
-
   });
   await router.route("/userform/ajax/inventoryOauthToken", async (route) => {
     await route.fulfill({
@@ -201,7 +171,6 @@ test.beforeEach(async ({ page, router }) => {
       contentType: "application/json",
       body: JSON.stringify({ data: "test-token" }),
     });
-
   });
   await router.route("/integration/integrationInfo?name=RAID", async (route) => {
     await route.fulfill({
@@ -221,7 +190,6 @@ test.beforeEach(async ({ page, router }) => {
         },
       }),
     });
-
   });
   await router.route("/export/ajax/defaultPDFConfig", async (route) => {
     await route.fulfill({
@@ -229,7 +197,6 @@ test.beforeEach(async ({ page, router }) => {
       contentType: "application/json",
       body: JSON.stringify(PDF_CONFIG),
     });
-
   });
   await router.route(/system\/ajax\/jsonList.*/, async (route) => {
     await route.fulfill({
@@ -250,14 +217,10 @@ test.beforeEach(async ({ page, router }) => {
   });
 });
 test.describe("Table Listing", () => {
-  feature(
-    "Usage should be in a human-readable format",
-    async ({ Given, Then }) => {
-      await Given["the sysadmin is on the users page"]();
-      await Then["the usage should be shown in human-readable format"]();
-    },
-  );
-
+  feature("Usage should be in a human-readable format", async ({ Given, Then }) => {
+    await Given["the sysadmin is on the users page"]();
+    await Then["the usage should be shown in human-readable format"]();
+  });
 });
 test.describe("Grant User PI role", () => {
   feature(
@@ -288,7 +251,6 @@ test.describe("Grant User PI role", () => {
       await Then["A request to set a verification password is not shown"]();
     },
   );
-
 });
 test.describe("Accessibility", () => {
   test("Should have no axe violations.", async ({ mount, page }) => {
@@ -313,8 +275,7 @@ test.describe("Accessibility", () => {
          * 4. Content not in landmarks is expected in component testing context
          */
         return (
-          v.description !==
-            "Ensure elements with an ARIA role that require child roles contain them" &&
+          v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
           v.id !== "landmark-one-main" &&
           v.id !== "page-has-heading-one" &&
           v.id !== "region" &&
@@ -324,7 +285,6 @@ test.describe("Accessibility", () => {
       }),
     ).toEqual([]);
   });
-
 });
 test.describe("CSV Export", () => {
   test.describe("Selection", () => {
@@ -337,45 +297,35 @@ test.describe("CSV Export", () => {
         await Then["{CSV} should have {count} rows"]({ csv, count: 10 });
       },
     );
-    feature(
-      "When one row is selected, just it should be included in the export",
-      async ({ Given, When, Then }) => {
-        await Given["the sysadmin is on the users page"]();
-        await When["one row is selected"]();
-        const csv =
-          await When["a CSV export of the selected rows is downloaded"]();
-        await Then["{CSV} should have {count} rows"]({ csv, count: 1 });
-      },
-    );
+    feature("When one row is selected, just it should be included in the export", async ({ Given, When, Then }) => {
+      await Given["the sysadmin is on the users page"]();
+      await When["one row is selected"]();
+      const csv = await When["a CSV export of the selected rows is downloaded"]();
+      await Then["{CSV} should have {count} rows"]({ csv, count: 1 });
+    });
   });
   test.describe("Columns", () => {
-    feature(
-      "All of the columns should be included in the CSV file.",
-      async ({ Given, When, Then }) => {
-        await Given["the sysadmin is on the users page"]();
-        const csv = await When["a CSV export is downloaded"]();
-        await Then[
-          "{CSV} should have the same number of columns as are available to view, except for 'Full Name'"
-        ]({ csv });
-        /*
-         * Full Name is not included in the CSV file because it is a derived
-         * column from the first and last name columns. It is provided as a
-         * convenience in the UI but would be redundant if included in the CSV.
-         */
-      },
-    );
-    feature(
-      "The usage column should be a precise number.",
-      async ({ Given, When, Then }) => {
-        await Given["the sysadmin is on the users page"]();
-        const csv = await When["a CSV export is downloaded"]();
-        await Then["{CSV} should have a precise usage column"]({ csv });
-        /*
-         * Because the CSV file can then be imported into a spreadsheet program
-         * and the usage column will be formatted as a number, for sorting and
-         * other purposes.
-         */
-      },
-    );
+    feature("All of the columns should be included in the CSV file.", async ({ Given, When, Then }) => {
+      await Given["the sysadmin is on the users page"]();
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should have the same number of columns as are available to view, except for 'Full Name'"]({
+        csv,
+      });
+      /*
+       * Full Name is not included in the CSV file because it is a derived
+       * column from the first and last name columns. It is provided as a
+       * convenience in the UI but would be redundant if included in the CSV.
+       */
+    });
+    feature("The usage column should be a precise number.", async ({ Given, When, Then }) => {
+      await Given["the sysadmin is on the users page"]();
+      const csv = await When["a CSV export is downloaded"]();
+      await Then["{CSV} should have a precise usage column"]({ csv });
+      /*
+       * Because the CSV file can then be imported into a spreadsheet program
+       * and the usage column will be formatted as a number, for sorting and
+       * other purposes.
+       */
+    });
   });
 });

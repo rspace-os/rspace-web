@@ -1,26 +1,25 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockAxiosGet, mockAxiosPost, mockCreateRoot, rootRenderCalls } =
-  vi.hoisted(() => {
-    const renderCalls: Array<{
-      container: Element;
-      node: React.ReactNode;
-    }> = [];
+const { mockAxiosGet, mockAxiosPost, mockCreateRoot, rootRenderCalls } = vi.hoisted(() => {
+  const renderCalls: Array<{
+    container: Element;
+    node: React.ReactNode;
+  }> = [];
 
-    return {
-      rootRenderCalls: renderCalls,
-      mockCreateRoot: vi.fn((container: Element) => ({
-        render: vi.fn((node: React.ReactNode) => {
-          renderCalls.push({ container, node });
-        }),
-        unmount: vi.fn(),
-      })),
-      mockAxiosGet: vi.fn(),
-      mockAxiosPost: vi.fn(),
-    };
-  });
+  return {
+    rootRenderCalls: renderCalls,
+    mockCreateRoot: vi.fn((container: Element) => ({
+      render: vi.fn((node: React.ReactNode) => {
+        renderCalls.push({ container, node });
+      }),
+      unmount: vi.fn(),
+    })),
+    mockAxiosGet: vi.fn(),
+    mockAxiosPost: vi.fn(),
+  };
+});
 
 vi.mock("react-dom/client", () => ({
   createRoot: mockCreateRoot,
@@ -95,9 +94,7 @@ describe("KetcherTinyMce accessibility", () => {
 
     const { baseElement } = render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
-    expect(
-      await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" })).toBeVisible();
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -115,7 +112,7 @@ describe("KetcherTinyMce accessibility", () => {
     mockAxiosGet.mockResolvedValueOnce({
       data: {
         data: {
-          chemElements: "{\"mol0\":{}}",
+          chemElements: '{"mol0":{}}',
         },
       },
     });
@@ -137,17 +134,12 @@ describe("KetcherTinyMce accessibility", () => {
 
     render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
-    expect(
-      await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" }),
-    ).toBeVisible();
-    expect(mockAxiosGet).toHaveBeenCalledWith(
-      "/chemical/ajax/loadChemElements",
-      {
-        params: {
-          chemId: "chem-42",
-        },
+    expect(await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" })).toBeVisible();
+    expect(mockAxiosGet).toHaveBeenCalledWith("/chemical/ajax/loadChemElements", {
+      params: {
+        chemId: "chem-42",
       },
-    );
+    });
   });
 
   it("reuses the existing React root when the TinyMCE Ketcher dialog is opened multiple times", () => {

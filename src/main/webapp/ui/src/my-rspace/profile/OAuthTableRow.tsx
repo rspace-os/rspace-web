@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
-import IconButton from "@mui/material/IconButton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons/faTrashAlt";
-import { ConfirmationDialog } from "@/components/ConfirmationDialog";
-import { OAuthApp } from "@/my-rspace/profile/types";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { OAuthApp } from "@/my-rspace/profile/types";
 
-const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp, onDeleteApp: (clientId: string) => Promise<void>; }) => {
+const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clientId: string) => Promise<void> }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -27,11 +28,7 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp, onDeleteApp: (clie
           }}
         >
           <Tooltip title="Delete" enterDelay={100}>
-            <IconButton
-              color="inherit"
-              onClick={() => setOpen(true)}
-              sx={{ width: "42px" }}
-            >
+            <IconButton color="inherit" onClick={() => setOpen(true)} sx={{ width: "42px" }}>
               <FontAwesomeIcon icon={faTrashAlt} size="xs" />
             </IconButton>
           </Tooltip>
@@ -39,8 +36,8 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp, onDeleteApp: (clie
             title="Confirm Deletion"
             consequences={
               <Typography variant="body1">
-                Are you sure you want to delete <strong>{app.appName}</strong>?
-                All access and refresh tokens will be revoked.
+                Are you sure you want to delete <strong>{app.appName}</strong>? All access and refresh tokens will be
+                revoked.
               </Typography>
             }
             variant="warning"

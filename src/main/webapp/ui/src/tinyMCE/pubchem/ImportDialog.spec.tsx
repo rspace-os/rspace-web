@@ -1,9 +1,10 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
 import { ImportDialogStory } from "./ImportDialog.story";
-import AxeBuilder from "@axe-core/playwright";
 
-import * as Jwt from "jsonwebtoken";
 const feature = test.extend<{
   Given: {
     "that the ImportDialog is mounted": () => Promise<void>;
@@ -62,6 +63,7 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   Once: async ({}, use) => {
     await use({});
   },
@@ -82,12 +84,11 @@ const feature = test.extend<{
         await searchInput.fill("multiple");
         await searchInput.press("Enter");
       },
-      "a search is performed that returns a compound with empty CAS":
-        async () => {
-          const searchInput = page.getByRole("textbox");
-          await searchInput.fill("nocas");
-          await searchInput.press("Enter");
-        },
+      "a search is performed that returns a compound with empty CAS": async () => {
+        const searchInput = page.getByRole("textbox");
+        await searchInput.fill("nocas");
+        await searchInput.press("Enter");
+      },
       "the search type selector is clicked": async () => {
         const searchTypeSelector = page.getByRole("combobox", {
           name: "Search type",
@@ -105,14 +106,12 @@ const feature = test.extend<{
           })
           .click();
       },
-      "the import button is clicked without selecting any compounds":
-        async () => {
-          await page.getByRole("button", { name: /import selected/i }).click();
-        },
-      "the escape key is pressed to dismiss the validation warning":
-        async () => {
-          await page.keyboard.press("Escape");
-        },
+      "the import button is clicked without selecting any compounds": async () => {
+        await page.getByRole("button", { name: /import selected/i }).click();
+      },
+      "the escape key is pressed to dismiss the validation warning": async () => {
+        await page.keyboard.press("Escape");
+      },
       "a compound is selected": async () => {
         await page
           .getByRole("checkbox", { name: /select/i })
@@ -120,9 +119,7 @@ const feature = test.extend<{
           .click();
       },
       "a selected compound is clicked again": async () => {
-        const checkbox = page
-          .getByRole("checkbox", { name: /select/i })
-          .first();
+        const checkbox = page.getByRole("checkbox", { name: /select/i }).first();
         await checkbox.click();
       },
       "tab key is used to navigate to a compound card": async () => {
@@ -133,9 +130,7 @@ const feature = test.extend<{
       },
       "tab key is used to navigate to a compound checkbox": async () => {
         const checkbox = page.getByLabel("Aspirin").getByRole("checkbox");
-        while (
-          await checkbox.evaluate((input) => input !== document.activeElement)
-        ) {
+        while (await checkbox.evaluate((input) => input !== document.activeElement)) {
           await page.keyboard.press("Tab");
         }
       },
@@ -190,9 +185,7 @@ const feature = test.extend<{
         await expect(checkbox).toBeChecked();
       },
       "multiple results should not be selected by default": async () => {
-        const checkboxes = page
-          .getByRole("checkbox", { name: /select compound/i })
-          .all();
+        const checkboxes = page.getByRole("checkbox", { name: /select compound/i }).all();
         for (const checkbox of await checkboxes) {
           await expect(checkbox).not.toBeChecked();
         }
@@ -240,8 +233,7 @@ const feature = test.extend<{
       "SMILES is passed in the API call": () => {
         const searchRequest = networkRequests.find(
           (request) =>
-            request.url.pathname === "/api/v1/pubchem/search" &&
-            request.postData?.includes('"searchType":"SMILES"'),
+            request.url.pathname === "/api/v1/pubchem/search" && request.postData?.includes('"searchType":"SMILES"'),
         );
         expect(searchRequest).toBeDefined();
       },
@@ -250,21 +242,16 @@ const feature = test.extend<{
         await expect(alert).toBeVisible();
         await expect(alert).toHaveText(/please select at least one compound/i);
       },
-      "the validation warning should disappear after selecting a compound":
-        async () => {
-          const alert = page.getByRole("alert");
-          await expect(alert).not.toBeVisible();
-        },
+      "the validation warning should disappear after selecting a compound": async () => {
+        const alert = page.getByRole("alert");
+        await expect(alert).not.toBeVisible();
+      },
       "the compound should not be selected": async () => {
-        const checkbox = page
-          .getByRole("checkbox", { name: /select/i })
-          .first();
+        const checkbox = page.getByRole("checkbox", { name: /select/i }).first();
         await expect(checkbox).not.toBeChecked();
       },
       "the compound should be selected": async () => {
-        const checkbox = page
-          .getByRole("checkbox", { name: /select/i })
-          .first();
+        const checkbox = page.getByRole("checkbox", { name: /select/i }).first();
         await expect(checkbox).toBeChecked();
       },
       "an error alert should be shown": async () => {
@@ -291,31 +278,22 @@ const feature = test.extend<{
         });
 
         await expect(compoundCard).toBeVisible();
-        await expect(
-          compoundCard.getByRole("term").filter({ hasText: /PubChem ID/i }),
-        ).toBeVisible();
-        await expect(
-          compoundCard.getByRole("term").filter({ hasText: /Formula/i }),
-        ).toBeVisible();
-        const casTerms = compoundCard
-          .getByRole("term")
-          .filter({ hasText: "CAS" })
-          .count();
+        await expect(compoundCard.getByRole("term").filter({ hasText: /PubChem ID/i })).toBeVisible();
+        await expect(compoundCard.getByRole("term").filter({ hasText: /Formula/i })).toBeVisible();
+        const casTerms = compoundCard.getByRole("term").filter({ hasText: "CAS" }).count();
         expect(await casTerms).toBe(0);
       },
       "no results error message should be displayed": async () => {
-        const errorMessage = page.getByText(
-          /No compounds found for "noresults"/i,
-        );
+        const errorMessage = page.getByText(/No compounds found for "noresults"/i);
         await expect(errorMessage).toBeVisible();
       },
-      "no results error message should not be visible after modifying search term":
-        async () => {
-          const errorMessage = page.getByText(/No compounds found for/i);
-          await expect(errorMessage).not.toBeVisible();
-        },
+      "no results error message should not be visible after modifying search term": async () => {
+        const errorMessage = page.getByText(/No compounds found for/i);
+        await expect(errorMessage).not.toBeVisible();
+      },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
@@ -324,10 +302,10 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -386,8 +364,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       const multipleResults = [
         {
           name: "Aspirin",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
           smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
           formula: "C9H8O4",
           pubchemId: "2244",
@@ -396,8 +373,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         },
         {
           name: "Paracetamol",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=1983&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=1983&t=l",
           smiles: "CC(=O)NC1=CC=C(O)C=C1",
           formula: "C8H9NO2",
           pubchemId: "1983",
@@ -414,8 +390,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       const noCasResult = [
         {
           name: "Compound with Empty CAS",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5555&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5555&t=l",
           smiles: "C1=CC=CC=C1",
           formula: "C6H6",
           pubchemId: "5555",
@@ -438,8 +413,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       const searchResults = [
         {
           name: "Aspirin",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
           smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
           formula: "C9H8O4",
           pubchemId: "2244",
@@ -501,52 +475,40 @@ test.describe("ImportDialog", () => {
     await Given["that the ImportDialog is mounted"]();
     await Then["there should be a search type selector"]();
   });
-  feature(
-    "The API endpoint is called when a search is performed",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed"]();
-      await Then["the mocked results are shown"]();
-    },
-  );
+  feature("The API endpoint is called when a search is performed", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed"]();
+    await Then["the mocked results are shown"]();
+  });
   feature("searchType is passed in API call", async ({ Given, When, Then }) => {
     await Given["that the ImportDialog is mounted"]();
     await When["SMILES is chosen as the search type"]();
     await When["a search is performed"]();
     Then["SMILES is passed in the API call"]();
   });
-  feature(
-    "Should auto-select a compound when there is only one result",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed"]();
-      await Then["the single result should be selected by default"]();
-      /*
-       * The vast majority of the time there will only be one result, so
-       * auto-selecting it is a small usability improvement that reduces
-       * the friction to inserting compounds, especially when paired with
-       * the slash menu command.
-       */
-    },
-  );
-  feature(
-    "Should not auto-select compounds when there are multiple results",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed that returns multiple results"]();
-      await Then["multiple results should not be selected by default"]();
-    },
-  );
-  feature(
-    "Should toggle compound selection when clicked twice",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed that returns multiple results"]();
-      await When["a compound is selected"]();
-      await When["a selected compound is clicked again"]();
-      await Then["the compound should not be selected"]();
-    },
-  );
+  feature("Should auto-select a compound when there is only one result", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed"]();
+    await Then["the single result should be selected by default"]();
+    /*
+     * The vast majority of the time there will only be one result, so
+     * auto-selecting it is a small usability improvement that reduces
+     * the friction to inserting compounds, especially when paired with
+     * the slash menu command.
+     */
+  });
+  feature("Should not auto-select compounds when there are multiple results", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns multiple results"]();
+    await Then["multiple results should not be selected by default"]();
+  });
+  feature("Should toggle compound selection when clicked twice", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns multiple results"]();
+    await When["a compound is selected"]();
+    await When["a selected compound is clicked again"]();
+    await Then["the compound should not be selected"]();
+  });
   feature(
     "Should allow keyboard selection of compounds by pressing enter on the card",
     async ({ Given, When, Then }) => {
@@ -567,82 +529,54 @@ test.describe("ImportDialog", () => {
       await Then["the compound should be selected"]();
     },
   );
-  feature(
-    "Should not toggle selection when clicking on external links",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed that returns multiple results"]();
-      await When["a compound is selected"]();
-      await When["the 'View on PubChem' link is clicked"]();
-      await Then["the compound should be selected"]();
-      /*
-       * Clicking a link inside of the interactive card should not toggle the
-       * selection state. Having interactive items be nested is less than ideal,
-       * given the potentially issues with misclicking but given that a misclick
-       * would only toggle the selected state which can be easily reverted this
-       * was not considered worth foregoing the convenience of having the link
-       * inside the card.
-       */
-    },
-  );
-  feature(
-    "Should validate compound selection",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed that returns multiple results"]();
-      await When[
-        "the import button is clicked without selecting any compounds"
-      ]();
-      await Then["a validation warning should be shown"]();
-      await When[
-        "the escape key is pressed to dismiss the validation warning"
-      ]();
-      await When["a compound is selected"]();
-      await Then[
-        "the validation warning should disappear after selecting a compound"
-      ]();
-    },
-  );
-  feature(
-    "An error when searching should result in an alert toast",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search fails"]();
-      await Then["an error alert should be shown"]();
-    },
-  );
-  feature(
-    "Should reset state when dialog is closed and reopened",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed that returns multiple results"]();
-      await When["a compound is selected"]();
-      await When["the dialog is closed and reopened"]();
-      await Then["there should be a search input"]();
-      await Then["the search input should be empty"]();
-      await Then["there should be no search results visible"]();
-    },
-  );
-  feature(
-    "Should not display CAS Number when it is empty",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When[
-        "a search is performed that returns a compound with empty CAS"
-      ]();
-      await Then["the CAS number should not be displayed"]();
-    },
-  );
-  feature(
-    "Should hide error message when typing after a no-results search",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search returns no results"]();
-      await Then["no results error message should be displayed"]();
-      await When["the search term is modified after a no-results search"]();
-      await Then[
-        "no results error message should not be visible after modifying search term"
-      ]();
-    },
-  );
+  feature("Should not toggle selection when clicking on external links", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns multiple results"]();
+    await When["a compound is selected"]();
+    await When["the 'View on PubChem' link is clicked"]();
+    await Then["the compound should be selected"]();
+    /*
+     * Clicking a link inside of the interactive card should not toggle the
+     * selection state. Having interactive items be nested is less than ideal,
+     * given the potentially issues with misclicking but given that a misclick
+     * would only toggle the selected state which can be easily reverted this
+     * was not considered worth foregoing the convenience of having the link
+     * inside the card.
+     */
+  });
+  feature("Should validate compound selection", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns multiple results"]();
+    await When["the import button is clicked without selecting any compounds"]();
+    await Then["a validation warning should be shown"]();
+    await When["the escape key is pressed to dismiss the validation warning"]();
+    await When["a compound is selected"]();
+    await Then["the validation warning should disappear after selecting a compound"]();
+  });
+  feature("An error when searching should result in an alert toast", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search fails"]();
+    await Then["an error alert should be shown"]();
+  });
+  feature("Should reset state when dialog is closed and reopened", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns multiple results"]();
+    await When["a compound is selected"]();
+    await When["the dialog is closed and reopened"]();
+    await Then["there should be a search input"]();
+    await Then["the search input should be empty"]();
+    await Then["there should be no search results visible"]();
+  });
+  feature("Should not display CAS Number when it is empty", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns a compound with empty CAS"]();
+    await Then["the CAS number should not be displayed"]();
+  });
+  feature("Should hide error message when typing after a no-results search", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search returns no results"]();
+    await Then["no results error message should be displayed"]();
+    await When["the search term is modified after a no-results search"]();
+    await Then["no results error message should not be visible after modifying search term"]();
+  });
 });

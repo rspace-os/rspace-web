@@ -1,9 +1,14 @@
-import { type Id, type GlobalId } from "./BaseRecord";
-import { type GeoLocation, type GeoLocationAttrs } from "./GeoLocation";
-import { type URL, type _LINK } from "../../util/types";
-import { type RadioOption } from "../../components/Inputs/RadioField";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type RadioOption } from "../../components/Inputs/RadioField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type _LINK, type URL } from "../../util/types";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Alert } from "../contexts/Alert";
+import type { GlobalId, Id } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GeoLocation, type GeoLocationAttrs } from "./GeoLocation";
 
 /**
  * @module Identifier

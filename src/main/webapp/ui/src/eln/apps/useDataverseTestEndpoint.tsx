@@ -1,4 +1,5 @@
 import axios from "@/common/axios";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type OptionsId } from "./useIntegrationsEndpoint";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
@@ -20,9 +21,7 @@ export function useDataverseTestEndpoint(): {
   });
 
   const test = async (optionsId: OptionsId): Promise<void> => {
-    const response = await api.get<
-      string | { errorId: string; exceptionMessage: string; tstamp: string }
-    >(optionsId);
+    const response = await api.get<string | { errorId: string; exceptionMessage: string; tstamp: string }>(optionsId);
     if (typeof response.data === "object") {
       throw new Error(response.data.exceptionMessage);
     }

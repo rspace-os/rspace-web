@@ -1,19 +1,19 @@
 /*
  * @vitest-environment jsdom
  */
-import { describe, expect, test, vi } from "vitest";
-import React from "react";
+
 import { render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
-import PermalinkRouter from "../PermalinkRouter";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import NavigateContext from "../../stores/contexts/Navigate";
+import PermalinkRouter from "../PermalinkRouter";
 
 vi.mock("../Search/SearchRouter", () => ({
   default: (props: { paramsOverride?: unknown }) => (
-    <div data-testid="search-router">
-      {JSON.stringify(props.paramsOverride)}
-    </div>
+    <div data-testid="search-router">{JSON.stringify(props.paramsOverride)}</div>
   ),
 }));
 
@@ -56,27 +56,17 @@ describe("PermalinkRouter", () => {
   test("a versioned Global Id redirects with the version as a search param", () => {
     renderAt("/inventory/subsample/SS4v1", "subsample");
 
-    expect(screen.getByTestId("location-pathname")).toHaveTextContent(
-      "/inventory/subsample/4",
-    );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "version=1",
-    );
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/subsample/4");
+    expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
     // and the redirected route resolves to the versioned permalink search
-    expect(screen.getByTestId("search-router")).toHaveTextContent(
-      '"version":1',
-    );
+    expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
   });
 
   test("an unversioned Global Id redirects without inventing a version", () => {
     renderAt("/inventory/sample/SA42", "sample");
 
-    expect(screen.getByTestId("location-pathname")).toHaveTextContent(
-      "/inventory/sample/42",
-    );
-    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
-      "version",
-    );
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/sample/42");
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent("version");
   });
 
   test("a plain numeric id with a version param is passed straight through", () => {

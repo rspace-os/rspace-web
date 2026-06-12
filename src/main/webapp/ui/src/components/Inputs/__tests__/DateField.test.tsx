@@ -1,6 +1,7 @@
-import { test, describe, expect, vi } from "vitest";
-import React from "react";
 import { configure, getConfig, render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 
 import NoValue from "../../../components/NoValue";
 import DateField from "../DateField";
@@ -21,50 +22,33 @@ describe("DateField", () => {
   });
 
   test("When passed an invalid date string, there is an error message shown.", () => {
-    const { container } = render(
-      <DateField value="2021-13-01" onChange={() => {}} />,
-    );
+    const { container } = render(<DateField value="2021-13-01" onChange={() => {}} />);
     expect(container).toHaveTextContent("Invalid date");
   });
 
   test("When passed a Date object, there is no error message shown.", () => {
-    const { container } = render(
-      <DateField value={new Date(2021, 0, 1)} onChange={() => {}} />,
-    );
+    const { container } = render(<DateField value={new Date(2021, 0, 1)} onChange={() => {}} />);
     expect(container).not.toHaveTextContent("Invalid date");
   });
 
   test("When passed a yyyy-MM-dd date string, there is no error message shown.", () => {
-    const { container } = render(
-      <DateField value="2021-01-01" onChange={() => {}} />,
-    );
+    const { container } = render(<DateField value="2021-01-01" onChange={() => {}} />);
     expect(container).not.toHaveTextContent("Invalid date");
   });
 
   test("When passed an ISO date-time string, there is no error message shown.", () => {
-    const { container } = render(
-      <DateField value="2021-01-01T00:00:00Z" onChange={() => {}} />,
-    );
+    const { container } = render(<DateField value="2021-01-01T00:00:00Z" onChange={() => {}} />);
     expect(container).not.toHaveTextContent("Invalid date");
   });
 
   test("When passed a non-ISO date string, there is an error message shown even if the string is parseable by the Date constructor.", () => {
-    const { container } = render(
-      <DateField value={new Date(2021, 0, 1).toString()} onChange={() => {}} />,
-    );
+    const { container } = render(<DateField value={new Date(2021, 0, 1).toString()} onChange={() => {}} />);
     expect(container).toHaveTextContent("Invalid date");
   });
 
   test("When passed a placeholder and test id, they are forwarded to the rendered field.", () => {
     const { testIdAttribute } = getConfig();
-    render(
-      <DateField
-        value={null}
-        onChange={() => {}}
-        placeholder="the beginning"
-        data-test-id="from-date"
-      />,
-    );
+    render(<DateField value={null} onChange={() => {}} placeholder="the beginning" data-test-id="from-date" />);
 
     try {
       configure({ testIdAttribute: "data-test-id" });

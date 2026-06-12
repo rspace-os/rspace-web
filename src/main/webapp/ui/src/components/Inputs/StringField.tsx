@@ -1,7 +1,8 @@
-import React from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
-import NoValue from "../../components/NoValue";
 import { inputBaseClasses } from "@mui/material/InputBase";
+// biome-ignore lint/style/useImportType: initial biome migration
+import TextField, { TextFieldProps } from "@mui/material/TextField";
+import type React from "react";
+import NoValue from "../../components/NoValue";
 
 export type StringFieldArgs = {
   value: string;

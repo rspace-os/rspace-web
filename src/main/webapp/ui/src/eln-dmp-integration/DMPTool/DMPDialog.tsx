@@ -1,33 +1,31 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Box from "@mui/material/Box";
-import { observer } from "mobx-react-lite";
+import Link from "@mui/material/Link";
+import Portal from "@mui/material/Portal";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GridRowId } from "@mui/x-data-grid";
+import DOMPurify from "dompurify";
+import { observer } from "mobx-react-lite";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import axios from "@/common/axios";
-import ScopeField, { type Scope } from "./ScopeField";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/dmptool";
+import docLinks from "../../assets/DocLinks";
+import AppBar from "../../components/AppBar";
+import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import Portal from "@mui/material/Portal";
-import createAccentedTheme from "../../accentedTheme";
-import { ThemeProvider } from "@mui/material/styles";
-import ValidatingSubmitButton, {
-  IsInvalid,
-  IsValid,
-} from "../../components/ValidatingSubmitButton";
-import Link from "@mui/material/Link";
-import AppBar from "../../components/AppBar";
-import docLinks from "../../assets/DocLinks";
-import Stack from "@mui/material/Stack";
-import { GridRowId } from "@mui/x-data-grid";
 import { DataGridColumn } from "../../util/table";
-import DOMPurify from "dompurify";
 import { mapNullable } from "../../util/Util";
-import { ACCENT_COLOR } from "../../assets/branding/dmptool";
-import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import ScopeField, { type Scope } from "./ScopeField";
 
 function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
@@ -59,11 +57,7 @@ export type Plan = {
   created: string;
 };
 
-function DMPDialogContent({
-  setOpen,
-}: {
-  setOpen: (open: boolean) => void;
-}): React.ReactNode {
+function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
 
@@ -100,11 +94,7 @@ function DMPDialogContent({
         if (r.data.success) {
           setDMPs(r.data.data.items.map((item) => item.dmp));
         } else {
-          if (
-            /Unable to load your DMPs. For more information/.test(
-              r.data.error?.errorMessages[0] ?? "",
-            )
-          ) {
+          if (/Unable to load your DMPs. For more information/.test(r.data.error?.errorMessages[0] ?? "")) {
             addAlert(
               mkAlert({
                 title: "Unable to load DMPs.",
@@ -179,9 +169,7 @@ function DMPDialogContent({
                     }
                   : {
                       title: "Import failed.",
-                      message:
-                        r.data.error?.errorMessages[0] ||
-                        "Could not import DMP",
+                      message: r.data.error?.errorMessages[0] || "Could not import DMP",
                       variant: "error",
                     },
               ),
@@ -238,8 +226,7 @@ function DMPDialogContent({
             </Typography>
             <Typography variant="body2">
               See <Link href="https://dmptool.org">dmptool.org</Link> and our{" "}
-              <Link href={docLinks.dmptool}>DMPTool integration docs</Link> for
-              more.
+              <Link href={docLinks.dmptool}>DMPTool integration docs</Link> for more.
             </Typography>
           </Box>
           <ScopeField
@@ -260,29 +247,22 @@ function DMPDialogContent({
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithFieldName<"description", Plan>(
-                  "description",
-                  {
-                    renderCell: (params: { row: Plan }) => {
-                      const sanitized = DOMPurify.sanitize(
-                        params.row.description,
-                      );
-                      return (
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: `${sanitized.substring(0, 200)} ${
-                              sanitized.length > 200 ? "..." : ""
-                            }`,
-                          }}
-                        ></span>
-                      );
-                    },
-                    headerName: "Description",
-                    display: "flex",
-                    flex: 1,
-                    sortable: false,
+                DataGridColumn.newColumnWithFieldName<"description", Plan>("description", {
+                  renderCell: (params: { row: Plan }) => {
+                    const sanitized = DOMPurify.sanitize(params.row.description);
+                    return (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: `${sanitized.substring(0, 200)} ${sanitized.length > 200 ? "..." : ""}`,
+                        }}
+                      ></span>
+                    );
                   },
-                ),
+                  headerName: "Description",
+                  display: "flex",
+                  flex: 1,
+                  sortable: false,
+                }),
                 DataGridColumn.newColumnWithValueMapper<"created", Plan>(
                   "created",
                   (created) => new Date(created).toLocaleString(),
@@ -349,9 +329,7 @@ function DMPDialogContent({
             onClick={() => {
               void handleImport();
             }}
-            validationResult={
-              !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-            }
+            validationResult={!selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()}
             loading={importing}
           >
             Import

@@ -1,11 +1,9 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import {
-  SimpleExample,
-  HorizontalExample,
-} from "./useOneDimensionalRovingTabIndex.story";
-
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type emptyObject } from "../../util/types";
+import { HorizontalExample, SimpleExample } from "./useOneDimensionalRovingTabIndex.story";
 
 const feature = test.extend<{
   Given: {
@@ -14,11 +12,7 @@ const feature = test.extend<{
   };
   Once: emptyObject;
   When: {
-    "the user presses the tab key {count} times": ({
-      count,
-    }: {
-      count: number;
-    }) => Promise<void>;
+    "the user presses the tab key {count} times": ({ count }: { count: number }) => Promise<void>;
     "the before button has focus": () => Promise<void>;
     "the roving list has focus": () => Promise<void>;
     "the user presses the down arrow key": () => Promise<void>;
@@ -46,16 +40,13 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   Once: async ({}, use) => {
     await use({});
   },
   When: async ({ page }, use) => {
     await use({
-      "the user presses the tab key {count} times": async ({
-        count,
-      }: {
-        count: number;
-      }) => {
+      "the user presses the tab key {count} times": async ({ count }: { count: number }) => {
         for (let i = 0; i < count; i++) {
           await page.keyboard.press("Tab");
         }
@@ -88,9 +79,7 @@ const feature = test.extend<{
         await page.keyboard.down("Shift");
         await page.keyboard.press("Tab");
         await page.keyboard.up("Shift");
-        await expect(
-          page.getByRole("button", { name: "Before the list" })
-        ).toBeFocused();
+        await expect(page.getByRole("button", { name: "Before the list" })).toBeFocused();
       },
     });
   },
@@ -108,34 +97,21 @@ const feature = test.extend<{
         await expect(secondButton).toBeFocused();
       },
       "the first list item gains focus": async () => {
-        const secondListItem = page
-          .getByRole("listitem")
-          .first()
-          .getByRole("button");
+        const secondListItem = page.getByRole("listitem").first().getByRole("button");
         await expect(secondListItem).toBeFocused();
       },
       "the second list item gains focus": async () => {
-        const secondListItem = page
-          .getByRole("listitem")
-          .nth(1)
-          .getByRole("button");
+        const secondListItem = page.getByRole("listitem").nth(1).getByRole("button");
         await expect(secondListItem).toBeFocused();
       },
       "the second list item should be the active roving tab stop": async () => {
-        const firstListItem = page
-          .getByRole("listitem")
-          .first()
-          .getByRole("button");
-        const secondListItem = page
-          .getByRole("listitem")
-          .nth(1)
-          .getByRole("button");
+        const firstListItem = page.getByRole("listitem").first().getByRole("button");
+        const secondListItem = page.getByRole("listitem").nth(1).getByRole("button");
         await expect(firstListItem).toHaveAttribute("tabindex", "-1");
         await expect(secondListItem).toHaveAttribute("tabindex", "0");
       },
     });
   },
-
 });
 test.describe("useOneDimensionalRovingTabIndex", () => {
   feature("The before button is focusable", async ({ Given, When, Then }) => {
@@ -143,15 +119,12 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
     await When["the before button has focus"]();
     await Then["the before button should gain focus"]();
   });
-  feature(
-    "Tabbing through the roving list focusses the after button",
-    async ({ Given, When, Then }) => {
-      await Given["the simple example component is rendered"]();
-      await When["the before button has focus"]();
-      await When["the user presses the tab key {count} times"]({ count: 2 });
-      await Then["the after button should gain focus"]();
-    },
-  );
+  feature("Tabbing through the roving list focusses the after button", async ({ Given, When, Then }) => {
+    await Given["the simple example component is rendered"]();
+    await When["the before button has focus"]();
+    await When["the user presses the tab key {count} times"]({ count: 2 });
+    await Then["the after button should gain focus"]();
+  });
   test.describe("The arrow keys traverse the roving list", () => {
     feature("The down arrow moves the focus", async ({ Given, When, Then }) => {
       await Given["the simple example component is rendered"]();
@@ -159,84 +132,60 @@ test.describe("useOneDimensionalRovingTabIndex", () => {
       await When["the user presses the down arrow key"]();
       await Then["the second list item gains focus"]();
     });
-    feature(
-      "The up arrow moves the focus back",
-      async ({ Given, When, Then }) => {
-        await Given["the simple example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the down arrow key"]();
-        await When["the user presses the up arrow key"]();
-        await Then["the first list item gains focus"]();
-      },
-    );
-    feature(
-      "The focus wraps back to the beginning",
-      async ({ Given, When, Then }) => {
-        await Given["the simple example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the down arrow key"]();
-        await When["the user presses the down arrow key"]();
-        await Then["the first list item gains focus"]();
-      },
-    );
-    feature(
-      "The focus wraps forward to the end",
-      async ({ Given, When, Then }) => {
-        await Given["the simple example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the up arrow key"]();
-        await When["the user presses the up arrow key"]();
-        await Then["the first list item gains focus"]();
-      },
-    );
-    feature(
-      "The right arrow moves the focus in the horizontal layout",
-      async ({ Given, When, Then }) => {
-        await Given["the horizontal example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the right arrow key"]();
-        await Then["the second list item gains focus"]();
-      },
-    );
-    feature(
-      "The left arrow moves the focus back in the horizontal layout",
-      async ({ Given, When, Then }) => {
-        await Given["the horizontal example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the right arrow key"]();
-        await When["the user presses the left arrow key"]();
-        await Then["the first list item gains focus"]();
-      },
-    );
-    feature(
-      "The focus wraps back to the beginning in horizontal layout",
-      async ({ Given, When, Then }) => {
-        await Given["the horizontal example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the right arrow key"]();
-        await When["the user presses the right arrow key"]();
-        await Then["the first list item gains focus"]();
-      },
-    );
-    feature(
-      "The focus wraps forward to the end in horizontal layout",
-      async ({ Given, When, Then }) => {
-        await Given["the horizontal example component is rendered"]();
-        await When["the roving list has focus"]();
-        await When["the user presses the left arrow key"]();
-        await When["the user presses the left arrow key"]();
-        await Then["the first list item gains focus"]();
-      },
-    );
-  });
-  feature(
-    "Leaving the roving list preserves the last focussed tab stop",
-    async ({ Given, When, Then }) => {
+    feature("The up arrow moves the focus back", async ({ Given, When, Then }) => {
       await Given["the simple example component is rendered"]();
       await When["the roving list has focus"]();
       await When["the user presses the down arrow key"]();
-      await When["the roving list loses focus"]();
-      await Then["the second list item should be the active roving tab stop"]();
-    },
-  );
+      await When["the user presses the up arrow key"]();
+      await Then["the first list item gains focus"]();
+    });
+    feature("The focus wraps back to the beginning", async ({ Given, When, Then }) => {
+      await Given["the simple example component is rendered"]();
+      await When["the roving list has focus"]();
+      await When["the user presses the down arrow key"]();
+      await When["the user presses the down arrow key"]();
+      await Then["the first list item gains focus"]();
+    });
+    feature("The focus wraps forward to the end", async ({ Given, When, Then }) => {
+      await Given["the simple example component is rendered"]();
+      await When["the roving list has focus"]();
+      await When["the user presses the up arrow key"]();
+      await When["the user presses the up arrow key"]();
+      await Then["the first list item gains focus"]();
+    });
+    feature("The right arrow moves the focus in the horizontal layout", async ({ Given, When, Then }) => {
+      await Given["the horizontal example component is rendered"]();
+      await When["the roving list has focus"]();
+      await When["the user presses the right arrow key"]();
+      await Then["the second list item gains focus"]();
+    });
+    feature("The left arrow moves the focus back in the horizontal layout", async ({ Given, When, Then }) => {
+      await Given["the horizontal example component is rendered"]();
+      await When["the roving list has focus"]();
+      await When["the user presses the right arrow key"]();
+      await When["the user presses the left arrow key"]();
+      await Then["the first list item gains focus"]();
+    });
+    feature("The focus wraps back to the beginning in horizontal layout", async ({ Given, When, Then }) => {
+      await Given["the horizontal example component is rendered"]();
+      await When["the roving list has focus"]();
+      await When["the user presses the right arrow key"]();
+      await When["the user presses the right arrow key"]();
+      await Then["the first list item gains focus"]();
+    });
+    feature("The focus wraps forward to the end in horizontal layout", async ({ Given, When, Then }) => {
+      await Given["the horizontal example component is rendered"]();
+      await When["the roving list has focus"]();
+      await When["the user presses the left arrow key"]();
+      await When["the user presses the left arrow key"]();
+      await Then["the first list item gains focus"]();
+    });
+  });
+  feature("Leaving the roving list preserves the last focussed tab stop", async ({ Given, When, Then }) => {
+    await Given["the simple example component is rendered"]();
+    await When["the roving list has focus"]();
+    await When["the user presses the down arrow key"]();
+    await When["the roving list loses focus"]();
+    await Then["the second list item should be the active roving tab stop"]();
+  });
 });

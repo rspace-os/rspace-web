@@ -1,23 +1,25 @@
 /*
  * @vitest-environment jsdom
  */
-import { test, describe, expect, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 // not an auto-mock: a side-effect polyfill that must run before tinymce loads
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
+import { cleanup, render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import { render, cleanup, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import ContainerForm from "../Container/Form";
-import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
-import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
-import { storesContext } from "../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../theme";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
-import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { IsValid } from "../../components/ValidatingSubmitButton";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
+import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../stores/stores-context";
+import materialTheme from "../../theme";
+import ContainerForm from "../Container/Form";
+import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
 
 class ResizeObserver {
   observe(): void {}
@@ -115,9 +117,7 @@ describe("Container Form and historical versions", () => {
     );
 
     // locations are not audited, so a snapshot has no contents to show
-    expect(
-      screen.queryByRole("heading", { name: /locations and content/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /locations and content/i })).not.toBeInTheDocument();
     // the sticky alert explains why
     expect(screen.getByText(/contents are not part of/i)).toBeInTheDocument();
   });
@@ -125,8 +125,6 @@ describe("Container Form and historical versions", () => {
   test("the Locations and Content section is shown for a live container", () => {
     renderContainerForm(makeMockContainer({ owner: personAttrs() }));
 
-    expect(
-      screen.getByRole("heading", { name: /locations and content/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /locations and content/i })).toBeInTheDocument();
   });
 });

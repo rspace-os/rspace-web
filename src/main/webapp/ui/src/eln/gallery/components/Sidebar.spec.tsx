@@ -1,9 +1,10 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
 import { DefaultSidebar } from "./Sidebar.story";
-import * as Jwt from "jsonwebtoken";
 
-import AxeBuilder from "@axe-core/playwright";
 const feature = test.extend<{
   Given: {
     "the sidebar is visible": () => Promise<void>;
@@ -41,10 +42,7 @@ const feature = test.extend<{
         await page.getByRole("textbox").fill("test");
       },
       "the user clicks the Create button in the dialog": async () => {
-        await page
-          .getByRole("dialog")
-          .getByRole("button", { name: "Create" })
-          .click();
+        await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();
       },
       "the user types a folder name and presses Enter": async () => {
         await page.getByRole("textbox").fill("test");
@@ -56,11 +54,7 @@ const feature = test.extend<{
     await use({
       "the New Folder dialog should be visible": async () => {
         await expect(page.getByRole("dialog")).toBeVisible();
-        await expect(
-          page
-            .getByRole("dialog")
-            .getByRole("heading", { name: "New Folder", exact: false }),
-        ).toBeVisible();
+        await expect(page.getByRole("dialog").getByRole("heading", { name: "New Folder", exact: false })).toBeVisible();
       },
       "a folder creation request should be made": async () => {
         // We'll check that the dialog is no longer visible, which indicates submission
@@ -86,8 +80,7 @@ const feature = test.extend<{
              * 5. Color contrast issues are often present in component tests due to branding
              */
             return (
-              v.description !==
-                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
               v.id !== "region" &&
@@ -98,10 +91,10 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -218,10 +211,10 @@ feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -255,40 +248,32 @@ feature.beforeEach(async ({ router }) => {
       body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
     });
   });
-
 });
 
+// biome-ignore lint/correctness/noEmptyPattern: initial biome migration
 feature.afterEach(({}) => {});
 test.describe("Sidebar", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the sidebar is visible"]();
     await Then["there shouldn't be any axe violations"]();
-
   });
   test.describe("New Folder", () => {
-    feature(
-      "Clicking the Submit button should work",
-      async ({ Given, When, Then }) => {
-        await Given["the sidebar is visible"]();
-        await When["the user clicks the Create button"]();
-        await When["the user clicks the New Folder menu item"]();
-        await Then["the New Folder dialog should be visible"]();
-        await When["the user types a folder name"]();
-        await When["the user clicks the Create button in the dialog"]();
-        await Then["a folder creation request should be made"]();
-      },
-
-    );
-    feature(
-      "Pressing enter to Submit should work",
-      async ({ Given, When, Then }) => {
-        await Given["the sidebar is visible"]();
-        await When["the user clicks the Create button"]();
-        await When["the user clicks the New Folder menu item"]();
-        await Then["the New Folder dialog should be visible"]();
-        await When["the user types a folder name and presses Enter"]();
-        await Then["a folder creation request should be made"]();
-      },
-    );
+    feature("Clicking the Submit button should work", async ({ Given, When, Then }) => {
+      await Given["the sidebar is visible"]();
+      await When["the user clicks the Create button"]();
+      await When["the user clicks the New Folder menu item"]();
+      await Then["the New Folder dialog should be visible"]();
+      await When["the user types a folder name"]();
+      await When["the user clicks the Create button in the dialog"]();
+      await Then["a folder creation request should be made"]();
+    });
+    feature("Pressing enter to Submit should work", async ({ Given, When, Then }) => {
+      await Given["the sidebar is visible"]();
+      await When["the user clicks the Create button"]();
+      await When["the user clicks the New Folder menu item"]();
+      await Then["the New Folder dialog should be visible"]();
+      await When["the user types a folder name and presses Enter"]();
+      await Then["a folder creation request should be made"]();
+    });
   });
 });

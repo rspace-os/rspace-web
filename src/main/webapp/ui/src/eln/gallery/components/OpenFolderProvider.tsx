@@ -1,4 +1,5 @@
 import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GalleryFile } from "../useGalleryListing";
 
 /**

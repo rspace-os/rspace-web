@@ -12,10 +12,7 @@ const normalizeMatcher = (matcher: Matcher): Matcher => {
   return new RegExp(matcher.source, flags);
 };
 
-const shouldSilence = (
-  args: unknown[],
-  matchers: Matcher[]
-): boolean => {
+const shouldSilence = (args: unknown[], matchers: Matcher[]): boolean => {
   if (matchers.length === 0) return false;
   return args.some((arg) => {
     const value = String(arg);
@@ -28,10 +25,7 @@ const shouldSilence = (
   });
 };
 
-export const silenceConsole = (
-  methods: ConsoleMethod[],
-  matchers: Matcher[]
-): (() => void) => {
+export const silenceConsole = (methods: ConsoleMethod[], matchers: Matcher[]): (() => void) => {
   const normalizedMatchers = matchers.map(normalizeMatcher);
   const restores = methods.map((method) => {
     const original = console[method].bind(console);
@@ -39,20 +33,19 @@ export const silenceConsole = (
       if (shouldSilence(args, normalizedMatchers)) {
         return;
       }
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       original(...(args as any[]));
     });
     return () => spy.mockRestore();
   });
 
   return () => {
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     restores.forEach((restore) => restore());
   };
 };
 
-export const silenceProcessOutput = (
-  streams: ProcessStream[],
-  matchers: Matcher[]
-): (() => void) => {
+export const silenceProcessOutput = (streams: ProcessStream[], matchers: Matcher[]): (() => void) => {
   if (typeof process === "undefined") {
     return () => {};
   }
@@ -68,6 +61,7 @@ export const silenceProcessOutput = (
     }
     const originalWrite = target.write.bind(target);
     const spy = vi.spyOn(target, "write").mockImplementation(
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       (chunk: unknown, encoding?: any, callback?: () => void) => {
         const text = String(chunk);
         if (shouldSilence([text], normalizedMatchers)) {
@@ -76,13 +70,15 @@ export const silenceProcessOutput = (
           }
           return true;
         }
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         return originalWrite(chunk as any, encoding, callback);
-      }
+      },
     );
     return [() => spy.mockRestore()];
   });
 
   return () => {
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     restores.forEach((restore) => restore());
   };
 };

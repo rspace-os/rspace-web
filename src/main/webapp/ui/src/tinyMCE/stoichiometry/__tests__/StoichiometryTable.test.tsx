@@ -1,10 +1,9 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import {
-  StoichiometryTableControllerProvider,
   type StoichiometryTableController,
+  StoichiometryTableControllerProvider,
 } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 
@@ -14,6 +13,7 @@ const staticStoichiometryTableSpy = vi.fn();
 vi.mock("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid", () => ({
   default: (props: unknown) => {
     stoichiometryTableGridSpy(props);
+    // biome-ignore lint/a11y/useSemanticElements: initial biome migration
     return <div role="grid" aria-label="Stoichiometry table grid" />;
   },
 }));
@@ -78,18 +78,11 @@ describe("StoichiometryTable", () => {
 
     render(
       <StoichiometryTableControllerProvider value={controller}>
-        <StoichiometryTable
-          editable
-          stoichiometryId={3}
-          stoichiometryRevision={1}
-          activeChemId={123}
-        />
+        <StoichiometryTable editable stoichiometryId={3} stoichiometryRevision={1} activeChemId={123} />
       </StoichiometryTableControllerProvider>,
     );
 
-    expect(
-      screen.getByRole("dialog", { name: "Loading molecule information" }),
-    ).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Loading molecule information" })).toBeVisible();
     expect(stoichiometryTableGridSpy).not.toHaveBeenCalled();
   });
 

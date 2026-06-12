@@ -7,11 +7,10 @@
  */
 import { useTheme } from "@mui/material/styles";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
 
-function CustomToggleButtonGroup(
-  props: React.ComponentProps<typeof ToggleButtonGroup>
-): React.ReactNode {
+function CustomToggleButtonGroup(props: React.ComponentProps<typeof ToggleButtonGroup>): React.ReactNode {
   const theme = useTheme();
   return (
     <ToggleButtonGroup
@@ -20,7 +19,7 @@ function CustomToggleButtonGroup(
         border: theme.borders.section,
         backgroundColor: theme.palette.background.default,
         display: "flex !important",
-        ...((props.sx) ?? {}),
+        ...(props.sx ?? {}),
       }}
     />
   );

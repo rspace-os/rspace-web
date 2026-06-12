@@ -1,12 +1,13 @@
-import Chip from "@mui/material/Chip";
-import Box from "@mui/material/Box";
-import React from "react";
-import { match } from "../../util/Util";
-import { useTheme } from "@mui/material/styles";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import { useTheme } from "@mui/material/styles";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import { match } from "../../util/Util";
 
 function StatusChip({
   error,
@@ -46,10 +47,7 @@ function StatusChip({
   const avatar = match<void, React.ReactElement | null>([
     [() => loading, null],
     [() => error, <ErrorIcon key="erroricon" sx={iconStyle} />],
-    [
-      () => Boolean(selectedFilename),
-      <CheckCircleIcon key="checkicon" sx={iconStyle} />,
-    ],
+    [() => Boolean(selectedFilename), <CheckCircleIcon key="checkicon" sx={iconStyle} />],
     [() => true, null],
   ])();
   return (
@@ -82,11 +80,7 @@ type SelectedFileInfoArgs = {
   loading: boolean;
 };
 
-function SelectedFileInfo({
-  selectedFilename,
-  error,
-  loading,
-}: SelectedFileInfoArgs): React.ReactNode {
+function SelectedFileInfo({ selectedFilename, error, loading }: SelectedFileInfoArgs): React.ReactNode {
   const theme = useTheme();
   return (
     <Box
@@ -96,13 +90,11 @@ function SelectedFileInfo({
         padding: theme.spacing(0.5, 2),
       }}
     >
-      <Box component="dt" sx={{ color: theme.palette.text.secondary }}>File selected:</Box>
+      <Box component="dt" sx={{ color: theme.palette.text.secondary }}>
+        File selected:
+      </Box>
       <Box component="dd" sx={{ marginLeft: theme.spacing(1) }}>
-        <StatusChip
-          selectedFilename={selectedFilename}
-          error={error}
-          loading={loading}
-        />
+        <StatusChip selectedFilename={selectedFilename} error={error} loading={loading} />
       </Box>
     </Box>
   );

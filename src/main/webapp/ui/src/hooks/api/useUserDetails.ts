@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../auth/useOauthToken";
 
 export type GroupMember = {
@@ -32,18 +32,13 @@ export default function useUserDetails(): {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
 
-  const getGroupMembers = React.useCallback(async (): Promise<
-    ReadonlyArray<GroupMember>
-  > => {
+  const getGroupMembers = React.useCallback(async (): Promise<ReadonlyArray<GroupMember>> => {
     try {
-      const { data } = await axios.get<ReadonlyArray<GroupMember>>(
-        `/api/v1/userDetails/groupMembers`,
-        {
-          headers: {
-            Authorization: `Bearer ${await getToken()}`,
-          },
+      const { data } = await axios.get<ReadonlyArray<GroupMember>>(`/api/v1/userDetails/groupMembers`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
         },
-      );
+      });
       return data;
     } catch (e) {
       addAlert(

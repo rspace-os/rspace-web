@@ -1,40 +1,33 @@
-import React, { useState, useContext, forwardRef } from "react";
-import Typography from "@mui/material/Typography";
-import { type IntegrationState } from "./useIntegrationsEndpoint";
-import Card from "@mui/material/Card";
-import CardMedia from "@mui/material/CardMedia";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Dialog } from "../../components/DialogBoundary";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import CardHeader from "@mui/material/CardHeader";
+import CardMedia from "@mui/material/CardMedia";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import { observer } from "mobx-react-lite";
-import Grow from "@mui/material/Grow";
-import {
-  createTheme,
-  ThemeOptions,
-  ThemeProvider,
-  useTheme,
-} from "@mui/material/styles";
 import DialogTitle from "@mui/material/DialogTitle";
-import CardActionArea from "@mui/material/CardActionArea";
-import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
-import docLinks from "../../assets/DocLinks";
 import Divider from "@mui/material/Divider";
-import CardHeader from "@mui/material/CardHeader";
-import Stack from "@mui/material/Stack";
-import AnalyticsContext from "../../stores/contexts/Analytics";
-import { type Hsl } from "../../accentedTheme";
-import { typographyClasses } from "@mui/material/Typography";
-import { svgIconClasses } from "@mui/material/SvgIcon";
 import { formControlLabelClasses } from "@mui/material/FormControlLabel";
+import Grow from "@mui/material/Grow";
+import Link from "@mui/material/Link";
 import { radioClasses } from "@mui/material/Radio";
-function hsl(
-  hue: number,
-  saturation: number,
-  lightness: number,
-  opacity: number,
-) {
+import Stack from "@mui/material/Stack";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { createTheme, ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
+import Typography, { typographyClasses } from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React, { forwardRef, useContext, useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Hsl } from "../../accentedTheme";
+import docLinks from "../../assets/DocLinks";
+import { Dialog } from "../../components/DialogBoundary";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type IntegrationState } from "./useIntegrationsEndpoint";
+
+function hsl(hue: number, saturation: number, lightness: number, opacity: number) {
   // lightness is reduced so that all text meets WCAG2.1 AAA guidelines
   // a reduction of 8 is arbitrary and should be increased to ensure compliance
   const adjustedLightness = Math.max(lightness - 8, 0);
@@ -42,12 +35,9 @@ function hsl(
     ? `hsl(${hue} ${saturation}% ${adjustedLightness}% / 100%)`
     : `hsl(${hue} ${saturation}% ${lightness}% / ${opacity}%)`;
 }
-const accentTextColor = (color: Hsl, opacity: number = 100) =>
-  hsl(color.hue, color.saturation, 27, opacity);
-const mainTextColor = (color: Hsl, opacity: number = 100) =>
-  hsl(color.hue, color.saturation, 20, opacity);
-const borderColor = (color: Hsl, opacity: number = 25) =>
-  hsl(color.hue, color.saturation, 20, opacity);
+const accentTextColor = (color: Hsl, opacity: number = 100) => hsl(color.hue, color.saturation, 27, opacity);
+const mainTextColor = (color: Hsl, opacity: number = 100) => hsl(color.hue, color.saturation, 20, opacity);
+const borderColor = (color: Hsl, opacity: number = 25) => hsl(color.hue, color.saturation, 20, opacity);
 type IntegrationCardArgs<Credentials> = {
   // The name of the integration, as rendered in the UI. Be sure to check how
   // the company chooses to brand the service.
@@ -105,23 +95,18 @@ type IntegrationCardArgs<Credentials> = {
   // it is enabled or disable.
   update: (newState: IntegrationState<Credentials>["mode"]) => void;
 };
-const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>(
-  (props, ref) => (
-    <Grow
-      {...props}
-      ref={ref}
-      timeout={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200
-      }
-      style={{
-        transformOrigin: "center 70%",
-      }}
-    />
-  ),
-);
+const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>((props, ref) => (
+  <Grow
+    {...props}
+    ref={ref}
+    timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+    style={{
+      transformOrigin: "center 70%",
+    }}
+  />
+));
 CustomGrow.displayName = "CustomGrow";
-const isTestEnv =
-  typeof process !== "undefined" && process.env.NODE_ENV === "test";
+const isTestEnv = typeof process !== "undefined" && process.env.NODE_ENV === "test";
 type NoopTransitionProps = {
   in?: boolean;
   children?: React.ReactNode;
@@ -377,30 +362,15 @@ function IntegrationCard<Credentials>({
           width: "100%",
           borderRadius: theme.spacing(1),
           justifyContent: "space-between",
-          boxShadow:
-            mode === "UNAVAILABLE"
-              ? "unset"
-              : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 8px 0px`,
-          filter:
-            mode === "UNAVAILABLE" ? "grayscale(0.6) opacity(0.8)" : "unset",
-          transitionDuration: window.matchMedia(
-            "(prefers-reduced-motion: reduce)",
-          ).matches
-            ? "0s"
-            : "0.3s",
+          boxShadow: mode === "UNAVAILABLE" ? "unset" : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 8px 0px`,
+          filter: mode === "UNAVAILABLE" ? "grayscale(0.6) opacity(0.8)" : "unset",
+          transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "0s" : "0.3s",
           "&:hover": {
             boxShadow:
-              mode === "UNAVAILABLE"
-                ? "unset"
-                : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
+              mode === "UNAVAILABLE" ? "unset" : `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
           },
           "&:focus-within": {
-            boxShadow: `${hsl(
-              color.hue,
-              color.saturation,
-              20,
-              20,
-            )} 0px 2px 12px 4px`,
+            boxShadow: `${hsl(color.hue, color.saturation, 20, 20)} 0px 2px 12px 4px`,
             borderColor: theme.palette.primary.main,
           },
         }}
@@ -419,12 +389,7 @@ function IntegrationCard<Credentials>({
             subheader={explanatoryText}
             avatar={
               <Box sx={cardMediaWrapperSx}>
-                <CardMedia
-                  component="img"
-                  src={image}
-                  alt=""
-                  role="presentation"
-                />
+                <CardMedia component="img" src={image} alt="" role="presentation" />
               </Box>
             }
           />
@@ -469,8 +434,7 @@ function IntegrationCard<Credentials>({
               left: "-18px",
               top: "1px",
               borderRadius: "50%",
-              backgroundColor: window.matchMedia("(prefers-contrast: more)")
-                .matches
+              backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
                 ? "transparent"
                 : borderColor(color),
             },
@@ -499,12 +463,7 @@ function IntegrationCard<Credentials>({
           >
             <Box>
               <Box sx={cardMediaWrapperSx}>
-                <CardMedia
-                  component="img"
-                  src={image}
-                  alt=""
-                  role="presentation"
-                />
+                <CardMedia component="img" src={image} alt="" role="presentation" />
               </Box>
             </Box>
             <Box>
@@ -521,21 +480,13 @@ function IntegrationCard<Credentials>({
               <Typography variant="body2">{usageText}</Typography>
               {typeof website === "string" ? (
                 <Typography variant="body2">
-                  See{" "}
-                  <Link
-                    href={
-                      website.startsWith("/") ? website : `https://${website}`
-                    }
-                  >
-                    {website}
-                  </Link>
+                  See <Link href={website.startsWith("/") ? website : `https://${website}`}>{website}</Link>
                   {" and our "}
                   <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
                 </Typography>
               ) : (
                 <Typography variant="body2">
-                  See our <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
-                  for more.
+                  See our <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
                 </Typography>
               )}
             </section>

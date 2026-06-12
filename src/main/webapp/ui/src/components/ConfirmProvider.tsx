@@ -16,8 +16,8 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { default as React, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { default as React, useState } from "react";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 type ConfirmState = {
@@ -40,9 +40,7 @@ const DEFAULT_CONFIRM_CONTEXT: ConfirmContextType = {
   setConfirmState: () => {},
 };
 
-const ConfirmContext: React.Context<ConfirmContextType> = React.createContext(
-  DEFAULT_CONFIRM_CONTEXT
-);
+const ConfirmContext: React.Context<ConfirmContextType> = React.createContext(DEFAULT_CONFIRM_CONTEXT);
 
 type ConfirmFunction = (
   title: React.ReactNode,
@@ -57,7 +55,7 @@ type ConfirmFunction = (
    * will turn into a spinner. Once the promise returned by onConfirm resolves,
    * the promise returned by confirm also resolves with true.
    */
-  onConfirm?: () => Promise<void>
+  onConfirm?: () => Promise<void>,
 ) => Promise<boolean>;
 
 /**
@@ -83,13 +81,7 @@ type ConfirmFunction = (
 export function useConfirm(): ConfirmFunction {
   const cc = React.useContext(ConfirmContext);
 
-  return function confirm(
-    title,
-    message,
-    yesLabel = "OK",
-    noLabel = "Cancel",
-    onConfirm
-  ): Promise<boolean> {
+  return function confirm(title, message, yesLabel = "OK", noLabel = "Cancel", onConfirm): Promise<boolean> {
     return new Promise((resolve) => {
       cc.setConfirmState({
         title,

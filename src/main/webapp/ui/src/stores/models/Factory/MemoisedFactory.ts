@@ -1,11 +1,16 @@
-import { type PersonId, type PersonAttrs } from "../../definitions/Person";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GlobalId } from "../../definitions/BaseRecord";
-import PersonModel from "../PersonModel";
-import InventoryBaseRecord from "../InventoryBaseRecord";
-import AlwaysNewFactory from "./AlwaysNewFactory";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Document, type DocumentAttrs } from "../../definitions/Document";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Factory } from "../../definitions/Factory";
-import { type DocumentAttrs, type Document } from "../../definitions/Document";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { PersonAttrs, PersonId } from "../../definitions/Person";
+import InventoryBaseRecord from "../InventoryBaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import PersonModel from "../PersonModel";
+import AlwaysNewFactory from "./AlwaysNewFactory";
 
 /**
  * A Factory which memoises the instantiation of new objects, thereby
@@ -34,11 +39,8 @@ export default class MemoisedFactory extends AlwaysNewFactory {
    * existing object, so do call `populateFromJson` on the returned object if
    * the data has changed.
    */
-  newRecord(
-    params: Record<string, unknown> & { globalId: GlobalId }
-  ): InventoryRecord {
-    if (params instanceof InventoryBaseRecord)
-      throw new Error("Cannot instantiate Record from InventoryBaseRecord");
+  newRecord(params: Record<string, unknown> & { globalId: GlobalId }): InventoryRecord {
+    if (params instanceof InventoryBaseRecord) throw new Error("Cannot instantiate Record from InventoryBaseRecord");
     const globalId = params.globalId;
     const existingRecord = this.recordCache.get(globalId);
     if (existingRecord) return existingRecord;

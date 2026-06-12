@@ -1,20 +1,18 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
-import { RecordLink, TopLink, CurrentRecord, InTrash } from "./RecordLink";
-import * as ArrayUtils from "../../util/ArrayUtils";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { CurrentRecord, InTrash, RecordLink, TopLink } from "./RecordLink";
 
 type BreadcrumbsArgs = {
   record: InventoryRecord;
   showCurrent?: boolean;
 };
 
-const _Breadcrumbs = ({
-  record,
-  showCurrent = false,
-}: BreadcrumbsArgs): React.ReactNode => {
+const _Breadcrumbs = ({ record, showCurrent = false }: BreadcrumbsArgs): React.ReactNode => {
   const showTopLink = record.showTopLinkInBreadcrumbs();
 
   const parents = hasLocation(record)

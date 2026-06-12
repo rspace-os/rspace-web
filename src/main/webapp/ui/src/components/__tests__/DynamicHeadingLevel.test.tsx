@@ -1,30 +1,23 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { Heading, HeadingContext } from "../DynamicHeadingLevel";
 import { typographyClasses } from "@mui/material/Typography";
-
+import { render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { Heading, HeadingContext } from "../DynamicHeadingLevel";
+
 describe("DynamicHeadingLevel", () => {
   test("Should default to level 1", () => {
-
     render(<Heading>Test</Heading>);
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 1 })
-    ).toBeInTheDocument();
-
+    expect(screen.getByRole("heading", { name: /Test/, level: 1 })).toBeInTheDocument();
   });
   test("Using a HeadingContext should result in a level 2", () => {
     render(
       <HeadingContext>
         <Heading>Test</Heading>
-      </HeadingContext>
-
+      </HeadingContext>,
     );
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 2 })
-    ).toBeInTheDocument();
-
+    expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
   });
   test("Nesting HeadingContexts should increment the level.", () => {
     render(
@@ -32,13 +25,9 @@ describe("DynamicHeadingLevel", () => {
         <HeadingContext>
           <Heading>Test</Heading>
         </HeadingContext>
-      </HeadingContext>
-
+      </HeadingContext>,
     );
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 3 })
-    ).toBeInTheDocument();
-
+    expect(screen.getByRole("heading", { name: /Test/, level: 3 })).toBeInTheDocument();
   });
   test("Specifying level allows skipping levels.", () => {
     render(
@@ -47,13 +36,9 @@ describe("DynamicHeadingLevel", () => {
         <HeadingContext level={2}>
           <Heading>Test</Heading>
         </HeadingContext>
-      </>
-
+      </>,
     );
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 2 })
-    ).toBeInTheDocument();
-
+    expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
   });
   test("Specifying level on a nested HeadingContext is not allowed.", () => {
     const restoreConsole = silenceConsole(["error"], [/./]);
@@ -63,11 +48,10 @@ describe("DynamicHeadingLevel", () => {
           <HeadingContext level={1}>
             <Heading>Test</Heading>
           </HeadingContext>
-        </HeadingContext>
+        </HeadingContext>,
       );
     }).toThrow();
     restoreConsole();
-
   });
   test("Nesting should max out at 6.", () => {
     render(
@@ -95,25 +79,17 @@ describe("DynamicHeadingLevel", () => {
             </HeadingContext>
           </HeadingContext>
         </HeadingContext>
-      </HeadingContext>
-
+      </HeadingContext>,
     );
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 6 })
-    ).toBeInTheDocument();
-
+    expect(screen.getByRole("heading", { name: /Test/, level: 6 })).toBeInTheDocument();
   });
   test("Variant should change css styles but leave element type untouched.", () => {
     render(
       <HeadingContext>
         <Heading variant="h5">Test</Heading>
-      </HeadingContext>
-
+      </HeadingContext>,
     );
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 2 }).className
-    ).toMatch(typographyClasses.h5);
-
+    expect(screen.getByRole("heading", { name: /Test/, level: 2 }).className).toMatch(typographyClasses.h5);
   });
   test("Variant should default to the level.", () => {
     render(
@@ -121,11 +97,8 @@ describe("DynamicHeadingLevel", () => {
         <HeadingContext>
           <Heading>Test</Heading>
         </HeadingContext>
-      </HeadingContext>
-
+      </HeadingContext>,
     );
-    expect(
-      screen.getByRole("heading", { name: /Test/, level: 3 }).className
-    ).toMatch(typographyClasses.h3);
+    expect(screen.getByRole("heading", { name: /Test/, level: 3 }).className).toMatch(typographyClasses.h3);
   });
 });

@@ -5,17 +5,19 @@
  * Due to its ubiquity throughout the application, its dependencies SHOULD be
  * kept to a minimum, and MUST NOT include any global state.
  */
-import React from "react";
-import Tooltip from "@mui/material/Tooltip";
+
 import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
 
 type CustomTooltipArgs = {
-  title: string,
-  enterDelay?: number,
-  children: React.ReactNode,
-  block?: boolean,
-  "aria-hidden"?: boolean,
-  "aria-label"?: string,
+  title: string;
+  enterDelay?: number;
+  children: React.ReactNode;
+  block?: boolean;
+  "aria-hidden"?: boolean;
+  "aria-label"?: string;
 };
 
 export default function CustomTooltip({
@@ -23,7 +25,9 @@ export default function CustomTooltip({
   enterDelay = 200,
   children,
   block = false,
+  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
   ["aria-hidden"]: ariaHidden,
+  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
   ["aria-label"]: ariaLabel,
 }: CustomTooltipArgs): React.ReactNode {
   return (

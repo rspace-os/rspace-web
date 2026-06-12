@@ -1,17 +1,13 @@
-import { test, describe, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 
 import PdfExport from "../PdfExport";
+
 describe("PdfExport", () => {
   test("Toggling a switch should set a boolean value.", () => {
-    const updateExportDetails: (key: string, exportDetail: unknown) => void =
-
-      vi.fn();
+    const updateExportDetails: (key: string, exportDetail: unknown) => void = vi.fn();
     render(
       <PdfExport
         exportDetails={{
@@ -35,14 +31,9 @@ describe("PdfExport", () => {
             exportName: false,
           },
         }}
-      />
-
+      />,
     );
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "Include provenance information" })
-
-    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "Include provenance information" }));
     expect(updateExportDetails).toHaveBeenCalledWith("provenance", true);
   });
 });
-

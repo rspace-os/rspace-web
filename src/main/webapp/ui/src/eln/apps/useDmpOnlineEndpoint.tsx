@@ -20,7 +20,7 @@ export function useDmpOnlineEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from DMPOnline.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useDmpOnlineEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from DMPOnline.",
-        })
+        }),
       );
     }
   };

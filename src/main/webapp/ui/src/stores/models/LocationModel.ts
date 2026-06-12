@@ -1,13 +1,18 @@
+import { action, computed, makeObservable, observable } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Container, type Location } from "../definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type HasLocation } from "../definitions/HasLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Search } from "../definitions/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SubSample } from "../definitions/SubSample";
 import getRootStore from "../stores/RootStore";
 import ContainerModel from "./ContainerModel";
 import InventoryBaseRecord from "./InventoryBaseRecord";
 import SubSampleModel from "./SubSampleModel";
-import { action, computed, observable, makeObservable } from "mobx";
-import { type Location, type Container } from "../definitions/Container";
-import { type SubSample } from "../definitions/SubSample";
-import { type Search } from "../definitions/Search";
-import { type InventoryRecord } from "../definitions/InventoryRecord";
-import { type HasLocation } from "../definitions/HasLocation";
 
 export type LocationAttrs = {
   id: number | null;
@@ -70,9 +75,7 @@ export default class LocationModel implements Location {
     const parentSearch = this.parentContainer.contentSearch;
     if (
       search === parentSearch &&
-      (parentSearch.fetcher.query ||
-        parentSearch.fetcher.resultType !== "ALL" ||
-        parentSearch.fetcher.owner)
+      (parentSearch.fetcher.query || parentSearch.fetcher.resultType !== "ALL" || parentSearch.fetcher.owner)
     ) {
       // search inside container is being performed
       if (!this.content) return true;
@@ -80,9 +83,7 @@ export default class LocationModel implements Location {
       return !search.isInResults(content) || search.alwaysFilterOut(content);
     }
     // search inside container is not being performed i.e. move or create dialogs
-    return (
-      this.content instanceof InventoryBaseRecord && search.alwaysFilterOut(this.content)
-    );
+    return this.content instanceof InventoryBaseRecord && search.alwaysFilterOut(this.content);
   }
 
   isShallow(search: Search): boolean {
@@ -125,30 +126,20 @@ export default class LocationModel implements Location {
   }
 
   get siblings(): Array<Location> {
-    if (
-      !this.parentContainer ||
-      !this.content ||
-      !(this.content instanceof SubSampleModel) ||
-      !this.content.sample.id
-    )
+    if (!this.parentContainer || !this.content || !(this.content instanceof SubSampleModel) || !this.content.sample.id)
       return [];
-    if (!this.parentContainer.locations)
-      throw new Error("Locations of container must be known.");
+    if (!this.parentContainer.locations) throw new Error("Locations of container must be known.");
     return this.parentContainer.locations.filter(
       (loc) =>
         loc.content instanceof SubSampleModel &&
         Boolean(loc.content.sample.id) &&
         this.content instanceof SubSampleModel &&
-        loc.content.sample.id === this.content.sample.id
+        loc.content.sample.id === this.content.sample.id,
     );
   }
 
   get isSiblingSelected(): boolean | null {
-    return (
-      this.content &&
-      this.content.recordType === "subSample" &&
-      this.siblings.some((loc) => loc.selected)
-    );
+    return this.content && this.content.recordType === "subSample" && this.siblings.some((loc) => loc.selected);
   }
 
   get allSiblingsSelected(): boolean {
@@ -156,8 +147,7 @@ export default class LocationModel implements Location {
   }
 
   isSelectable(search: Search): boolean {
-    if (search.uiConfig.onlyAllowSelectingEmptyLocations)
-      return !this.hasContent;
+    if (search.uiConfig.onlyAllowSelectingEmptyLocations) return !this.hasContent;
     return !this.isGreyedOut(search);
   }
 
@@ -177,7 +167,8 @@ export default class LocationModel implements Location {
 
   get hasContent(): boolean {
     return Boolean(
-      this.content && this.content.globalId && !this.content.deleted
+      // biome-ignore lint/complexity/useOptionalChain: initial biome migration
+      this.content && this.content.globalId && !this.content.deleted,
     );
   }
 
@@ -186,7 +177,7 @@ export default class LocationModel implements Location {
       const uniqueColor = this.parentContainer.getColor(this.content.sample.id);
       if (!uniqueColor)
         throw new Error(
-          "Impossible state: sample of content's subsample should always have a valid colour within the parent container"
+          "Impossible state: sample of content's subsample should always have a valid colour within the parent container",
         );
       return uniqueColor;
     }
@@ -206,22 +197,13 @@ export default class LocationModel implements Location {
   toggleSelected(value?: boolean | null): void {
     value = value ?? !this.selected;
     const moveStore = getRootStore().moveStore;
-    if (
-      moveStore.isMoving &&
-      moveStore.activeResult instanceof ContainerModel
-    ) {
+    if (moveStore.isMoving && moveStore.activeResult instanceof ContainerModel) {
       const activeResult: ContainerModel = moveStore.activeResult;
-      if (!activeResult.selectedLocations)
-        throw new Error("Locations of container must be known.");
+      if (!activeResult.selectedLocations) throw new Error("Locations of container must be known.");
       const selectedLocations = activeResult.selectedLocations;
       if (value) {
-        const selectedGlobalIds = selectedLocations.map(
-          (l) => l.content?.globalId
-        );
-        const firstNotPlaced =
-          moveStore.selectedResults.find(
-            (r) => !selectedGlobalIds.includes(r.globalId)
-          ) ?? null;
+        const selectedGlobalIds = selectedLocations.map((l) => l.content?.globalId);
+        const firstNotPlaced = moveStore.selectedResults.find((r) => !selectedGlobalIds.includes(r.globalId)) ?? null;
 
         // set new location
         this.content = firstNotPlaced;
@@ -236,10 +218,8 @@ export default class LocationModel implements Location {
     if (this.parentContainer.cType !== "LIST" && !moveStore.isMoving) {
       const activeContainer = getRootStore().searchStore.activeResult;
       if ((activeContainer as Container | null)?.contentSearch) {
-        const content = (
-          activeContainer as Container
-        ).contentSearch.cacheFetcher.results.find(
-          (r) => r.globalId === this.content?.globalId
+        const content = (activeContainer as Container).contentSearch.cacheFetcher.results.find(
+          (r) => r.globalId === this.content?.globalId,
         );
         if (content) content.toggleSelected(value);
       }

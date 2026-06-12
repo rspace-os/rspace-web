@@ -1,10 +1,11 @@
 import Grid from "@mui/material/Grid";
-import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import ArgosIcon from "../../../assets/branding/argos/logo.svg";
-import { LOGO_COLOR } from "../../../assets/branding/argos";
 import { observer } from "mobx-react-lite";
+import React from "react";
+import { LOGO_COLOR } from "../../../assets/branding/argos";
+import ArgosIcon from "../../../assets/branding/argos/logo.svg";
+import IntegrationCard from "../IntegrationCard";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ArgosArgs = {
   integrationState: IntegrationStates["ARGOS"];
@@ -21,8 +22,9 @@ function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="ARGOS"
         explanatoryText="Create, manage and exchange Data Management Plans on an extensible open platform."

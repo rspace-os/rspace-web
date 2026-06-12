@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
-import { observer } from "mobx-react-lite";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useState } from "react";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import TextField from "../../../../components/Inputs/TextField";
+// biome-ignore lint/style/useImportType: initial biome migration
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import FormField from "../../../components/Inputs/FormField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import ValidatingSubmitButton, {
-  IsInvalid,
-  IsValid,
-} from "@/components/ValidatingSubmitButton";
 
 type NewNoteArgs = {
   record: SubSampleModel;
@@ -20,11 +19,7 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
   const [note, setNote] = useState("");
   const [initial, setInitial] = useState(true);
 
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { name: string; value: string };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { name: string; value: string } }) => {
     setNote(value);
 
     if (value === "") {
@@ -107,26 +102,16 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
         label="New note"
         maxLength={2000}
         value={note}
-        renderInput={({ error: _error, ...props }) => (
-          <TextField onChange={handleChange} name="content" {...props} />
-        )}
+        renderInput={({ error: _error, ...props }) => <TextField onChange={handleChange} name="content" {...props} />}
         disabled={!record.isFieldEditable("notes")}
       />
-      <Stack
-        direction="row"
-        sx={{ justifyContent: "space-between", alignItems: "flex-start" }}
-      >
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
         <Typography variant="caption">
-          Please note that once created, notes can be neither edited nor
-          deleted.
+          Please note that once created, notes can be neither edited nor deleted.
         </Typography>
         <Stack direction="row" spacing={1}>
           <Button onClick={clearNote}>Clear</Button>
-          <ValidatingSubmitButton
-            validationResult={validateValue(note)}
-            onClick={createNote}
-            loading={false}
-          >
+          <ValidatingSubmitButton validationResult={validateValue(note)} onClick={createNote} loading={false}>
             Create note
           </ValidatingSubmitButton>
         </Stack>

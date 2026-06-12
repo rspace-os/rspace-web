@@ -1,17 +1,17 @@
-import React from "react";
-import Popover from "@mui/material/Popover";
-import Card from "@mui/material/Card";
+import GroupIcon from "@mui/icons-material/Group";
 import Avatar from "@mui/material/Avatar";
-import CardHeader from "@mui/material/CardHeader";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
-import Button from "@mui/material/Button";
+import CardHeader from "@mui/material/CardHeader";
+import Chip from "@mui/material/Chip";
+import Popover from "@mui/material/Popover";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
-import Chip from "@mui/material/Chip";
-import GroupIcon from "@mui/icons-material/Group";
+import React from "react";
 import useGroups, { type GroupDetail } from "../hooks/api/useGroups";
 
 type GroupDetailsArgs = {
@@ -106,28 +106,19 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
                   <TableCell component="th" scope="row">
                     Members
                   </TableCell>
-                  <TableCell align="right">
-                    {displayData.members.length}
-                  </TableCell>
+                  <TableCell align="right">{displayData.members.length}</TableCell>
                 </TableRow>
                 <TableRow data-test-id="row-pis">
                   <TableCell component="th" scope="row">
                     Principal Investigators
                   </TableCell>
-                  <TableCell align="right">
-                    {displayData.members.filter((m) => m.role === "PI").length}
-                  </TableCell>
+                  <TableCell align="right">{displayData.members.filter((m) => m.role === "PI").length}</TableCell>
                 </TableRow>
                 <TableRow data-test-id="row-users">
                   <TableCell component="th" scope="row">
                     Users
                   </TableCell>
-                  <TableCell align="right">
-                    {
-                      displayData.members.filter((m) => m.role === "USER")
-                        .length
-                    }
-                  </TableCell>
+                  <TableCell align="right">{displayData.members.filter((m) => m.role === "USER").length}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>

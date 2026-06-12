@@ -1,5 +1,6 @@
 import React, { type Context, createContext } from "react";
 import { take } from "../../util/iterators";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type LinkableRecord } from "../definitions/LinkableRecord";
 
 type AlertVariant = "success" | "warning" | "error" | "notice";
@@ -146,9 +147,7 @@ const DEFAULT_ALERT_CONTEXT: AlertContextType = {
   removeAlert: () => {},
 };
 
-const AlertContext: Context<AlertContextType> = createContext(
-  DEFAULT_ALERT_CONTEXT,
-);
+const AlertContext: Context<AlertContextType> = createContext(DEFAULT_ALERT_CONTEXT);
 
 /**
  * This context allows any part of the page to display alerts in the top right

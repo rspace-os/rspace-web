@@ -1,4 +1,5 @@
-import { Optional, lift2 } from "../../util/optional";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { lift2, Optional } from "../../util/optional";
 
 /**
  * The definition of a tag in RSpace. If the tag is describing a term from a

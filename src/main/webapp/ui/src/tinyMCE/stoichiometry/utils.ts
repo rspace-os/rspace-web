@@ -1,10 +1,6 @@
 import { produce } from "immer";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
-import {
-  convertFromGrams,
-  getQuantityUnitSymbol,
-  isMassUnit,
-} from "@/modules/inventory/utils";
+import { convertFromGrams, getQuantityUnitSymbol, isMassUnit } from "@/modules/inventory/utils";
 import type { EditableMolecule } from "./types";
 
 export type InventoryUpdateSelectionDisabledReason =
@@ -21,11 +17,7 @@ export type InventoryUpdateEligibility = {
   stockDisplay: InventoryUpdateStockDisplay;
 };
 
-export type InventoryUpdateRemainingStatus =
-  | "default"
-  | "positive"
-  | "zero"
-  | "negative";
+export type InventoryUpdateRemainingStatus = "default" | "positive" | "zero" | "negative";
 
 export type InventoryUpdateStockMetric = {
   rawValue: number | null;
@@ -61,10 +53,7 @@ function formatInventoryUpdateMetricValue(value: number | null): string {
   });
 }
 
-function makeStockMetric(
-  rawValue: number | null,
-  unitLabel: string | null,
-): InventoryUpdateStockMetric {
+function makeStockMetric(rawValue: number | null, unitLabel: string | null): InventoryUpdateStockMetric {
   return {
     rawValue,
     displayValue: formatInventoryUpdateMetricValue(rawValue),
@@ -139,28 +128,23 @@ function buildInventoryUpdateStockDisplay(
   };
 }
 
-function getInventoryUpdateDisabledReasonText(
-  reason: InventoryUpdateSelectionDisabledReason,
-): string {
+function getInventoryUpdateDisabledReasonText(reason: InventoryUpdateSelectionDisabledReason): string {
   return {
     missingInventoryLink: "Link an inventory item before updating stock.",
-    linkedStockUnavailable:
-      "Linked stock information is unavailable, so this molecule cannot be updated.",
+    linkedStockUnavailable: "Linked stock information is unavailable, so this molecule cannot be updated.",
     nonMassInventoryQuantity:
       "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
-    missingActualMass:
-      "Define actual mass before updating linked inventory stock.",
-    insufficientStock:
-      "There is insufficient linked stock for this molecule's actual mass.",
+    missingActualMass: "Define actual mass before updating linked inventory stock.",
+    insufficientStock: "There is insufficient linked stock for this molecule's actual mass.",
   }[reason];
 }
 
 export function getInventoryUpdateEligibility(
   molecule: EditableMolecule,
-  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<string, InventoryQuantityQueryResult> = new Map<
     string,
     InventoryQuantityQueryResult
-  > = new Map<string, InventoryQuantityQueryResult>(),
+  >(),
 ): InventoryUpdateEligibility {
   const inventoryItemGlobalId = molecule.inventoryLink?.inventoryItemGlobalId;
   if (!inventoryItemGlobalId) {
@@ -172,10 +156,9 @@ export function getInventoryUpdateEligibility(
     };
   }
 
-  const linkedInventoryQuantityInfo = linkedInventoryQuantityInfoByGlobalId.get(
-    inventoryItemGlobalId,
-  );
+  const linkedInventoryQuantityInfo = linkedInventoryQuantityInfoByGlobalId.get(inventoryItemGlobalId);
   if (
+    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
     !linkedInventoryQuantityInfo ||
     linkedInventoryQuantityInfo.status !== "available" ||
     !linkedInventoryQuantityInfo.quantity
@@ -192,8 +175,7 @@ export function getInventoryUpdateEligibility(
   const stockDisplay = buildInventoryUpdateStockDisplay(quantity, molecule.actualAmount);
   const stockDeducted = molecule.inventoryLink?.stockDeducted === true;
 
-  const showInsufficientStockWarning =
-    !stockDeducted && stockDisplay.remainingStatus === "negative";
+  const showInsufficientStockWarning = !stockDeducted && stockDisplay.remainingStatus === "negative";
 
   let disabledReason: InventoryUpdateSelectionDisabledReason | null = null;
   if (!isMassUnit(quantity.unitId)) {
@@ -235,8 +217,7 @@ export function hasDuplicateInventoryLink(
     (molecule) =>
       molecule.id !== moleculeId &&
       (molecule.inventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId ||
-        molecule.deletedInventoryLink?.inventoryItemGlobalId ===
-          inventoryItemGlobalId),
+        molecule.deletedInventoryLink?.inventoryItemGlobalId === inventoryItemGlobalId),
   );
 }
 
@@ -289,14 +270,9 @@ function calculateNonLimitingReagentExcess(
   return actualMoles / coefficient / limitingReagentMoles - 1;
 }
 
-function calculateActualYieldOrExcess(
-  molecule: EditableMolecule,
-  limitingReagentMoles: number,
-): number | null {
+function calculateActualYieldOrExcess(molecule: EditableMolecule, limitingReagentMoles: number): number | null {
   if (molecule.coefficient === null || molecule.molecularWeight === null) {
-    throw new Error(
-      "Cannot calculate yield or excess for molecule with missing coefficient or molecular weight",
-    );
+    throw new Error("Cannot calculate yield or excess for molecule with missing coefficient or molecular weight");
   }
 
   if (molecule.role === "PRODUCT") {
@@ -310,10 +286,7 @@ function calculateActualYieldOrExcess(
     );
   }
 
-  if (
-    (molecule.role === "REACTANT" || molecule.role === "AGENT") &&
-    !molecule.limitingReagent
-  ) {
+  if ((molecule.role === "REACTANT" || molecule.role === "AGENT") && !molecule.limitingReagent) {
     return calculateNonLimitingReagentExcess(
       {
         actualAmount: molecule.actualAmount,
@@ -327,9 +300,7 @@ function calculateActualYieldOrExcess(
   return null;
 }
 
-function clearActualYieldAndExcess(
-  molecules: ReadonlyArray<EditableMolecule>,
-): ReadonlyArray<EditableMolecule> {
+function clearActualYieldAndExcess(molecules: ReadonlyArray<EditableMolecule>): ReadonlyArray<EditableMolecule> {
   return produce(molecules, (draftMolecules) => {
     for (const molecule of draftMolecules) {
       molecule.actualYield = null;
@@ -337,12 +308,8 @@ function clearActualYieldAndExcess(
   });
 }
 
-function updateYieldAndExcess(
-  molecules: ReadonlyArray<EditableMolecule>,
-): ReadonlyArray<EditableMolecule> {
-  const limitingReagent = molecules.find(
-    (m) => m.limitingReagent && m.role === "REACTANT",
-  );
+function updateYieldAndExcess(molecules: ReadonlyArray<EditableMolecule>): ReadonlyArray<EditableMolecule> {
+  const limitingReagent = molecules.find((m) => m.limitingReagent && m.role === "REACTANT");
   if (!limitingReagent || limitingReagent.actualAmount === null) {
     return clearActualYieldAndExcess(molecules);
   }
@@ -352,21 +319,14 @@ function updateYieldAndExcess(
   }
 
   const limitingReagentMoles =
-    (calculateMoles(
-      limitingReagent.actualAmount,
-      limitingReagent.molecularWeight,
-      
-    ) ?? 0) / limitingReagent.coefficient;
+    (calculateMoles(limitingReagent.actualAmount, limitingReagent.molecularWeight) ?? 0) / limitingReagent.coefficient;
   if (limitingReagentMoles <= 0) {
     return clearActualYieldAndExcess(molecules);
   }
 
   return produce(molecules, (draftMolecules) => {
     for (const molecule of draftMolecules) {
-      molecule.actualYield = calculateActualYieldOrExcess(
-        molecule,
-        limitingReagentMoles,
-      );
+      molecule.actualYield = calculateActualYieldOrExcess(molecule, limitingReagentMoles);
     }
   });
 }
@@ -386,23 +346,18 @@ function normaliseCoefficients(
 
   return produce(molecules, (draftMolecules) => {
     for (const molecule of draftMolecules) {
-      molecule.coefficient = molecule.coefficient as number / limitingCoefficient;
+      molecule.coefficient = (molecule.coefficient as number) / limitingCoefficient;
     }
   });
 }
 
-function applyMassByRatio(
-  molecules: ReadonlyArray<EditableMolecule>,
-  ratio: number | null,
-) {
+function applyMassByRatio(molecules: ReadonlyArray<EditableMolecule>, ratio: number | null) {
   if (ratio === null) {
     return molecules;
   }
 
   if (molecules.find((m) => m.coefficient === null || m.molecularWeight === null)) {
-    throw new Error(
-      "All molecules must have valid coefficient and molecular weight to apply mass by ratio",
-    );
+    throw new Error("All molecules must have valid coefficient and molecular weight to apply mass by ratio");
   }
 
   return produce(molecules, (draftMolecules) => {
@@ -423,33 +378,20 @@ function validateMoleculeImmutability(
   after: EditableMolecule,
   { allowRoleChange = false }: CalculateUpdatedMoleculesOptions = {},
 ) {
-  if (before.id !== after.id)
-    throw new Error(
-      "ID is an intrinsic property of the chemical and cannot be modified",
-    );
+  if (before.id !== after.id) throw new Error("ID is an intrinsic property of the chemical and cannot be modified");
   if (before.name !== after.name)
-    throw new Error(
-      "Name is an intrinsic property of the chemical and cannot be modified",
-    );
+    throw new Error("Name is an intrinsic property of the chemical and cannot be modified");
   if (before.molecularWeight !== after.molecularWeight)
-    throw new Error(
-      "Molecular weight is an intrinsic property of the chemical and cannot be modified",
-    );
+    throw new Error("Molecular weight is an intrinsic property of the chemical and cannot be modified");
   if (before.formula !== after.formula)
-    throw new Error(
-      "Chemical formula is an intrinsic property of the chemical and cannot be modified",
-    );
+    throw new Error("Chemical formula is an intrinsic property of the chemical and cannot be modified");
   if (before.smiles !== after.smiles)
-    throw new Error(
-      "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
-    );
+    throw new Error("The SMILES representation is an intrinsic property of the chemical and cannot be modified");
 
   if (!allowRoleChange && before.role !== after.role)
     throw new Error("Modifying the role of a molecule is not supported");
   if (before.rsChemElement !== after.rsChemElement)
-    throw new Error(
-      "Modifying the rsChemElement of a molecule is not supported",
-    );
+    throw new Error("Modifying the rsChemElement of a molecule is not supported");
 }
 
 /**
@@ -491,10 +433,7 @@ export function calculateUpdatedMolecules(
 
   validateMoleculeImmutability(beforeMolecule, editedRow, options);
 
-  const applyChanges = (
-    newProperties: Partial<EditableMolecule>,
-    molecules = allMolecules,
-  ) => {
+  const applyChanges = (newProperties: Partial<EditableMolecule>, molecules = allMolecules) => {
     return produce(molecules, (draftMolecules) => {
       const editedMolecule = draftMolecules.find((m) => m.id === editedRow.id);
       if (editedMolecule) {
@@ -511,8 +450,7 @@ export function calculateUpdatedMolecules(
     return updateYieldAndExcess(
       applyChanges({
         role: editedRow.role,
-        limitingReagent:
-          editedRow.role === "REACTANT" ? editedRow.limitingReagent : false,
+        limitingReagent: editedRow.role === "REACTANT" ? editedRow.limitingReagent : false,
       }),
     );
   }
@@ -524,20 +462,9 @@ export function calculateUpdatedMolecules(
       if (limitingReagent.coefficient === null) {
         throw new Error("Limiting reagent coefficient is undefined");
       }
-      const limitingReagentMoles = calculateMoles(
-        editedRow.mass,
-        limitingReagent.molecularWeight,
-      );
-      const ratio =
-        limitingReagentMoles === null
-          ? null
-          : limitingReagentMoles / limitingReagent.coefficient;
-      return updateYieldAndExcess(
-        applyChanges(
-          { mass: editedRow.mass },
-          applyMassByRatio(allMolecules, ratio),
-        ),
-      );
+      const limitingReagentMoles = calculateMoles(editedRow.mass, limitingReagent.molecularWeight);
+      const ratio = limitingReagentMoles === null ? null : limitingReagentMoles / limitingReagent.coefficient;
+      return updateYieldAndExcess(applyChanges({ mass: editedRow.mass }, applyMassByRatio(allMolecules, ratio)));
     }
     return updateYieldAndExcess(applyChanges({ mass: editedRow.mass }));
   }
@@ -556,17 +483,13 @@ export function calculateUpdatedMolecules(
       }
       const ratio = editedRow.moles / limitingReagent.coefficient;
 
-      return updateYieldAndExcess(
-        applyChanges({ mass }, applyMassByRatio(allMolecules, ratio)),
-      );
+      return updateYieldAndExcess(applyChanges({ mass }, applyMassByRatio(allMolecules, ratio)));
     }
     return updateYieldAndExcess(applyChanges({ mass }));
   }
 
   if (beforeMolecule.actualAmount !== editedRow.actualAmount) {
-    return updateYieldAndExcess(
-      applyChanges({ actualAmount: editedRow.actualAmount }),
-    );
+    return updateYieldAndExcess(applyChanges({ actualAmount: editedRow.actualAmount }));
   }
 
   if (editedRow.actualMoles !== null) {
@@ -594,31 +517,23 @@ export function calculateUpdatedMolecules(
     if (!newLimitingReagent) {
       throw new Error("No limiting reagent found after update");
     }
-    return updateYieldAndExcess(
-      normaliseCoefficients(updatedMolecules, newLimitingReagent),
-    );
+    return updateYieldAndExcess(normaliseCoefficients(updatedMolecules, newLimitingReagent));
   }
 
   if (beforeMolecule.coefficient !== editedRow.coefficient) {
     if (beforeMolecule.coefficient === null || editedRow.coefficient === null) {
       throw new Error("Molecule coefficient is undefined");
     }
-    const changeInCoefficient =
-      editedRow.coefficient / beforeMolecule.coefficient;
+    const changeInCoefficient = editedRow.coefficient / beforeMolecule.coefficient;
     const updatedMolecules = applyChanges({
       coefficient: editedRow.coefficient,
-      mass:
-        beforeMolecule.mass === null
-          ? null
-          : beforeMolecule.mass * changeInCoefficient,
+      mass: beforeMolecule.mass === null ? null : beforeMolecule.mass * changeInCoefficient,
     });
     const newLimitingReagent = updatedMolecules.find((m) => m.limitingReagent);
     if (!newLimitingReagent) {
       throw new Error("No limiting reagent found after update");
     }
-    return updateYieldAndExcess(
-      normaliseCoefficients(updatedMolecules, newLimitingReagent),
-    );
+    return updateYieldAndExcess(normaliseCoefficients(updatedMolecules, newLimitingReagent));
   }
 
   return allMolecules;

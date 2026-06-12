@@ -1,10 +1,16 @@
-import { type PersonAttrs, type Person } from "./Person";
-import { type PersistedBarcodeAttrs, type BarcodeRecord } from "./Barcode";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type DocumentAttrs, type Document } from "./Document";
-import { type IdentifierAttrs, type Identifier } from "./Identifier";
-import { type GlobalId } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import InvApiService from "../../common/InvApiService";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type BarcodeRecord, type PersistedBarcodeAttrs } from "./Barcode";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GlobalId } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Document, type DocumentAttrs } from "./Document";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Identifier, type IdentifierAttrs } from "./Identifier";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "./InventoryRecord";
+import type { Person, PersonAttrs } from "./Person";
 
 /**
  * Objects which implement this interface provide an abstraction layer over the
@@ -20,17 +26,11 @@ export interface Factory {
    * `Record<string, unknown>` is the type of the argument as it cannot be
    * determined before runtime what the attributes must be.
    */
-  newRecord(
-    params: Record<string, unknown> & { globalId: GlobalId | null },
-  ): InventoryRecord;
+  newRecord(params: Record<string, unknown> & { globalId: GlobalId | null }): InventoryRecord;
 
   newPerson(attrs: PersonAttrs): Person;
   newBarcode(attrs: PersistedBarcodeAttrs): BarcodeRecord;
-  newIdentifier(
-    attrs: IdentifierAttrs,
-    parentGlobalId: GlobalId,
-    ApiService: typeof InvApiService,
-  ): Identifier;
+  newIdentifier(attrs: IdentifierAttrs, parentGlobalId: GlobalId, ApiService: typeof InvApiService): Identifier;
   newDocument(attrs: DocumentAttrs): Document;
 
   /*

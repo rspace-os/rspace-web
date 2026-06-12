@@ -1,18 +1,18 @@
-import { test, describe, expect, vi } from 'vitest';
-import React,
-  { useState } from "react";
 import { render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React, { useState } from "react";
+import { describe, expect, test, vi } from "vitest";
 import StepperPanel from "../StepperPanel";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+import userEvent from "@testing-library/user-event";
+import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";
-import FormSectionsContext from "../../../../stores/contexts/FormSections";
-import userEvent from "@testing-library/user-event";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/RootStore", () => ({
-  default: () => ({})
+  default: () => ({}),
 }));
 describe("StepperPanel", () => {
   describe("Renders correctly", () => {
@@ -30,7 +30,7 @@ describe("StepperPanel", () => {
               <div data-testid="content"></div>
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("content")).toBeVisible();
     });
@@ -48,11 +48,10 @@ describe("StepperPanel", () => {
               <div data-testid="content"></div>
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("content")).not.toBeVisible();
     });
-
   });
   describe("Expands and collapses properly", () => {
     test("Expand button works correctly", async () => {
@@ -68,11 +67,11 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
+              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
               <></>
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByLabelText("Expand section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
@@ -90,16 +89,15 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
+              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
               <></>
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByLabelText("Collapse section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", false);
     });
-
   });
   describe("Expand/Collapse all appears after performing the operation once", () => {
     function TestComponent({
@@ -115,6 +113,7 @@ describe("StepperPanel", () => {
           <FormSectionsContext.Provider
             value={{
               isExpanded: () => open,
+              // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
               setExpanded: (recordType, sectionName, value) => {
                 setOpen(value);
               },
@@ -122,12 +121,12 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
+              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
               <></>
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>
       );
-
     }
     test("Collapse all", async () => {
       const user = userEvent.setup();
@@ -141,15 +140,11 @@ describe("StepperPanel", () => {
     test("Expand all", async () => {
       const user = userEvent.setup();
       const setAllExpanded = vi.fn();
-      render(
-        <TestComponent setAllExpanded={setAllExpanded} openInit={false} />
-
-      );
+      render(<TestComponent setAllExpanded={setAllExpanded} openInit={false} />);
       await user.click(screen.getByLabelText("Expand section"));
       await user.click(screen.getByRole("button", { name: "Expand All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", true);
     });
-
   });
   describe("Accessibility", () => {
     test("Has role region", () => {
@@ -157,13 +152,13 @@ describe("StepperPanel", () => {
         <ThemeProvider theme={materialTheme}>
           <SynchroniseFormSections>
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
+              {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
               <></>
             </StepperPanel>
           </SynchroniseFormSections>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       screen.getByRole("region", { name: "Bar" });
     });
   });
 });
-

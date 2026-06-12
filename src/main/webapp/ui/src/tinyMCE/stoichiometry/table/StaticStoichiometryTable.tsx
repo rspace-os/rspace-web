@@ -2,8 +2,8 @@ import React from "react";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import { useGetStoichiometryQuery } from "@/modules/stoichiometry/queries";
 import { toEditableMolecules } from "@/tinyMCE/stoichiometry/editableMolecules";
-import type { StoichiometryTableProps } from "./types";
 import StoichiometryTableGrid from "./StoichiometryTableGrid";
+import type { StoichiometryTableProps } from "./types";
 
 export default function StaticStoichiometryTable({
   stoichiometryId,

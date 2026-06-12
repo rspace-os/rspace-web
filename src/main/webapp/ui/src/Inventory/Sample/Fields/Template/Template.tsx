@@ -1,33 +1,33 @@
-import React, { useState } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../../stores/use-stores";
-import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import SummaryInfo from "../../../Template/SummaryInfo";
-import TemplateModel from "../../../../stores/models/TemplateModel";
-import { mkAlert } from "../../../../stores/contexts/Alert";
-import SampleModel from "../../../../stores/models/SampleModel";
-import docLinks from "../../../../assets/DocLinks";
-import Divider from "@mui/material/Divider";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Stack } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import VersionInfo from "../../../Template/Fields/VersionInfo";
-import TemplatePicker from "../../../components/Picker/TemplatePicker";
-import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import Collapse from "@mui/material/Collapse";
-import Alert from "@mui/material/Alert";
-import { getErrorMessage } from "../../../../util/error";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
-import { Stack } from "@mui/material";
+import { observer } from "mobx-react-lite";
+import React, { useState } from "react";
+import docLinks from "../../../../assets/DocLinks";
+import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
+import InputWrapper from "../../../../components/Inputs/InputWrapper";
+import { mkAlert } from "../../../../stores/contexts/Alert";
+import SampleModel from "../../../../stores/models/SampleModel";
+import TemplateModel from "../../../../stores/models/TemplateModel";
+import useStores from "../../../../stores/use-stores";
+import { getErrorMessage } from "../../../../util/error";
+import TemplatePicker from "../../../components/Picker/TemplatePicker";
+import VersionInfo from "../../../Template/Fields/VersionInfo";
+import SummaryInfo from "../../../Template/SummaryInfo";
 
 function Template(): React.ReactNode {
   const {
     searchStore: { activeResult },
     uiStore,
   } = useStores();
-  if (!activeResult || !(activeResult instanceof SampleModel))
-    throw new Error("ActiveResult must be a Sample");
+  if (!activeResult || !(activeResult instanceof SampleModel)) throw new Error("ActiveResult must be a Sample");
 
   const [open, setOpen] = useState(true);
 
@@ -48,10 +48,10 @@ function Template(): React.ReactNode {
   );
 
   const template = activeResult.template;
-  if (!(template === null || template instanceof TemplateModel))
-    throw new Error("Template is not a TemplateModel");
+  if (!(template === null || template instanceof TemplateModel)) throw new Error("Template is not a TemplateModel");
   if (!activeResult.id)
     return (
+      // biome-ignore lint/complexity/noUselessFragments: initial biome migration
       <>
         <InputWrapper
           label="Sample Template"
@@ -59,13 +59,9 @@ function Template(): React.ReactNode {
           explanation={
             activeResult.isFieldEditable("template") ? (
               <>
-                If you select a sample template below, initial metadata and
-                custom fields will be automatically generated.
-                <a
-                  href={docLinks.createTemplate}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                If you select a sample template below, initial metadata and custom fields will be automatically
+                generated.
+                <a href={docLinks.createTemplate} target="_blank" rel="noreferrer">
                   (Learn more about sample templates)
                 </a>
               </>
@@ -103,11 +99,7 @@ function Template(): React.ReactNode {
           activeResult.isFieldEditable("template") ? (
             <>
               See the documentation for information on{" "}
-              <a
-                href={docLinks.createTemplate}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href={docLinks.createTemplate} target="_blank" rel="noreferrer">
                 how to create custom templates
               </a>
               .
@@ -115,12 +107,9 @@ function Template(): React.ReactNode {
           ) : null
         }
       >
+        {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
         <>
-          <Grid
-            container
-            direction="row"
-            sx={{ alignItems: "center", justifyContent: "space-between" }}
-          >
+          <Grid container direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
             <Grid sx={{ flexGrow: 1 }}>
               <SummaryInfo
                 template={template}
@@ -160,9 +149,7 @@ function Template(): React.ReactNode {
         <>
           {!activeResult.template && (
             <Alert severity="info" role="status">
-              {open
-                ? "Select a template from the list below."
-                : "Expand to select a template."}
+              {open ? "Select a template from the list below." : "Expand to select a template."}
             </Alert>
           )}
           <Collapse in={open} component="div" collapsedSize={0}>

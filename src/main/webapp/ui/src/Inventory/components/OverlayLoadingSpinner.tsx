@@ -1,7 +1,8 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
 
 function OverlayLoadingSpinner(): React.ReactNode {

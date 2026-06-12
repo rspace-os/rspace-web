@@ -1,16 +1,15 @@
-import React, { useState } from "react";
-import { observer } from "mobx-react-lite";
-import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
-import PreviewIcon from "@mui/icons-material/Visibility";
-import ImagePreview, {
-  type PreviewSize,
-} from "../../../../components/ImagePreview";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
-import { type Attachment } from "../../../../stores/definitions/Attachment";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import PreviewIcon from "@mui/icons-material/Visibility";
+import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
+import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
-import useStores from "../../../../stores/use-stores";
+import ImagePreview, { type PreviewSize } from "../../../../components/ImagePreview";
 import { mkAlert } from "../../../../stores/contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Attachment } from "../../../../stores/definitions/Attachment";
+import useStores from "../../../../stores/use-stores";
 
 type PreviewArgs = {
   attachment: Attachment;
@@ -36,7 +35,7 @@ function Preview({ attachment }: PreviewArgs) {
             title: "Could not fetch image",
             message: e.message,
             variant: "error",
-          })
+          }),
         );
       });
   };
@@ -53,12 +52,12 @@ function Preview({ attachment }: PreviewArgs) {
           imageLink
             ? ""
             : loadingImage
-            ? "Loading image"
-            : previewSupported
-            ? "Preview file as image"
-            : !attachment.id
-            ? "Save first to enable image preview"
-            : "Preview is not supported for this file type"
+              ? "Loading image"
+              : previewSupported
+                ? "Preview file as image"
+                : !attachment.id
+                  ? "Save first to enable image preview"
+                  : "Preview is not supported for this file type"
         }
         size="small"
         color="primary"
@@ -75,12 +74,7 @@ function Preview({ attachment }: PreviewArgs) {
         }
       />
       {showPreview && imageLink && (
-        <ImagePreview
-          closePreview={closePreview}
-          link={imageLink}
-          size={size}
-          setSize={setSize}
-        />
+        <ImagePreview closePreview={closePreview} link={imageLink} size={size} setSize={setSize} />
       )}
     </>
   );

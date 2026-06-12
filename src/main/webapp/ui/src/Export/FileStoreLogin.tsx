@@ -1,13 +1,15 @@
-import React, { useState } from "react";
-import TextField from "@mui/material/TextField";
-import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
-import axios from "@/common/axios";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
-import LoadingFade from "../components/LoadingFade";
+import Grid from "@mui/material/Grid";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
+import TextField from "@mui/material/TextField";
+import type React from "react";
+import { useState } from "react";
+import axios from "@/common/axios";
+import LoadingFade from "../components/LoadingFade";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type FileSystemId } from "./common";
 
 type FileStoreLoginArgs = {
@@ -53,10 +55,7 @@ export default function FileStoreLogin({
         nfspassword: password,
       })
       .then((response) => {
-        if (
-          response.data ===
-          "Authentication problem, check your username and password or contact your System Admin"
-        ) {
+        if (response.data === "Authentication problem, check your username and password or contact your System Admin") {
           setLoginError(true);
         } else {
           setLoginError(false);
@@ -84,11 +83,7 @@ export default function FileStoreLogin({
               autoComplete="nfsUsername"
               data-test-id="username"
             />
-            {userNameError && (
-              <FormHelperText id="name-error-text">
-                Username cannot be blank
-              </FormHelperText>
-            )}
+            {userNameError && <FormHelperText id="name-error-text">Username cannot be blank</FormHelperText>}
           </FormControl>
         </Grid>
         <Grid size={12}>
@@ -102,35 +97,21 @@ export default function FileStoreLogin({
               autoComplete="nfsPassword"
               data-test-id="password"
             />
-            {passwordError && (
-              <FormHelperText>Password cannot be blank</FormHelperText>
-            )}
+            {passwordError && <FormHelperText>Password cannot be blank</FormHelperText>}
             {loginError && (
               <FormHelperText>
-                Authentication problem, check your username and password or
-                contact your System Admin
+                Authentication problem, check your username and password or contact your System Admin
               </FormHelperText>
             )}
             <br />
           </FormControl>
         </Grid>
         {!hideCancelButton && (
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={loading}
-            data-test-id="cancel-button"
-          >
+          <Button variant="contained" color="primary" disabled={loading} data-test-id="cancel-button">
             Cancel
           </Button>
         )}
-        <Button
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          onClick={login}
-          data-test-id="login-button"
-        >
+        <Button variant="contained" color="primary" disabled={loading} onClick={login} data-test-id="login-button">
           Login
         </Button>
         <Snackbar

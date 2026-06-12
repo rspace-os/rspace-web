@@ -1,18 +1,22 @@
-import React, { type ReactNode } from "react";
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
 import { observer } from "mobx-react-lite";
-import FieldCard from "./FieldCard";
-import { type Factory } from "../../../../stores/definitions/Factory";
+import type { ReactNode } from "react";
 import docLinks from "../../../../assets/DocLinks";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type HasEditableFields } from "../../../../stores/definitions/Editable";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Factory } from "../../../../stores/definitions/Factory";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import BatchFormField from "../../Inputs/BatchFormField";
+import FieldCard from "./FieldCard";
 
 function BarcodesFromField<
   Fields extends {
     barcodes: Array<BarcodeRecord>;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   factory,
@@ -46,13 +50,7 @@ function BarcodesFromField<
       setDisabled={(checked) => {
         fieldOwner.setFieldEditable("barcodes", checked);
       }}
-      renderInput={() => (
-        <FieldCard
-          fieldOwner={fieldOwner}
-          factory={factory}
-          connectedItem={connectedItem}
-        />
-      )}
+      renderInput={() => <FieldCard fieldOwner={fieldOwner} factory={factory} connectedItem={connectedItem} />}
     />
   );
 }

@@ -1,26 +1,29 @@
-import React, { forwardRef } from "react";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { FormControlLabel, TableContainer } from "@mui/material";
-import Table from "@mui/material/Table";
-import EnhancedTableHead, {
-  type Cell,
-} from "../../components/EnhancedTableHead";
-import TableBody from "@mui/material/TableBody";
-import { getSorting, stableSort } from "../../util/table";
-import TableRow, { tableRowClasses } from "@mui/material/TableRow";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
-import Checkbox from "@mui/material/Checkbox";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import React, { forwardRef } from "react";
+import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
+import { getSorting, stableSort } from "../../util/table";
 import { Order } from "./Enums";
-import type { OmeroItem, OmeroDataTypes } from "./OmeroTypes";
+import type { OmeroDataTypes, OmeroItem } from "./OmeroTypes";
+
 function getLinkToOmero(item: OmeroItem, omero_web_url: string): string {
   if (item.type !== "plateAcquisition") {
+    // biome-ignore lint/style/useTemplate: initial biome migration
     return omero_web_url + "webclient/?show=" + item.type + "-" + item.id;
   }
   if (!item.fake) {
     //fake plate acquisitions use the plate ID
+    // biome-ignore lint/style/useTemplate: initial biome migration
     return omero_web_url + "webclient/?show=acquisition-" + item.id;
   }
+  // biome-ignore lint/style/useTemplate: initial biome migration
   return omero_web_url + "webclient/?show=plate-" + item.id;
 }
 
@@ -50,11 +53,7 @@ const CHECKBOX_CELL_INDENT: Partial<Record<OmeroDataTypes, number>> = {
  * Since Omero data of different types can have the same ID, types must always be used in comparisons and it is assumed that projects -> datasets -> images,
  * whereas Screens -> Plates ->PlateAcquisitions -> images
  */
-export const omeroSort = (
-  results: Array<OmeroItem>,
-  order: "asc" | "desc",
-  orderBy: string,
-): Array<OmeroItem> => {
+export const omeroSort = (results: Array<OmeroItem>, order: "asc" | "desc", orderBy: string): Array<OmeroItem> => {
   const sorted = stableSort(results, getSorting(order, orderBy));
   const notTopParent: Array<OmeroItem> = [];
   const sortedByParentThenChild: Array<OmeroItem> = [];
@@ -70,23 +69,15 @@ export const omeroSort = (
 };
 //1) Omero has orphan data and
 //2) User can select children for insertion into doc without selecting parent
-const itemHasNoParent = (
-  item: OmeroItem,
-  allItems: Array<OmeroItem>,
-): boolean => {
+const itemHasNoParent = (item: OmeroItem, allItems: Array<OmeroItem>): boolean => {
   if (item.type === "project" || item.type === "screen") {
     return true;
   }
   return !allItems.some(
-    (potentialParent) =>
-      potentialParent.name === item.parentName &&
-      potentialParent.type === item.parentType,
+    (potentialParent) => potentialParent.name === item.parentName && potentialParent.type === item.parentType,
   );
 };
-const insertChildrenAfterTheirParent = (
-  parents: Array<OmeroItem>,
-  children: Array<OmeroItem>,
-): void => {
+const insertChildrenAfterTheirParent = (parents: Array<OmeroItem>, children: Array<OmeroItem>): void => {
   if (!children || children.length === 0) {
     return;
   }
@@ -96,43 +87,27 @@ const insertChildrenAfterTheirParent = (
     const parentsHavingChildren: Array<OmeroItem> = [];
     children.forEach((child) => {
       const parentOfThisChild = parents.filter(
-        (aParent) =>
-          aParent.id === child.parentId &&
-          child.type === type &&
-          aParent.type === child.parentType,
+        (aParent) => aParent.id === child.parentId && child.type === type && aParent.type === child.parentType,
       );
       if (parentOfThisChild && parentOfThisChild.length > 0) {
-        if (
-          !parentsHavingChildren.some(
-            (testee) => testee.name === parentOfThisChild[0].name,
-          )
-        ) {
+        if (!parentsHavingChildren.some((testee) => testee.name === parentOfThisChild[0].name)) {
           parentsHavingChildren.push(parentOfThisChild[0]);
         }
       }
     });
     parentsHavingChildren.forEach((parent) => {
       const matchingChildren = children.filter(
-        (child) =>
-          parent.id === child.parentId &&
-          child.type === type &&
-          parent.type === child.parentType,
+        (child) => parent.id === child.parentId && child.type === type && parent.type === child.parentType,
       );
       const insertPointForMatchingChildren = parents.findIndex((testee) => {
         return testee.id === parent.id && testee.type === parent.type;
       });
-      parents.splice(
-        insertPointForMatchingChildren + 1,
-        0,
-        ...matchingChildren,
-      );
+      parents.splice(insertPointForMatchingChildren + 1, 0, ...matchingChildren);
     });
   });
 };
 type ResultsTableArgs = {
-  populateOmeroItemWithFetchedChildrenOrShowHiddenChildren: (
-    item: OmeroItem,
-  ) => Promise<void>;
+  populateOmeroItemWithFetchedChildrenOrShowHiddenChildren: (item: OmeroItem) => Promise<void>;
   hideChildren: (item: OmeroItem, showGrid?: boolean) => void;
   onRowClick: (id: string) => void;
   omero_web_url: string;
@@ -191,17 +166,16 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
       });
     };
     function handleRequestSort(
+      // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
       event: React.MouseEvent<HTMLSpanElement>,
       property: string,
     ): void {
-      const isDesc =
-        orderBy === findOrderByTerm(property) && order === Order.desc;
+      const isDesc = orderBy === findOrderByTerm(property) && order === Order.desc;
       setOrder(isDesc ? Order.asc : Order.desc);
       const orderByValue = findOrderByTerm(property);
       setOrderBy(orderByValue);
     }
-    const findOrderByTerm = (property: string): string =>
-      property === "path" ? "name" : "firstDescription";
+    const findOrderByTerm = (property: string): string => (property === "path" ? "name" : "firstDescription");
     const itemHasFetchableChildren = (item: OmeroItem): boolean => {
       return (
         item.type === "plate" ||
@@ -214,10 +188,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     const getFetchText = (item: OmeroItem): string => {
       if (item.showingChildren) return "hide children";
       if (isDataSetOrPlateAcquistion(item)) return "show children";
-      if (item.type === "plate")
-        return item.childCounts > 1
-          ? "show plateAcquisitions "
-          : " show grid of wells  ";
+      if (item.type === "plate") return item.childCounts > 1 ? "show plateAcquisitions " : " show grid of wells  ";
       if (item.type === "project") return "show datasets";
       if (item.type === "screen") return "show plates";
       return "";
@@ -228,6 +199,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     const makeOnClick = (item: OmeroItem) => {
       return (): void => {
         toggleSelected(item);
+        // biome-ignore lint/style/useTemplate: initial biome migration
         onRowClick(item.type + "_" + item.id);
       };
     };
@@ -252,6 +224,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                 if (event.target.checked) {
                   const newSelected = results
                     .filter((item: OmeroItem) => !item.gridShown)
+                    // biome-ignore lint/style/useTemplate: initial biome migration
                     .map((item) => item.type + "_" + item.id);
                   return setSelectedItemIds(newSelected);
                 }
@@ -267,12 +240,10 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
             >
               {omeroSort(results, order, orderBy)
                 .filter((item) => !(item.hide || item.hideAsIndirectDescendant))
-                .filter(
-                  (item) =>
-                    item.type !== "well sample" && item.type !== "well",
-                )
+                .filter((item) => item.type !== "well sample" && item.type !== "well")
                 .map((item, index) => {
                   const isItemSelected =
+                    // biome-ignore lint/style/useTemplate: initial biome migration
                     selectedItemIds.indexOf(item.type + "_" + item.id) !== -1;
                   const labelId = `item-search-results-checkbox-${index}`;
                   const nameAnchorHref = `#${item.type}_name_display_${item.id}`;
@@ -326,8 +297,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                           width={cell.id === "path" ? "25%" : "75%"}
                           id={`${cell.id}_tablecell_${item.type}${item.id}`}
                         >
-                          {cell.id === "description" &&
-                          item.imageGridDetails ? (
+                          {cell.id === "description" && item.imageGridDetails ? (
                             <>
                               {item.imageGridDetails.map((wellList, rowIndex) =>
                                 wellList.map((wells, columnIndex) => (
@@ -336,9 +306,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   </div>
                                 )),
                               )}
-                              <Box sx={{ fontWeight: "bold", fontSize: "16px" }}>
-                                {item.paths}
-                              </Box>
+                              <Box sx={{ fontWeight: "bold", fontSize: "16px" }}>{item.paths}</Box>
                             </>
                           ) : cell.id === "path" ? (
                             <div>
@@ -349,9 +317,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                               >
                                 {item.name}
                               </Box>
-                              <Box sx={{ fontWeight: "bold" }}>
-                                {item.displayType ?? item.type}
-                              </Box>
+                              <Box sx={{ fontWeight: "bold" }}>{item.displayType ?? item.type}</Box>
                               <div>
                                 {item.fetched ? (
                                   <Box
@@ -371,9 +337,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       item.fetched = true;
                                     }}
                                   >
-                                    {item.type === "image"
-                                      ? "re-draw image"
-                                      : "fetch details"}
+                                    {item.type === "image" ? "re-draw image" : "fetch details"}
                                   </a>
                                 )}
                                 {item.gridShown ? (
@@ -386,22 +350,17 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                     }}
                                   >
                                     hide image grid{" "}
-                                    {item.samplesUrls &&
-                                    item.samplesUrls.length > 1
-                                      ? " (there are other fields)"
-                                      : ""}
+                                    {item.samplesUrls && item.samplesUrls.length > 1 ? " (there are other fields)" : ""}
                                   </a>
                                 ) : item.type === "plateAcquisition" ? (
                                   <div>
+                                    {/** biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration */}
                                     {item.samplesUrls?.map((url, pos) => (
                                       <div key={pos}>
                                         <a
                                           href={nameAnchorHref}
                                           onClick={() => {
-                                            void addGridOfThumbnailsToItem(
-                                              item,
-                                              pos,
-                                            );
+                                            void addGridOfThumbnailsToItem(item, pos);
                                           }}
                                         >
                                           <Box
@@ -410,8 +369,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                             data-testid={`${item.type}_show_grid_${item.id}`}
                                             sx={{ fontWeight: "bold" }}
                                           >
-                                            show grid of wells for field{" "}
-                                            {pos + 1}
+                                            show grid of wells for field {pos + 1}
                                           </Box>
                                         </a>
                                       </div>
@@ -433,7 +391,8 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       >
                                         show image grid{" "}
                                         {item.childCounts !== 0
-                                          ? " [" + item.childCounts + "] "
+                                          ? // biome-ignore lint/style/useTemplate: initial biome migration
+                                            " [" + item.childCounts + "] "
                                           : " [1]"}
                                       </Box>
                                     </a>
@@ -484,9 +443,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   see in omero
                                 </a>
                               </div>
-                              <div
-                                id={`${item.type}_fetch_children_${item.id}`}
-                              >
+                              <div id={`${item.type}_fetch_children_${item.id}`}>
                                 {itemHasFetchableChildren(item) && (
                                   <a
                                     data-testid={`${item.type}_fetch_childrenLink_${item.id}`}
@@ -495,17 +452,17 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       if (item.showingChildren) {
                                         hideChildren(item);
                                       } else {
-                                        void populateOmeroItemWithFetchedChildrenOrShowHiddenChildren(
-                                          item,
-                                        );
+                                        void populateOmeroItemWithFetchedChildrenOrShowHiddenChildren(item);
                                       }
                                     }}
                                   >
                                     {getFetchText(item)}{" "}
                                     {isDataSetOrPlateAcquistion(item)
-                                      ? "[" + item.addedChildren.length + "]"
+                                      ? // biome-ignore lint/style/useTemplate: initial biome migration
+                                        "[" + item.addedChildren.length + "]"
                                       : item.childCounts !== 0
-                                        ? "[" + item.childCounts + "]"
+                                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                                          "[" + item.childCounts + "]"
                                         : "[1]"}
                                   </a>
                                 )}
@@ -516,12 +473,8 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   data-testid={`${item.type}_link_parent_${item.id}`}
                                   sx={{ fontWeight: "bold" }}
                                 >
-                                  <a
-                                    href={
-                                      "#" +
-                                      `${item.parentType}_name_display_${item.parentId}`
-                                    }
-                                  >
+                                  <a href={`#${item.parentType}_name_display_${item.parentId}`}>
+                                    {/** biome-ignore lint/style/useTemplate: initial biome migration */}
                                     {" -> parent_" + item.parentType}
                                   </a>
                                 </Box>
@@ -530,9 +483,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                           ) : (
                             <>
                               {item.descriptionElems}
-                              <Box sx={{ fontWeight: "bold", fontSize: "16px" }}>
-                                {item.paths}
-                              </Box>
+                              <Box sx={{ fontWeight: "bold", fontSize: "16px" }}>{item.paths}</Box>
                             </>
                           )}
                         </TableCell>
@@ -543,7 +494,19 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
             </TableBody>
           </Table>
         </TableContainer>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "fixed", left: 0, bottom: 0, width: "calc(100% - 16px)", ml: "8px", backgroundColor: "#f6f6f6" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            position: "fixed",
+            left: 0,
+            bottom: 0,
+            width: "calc(100% - 16px)",
+            ml: "8px",
+            backgroundColor: "#f6f6f6",
+          }}
+        >
           <Typography component="span" variant="body2" color="textPrimary">
             Selected: {selectedItemIds.length}
           </Typography>

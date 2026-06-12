@@ -1,18 +1,15 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import {
-  render,
-  waitFor,
-  fireEvent,
-  screen,
-  within,
-} from "@testing-library/react";
-import Alias from "../Alias";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
-import { type Alias as AliasType } from "../../../../stores/definitions/Sample";
-
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type HasEditableFields } from "../../../../stores/definitions/Editable";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Alias as AliasType } from "../../../../stores/definitions/Sample";
+import materialTheme from "../../../../theme";
+import Alias from "../Alias";
+
 describe("Alias", () => {
   test("Typing a custom alias should not select one of the radio buttons", async () => {
     const template: HasEditableFields<{ subSampleAlias: AliasType }> = {
@@ -28,19 +25,14 @@ describe("Alias", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <Alias fieldOwner={template} onErrorStateChange={() => {}} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
 
     fireEvent.click(screen.getByText("Custom"));
-    const pluralInput = within(
-      screen.getByTestId("aliasField_pluralBox")
-    ).getByRole("textbox");
+    const pluralInput = within(screen.getByTestId("aliasField_pluralBox")).getByRole("textbox");
 
     fireEvent.input(pluralInput, { target: { value: "x" } });
-    const singleInput = within(
-      screen.getByTestId("aliasField_singleBox")
-    ).getByRole("textbox");
+    const singleInput = within(screen.getByTestId("aliasField_singleBox")).getByRole("textbox");
     // entering "unit" as a custom alias...
 
     fireEvent.input(singleInput, { target: { value: "unit" } });
@@ -51,10 +43,7 @@ describe("Alias", () => {
     expect(template.fieldValues.subSampleAlias.plural).toEqual("x");
     // ...should not select the unit radio button
     expect(
-      screen
-        .getAllByRole("radio")
-        .filter((radio) => (radio as HTMLInputElement).value === "unit")[0]
+      screen.getAllByRole("radio").filter((radio) => (radio as HTMLInputElement).value === "unit")[0],
     ).not.toBeChecked();
   });
 });
-

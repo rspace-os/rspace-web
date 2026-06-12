@@ -1,35 +1,25 @@
-import {
-  action,
-  observable,
-  computed,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import ApiService, {
-  type BulkEndpointRecordSerialisation,
-} from "../../common/InvApiService";
-import type { RootStore } from "./RootStore";
-import ContainerModel from "../models/ContainerModel";
-import SubSampleModel from "../models/SubSampleModel";
-import SampleModel from "../models/SampleModel";
-import { mkAlert } from "../contexts/Alert";
-import {
-  handleDetailedErrors,
-  handleDetailedSuccesses,
-} from "../../util/alerts";
-import MemoisedFactory from "../models/Factory/MemoisedFactory";
-import Search from "../models/Search";
-import InventoryBaseRecord from "../models/InventoryBaseRecord";
-import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
-import { type Container, type Location } from "../definitions/Container";
-import {
-  type InventoryRecord,
-  recordTypeToApiRecordType,
-} from "../definitions/InventoryRecord";
-import { type Panel } from "../../util/types";
-import { Optional } from "../../util/optional";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
+import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
+import { Optional } from "../../util/optional";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Panel } from "../../util/types";
+import { mkAlert } from "../contexts/Alert";
+import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Container, type Location } from "../definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { HasLocation } from "../definitions/HasLocation";
+import { type InventoryRecord, recordTypeToApiRecordType } from "../definitions/InventoryRecord";
+import ContainerModel from "../models/ContainerModel";
+import MemoisedFactory from "../models/Factory/MemoisedFactory";
+// biome-ignore lint/style/useImportType: initial biome migration
+import InventoryBaseRecord from "../models/InventoryBaseRecord";
+import SampleModel from "../models/SampleModel";
+import Search from "../models/Search";
+import SubSampleModel from "../models/SubSampleModel";
+import type { RootStore } from "./RootStore";
 
 type SerialisedRecord =
   | (BulkEndpointRecordSerialisation & {
@@ -80,10 +70,7 @@ export default class MoveStore {
   }
 
   get activeResult(): Container | null | undefined {
-    return (
-      (this.search?.activeResult as Container) ??
-      this.rootStore.peopleStore.currentUser?.bench
-    );
+    return (this.search?.activeResult as Container) ?? this.rootStore.peopleStore.currentUser?.bench;
   }
 
   get targetLocations(): Array<Location> | null {
@@ -126,18 +113,13 @@ export default class MoveStore {
               r.refreshAssociatedSearch();
               this.clearLocationsWithContentBeingMovedOut(r);
               r.contentSearch.uiConfig.selectionMode =
-                !r.canStoreRecords ||
-                r.cType === "LIST" ||
-                r.cType === "WORKBENCH"
-                  ? "NONE"
-                  : "MULTIPLE";
+                !r.canStoreRecords || r.cType === "LIST" || r.cType === "WORKBENCH" ? "NONE" : "MULTIPLE";
               /*
                * This is the search in the right panel of the move dialog, so
                * it is here that we apply the restrictions on selection
                */
               r.contentSearch.uiConfig.onlyAllowSelectingEmptyLocations = true;
-              r.contentSearch.uiConfig.selectionLimit =
-                this.selectedResults.length;
+              r.contentSearch.uiConfig.selectionLimit = this.selectedResults.length;
             }
           },
         },
@@ -162,15 +144,12 @@ export default class MoveStore {
   }
 
   clearLocationsWithContentBeingMovedOut(container: Container): void {
-    if (!container.locations)
-      throw new Error("Locations of container must be known.");
+    if (!container.locations) throw new Error("Locations of container must be known.");
     const locations = container.locations;
     if (this.search) {
       for (const loc of locations) {
         if (
-          this.selectedResults
-            .map((sr) => sr.globalId)
-            .includes(loc.content === null ? null : loc.content.globalId)
+          this.selectedResults.map((sr) => sr.globalId).includes(loc.content === null ? null : loc.content.globalId)
         ) {
           loc.content = null;
         }
@@ -190,10 +169,7 @@ export default class MoveStore {
           await record.fetchAdditionalInfo();
         }
         this.selectedResults = [...this.selectedResults, ...record.subSamples];
-      } else if (
-        record instanceof SubSampleModel ||
-        record instanceof ContainerModel
-      ) {
+      } else if (record instanceof SubSampleModel || record instanceof ContainerModel) {
         this.selectedResults = [...this.selectedResults, record];
       } else {
         throw new Error("Unknown type.");
@@ -213,8 +189,7 @@ export default class MoveStore {
         removeFromParentContainerRequest: true,
       }));
     } else {
-      if (!(this.activeResult instanceof ContainerModel))
-        throw new Error("Active result not set.");
+      if (!(this.activeResult instanceof ContainerModel)) throw new Error("Active result not set.");
       const cType = this.activeResult.cType;
       const infiniteContainer = cType === "LIST" || cType === "WORKBENCH";
       const parentContainers = [this.activeResult.paramsForBackend];
@@ -227,14 +202,11 @@ export default class MoveStore {
           parentContainers,
         }));
       } else {
-        if (!this.targetLocations)
-          throw new Error("Could not get target locations.");
-        if (this.targetLocations.length === 0)
-          throw new Error("Nothing is selected.");
+        if (!this.targetLocations) throw new Error("Could not get target locations.");
+        if (this.targetLocations.length === 0) throw new Error("Nothing is selected.");
 
         serialisedRecords = this.targetLocations.map((loc) => {
-          if (!loc.content)
-            throw new Error("An empty location has been selected.");
+          if (!loc.content) throw new Error("An empty location has been selected.");
           const content = loc.content;
           return {
             id: content.id,
@@ -274,7 +246,7 @@ export default class MoveStore {
         handleDetailedErrors(
           data.errorCount,
           data.results.map((r) => ({ response: r })),
-          "move"
+          "move",
         )
       ) {
         return;
@@ -286,8 +258,7 @@ export default class MoveStore {
           movedItemsCount: data.successCount,
           targetCType:
             // eslint-disable-next-line -- this is hacky, buts its just analytics
-            results.map((r) => r.paramsForBackend)[0].parentContainers?.[0]
-              ?.cType,
+            results.map((r) => r.paramsForBackend)[0].parentContainers?.[0]?.cType,
         });
       }
       void this.setIsMoving(false);
@@ -297,7 +268,7 @@ export default class MoveStore {
           title: "Move failed.",
           message: getErrorMessage(error, "Unknown reason"),
           variant: "error",
-        })
+        }),
       );
       console.error("Could not move records", error);
       throw error;
@@ -342,9 +313,7 @@ export default class MoveStore {
   get sourceIsAlsoDestination(): boolean {
     return Optional.fromNullable(this.search?.activeResult?.globalId)
       .map((destGlobalId) => {
-        const sources = this.selectedResults.map(
-          (r) => r.immediateParentContainer
-        );
+        const sources = this.selectedResults.map((r) => r.immediateParentContainer);
         return sources.every((s) => s?.globalId === destGlobalId);
       })
       .orElse(false);

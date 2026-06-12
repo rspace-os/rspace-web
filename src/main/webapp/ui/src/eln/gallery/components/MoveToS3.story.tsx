@@ -1,15 +1,12 @@
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import MoveToS3 from "./MoveToS3";
 import Alerts from "@/components/Alerts/Alerts";
+import MoveToS3 from "./MoveToS3";
 
 function renderWithProviders(selectedIds: ReadonlyArray<string>) {
   return (
     <Alerts>
-      <MoveToS3
-        selectedIds={selectedIds}
-        dialogOpen={true}
-        setDialogOpen={() => {}}
-      />
+      <MoveToS3 selectedIds={selectedIds} dialogOpen={true} setDialogOpen={() => {}} />
     </Alerts>
   );
 }

@@ -1,6 +1,4 @@
-import { createContext, type Context } from "react";
+import { type Context, createContext } from "react";
 import getRootStore, { type StoreContainer } from "./stores/RootStore";
 
-export const storesContext: Context<StoreContainer> = createContext(
-  getRootStore()
-);
+export const storesContext: Context<StoreContainer> = createContext(getRootStore());

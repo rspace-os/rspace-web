@@ -1,9 +1,10 @@
-import FieldModel from "../../../stores/models/FieldModel";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
 import TextField from "@mui/material/TextField";
-import { observer } from "mobx-react-lite";
-import React, { useState, useEffect } from "react";
 import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React, { useEffect, useState } from "react";
+import InputWrapper from "../../../components/Inputs/InputWrapper";
+import type FieldModel from "../../../stores/models/FieldModel";
 import { match } from "../../../util/Util";
 
 type NameFieldArgs = {
@@ -13,18 +14,11 @@ type NameFieldArgs = {
   id: string;
 };
 
-function NameField({
-  field,
-  editing,
-  onErrorStateChange,
-  id,
-}: NameFieldArgs): React.ReactNode {
+function NameField({ field, editing, onErrorStateChange, id }: NameFieldArgs): React.ReactNode {
   const [duplicateFieldError, setDuplicateFieldError] = useState(false);
 
   useEffect(() => {
-    setDuplicateFieldError(
-      field.owner.fieldNamesInUse.filter((n) => n === field.name).length > 1
-    );
+    setDuplicateFieldError(field.owner.fieldNamesInUse.filter((n) => n === field.name).length > 1);
   }, [field.owner.fieldNamesInUse, field.name]);
 
   const emptyName = field.name === "";
@@ -32,10 +26,7 @@ function NameField({
 
   const helperText = match<void, string>([
     [() => emptyName, "Name cannot be empty"],
-    [
-      () => duplicateFieldError,
-      "You either already have a field with that name or that name is not permitted",
-    ],
+    [() => duplicateFieldError, "You either already have a field with that name or that name is not permitted"],
     [() => tooLongName, "Name cannot be longer than 50 characters"],
     [() => true, ""],
   ])();
@@ -53,9 +44,7 @@ function NameField({
         value={field.name}
         name="name"
         disabled={!editing}
-        onChange={({
-          target: { value },
-        }: React.ChangeEvent<HTMLInputElement>) => {
+        onChange={({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
           field.setAttributesDirty({ name: value });
           onErrorStateChange(value === "" || value.length > 50);
         }}
@@ -63,12 +52,7 @@ function NameField({
       />
     </InputWrapper>
   ) : (
-    <Typography
-      variant="h6"
-      component="h6"
-      sx={{ overflowWrap: "anywhere" }}
-      id={id}
-    >
+    <Typography variant="h6" component="h6" sx={{ overflowWrap: "anywhere" }} id={id}>
       {field.name}
     </Typography>
   );

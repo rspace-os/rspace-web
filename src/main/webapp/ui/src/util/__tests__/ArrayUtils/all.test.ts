@@ -1,24 +1,19 @@
-import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+import { describe, expect, test } from "vitest";
+import * as ArrayUtils from "../../ArrayUtils";
 import { Optional } from "../../optional";
 
-import * as ArrayUtils from "../../ArrayUtils";
 describe("all", () => {
   test("Zero element: Any Optional.empty will always result in Optional.empty.", () => {
     fc.assert(
       fc.property(
         fc
           .array(fc.option(fc.nat(), { nil: null }))
-          .map((nullable: Array<number | null>) =>
-            nullable.map((x) => Optional.fromNullable(x))
-          ),
+          .map((nullable: Array<number | null>) => nullable.map((x) => Optional.fromNullable(x))),
         (optionals) => {
-          expect(
-            ArrayUtils.all([...optionals, Optional.empty<number>()]).isEmpty()
-          ).toBe(true);
-        }
-      )
+          expect(ArrayUtils.all([...optionals, Optional.empty<number>()]).isEmpty()).toBe(true);
+        },
+      ),
     );
   });
 });
-

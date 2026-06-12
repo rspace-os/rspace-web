@@ -1,32 +1,28 @@
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
-import NumberedLocation from "../NumberedLocation";
-import React, { type MouseEvent } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { preventEventBubbling } from "../../../../../util/Util";
-import { observer } from "mobx-react-lite";
 import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React, { type MouseEvent } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Location } from "../../../../../stores/definitions/Container";
+import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
+import { preventEventBubbling } from "../../../../../util/Util";
 import InfoBadge from "../../../../components/InfoBadge";
 import InfoCard from "../../../../components/InfoCard";
-import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { LOCATION_TAPPED_EVENT } from "../../../Fields/LocationsImageMarkersDialog";
+import NumberedLocation from "../NumberedLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type TappedLocationData } from "./ContentImage";
-import { type Location } from "../../../../../stores/definitions/Container";
 
 type LocationsTableArgs = {
   locations: Array<Location>;
-  onRemove: ({
-    location,
-    number,
-  }: {
-    location: Location;
-    number: number;
-  }) => void;
+  onRemove: ({ location, number }: { location: Location; number: number }) => void;
   isCompactView: boolean;
   parentRef: React.RefObject<HTMLElement>;
   selected?: number;
@@ -47,25 +43,17 @@ function LocationsTable({
     detail: { number: number };
   };
 
-  const listener =
-    (num: number, rowRef: React.RefObject<HTMLTableRowElement>) =>
-    (event: Event) => {
-      const customEvent = event as unknown as CustomEvent;
-      const tappedNum = customEvent.detail.number;
-      if (tappedNum === num && isCompactView && rowRef.current) {
-        rowRef.current.scrollIntoView({
-          behavior: "smooth",
-        });
-      }
-    };
+  const listener = (num: number, rowRef: React.RefObject<HTMLTableRowElement>) => (event: Event) => {
+    const customEvent = event as unknown as CustomEvent;
+    const tappedNum = customEvent.detail.number;
+    if (tappedNum === num && isCompactView && rowRef.current) {
+      rowRef.current.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  };
 
-  const LocationTableRow = ({
-    location,
-    number,
-  }: {
-    location: Location;
-    number: number;
-  }) => {
+  const LocationTableRow = ({ location, number }: { location: Location; number: number }) => {
     const rowRef = React.createRef<HTMLTableRowElement>();
     const l = listener(number, rowRef);
     const mark = { location, number, point: { left: 0, top: 0 } }; // point is unused, but necessary for type
@@ -82,11 +70,7 @@ function LocationsTable({
     return (
       <TableRow key={number} ref={rowRef} onClick={() => onClick(mark)}>
         <TableCell sx={{ padding: 0 }}>
-          <NumberedLocation
-            number={number}
-            inline
-            selected={Boolean(selected) && selected === number}
-          />
+          <NumberedLocation number={number} inline selected={Boolean(selected) && selected === number} />
         </TableCell>
         <TableCell sx={{ padding: "10px" }}>
           {location.name && location.content instanceof InventoryBaseRecord && (
@@ -95,11 +79,7 @@ function LocationsTable({
             </InfoBadge>
           )}
           {location.name ?? (
-            <Typography
-              variant="inherit"
-              component="span"
-              sx={{ paddingLeft: "20px" }}
-            >
+            <Typography variant="inherit" component="span" sx={{ paddingLeft: "20px" }}>
               &mdash;
             </Typography>
           )}
@@ -107,11 +87,7 @@ function LocationsTable({
         <TableCell sx={{ paddingRight: 0 }}>
           <ButtonGroup color="primary" size="small">
             {!location.hasContent && (
-              <Button
-                onClick={(e: MouseEvent<HTMLButtonElement>) =>
-                  preventEventBubbling(() => onRemove(mark))(e)
-                }
-              >
+              <Button onClick={(e: MouseEvent<HTMLButtonElement>) => preventEventBubbling(() => onRemove(mark))(e)}>
                 Remove
               </Button>
             )}
@@ -135,11 +111,7 @@ function LocationsTable({
         </TableHead>
         <TableBody ref={tableBody}>
           {locations.map((location, index) => (
-            <LocationTableRow
-              location={location}
-              number={index + 1}
-              key={index}
-            />
+            <LocationTableRow location={location} number={index + 1} key={index} />
           ))}
         </TableBody>
       </Table>

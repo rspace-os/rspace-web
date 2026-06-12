@@ -1,3 +1,4 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
 
 type OmeroItemBase = {
@@ -41,15 +42,7 @@ type OmeroItemBase = {
   fake: boolean;
 };
 
-export type OmeroItem =
-  | PlateAcquisition
-  | Project
-  | Screen
-  | Dataset
-  | Plate
-  | Image
-  | WellSample
-  | Well;
+export type OmeroItem = PlateAcquisition | Project | Screen | Dataset | Plate | Image | WellSample | Well;
 
 export type PlateAcquisition = OmeroItemBase & {
   rows: number;
@@ -103,6 +96,4 @@ export type OmeroArgs = {
   omero_web_url: string;
 };
 
-export const $PropertyExists = <T extends NonNullable<unknown>>(
-  val: T
-): NonNullable<T> => val;
+export const $PropertyExists = <T extends NonNullable<unknown>>(val: T): NonNullable<T> => val;

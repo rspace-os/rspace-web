@@ -1,13 +1,14 @@
-import React from "react";
-import Box from "@mui/material/Box";
-import { useTheme } from "@mui/material/styles";
-import Tooltip from "@mui/material/Tooltip";
-import { svgIconClasses } from "@mui/material/SvgIcon";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import NotInterestedIcon from "@mui/icons-material/NotInterested";
+import Box from "@mui/material/Box";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { useTheme } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
 import PeopleIcon from "../../assets/graphics/PeopleIcon";
-import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Record } from "../../stores/definitions/Record";
 
 type InfoBadgeArgs = {
@@ -16,11 +17,7 @@ type InfoBadgeArgs = {
   record: Record;
 };
 
-function InfoBadge({
-  inline = false,
-  children,
-  record,
-}: InfoBadgeArgs): React.ReactNode {
+function InfoBadge({ inline = false, children, record }: InfoBadgeArgs): React.ReactNode {
   const { readAccessLevel, deleted } = record;
   const theme = useTheme();
 
@@ -38,9 +35,7 @@ function InfoBadge({
         component="span"
         sx={{
           color: "white",
-          backgroundColor: deleted
-            ? theme.palette.deletedGrey
-            : theme.palette.primary.dark,
+          backgroundColor: deleted ? theme.palette.deletedGrey : theme.palette.primary.dark,
           borderRadius: 10,
           display: "inline-flex",
           alignItems: "center",

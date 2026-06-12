@@ -1,10 +1,12 @@
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
 import Chip from "@mui/material/Chip";
-import RecordIcon from "./RecordTypeIcon";
-import NavigateContext from "../stores/contexts/Navigate";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import AnalyticsContext from "../stores/contexts/Analytics";
+import NavigateContext from "../stores/contexts/Navigate";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type LinkableRecord } from "../stores/definitions/LinkableRecord";
+import RecordIcon from "./RecordTypeIcon";
 
 type GlobalIdArgs = {
   record: LinkableRecord;
@@ -20,10 +22,7 @@ function GlobalId({ record, onClick }: GlobalIdArgs): React.ReactNode {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (
-      record.permalinkURL !== null &&
-      typeof record.permalinkURL !== "undefined"
-    ) {
+    if (record.permalinkURL !== null && typeof record.permalinkURL !== "undefined") {
       navigate(record.permalinkURL);
       trackEvent("GlobalIdClicked");
       onClick?.();

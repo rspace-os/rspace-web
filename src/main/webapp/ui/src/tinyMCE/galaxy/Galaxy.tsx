@@ -1,24 +1,26 @@
-import axios from "@/common/axios";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "@/theme";
-import React, { useEffect, useState } from "react";
-import TitledBox from "@/components/TitledBox";
-import Stack from "@mui/material/Stack";
-import { DataGridColumn } from "@/util/table";
-import { DataGrid, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
-import CssBaseline from "@mui/material/CssBaseline";
-import CircularProgress from "@mui/material/CircularProgress";
-import Grid from "@mui/material/Grid";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { FormControlLabel, Modal } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import CssBaseline from "@mui/material/CssBaseline";
+import Grid from "@mui/material/Grid";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { DataGrid, GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
+import React, { useEffect, useState } from "react";
+import axios from "@/common/axios";
+import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import TitledBox from "@/components/TitledBox";
 import { ErrorReason } from "@/eln/eln-external-workflows/Enums";
 import ErrorView from "@/eln/eln-external-workflows/ErrorView";
 import { WorkFlowIcon } from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
-import RadioGroup from "@mui/material/RadioGroup";
-import Radio from "@mui/material/Radio";
+import materialTheme from "@/theme";
+import { DataGridColumn } from "@/util/table";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
-import { HeadingContext } from "@/components/DynamicHeadingLevel";
 
 export type AttachedRecords = {
   id: string;
@@ -35,6 +37,8 @@ export type RSpaceErrorResponse = {
 export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
 function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  // biome-ignore lint/complexity/useArrowFunction: initial biome migration
   (parent as any).tinymce.activeEditor?.on("galaxy-used", function () {
     setDoUpload(true);
   });
@@ -79,27 +83,19 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   /**
    * Set default to EU as this is the domain of most RSpace users?
    **/
-  const [targetAlias, setTargetAlias] = useLocalStorage(
-    "galaxyServerChoice",
-    defaultServerAlias,
-  );
+  const [targetAlias, setTargetAlias] = useLocalStorage("galaxyServerChoice", defaultServerAlias);
   type GalaxyServer = { GALAXY_ALIAS: string; GALAXY_URL: string };
   const [servers, setServers] = React.useState<Array<GalaxyServer>>([]);
-  const [attachedFiles, setAttachedFiles] = useState<Array<AttachedRecords>>(
-    [],
-  );
-  const [selectedAttachmentIds, setSelectedAttachmentIds] =
-    useState<GridRowSelectionModel>({
-      type: "include",
-      ids: new Set<GridRowId>([]),
-    });
+  const [attachedFiles, setAttachedFiles] = useState<Array<AttachedRecords>>([]);
+  const [selectedAttachmentIds, setSelectedAttachmentIds] = useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set<GridRowId>([]),
+  });
   const [historyId, setHistoryId] = useState(null);
   const [historyName, setHistoryName] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [doUpload, setDoUpload] = useState(false);
-  const [errorReason, setErrorReason] = useState<
-    (typeof ErrorReason)[keyof typeof ErrorReason]
-  >(ErrorReason.None);
+  const [errorReason, setErrorReason] = useState<(typeof ErrorReason)[keyof typeof ErrorReason]>(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
   useEffect(() => {
     void setAttachedFiles(attachedFileInfo);
@@ -113,9 +109,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
             responseType: "json",
           })
         ).data;
-        const authenticatedServers = Object.entries(
-          galaxyIntegrationInfo.data.options,
-        )
+        const authenticatedServers = Object.entries(galaxyIntegrationInfo.data.options)
           .filter(([k]) => k !== "GALAXY_CONFIGURED_SERVERS")
           .flatMap((auth) => auth[1] as GalaxyServer);
         setServers(authenticatedServers);
@@ -143,15 +137,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   };
 
   const getGalaxyUrl = (): string => {
-    const targetServer = servers.find(
-      (server) => targetAlias === server.GALAXY_ALIAS,
-    );
+    const targetServer = servers.find((server) => targetAlias === server.GALAXY_ALIAS);
     return targetServer ? targetServer.GALAXY_URL : "";
   };
 
   const setUpGalaxyData = async () => {
     const selectedIds: GridRowId[] = [];
     if (selectedAttachmentIds.type === "include") {
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       selectedAttachmentIds.ids.forEach((id) => selectedIds.push(id));
     }
     return axios.post("/apps/galaxy/setUpDataInGalaxyFor", null, {
@@ -185,14 +178,12 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   useEffect(() => {
     const selectedIds: GridRowId[] = [];
     if (selectedAttachmentIds.type === "include") {
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       selectedAttachmentIds.ids.forEach((id) => selectedIds.push(id));
     }
     window.parent.postMessage(
       {
-        mceAction:
-          selectedIds.length === 0 || servers.length === 0
-            ? "no-data-selected"
-            : "data-selected",
+        mceAction: selectedIds.length === 0 || servers.length === 0 ? "no-data-selected" : "data-selected",
       },
       "*",
     );
@@ -201,12 +192,8 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
 
   function handleRequestError(error: RSpaceError) {
     // error.message is generated by axios and contains user unfriendly response codes, therefore only use as a last resort
-    let responseError = error.response.data.exceptionMessage
-      ? error.response.data.exceptionMessage
-      : error.message;
-    responseError += error.response.data.errorId
-      ? ` (errorId: ${error.response.data.errorId})`
-      : "";
+    let responseError = error.response.data.exceptionMessage ? error.response.data.exceptionMessage : error.message;
+    responseError += error.response.data.errorId ? ` (errorId: ${error.response.data.errorId})` : "";
     setErrorMessage(responseError);
     if (error.message.slice(error.message.length - 3) === "408") {
       setErrorReason(ErrorReason.Timeout);
@@ -229,6 +216,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
       <ThemeProvider theme={materialTheme}>
         <HeadingContext level={3}>
           {historyId && (
+            // biome-ignore lint/complexity/noUselessFragments: initial biome migration
             <>
               <TitledBox title="View Workflow in Galaxy" border>
                 <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
@@ -241,26 +229,22 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     >
                       {historyName}
                     </a>{" "}
-                    (Opens in new tab.) (You must be logged into Galaxy or you
-                    will see 'Unnamed History'){" "}
+                    (Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History'){" "}
                   </p>
                   <p>
                     <strong>
                       {" "}
-                      The data you have uploaded to Galaxy has links back to
-                      RSpace present in its 'annotation' metadata.
+                      The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation'
+                      metadata.
                     </strong>
                   </p>
                   <p>
                     <strong>
                       {" "}
-                      Data uploaded to this history is now viewable by clicking
-                      on the 'workflow' icon which will appear in your document.
-                      Any invocations in Galaxy which use this data will be
-                      tracked in RSpace, the data being updated whenever you
-                      click on this 'workflow' icon. The badge count on the
-                      workflow icon indicates how many Galaxy Invocations are
-                      using the uploaded data.
+                      Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear
+                      in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the
+                      data being updated whenever you click on this 'workflow' icon. The badge count on the workflow
+                      icon indicates how many Galaxy Invocations are using the uploaded data.
                     </strong>
                   </p>
                 </Stack>
@@ -273,9 +257,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                 <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
-                      <label htmlFor="serverChoice">
-                        Choose a Galaxy Server
-                      </label>
+                      <label htmlFor="serverChoice">Choose a Galaxy Server</label>
                       <RadioGroup
                         id="serverChoice"
                         row
@@ -298,34 +280,25 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                     </>
                   )}
                   <p>Choose attached files to be uploaded to Galaxy.</p>
-                  All selected files will be combined into a 'list dataset',
-                  which will be available for immediate use. The list dataset
-                  will be named after this RSpace document, using the format:
+                  All selected files will be combined into a 'list dataset', which will be available for immediate use.
+                  The list dataset will be named after this RSpace document, using the format:
                   <p>
                     <strong>
-                      "RSPACE_" + document name + "_" + global ID of document +
-                      "_" + name of field data was attached to + "_" + global ID
-                      of that field.
+                      "RSPACE_" + document name + "_" + global ID of document + "_" + name of field data was attached to
+                      + "_" + global ID of that field.
                     </strong>
                   </p>
-                  When you click 'Upload to Galaxy', a new history will be
-                  created in Galaxy named after your RSpace document with the
-                  same name as the 'list dataset' described above. Your chosen
-                  data will be uploaded to this new history. You can make this
-                  history active in Galaxy by switching to it.
+                  When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace
+                  document with the same name as the 'list dataset' described above. Your chosen data will be uploaded
+                  to this new history. You can make this history active in Galaxy by switching to it.
                   <p>
                     <strong>
-                      RSpace will store the details of the files you have
-                      uploaded and also any use of these files on Galaxy in
-                      Invocations will be tracked.
+                      RSpace will store the details of the files you have uploaded and also any use of these files on
+                      Galaxy in Invocations will be tracked.
                     </strong>
                   </p>
                   {errorMessage && (
-                    <ErrorView
-                      errorReason={errorReason}
-                      errorMessage={errorMessage}
-                      WorkFlowIcon={WorkFlowIcon}
-                    />
+                    <ErrorView errorReason={errorReason} errorMessage={errorMessage} WorkFlowIcon={WorkFlowIcon} />
                   )}
                   <Modal
                     open={uploading}
@@ -343,22 +316,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                       }}
                     >
                       <Grid size={3}>
-                        {uploading && (
-                          <CircularProgress
-                            variant="indeterminate"
-                            value={1}
-                            size="8rem"
-                          />
-                        )}
+                        {uploading && <CircularProgress variant="indeterminate" value={1} size="8rem" />}
                       </Grid>
                     </Grid>
                   </Modal>
                 </Stack>
               </TitledBox>
               <DataGrid
-                onRowSelectionModelChange={(
-                  newRowSelectionModel: GridRowSelectionModel,
-                ) => {
+                onRowSelectionModelChange={(newRowSelectionModel: GridRowSelectionModel) => {
                   setSelectedAttachmentIds(newRowSelectionModel);
                 }}
                 rowSelectionModel={selectedAttachmentIds}
@@ -366,10 +331,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                 rows={attachedFiles}
                 disableColumnSelector={true}
                 columns={[
-                  DataGridColumn.newColumnWithFieldName<
-                    "html",
-                    AttachedRecords
-                  >("html", {
+                  DataGridColumn.newColumnWithFieldName<"html", AttachedRecords>("html", {
                     maxWidth: 370,
                     headerName: "File",
                     flex: 1,

@@ -1,16 +1,17 @@
-
-import { describe, expect, test, vi } from 'vitest';
+// biome-ignore lint/style/useImportType: initial biome migration
+import { AxiosResponse } from "axios";
+import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
 import { makeMockTemplate, templateAttrs } from "./mocking";
-import { AxiosResponse } from "axios";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  query: vi.fn(),
-  post: vi.fn(),
-  delete: vi.fn(),
-  get: vi.fn(),
-  }}));
+    query: vi.fn(),
+    post: vi.fn(),
+    delete: vi.fn(),
+    get: vi.fn(),
+  },
+}));
 describe("method: setEditing", () => {
   test("Properties should be reset.", async () => {
     // Create properly typed mock responses
@@ -22,7 +23,6 @@ describe("method: setEditing", () => {
       statusText: "OK",
       headers: {},
       config: { headers: {} },
-
     } as AxiosResponse;
     const postMockResponse = {
       data: {
@@ -38,7 +38,6 @@ describe("method: setEditing", () => {
       statusText: "OK",
       headers: {},
       config: { headers: {} },
-
     } as AxiosResponse;
     const deleteMockResponse = {
       data: {
@@ -54,7 +53,6 @@ describe("method: setEditing", () => {
       statusText: "OK",
       headers: {},
       config: { headers: {} },
-
     } as AxiosResponse;
     // Setup the mock implementations
 
@@ -71,4 +69,3 @@ describe("method: setEditing", () => {
     expect(template.name).toBe("oldName");
   });
 });
-

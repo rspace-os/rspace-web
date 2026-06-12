@@ -1,13 +1,12 @@
-import React, { type ComponentType, forwardRef, useState } from "react";
-import useStores from "../../../stores/use-stores";
-import ContextMenuAction, {
-  type ContextMenuRenderOptions,
-} from "./ContextMenuAction";
 import PrintIcon from "@mui/icons-material/Print";
 import { Observer } from "mobx-react-lite";
-import { match } from "../../../util/Util";
+import React, { type ComponentType, forwardRef, useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import useStores from "../../../stores/use-stores";
+import { match } from "../../../util/Util";
 import PrintDialog from "../Print/PrintDialog";
+import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 
 type PrintBarcodeActionArgs = {
   as: ContextMenuRenderOptions;
@@ -26,20 +25,12 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef<
 
   const disabledHelp = match<void, string>([
     [() => disabled !== "", disabled],
-    [
-      () => selectedResults.some((r) => r.recordType === "sampleTemplate"),
-      "Templates do not have barcodes.",
-    ],
+    [() => selectedResults.some((r) => r.recordType === "sampleTemplate"), "Templates do not have barcodes."],
     [
       () => selectedResults.some((r) => !r.canRead),
-      `You do not have permission to print ${
-        selectedResults.length > 1 ? "these items" : "this item"
-      }.`,
+      `You do not have permission to print ${selectedResults.length > 1 ? "these items" : "this item"}.`,
     ],
-    [
-      () => searchStore.activeResultIsBeingEdited,
-      "Cannot print barcodes whilst a record is being edited.",
-    ],
+    [() => searchStore.activeResultIsBeingEdited, "Cannot print barcodes whilst a record is being edited."],
     [() => true, ""],
   ])();
 

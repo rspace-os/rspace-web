@@ -1,36 +1,37 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import SubSampleModel from "../../../stores/models/SubSampleModel";
-import Grid from "@mui/material/Grid";
-import Collapse from "@mui/material/Collapse";
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import IconButton from "@mui/material/IconButton";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
-import Link from "@mui/material/Link";
-import { useTheme, darken, alpha } from "@mui/material/styles";
-import LocationField from "../../components/Fields/Location";
-import Box from "@mui/material/Box";
-import GlobalId from "../../../components/GlobalId";
-import QuantityField from "../../Subsample/Fields/Quantity";
-import Stack from "@mui/material/Stack";
-import Notes from "../../Subsample/Fields/Notes/Notes";
-import MobileStepper from "@mui/material/MobileStepper";
-import Button, { buttonClasses } from "@mui/material/Button";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
-import { type Search } from "../../../stores/definitions/Search";
-import { modulo } from "../../../util/Util";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Button, { buttonClasses } from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Collapse from "@mui/material/Collapse";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
+import MobileStepper from "@mui/material/MobileStepper";
+import Stack from "@mui/material/Stack";
 import { svgIconClasses } from "@mui/material/SvgIcon";
-import { Link as ReactRouterLink } from "react-router-dom";
+import { alpha, darken, useTheme } from "@mui/material/styles";
+import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import ImageField from "../../components/Fields/Image";
-import Description from "../../components/Fields/Description";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { Link as ReactRouterLink } from "react-router-dom";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import GlobalId from "../../../components/GlobalId";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Search } from "../../../stores/definitions/Search";
+import SubSampleModel from "../../../stores/models/SubSampleModel";
+import { modulo } from "../../../util/Util";
 import BarcodesField from "../../components/Fields/Barcodes/FormField";
+import Description from "../../components/Fields/Description";
+import ImageField from "../../components/Fields/Image";
+import LocationField from "../../components/Fields/Location";
 import FormField from "../../components/Inputs/FormField";
+import Notes from "../../Subsample/Fields/Notes/Notes";
+import QuantityField from "../../Subsample/Fields/Quantity";
 
 type WrapperArgs = {
   children: React.ReactNode;
@@ -90,17 +91,14 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   }, [search.filteredResults, processingCardNav, search]);
 
   const subsample = search.activeResult;
-  if (subsample === null || typeof subsample === "undefined")
-    return <Wrapper>No subsamples</Wrapper>;
-  const index = search.filteredResults.findIndex(
-    (x) => x.globalId === subsample.globalId,
-  );
+  if (subsample === null || typeof subsample === "undefined") return <Wrapper>No subsamples</Wrapper>;
+  const index = search.filteredResults.findIndex((x) => x.globalId === subsample.globalId);
 
-  if (!(subsample instanceof SubSampleModel))
-    throw new Error("All Subsamples must be instances of SubSampleModel");
+  if (!(subsample instanceof SubSampleModel)) throw new Error("All Subsamples must be instances of SubSampleModel");
 
   return (
     <Wrapper>
+      {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
       <>
         <Card
           role="region"
@@ -144,28 +142,18 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           <CardContent>
             <Stack spacing={2}>
               <LocationField fieldOwner={subsample} />
-              <ImageField
-                fieldOwner={subsample}
-                alt={`What the subsample, ${subsample.name}, looks like`}
-              />
+              <ImageField fieldOwner={subsample} alt={`What the subsample, ${subsample.name}, looks like`} />
               <QuantityField
                 fieldOwner={subsample}
                 quantityCategory={subsample.quantityCategory}
                 onErrorStateChange={() => {}}
               />
-              <Description
-                fieldOwner={subsample}
-                onErrorStateChange={() => {}}
-              />
+              <Description fieldOwner={subsample} onErrorStateChange={() => {}} />
               <FormField
                 label="Barcodes"
                 value={null}
                 renderInput={() => (
-                  <BarcodesField
-                    fieldOwner={subsample}
-                    factory={subsample.factory}
-                    connectedItem={subsample}
-                  />
+                  <BarcodesField fieldOwner={subsample} factory={subsample.factory} connectedItem={subsample} />
                 )}
               />
               <Notes record={subsample} onErrorStateChange={() => {}} />
@@ -173,10 +161,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
           </CardContent>
           <CardActions>
             <Typography align="center" sx={{ width: "100%" }}>
-              <Link
-                component={ReactRouterLink}
-                to={subsample.permalinkURL || ""}
-              >
+              <Link component={ReactRouterLink} to={subsample.permalinkURL || ""}>
                 See full details of <strong>{subsample.name}</strong>
               </Link>
             </Typography>
@@ -185,9 +170,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
         <MobileStepper
           variant="text"
           steps={search.count}
-          activeStep={
-            index + search.fetcher.pageSize * search.fetcher.pageNumber
-          }
+          activeStep={index + search.fetcher.pageSize * search.fetcher.pageNumber}
           position="static"
           sx={{
             backgroundColor: theme.palette.record.subSample.lighter,
@@ -217,22 +200,13 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
                   try {
                     if (index + 1 > search.filteredResults.length - 1)
                       await search.setPage(search.fetcher.pageNumber + 1);
-                    await search.setActiveResult(
-                      search.filteredResults[
-                        (index + 1) % search.fetcher.pageSize
-                      ],
-                    );
+                    await search.setActiveResult(search.filteredResults[(index + 1) % search.fetcher.pageSize]);
                   } finally {
                     setProcessingCardNav(false);
                   }
                 })();
               }}
-              disabled={
-                index +
-                  search.fetcher.pageSize * search.fetcher.pageNumber +
-                  1 >=
-                search.count
-              }
+              disabled={index + search.fetcher.pageSize * search.fetcher.pageNumber + 1 >= search.count}
             >
               <KeyboardArrowRight />
             </Button>
@@ -245,22 +219,14 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
                 void (async () => {
                   setProcessingCardNav(true);
                   try {
-                    if (index === 0)
-                      await search.setPage(search.fetcher.pageNumber - 1);
-                    await search.setActiveResult(
-                      search.filteredResults[
-                        modulo(index - 1, search.fetcher.pageSize)
-                      ],
-                    );
+                    if (index === 0) await search.setPage(search.fetcher.pageNumber - 1);
+                    await search.setActiveResult(search.filteredResults[modulo(index - 1, search.fetcher.pageSize)]);
                   } finally {
                     setProcessingCardNav(false);
                   }
                 })();
               }}
-              disabled={
-                index + search.fetcher.pageSize * search.fetcher.pageNumber ===
-                0
-              }
+              disabled={index + search.fetcher.pageSize * search.fetcher.pageNumber === 0}
             >
               <KeyboardArrowLeft />
             </Button>

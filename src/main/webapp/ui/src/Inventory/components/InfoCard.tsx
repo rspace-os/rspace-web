@@ -1,18 +1,20 @@
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
+import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
-import RecordDetails from "./RecordDetails";
-import Button from "@mui/material/Button";
-import useStores from "../../stores/use-stores";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
-import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
+import CardHeader from "@mui/material/CardHeader";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
+import NavigateContext from "../../stores/contexts/Navigate";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Record } from "../../stores/definitions/Record";
 import ContainerModel from "../../stores/models/ContainerModel";
-import NavigateContext from "../../stores/contexts/Navigate";
+import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
+import useStores from "../../stores/use-stores";
+import RecordDetails from "./RecordDetails";
 
 function OpenButton({
   icon,
@@ -21,13 +23,7 @@ function OpenButton({
   icon?: React.ReactNode;
 }): React.ReactNode {
   return (
-    <Button
-      color="primary"
-      variant="text"
-      disableElevation
-      sx={{ cursor: "default" }}
-      {...rest}
-    >
+    <Button color="primary" variant="text" disableElevation sx={{ cursor: "default" }} {...rest}>
       {icon}
       Open
     </Button>
@@ -51,12 +47,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
           // @ts-expect-error for some reason comppnent="a" is not recognised
           component="a"
           target="_blank"
-          icon={
-            <FontAwesomeIcon
-              icon={faExternalLinkAlt}
-              style={{ marginRight: 10 }}
-            />
-          }
+          icon={<FontAwesomeIcon icon={faExternalLinkAlt} style={{ marginRight: 10 }} />}
         />
       )}
       {r instanceof ContainerModel && (
@@ -106,11 +97,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
         userSelect: "none",
       }}
     >
-      <CardHeader
-        title={record.name}
-        subheader={record.cardTypeLabel}
-        sx={{ paddingBottom: "4px" }}
-      />
+      <CardHeader title={record.name} subheader={record.cardTypeLabel} sx={{ paddingBottom: "4px" }} />
       <CardContent sx={{ overflowY: "auto" }}>
         <RecordDetails record={record} hideName />
       </CardContent>

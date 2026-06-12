@@ -1,10 +1,12 @@
-import { test, describe, expect } from "vitest";
-import React, { useState, useEffect } from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
-import { type Validator, mkValidator } from "../Validator";
-import { runInAction, observable } from "mobx";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { observable, runInAction } from "mobx";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React, { useEffect, useState } from "react";
+import { describe, expect, test } from "vitest";
+import { mkValidator, type Validator } from "../Validator";
+
 function Child1({ validator }: { validator: Validator }) {
   const [state] = useState(observable({ text: "" }));
   useEffect(() => {

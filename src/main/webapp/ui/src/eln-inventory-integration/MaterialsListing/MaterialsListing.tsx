@@ -1,30 +1,31 @@
-import useStores from "../../stores/use-stores";
-import Fab from "@mui/material/Fab";
-import MaterialsDialog from "./MaterialsDialog";
-import React, { useState, useEffect } from "react";
-import materialTheme from "../../theme";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { faVial } from "@fortawesome/free-solid-svg-icons/faVial";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
-import { type ElnFieldId } from "../../stores/models/MaterialsModel";
-import MenuItem from "@mui/material/MenuItem";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
+import Fab from "@mui/material/Fab";
 import Grow from "@mui/material/Grow";
+import MenuItem from "@mui/material/MenuItem";
+import MenuList from "@mui/material/MenuList";
 import Paper from "@mui/material/Paper";
 import Popper from "@mui/material/Popper";
-import MenuList from "@mui/material/MenuList";
-import Badge from "@mui/material/Badge";
-import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
-import PrintedMaterialsListing from "./PrintedMaterialsListing";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { observer } from "mobx-react-lite";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import createAccentedTheme from "../../accentedTheme";
-import AnalyticsContext from "../../stores/contexts/Analytics";
+import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
+import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
 import Analytics from "../../components/Analytics";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ElnFieldId } from "../../stores/models/MaterialsModel";
+import useStores from "../../stores/use-stores";
+import materialTheme from "../../theme";
+import MaterialsDialog from "./MaterialsDialog";
+import PrintedMaterialsListing from "./PrintedMaterialsListing";
 
 const FAB_SIZE = 48;
 
@@ -36,13 +37,7 @@ const itemTextSx = {
 } as const;
 
 const MaterialsLauncher = observer(
-  ({
-    elnFieldId,
-    fabRightPadding,
-  }: {
-    elnFieldId: ElnFieldId;
-    fabRightPadding: number;
-  }) => {
+  ({ elnFieldId, fabRightPadding }: { elnFieldId: ElnFieldId; fabRightPadding: number }) => {
     const { materialsStore } = useStores();
     const { trackEvent } = React.useContext(AnalyticsContext);
 
@@ -60,9 +55,7 @@ const MaterialsLauncher = observer(
     const fieldListCount = fieldListings?.length;
     return (
       <>
-        <PrintedMaterialsListing
-          listsOfMaterials={materialsStore.fieldLists.get(elnFieldId) ?? []}
-        />
+        <PrintedMaterialsListing listsOfMaterials={materialsStore.fieldLists.get(elnFieldId) ?? []} />
         <Box
           sx={{
             position: "absolute",
@@ -113,10 +106,7 @@ const MaterialsLauncher = observer(
                 }}
               >
                 {({ TransitionProps }) => (
-                  <Grow
-                    {...TransitionProps}
-                    style={{ transformOrigin: "center right" }}
-                  >
+                  <Grow {...TransitionProps} style={{ transformOrigin: "center right" }}>
                     <Paper
                       sx={{
                         maxHeight: "calc(100vh - 16px)",
@@ -137,18 +127,10 @@ const MaterialsLauncher = observer(
                                 handleClose();
                               }}
                             >
-                              <Typography
-                                variant="inherit"
-                                component="span"
-                                sx={itemTextSx}
-                              >
+                              <Typography variant="inherit" component="span" sx={itemTextSx}>
                                 {i + 1}: {list.name}
                               </Typography>
-                              <Typography
-                                variant="inherit"
-                                component="em"
-                                sx={itemTextSx}
-                              >
+                              <Typography variant="inherit" component="em" sx={itemTextSx}>
                                 {list.description}
                               </Typography>
                             </MenuItem>
@@ -177,89 +159,82 @@ type MaterialsListingArgs = {
   fabRightPadding: number;
 };
 
-const MaterialsListing = observer(
-  ({ elnFieldId, canEdit, fabRightPadding }: MaterialsListingArgs) => {
-    const { materialsStore } = useStores();
-    const [loading, setLoading] = useState(true);
+const MaterialsListing = observer(({ elnFieldId, canEdit, fabRightPadding }: MaterialsListingArgs) => {
+  const { materialsStore } = useStores();
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-      materialsStore.canEdit = canEdit;
-    }, [canEdit]);
+  useEffect(() => {
+    materialsStore.canEdit = canEdit;
+  }, [canEdit]);
 
-    useEffect(() => {
-      materialsStore
-        .setup()
-        .then(() => setLoading(false))
-        .catch((e) => console.error(e));
-    }, []);
+  useEffect(() => {
+    materialsStore
+      .setup()
+      .then(() => setLoading(false))
+      .catch((e) => console.error(e));
+  }, []);
 
-    useEffect(() => {
-      if (!loading)
-        void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
-    }, [loading]);
+  useEffect(() => {
+    if (!loading) void materialsStore.getFieldMaterialsListings(parseInt(elnFieldId, 10));
+  }, [loading]);
 
-    return !loading ? (
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={materialTheme}>
-          <AlwaysNewWindowNavigationContext>
-            {materialsStore.fieldLists.has(parseInt(elnFieldId, 10)) && (
-              <MaterialsLauncher
-                elnFieldId={parseInt(elnFieldId, 10)}
-                fabRightPadding={fabRightPadding}
-              />
-            )}
-          </AlwaysNewWindowNavigationContext>
-        </ThemeProvider>
-      </StyledEngineProvider>
-    ) : null;
-  },
-);
+  return !loading ? (
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <AlwaysNewWindowNavigationContext>
+          {materialsStore.fieldLists.has(parseInt(elnFieldId, 10)) && (
+            <MaterialsLauncher elnFieldId={parseInt(elnFieldId, 10)} fabRightPadding={fabRightPadding} />
+          )}
+        </AlwaysNewWindowNavigationContext>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  ) : null;
+});
 
 type NewMaterialsListingArgs = {
   elnFieldId: string;
 };
 
-const NewMaterialsListing = observer(
-  ({ elnFieldId }: NewMaterialsListingArgs) => {
-    const { materialsStore } = useStores();
-    const { trackEvent } = React.useContext(AnalyticsContext);
-    const [showDialog, _setShowDialog] = useState(false);
-    const setShowDialog = (value: boolean) => {
-      _setShowDialog(value);
-      window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
-    };
-    return (
-      <Box sx={{ "@media print": { display: "none" } }}>
-        <StyledEngineProvider injectFirst enableCssLayer>
-          <ThemeProvider theme={materialTheme}>
-            <AlwaysNewWindowNavigationContext>
-              <div className="bootstrap-custom-flat">
-                <button
-                  className="btn btn-default"
-                  style={{
-                    float: "right",
-                    marginRight: "8px",
-                  }}
-                  onClick={({ currentTarget }) => {
-                    trackEvent("user:create:list_of_materials");
-                    setShowDialog(true);
-                    currentTarget.blur();
-                    materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));
-                  }}
-                >
-                  New List of Materials
-                </button>
-                <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
-                  <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
-                </ThemeProvider>
-              </div>
-            </AlwaysNewWindowNavigationContext>
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </Box>
-    );
-  },
-);
+const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListingArgs) => {
+  const { materialsStore } = useStores();
+  const { trackEvent } = React.useContext(AnalyticsContext);
+  const [showDialog, _setShowDialog] = useState(false);
+  const setShowDialog = (value: boolean) => {
+    _setShowDialog(value);
+    window.dispatchEvent(new CustomEvent("listOfMaterialsOpened"));
+  };
+  return (
+    <Box sx={{ "@media print": { display: "none" } }}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={materialTheme}>
+          <AlwaysNewWindowNavigationContext>
+            <div className="bootstrap-custom-flat">
+              {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
+              <button
+                className="btn btn-default"
+                style={{
+                  float: "right",
+                  marginRight: "8px",
+                }}
+                onClick={({ currentTarget }) => {
+                  trackEvent("user:create:list_of_materials");
+                  setShowDialog(true);
+                  currentTarget.blur();
+                  materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));
+                }}
+              >
+                New List of Materials
+              </button>
+              <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
+                <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
+              </ThemeProvider>
+            </div>
+          </AlwaysNewWindowNavigationContext>
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </Box>
+  );
+});
 
 function initListOfMaterials({
   makeWrapperRelative,
@@ -280,39 +255,33 @@ function initListOfMaterials({
     canEdit = globalWindow.isEditable;
   }
 
-  Array.from(document.getElementsByClassName("invMaterialsListing")).forEach(
-    (wrapperDiv) => {
-      const listingWrapper = wrapperDiv as HTMLDivElement;
-      const { fieldId, documentId } = listingWrapper.dataset;
+  Array.from(document.getElementsByClassName("invMaterialsListing")).forEach((wrapperDiv) => {
+    const listingWrapper = wrapperDiv as HTMLDivElement;
+    const { fieldId, documentId } = listingWrapper.dataset;
 
-      if (!fieldId) return;
+    if (!fieldId) return;
 
-      const root = createRoot(listingWrapper);
-      root.render(
+    const root = createRoot(listingWrapper);
+    root.render(
+      <Analytics>
+        <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
+      </Analytics>,
+    );
+    if (makeWrapperRelative) listingWrapper.style.position = "relative";
+
+    if (!documentId) return;
+
+    const newButtonWrapper = document.querySelector(
+      `.invMaterialsListing_new[data-field-id="${fieldId}"][data-document-id="${documentId}"]`,
+    );
+    if (newButtonWrapper) {
+      createRoot(newButtonWrapper).render(
         <Analytics>
-          <MaterialsListing
-            elnFieldId={fieldId}
-            canEdit={canEdit}
-            fabRightPadding={fabRightPadding}
-          />
+          <NewMaterialsListing elnFieldId={fieldId} />
         </Analytics>,
       );
-      if (makeWrapperRelative) listingWrapper.style.position = "relative";
-
-      if (!documentId) return;
-
-      const newButtonWrapper = document.querySelector(
-        `.invMaterialsListing_new[data-field-id="${fieldId}"][data-document-id="${documentId}"]`,
-      );
-      if (newButtonWrapper) {
-        createRoot(newButtonWrapper).render(
-          <Analytics>
-            <NewMaterialsListing elnFieldId={fieldId} />
-          </Analytics>,
-        );
-      }
-    },
-  );
+    }
+  });
 }
 
 /*

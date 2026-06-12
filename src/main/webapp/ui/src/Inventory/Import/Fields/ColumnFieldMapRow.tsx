@@ -1,29 +1,26 @@
-import React, { useState } from "react";
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
-import CustomTooltip from "../../../components/CustomTooltip";
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import FieldMenuItem from "./FieldSelectMenuItem";
-import FieldNameStringField from "./FieldNameStringField";
-import FieldTypeMenu from "./FieldTypeMenu";
-import UploadFormControl from "./FormControl";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Select from "@mui/material/Select";
-import TableCell from "./TableCell";
+import { useTheme } from "@mui/material/styles";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import {
-  Fields,
-  ColumnFieldMap,
-  getTypeOfField,
-} from "../../../stores/models/ImportModel";
-import { FIELD_DATA } from "../../../stores/models/FieldTypes";
-import { toTitleCase, match } from "../../../util/Util";
 import { observer } from "mobx-react-lite";
-import { useTheme } from "@mui/material/styles";
-import Badge from "@mui/material/Badge";
+import { useState } from "react";
+import CustomTooltip from "../../../components/CustomTooltip";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import { FIELD_DATA } from "../../../stores/models/FieldTypes";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { ColumnFieldMap, Fields, getTypeOfField } from "../../../stores/models/ImportModel";
+import { match, toTitleCase } from "../../../util/Util";
+import FieldNameStringField from "./FieldNameStringField";
+import FieldMenuItem from "./FieldSelectMenuItem";
+import FieldTypeMenu from "./FieldTypeMenu";
+import UploadFormControl from "./FormControl";
+import TableCell from "./TableCell";
 
 type ColumnFieldMapRowArgs = {
   columnFieldMap: ColumnFieldMap;
@@ -36,30 +33,20 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
 
   const renderClosedFieldSelectLabel = (fieldSymbolKey: string) =>
     match<string, string>([
-      [
-        (f) => f === "CUSTOM",
-        `Custom Field (${FIELD_DATA[columnFieldMap.chosenFieldType].label})`,
-      ],
+      [(f) => f === "CUSTOM", `Custom Field (${FIELD_DATA[columnFieldMap.chosenFieldType].label})`],
       [() => true, toTitleCase(fieldSymbolKey)],
     ])(fieldSymbolKey);
 
   const FieldSymbols = Object.values(columnFieldMap.fieldsByRecordType);
 
-  const onTypeChange = ({
-    target: { value },
-  }: {
-    target: { value: string };
-  }) => {
+  const onTypeChange = ({ target: { value } }: { target: { value: string } }) => {
     const field = Symbol.for(value);
     columnFieldMap.updateField(field);
-    columnFieldMap.setChosenFieldType(
-      getTypeOfField(field) ?? columnFieldMap.fieldType,
-    );
+    columnFieldMap.setChosenFieldType(getTypeOfField(field) ?? columnFieldMap.fieldType);
     setOpen(field === Fields.custom);
     // handle auto-un/selection
     const selectionToggleNeeded =
-      (value === "IGNORE" && columnFieldMap.selected) ||
-      (value !== "IGNORE" && !columnFieldMap.selected);
+      (value === "IGNORE" && columnFieldMap.selected) || (value !== "IGNORE" && !columnFieldMap.selected);
     if (selectionToggleNeeded) columnFieldMap.toggleSelected();
   };
 
@@ -78,11 +65,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
         <TableCell nopadding={true} padding="none" align="left" width="70%">
           {columnFieldMap.fieldName}
           {columnFieldMap.columnName !== columnFieldMap.fieldName && (
-            <Typography
-              color="textSecondary"
-              component="span"
-              variant="caption"
-            >
+            <Typography color="textSecondary" component="span" variant="caption">
               {" "}
               ({columnFieldMap.columnName})
             </Typography>
@@ -108,9 +91,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
                 value={Symbol.keyFor(f)}
                 field={f}
                 currentField={columnFieldMap.field}
-                typeIsCompatibleWithField={columnFieldMap.isCompatibleWithField(
-                  f,
-                )}
+                typeIsCompatibleWithField={columnFieldMap.isCompatibleWithField(f)}
               />
             ))}
           </Select>
@@ -119,15 +100,9 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
           <CustomTooltip title="Custom details">
             <IconButton
               onClick={() => setOpen(!open)}
-              disabled={
-                existingTemplate || columnFieldMap.field !== Fields.custom
-              }
+              disabled={existingTemplate || columnFieldMap.field !== Fields.custom}
             >
-              <Badge
-                badgeContent={columnFieldMap.valid ? "" : "!"}
-                color="error"
-                invisible={columnFieldMap.valid}
-              >
+              <Badge badgeContent={columnFieldMap.valid ? "" : "!"} color="error" invisible={columnFieldMap.valid}>
                 <ExpandCollapseIcon open={open} />
               </Badge>
             </IconButton>

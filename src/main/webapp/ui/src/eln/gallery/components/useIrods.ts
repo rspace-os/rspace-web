@@ -1,15 +1,14 @@
-import axios from "@/common/axios";
 import React from "react";
-import Result from "../../../util/result";
-import * as Parsers from "../../../util/parsers";
-import * as FetchingData from "../../../util/fetchingData";
+import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
-import { Optional } from "../../../util/optional";
-import AlertContext, {
-  mkAlert,
-  type Alert,
-} from "../../../stores/contexts/Alert";
+import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+// biome-ignore lint/style/useImportType: initial biome migration
+import * as FetchingData from "../../../util/fetchingData";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
 import { stableSort } from "../../../util/table";
 
 type Link = { operation: string; href: string };
@@ -27,12 +26,8 @@ function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
                 operation,
                 href,
               }))(
-                Parsers.getValueWithKey("operation")(linkObj).flatMap(
-                  Parsers.isString,
-                ),
-                Parsers.getValueWithKey("link")(linkObj).flatMap(
-                  Parsers.isString,
-                ),
+                Parsers.getValueWithKey("operation")(linkObj).flatMap(Parsers.isString),
+                Parsers.getValueWithKey("link")(linkObj).flatMap(Parsers.isString),
               ),
             ),
         ),
@@ -49,9 +44,7 @@ function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
 const parseSpecificHref =
   (op: string) =>
   (links: ReadonlyArray<Link>): Optional<string> =>
-    ArrayUtils.find(({ operation }) => operation === op, links).map(
-      ({ href }) => href,
-    );
+    ArrayUtils.find(({ operation }) => operation === op, links).map(({ href }) => href);
 
 const parseOperationError = (error: unknown): Result<string> =>
   Parsers.objectPath(["response", "data", "errors"], error)
@@ -59,20 +52,15 @@ const parseOperationError = (error: unknown): Result<string> =>
     .flatMap(ArrayUtils.head)
     .flatMap(Parsers.isString)
     .map((errorMsg) => {
-      if (/attempt to overwrite file/.test(errorMsg))
-        return "Some or all of the files already exist";
-      if (/AuthenticationException/.test(errorMsg))
-        return "Authentication failed";
+      if (/attempt to overwrite file/.test(errorMsg)) return "Some or all of the files already exist";
+      if (/AuthenticationException/.test(errorMsg)) return "Authentication failed";
       if (/InvalidUserException/.test(errorMsg)) return "Authentication failed";
-      if (/java.net.UnknownHostException/.test(errorMsg))
-        return "Could not reach the iRODs server";
+      if (/java.net.UnknownHostException/.test(errorMsg)) return "Could not reach the iRODs server";
       return errorMsg;
     });
 
 function handleErrors(response: unknown): Alert {
-  const data = Parsers.objectPath(["data"], response)
-    .flatMap(Parsers.isObject)
-    .flatMap(Parsers.isNotNull);
+  const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
   return data
     .flatMap(Parsers.getValueWithKey("numFilesInput"))
@@ -98,9 +86,7 @@ function handleErrors(response: unknown): Alert {
                   Parsers.isObject(d)
                     .flatMap(Parsers.isNotNull)
                     .flatMap((obj) => {
-                      const succeeded = Parsers.getValueWithKey("succeeded")(
-                        obj,
-                      )
+                      const succeeded = Parsers.getValueWithKey("succeeded")(obj)
                         .flatMap(Parsers.isBoolean)
                         .flatMap(Parsers.isTrue);
 
@@ -127,12 +113,8 @@ function handleErrors(response: unknown): Alert {
                             title: filename,
                             help: reason,
                           }))(
-                            Parsers.getValueWithKey("fileName")(obj).flatMap(
-                              Parsers.isString,
-                            ),
-                            Parsers.getValueWithKey("reason")(obj).flatMap(
-                              Parsers.isString,
-                            ),
+                            Parsers.getValueWithKey("fileName")(obj).flatMap(Parsers.isString),
+                            Parsers.getValueWithKey("reason")(obj).flatMap(Parsers.isString),
                           ),
                         );
                     }),
@@ -163,24 +145,8 @@ export type IrodsLocation = {
   id: number;
   name: string;
   path: string;
-  copy: Optional<
-    ({
-      username,
-      password,
-    }: {
-      username: string;
-      password: string;
-    }) => Promise<void>
-  >;
-  move: Optional<
-    ({
-      username,
-      password,
-    }: {
-      username: string;
-      password: string;
-    }) => Promise<void>
-  >;
+  copy: Optional<({ username, password }: { username: string; password: string }) => Promise<void>>;
+  move: Optional<({ username, password }: { username: string; password: string }) => Promise<void>>;
 };
 
 /**
@@ -232,6 +198,7 @@ export default function useIrods(
           const api = axios.create({
             baseURL: "/api/v1/gallery/irods",
             headers: {
+              // biome-ignore lint/style/useTemplate: initial biome migration
               Authorization: "Bearer " + (await getToken()),
             },
           });
@@ -260,6 +227,7 @@ export default function useIrods(
           const api = axios.create({
             baseURL: "/api/v1/gallery/irods",
             headers: {
+              // biome-ignore lint/style/useTemplate: initial biome migration
               Authorization: "Bearer " + (await getToken()),
             },
           });
@@ -288,12 +256,10 @@ export default function useIrods(
 
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
-  const [configuredLocations, setConfiguredLocations] = React.useState<
-    Result<ReadonlyArray<IrodsLocation>>
-  >(Result.Ok([]));
-  const [serverUrl, setServerUrl] = React.useState<Result<string>>(
-    Result.Ok(""),
+  const [configuredLocations, setConfiguredLocations] = React.useState<Result<ReadonlyArray<IrodsLocation>>>(
+    Result.Ok([]),
   );
+  const [serverUrl, setServerUrl] = React.useState<Result<string>>(Result.Ok(""));
 
   async function fetchConfiguredLocations() {
     setLoading(true);
@@ -302,6 +268,7 @@ export default function useIrods(
       const api = axios.create({
         baseURL: "/api/v1/gallery/irods",
         headers: {
+          // biome-ignore lint/style/useTemplate: initial biome migration
           Authorization: "Bearer " + (await getToken()),
         },
       });
@@ -310,24 +277,16 @@ export default function useIrods(
           recordIds: selectedIds.join(","),
         }),
       });
-      const dataObj: Result<object> = Parsers.isObject(data).flatMap(
-        Parsers.isNotNull,
-      );
+      const dataObj: Result<object> = Parsers.isObject(data).flatMap(Parsers.isNotNull);
       setServerUrl(
         dataObj
           .flatMap(Parsers.getValueWithKey("serverUrl"))
           .flatMap(Parsers.isString)
           .mapError(([error]) => {
             console.error("Cannot parse 'serverUrl' from API response", error);
-            return new Error(
-              "Could not determine which iRODS server is configured.",
-            );
+            return new Error("Could not determine which iRODS server is configured.");
           })
-          .flatMap((url) =>
-            url === ""
-              ? Result.Error([new Error("No iRODS filestore configured")])
-              : Result.Ok(url),
-          ),
+          .flatMap((url) => (url === "" ? Result.Error([new Error("No iRODS filestore configured")]) : Result.Ok(url))),
       );
       setConfiguredLocations(
         dataObj
@@ -341,15 +300,9 @@ export default function useIrods(
                   .flatMap((obj) => {
                     const links = parseIrodsLocationLinks(obj);
                     return Result.lift5(mkIrodsLocation)(
-                      Parsers.getValueWithKey("id")(obj).flatMap(
-                        Parsers.isNumber,
-                      ),
-                      Parsers.getValueWithKey("name")(obj).flatMap(
-                        Parsers.isString,
-                      ),
-                      Parsers.getValueWithKey("path")(obj).flatMap(
-                        Parsers.isString,
-                      ),
+                      Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber),
+                      Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString),
+                      Parsers.getValueWithKey("path")(obj).flatMap(Parsers.isString),
                       links.map(parseSpecificHref("copy")),
                       links.map(parseSpecificHref("move")),
                     );
@@ -386,9 +339,7 @@ export default function useIrods(
    * there is a new array in memory that contains the same Ids then there is no
    * need to re-fetch, nor if the same array has been re-ordered.
    */
-  const parsedSelectedIds = Result.all(
-    ...selectedIds.map(Parsers.parseInteger),
-  ).orElseGet(() => {
+  const parsedSelectedIds = Result.all(...selectedIds.map(Parsers.parseInteger)).orElseGet(() => {
     throw new Error("Invalid selected Ids");
   });
   const sortedStringOfSelectedIds = JSON.stringify(
@@ -400,20 +351,17 @@ export default function useIrods(
   );
   React.useEffect(() => {
     void fetchConfiguredLocations();
-
   }, [sortedStringOfSelectedIds]);
 
   if (loading) return { tag: "loading" };
   if (errorMessage) return { tag: "error", error: errorMessage };
-  return Result.lift2(
-    (url: string, locations: ReadonlyArray<IrodsLocation>) => ({
-      tag: "success" as const,
-      value: {
-        serverUrl: url,
-        configuredLocations: locations,
-      },
-    }),
-  )(serverUrl, configuredLocations).orElseGet(([error]) => ({
+  return Result.lift2((url: string, locations: ReadonlyArray<IrodsLocation>) => ({
+    tag: "success" as const,
+    value: {
+      serverUrl: url,
+      configuredLocations: locations,
+    },
+  }))(serverUrl, configuredLocations).orElseGet(([error]) => ({
     tag: "error",
     error: error.message,
   }));

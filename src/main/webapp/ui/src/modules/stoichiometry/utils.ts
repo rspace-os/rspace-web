@@ -1,5 +1,7 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import { RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 import { parse } from "@/modules/common/queries/parseOrThrow";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
   StoichiometryMessageErrorResponse,
   StoichiometryMessageErrorResponseSchema,
@@ -7,11 +9,7 @@ import {
 
 export const STOICHIOMETRY_API_BASE_URL = "/api/v1";
 
-
-export const toStoichiometryError = (
-  data: unknown,
-  fallbackMessage: string,
-): Error => {
+export const toStoichiometryError = (data: unknown, fallbackMessage: string): Error => {
   const restApiError = parse(RestApiErrorSchema, data).caseOf({
     Left: () => null,
     Right: (validatedError: RestApiError) => validatedError,
@@ -20,13 +18,9 @@ export const toStoichiometryError = (
     return new Error(restApiError.message);
   }
 
-  const messageError = parse(
-    StoichiometryMessageErrorResponseSchema,
-    data,
-  ).caseOf({
+  const messageError = parse(StoichiometryMessageErrorResponseSchema, data).caseOf({
     Left: () => null,
-    Right: (validatedError: StoichiometryMessageErrorResponse) =>
-      validatedError,
+    Right: (validatedError: StoichiometryMessageErrorResponse) => validatedError,
   });
   if (messageError) {
     return new Error(messageError.message);

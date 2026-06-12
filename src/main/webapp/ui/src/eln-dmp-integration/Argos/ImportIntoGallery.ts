@@ -1,6 +1,7 @@
 //@flow
 
 import axios from "@/common/axios";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type PlanSummary } from "./PlanSummary";
 
 /*

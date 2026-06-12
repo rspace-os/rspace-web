@@ -1,12 +1,10 @@
-import React from "react";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton, {
-  listItemButtonClasses,
-} from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
 import Badge, { badgeClasses } from "@mui/material/Badge";
-import { darken, alpha } from "@mui/system";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton, { listItemButtonClasses } from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import { alpha, darken } from "@mui/system";
+import React from "react";
 
 type DrawerTabProps = {
   drawerOpen: boolean;
@@ -19,10 +17,7 @@ type DrawerTabProps = {
   badge?: React.ReactNode;
 };
 const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
-  (
-    { icon, label, index, selected, onClick, tabIndex, badge, drawerOpen },
-    ref,
-  ) => (
+  ({ icon, label, index, selected, onClick, tabIndex, badge, drawerOpen }, ref) => (
     <ListItem disablePadding sx={{ position: "static" }}>
       <ListItemButton
         selected={selected}
@@ -44,8 +39,7 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
         <ListItemText
           primary={label}
           sx={{
-            transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-              .matches
+            transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
               ? "none"
               : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
             opacity: drawerOpen ? 1 : 0,
@@ -61,8 +55,7 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
             max={999}
             sx={{
               marginLeft: "auto",
-              transition: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
+              transition: window.matchMedia("(prefers-reduced-motion: reduce)").matches
                 ? "none"
                 : "all .2s cubic-bezier(0.4, 0, 0.2, 1)",
               opacity: drawerOpen ? 1 : 0,

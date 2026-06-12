@@ -1,24 +1,17 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
 import { AddFilestoreDialogStory } from "./AddFilestoreDialog.story";
-import * as Jwt from "jsonwebtoken";
 
-import AxeBuilder from "@axe-core/playwright";
 const feature = test.extend<{
   Given: {
     "the add filestore dialog is mounted": () => Promise<void>;
   };
   When: {
-    "the user selects a {filesystem}": ({
-      filesystem,
-    }: {
-      filesystem: string;
-    }) => Promise<void>;
-    "the user selects a {folder}": ({
-      folder,
-    }: {
-      folder: string;
-    }) => Promise<void>;
+    "the user selects a {filesystem}": ({ filesystem }: { filesystem: string }) => Promise<void>;
+    "the user selects a {folder}": ({ folder }: { folder: string }) => Promise<void>;
   };
   Then: {
     "there shouldn't be any axe violations": () => Promise<void>;
@@ -63,29 +56,25 @@ const feature = test.extend<{
              * 2. Component tests typically don't have h1 headings as they're not full pages
              * 3. Content not in landmarks is expected in component testing context
              */
-            return (
-              v.id !== "landmark-one-main" &&
-              v.id !== "page-has-heading-one" &&
-              v.id !== "region"
-            );
-          })
+            return v.id !== "landmark-one-main" && v.id !== "page-has-heading-one" && v.id !== "region";
+          }),
         ).toEqual([]);
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -112,93 +101,87 @@ feature.beforeEach(async ({ router }) => {
       ]),
     });
   });
-  await router.route(
-    "/api/v1/gallery/filesystems/1/browse?remotePath=%2F",
-    (route) => {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          remotePath: "/",
-          filesystemInfo: {
-            id: 1,
-            name: "irods test",
-            url: "irods-test.researchspace.com",
-            clientType: "IRODS",
-            authType: "PASSWORD",
-            options: {},
-            loggedAs: null,
+  await router.route("/api/v1/gallery/filesystems/1/browse?remotePath=%2F", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        remotePath: "/",
+        filesystemInfo: {
+          id: 1,
+          name: "irods test",
+          url: "irods-test.researchspace.com",
+          clientType: "IRODS",
+          authType: "PASSWORD",
+          options: {},
+          loggedAs: null,
+        },
+        loggedUser: "alice",
+        showExtraDirs: false,
+        showCurrentDir: false,
+        content: [
+          {
+            name: "selenium",
+            logicPath: "/tempZone/home/alice/selenium",
+            fileSize: 0,
+            nfsId: 10809,
+            folder: true,
+            modificationDate: "2024-07-02T08:16:38.000Z",
           },
-          loggedUser: "alice",
-          showExtraDirs: false,
-          showCurrentDir: false,
-          content: [
-            {
-              name: "selenium",
-              logicPath: "/tempZone/home/alice/selenium",
-              fileSize: 0,
-              nfsId: 10809,
-              folder: true,
-              modificationDate: "2024-07-02T08:16:38.000Z",
-            },
-            {
-              name: "test",
-              logicPath: "/tempZone/home/alice/test",
-              fileSize: 0,
-              nfsId: 10111,
-              folder: true,
-              modificationDate: "2024-12-16T01:32:36.000Z",
-            },
-            {
-              name: "training_jpgs",
-              logicPath: "/tempZone/home/alice/training_jpgs",
-              fileSize: 0,
-              nfsId: 10024,
-              folder: true,
-              modificationDate: "2024-05-17T06:30:18.000Z",
-            },
-            {
-              name: "unit_test_DO_NOT_MANUAL_USE",
-              logicPath: "/tempZone/home/alice/unit_test_DO_NOT_MANUAL_USE",
-              fileSize: 0,
-              nfsId: 10851,
-              folder: true,
-              modificationDate: "2024-12-16T01:18:08.000Z",
-            },
-          ],
-          // },
-        }),
-      });
-    }
-  );
-  await router.route(
-    "/api/v1/gallery/filesystems/1/browse?remotePath=%2Ftest%2F",
-    (route) => {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          remotePath: "/",
-          filesystemInfo: {
-            id: 1,
-            name: "irods test",
-            url: "irods-test.researchspace.com",
-            clientType: "IRODS",
-            authType: "PASSWORD",
-            options: {},
-            loggedAs: null,
+          {
+            name: "test",
+            logicPath: "/tempZone/home/alice/test",
+            fileSize: 0,
+            nfsId: 10111,
+            folder: true,
+            modificationDate: "2024-12-16T01:32:36.000Z",
           },
-          loggedUser: "alice",
-          showExtraDirs: false,
-          showCurrentDir: false,
-          content: [],
-        }),
-      });
-    }
-  );
-
+          {
+            name: "training_jpgs",
+            logicPath: "/tempZone/home/alice/training_jpgs",
+            fileSize: 0,
+            nfsId: 10024,
+            folder: true,
+            modificationDate: "2024-05-17T06:30:18.000Z",
+          },
+          {
+            name: "unit_test_DO_NOT_MANUAL_USE",
+            logicPath: "/tempZone/home/alice/unit_test_DO_NOT_MANUAL_USE",
+            fileSize: 0,
+            nfsId: 10851,
+            folder: true,
+            modificationDate: "2024-12-16T01:18:08.000Z",
+          },
+        ],
+        // },
+      }),
+    });
+  });
+  await router.route("/api/v1/gallery/filesystems/1/browse?remotePath=%2Ftest%2F", (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        remotePath: "/",
+        filesystemInfo: {
+          id: 1,
+          name: "irods test",
+          url: "irods-test.researchspace.com",
+          clientType: "IRODS",
+          authType: "PASSWORD",
+          options: {},
+          loggedAs: null,
+        },
+        loggedUser: "alice",
+        showExtraDirs: false,
+        showCurrentDir: false,
+        content: [],
+      }),
+    });
+  });
 });
 
+// biome-ignore lint/correctness/noEmptyPattern: initial biome migration
 feature.afterEach(({}) => {});
 test.describe("AddFilestoreDialog", () => {
   feature("Should have no axe violations", async ({ Given, When, Then }) => {

@@ -1,16 +1,13 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
+import TemplateModel from "../../../models/TemplateModel";
 import getRootStore from "../../RootStore";
 
-import TemplateModel from "../../../models/TemplateModel";
 describe("method: createNewTemplate", () => {
   test("Should return a new template model", async () => {
     const { searchStore, peopleStore } = getRootStore();
-    vi
-      .spyOn(peopleStore, "fetchCurrentUsersGroups")
-      .mockImplementation(() => Promise.resolve([]));
+    vi.spyOn(peopleStore, "fetchCurrentUsersGroups").mockImplementation(() => Promise.resolve([]));
     const template = await searchStore.createNewTemplate();
     expect(template.id).toBe(null);
-
   });
   test("Should not call fetchAdditionalInfo on the new template", async () => {
     const { searchStore } = getRootStore();
@@ -19,4 +16,3 @@ describe("method: createNewTemplate", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
-

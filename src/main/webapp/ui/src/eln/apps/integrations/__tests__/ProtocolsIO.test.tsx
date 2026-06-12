@@ -1,12 +1,9 @@
-import { test, describe, expect } from 'vitest';
+import { fireEvent, render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-import ProtocolsIO from "../ProtocolsIO";
+import { describe, expect, test } from "vitest";
 import { Optional } from "../../../../util/optional";
+import ProtocolsIO from "../ProtocolsIO";
 
 import "@/__tests__/__mocks__/matchMedia";
 describe("ProtocolsIO", () => {
@@ -21,8 +18,7 @@ describe("ProtocolsIO", () => {
             },
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -42,8 +38,7 @@ describe("ProtocolsIO", () => {
           },
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -59,8 +54,7 @@ describe("ProtocolsIO", () => {
           },
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));

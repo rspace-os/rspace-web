@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { FormLabel } from "@mui/material";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+// biome-ignore lint/style/useImportType: initial biome migration
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
+import React, { useEffect, useState } from "react";
+import NumberField from "../../../components/Inputs/NumberField";
 import {
-  type Temperature,
-  CELSIUS,
-  KELVIN,
-  FAHRENHEIT,
   ABSOLUTE_ZERO,
+  CELSIUS,
+  FAHRENHEIT,
+  KELVIN,
   LIQUID_NITROGEN,
+  type Temperature,
   type TemperatureScale,
   temperatureFromTo,
   validateTemperature,
 } from "../../../stores/definitions/Units";
-import Grid from "@mui/material/Grid";
-import Stack from "@mui/material/Stack";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import Button from "@mui/material/Button";
-import NumberField from "../../../components/Inputs/NumberField";
-import InputAdornment from "@mui/material/InputAdornment";
-import { FormLabel } from "@mui/material";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
 const DECIMAL = 10; // for parseInt/parseFloat
@@ -33,18 +35,11 @@ type LabelArgs = {
 const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
   // prettier-ignore
   const render = (x: number) =>
-    unitId === CELSIUS ?  `${x}°C`:
-    unitId === KELVIN  ?  `${x}K` :
-    /* else FAHRENHEIT */ `${x}°F`;
+    unitId === CELSIUS ? `${x}°C` : unitId === KELVIN ? `${x}K` : /* else FAHRENHEIT */ `${x}°F`;
 
   if (Number.isNaN(min) || Number.isNaN(max)) return <>Invalid values.</>;
-  const absoluteZeroInUnitId = temperatureFromTo(
-    CELSIUS,
-    unitId,
-    ABSOLUTE_ZERO,
-  );
-  if (min < absoluteZeroInUnitId || max < absoluteZeroInUnitId)
-    return <>One or more values are below absolute zero.</>;
+  const absoluteZeroInUnitId = temperatureFromTo(CELSIUS, unitId, ABSOLUTE_ZERO);
+  if (min < absoluteZeroInUnitId || max < absoluteZeroInUnitId) return <>One or more values are below absolute zero.</>;
   if (min === max) return render(min);
   return (
     <>
@@ -61,12 +56,7 @@ type TemperatureButtonArgs = {
 
 const TemperatureButton = (props: TemperatureButtonArgs) => (
   <Grid size={props.wide ? 12 : 6}>
-    <Button
-      sx={{ width: "100%" }}
-      onClick={props.onClick}
-      variant="outlined"
-      color="primary"
-    >
+    <Button sx={{ width: "100%" }} onClick={props.onClick} variant="outlined" color="primary">
       {props.label}
     </Button>
   </Grid>
@@ -98,9 +88,7 @@ function SpecifiedStorageTemperature({
   onErrorStateChange,
 }: SpecifiedStorageTemperatureArgs): React.ReactNode {
   if (storageTempMin.unitId !== storageTempMax.unitId)
-    throw new Error(
-      "Unit IDs of storageTempMin and storageTempMax are not the same.",
-    );
+    throw new Error("Unit IDs of storageTempMin and storageTempMax are not the same.");
   const unitId: TemperatureScale = storageTempMin.unitId;
   const minValue: number = storageTempMin.numericValue;
   const maxValue: number = storageTempMax.numericValue;
@@ -115,10 +103,8 @@ function SpecifiedStorageTemperature({
   useEffect(() => {
     setMin(storageTempMin.numericValue);
     setMax(storageTempMax.numericValue);
-    if (!Number.isNaN(storageTempMin.numericValue))
-      setMinField(`${storageTempMin.numericValue}`);
-    if (!Number.isNaN(storageTempMax.numericValue))
-      setMaxField(`${storageTempMax.numericValue}`);
+    if (!Number.isNaN(storageTempMin.numericValue)) setMinField(`${storageTempMin.numericValue}`);
+    if (!Number.isNaN(storageTempMax.numericValue)) setMaxField(`${storageTempMax.numericValue}`);
   }, [storageTempMin, storageTempMax]);
 
   const handleButtonPressed = (newMin: number, newMax: number): void => {
@@ -155,10 +141,7 @@ function SpecifiedStorageTemperature({
     const newMinTemp: Temperature = { numericValue: newMin, unitId };
     const newMaxTemp: Temperature = { numericValue: newMax, unitId };
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
-    onErrorStateChange(
-      !validateTemperature(newMinTemp).isError ||
-        !validateTemperature(newMaxTemp).isError,
-    );
+    onErrorStateChange(!validateTemperature(newMinTemp).isError || !validateTemperature(newMaxTemp).isError);
   };
 
   const handleMaxFieldChange = (value: string) => {
@@ -170,10 +153,7 @@ function SpecifiedStorageTemperature({
     const newMinTemp: Temperature = { numericValue: newMin, unitId };
     const newMaxTemp: Temperature = { numericValue: newMax, unitId };
     setTemperatures({ storageTempMin: newMinTemp, storageTempMax: newMaxTemp });
-    onErrorStateChange(
-      !validateTemperature(newMinTemp).isError ||
-        !validateTemperature(newMaxTemp).isError,
-    );
+    onErrorStateChange(!validateTemperature(newMinTemp).isError || !validateTemperature(newMaxTemp).isError);
   };
 
   return (
@@ -214,111 +194,89 @@ function SpecifiedStorageTemperature({
                 {!disabled && (
                   <>
                     <Grid container direction="row" spacing={1}>
-                        <Grid size={6}>
-                          <NumberField
-                            value={minField}
-                            onChange={(e) => {
-                              handleMinFieldChange(e.target.value);
-                            }}
-                            variant="outlined"
-                            size="small"
-                            error={
-                              validateTemperature({ numericValue: min, unitId })
-                                .isError
-                            }
-                            fullWidth
-                            slotProps={{
-                              input: {
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    Min
-                                  </InputAdornment>
-                                ),
-                              },
-                            }}
-                          />
-                        </Grid>
-                        <Grid size={6}>
-                          <NumberField
-                            value={maxField}
-                            onChange={(e) => {
-                              handleMaxFieldChange(e.target.value);
-                            }}
-                            variant="outlined"
-                            size="small"
-                            error={
-                              validateTemperature({ numericValue: max, unitId })
-                                .isError
-                            }
-                            fullWidth
-                            slotProps={{
-                              input: {
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    Max
-                                  </InputAdornment>
-                                ),
-                              },
-                            }}
-                          />
-                        </Grid>
+                      <Grid size={6}>
+                        <NumberField
+                          value={minField}
+                          onChange={(e) => {
+                            handleMinFieldChange(e.target.value);
+                          }}
+                          variant="outlined"
+                          size="small"
+                          error={validateTemperature({ numericValue: min, unitId }).isError}
+                          fullWidth
+                          slotProps={{
+                            input: {
+                              startAdornment: <InputAdornment position="start">Min</InputAdornment>,
+                            },
+                          }}
+                        />
                       </Grid>
+                      <Grid size={6}>
+                        <NumberField
+                          value={maxField}
+                          onChange={(e) => {
+                            handleMaxFieldChange(e.target.value);
+                          }}
+                          variant="outlined"
+                          size="small"
+                          error={validateTemperature({ numericValue: max, unitId }).isError}
+                          fullWidth
+                          slotProps={{
+                            input: {
+                              startAdornment: <InputAdornment position="start">Max</InputAdornment>,
+                            },
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
                     <Grid container direction="row" spacing={1}>
                       <TemperatureButton
                         label="Ambient"
-                          onClick={() => {
-                            handleButtonPressed(
-                              temperatureFromTo(CELSIUS, unitId, 15),
-                              temperatureFromTo(CELSIUS, unitId, 30),
-                            );
-                          }}
-                        />
-                        <TemperatureButton
-                          label="Refrigerated"
-                          onClick={() => {
-                            handleButtonPressed(
-                              temperatureFromTo(CELSIUS, unitId, 3),
-                              temperatureFromTo(CELSIUS, unitId, 5),
-                            );
-                          }}
-                        />
-                        <TemperatureButton
-                          label="Frozen"
-                          onClick={() => {
-                            handleButtonPressed(
-                              temperatureFromTo(CELSIUS, unitId, -30),
-                              temperatureFromTo(CELSIUS, unitId, -18),
-                            );
-                          }}
-                        />
-                        <TemperatureButton
-                          label="ULT Frozen"
-                          onClick={() => {
-                            handleButtonPressed(
-                              temperatureFromTo(CELSIUS, unitId, -80),
-                              temperatureFromTo(CELSIUS, unitId, -70),
-                            );
-                          }}
-                        />
-                        <TemperatureButton
-                          wide
-                          label="Liquid Nitrogen"
-                          onClick={() => {
-                            handleButtonPressed(
-                              temperatureFromTo(
-                                CELSIUS,
-                                unitId,
-                                LIQUID_NITROGEN,
-                              ),
-                              temperatureFromTo(
-                                CELSIUS,
-                                unitId,
-                                LIQUID_NITROGEN,
-                              ),
-                            );
-                          }}
-                        />
-                      </Grid>
+                        onClick={() => {
+                          handleButtonPressed(
+                            temperatureFromTo(CELSIUS, unitId, 15),
+                            temperatureFromTo(CELSIUS, unitId, 30),
+                          );
+                        }}
+                      />
+                      <TemperatureButton
+                        label="Refrigerated"
+                        onClick={() => {
+                          handleButtonPressed(
+                            temperatureFromTo(CELSIUS, unitId, 3),
+                            temperatureFromTo(CELSIUS, unitId, 5),
+                          );
+                        }}
+                      />
+                      <TemperatureButton
+                        label="Frozen"
+                        onClick={() => {
+                          handleButtonPressed(
+                            temperatureFromTo(CELSIUS, unitId, -30),
+                            temperatureFromTo(CELSIUS, unitId, -18),
+                          );
+                        }}
+                      />
+                      <TemperatureButton
+                        label="ULT Frozen"
+                        onClick={() => {
+                          handleButtonPressed(
+                            temperatureFromTo(CELSIUS, unitId, -80),
+                            temperatureFromTo(CELSIUS, unitId, -70),
+                          );
+                        }}
+                      />
+                      <TemperatureButton
+                        wide
+                        label="Liquid Nitrogen"
+                        onClick={() => {
+                          handleButtonPressed(
+                            temperatureFromTo(CELSIUS, unitId, LIQUID_NITROGEN),
+                            temperatureFromTo(CELSIUS, unitId, LIQUID_NITROGEN),
+                          );
+                        }}
+                      />
+                    </Grid>
                   </>
                 )}
               </Stack>

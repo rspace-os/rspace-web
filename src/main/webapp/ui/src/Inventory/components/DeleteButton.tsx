@@ -1,8 +1,9 @@
-import { match } from "../../util/Util";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useTheme } from "@mui/material/styles";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React, { useState } from "react";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
-import { useTheme } from "@mui/material/styles";
+import { match } from "../../util/Util";
 
 type DeleteButtonArgs = {
   onClick: () => void;

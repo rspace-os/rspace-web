@@ -1,42 +1,39 @@
-import React, { useState, useEffect, useContext } from "react";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import Chip from "@mui/material/Chip";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Box from "@mui/material/Box";
-import { observer } from "mobx-react-lite";
-import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
-import Typography from "@mui/material/Typography";
-import { type UseState } from "../../util/types";
-import {
-  type PlanSummary,
-  fetchPlanSummaries,
-  type SearchParameters,
-} from "./PlanSummary";
-import StringField from "../../components/Inputs/StringField";
-import DropdownButton from "../../components/DropdownButton";
-import Popover from "@mui/material/Popover";
-import Chip from "@mui/material/Chip";
-import { importPlan } from "./ImportIntoGallery";
-import TablePagination from "@mui/material/TablePagination";
-import { paginationOptions, DataGridColumn } from "../../util/table";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-import Portal from "@mui/material/Portal";
-import ValidatingSubmitButton, {
-  IsInvalid,
-  IsValid,
-} from "../../components/ValidatingSubmitButton";
-import docLinks from "../../assets/DocLinks";
-import Link from "@mui/material/Link";
-import createAccentedTheme from "../../accentedTheme";
-import { ThemeProvider } from "@mui/material/styles";
-import { GridRowId } from "@mui/x-data-grid";
-import Stack from "@mui/material/Stack";
 import DialogTitle from "@mui/material/DialogTitle";
-import AppBar from "../../components/AppBar";
+import Link from "@mui/material/Link";
+import Popover from "@mui/material/Popover";
+import Portal from "@mui/material/Portal";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import TablePagination from "@mui/material/TablePagination";
+import Typography from "@mui/material/Typography";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GridRowId } from "@mui/x-data-grid";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect, useState } from "react";
+import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
+import docLinks from "../../assets/DocLinks";
+import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import DropdownButton from "../../components/DropdownButton";
+import StringField from "../../components/Inputs/StringField";
+import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import { DataGridColumn, paginationOptions } from "../../util/table";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type UseState } from "../../util/types";
+import { importPlan } from "./ImportIntoGallery";
+import { fetchPlanSummaries, type PlanSummary, type SearchParameters } from "./PlanSummary";
+
 const Panel = ({
   anchorEl,
   children,
@@ -96,11 +93,7 @@ const Search = ({ name, value, onChange, onSubmit }: SearchControlArgs) => {
         setAnchorEl(e.currentTarget);
       }}
     >
-      <Panel
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-        onSubmit={() => onSubmit()}
-      >
+      <Panel anchorEl={anchorEl} onClose={() => setAnchorEl(null)} onSubmit={() => onSubmit()}>
         <StringField
           value={value ?? ""}
           onChange={({ target: { value: newValue } }) => onChange(newValue)}
@@ -154,31 +147,24 @@ const SearchControls = ({
   setPage,
 }: SearchControlsArgs) => {
   const { addAlert } = useContext(AlertContext);
-  const [searchParameters, setSearchParameters]: UseState<
-    Omit<SearchParameters, "page" | "pageSize">
-  > = useState({
+  const [searchParameters, setSearchParameters]: UseState<Omit<SearchParameters, "page" | "pageSize">> = useState({
     like: null as string | null,
     grantsLike: null as string | null,
     fundersLike: null as string | null,
     collaboratorsLike: null as string | null,
   });
-  const [appliedSearchParameters, setAppliedSearchParameters]: UseState<
-    Omit<SearchParameters, "page" | "pageSize">
-  > = useState({
-    like: null as string | null,
-    grantsLike: null as string | null,
-    fundersLike: null as string | null,
-    collaboratorsLike: null as string | null,
-  });
-  const modifySearchParameters = (
-    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">,
-  ) => {
+  const [appliedSearchParameters, setAppliedSearchParameters]: UseState<Omit<SearchParameters, "page" | "pageSize">> =
+    useState({
+      like: null as string | null,
+      grantsLike: null as string | null,
+      fundersLike: null as string | null,
+      collaboratorsLike: null as string | null,
+    });
+  const modifySearchParameters = (newSearchParameters: Omit<SearchParameters, "page" | "pageSize">) => {
     setSearchParameters(newSearchParameters);
     setPage(0);
   };
-  const getDMPs = async (
-    newSearchParameters: Omit<SearchParameters, "page" | "pageSize">,
-  ) => {
+  const getDMPs = async (newSearchParameters: Omit<SearchParameters, "page" | "pageSize">) => {
     setFetching(true);
     setDMPs([]);
     try {
@@ -209,12 +195,7 @@ const SearchControls = ({
   }, [page, pageSize]);
   return (
     <Stack spacing={1}>
-      <Stack
-        direction="row"
-        spacing={1}
-        role="group"
-        aria-label="Search filters"
-      >
+      <Stack direction="row" spacing={1} role="group" aria-label="Search filters">
         <CustomChip
           name="Label"
           value={appliedSearchParameters.like}
@@ -362,11 +343,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
     />
   );
 }
-function DMPDialogContent({
-  setOpen,
-}: {
-  setOpen: (open: boolean) => void;
-}): React.ReactNode {
+function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const [DMPs, setDMPs] = useState<Array<PlanSummary>>([]);
@@ -436,14 +413,12 @@ function DMPDialogContent({
         >
           <Box>
             <Typography variant="body2">
-              Importing a DMP from <strong>argos.openaire.eu</strong> will make
-              it available to view and reference within RSpace.
+              Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference
+              within RSpace.
             </Typography>
             <Typography variant="body2">
-              See{" "}
-              <Link href="https://argos.openaire.eu">argos.openaire.eu</Link>{" "}
-              and our <Link href={docLinks.argos}>Argos integration docs</Link>{" "}
-              for more.
+              See <Link href="https://argos.openaire.eu">argos.openaire.eu</Link> and our{" "}
+              <Link href={docLinks.argos}>Argos integration docs</Link> for more.
             </Typography>
           </Box>
           <SearchControls
@@ -463,31 +438,22 @@ function DMPDialogContent({
           >
             <DataGridWithRadioSelection
               columns={[
-                DataGridColumn.newColumnWithFieldName<"label", PlanSummary>(
-                  "label",
-                  {
-                    headerName: "Label",
-                    flex: 1,
-                    sortable: false,
-                  },
-                ),
+                DataGridColumn.newColumnWithFieldName<"label", PlanSummary>("label", {
+                  headerName: "Label",
+                  flex: 1,
+                  sortable: false,
+                }),
                 DataGridColumn.newColumnWithFieldName<"id", PlanSummary>("id", {
                   headerName: "Id",
                   flex: 1,
                   sortable: false,
                 }),
-                DataGridColumn.newColumnWithFieldName<"grant", PlanSummary>(
-                  "grant",
-                  {
-                    headerName: "Grant",
-                    flex: 1,
-                    sortable: false,
-                  },
-                ),
-                DataGridColumn.newColumnWithValueMapper<
-                  "createdAt",
-                  PlanSummary
-                >(
+                DataGridColumn.newColumnWithFieldName<"grant", PlanSummary>("grant", {
+                  headerName: "Grant",
+                  flex: 1,
+                  sortable: false,
+                }),
+                DataGridColumn.newColumnWithValueMapper<"createdAt", PlanSummary>(
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
@@ -496,10 +462,7 @@ function DMPDialogContent({
                     sortable: false,
                   },
                 ),
-                DataGridColumn.newColumnWithValueMapper<
-                  "modifiedAt",
-                  PlanSummary
-                >(
+                DataGridColumn.newColumnWithValueMapper<"modifiedAt", PlanSummary>(
                   "modifiedAt",
                   (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {
@@ -512,9 +475,7 @@ function DMPDialogContent({
               rows={fetching ? [] : DMPs}
               selectedRowId={selectedPlan?.id}
               onSelectionChange={(newSelectionId: GridRowId) => {
-                setSelectedPlan(
-                  DMPs.find((d) => d.id === newSelectionId) ?? null,
-                );
+                setSelectedPlan(DMPs.find((d) => d.id === newSelectionId) ?? null);
               }}
               selectRadioAriaLabelFunc={(row) => `Select plan: ${row.label}`}
               initialState={{
@@ -578,8 +539,7 @@ function DMPDialogContent({
                 },
                 select: {
                   renderValue: (value: unknown): React.ReactNode => {
-                    if (typeof value !== "number")
-                      throw new Error("Invalid value");
+                    if (typeof value !== "number") throw new Error("Invalid value");
                     return value < totalCount ? value : `${value} (All)`;
                   },
                 },
@@ -594,9 +554,7 @@ function DMPDialogContent({
               onClick={() => {
                 void handleImport();
               }}
-              validationResult={
-                !selectedPlan ? IsInvalid("No DMP selected.") : IsValid()
-              }
+              validationResult={!selectedPlan ? IsInvalid("No DMP selected.") : IsValid()}
               loading={importing}
             >
               Import

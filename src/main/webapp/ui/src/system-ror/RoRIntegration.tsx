@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
+import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Button } from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../theme";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import GenericsearchBar from "../components/GenericsearchBar";
 import axios from "@/common/axios";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
-import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
-import Alert from "@mui/material/Alert";
-import { Button } from "@mui/material";
-import Box from "@mui/material/Box";
+import GenericsearchBar from "../components/GenericsearchBar";
+import materialTheme from "../theme";
 
 type Location = { geonames_details: { name: string; country_name: string } };
 type Name = { types: Array<string>; value: string };
@@ -31,17 +33,11 @@ type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
 const RSPACE_ROR_FORWARD_SLASH_DELIM = "__rspacror_forsl__";
 
-function RorDetails(
-  props: React.HTMLAttributes<HTMLDivElement>,
-): React.ReactNode {
-  return (
-    <Box {...props} sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }} />
-  );
+function RorDetails(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
+  return <Box {...props} sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }} />;
 }
 
-function RorHelpText(
-  props: React.HTMLAttributes<HTMLDivElement>,
-): React.ReactNode {
+function RorHelpText(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
   return (
     <Box
       {...props}
@@ -54,16 +50,8 @@ function RorHelpText(
   );
 }
 
-function RorErrorHelpText(
-  props: React.HTMLAttributes<HTMLSpanElement>,
-): React.ReactNode {
-  return (
-    <Box
-      component="span"
-      {...props}
-      sx={{ fontSize: "14px", backgroundColor: "#d9d9d9" }}
-    />
-  );
+function RorErrorHelpText(props: React.HTMLAttributes<HTMLSpanElement>): React.ReactNode {
+  return <Box component="span" {...props} sx={{ fontSize: "14px", backgroundColor: "#d9d9d9" }} />;
 }
 
 function RoRIntegration(): React.ReactNode {
@@ -72,17 +60,13 @@ function RoRIntegration(): React.ReactNode {
   const [rorDetails, setRorDetails] = useState<RoRApiResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const handleNetworkError = (e: Error) => {
-    setErrorMessage(
-      e.message ? e.message : "There is a problem, please try again later",
-    );
+    setErrorMessage(e.message ? e.message : "There is a problem, please try again later");
   };
 
   useEffect(() => {
     const fetchExistingRor = async () => {
       try {
-        const response: { data: string } = await axios.get(
-          "/system/ror/existingGlobalRoRID",
-        );
+        const response: { data: string } = await axios.get("/system/ror/existingGlobalRoRID");
         setRor(response.data);
       } catch (e) {
         if (e instanceof Error) handleNetworkError(e);
@@ -95,21 +79,16 @@ function RoRIntegration(): React.ReactNode {
   const parseRorError = (rorErrorMessage: string): string => {
     if (rorErrorMessage.includes("errors")) {
       //error from ROR API
-      return rorErrorMessage.substring(
-        rorErrorMessage.indexOf("errors") + 10,
-        rorErrorMessage.length - 6,
-      );
+      return rorErrorMessage.substring(rorErrorMessage.indexOf("errors") + 10, rorErrorMessage.length - 6);
     }
     return rorErrorMessage; //RSpace error message
   };
 
   const updateRor = async () => {
-    const updatedRoR = candidateRor.replaceAll(
-      "/",
-      RSPACE_ROR_FORWARD_SLASH_DELIM,
-    );
+    const updatedRoR = candidateRor.replaceAll("/", RSPACE_ROR_FORWARD_SLASH_DELIM);
     try {
       const response: RSpaceApiResponse = await axios.post(
+        // biome-ignore lint/style/useTemplate: initial biome migration
         "/system/ror/rorForID/" + updatedRoR,
       );
       if (response.data.exceptionMessage) {
@@ -125,9 +104,7 @@ function RoRIntegration(): React.ReactNode {
   };
   const deleteRor = async () => {
     try {
-      const response: RSpaceApiResponse = await axios.delete(
-        "/system/ror/rorForID/",
-      );
+      const response: RSpaceApiResponse = await axios.delete("/system/ror/rorForID/");
       if (response.data.exceptionMessage) {
         setErrorMessage(parseRorError(response.data.exceptionMessage));
       } else {
@@ -143,12 +120,10 @@ function RoRIntegration(): React.ReactNode {
 
   const fetchDetails = async (rorID: string) => {
     if (rorID) {
-      const searchTerm = rorID.replaceAll(
-        "/",
-        RSPACE_ROR_FORWARD_SLASH_DELIM,
-      );
+      const searchTerm = rorID.replaceAll("/", RSPACE_ROR_FORWARD_SLASH_DELIM);
       try {
         const response: { data: RoRApiResponse } = await axios.get(
+          // biome-ignore lint/style/useTemplate: initial biome migration
           "/system/ror/rorForID/" + searchTerm,
         );
         if (response.data.exceptionMessage) {
@@ -184,10 +159,9 @@ function RoRIntegration(): React.ReactNode {
   }, [candidateRor]);
 
   const getDisplayName = (): string | null => {
+    // biome-ignore lint/complexity/useOptionalChain: initial biome migration
     if (rorDetails && rorDetails.names) {
-      return rorDetails.names
-        .filter((name) => name.types.includes("ror_display"))
-        .map((name) => name.value)[0];
+      return rorDetails.names.filter((name) => name.types.includes("ror_display")).map((name) => name.value)[0];
     }
     return null;
   };
@@ -206,13 +180,11 @@ function RoRIntegration(): React.ReactNode {
     }
   };
 
-  const showLinkAction =
-    Boolean(candidateRor) && !rorMatchesCandidateRor() && !errorMessage;
-  const showUnlinkAction =
-    (rorMatchesCandidateRor() || (Boolean(ror) && !candidateRor)) &&
-    !errorMessage;
+  const showLinkAction = Boolean(candidateRor) && !rorMatchesCandidateRor() && !errorMessage;
+  const showUnlinkAction = (rorMatchesCandidateRor() || (Boolean(ror) && !candidateRor)) && !errorMessage;
 
   return (
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
     <>
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
@@ -223,10 +195,9 @@ function RoRIntegration(): React.ReactNode {
               <a target="_blank" rel="noreferrer" href="https://ror.org">
                 ROR ID
               </a>{" "}
-              with your RSpace instance, you ensure the research outputs
-              produced in RSpace are connected with your research organisation.
-              All research outputs with a DOI will automatically include the ROR
-              ID in their affiliation metadata.
+              with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your
+              research organisation. All research outputs with a DOI will automatically include the ROR ID in their
+              affiliation metadata.
             </RorHelpText>
           </div>
           <RorHelpText>
@@ -245,8 +216,7 @@ function RoRIntegration(): React.ReactNode {
               <a target="_blank" rel="noreferrer" href="https://ror.org/search">
                 ROR registry
               </a>{" "}
-              to ensure you are adding the correct ROR ID. If your institution
-              does not have a ROR ID, you can submit a{" "}
+              to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a{" "}
               <a
                 target="_blank"
                 rel="noreferrer"
@@ -258,15 +228,13 @@ function RoRIntegration(): React.ReactNode {
           )}
           {showLinkAction && (
             <RorHelpText>
-              ROR ID found. Click <strong>Link</strong> to associate with this
-              RSpace Instance.
+              ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.
             </RorHelpText>
           )}
           {showUnlinkAction && (
             <RorHelpText>
-              A ROR ID is linked to this RSpace Instance. Click on{" "}
-              <strong>UNLINK</strong> to remove the association. Future
-              published or updated DOIs will not include the ROR ID.
+              A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association.
+              Future published or updated DOIs will not include the ROR ID.
             </RorHelpText>
           )}
           {rorDetails && (
@@ -284,10 +252,7 @@ function RoRIntegration(): React.ReactNode {
                 <h2>{getDisplayName()}</h2>
               </RorDetails>
               {rorDetails.locations.map((location, index) => {
-                const cityCountry =
-                  location.geonames_details.name +
-                  ", " +
-                  location.geonames_details.country_name;
+                const cityCountry = `${location.geonames_details.name}, ${location.geonames_details.country_name}`;
                 return (
                   <RorDetails
                     key={`${location.geonames_details.name}-${location.geonames_details.country_name}-${index}`}
@@ -310,17 +275,12 @@ function RoRIntegration(): React.ReactNode {
               </RorDetails>
             </>
           )}
-          {errorMessage && (
-            <Alert severity={getSeverity(errorMessage)}>{errorMessage}</Alert>
-          )}
+          {errorMessage && <Alert severity={getSeverity(errorMessage)}>{errorMessage}</Alert>}
           {errorMessage && getSeverity(errorMessage) === "error" && (
             <RorHelpText>
               Please ensure the ROR ID is one of the following formats:
-              <RorErrorHelpText>
-                https://ror.org/02mhbdp94
-              </RorErrorHelpText>,{" "}
-              <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>,{" "}
-              <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
+              <RorErrorHelpText>https://ror.org/02mhbdp94</RorErrorHelpText>,{" "}
+              <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>, <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
             </RorHelpText>
           )}
           {showLinkAction && (
@@ -358,8 +318,7 @@ type HTMLElementWithRorRoot = HTMLElement & { rorRoot?: Root };
 function mountRoRIntegration(event?: Event) {
   event?.preventDefault();
 
-  const mainArea: HTMLElementWithRorRoot | null =
-    document.getElementById("mainArea");
+  const mainArea: HTMLElementWithRorRoot | null = document.getElementById("mainArea");
 
   if (!mainArea) {
     return;
@@ -384,9 +343,7 @@ function mountRoRIntegration(event?: Event) {
 }
 
 window.addEventListener("load", () => {
-  document
-    .getElementById("rorRegistryLink")
-    ?.addEventListener("click", (event) => void mountRoRIntegration(event));
+  document.getElementById("rorRegistryLink")?.addEventListener("click", (event) => void mountRoRIntegration(event));
 });
 
 export default RoRIntegration;

@@ -1,14 +1,15 @@
-import React from "react";
+import Box from "@mui/material/Box";
+import { chipClasses } from "@mui/material/Chip";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
-import UserDetails from "../../../../components/UserDetails";
+import { darken } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import type React from "react";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import TextField from "../../../../components/Inputs/TextField";
+import UserDetails from "../../../../components/UserDetails";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Note } from "../../../../stores/models/SubSampleModel";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { darken } from "@mui/material/styles";
-import { chipClasses } from "@mui/material/Chip";
 
 type NoteItemArgs = {
   note: Note;
@@ -52,9 +53,7 @@ export default function NoteItem({ note }: NoteItemArgs): React.ReactNode {
             </Box>
           </>
         }
-        secondary={
-          <TextField value={note.content} disabled={true} variant="standard" />
-        }
+        secondary={<TextField value={note.content} disabled={true} variant="standard" />}
       />
     </ListItem>
   );

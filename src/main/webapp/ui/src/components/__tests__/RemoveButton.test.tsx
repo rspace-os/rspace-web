@@ -1,11 +1,12 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import RemoveButton from "../RemoveButton";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../theme";
-
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
+import materialTheme from "../../theme";
+import RemoveButton from "../RemoveButton";
+
 describe("RemoveButton", () => {
   test("Should invoke onClick when clicked.", async () => {
     const user = userEvent.setup();
@@ -13,22 +14,18 @@ describe("RemoveButton", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <RemoveButton onClick={onClick} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
 
     await user.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
-
   });
   test('Has default tooltip "Delete"', () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <RemoveButton />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     screen.getByLabelText("Delete");
   });
 });
-

@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { faUnlink } from "@fortawesome/free-solid-svg-icons/faUnlink";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import IconButton from "@mui/material/IconButton";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
-import IconButton from "@mui/material/IconButton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUnlink } from "@fortawesome/free-solid-svg-icons/faUnlink";
-import { ConnectedOAuthApp } from "@/my-rspace/profile/types";
-import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 
 const ConnectedAppsTableRow = ({
   app,
@@ -27,11 +28,7 @@ const ConnectedAppsTableRow = ({
       <TableCell align="left">{app.scope}</TableCell>
       <TableCell align="right">
         <Tooltip title="Disconnect" enterDelay={100}>
-          <IconButton
-            color="inherit"
-            onClick={() => setOpen(true)}
-            sx={{ width: "42px" }}
-          >
+          <IconButton color="inherit" onClick={() => setOpen(true)} sx={{ width: "42px" }}>
             <FontAwesomeIcon icon={faUnlink} size="xs" />
           </IconButton>
         </Tooltip>
@@ -39,8 +36,7 @@ const ConnectedAppsTableRow = ({
           title="Confirm Disconnect"
           consequences={
             <Typography variant="body1">
-              Are you sure you want to revoke access from{" "}
-              <strong>{app.clientName}</strong>?
+              Are you sure you want to revoke access from <strong>{app.clientName}</strong>?
             </Typography>
           }
           variant="warning"

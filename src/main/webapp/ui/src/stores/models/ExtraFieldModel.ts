@@ -1,17 +1,13 @@
-import { action, observable, computed, makeObservable } from "mobx";
-import InventoryBaseRecord from "./InventoryBaseRecord";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
-import {
-  type ExtraFieldAttrs,
-  type ExtraFieldType,
-  type ExtraField,
-} from "../definitions/ExtraField";
+import { action, computed, makeObservable, observable } from "mobx";
+import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GlobalId, type Id } from "../definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ExtraField, type ExtraFieldAttrs, type ExtraFieldType } from "../definitions/ExtraField";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../definitions/InventoryRecord";
-import {
-  IsValid,
-  IsInvalid,
-  type ValidationResult,
-} from "../../components/ValidatingSubmitButton";
+// biome-ignore lint/style/useImportType: initial biome migration
+import InventoryBaseRecord from "./InventoryBaseRecord";
 
 export default class ExtraFieldModel implements ExtraField {
   // @ts-expect-error Set by the call to setAttributes
@@ -88,24 +84,15 @@ export default class ExtraFieldModel implements ExtraField {
 
   get isValid(): ValidationResult {
     if (!this.name) return IsInvalid("Names of extra fields cannot be empty.");
-    if (this.name.length > 255)
-      return IsInvalid("Names of extra fields cannot exceed 255 characters.");
+    if (this.name.length > 255) return IsInvalid("Names of extra fields cannot exceed 255 characters.");
     if (this.type === "Text") {
-      if (typeof this.content !== "string")
-        return IsInvalid(
-          "The content of textual extra fields must be a string."
-        );
+      if (typeof this.content !== "string") return IsInvalid("The content of textual extra fields must be a string.");
       if (this.content.length > 250)
-        return IsInvalid(
-          "The content of textual extra fields cannot exceed 250 characters."
-        );
+        return IsInvalid("The content of textual extra fields cannot exceed 250 characters.");
       return IsValid();
     }
     if (this.type === "Number") {
-      if (this.invalidInput)
-        return IsInvalid(
-          "The content of numberical extra fields must be a valid number."
-        );
+      if (this.invalidInput) return IsInvalid("The content of numberical extra fields must be a valid number.");
       return IsValid();
     }
     return IsInvalid("Invalid field type");

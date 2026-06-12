@@ -1,101 +1,95 @@
-import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React from "react";
-import { createRoot } from "react-dom/client";
-import ErrorBoundary from "../../../components/ErrorBoundary";
-import Portal from "@mui/material/Portal";
-import Button from "@mui/material/Button";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Chip, { chipClasses } from "@mui/material/Chip";
-import { inputBaseClasses } from "@mui/material/InputBase";
-import { tablePaginationClasses } from "@mui/material/TablePagination";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
-import TagsCombobox from "./TagsCombobox";
-import RsSet, { flattenWithIntersection } from "../../../util/set";
-import * as ArrayUtils from "../../../util/ArrayUtils";
-import { Optional } from "../../../util/optional";
-import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
-import CardContent from "@mui/material/CardContent";
-import Box from "@mui/material/Box";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableRow from "@mui/material/TableRow";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import {
-  DataGrid,
-  Toolbar as DataGridToolbar,
-  ColumnsPanelTrigger,
-  GridToolbarExportContainer,
-  useGridApiContext,
-  GridColumnVisibilityModel,
-  GridRowSelectionModel,
-  GridSortModel,
-  GridSlotProps,
-} from "@mui/x-data-grid";
-import TextField from "@mui/material/TextField";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
-import FilterListIcon from "@mui/icons-material/FilterList";
+import MakePiIcon from "@mui/icons-material/Badge";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import CustomTooltip from "../../../components/CustomTooltip";
-import {
-  useUserListing,
-  type User,
-  type UserListing,
-  type UserId,
-} from "../../../hooks/api/useUserListing";
-import * as FetchingData from "../../../util/fetchingData";
-import { formatFileSize } from "../../../util/files";
-import { DataGridColumn, paginationOptions } from "../../../util/table";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import CrossIcon from "@mui/icons-material/Clear";
+import CloseIcon from "@mui/icons-material/Close";
+import UserAliasIcon from "@mui/icons-material/ContactEmergency";
+import TickIcon from "@mui/icons-material/Done";
+import ExpandCircleDownIcon from "@mui/icons-material/ExpandCircleDown";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ExportIcon from "@mui/icons-material/GetApp";
+import TagIcon from "@mui/icons-material/LocalOfferOutlined";
+import LockIcon from "@mui/icons-material/Lock";
+import DisableIcon from "@mui/icons-material/NoAccounts";
+import RemoveUserIcon from "@mui/icons-material/PersonRemove";
+import SearchIcon from "@mui/icons-material/Search";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import { inputBaseClasses } from "@mui/material/InputBase";
 import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import Popover from "@mui/material/Popover";
-import Switch from "@mui/material/Switch";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import ExportDialog from "../../../Export/ExportDialog";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import TagIcon from "@mui/icons-material/LocalOfferOutlined";
-import RemoveUserIcon from "@mui/icons-material/PersonRemove";
-import DisableIcon from "@mui/icons-material/NoAccounts";
-import ExportIcon from "@mui/icons-material/GetApp";
-import MakePiIcon from "@mui/icons-material/Badge";
-import Result from "../../../util/result";
-import TickIcon from "@mui/icons-material/Done";
-import CrossIcon from "@mui/icons-material/Clear";
-import LockIcon from "@mui/icons-material/Lock";
-import ExpandCircleDownIcon from "@mui/icons-material/ExpandCircleDown";
-import DialogContentText from "@mui/material/DialogContentText";
-import { sleep } from "../../../util/Util";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import Dialog from "@mui/material/Dialog";
-import Alerts from "../../../components/Alerts/Alerts";
-import docLinks from "../../../assets/DocLinks";
+import Popover from "@mui/material/Popover";
+import Portal from "@mui/material/Portal";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import { ThemeProvider } from "@mui/material/styles";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import { tablePaginationClasses } from "@mui/material/TablePagination";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+// biome-ignore lint/style/useImportType: initial biome migration
+import {
+  ColumnsPanelTrigger,
+  DataGrid,
+  Toolbar as DataGridToolbar,
+  GridColumnVisibilityModel,
+  GridRowSelectionModel,
+  GridSlotProps,
+  GridSortModel,
+  GridToolbarExportContainer,
+  useGridApiContext,
+} from "@mui/x-data-grid";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+import { createRoot } from "react-dom/client";
 import createAccentedTheme from "../../../accentedTheme";
-import UserAliasIcon from "@mui/icons-material/ContactEmergency";
-import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
-import * as Parsers from "../../../util/parsers";
-import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerificationPasswordNeeded";
-import useUiPreference, {
-  PREFERENCES,
-  UiPreferences,
-} from "../../../hooks/api/useUiPreference";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
+import docLinks from "../../../assets/DocLinks";
+import Alerts from "../../../components/Alerts/Alerts";
 import Analytics from "../../../components/Analytics";
-import Alert from "@mui/material/Alert";
+import CustomTooltip from "../../../components/CustomTooltip";
+import ErrorBoundary from "../../../components/ErrorBoundary";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import ExportDialog from "../../../Export/ExportDialog";
+import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerificationPasswordNeeded";
+import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
+import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/useUiPreference";
+import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import * as FetchingData from "../../../util/fetchingData";
+import { formatFileSize } from "../../../util/files";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
+import RsSet, { flattenWithIntersection } from "../../../util/set";
+import { DataGridColumn, paginationOptions } from "../../../util/table";
+import { sleep } from "../../../util/Util";
+import TagsCombobox from "./TagsCombobox";
 
 /*
  * `userListing` and `selectedCount` are passed to the `UsersToolbar` slot via
@@ -122,6 +116,7 @@ declare module "@mui/x-data-grid" {
  * information.
  */
 const EventBoundary = ({ children }: { children: React.ReactNode }) => (
+  // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
   <div
     onKeyDown={(e) => {
       e.stopPropagation();
@@ -194,32 +189,19 @@ const TagDialog = ({
   selectedUsers: ReadonlyArray<User>;
   open: boolean;
   onClose: () => void;
-  setTags: (
-    addedTags: Array<string>,
-    deletedTags: Array<string>,
-  ) => Promise<void>;
+  setTags: (addedTags: Array<string>, deletedTags: Array<string>) => Promise<void>;
 }) => {
   const { addAlert } = React.useContext(AlertContext);
-  const [commonTags, setCommonTags] = React.useState<RsSet<string>>(
-    new RsSet([]),
-  );
+  const [commonTags, setCommonTags] = React.useState<RsSet<string>>(new RsSet([]));
   const [addedTags, setAddedTags] = React.useState<Array<string>>([]);
   const [deletedTags, setDeletedTags] = React.useState<Array<string>>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const visibleTags = React.useMemo(() => {
-    return [
-      ...new RsSet(addedTags)
-        .union(commonTags)
-        .subtract(new RsSet(deletedTags)),
-    ];
+    return [...new RsSet(addedTags).union(commonTags).subtract(new RsSet(deletedTags))];
   }, [commonTags, addedTags, deletedTags]);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   React.useEffect(() => {
-    setCommonTags(
-      flattenWithIntersection(
-        new RsSet(selectedUsers.map((user) => new RsSet(user.tags))),
-      ),
-    );
+    setCommonTags(flattenWithIntersection(new RsSet(selectedUsers.map((user) => new RsSet(user.tags)))));
   }, [selectedUsers]);
   return (
     <Portal>
@@ -231,24 +213,13 @@ const TagDialog = ({
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2">
-              You can tag users to categorise them, and filter users by tag.
-              These tags are only visible to System Admins and Community Admins.
-              If you&apos;ve selected several users, only shared tags will be
-              shown.{" "}
-              <Link
-                target="_blank"
-                rel="noreferrer"
-                href={docLinks.taggingUsers}
-              >
+              You can tag users to categorise them, and filter users by tag. These tags are only visible to System
+              Admins and Community Admins. If you&apos;ve selected several users, only shared tags will be shown.{" "}
+              <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers}>
                 Read more about tagging users here.
               </Link>{" "}
             </Typography>
-            <Stack
-              direction="row"
-              spacing={1}
-              useFlexGap
-              sx={{ flexWrap: "wrap" }}
-            >
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
               {visibleTags.map((tag) => (
                 <Chip
                   key={tag}
@@ -274,11 +245,8 @@ const TagDialog = ({
                   value={new RsSet(visibleTags)}
                   anchorEl={anchorEl}
                   onSelection={(newTag) => {
-                    if (!addedTags.includes(newTag))
-                      setAddedTags([...addedTags, newTag]);
-                    setDeletedTags(
-                      deletedTags.filter((dTag) => dTag !== newTag),
-                    );
+                    if (!addedTags.includes(newTag)) setAddedTags([...addedTags, newTag]);
+                    setDeletedTags(deletedTags.filter((dTag) => dTag !== newTag));
                   }}
                   onClose={() => {
                     setAnchorEl(null);
@@ -328,13 +296,10 @@ const TagDialog = ({
     </Portal>
   );
 };
-const SearchBox = ({
-  userListing,
-}: {
-  userListing: FetchingData.Fetched<UserListing>;
-}) => {
+const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserListing> }) => {
   const [searchTerm, setSearchTerm] = React.useState("");
   return (
+    // biome-ignore lint/a11y/useSemanticElements: initial biome migration
     <form
       role="search"
       onSubmit={(e) => {
@@ -462,13 +427,9 @@ const PiAction = ({
         </ListItemIcon>
         <ListItemText
           primary={allowedPiAction
-            .map(({ action }) =>
-              action === "grant" ? "Grant PI role" : "Revoke PI role",
-            )
+            .map(({ action }) => (action === "grant" ? "Grant PI role" : "Revoke PI role"))
             .orElse("Grant PI role")}
-          secondary={allowedPiAction
-            .map(() => null)
-            .orElseGet(([error]) => error.message)}
+          secondary={allowedPiAction.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
               style: {
@@ -542,11 +503,7 @@ const PiAction = ({
                   })();
                 }}
               >
-                <DialogTitle>
-                  {action === "grant"
-                    ? "Grant user PI role"
-                    : "Revoke PI role from user"}
-                </DialogTitle>
+                <DialogTitle>{action === "grant" ? "Grant user PI role" : "Revoke PI role from user"}</DialogTitle>
                 <DialogContent>
                   {FetchingData.match(verificationPasswordNeeded, {
                     loading: () => (
@@ -577,8 +534,7 @@ const PiAction = ({
                             mb: 2,
                           }}
                         >
-                          Please set your verification password in My RSpace
-                          before performing this action.
+                          Please set your verification password in My RSpace before performing this action.
                         </DialogContentText>
                       ) : (
                         <>
@@ -588,14 +544,9 @@ const PiAction = ({
                               mb: 2,
                             }}
                           >
-                            To{" "}
-                            {action === "grant"
-                              ? "grant the PI role to"
-                              : "revoke the PI role from"}{" "}
-                            <strong>
-                              {selectedUser.map((u) => u.fullName).orElse("")}
-                            </strong>{" "}
-                            please re-enter your password.
+                            To {action === "grant" ? "grant the PI role to" : "revoke the PI role from"}{" "}
+                            <strong>{selectedUser.map((u) => u.fullName).orElse("")}</strong> please re-enter your
+                            password.
                           </DialogContentText>
                           <TextField
                             type="password"
@@ -663,9 +614,7 @@ const SetUsernamAliasAction = ({
         </ListItemIcon>
         <ListItemText
           primary="Set Username Alias"
-          secondary={allowedToSetAlias
-            .map(() => null)
-            .orElseGet(([error]) => error.message)}
+          secondary={allowedToSetAlias.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
               style: {
@@ -722,11 +671,9 @@ const SetUsernamAliasAction = ({
                   }}
                 >
                   <Typography variant="body2">
-                    SysAdmins can set a username alias for a user, enabling both
-                    the username and its alias to be used during login. The
-                    alias is only recognised during the login process, and does
-                    not replace the user’s username as their main identifier
-                    inside RSpace.
+                    SysAdmins can set a username alias for a user, enabling both the username and its alias to be used
+                    during login. The alias is only recognised during the login process, and does not replace the user’s
+                    username as their main identifier inside RSpace.
                   </Typography>
                 </DialogContentText>
                 <TextField
@@ -749,12 +696,7 @@ const SetUsernamAliasAction = ({
                 >
                   Cancel
                 </Button>
-                <SubmitSpinnerButton
-                  type="submit"
-                  loading={false}
-                  disabled={false}
-                  label="Set Alias"
-                />
+                <SubmitSpinnerButton type="submit" loading={false} disabled={false} label="Set Alias" />
               </DialogActions>
             </form>
           </Dialog>
@@ -777,15 +719,8 @@ const DeleteAction = ({
   const allowedToDelete: Result<User> = FetchingData.getSuccessValue(canDelete)
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
-    .mapError(
-      () =>
-        new Error('The deployment property "sysadmin.delete.user" is false.'),
-    )
-    .flatMap(() =>
-      selectedUser.mapError(
-        () => new Error("Only one user can be deleted at a time."),
-      ),
-    );
+    .mapError(() => new Error('The deployment property "sysadmin.delete.user" is false.'))
+    .flatMap(() => selectedUser.mapError(() => new Error("Only one user can be deleted at a time.")));
   return (
     <>
       <MenuItem
@@ -799,9 +734,7 @@ const DeleteAction = ({
         </ListItemIcon>
         <ListItemText
           primary="Delete"
-          secondary={allowedToDelete
-            .map(() => null)
-            .orElseGet(([error]) => error.message)}
+          secondary={allowedToDelete.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
               style: {
@@ -826,8 +759,7 @@ const DeleteAction = ({
                 e.preventDefault();
                 void (async () => {
                   try {
-                    if (username !== user.username)
-                      throw new Error("Usernames do not match.");
+                    if (username !== user.username) throw new Error("Usernames do not match.");
                     await user.delete();
                     addAlert(
                       mkAlert({
@@ -859,22 +791,15 @@ const DeleteAction = ({
                     mb: 2,
                   }}
                 >
-                  {(user.hasFormsUsedByOtherUsers ||
-                    user.hasTemplatesUsedByOtherUsers) && (
+                  {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
                         The user you are trying to delete is{" "}
-                        <strong>
-                          the owner of Forms and/or Templates that are used by
-                          other users.
-                        </strong>{" "}
-                        To ensure continued access to these Forms/Templates, the
-                        system
-                        <strong> will transfer ownership</strong> of those files
-                        to
-                        <strong> this System Administrator</strong> account.
-                        Forms and Templates that are not used by others will be
-                        deleted.
+                        <strong>the owner of Forms and/or Templates that are used by other users.</strong> To ensure
+                        continued access to these Forms/Templates, the system
+                        <strong> will transfer ownership</strong> of those files to
+                        <strong> this System Administrator</strong> account. Forms and Templates that are not used by
+                        others will be deleted.
                       </Typography>
                     </Alert>
                   )}
@@ -884,8 +809,7 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    User deletion is irreversible, and all documents will be
-                    deleted.
+                    User deletion is irreversible, and all documents will be deleted.
                   </Typography>
                   {user.hasFormsUsedByOtherUsers && (
                     <Typography
@@ -895,13 +819,11 @@ const DeleteAction = ({
                       }}
                     >
                       The user you are trying to delete is{" "}
-                      <strong>
-                        the owner of Forms that are used by other users.
-                      </strong>
+                      <strong>the owner of Forms that are used by other users.</strong>
                       To ensure continued access to these Forms, the system
                       <strong> will transfer ownership</strong> of the Forms to
-                      <strong> this System Administrator</strong> account. Forms
-                      that are not used by others will be deleted.
+                      <strong> this System Administrator</strong> account. Forms that are not used by others will be
+                      deleted.
                     </Typography>
                   )}
                   <Typography
@@ -910,8 +832,8 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    An XML archive will be made of the user&apos;s work which
-                    will be available for a short time on the server.
+                    An XML archive will be made of the user&apos;s work which will be available for a short time on the
+                    server.
                   </Typography>
                   <Typography
                     variant="body2"
@@ -919,10 +841,7 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    To delete{" "}
-                    <strong>
-                      {selectedUser.map((u) => u.fullName).orElse("")}
-                    </strong>
+                    To delete <strong>{selectedUser.map((u) => u.fullName).orElse("")}</strong>
                     &apos;s account please enter their username.
                   </Typography>
                 </DialogContentText>
@@ -951,8 +870,7 @@ const DeleteAction = ({
                   loading={false}
                   disabled={false}
                   label={
-                    user.hasFormsUsedByOtherUsers ||
-                    user.hasTemplatesUsedByOtherUsers
+                    user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers
                       ? "Transfer Forms/Templates And Delete"
                       : "Delete"
                   }
@@ -974,44 +892,31 @@ const SelectionActions = ({
 }) => {
   const { addAlert } = React.useContext(AlertContext);
   const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
-  const [actionsAnchorEl, setActionsAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  const [actionsAnchorEl, setActionsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagDialogOpen, setTagDialogOpen] = React.useState(false);
   const exportAllowed: Result<React.ReactNode> =
     selectedIds.length === 1
       ? Result.Ok(null)
-      : Result.Error([
-          new Error("Only one user's work can be exported at a time."),
-        ]);
+      : Result.Error([new Error("Only one user's work can be exported at a time.")]);
   const selectedUsers: Result<ReadonlyArray<User>> =
     selectedIds.length === 0
       ? Result.Error([new Error("No users selected")])
       : Result.all(
           ...selectedIds.map((id) =>
-            FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
-              listing.getById(id),
-            ),
+            FetchingData.getSuccessValue(fetchedListing).flatMap((listing) => listing.getById(id)),
           ),
         );
   const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
     .toResult(() => new Error("selectedIds is empty"))
     .flatMap((id) =>
-      selectedIds.length > 1
-        ? Result.Error<UserId>([new Error("More than one user is selected")])
-        : Result.Ok(id),
+      selectedIds.length > 1 ? Result.Error<UserId>([new Error("More than one user is selected")]) : Result.Ok(id),
     )
-    .flatMap((id) =>
-      FetchingData.getSuccessValue(fetchedListing).flatMap((listing) =>
-        listing.getById(id),
-      ),
-    );
+    .flatMap((id) => FetchingData.getSuccessValue(fetchedListing).flatMap((listing) => listing.getById(id)));
   const enableDisableAction: Result<{
     user: User;
     action: "enable" | "disable";
   }> = selectedUser
-    .mapError(
-      () => new Error("Only one user can be enabled / disabled at a time."),
-    )
+    .mapError(() => new Error("Only one user can be enabled / disabled at a time."))
     .map((user) =>
       user.enabled
         ? {
@@ -1026,9 +931,7 @@ const SelectionActions = ({
   const unlockAction: Result<User> = selectedUser
     .mapError(() => new Error("Only one user can be unlocked at a time."))
     .flatMap((user) =>
-      user.locked
-        ? Result.Ok(user)
-        : Result.Error([new Error("Only locked accounts can be unlocked.")]),
+      user.locked ? Result.Ok(user) : Result.Error([new Error("Only locked accounts can be unlocked.")]),
     );
   return (
     <>
@@ -1107,9 +1010,7 @@ const SelectionActions = ({
                           setTagDialogOpen(false);
                           setActionsAnchorEl(null);
                         }}
-                        setTags={(addedTags, deletedTags) =>
-                          listing.setTags(users, addedTags, deletedTags)
-                        }
+                        setTags={(addedTags, deletedTags) => listing.setTags(users, addedTags, deletedTags)}
                       />
                     ))
                     .orElse(null)}
@@ -1126,9 +1027,7 @@ const SelectionActions = ({
                   </ListItemIcon>
                   <ListItemText
                     primary="Export Work"
-                    secondary={exportAllowed.orElseGet(
-                      ([error]) => error.message,
-                    )}
+                    secondary={exportAllowed.orElseGet(([error]) => error.message)}
                     slotProps={{
                       secondary: {
                         style: {
@@ -1172,9 +1071,7 @@ const SelectionActions = ({
                   </ListItemIcon>
                   <ListItemText
                     primary="Unlock"
-                    secondary={unlockAction
-                      .map(() => null)
-                      .orElseGet(([error]) => error.message)}
+                    secondary={unlockAction.map(() => null).orElseGet(([error]) => error.message)}
                     slotProps={{
                       secondary: {
                         style: {
@@ -1185,10 +1082,7 @@ const SelectionActions = ({
                   />
                 </MenuItem>
                 <EventBoundary>
-                  <SetUsernamAliasAction
-                    selectedUser={selectedUser}
-                    setActionsAnchorEl={setActionsAnchorEl}
-                  />
+                  <SetUsernamAliasAction selectedUser={selectedUser} setActionsAnchorEl={setActionsAnchorEl} />
                 </EventBoundary>
                 <MenuItem
                   disabled={enableDisableAction.isError}
@@ -1248,13 +1142,9 @@ const SelectionActions = ({
                   </ListItemIcon>
                   <ListItemText
                     primary={enableDisableAction
-                      .map(({ action }) =>
-                        action === "disable" ? "Disable" : "Enable",
-                      )
+                      .map(({ action }) => (action === "disable" ? "Disable" : "Enable"))
                       .orElse("Enable / Disable")}
-                    secondary={enableDisableAction
-                      .map(() => null)
-                      .orElseGet(([error]) => error.message)}
+                    secondary={enableDisableAction.map(() => null).orElseGet(([error]) => error.message)}
                     slotProps={{
                       secondary: {
                         style: {
@@ -1265,10 +1155,7 @@ const SelectionActions = ({
                   />
                 </MenuItem>
                 <EventBoundary>
-                  <DeleteAction
-                    selectedUser={selectedUser}
-                    setActionsAnchorEl={setActionsAnchorEl}
-                  />
+                  <DeleteAction selectedUser={selectedUser} setActionsAnchorEl={setActionsAnchorEl} />
                 </EventBoundary>
               </Menu>
             </Box>
@@ -1302,14 +1189,9 @@ const SelectionActions = ({
     </>
   );
 };
-const UsersToolbar = ({
-  userListing,
-  selectedCount,
-}: GridSlotProps["toolbar"]) => {
-  const [filterAnchorEl, setFilterAnchorEl] =
-    React.useState<HTMLElement | null>(null);
-  const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) => {
+  const [filterAnchorEl, setFilterAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
   const [tags, setTags] = React.useState<Array<string>>([]);
   const apiRef = useGridApiContext();
@@ -1321,6 +1203,7 @@ const UsersToolbar = ({
    * table to a valid state.
    */
   const exportAllRows = async () => {
+    // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let priorSearchParameters;
     const newListing: UserListing = await FetchingData.match(userListing, {
       loading: () => Promise.reject(new Error("loading")),
@@ -1413,13 +1296,9 @@ const UsersToolbar = ({
                       // listing and would just cause an unnecessary
                       // re-render of the whole page.
                       if (event.target.checked && tags.length === 0) return;
-                      FetchingData.getSuccessValue(userListing).do(
-                        (listing) => {
-                          void listing.applyTagsFilter(
-                            event.target.checked ? tags : [],
-                          );
-                        },
-                      );
+                      FetchingData.getSuccessValue(userListing).do((listing) => {
+                        void listing.applyTagsFilter(event.target.checked ? tags : []);
+                      });
                     }}
                   />
                 }
@@ -1427,12 +1306,7 @@ const UsersToolbar = ({
               />
               <Stack direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
                 <Box sx={{ width: 30, flexShrink: 0 }} />
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  useFlexGap
-                  sx={{ flexWrap: "wrap" }}
-                >
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
                   {tags.map((tag) => (
                     <Chip
                       key={tag}
@@ -1441,11 +1315,9 @@ const UsersToolbar = ({
                       onDelete={() => {
                         const newTags = tags.filter((t) => t !== tag);
                         setTags(newTags);
-                        FetchingData.getSuccessValue(userListing).do(
-                          (listing) => {
-                            void listing.applyTagsFilter(newTags);
-                          },
-                        );
+                        FetchingData.getSuccessValue(userListing).do((listing) => {
+                          void listing.applyTagsFilter(newTags);
+                        });
                       }}
                       disabled={!tagsChecked}
                     />
@@ -1469,11 +1341,9 @@ const UsersToolbar = ({
                         if (!tags.includes(newTag)) {
                           const newTags = [...tags, newTag];
                           setTags(newTags);
-                          FetchingData.getSuccessValue(userListing).do(
-                            (listing) => {
-                              void listing.applyTagsFilter(newTags);
-                            },
-                          );
+                          FetchingData.getSuccessValue(userListing).do((listing) => {
+                            void listing.applyTagsFilter(newTags);
+                          });
                         }
                       }}
                       onClose={() => {
@@ -1526,49 +1396,39 @@ const UsersToolbar = ({
 };
 export const UsersPage = (): React.ReactNode => {
   const { userListing } = useUserListing();
-  const [rowSelectionModel, setRowSelectionModel] =
-    React.useState<GridRowSelectionModel>({
-      type: "include",
-      ids: new Set(),
-    });
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
   const [sortModel, setSortModel] = React.useState<GridSortModel>([]);
-  const [groupsAnchorEl, setGroupsAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  const [groupsAnchorEl, setGroupsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [groupsList, setGroupsList] = React.useState<Array<string>>([]);
-  const [tagsAnchorEl, setTagsAnchorEl] = React.useState<HTMLElement | null>(
-    null,
-  );
+  const [tagsAnchorEl, setTagsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsList, setTagsList] = React.useState<Array<string>>([]);
-  const [columnVisibility, setColumnVisibility] =
-    useUiPreference<GridColumnVisibilityModel>(
-      PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
-      {
-        defaultValue: {
-          email: false,
-          recordCount: false,
-          created: false,
-          firstName: false,
-          lastName: false,
-          locked: false,
-          tags: false,
-          usernameAlias: false,
-        },
+  const [columnVisibility, setColumnVisibility] = useUiPreference<GridColumnVisibilityModel>(
+    PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS,
+    {
+      defaultValue: {
+        email: false,
+        recordCount: false,
+        created: false,
+        firstName: false,
+        lastName: false,
+        locked: false,
+        tags: false,
+        usernameAlias: false,
       },
-    );
+    },
+  );
   const selectedIds = React.useMemo(
-    () =>
-      rowSelectionModel.type === "include" ? [...rowSelectionModel.ids] : [],
+    () => (rowSelectionModel.type === "include" ? [...rowSelectionModel.ids] : []),
     [rowSelectionModel],
   );
   const columns = [
     DataGridColumn.newColumnWithValueMapper("fullNameSurnameFirst", (v) => v, {
       headerName: "Full Name",
       flex: 1,
-      renderCell: (params: {
-        value?: string;
-        row: User;
-        tabIndex: number;
-      }): React.ReactNode => {
+      renderCell: (params: { value?: string; row: User; tabIndex: number }): React.ReactNode => {
         if (!params.value) return null;
         return (
           <Link
@@ -1617,14 +1477,10 @@ export const UsersPage = (): React.ReactNode => {
       headerName: "Username",
       flex: 1,
     }),
-    DataGridColumn.newColumnWithValueMapper<"recordCount", User>(
-      "recordCount",
-      (recordCount) => `${recordCount}`,
-      {
-        headerName: "Documents",
-        flex: 1,
-      },
-    ),
+    DataGridColumn.newColumnWithValueMapper<"recordCount", User>("recordCount", (recordCount) => `${recordCount}`, {
+      headerName: "Documents",
+      flex: 1,
+    }),
     DataGridColumn.newColumnWithFieldName<"fileUsage", User>("fileUsage", {
       headerName: "Usage",
       flex: 1,
@@ -1633,14 +1489,12 @@ export const UsersPage = (): React.ReactNode => {
     DataGridColumn.newColumnWithFieldName<"lastLogin", User>("lastLogin", {
       headerName: "Last Login",
       flex: 1,
-      valueFormatter: (value: Optional<Date>) =>
-        value.map((l) => l.toLocaleString()).orElse("—"),
+      valueFormatter: (value: Optional<Date>) => value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<"created", User>("created", {
       headerName: "Creation Date",
       flex: 1,
-      valueFormatter: (value: Optional<Date>) =>
-        value.map((l) => l.toLocaleString()).orElse("—"),
+      valueFormatter: (value: Optional<Date>) => value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<"enabled", User>("enabled", {
       headerName: "Enabled",
@@ -1660,21 +1514,14 @@ export const UsersPage = (): React.ReactNode => {
       sortable: false,
       valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value?: boolean }) =>
-        params.value ? (
-          <LockIcon color="error" aria-label="Locked" aria-hidden="false" />
-        ) : (
-          <>&mdash;</>
-        ),
+        params.value ? <LockIcon color="error" aria-label="Locked" aria-hidden="false" /> : <>&mdash;</>,
     }),
     DataGridColumn.newColumnWithFieldName<"groups", User>("groups", {
       headerName: "Group Membership",
       flex: 1,
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
-      renderCell: (params: {
-        value?: Array<string>;
-        tabIndex: number;
-      }): React.ReactNode => {
+      renderCell: (params: { value?: Array<string>; tabIndex: number }): React.ReactNode => {
         if (!params.value) return <>&mdash;</>;
         const value = params.value;
         if (value.length === 0) return <>&mdash;</>;
@@ -1761,14 +1608,11 @@ export const UsersPage = (): React.ReactNode => {
         );
       },
     }),
-    DataGridColumn.newColumnWithFieldName<"usernameAlias", User>(
-      "usernameAlias",
-      {
-        headerName: "Username Alias",
-        flex: 1,
-        sortable: false,
-      },
-    ),
+    DataGridColumn.newColumnWithFieldName<"usernameAlias", User>("usernameAlias", {
+      headerName: "Username Alias",
+      flex: 1,
+      sortable: false,
+    }),
   ];
   return (
     <Analytics>
@@ -1826,11 +1670,7 @@ export const UsersPage = (): React.ReactNode => {
                         [`& .${tableCellClasses.root}`]: {
                           backgroundColor: "#edf7fc",
                           padding: "4px 12px",
-                          borderBottom: theme.borders.themedDialogTitle?.(
-                            200,
-                            90,
-                            20,
-                          ),
+                          borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
                         },
                         [`& tr:last-of-type .${tableCellClasses.root}`]: {
                           borderBottom: "unset",
@@ -1841,14 +1681,11 @@ export const UsersPage = (): React.ReactNode => {
                         <TableRow>
                           <TableCell>Available Seats</TableCell>
                           <TableCell>
-                            {FetchingData.match<UserListing, React.ReactNode>(
-                              userListing,
-                              {
-                                loading: () => <>&mdash;</>,
-                                error: () => <>&mdash;</>,
-                                success: (listing) => listing.availableSeats,
-                              },
-                            )}
+                            {FetchingData.match<UserListing, React.ReactNode>(userListing, {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.availableSeats,
+                            })}
                           </TableCell>
                         </TableRow>
                         <TableRow>
@@ -1858,42 +1695,31 @@ export const UsersPage = (): React.ReactNode => {
                             </CustomTooltip>
                           </TableCell>
                           <TableCell>
-                            {FetchingData.match<UserListing, React.ReactNode>(
-                              userListing,
-                              {
-                                loading: () => <>&mdash;</>,
-                                error: () => <>&mdash;</>,
-                                success: (listing) =>
-                                  listing.billableUsersCount,
-                              },
-                            )}
+                            {FetchingData.match<UserListing, React.ReactNode>(userListing, {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.billableUsersCount,
+                            })}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>System Admins</TableCell>
                           <TableCell>
-                            {FetchingData.match<UserListing, React.ReactNode>(
-                              userListing,
-                              {
-                                loading: () => <>&mdash;</>,
-                                error: () => <>&mdash;</>,
-                                success: (listing) => listing.systemAdminCount,
-                              },
-                            )}
+                            {FetchingData.match<UserListing, React.ReactNode>(userListing, {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.systemAdminCount,
+                            })}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Community Admins</TableCell>
                           <TableCell>
-                            {FetchingData.match<UserListing, React.ReactNode>(
-                              userListing,
-                              {
-                                loading: () => <>&mdash;</>,
-                                error: () => <>&mdash;</>,
-                                success: (listing) =>
-                                  listing.communityAdminCount,
-                              },
-                            )}
+                            {FetchingData.match<UserListing, React.ReactNode>(userListing, {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.communityAdminCount,
+                            })}
                           </TableCell>
                         </TableRow>
                         <TableRow>
@@ -1903,14 +1729,11 @@ export const UsersPage = (): React.ReactNode => {
                             </CustomTooltip>
                           </TableCell>
                           <TableCell>
-                            {FetchingData.match<UserListing, React.ReactNode>(
-                              userListing,
-                              {
-                                loading: () => <>&mdash;</>,
-                                error: () => <>&mdash;</>,
-                                success: (listing) => listing.totalUsersCount,
-                              },
-                            )}
+                            {FetchingData.match<UserListing, React.ReactNode>(userListing, {
+                              loading: () => <>&mdash;</>,
+                              error: () => <>&mdash;</>,
+                              success: (listing) => listing.totalUsersCount,
+                            })}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -1924,14 +1747,9 @@ export const UsersPage = (): React.ReactNode => {
                       maxWidth: 575,
                     }}
                   >
-                    You can search, filter, and tag user accounts, as well as
-                    export summary information about the users on this server.
-                    See our{" "}
-                    <Link
-                      target="_blank"
-                      rel="noreferrer"
-                      href={docLinks.taggingUsers}
-                    >
+                    You can search, filter, and tag user accounts, as well as export summary information about the users
+                    on this server. See our{" "}
+                    <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers}>
                       Tagging docs
                     </Link>{" "}
                     for more.
@@ -1952,18 +1770,14 @@ export const UsersPage = (): React.ReactNode => {
                       error: (error) => (
                         <>
                           <Typography variant="body2">
-                            Failed to load listing of users. Please try
-                            refreshing.
+                            Failed to load listing of users. Please try refreshing.
                           </Typography>
                           <samp>{error}</samp>
                         </>
                       ),
                       success: () => <></>,
                     })}
-                    <SelectionActions
-                      selectedIds={selectedIds as ReadonlyArray<UserId>}
-                      fetchedListing={userListing}
-                    />
+                    <SelectionActions selectedIds={selectedIds as ReadonlyArray<UserId>} fetchedListing={userListing} />
                     <Box sx={{ width: "100%" }}>
                       <DataGrid
                         sx={{
@@ -1989,10 +1803,7 @@ export const UsersPage = (): React.ReactNode => {
                         checkboxSelection
                         disableRowSelectionExcludeModel
                         rowSelectionModel={rowSelectionModel}
-                        onRowSelectionModelChange={(
-                          newRowSelectionModel: GridRowSelectionModel,
-                          _details,
-                        ) => {
+                        onRowSelectionModelChange={(newRowSelectionModel: GridRowSelectionModel, _details) => {
                           /*
                            * This prop is called not only when the user taps
                            * one of the checkboxes but also when new data is
@@ -2030,13 +1841,9 @@ export const UsersPage = (): React.ReactNode => {
                         pageSizeOptions={FetchingData.match(userListing, {
                           loading: () => [0],
                           error: () => [0],
-                          success: (listing) =>
-                            paginationOptions(listing.totalListingCount),
+                          success: (listing) => paginationOptions(listing.totalListingCount),
                         })}
-                        onPaginationModelChange={({
-                          pageSize: newPageSize,
-                          page: newPage,
-                        }) => {
+                        onPaginationModelChange={({ pageSize: newPageSize, page: newPage }) => {
                           FetchingData.match(userListing, {
                             loading: () => {},
                             error: () => {},
@@ -2062,9 +1869,7 @@ export const UsersPage = (): React.ReactNode => {
                                 void listing.clearOrdering();
                                 return;
                               }
-                              const [
-                                { field: newOrderBy, sort: newSortOrder },
-                              ] = newSortModel;
+                              const [{ field: newOrderBy, sort: newSortOrder }] = newSortModel;
                               setSortModel([
                                 {
                                   field: newOrderBy,
@@ -2082,18 +1887,10 @@ export const UsersPage = (): React.ReactNode => {
                                 lastName: "lastName",
                                 email: "email",
                               }[newOrderBy];
-                              if (!apiOrderBy)
-                                throw new Error(
-                                  `Invalid order by: ${newOrderBy}`,
-                                );
+                              if (!apiOrderBy) throw new Error(`Invalid order by: ${newOrderBy}`);
                               if (typeof newSortOrder !== "string")
-                                throw new Error(
-                                  `Invalid sort order: ${newSortOrder}`,
-                                );
-                              void listing.setOrdering(
-                                apiOrderBy,
-                                newSortOrder,
-                              );
+                                throw new Error(`Invalid sort order: ${newSortOrder}`);
+                              void listing.setOrdering(apiOrderBy, newSortOrder);
                             },
                           });
                         }}
@@ -2123,11 +1920,7 @@ export const UsersPage = (): React.ReactNode => {
                         showToolbar
                       />
                     </Box>
-                    <Panel
-                      anchorEl={groupsAnchorEl}
-                      onClose={() => setGroupsAnchorEl(null)}
-                      ariaLabel="Groups"
-                    >
+                    <Panel anchorEl={groupsAnchorEl} onClose={() => setGroupsAnchorEl(null)} ariaLabel="Groups">
                       <List
                         sx={{
                           p: 0,
@@ -2140,11 +1933,7 @@ export const UsersPage = (): React.ReactNode => {
                         ))}
                       </List>
                     </Panel>
-                    <Panel
-                      anchorEl={tagsAnchorEl}
-                      onClose={() => setTagsAnchorEl(null)}
-                      ariaLabel="Tags"
-                    >
+                    <Panel anchorEl={tagsAnchorEl} onClose={() => setTagsAnchorEl(null)} ariaLabel="Tags">
                       <List
                         sx={{
                           p: 0,

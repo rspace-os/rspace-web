@@ -6,11 +6,7 @@ import {
   getMoleculeInfo,
   updateStoichiometry,
 } from "@/modules/stoichiometry/mutations";
-import type {
-  MoleculeInfo,
-  StoichiometryRequest,
-  StoichiometryResponse,
-} from "@/modules/stoichiometry/schema";
+import type { MoleculeInfo, StoichiometryRequest, StoichiometryResponse } from "@/modules/stoichiometry/schema";
 
 const API_BASE_URL = "/api/v1";
 
@@ -144,13 +140,10 @@ describe("calculateStoichiometry", () => {
   });
 
   it("throws API message when calculation request fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ message: "Unable to calculate stoichiometry" }),
-      {
-        status: 400,
-        statusText: "Bad Request",
-      },
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ message: "Unable to calculate stoichiometry" }), {
+      status: 400,
+      statusText: "Bad Request",
+    });
 
     await expect(
       calculateStoichiometry(
@@ -194,9 +187,7 @@ describe("updateStoichiometry", () => {
 
     expect(result).toEqual(mockStoichiometryResponse);
     const callArgs = fetchMock.mock.calls[0];
-    expect(callArgs[0]).toBe(
-      `${API_BASE_URL}/stoichiometry?stoichiometryId=3`,
-    );
+    expect(callArgs[0]).toBe(`${API_BASE_URL}/stoichiometry?stoichiometryId=3`);
     expect(callArgs[1]).toEqual(
       expect.objectContaining({
         method: "PUT",
@@ -206,9 +197,7 @@ describe("updateStoichiometry", () => {
         }) as Record<string, string>,
       }),
     );
-    expect(JSON.parse(callArgs[1]?.body as string)).toEqual(
-      mockStoichiometryRequest,
-    );
+    expect(JSON.parse(callArgs[1]?.body as string)).toEqual(mockStoichiometryRequest);
   });
 
   it("parses inventory links using stockDeducted shape", async () => {
@@ -230,13 +219,10 @@ describe("updateStoichiometry", () => {
   });
 
   it("throws API message when update request fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ message: "Could not update stoichiometry" }),
-      {
-        status: 409,
-        statusText: "Conflict",
-      },
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ message: "Could not update stoichiometry" }), {
+      status: 409,
+      statusText: "Conflict",
+    });
 
     await expect(
       updateStoichiometry(
@@ -302,17 +288,14 @@ describe("deleteStoichiometry", () => {
   });
 
   it("throws API message when request fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ message: "No stoichiometry found with id 3" }),
-      {
-        status: 404,
-        statusText: "Not Found",
-      },
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ message: "No stoichiometry found with id 3" }), {
+      status: 404,
+      statusText: "Not Found",
+    });
 
-    await expect(
-      deleteStoichiometry({ stoichiometryId: 3 }, token),
-    ).rejects.toThrow("No stoichiometry found with id 3");
+    await expect(deleteStoichiometry({ stoichiometryId: 3 }, token)).rejects.toThrow(
+      "No stoichiometry found with id 3",
+    );
   });
 
   it("falls back to status text when delete error body cannot be parsed", async () => {
@@ -321,17 +304,15 @@ describe("deleteStoichiometry", () => {
       statusText: "Internal Server Error",
     });
 
-    await expect(
-      deleteStoichiometry({ stoichiometryId: 3 }, token),
-    ).rejects.toThrow("Failed to delete stoichiometry: Internal Server Error");
+    await expect(deleteStoichiometry({ stoichiometryId: 3 }, token)).rejects.toThrow(
+      "Failed to delete stoichiometry: Internal Server Error",
+    );
   });
 
   it("bubbles up network failures during deletion", async () => {
     fetchMock.mockRejectOnce(new Error("Network down"));
 
-    await expect(
-      deleteStoichiometry({ stoichiometryId: 3 }, token),
-    ).rejects.toThrow("Network down");
+    await expect(deleteStoichiometry({ stoichiometryId: 3 }, token)).rejects.toThrow("Network down");
   });
 });
 
@@ -392,13 +373,10 @@ describe("deductStock", () => {
   });
 
   it("throws API message when deductStock fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ message: "Unable to deduct stock" }),
-      {
-        status: 500,
-        statusText: "Internal Server Error",
-      },
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ message: "Unable to deduct stock" }), {
+      status: 500,
+      statusText: "Internal Server Error",
+    });
 
     await expect(
       deductStock(
@@ -450,13 +428,10 @@ describe("getMoleculeInfo", () => {
   });
 
   it("throws API message when molecule info request fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ message: "Unsupported SMILES string" }),
-      {
-        status: 422,
-        statusText: "Unprocessable Entity",
-      },
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ message: "Unsupported SMILES string" }), {
+      status: 422,
+      statusText: "Unprocessable Entity",
+    });
 
     await expect(
       getMoleculeInfo(

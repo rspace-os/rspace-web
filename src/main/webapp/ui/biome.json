@@ -7,7 +7,7 @@
     "defaultBranch": "main"
   },
   "files": {
-    "ignoreUnknown": true
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
   },
   "formatter": {
     "enabled": true,

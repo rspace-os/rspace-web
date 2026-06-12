@@ -1,9 +1,11 @@
 // @flow
 
-import GlobalId from "../../components/GlobalId";
-import NameWithBadge from "../../Inventory/components/NameWithBadge";
-import React, { useState, useEffect } from "react";
+import ClearIcon from "@mui/icons-material/Clear";
 import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import { type SxProps, type Theme, useTheme } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -11,22 +13,20 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
-import {
-  Material,
-  type ListOfMaterials,
-} from "../../stores/models/MaterialsModel";
 import { observer } from "mobx-react-lite";
-import ClearIcon from "@mui/icons-material/Clear";
-import RecordLocation from "../../Inventory/components/RecordLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React, { useEffect, useState } from "react";
+import GlobalId from "../../components/GlobalId";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
 import UserDetails from "../../components/UserDetails";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import Checkbox from "@mui/material/Checkbox";
-import UsedQuantityField from "./UsedQuantityField";
-import SubSampleModel from "../../stores/models/SubSampleModel";
+import NameWithBadge from "../../Inventory/components/NameWithBadge";
+import RecordLocation from "../../Inventory/components/RecordLocation";
 import { hasQuantity } from "../../stores/models/HasQuantity";
-import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
+import SubSampleModel from "../../stores/models/SubSampleModel";
+import UsedQuantityField from "./UsedQuantityField";
+
 const colorCodedQuantity = (
   material: Material,
   list: ListOfMaterials,
@@ -78,12 +78,7 @@ function TableSubCell({
     </Box>
   );
 }
-function MaterialsTable({
-  list,
-  isSingleColumn,
-  onRemove,
-  canEdit,
-}: TableArgs): React.ReactNode {
+function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs): React.ReactNode {
   const theme = useTheme();
   const quantityColors = {
     warningRed: theme.palette.warningRed,
@@ -92,16 +87,13 @@ function MaterialsTable({
   };
   const editingMode = list.editingMode;
   const materials = list.materials;
-  const editableMaterials = materials.filter(
-    (m) => m.invRec instanceof SubSampleModel,
-  );
+  const editableMaterials = materials.filter((m) => m.invRec instanceof SubSampleModel);
   const [selectOption, setSelectOption] = useState("None");
   const afterToggleUpdates = (material: Material) => {
     if (material.selected) {
       material.setEditing(true, false);
       if (material.usedQuantity && list.additionalQuantity) {
-        const unitId =
-          list.additionalQuantity.unitId ?? material.usedQuantity.unitId;
+        const unitId = list.additionalQuantity.unitId ?? material.usedQuantity.unitId;
         material.setUsedQuantity(list.additionalQuantity.numericValue, unitId);
         material.updateQuantityEstimate();
       }
@@ -124,6 +116,7 @@ function MaterialsTable({
         m.setEditing(false, true); // cancelChanges and updateQuantityEstimates
       });
     } else {
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       list.selectedMaterials.forEach((m) => m.setEditing(true, false));
     }
   }, [list.mixedSelectedCategories]);
@@ -133,6 +126,7 @@ function MaterialsTable({
       handler: () =>
         editableMaterials
           .filter((m) => m.selected)
+          // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
           .forEach((m) => handleSelect(m)),
     },
     {
@@ -140,10 +134,12 @@ function MaterialsTable({
       handler: () =>
         editableMaterials
           .filter((m) => !m.selected)
+          // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
           .forEach((m) => handleSelect(m)),
     },
     {
       name: "Invert",
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       handler: () => editableMaterials.forEach((m) => handleSelect(m)),
     },
   ];
@@ -193,10 +189,7 @@ function MaterialsTable({
                     alignItems: "center",
                   }}
                 >
-                  <Box
-                    component="span"
-                    sx={!isSingleColumn ? { textAlign: "center" } : undefined}
-                  >
+                  <Box component="span" sx={!isSingleColumn ? { textAlign: "center" } : undefined}>
                     Batch Edit
                   </Box>
                   <Select
@@ -209,11 +202,7 @@ function MaterialsTable({
                     variant="standard"
                   >
                     {multipleSelectOptions.map((option) => (
-                      <MenuItem
-                        key={option.name}
-                        value={option.name}
-                        onClick={option.handler}
-                      >
+                      <MenuItem key={option.name} value={option.name} onClick={option.handler}>
                         {option.name}
                       </MenuItem>
                     ))}
@@ -250,8 +239,7 @@ function MaterialsTable({
         <TableBody sx={{ width: "100%" }}>
           {materials.map((material) => {
             const record = material.invRec;
-            if (!record.globalId)
-              throw new Error("Item Global ID must be known");
+            if (!record.globalId) throw new Error("Item Global ID must be known");
             const globalId = record.globalId;
 
             // Some samples don't have a quantity, so the UI must check for that
@@ -318,11 +306,7 @@ function MaterialsTable({
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
                   >
-                    {material.usedQuantity ? (
-                      material.usedQuantityLabel
-                    ) : (
-                      <>&mdash;</>
-                    )}
+                    {material.usedQuantity ? material.usedQuantityLabel : <>&mdash;</>}
                   </TableSubCell>
                   <TableSubCell
                     data-test-id={`material-inventory-quantity-${globalId}`}
@@ -331,11 +315,7 @@ function MaterialsTable({
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
                   >
-                    {hasQuantity(record).isEmpty() || noQuantitySample ? (
-                      <>&mdash;</>
-                    ) : (
-                      material.inventoryQuantityLabel
-                    )}
+                    {hasQuantity(record).isEmpty() || noQuantitySample ? <>&mdash;</> : material.inventoryQuantityLabel}
                   </TableSubCell>
                 </TableCell>
                 {editingMode && material.canEditQuantity ? (
@@ -352,10 +332,7 @@ function MaterialsTable({
                     <TableSubCell flex={4}>
                       <UsedQuantityField material={material} list={list} />
                     </TableSubCell>
-                    <TableSubCell
-                      sx={{ color: theme.palette.primary.main }}
-                      flex={3}
-                    >
+                    <TableSubCell sx={{ color: theme.palette.primary.main }} flex={3}>
                       <Checkbox
                         color="primary"
                         onChange={() => {
@@ -364,9 +341,7 @@ function MaterialsTable({
                         }}
                         value={material.updateInventoryQuantity}
                         checked={material.updateInventoryQuantity ?? undefined}
-                        disabled={
-                          !material.selected || list.mixedSelectedCategories
-                        }
+                        disabled={!material.selected || list.mixedSelectedCategories}
                         slotProps={{
                           input: {
                             "aria-label": "Linked quantities",
@@ -383,10 +358,7 @@ function MaterialsTable({
                     <TableSubCell flex={4}>
                       <>&mdash;</>
                     </TableSubCell>
-                    <TableSubCell
-                      sx={{ color: theme.palette.primary.main }}
-                      flex={3}
-                    >
+                    <TableSubCell sx={{ color: theme.palette.primary.main }} flex={3}>
                       <>&mdash;</>
                     </TableSubCell>
                   </TableCell>
@@ -398,10 +370,7 @@ function MaterialsTable({
                     <TableSubCell flex={2}>
                       <GlobalId record={record} />
                     </TableSubCell>
-                    <TableSubCell
-                      sx={{ color: theme.palette.primary.main }}
-                      flex={2}
-                    >
+                    <TableSubCell sx={{ color: theme.palette.primary.main }} flex={2}>
                       {record.owner ? (
                         <UserDetails
                           userId={record.owner.id}

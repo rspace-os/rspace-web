@@ -1,9 +1,11 @@
-import React from "react";
-import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
-import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import Chip from "@mui/material/Chip";
+import type React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Container } from "@/stores/definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { ContentSummary } from "@/stores/definitions/container/types";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
 
 type CountChipArgs = {
   type: string;
@@ -13,9 +15,7 @@ type CountChipArgs = {
 function getCount(type: string, cs: ContentSummary): number {
   if (type === "container") return cs.containerCount;
   if (type === "subSample") return cs.subSampleCount;
-  throw new TypeError(
-    'The string "type" can only be "container" or "subSample"'
-  );
+  throw new TypeError('The string "type" can only be "container" or "subSample"');
 }
 
 const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {

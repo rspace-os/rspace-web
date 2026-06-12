@@ -1,40 +1,42 @@
-import React from "react";
-import { type GalleryFile, idToString } from "../useGalleryListing";
-import { Optional } from "../../../util/optional";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import { useGallerySelection } from "../useGallerySelection";
-import { useImagePreview } from "./CallableImagePreview";
-import { usePdfPreview } from "./CallablePdfPreview";
-import { useAsposePreview } from "./CallableAsposePreview";
-import { useSnapGenePreview } from "./CallableSnapGenePreview";
-import { useSnippetPreview } from "./CallableSnippetPreview";
-import usePrimaryAction, {
-  useImagePreviewOfGalleryFile,
-  usePdfPreviewOfGalleryFile,
-  useAsposePreviewOfGalleryFile,
-} from "../primaryActionHooks";
-import PlaceholderLabel from "./PlaceholderLabel";
-import IconButton from "@mui/material/IconButton";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
-import { take, incrementForever } from "../../../util/iterators";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import React from "react";
 import { Document, Page } from "react-pdf";
+import { incrementForever, take } from "../../../util/iterators";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Optional } from "../../../util/optional";
+import usePrimaryAction, {
+  useAsposePreviewOfGalleryFile,
+  useImagePreviewOfGalleryFile,
+  usePdfPreviewOfGalleryFile,
+} from "../primaryActionHooks";
+import { type GalleryFile, idToString } from "../useGalleryListing";
+import { useGallerySelection } from "../useGallerySelection";
+import { useAsposePreview } from "./CallableAsposePreview";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
+import { useSnippetPreview } from "./CallableSnippetPreview";
+import PlaceholderLabel from "./PlaceholderLabel";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import Typography from "@mui/material/Typography";
+import axios from "@/common/axios";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
-import axios from "@/common/axios";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import ResetZoomIcon from "./ResetZoomIcon";
-import Typography from "@mui/material/Typography";
-import { useFolderOpen } from "./OpenFolderProvider";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type URL as Url } from "../../../util/types";
+import { useFolderOpen } from "./OpenFolderProvider";
+import ResetZoomIcon from "./ResetZoomIcon";
 
 /*
  * This snippet is a necessary step in initialising the PDF preview
@@ -125,10 +127,7 @@ const PreviewWrapper = ({
           x: currentOffset.x - cursorOffset.x,
           y: currentOffset.y - cursorOffset.y,
         };
-        thisNode?.scrollTo(
-          scrollPos.scrollLeft - moved.x,
-          scrollPos.scrollTop - moved.y,
-        );
+        thisNode?.scrollTo(scrollPos.scrollLeft - moved.x, scrollPos.scrollTop - moved.y);
       }}
       onMouseUp={() => {
         setCursorOffset(null);
@@ -207,15 +206,7 @@ const PreviewWrapper = ({
   );
 };
 
-const Preview = ({
-  file,
-  zoom,
-  visible,
-}: {
-  file: GalleryFile;
-  zoom: number;
-  visible: boolean;
-}) => {
+const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; visible: boolean }) => {
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
@@ -270,9 +261,7 @@ const Preview = ({
             setAsposePdfUrl({ tag: "loading" });
             try {
               const { data } = await axios.get<unknown>(
-                "/Streamfile/ajax/convert/" +
-                  idToString(file.id).elseThrow() +
-                  "?outputFormat=pdf",
+                `/Streamfile/ajax/convert/${idToString(file.id).elseThrow()}?outputFormat=pdf`,
               );
               const fileName = Parsers.isObject(data)
                 .flatMap(Parsers.isNotNull)
@@ -282,11 +271,7 @@ const Preview = ({
               if (fileName) {
                 setAsposePdfUrl({
                   tag: "loaded",
-                  url:
-                    "/Streamfile/direct/" +
-                    idToString(file.id).elseThrow() +
-                    "?fileName=" +
-                    fileName,
+                  url: `/Streamfile/direct/${idToString(file.id).elseThrow()}?fileName=${fileName}`,
                 });
               } else {
                 Parsers.isObject(data)
@@ -314,21 +299,14 @@ const Preview = ({
       });
   }, []);
 
-  function onDocumentLoadSuccess({
-    numPages: nextNumPages,
-  }: {
-    numPages: number;
-  }): void {
+  function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
     setNumPages(nextNumPages);
   }
 
   let loadingLabel = null;
-  if (imageUrl !== null && imageUrl.tag === "loading")
-    loadingLabel = "Loading image...";
-  if (pdfUrl !== null && pdfUrl.tag === "loading")
-    loadingLabel = "Loading PDF...";
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading")
-    loadingLabel = "Generating PDF...";
+  if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = "Loading image...";
+  if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = "Loading PDF...";
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading") loadingLabel = "Generating PDF...";
   if (loadingLabel !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -337,14 +315,11 @@ const Preview = ({
     );
 
   let imageSrc = null;
-  if (imageUrl === null && pdfUrl === null && asposePdfUrl === null)
-    imageSrc = file.thumbnailUrl;
+  if (imageUrl === null && pdfUrl === null && asposePdfUrl === null) imageSrc = file.thumbnailUrl;
   if (imageUrl !== null && imageUrl.tag === "loaded") imageSrc = imageUrl.url;
-  if (imageUrl !== null && imageUrl.tag === "error")
-    imageSrc = file.thumbnailUrl;
+  if (imageUrl !== null && imageUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (pdfUrl !== null && pdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "error")
-    imageSrc = file.thumbnailUrl;
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
@@ -366,8 +341,7 @@ const Preview = ({
 
   let pdfSrc = null;
   if (pdfUrl !== null && pdfUrl.tag === "loaded") pdfSrc = pdfUrl.url;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded")
-    pdfSrc = asposePdfUrl.url;
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded") pdfSrc = asposePdfUrl.url;
   if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -380,11 +354,7 @@ const Preview = ({
         >
           <Document file={pdfSrc} onLoadSuccess={onDocumentLoadSuccess}>
             {[...take(incrementForever(), numPages)].map((index) => (
-              <Page
-                key={`page_${index + 1}`}
-                pageNumber={index + 1}
-                scale={zoom}
-              />
+              <Page key={`page_${index + 1}`} pageNumber={index + 1} scale={zoom} />
             ))}
           </Document>
         </Box>
@@ -477,9 +447,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   if (listing.tag === "empty")
     return (
       <PlaceholderLabel>
-        {listing.refreshing
-          ? "Refreshing..."
-          : (listing.reason ?? "There are no folders.")}
+        {listing.refreshing ? "Refreshing..." : (listing.reason ?? "There are no folders.")}
       </PlaceholderLabel>
     );
   return (
@@ -600,12 +568,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
         }}
       >
         {listing.list.map((f, i) => (
-          <Preview
-            file={f}
-            zoom={zoom}
-            visible={i === visibleIndex}
-            key={f.key}
-          />
+          <Preview file={f} zoom={zoom} visible={i === visibleIndex} key={f.key} />
         ))}
       </Box>
     </Stack>

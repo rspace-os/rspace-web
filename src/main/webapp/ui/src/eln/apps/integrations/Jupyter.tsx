@@ -1,11 +1,11 @@
-import Grid from "@mui/material/Grid";
-import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
-import { observer } from "mobx-react-lite";
-import { LOGO_COLOR } from "@/assets/branding/Jupyter";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { LOGO_COLOR } from "@/assets/branding/Jupyter";
+import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
+import IntegrationCard from "../IntegrationCard";
 
 function Jupyter(): React.ReactNode {
   return (
@@ -26,17 +26,15 @@ function Jupyter(): React.ReactNode {
         website="docs.jupyter.org/en/latest/"
         docLink="jupyter"
         setupSection={
+          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           <>
             <ol>
               <li>
-                <strong>Enable API access:</strong> Generate your API key in My
-                RSpace → My Profile.
+                <strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.
               </li>
               <li>
-                <strong>Configure Jupyter instance for all notebooks:</strong>{" "}
-                Follow the instructions in RSpace help docs to use pip to
-                install RSpace client. Run a python cell with the following
-                code:
+                <strong>Configure Jupyter instance for all notebooks:</strong> Follow the instructions in RSpace help
+                docs to use pip to install RSpace client. Run a python cell with the following code:
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
                   <strong>One time install step:</strong>
                   <Box
@@ -50,12 +48,12 @@ function Jupyter(): React.ReactNode {
                     {`%pip install rspace-client==2.6.2`}
                   </Box>
                 </Typography>
-                Run the cell then <strong>restart the kernel</strong> and{" "}
-                <strong>refresh the browser </strong> tab running Jupyter.
+                Run the cell then <strong>restart the kernel</strong> and <strong>refresh the browser </strong> tab
+                running Jupyter.
               </li>
               <li>
-                <strong>Configure notebook:</strong> Follow the instructions in
-                RSpace help docs to import the sync_notebook script.
+                <strong>Configure notebook:</strong> Follow the instructions in RSpace help docs to import the
+                sync_notebook script.
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
                   <strong>Do this step once per notebook:</strong>
                   <Box
@@ -69,15 +67,13 @@ function Jupyter(): React.ReactNode {
                     {`from rspace_client.notebook_sync import sync_notebook`}
                   </Box>
                 </Typography>
-                Run the cell, <strong>restart the kernel</strong> and then run
-                the cell one more time{" "}
+                Run the cell, <strong>restart the kernel</strong> and then run the cell one more time{" "}
                 <strong>without a kernel restart. Save the Notebook.</strong>
               </li>
               <li>
                 <strong>Run the code:</strong>
                 <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-                  Paste this code into{" "}
-                  <strong>the last cell in the notebook:</strong>
+                  Paste this code into <strong>the last cell in the notebook:</strong>
                   <Box
                     component="pre"
                     sx={{

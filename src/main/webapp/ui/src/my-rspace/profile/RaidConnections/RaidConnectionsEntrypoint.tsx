@@ -1,9 +1,9 @@
-import { createRoot } from "react-dom/client";
-import materialTheme from "@/theme";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createRoot } from "react-dom/client";
 import RaidConnections from "@/my-rspace/profile/RaidConnections/RaidConnections";
+import materialTheme from "@/theme";
 
 declare global {
   interface Window {

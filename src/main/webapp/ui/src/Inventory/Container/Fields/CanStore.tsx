@@ -1,24 +1,17 @@
-import React from "react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import ChoiceField, { type ChoiceOption } from "../../../components/Inputs/ChoiceField";
+import { mapPermissioned, orElseIfNoAccess } from "../../../stores/definitions/PermissionedData";
+// biome-ignore lint/style/useImportType: initial biome migration
 import ContainerModel from "../../../stores/models/ContainerModel";
-import ChoiceField, {
-  type ChoiceOption,
-} from "../../../components/Inputs/ChoiceField";
 import FormField from "../../components/Inputs/FormField";
-import {
-  mapPermissioned,
-  orElseIfNoAccess,
-} from "../../../stores/definitions/PermissionedData";
 
 type CanStoreArgs = {
   onErrorStateChange: (hasSelection: boolean) => void;
   container: ContainerModel;
 };
 
-function CanStore({
-  onErrorStateChange,
-  container,
-}: CanStoreArgs): React.ReactNode {
+function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactNode {
   const handleChange = ({
     target: { value },
   }: {
@@ -32,10 +25,8 @@ function CanStore({
       canStoreSamples: value.includes("sample"),
     });
     onErrorStateChange(
-      [
-        ...(container.canStoreContainers ? ["container"] : []),
-        ...(container.canStoreSamples ? ["sample"] : []),
-      ].length > 0
+      [...(container.canStoreContainers ? ["container"] : []), ...(container.canStoreSamples ? ["sample"] : [])]
+        .length > 0,
     );
   };
 
@@ -44,11 +35,8 @@ function CanStore({
       value: "sample",
       label: "Subsamples",
       disabled: orElseIfNoAccess(
-        mapPermissioned(
-          container.contentSummary,
-          ({ subSampleCount }) => subSampleCount > 0
-        ),
-        true
+        mapPermissioned(container.contentSummary, ({ subSampleCount }) => subSampleCount > 0),
+        true,
       ),
       editing: false,
     },
@@ -56,11 +44,8 @@ function CanStore({
       value: "container",
       label: "Containers",
       disabled: orElseIfNoAccess(
-        mapPermissioned(
-          container.contentSummary,
-          ({ containerCount }) => containerCount > 0
-        ),
-        true
+        mapPermissioned(container.contentSummary, ({ containerCount }) => containerCount > 0),
+        true,
       ),
       editing: false,
     },
@@ -85,12 +70,7 @@ function CanStore({
       doNotAttachIdToLabel
       asFieldset
       renderInput={({ id: _id, error: _error, ...props }) => (
-        <ChoiceField
-          {...props}
-          name="canstore"
-          onChange={handleChange}
-          options={options}
-        />
+        <ChoiceField {...props} name="canstore" onChange={handleChange} options={options} />
       )}
     />
   );

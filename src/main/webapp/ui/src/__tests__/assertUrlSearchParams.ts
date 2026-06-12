@@ -1,4 +1,3 @@
-
 /*
  * These are some custom assertions for working with instances of
  * URLSearchParams.
@@ -11,6 +10,7 @@
 import { expect } from "vitest";
 
 declare module "vitest" {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   interface Assertion<T = any> {
     urlSearchParamContaining(expected: Record<string, string>): T;
     urlSearchParamHasKey(expectedKey: string): T;
@@ -37,10 +37,7 @@ expect.extend({
    *    expect.urlSearchParamContaining({ pageNumber: "1" }),
    *  );
    */
-  urlSearchParamContaining(
-    actual: URLSearchParams,
-    expected: { [key: string]: string }
-  ) {
+  urlSearchParamContaining(actual: URLSearchParams, expected: { [key: string]: string }) {
     for (const [k, v] of Object.entries(expected)) {
       if (!actual.has(k)) return { pass: false, message: () => "" };
       if (actual.get(k) !== v) return { pass: false, message: () => "" };
@@ -72,5 +69,5 @@ expect.extend({
   },
 });
 
+// biome-ignore lint/complexity/noUselessEmptyExport: initial biome migration
 export {};
-

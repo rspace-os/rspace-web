@@ -1,21 +1,22 @@
-import { describe, expect, test, vi } from 'vitest';
-import { makeMockTemplate, templateAttrs } from "./mocking";
-import InvApiService from "../../../../common/InvApiService";
+import { describe, expect, test, vi } from "vitest";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { AxiosResponse } from "@/common/axios";
+import InvApiService from "../../../../common/InvApiService";
+import { makeMockTemplate, templateAttrs } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  get: () => ({}),
-  }}));
+    get: () => ({}),
+  },
+}));
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  uiStore: {
-    addAlert: () => {},
-    setPageNavigationConfirmation: () => {},
-    setDirty: () => {},
-  },
-})
-
+    uiStore: {
+      addAlert: () => {},
+      setPageNavigationConfirmation: () => {},
+      setDirty: () => {},
+    },
+  }),
 }));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
@@ -27,13 +28,11 @@ describe("fetchAdditionalInfo", () => {
         statusText: "OK",
         headers: {},
         config: {},
-      } as AxiosResponse)
-
+      } as AxiosResponse),
     );
     let firstCallDone = false;
     await template.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
-
     });
     await template.fetchAdditionalInfo();
     /*
@@ -82,4 +81,3 @@ describe("fetchAdditionalInfo", () => {
     expect(spy).toHaveBeenCalledWith("sampleTemplates", "1/versions/0");
   });
 });
-

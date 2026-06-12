@@ -1,38 +1,32 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  screen,
-  waitFor,
-  fireEvent,
-} from "@testing-library/react";
-import { action, observable } from "mobx";
-import { storesContext } from "../../../../stores/stores-context";
-import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-import MoveDialog from "../MoveDialog";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { action, observable } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
+import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../stores/stores-context";
+import materialTheme from "../../../../theme";
+import MoveDialog from "../MoveDialog";
 import "@/__tests__/__mocks__/matchMedia";
 import Dialog from "@mui/material/Dialog";
-import {
-  makeMockSubSample,
-  subSampleAttrsArbitrary,
-} from "../../../../stores/models/__tests__/SubSampleModel/mocking";
-import fc from "fast-check";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
-import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import userEvent from "@testing-library/user-event";
+import fc from "fast-check";
 import { render, within } from "@/__tests__/customQueries";
+import { makeMockSubSample, subSampleAttrsArbitrary } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
+// biome-ignore lint/style/useImportType: initial biome migration
+import SubSampleModel from "../../../../stores/models/SubSampleModel";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import * as ArrayUtils from "../../../../util/ArrayUtils";
 
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
 }));
 vi.mock("@mui/material/Dialog", () => ({
-  default: vi.fn(({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  )),
+  default: vi.fn(({ children }: { children: React.ReactNode }) => <>{children}</>),
 }));
 vi.mock("../../../../components/Inputs/DateField", () => ({
   default: () => <></>,
@@ -70,107 +64,75 @@ describe("MoveDialog", () => {
           savedBaskets: [],
           getBaskets: () => {},
         },
-      })
-
+      }),
     );
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
           <MoveDialog />
         </storesContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
-    expect(Dialog).toHaveBeenCalledWith(
-      expect.objectContaining({ open: true }),
-      expect.anything()
-
-    );
+    expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), expect.anything());
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);
     });
-    expect(Dialog).toHaveBeenCalledWith(
-      expect.objectContaining({ open: false }),
-      expect.anything()
-    );
-
+    expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), expect.anything());
   });
   test("Table hidden in header should list all selectedResults", () => {
     fc.assert(
-      fc
-        .property(
-          fc.array<SubSampleModel>(
-            subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs))
-          ),
-          (selectedResults) => {
-            // this check prevents the non-unique react key warning
-            fc.pre(
-              ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId))
+      fc.property(
+        fc.array<SubSampleModel>(subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs))),
+        (selectedResults) => {
+          // this check prevents the non-unique react key warning
+          fc.pre(ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId)));
+          const rootStore: StoreContainer = makeMockRootStore(
+            observable({
+              moveStore: {
+                isMoving: true,
+                selectedResults,
+                setIsMoving: action((x: boolean) => {
+                  rootStore.moveStore.isMoving = x;
+                }),
+                search: new Search({
+                  factory: mockFactory(),
+                }),
+                submitting: "NO",
+              },
+              uiStore: {
+                setDialogVisiblePanel: () => {},
+                isSingleColumnLayout: false,
+              },
+              searchStore: {
+                savedSearches: [],
+                savedBaskets: [],
+                getBaskets: () => {},
+              },
+            }),
+          );
+          render(
+            <ThemeProvider theme={materialTheme}>
+              <storesContext.Provider value={rootStore}>
+                <MoveDialog />
+              </storesContext.Provider>
+            </ThemeProvider>,
+          );
+          fireEvent.click(screen.getByRole("button", { name: "Show items being moved" }));
+          expect(within(screen.getByRole("table")).getAllByRole("row").length).toBe(selectedResults.length + 1);
+          const table = screen.getByRole("table");
 
-            );
-            const rootStore: StoreContainer = makeMockRootStore(
-              observable({
-                moveStore: {
-                  isMoving: true,
-                  selectedResults,
-                  setIsMoving: action((x: boolean) => {
-                    rootStore.moveStore.isMoving = x;
-                  }),
-                  search: new Search({
-                    factory: mockFactory(),
-                  }),
-                  submitting: "NO",
-                },
-                uiStore: {
-                  setDialogVisiblePanel: () => {},
-                  isSingleColumnLayout: false,
-                },
-                searchStore: {
-                  savedSearches: [],
-                  savedBaskets: [],
-                  getBaskets: () => {},
-                },
-              })
+          const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
+          const indexOfNameColumn =
+            // @ts-expect-error TS does not recognise the vi.extend
 
-            );
-            render(
-              <ThemeProvider theme={materialTheme}>
-                <storesContext.Provider value={rootStore}>
-                  <MoveDialog />
-                </storesContext.Provider>
-              </ThemeProvider>
-
-            );
-            fireEvent.click(
-              screen.getByRole("button", { name: "Show items being moved" })
-
-            );
-            expect(
-              within(screen.getByRole("table")).getAllByRole("row").length
-
-            ).toBe(selectedResults.length + 1);
-            const table = screen.getByRole("table");
-
-            const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
-            const indexOfNameColumn =
-              // @ts-expect-error TS does not recognise the vi.extend
-
-              within(headerRow).getIndexOfTableCell("Name");
-            const allNameCells = bodyRows.map(
-              (row) => within(row).getAllByRole("cell")[indexOfNameColumn]
-
-            );
-            expect(
-              selectedResults.every((r) =>
-                allNameCells.some((cell) => cell.textContent === r.name)
-              )
-            ).toBe(true);
-          }
-        )
-,
-      { numRuns: 1 }
+            within(headerRow).getIndexOfTableCell("Name");
+          const allNameCells = bodyRows.map((row) => within(row).getAllByRole("cell")[indexOfNameColumn]);
+          expect(selectedResults.every((r) => allNameCells.some((cell) => cell.textContent === r.name))).toBe(true);
+        },
+      ),
+      { numRuns: 1 },
     );
   });
 });

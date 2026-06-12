@@ -1,15 +1,13 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
+import fs from "fs/promises";
+import * as Jwt from "jsonwebtoken";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Download } from "playwright-core";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
 import identifiersJson from "../../__tests__/identifiers.json";
-import {
-  SimpleIgsnTable,
-  SingularSelectionIgsnTable,
-  IgsnTableWithControlDefaults,
-} from "./IgsnTable.story";
-import fs from "fs/promises";
-
-import * as Jwt from "jsonwebtoken";
+import { IgsnTableWithControlDefaults, SimpleIgsnTable, SingularSelectionIgsnTable } from "./IgsnTable.story";
 
 const feature = test.extend<{
   Given: {
@@ -27,18 +25,10 @@ const feature = test.extend<{
     "the researcher selects 'Draft' from the state menu": () => Promise<void>;
     "the researcher selects 'No Linked Item' from the Linked Item menu": () => Promise<void>;
     "the researcher selects the IGSN with DOI '10.82316/khma-em96'": () => Promise<void>;
-    "the researcher selects {count} IGSNs": ({
-      count,
-    }: {
-      count: number;
-    }) => Promise<void>;
+    "the researcher selects {count} IGSNs": ({ count }: { count: number }) => Promise<void>;
     "the researcher types 'test' in the search box": () => Promise<void>;
     "the researcher clicks the Scan QR Code button": () => Promise<void>;
-    "a QR code is scanned with value {value}": ({
-      value,
-    }: {
-      value: string;
-    }) => Promise<void>;
+    "a QR code is scanned with value {value}": ({ value }: { value: string }) => Promise<void>;
   };
   Then: {
     "a table should be shown": () => Promise<void>;
@@ -47,13 +37,7 @@ const feature = test.extend<{
     "there should be a menu for changing column visibility": () => Promise<void>;
     "there should be a menu for exporting the IGSN table to CSV": () => Promise<void>;
     "a 'No IGSN IDs' message should be displayed": () => Promise<void>;
-    "{CSV} should have {count} rows": ({
-      csv,
-      count,
-    }: {
-      csv: Download;
-      count: number;
-    }) => Promise<void>;
+    "{CSV} should have {count} rows": ({ csv, count }: { csv: Download; count: number }) => Promise<void>;
     "there should be a network request with state set to 'draft'": () => Promise<void>;
     "there should be a network request with isAssociated set to 'false'": () => Promise<void>;
     "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": () => Promise<void>;
@@ -70,14 +54,12 @@ const feature = test.extend<{
       "the researcher is viewing the IGSN table": async () => {
         await mount(<SimpleIgsnTable />);
       },
-      "the researcher is viewing the IGSN table with singular selection":
-        async () => {
-          await mount(<SingularSelectionIgsnTable />);
-        },
-      "the researcher is viewing the IGSN table with control defaults":
-        async () => {
-          await mount(<IgsnTableWithControlDefaults />);
-        },
+      "the researcher is viewing the IGSN table with singular selection": async () => {
+        await mount(<SingularSelectionIgsnTable />);
+      },
+      "the researcher is viewing the IGSN table with control defaults": async () => {
+        await mount(<IgsnTableWithControlDefaults />);
+      },
       "the researcher is viewing the IGSN table with no results": async () => {
         // Intercept API requests and return an empty array
         await page.route(
@@ -88,7 +70,7 @@ const feature = test.extend<{
               contentType: "application/json",
               body: JSON.stringify([]),
             });
-          }
+          },
         );
         await mount(<SimpleIgsnTable />);
       },
@@ -128,11 +110,10 @@ const feature = test.extend<{
         await page.getByRole("button", { name: /State: / }).click();
         await page.getByRole("menuitem", { name: /Draft/ }).click();
       },
-      "the researcher selects 'No Linked Item' from the Linked Item menu":
-        async () => {
-          await page.getByRole("button", { name: /Linked Item: / }).click();
-          await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
-        },
+      "the researcher selects 'No Linked Item' from the Linked Item menu": async () => {
+        await page.getByRole("button", { name: /Linked Item: / }).click();
+        await page.getByRole("menuitem", { name: /No Linked Item/ }).click();
+      },
       "the researcher types 'test' in the search box": async () => {
         await page.getByRole("searchbox").fill("test");
         await page.waitForTimeout(500);
@@ -147,26 +128,17 @@ const feature = test.extend<{
           .fill(value);
         await page.getByRole("button", { name: /Search for IGSN/ }).click();
       },
-      "the researcher selects the IGSN with DOI '10.82316/khma-em96'":
-        async () => {
-          const row = page
-            .getByRole("row", { name: /10.82316\/khma-em96/ })
-            .first();
-          await expect(row).toBeVisible();
-          const selectionControl = row
-            .locator('input[type="checkbox"], input[type="radio"]')
-            .first();
-          await expect(selectionControl).toBeVisible();
-          await selectionControl.click();
-          if ((await selectionControl.count()) === 0) {
-            throw new Error("No row selection control was rendered");
-          }
-        },
-      "the researcher selects {count} IGSNs": async ({
-        count,
-      }: {
-        count: number;
-      }) => {
+      "the researcher selects the IGSN with DOI '10.82316/khma-em96'": async () => {
+        const row = page.getByRole("row", { name: /10.82316\/khma-em96/ }).first();
+        await expect(row).toBeVisible();
+        const selectionControl = row.locator('input[type="checkbox"], input[type="radio"]').first();
+        await expect(selectionControl).toBeVisible();
+        await selectionControl.click();
+        if ((await selectionControl.count()) === 0) {
+          throw new Error("No row selection control was rendered");
+        }
+      },
+      "the researcher selects {count} IGSNs": async ({ count }: { count: number }) => {
         for (let i = 0; i < count; i++) {
           await page
             .getByRole("checkbox", { name: /Select row/ })
@@ -182,14 +154,13 @@ const feature = test.extend<{
         const table = page.getByRole("grid");
         await expect(table).toBeVisible();
       },
-      "the default columns should be Select, DOI, State, and Linked Item":
-        async () => {
-          const headers = page.getByRole("columnheader");
-          await expect(headers).toHaveCount(4);
-          await expect(headers.nth(1)).toHaveText("DOI");
-          await expect(headers.nth(2)).toHaveText("State");
-          await expect(headers.nth(3)).toHaveText("Linked Item");
-        },
+      "the default columns should be Select, DOI, State, and Linked Item": async () => {
+        const headers = page.getByRole("columnheader");
+        await expect(headers).toHaveCount(4);
+        await expect(headers.nth(1)).toHaveText("DOI");
+        await expect(headers.nth(2)).toHaveText("State");
+        await expect(headers.nth(3)).toHaveText("Linked Item");
+      },
       "there should be four rows": async () => {
         const rows = await page.getByRole("row").count();
         expect(rows).toBe(5); // + 1 for the header row
@@ -200,13 +171,12 @@ const feature = test.extend<{
         const menu = page.getByRole("tooltip");
         await expect(menu).toBeVisible();
       },
-      "there should be a menu for exporting the IGSN table to CSV":
-        async () => {
-          const menuButton = page.getByRole("button", { name: "Export" });
-          await menuButton.click();
-          const menu = page.getByRole("tooltip");
-          await expect(menu).toBeVisible();
-        },
+      "there should be a menu for exporting the IGSN table to CSV": async () => {
+        const menuButton = page.getByRole("button", { name: "Export" });
+        await menuButton.click();
+        const menu = page.getByRole("tooltip");
+        await expect(menu).toBeVisible();
+      },
       "a search box should be shown in the toolbar": async () => {
         const searchBox = page.getByRole("searchbox");
         await expect(searchBox).toBeVisible();
@@ -223,53 +193,45 @@ const feature = test.extend<{
             networkRequests
               .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
               .find((url) => url.searchParams.get("state") === "draft")
-              ?.searchParams.get("state")
+              ?.searchParams.get("state"),
           )
           .toBe("draft");
       },
-      "there should be a network request with isAssociated set to 'false'":
-        async () => {
-          await expect
-            .poll(() =>
-              networkRequests
-                .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
-                .find((url) => url.searchParams.get("isAssociated") === "false")
-                ?.searchParams.get("isAssociated")
-            )
-            .toBe("false");
-        },
+      "there should be a network request with isAssociated set to 'false'": async () => {
+        await expect
+          .poll(() =>
+            networkRequests
+              .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
+              .find((url) => url.searchParams.get("isAssociated") === "false")
+              ?.searchParams.get("isAssociated"),
+          )
+          .toBe("false");
+      },
       "there should be a network request with searchTerm set to 'test'": async () => {
         await expect
           .poll(() =>
             networkRequests
               .filter((url) => url.pathname === "/api/inventory/v1/identifiers")
               .find((url) => url.searchParams.get("identifier") === "test")
-              ?.searchParams.get("identifier")
+              ?.searchParams.get("identifier"),
           )
           .toBe("test");
       },
-      "the IGSN with DOI '10.82316/khma-em96' is added to the selection state":
-        async () => {
-          /*
-           * We can't check that setSelectedIdentifiers has actually been called
-           * using Playwright, but because IgsnTable.story renders the selection
-           * we can check what's been rendered.
-           */
-          await expect(
-            page.getByLabel("selected IGSNs").getByText("10.82316/khma-em96")
-
-          ).toBeVisible();
-          const row = page
-            .getByRole("row", { name: /10.82316\/khma-em96/ })
-            .first();
-          let widget = row.getByRole("checkbox").first();
-          if ((await widget.count()) === 0) {
-            widget = row.getByRole("radio").first();
-          }
-          await expect(widget).toBeChecked();
-        },
+      "the IGSN with DOI '10.82316/khma-em96' is added to the selection state": async () => {
+        /*
+         * We can't check that setSelectedIdentifiers has actually been called
+         * using Playwright, but because IgsnTable.story renders the selection
+         * we can check what's been rendered.
+         */
+        await expect(page.getByLabel("selected IGSNs").getByText("10.82316/khma-em96")).toBeVisible();
+        const row = page.getByRole("row", { name: /10.82316\/khma-em96/ }).first();
+        let widget = row.getByRole("checkbox").first();
+        if ((await widget.count()) === 0) {
+          widget = row.getByRole("radio").first();
+        }
+        await expect(widget).toBeChecked();
+      },
       "the Linked Item column should contains links": async () => {
-
         const table = page.getByRole("grid");
         // Locate the header row
 
@@ -283,7 +245,6 @@ const feature = test.extend<{
             linkedItemColumnIndex = i;
             break;
           }
-
         }
         // Ensure the "Linked Item" column was found
 
@@ -293,10 +254,7 @@ const feature = test.extend<{
         const rows = table.getByRole("rowgroup").getByRole("row");
         // Iterate through each row and check if the cell in the "Linked Item" column contains a link
         for (let i = 0; i < (await rows.count()); i++) {
-          const cell = rows
-            .nth(i)
-            .getByRole("gridcell")
-            .nth(linkedItemColumnIndex);
+          const cell = rows.nth(i).getByRole("gridcell").nth(linkedItemColumnIndex);
 
           const link = cell.locator("a");
           // Assert that the cell contains a link
@@ -305,121 +263,84 @@ const feature = test.extend<{
       },
       "a 'No IGSN IDs' message should be displayed": async () => {
         // Verify the overlay message is displayed
-        await expect(
-          page.getByRole("grid").getByText("No IGSN IDs")
-
-        ).toBeVisible();
+        await expect(page.getByRole("grid").getByText("No IGSN IDs")).toBeVisible();
         // Verify the grid has a header row but no data rows
-        const headerRow = page
-          .getByRole("row")
-          .filter({ has: page.getByRole("columnheader") });
+        const headerRow = page.getByRole("row").filter({ has: page.getByRole("columnheader") });
 
         await expect(headerRow).toBeVisible();
         // Count should be 1 (just the header row)
         const rowCount = await page.getByRole("row").count();
         expect(rowCount).toBe(1);
       },
-      "the toolbar controls should be in the order: search, scan, then filters":
-        async () => {
-          const searchControl = page.getByRole("searchbox");
-          const scanButton = page.getByRole("button", { name: "Scan" });
-          const stateFilter = page.getByRole("button", { name: /State: / });
-          const linkedItemFilter = page.getByRole("button", {
-            name: /Linked Item: /,
+      "the toolbar controls should be in the order: search, scan, then filters": async () => {
+        const searchControl = page.getByRole("searchbox");
+        const scanButton = page.getByRole("button", { name: "Scan" });
+        const stateFilter = page.getByRole("button", { name: /State: / });
+        const linkedItemFilter = page.getByRole("button", {
+          name: /Linked Item: /,
+        });
+        const searchControlHandle = await searchControl.evaluateHandle((x) => Promise.resolve(x));
+        const scanButtonHandle = await scanButton.evaluateHandle((x) => Promise.resolve(x));
+        const stateFilterHandle = await stateFilter.evaluateHandle((x) => Promise.resolve(x));
+        const linkedItemFilterHandle = await linkedItemFilter.evaluateHandle((x) => Promise.resolve(x));
+        await expect(searchControl).toBeVisible();
+        await expect(scanButton).toBeVisible();
+        await expect(stateFilter).toBeVisible();
 
-          });
-          const searchControlHandle = await searchControl.evaluateHandle((x) =>
-            Promise.resolve(x)
-          );
-          const scanButtonHandle = await scanButton.evaluateHandle((x) =>
-            Promise.resolve(x)
-          );
-          const stateFilterHandle = await stateFilter.evaluateHandle((x) =>
-            Promise.resolve(x)
-          );
-          const linkedItemFilterHandle = await linkedItemFilter.evaluateHandle(
-            (x) => Promise.resolve(x)
-
-          );
-          await expect(searchControl).toBeVisible();
-          await expect(scanButton).toBeVisible();
-          await expect(stateFilter).toBeVisible();
-
-          await expect(linkedItemFilter).toBeVisible();
-          const orderResults = await page.evaluate(
-            ({ search, scan, state, linkedItem }) => {
-              if (!search || !scan || !state || !linkedItem) {
-                return { error: "Failed to find all elements" };
-
-              }
-              const searchBeforeScan = Boolean(
-                search.compareDocumentPosition(scan) &
-                  Node.DOCUMENT_POSITION_FOLLOWING
-              );
-              const scanBeforeState = Boolean(
-                scan.compareDocumentPosition(state) &
-                  Node.DOCUMENT_POSITION_FOLLOWING
-              );
-              const stateBeforeLinkedItem = Boolean(
-                state.compareDocumentPosition(linkedItem) &
-                  Node.DOCUMENT_POSITION_FOLLOWING
-
-              );
-              return {
-                searchBeforeScan,
-                scanBeforeState,
-                stateBeforeLinkedItem,
-              };
-            },
-            {
-              search: searchControlHandle,
-              scan: scanButtonHandle,
-              state: stateFilterHandle,
-              linkedItem: linkedItemFilterHandle,
+        await expect(linkedItemFilter).toBeVisible();
+        const orderResults = await page.evaluate(
+          ({ search, scan, state, linkedItem }) => {
+            if (!search || !scan || !state || !linkedItem) {
+              return { error: "Failed to find all elements" };
             }
-
-          );
-          // Check for evaluate errors
-          if ("error" in orderResults) {
-            throw new Error(orderResults.error);
-
-          }
-          expect(
-            orderResults.searchBeforeScan,
-            "Search textfield should be before scan button"
-          ).toBe(true);
-          expect(
-            orderResults.scanBeforeState,
-            "Scan button should be before state filter control"
-          ).toBe(true);
-          expect(
-            orderResults.stateBeforeLinkedItem,
-            "State filter controlshould be before linked item filter control"
-          ).toBe(true);
-        },
-      "the search box should have the placeholder 'Search IGSN IDs...'":
-        async () => {
-          const searchBox = page.getByRole("searchbox");
-          await expect(searchBox).toHaveAttribute(
-            "placeholder",
-            "Search IGSN IDs..."
-          );
-        },
+            const searchBeforeScan = Boolean(search.compareDocumentPosition(scan) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const scanBeforeState = Boolean(scan.compareDocumentPosition(state) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const stateBeforeLinkedItem = Boolean(
+              state.compareDocumentPosition(linkedItem) & Node.DOCUMENT_POSITION_FOLLOWING,
+            );
+            return {
+              searchBeforeScan,
+              scanBeforeState,
+              stateBeforeLinkedItem,
+            };
+          },
+          {
+            search: searchControlHandle,
+            scan: scanButtonHandle,
+            state: stateFilterHandle,
+            linkedItem: linkedItemFilterHandle,
+          },
+        );
+        // Check for evaluate errors
+        if ("error" in orderResults) {
+          throw new Error(orderResults.error);
+        }
+        expect(orderResults.searchBeforeScan, "Search textfield should be before scan button").toBe(true);
+        expect(orderResults.scanBeforeState, "Scan button should be before state filter control").toBe(true);
+        expect(
+          orderResults.stateBeforeLinkedItem,
+          "State filter controlshould be before linked item filter control",
+        ).toBe(true);
+      },
+      "the search box should have the placeholder 'Search IGSN IDs...'": async () => {
+        const searchBox = page.getByRole("searchbox");
+        await expect(searchBox).toHaveAttribute("placeholder", "Search IGSN IDs...");
+      },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ page, networkRequests }) => {
   await page.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
+      // biome-ignore lint/complexity/useDateNow: initial biome migration
       iat: new Date().getTime(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -428,7 +349,6 @@ feature.beforeEach(async ({ page, networkRequests }) => {
         data: Jwt.sign(payload, "dummySecretKey"),
       }),
     });
-
   });
   await page.route(
     (url) => url.pathname === "/api/inventory/v1/identifiers",
@@ -442,123 +362,69 @@ feature.beforeEach(async ({ page, networkRequests }) => {
 
       let filteredIdentifiers = identifiersJson;
       if (state) {
-        filteredIdentifiers = filteredIdentifiers.filter(
-          (identifier) => identifier.state === state
-        );
-
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.state === state);
       }
       if (searchTerm) {
-        filteredIdentifiers = filteredIdentifiers.filter((identifier) =>
-          identifier.doi.includes(searchTerm)
-        );
-
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.doi.includes(searchTerm));
       }
       if (isAssociated === "true") {
-        filteredIdentifiers = filteredIdentifiers.filter(
-          (identifier) => identifier.associatedGlobalId !== null
-        );
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId !== null);
       } else if (isAssociated === "false") {
-        filteredIdentifiers = filteredIdentifiers.filter(
-          (identifier) => identifier.associatedGlobalId === null
-        );
-
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId === null);
       }
       return route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(filteredIdentifiers),
       });
-    }
-
+    },
   );
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
   });
-
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-
 });
 test.describe("IGSN Table", () => {
-  feature(
-    "When the researcher is viewing the IGSN table, a table should be shown.",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then["a table should be shown"]();
-    }
-
-  );
-  feature(
-    "The default columns should be Select, DOI, State, and Linked Item",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then[
-        "the default columns should be Select, DOI, State, and Linked Item"
-      ]();
-    }
-
-  );
-  feature(
-    "The mocked data displays four rows",
-    async ({ Given, Once, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Once["the table has loaded"]();
-      await Then["there should be four rows"]();
-    }
-
-  );
-  feature(
-    "The toolbar should contain a search box",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then["a search box should be shown in the toolbar"]();
-    }
-
-  );
-  feature(
-    "The toolbar's search box should have the correct placeholder text",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then[
-        "the search box should have the placeholder 'Search IGSN IDs...'"
-      ]();
-      /*
-       * International Generic Sample Number (IGSN), confusingly, refers to the
-       * organsiation and the IDs themselves are referred to as IGSN IDs.
-       */
-    }
-
-  );
-  feature(
-    "Searching makes API call with searchTerm parameter",
-    async ({ Given, When, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await When["the researcher types 'test' in the search box"]();
-      await Then[
-        "there should be a network request with searchTerm set to 'test'"
-      ]();
-    }
-
-  );
-  feature(
-    "There should be a menu for changing column visibility",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then["there should be a menu for changing column visibility"]();
-    }
-
-  );
-  feature(
-    "There should be a menu for exporting the IGSN table to CSV",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then[
-        "there should be a menu for exporting the IGSN table to CSV"
-      ]();
-    }
-
-  );
+  feature("When the researcher is viewing the IGSN table, a table should be shown.", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["a table should be shown"]();
+  });
+  feature("The default columns should be Select, DOI, State, and Linked Item", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["the default columns should be Select, DOI, State, and Linked Item"]();
+  });
+  feature("The mocked data displays four rows", async ({ Given, Once, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Once["the table has loaded"]();
+    await Then["there should be four rows"]();
+  });
+  feature("The toolbar should contain a search box", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["a search box should be shown in the toolbar"]();
+  });
+  feature("The toolbar's search box should have the correct placeholder text", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["the search box should have the placeholder 'Search IGSN IDs...'"]();
+    /*
+     * International Generic Sample Number (IGSN), confusingly, refers to the
+     * organsiation and the IDs themselves are referred to as IGSN IDs.
+     */
+  });
+  feature("Searching makes API call with searchTerm parameter", async ({ Given, When, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await When["the researcher types 'test' in the search box"]();
+    await Then["there should be a network request with searchTerm set to 'test'"]();
+  });
+  feature("There should be a menu for changing column visibility", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["there should be a menu for changing column visibility"]();
+  });
+  feature("There should be a menu for exporting the IGSN table to CSV", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["there should be a menu for exporting the IGSN table to CSV"]();
+  });
   feature(
     "When there is no selection, all rows should be included in the export.",
     async ({ Given, Once, When, Then }) => {
@@ -567,79 +433,42 @@ test.describe("IGSN Table", () => {
       // Note that no selection is made
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
-    }
-
+    },
   );
-  feature(
-    "Filtering by state makes API call with state parameter",
-    async ({ Given, When, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await When["the researcher selects 'Draft' from the state menu"]();
-      await Then[
-        "there should be a network request with state set to 'draft'"
-      ]();
-    }
-
-  );
-  feature(
-    "Filtering by linked item makes API call with isAssociated parameter",
-    async ({ Given, When, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await When[
-        "the researcher selects 'No Linked Item' from the Linked Item menu"
-      ]();
-      await Then[
-        "there should be a network request with isAssociated set to 'false'"
-      ]();
-    }
-
-  );
+  feature("Filtering by state makes API call with state parameter", async ({ Given, When, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await When["the researcher selects 'Draft' from the state menu"]();
+    await Then["there should be a network request with state set to 'draft'"]();
+  });
+  feature("Filtering by linked item makes API call with isAssociated parameter", async ({ Given, When, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await When["the researcher selects 'No Linked Item' from the Linked Item menu"]();
+    await Then["there should be a network request with isAssociated set to 'false'"]();
+  });
   feature(
     "When a researcher selects an identifier, the selection state is updated",
     async ({ Given, Once, When, Then }) => {
       await Given["the researcher is viewing the IGSN table"]();
       await Once["the table has loaded"]();
-      await When[
-        "the researcher selects the IGSN with DOI '10.82316/khma-em96'"
-      ]();
-      await Then[
-        "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
-      ]();
-    }
-
+      await When["the researcher selects the IGSN with DOI '10.82316/khma-em96'"]();
+      await Then["the IGSN with DOI '10.82316/khma-em96' is added to the selection state"]();
+    },
   );
   feature(
     "When a researcher selects an identifier in singluar selection mode, the selection state is updated",
     async ({ Given, Once, When, Then }) => {
-      await Given[
-        "the researcher is viewing the IGSN table with singular selection"
-      ]();
+      await Given["the researcher is viewing the IGSN table with singular selection"]();
       await Once["the table has loaded"]();
-      await When[
-        "the researcher selects the IGSN with DOI '10.82316/khma-em96'"
-      ]();
-      await Then[
-        "the IGSN with DOI '10.82316/khma-em96' is added to the selection state"
-      ]();
-    }
-
+      await When["the researcher selects the IGSN with DOI '10.82316/khma-em96'"]();
+      await Then["the IGSN with DOI '10.82316/khma-em96' is added to the selection state"]();
+    },
   );
-  feature(
-    "Control defaults are applied to the table when provided",
-    async ({ Given, page }) => {
-      await Given[
-        "the researcher is viewing the IGSN table with control defaults"
-      ]();
-      await expect(page.getByRole("searchbox")).toHaveValue("test");
-      await expect(
-        page.getByRole("button", { name: /State:\s*draft/ }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("button", { name: /Linked Item:\s*No/ }),
-      ).toBeVisible();
-    }
-
-  );
+  feature("Control defaults are applied to the table when provided", async ({ Given, page }) => {
+    await Given["the researcher is viewing the IGSN table with control defaults"]();
+    await expect(page.getByRole("searchbox")).toHaveValue("test");
+    await expect(page.getByRole("button", { name: /State:\s*draft/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Linked Item:\s*No/ })).toBeVisible();
+  });
   feature(
     "When some IGSNs are selected, CSV exports should include just those rows",
     async ({ Given, Once, When, Then }) => {
@@ -648,50 +477,32 @@ test.describe("IGSN Table", () => {
       await When["the researcher selects {count} IGSNs"]({ count: 2 });
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 2 });
-    }
-
+    },
   );
-  feature(
-    "The Linked Item column should contain links to the Inventory record",
-    async ({ Given, Once, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Once["the table has loaded"]();
-      await Then["the Linked Item column should contains links"]();
-    }
-
-  );
-  feature(
-    "When there are no results, a 'No IGSN IDs' message is displayed",
-    async ({ Given, Once, Then }) => {
-      await Given["the researcher is viewing the IGSN table with no results"]();
-      await Once["the empty table has loaded"]();
-      await Then["a 'No IGSN IDs' message should be displayed"]();
-    }
-
-  );
-  feature(
-    "Scanning a QR code updates the search term",
-    async ({ Given, When, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await When["the researcher clicks the Scan QR Code button"]();
-      await When["a QR code is scanned with value {value}"]({
-        value: "test",
-      });
-      await Then["there should be a network request with searchTerm set to 'test'"]();
-    }
-
-  );
-  feature(
-    "The toolbar controls should be in the order: search, scan, then filters",
-    async ({ Given, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Then[
-        "the toolbar controls should be in the order: search, scan, then filters"
-      ]();
-      /*
-       * This is so that the controls are in a consistent order across the whole
-       * product.
-       */
-    }
-  );
+  feature("The Linked Item column should contain links to the Inventory record", async ({ Given, Once, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Once["the table has loaded"]();
+    await Then["the Linked Item column should contains links"]();
+  });
+  feature("When there are no results, a 'No IGSN IDs' message is displayed", async ({ Given, Once, Then }) => {
+    await Given["the researcher is viewing the IGSN table with no results"]();
+    await Once["the empty table has loaded"]();
+    await Then["a 'No IGSN IDs' message should be displayed"]();
+  });
+  feature("Scanning a QR code updates the search term", async ({ Given, When, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await When["the researcher clicks the Scan QR Code button"]();
+    await When["a QR code is scanned with value {value}"]({
+      value: "test",
+    });
+    await Then["there should be a network request with searchTerm set to 'test'"]();
+  });
+  feature("The toolbar controls should be in the order: search, scan, then filters", async ({ Given, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    await Then["the toolbar controls should be in the order: search, scan, then filters"]();
+    /*
+     * This is so that the controls are in a consistent order across the whole
+     * product.
+     */
+  });
 });

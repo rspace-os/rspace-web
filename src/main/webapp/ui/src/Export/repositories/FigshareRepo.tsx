@@ -1,13 +1,14 @@
-import React from "react";
-import Users from "../ExportRepoUser";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormLabel from "@mui/material/FormLabel";
+import Grid from "@mui/material/Grid";
+import MenuItem from "@mui/material/MenuItem";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
 import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
-import Grid from "@mui/material/Grid";
+import type React from "react";
+import Users from "../ExportRepoUser";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Person, type Repo, type StandardValidations } from "./common";
 
 type FigshareArgs = {
@@ -133,16 +134,8 @@ export default function FigshareRepo({
             }}
             value={publish}
           >
-            <FormControlLabel
-              value="true"
-              control={<Radio color="primary" />}
-              label="Publish"
-            />
-            <FormControlLabel
-              value="false"
-              control={<Radio color="primary" />}
-              label="Draft"
-            />
+            <FormControlLabel value="true" control={<Radio color="primary" />} label="Publish" />
+            <FormControlLabel value="false" control={<Radio color="primary" />} label="Draft" />
           </RadioGroup>
         </FormControl>
       </Grid>

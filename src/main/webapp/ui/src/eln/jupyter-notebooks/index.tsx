@@ -1,14 +1,13 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import Box from "@mui/material/Box";
-import { Notebook, type Ipynb } from "@jupyter-kit/react";
-import { createKatexPlugin } from "@jupyter-kit/katex";
+import { haskell } from "@jupyter-kit/core/langs/haskell";
 import { javascript } from "@jupyter-kit/core/langs/javascript";
 import { julia } from "@jupyter-kit/core/langs/julia";
-import { haskell } from "@jupyter-kit/core/langs/haskell";
 import { python } from "@jupyter-kit/core/langs/python";
 import { r } from "@jupyter-kit/core/langs/r";
 import { ruby } from "@jupyter-kit/core/langs/ruby";
+import { createKatexPlugin } from "@jupyter-kit/katex";
+import { type Ipynb, Notebook } from "@jupyter-kit/react";
+import Box from "@mui/material/Box";
+import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import "@jupyter-kit/theme-default/default.css";
 import "@jupyter-kit/theme-default/syntax/one-dark.css";
@@ -16,16 +15,15 @@ import "katex/dist/katex.min.css";
 
 const supportedLanguages = [python, javascript, r, julia, haskell, ruby];
 
-const supportedLanguageNames = new Set(
-  supportedLanguages.flatMap(({ name, aliases = [] }) => [name, ...aliases]),
-);
+const supportedLanguageNames = new Set(supportedLanguages.flatMap(({ name, aliases = [] }) => [name, ...aliases]));
 
 const notebookPlugins = [createKatexPlugin()];
 
 function getFieldButton(fieldId: string | null): HTMLElement | null {
   return fieldId == null
     ? null
-    : document.getElementById("jupyter_notebooks_button_" + fieldId);
+    : // biome-ignore lint/style/useTemplate: initial biome migration
+      document.getElementById("jupyter_notebooks_button_" + fieldId);
 }
 
 function showElement(element: HTMLElement, defaultDisplay = "block") {
@@ -67,10 +65,7 @@ function getJupyterDivsUntil(
 
   while (current != null && !stop(current)) {
     matches.push(...findJupyterNotebookContents(current));
-    current =
-      direction === "next"
-        ? current.nextElementSibling
-        : current.previousElementSibling;
+    current = direction === "next" ? current.nextElementSibling : current.previousElementSibling;
   }
 
   return matches;
@@ -98,20 +93,14 @@ function parseAttachmentsFromTextField(fieldId: string | null): Element[] {
   return [...container.querySelectorAll(".attachmentDiv")];
 }
 
-function getAttachmentRecordId(
-  attachment: Element,
-  isNotebook: boolean,
-): string | null {
+function getAttachmentRecordId(attachment: Element, isNotebook: boolean): string | null {
   if (isNotebook) {
-    const downloadLink = attachment.querySelector<HTMLAnchorElement>(
-      ".inlineActionLink.downloadActionLink",
-    );
+    const downloadLink = attachment.querySelector<HTMLAnchorElement>(".inlineActionLink.downloadActionLink");
 
     return downloadLink?.getAttribute("href")?.substring(12) ?? null;
   }
 
-  const attachmentInfo =
-    attachment.querySelector<HTMLElement>(".attachmentInfoDiv");
+  const attachmentInfo = attachment.querySelector<HTMLElement>(".attachmentInfoDiv");
 
   return attachmentInfo?.id.substring(18) ?? null;
 }
@@ -123,31 +112,28 @@ function getAttachmentRecordId(
 /**
  * invoked on page load of a notebook page by journal.js event dispatch
  */
+
+// biome-ignore lint/complexity/useArrowFunction: initial biome migration
 window.addEventListener("jupyterNotebooks-init", function () {
   loadUIOnPageLoad(true);
 });
+// biome-ignore lint/complexity/useArrowFunction: initial biome migration
 window.addEventListener("jupyter_viewer_click", function (event) {
   const { detail } = event as CustomEvent<{ id: string | number }>;
 
   // alert(event.detail.id);
-  [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach(
-    (wrapperDiv) => {
-      const fieldId = wrapperDiv.getAttribute("data-field-id");
-      if (fieldId === `${detail.id}`) {
-        toggleElement(wrapperDiv as HTMLElement);
-      }
-    },
-  );
+  [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach((wrapperDiv) => {
+    const fieldId = wrapperDiv.getAttribute("data-field-id");
+    if (fieldId === `${detail.id}`) {
+      toggleElement(wrapperDiv as HTMLElement);
+    }
+  });
 });
 
 function getNotebookLanguage(ipynb: Ipynb): string {
   const metadata = ipynb.metadata;
-  const kernelspec = metadata?.kernelspec as
-    | Record<string, unknown>
-    | undefined;
-  const languageInfo = metadata?.language_info as
-    | Record<string, unknown>
-    | undefined;
+  const kernelspec = metadata?.kernelspec as Record<string, unknown> | undefined;
+  const languageInfo = metadata?.language_info as Record<string, unknown> | undefined;
   const rawLanguage =
     (typeof languageInfo?.name === "string" && languageInfo.name) ||
     (typeof kernelspec?.language === "string" && kernelspec.language) ||
@@ -163,9 +149,7 @@ function getNotebookLanguage(ipynb: Ipynb): string {
 
   const resolvedLanguage = aliases[normalisedLanguage] ?? normalisedLanguage;
 
-  return supportedLanguageNames.has(resolvedLanguage)
-    ? resolvedLanguage
-    : "python";
+  return supportedLanguageNames.has(resolvedLanguage) ? resolvedLanguage : "python";
 }
 
 /**
@@ -174,54 +158,50 @@ function getNotebookLanguage(ipynb: Ipynb): string {
  * @param isForNotebookPage
  */
 const loadUIOnPageLoad = (isForNotebookPage = false) => {
-  [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach(
-    (wrapperDiv) => {
-      const fieldId = wrapperDiv.getAttribute("data-field-id");
-      const attachedFileIds = getAttachedFilesByParsingEmbeddedText(
-        isForNotebookPage,
-        fieldId,
-      );
-      for (const attachedFileId of attachedFileIds) {
-        const rootDivId = "rootDiv_" + attachedFileId;
-        const rootDiv = document.createElement("div");
+  [...document.getElementsByClassName("jupyter_notebooks_contents")].forEach((wrapperDiv) => {
+    const fieldId = wrapperDiv.getAttribute("data-field-id");
+    const attachedFileIds = getAttachedFilesByParsingEmbeddedText(isForNotebookPage, fieldId);
+    for (const attachedFileId of attachedFileIds) {
+      // biome-ignore lint/style/useTemplate: initial biome migration
+      const rootDivId = "rootDiv_" + attachedFileId;
+      const rootDiv = document.createElement("div");
 
-        rootDiv.id = rootDivId;
-        wrapperDiv.append(rootDiv);
+      rootDiv.id = rootDivId;
+      wrapperDiv.append(rootDiv);
 
-        void (async () => {
-          const { data } = await axios.get<Ipynb>(
-            "/Streamfile/" + attachedFileId,
+      void (async () => {
+        const { data } = await axios.get<Ipynb>(
+          // biome-ignore lint/style/useTemplate: initial biome migration
+          "/Streamfile/" + attachedFileId,
+        );
+        const root = createRoot(rootDiv);
+
+        function App() {
+          return (
+            <Box sx={{ margin: "4rem 2rem", border: "1px solid black" }}>
+              <Notebook
+                ipynb={data}
+                // biome-ignore lint/style/useTemplate: initial biome migration
+                filename={attachedFileId + ".ipynb"}
+                language={getNotebookLanguage(data)}
+                languages={supportedLanguages}
+                plugins={notebookPlugins}
+              />
+            </Box>
           );
-          const root = createRoot(rootDiv);
+        }
 
-          function App() {
-            return (
-              <Box sx={{ margin: "4rem 2rem", border: "1px solid black" }}>
-                <Notebook
-                  ipynb={data}
-                  filename={attachedFileId + ".ipynb"}
-                  language={getNotebookLanguage(data)}
-                  languages={supportedLanguages}
-                  plugins={notebookPlugins}
-                />
-              </Box>
-            );
-          }
-
-          root.render(<App />);
-        })();
-      }
-    },
-  );
+        root.render(<App />);
+      })();
+    }
+  });
 };
 /**
  * invoked when Structured Doc page loads (but not when a Notebook page loads)
  */
 loadUIOnPageLoad();
 
-function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(
-  fieldId: string | null,
-) {
+function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(fieldId: string | null) {
   const button = getFieldButton(fieldId);
   const matches = getJupyterDivsUntil(
     button?.nextElementSibling ?? null,
@@ -239,10 +219,8 @@ function thereAreNoOtherJupyterDivsBetweenThisAndTheAttachmentDiv(
   return true;
 }
 
-function thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(
-  attachment: Element,
-  fieldId: string | null,
-) {
+function thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(attachment: Element, fieldId: string | null) {
+  // biome-ignore lint/style/useTemplate: initial biome migration
   const buttonId = "jupyter_notebooks_button_" + fieldId;
   const matches = getJupyterDivsUntil(
     attachment.previousElementSibling,
@@ -268,6 +246,7 @@ function getTextFieldHtml(fieldId: string | null): string {
     return "";
   }
 
+  // biome-ignore lint/style/useTemplate: initial biome migration
   const textField = document.getElementById("rtf_" + fieldId);
 
   if (
@@ -281,10 +260,7 @@ function getTextFieldHtml(fieldId: string | null): string {
   return "";
 }
 
-function getAttachedFilesByParsingEmbeddedText(
-  isNotebook: boolean,
-  fieldId: string | null,
-): string[] {
+function getAttachedFilesByParsingEmbeddedText(isNotebook: boolean, fieldId: string | null): string[] {
   const recordIds: string[] = [];
   //For documents in any mode and notebook entries in 'edit' mode, this will create an array of all attachments in this textfield
   //However, for notebooks in 'view' mode this will create an array of all attachments in the entire document
@@ -310,12 +286,7 @@ function getAttachedFilesByParsingEmbeddedText(
           if (button != null) {
             showElement(button, "inline-block");
           }
-          if (
-            thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(
-              attachment,
-              fieldId,
-            )
-          ) {
+          if (thereAreNoOtherJupyterDivsBetweenTheAttachmentDivAndThis(attachment, fieldId)) {
             recordIds.push(record);
           }
         }

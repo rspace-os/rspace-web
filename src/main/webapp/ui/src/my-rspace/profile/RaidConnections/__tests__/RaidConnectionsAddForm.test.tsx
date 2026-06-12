@@ -1,16 +1,12 @@
-import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsAddForm from "../RaidConnectionsAddForm";
 import "@/__tests__/__mocks__/matchMedia";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { GetAvailableRaidListResponse } from "@/modules/raid/schema";
 
 // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
@@ -52,10 +48,7 @@ vi.mock("@/modules/raid/mutations", () => ({
   })),
 }));
 
-const renderWithProviders = (props: {
-  groupId: string;
-  handleCloseForm: () => void;
-}) => {
+const renderWithProviders = (props: { groupId: string; handleCloseForm: () => void }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -69,7 +62,7 @@ const renderWithProviders = (props: {
       <QueryClientProvider client={queryClient}>
         <RaidConnectionsAddForm {...props} />
       </QueryClientProvider>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
 };
 
@@ -181,7 +174,6 @@ describe("RaidConnectionsAddForm", () => {
     });
 
     it("Should display no options message when list is empty", async () => {
-
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
       const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
@@ -190,7 +182,7 @@ describe("RaidConnectionsAddForm", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/No valid available RAiD found, or the RAiD has been used by another project group./i)
+          screen.getByText(/No valid available RAiD found, or the RAiD has been used by another project group./i),
         ).toBeInTheDocument();
       });
     });
@@ -535,9 +527,7 @@ describe("RaidConnectionsAddForm", () => {
       await user.click(autocomplete);
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Test RAiD (raid-123456789012345678901234567890)")
-        ).toBeInTheDocument();
+        expect(screen.getByText("Test RAiD (raid-123456789012345678901234567890)")).toBeInTheDocument();
       });
     });
 
@@ -608,9 +598,7 @@ describe("RaidConnectionsAddForm", () => {
 
       // Both options should be available
       expect(screen.getByText("Test RAiD 1 (raid-123)")).toBeInTheDocument();
-      expect(
-        screen.getByText("Test RAiD 1 (alt) (raid-123)")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Test RAiD 1 (alt) (raid-123)")).toBeInTheDocument();
     });
   });
 });

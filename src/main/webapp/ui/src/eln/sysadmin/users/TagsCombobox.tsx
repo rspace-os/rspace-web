@@ -1,29 +1,25 @@
-import React, { useEffect, useState, useRef, useMemo, useId } from "react";
-import TextField from "@mui/material/TextField";
-import useAutocomplete, {
-  AutocompleteCloseReason,
-  AutocompleteGroupedOption,
-} from "@mui/material/useAutocomplete";
-import { VariableSizeList } from "react-window";
-import InfiniteLoader from "react-window-infinite-loader";
-import Popover from "@mui/material/Popover";
-import InputAdornment from "@mui/material/InputAdornment";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FilterIcon from "@mui/icons-material/FilterAlt";
-import ListItemText from "@mui/material/ListItemText";
-import {
-  checkUserInputString,
-  helpText,
-  isAllowed,
-} from "../../../components/Tags/TagValidation";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import { useTheme } from "@mui/material/styles";
-import { stableSort } from "../../../util/table";
-import RsSet from "../../../util/set";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import Grow from "@mui/material/Grow";
+import InputAdornment from "@mui/material/InputAdornment";
+import ListItemText from "@mui/material/ListItemText";
+import Popover from "@mui/material/Popover";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import useAutocomplete, { AutocompleteCloseReason, AutocompleteGroupedOption } from "@mui/material/useAutocomplete";
+import type React from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { VariableSizeList } from "react-window";
+import InfiniteLoader from "react-window-infinite-loader";
 import axios from "@/common/axios";
+import { checkUserInputString, helpText, isAllowed } from "../../../components/Tags/TagValidation";
+// biome-ignore lint/style/useImportType: initial biome migration
+import RsSet from "../../../util/set";
+import { stableSort } from "../../../util/table";
 
 /*
  * This component is a general purpose combobox for selecting a user tag. The
@@ -90,13 +86,8 @@ function OptionsListing({
   filter,
 }: {
   sortedOptions: Array<InternalTag>;
-  getOptionProps: (optionAndIndex: {
-    option: InternalTag;
-    index: number;
-  }) => object;
-  groupedOptions:
-    | Array<InternalTag>
-    | Array<AutocompleteGroupedOption<InternalTag>>;
+  getOptionProps: (optionAndIndex: { option: InternalTag; index: number }) => object;
+  groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
   listboxProps: object;
   listRef: React.MutableRefObject<VariableSizeList | null>;
   keyboardFocusIndex: number | null;
@@ -104,15 +95,8 @@ function OptionsListing({
 }) {
   const theme = useTheme();
 
-  const Item = ({
-    index,
-    style,
-  }: {
-    index: number;
-    style: React.CSSProperties;
-  }) => {
-    if (!groupedOptions || index >= groupedOptions.length)
-      return <li style={style} />;
+  const Item = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    if (!groupedOptions || index >= groupedOptions.length) return <li style={style} />;
 
     const option = groupedOptions[index] as InternalTag;
     const name = option.value || "no name";
@@ -132,19 +116,14 @@ function OptionsListing({
       );
 
     return (
+      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
       <li
         {...getOptionProps({ option, index })}
         style={{
           padding: "8px",
           cursor: "default",
-          border:
-            index === keyboardFocusIndex
-              ? `2px solid ${theme.palette.primary.main}`
-              : "none",
-          backgroundColor:
-            index === keyboardFocusIndex
-              ? theme.palette.hover.iconButton
-              : "transparent",
+          border: index === keyboardFocusIndex ? `2px solid ${theme.palette.primary.main}` : "none",
+          backgroundColor: index === keyboardFocusIndex ? theme.palette.hover.iconButton : "transparent",
           borderRadius: "4px",
 
           /*
@@ -181,11 +160,7 @@ function OptionsListing({
   };
 
   return (
-    <InfiniteLoader
-      isItemLoaded={() => true}
-      itemCount={sortedOptions.length}
-      loadMoreItems={() => {}}
-    >
+    <InfiniteLoader isItemLoaded={() => true} itemCount={sortedOptions.length} loadMoreItems={() => {}}>
       {({ onItemsRendered, ref }) => (
         <VariableSizeList
           {...listboxProps}
@@ -268,9 +243,7 @@ function TagsComboboxContent({
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [filter, setFilter] = useState("");
   const [error, setError] = useState(false);
-  const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(
-    null,
-  );
+  const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(null);
   const listRef = useRef<VariableSizeList | null>(null);
 
   const loadPage = async (): Promise<{
@@ -281,9 +254,7 @@ function TagsComboboxContent({
     setIsNextPageLoading(true);
     setError(false);
     try {
-      const { data } = await axios.get<Array<string>>(
-        `/system/users/allUserTags?tagFilter=${filter}`,
-      );
+      const { data } = await axios.get<Array<string>>(`/system/users/allUserTags?tagFilter=${filter}`);
       return {
         lastPage: true,
         tags: data.map((tag) => ({
@@ -321,13 +292,7 @@ function TagsComboboxContent({
    * StackOverflow post for more info
    * https://stackoverflow.com/questions/59013367/react-window-infinite-loader-material-ui-autocomplete
    */
-  const {
-    getRootProps,
-    getInputProps,
-    getListboxProps,
-    getOptionProps,
-    groupedOptions,
-  } = useAutocomplete({
+  const { getRootProps, getInputProps, getListboxProps, getOptionProps, groupedOptions } = useAutocomplete({
     open: true,
     options: sortedOptions,
     getOptionLabel: (option) => {
@@ -337,6 +302,7 @@ function TagsComboboxContent({
       return option.value;
     },
     filterOptions: (x) => x,
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     onInputChange: (event, newInputValue, reason) => {
       if (reason === "input") {
         setFilter(newInputValue);
@@ -352,10 +318,7 @@ function TagsComboboxContent({
        * details of the tapped tag.
        */
     },
-    onClose: (
-      event: React.SyntheticEvent<Element, Event>,
-      reason: AutocompleteCloseReason,
-    ) => {
+    onClose: (event: React.SyntheticEvent<Element, Event>, reason: AutocompleteCloseReason) => {
       /*
        * This event is fired whenever the user taps inside the Popover. There
        * are various different parts of the Popover that the user may tap on
@@ -364,10 +327,7 @@ function TagsComboboxContent({
        */
       let li = null;
       const relatedTarget = (event as React.FocusEvent).relatedTarget;
-      if (
-        event.currentTarget.nodeName === "INPUT" &&
-        relatedTarget?.nodeName === "LI"
-      ) {
+      if (event.currentTarget.nodeName === "INPUT" && relatedTarget?.nodeName === "LI") {
         li = relatedTarget;
       }
       if (event.currentTarget.nodeName === "LI") {
@@ -389,9 +349,7 @@ function TagsComboboxContent({
     if (typeof autocompleteInputRef === "function") {
       autocompleteInputRef(node);
     } else if (autocompleteInputRef) {
-      (
-        autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>
-      ).current = node;
+      (autocompleteInputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
     }
   };
 
@@ -410,13 +368,8 @@ function TagsComboboxContent({
     listRef.current?.resetAfterIndex(0);
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
-    null,
-  );
-  function debounce<FuncReturn>(
-    func: () => FuncReturn,
-    timeout: number = 1000,
-  ): () => void {
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 1000): () => void {
     return () => {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout);
@@ -494,13 +447,8 @@ function TagsComboboxContent({
                * filter (allowNewTags === false), in which case only a tag that
                * already exists may be chosen (e.g. by typing its exact name).
                */
-              const tagAlreadyExists = sortedOptions.some(
-                (t) => t.value === filter,
-              );
-              if (
-                (allowNewTags || tagAlreadyExists) &&
-                isAllowed(checkUserInputString(filter))
-              ) {
+              const tagAlreadyExists = sortedOptions.some((t) => t.value === filter);
+              if ((allowNewTags || tagAlreadyExists) && isAllowed(checkUserInputString(filter))) {
                 onSelection(filter);
                 setKeyboardFocusIndex(null);
                 onClose();
@@ -519,10 +467,7 @@ function TagsComboboxContent({
               let newIndex = keyboardFocusIndex ?? -1;
               do {
                 newIndex++;
-                if (
-                  newIndex === tags.length - 1 &&
-                  sortedOptions[newIndex].selected
-                ) {
+                if (newIndex === tags.length - 1 && sortedOptions[newIndex].selected) {
                   newIndex = keyboardFocusIndex ?? 0;
                   break;
                 }
@@ -572,12 +517,7 @@ function TagsComboboxContent({
                    */}
                   <Grow in={isNextPageLoading} timeout={300}>
                     <div>
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        spin
-                        size="sm"
-                        style={{ animationDuration: "1.5s" }}
-                      />
+                      <FontAwesomeIcon icon={faSpinner} spin size="sm" style={{ animationDuration: "1.5s" }} />
                     </div>
                   </Grow>
                 </InputAdornment>
@@ -616,11 +556,7 @@ function TagsComboboxContent({
       {error && (
         <Alert severity="warning">
           <AlertTitle>Error fetching tags</AlertTitle>
-          {allowNewTags ? (
-            <>Simply type in the tag and press enter instead.</>
-          ) : (
-            <>Please try again.</>
-          )}
+          {allowNewTags ? <>Simply type in the tag and press enter instead.</> : <>Please try again.</>}
         </Alert>
       )}
     </>
@@ -648,19 +584,11 @@ export default function TagsCombobox({
         horizontal: "left",
       }}
       elevation={0}
-      transitionDuration={
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? 0
-          : "auto"
-      }
+      transitionDuration={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : "auto"}
       slotProps={{
         backdrop: {
           invisible: false,
-          transitionDuration: window.matchMedia(
-            "(prefers-reduced-motion: reduce)",
-          ).matches
-            ? 0
-            : 225,
+          transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 225,
         },
 
         paper: {
@@ -674,12 +602,7 @@ export default function TagsCombobox({
       }}
     >
       {Boolean(anchorEl) && (
-        <TagsComboboxContent
-          value={value}
-          onSelection={onSelection}
-          onClose={onClose}
-          allowNewTags={allowNewTags}
-        />
+        <TagsComboboxContent value={value} onSelection={onSelection} onClose={onClose} allowNewTags={allowNewTags} />
       )}
     </Popover>
   );

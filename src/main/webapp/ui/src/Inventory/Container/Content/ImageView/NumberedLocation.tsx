@@ -1,8 +1,9 @@
 import Badge from "@mui/material/Badge";
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { useTheme } from "@mui/material/styles";
 import SvgIcon from "@mui/material/SvgIcon";
+import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
 
 type NumberedLocationArgs = {
   number: number;
@@ -39,15 +40,9 @@ function NumberedLocation({
             fontSize: "1rem",
             borderRadius: "50%",
             zIndex: selected ? 4 : 2,
-            border: inline
-              ? `2px solid${theme.palette.primary.main}`
-              : "none",
-            backgroundColor: selected
-              ? theme.palette.primary.main
-              : theme.palette.primary.contrastText,
-            color: selected
-              ? theme.palette.primary.contrastText
-              : theme.palette.primary.main,
+            border: inline ? `2px solid${theme.palette.primary.main}` : "none",
+            backgroundColor: selected ? theme.palette.primary.main : theme.palette.primary.contrastText,
+            color: selected ? theme.palette.primary.contrastText : theme.palette.primary.main,
           },
         },
       }}
@@ -69,12 +64,8 @@ function NumberedLocation({
         <path
           d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
           style={{
-            stroke: selected
-              ? theme.palette.primary.contrastText
-              : theme.palette.primary.main,
-            fill: selected
-              ? theme.palette.primary.main
-              : theme.palette.primary.contrastText,
+            stroke: selected ? theme.palette.primary.contrastText : theme.palette.primary.main,
+            fill: selected ? theme.palette.primary.main : theme.palette.primary.contrastText,
           }}
         />
       </SvgIcon>

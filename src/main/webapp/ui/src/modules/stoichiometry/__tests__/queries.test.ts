@@ -116,10 +116,7 @@ describe("getStoichiometry", () => {
       token,
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/stoichiometry?stoichiometryId=3`,
-      expect.any(Object),
-    );
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/stoichiometry?stoichiometryId=3`, expect.any(Object));
   });
 
   it("throws message from API when present", async () => {
@@ -128,9 +125,7 @@ describe("getStoichiometry", () => {
       statusText: "Not Found",
     });
 
-    await expect(
-      getStoichiometry({ stoichiometryId: 3, token }),
-    ).rejects.toThrow("Link not found");
+    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow("Link not found");
   });
 
   it("throws fallback message when API error shape is unknown", async () => {
@@ -139,16 +134,14 @@ describe("getStoichiometry", () => {
       statusText: "Internal Server Error",
     });
 
-    await expect(
-      getStoichiometry({ stoichiometryId: 3, token }),
-    ).rejects.toThrow("Failed to fetch stoichiometry: Internal Server Error");
+    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow(
+      "Failed to fetch stoichiometry: Internal Server Error",
+    );
   });
 
   it("bubbles up network failures", async () => {
     fetchMock.mockRejectOnce(new Error("Network down"));
 
-    await expect(
-      getStoichiometry({ stoichiometryId: 3, token }),
-    ).rejects.toThrow("Network down");
+    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow("Network down");
   });
 });

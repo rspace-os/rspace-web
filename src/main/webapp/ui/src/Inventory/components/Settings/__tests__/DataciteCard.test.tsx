@@ -1,10 +1,11 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import { render } from "@testing-library/react";
-import DataciteCard from "../DataciteCard";
 import { ThemeProvider } from "@mui/material/styles";
-
+import { render } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
 import materialTheme from "../../../../theme";
+import DataciteCard from "../DataciteCard";
+
 describe("DataciteCard", () => {
   test("Should have no axe violations.", async () => {
     const { container } = render(
@@ -18,7 +19,7 @@ describe("DataciteCard", () => {
             repositoryPrefix: "",
           }}
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest

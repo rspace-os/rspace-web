@@ -1,9 +1,10 @@
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { hasLocation } from "../../../stores/models/HasLocation";
 import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import React from "react";
 
 type TopLevelButtonArgs = {
   onClose: () => void;
@@ -11,13 +12,11 @@ type TopLevelButtonArgs = {
 
 function TopLevelButton({ onClose }: TopLevelButtonArgs): React.ReactNode {
   const { moveStore, uiStore } = useStores();
-  const allContainers = moveStore.selectedResults.every(
-    (r) => r instanceof ContainerModel
-  );
+  const allContainers = moveStore.selectedResults.every((r) => r instanceof ContainerModel);
   const allTopLevel = moveStore.selectedResults.every((r) =>
     hasLocation(r)
       .map((r) => r.immediateParentContainer === null)
-      .orElse(false)
+      .orElse(false),
   );
   return (
     <SubmitSpinner
@@ -27,9 +26,7 @@ function TopLevelButton({ onClose }: TopLevelButtonArgs): React.ReactNode {
         });
       }}
       fullWidth={uiStore.isSmall}
-      disabled={
-        !allContainers || allTopLevel || moveStore.submitting === "MAKE-TOP"
-      }
+      disabled={!allContainers || allTopLevel || moveStore.submitting === "MAKE-TOP"}
       loading={moveStore.submitting === "MAKE-TOP"}
       label="Make Top-level"
     />

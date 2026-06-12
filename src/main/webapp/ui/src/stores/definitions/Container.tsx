@@ -1,14 +1,16 @@
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Search, type SearchView } from "./Search";
-import { type Id } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Point } from "../../util/types";
-import { type Permissioned } from "./PermissionedData";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Id } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type HasLocation } from "./HasLocation";
-import {
-  ContainerType,
-  ContentSummary,
-  GridLayout,
-} from "@/stores/definitions/container/types";
+import type { InventoryRecord } from "./InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Permissioned } from "./PermissionedData";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Search, type SearchView } from "./Search";
 
 export function cTypeToDefaultSearchView(cType: ContainerType): SearchView {
   if (cType === "GRID") return "GRID";

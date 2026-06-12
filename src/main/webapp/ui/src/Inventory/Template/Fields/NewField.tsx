@@ -1,11 +1,13 @@
-import React from "react";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
-import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import type React from "react";
 import CustomTooltip from "../../../components/CustomTooltip";
 import FormControl from "../../../components/Inputs/FormControl";
-import TemplateModel from "../../../stores/models/TemplateModel";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type FieldModelAttrs } from "../../../stores/models/FieldModel";
+// biome-ignore lint/style/useImportType: initial biome migration
+import TemplateModel from "../../../stores/models/TemplateModel";
 
 const EMPTY_FIELD: FieldModelAttrs = {
   name: "",

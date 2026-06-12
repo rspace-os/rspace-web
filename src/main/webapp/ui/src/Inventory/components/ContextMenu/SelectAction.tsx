@@ -1,13 +1,14 @@
-import React, { forwardRef } from "react";
-import ContextMenuAction, {
-  type ContextMenuRenderOptions,
-} from "./ContextMenuAction";
 import SelectAllIcon from "@mui/icons-material/SelectAll";
-import { Observer } from "mobx-react-lite";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import Badge from "@mui/material/Badge";
-import { match } from "../../../util/Util";
+import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { forwardRef } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { match } from "../../../util/Util";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 
 type SelectActionArgs = {
   as: ContextMenuRenderOptions;
@@ -27,14 +28,8 @@ type SelectActionArgs = {
   selectedResults: ReadonlyArray<InventoryRecord>;
 };
 
-const SelectAction = forwardRef<
-  React.ElementRef<typeof ContextMenuAction>,
-  SelectActionArgs
->(
-  (
-    { as, disabled, onSelectOptions, selectedResults }: SelectActionArgs,
-    ref,
-  ) => {
+const SelectAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, SelectActionArgs>(
+  ({ as, disabled, onSelectOptions, selectedResults }: SelectActionArgs, ref) => {
     // can't enforce this in the type because ContextActions can't conditionally render
     if (!onSelectOptions) throw new Error("onSelectOptions is required");
     const options: Array<SplitButtonOption> = onSelectOptions;
@@ -50,11 +45,7 @@ const SelectAction = forwardRef<
           <ContextMenuAction
             options={options}
             icon={
-              <Badge
-                badgeContent={selectedResults.length}
-                color="primary"
-                max={100}
-              >
+              <Badge badgeContent={selectedResults.length} color="primary" max={100}>
                 <SelectAllIcon fontSize="small" />
               </Badge>
             }

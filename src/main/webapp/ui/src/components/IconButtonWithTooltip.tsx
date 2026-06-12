@@ -1,8 +1,8 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import CustomTooltip from "./CustomTooltip";
 import IconButton from "@mui/material/IconButton";
 import type { SxProps, Theme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import CustomTooltip from "./CustomTooltip";
 
 type RemainingIconButtonProps = {
   className?: string;
@@ -28,23 +28,18 @@ type IconButtonWithTooltipArgs = {
   disabled?: boolean;
 } & RemainingIconButtonProps;
 
-const IconButtonWithTooltip = React.forwardRef<
-  HTMLButtonElement,
-  IconButtonWithTooltipArgs
->(({ title, icon, ariaLabel, ...rest }: IconButtonWithTooltipArgs, ref) => {
-  return (
-    <CustomTooltip title={title} aria-label="">
-      <IconButton
-        color="inherit"
-        aria-label={ariaLabel ?? title}
-        {...rest}
-        ref={ref}
-      >
-        {icon}
-      </IconButton>
-    </CustomTooltip>
-  );
-});
+const IconButtonWithTooltip = React.forwardRef<HTMLButtonElement, IconButtonWithTooltipArgs>(
+  ({ title, icon, ariaLabel, ...rest }: IconButtonWithTooltipArgs, ref) => {
+    return (
+      // biome-ignore lint/a11y/useValidAriaValues: initial biome migration
+      <CustomTooltip title={title} aria-label="">
+        <IconButton color="inherit" aria-label={ariaLabel ?? title} {...rest} ref={ref}>
+          {icon}
+        </IconButton>
+      </CustomTooltip>
+    );
+  },
+);
 
 IconButtonWithTooltip.displayName = "IconButtonWithTooltip";
 /**

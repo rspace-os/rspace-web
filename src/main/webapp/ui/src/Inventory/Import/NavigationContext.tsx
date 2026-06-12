@@ -1,6 +1,8 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React, { useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type URL } from "../../util/types";
 
 type NavigationContextArgs = {
@@ -13,9 +15,7 @@ type NavigationContextArgs = {
  * NavigateContext that wraps this component is used to perform the navigation,
  * thereby composing the logic.
  */
-export default function NavigationContext({
-  children,
-}: NavigationContextArgs): React.ReactNode {
+export default function NavigationContext({ children }: NavigationContextArgs): React.ReactNode {
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();

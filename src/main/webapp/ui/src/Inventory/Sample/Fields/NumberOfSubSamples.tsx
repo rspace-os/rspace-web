@@ -1,16 +1,13 @@
-import React, { useState } from "react";
-import { observer } from "mobx-react-lite";
-import NumberField from "../../../components/Inputs/NumberField";
-import SampleModel, {
-  type SubSampleTargetLocation,
-} from "../../../stores/models/SampleModel";
-import FormField from "../../components/Inputs/FormField";
-import RadioField, {
-  OptionHeading,
-  OptionExplanation,
-} from "../../../components/Inputs/RadioField";
 import Box from "@mui/material/Box";
 import { textFieldClasses } from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useState } from "react";
+import NumberField from "../../../components/Inputs/NumberField";
+import RadioField, { OptionExplanation, OptionHeading } from "../../../components/Inputs/RadioField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import SampleModel, { type SubSampleTargetLocation } from "../../../stores/models/SampleModel";
+import FormField from "../../components/Inputs/FormField";
 
 const MIN = 2;
 const MAX = 100;
@@ -20,10 +17,7 @@ type NumberOfSubSamplesArgs = {
   sample: SampleModel;
 };
 
-function NumberOfSubSamples({
-  onErrorStateChange,
-  sample,
-}: NumberOfSubSamplesArgs): React.ReactNode {
+function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesArgs): React.ReactNode {
   /*
    * When tapping the "Create" context button for a container, the user has the
    * option to create a sample with respect to the container. The user can
@@ -33,21 +27,15 @@ function NumberOfSubSamples({
    */
   const withSpecifiedLocations: boolean =
     sample.newSampleSubSampleTargetLocations?.some(
-      ({ location }: SubSampleTargetLocation) =>
-        Object.keys(location).length > 0,
+      ({ location }: SubSampleTargetLocation) => Object.keys(location).length > 0,
     ) ?? false;
-  const fixedNumberOfSubSamples: boolean =
-    sample.beingCreatedInContainer && withSpecifiedLocations;
+  const fixedNumberOfSubSamples: boolean = sample.beingCreatedInContainer && withSpecifiedLocations;
 
   const [valid, setValid] = useState(true);
   const [count, setCount] = useState(fixedNumberOfSubSamples ? "1" : "2");
   const [type, setType] = useState<"SINGULAR" | "MANY">("SINGULAR");
 
-  const handleChange = ({
-    target,
-  }: {
-    target: { value: string; checkValidity: () => boolean };
-  }) => {
+  const handleChange = ({ target }: { target: { value: string; checkValidity: () => boolean } }) => {
     setCount(target.value);
     if (!target.checkValidity() || target.value === "") {
       setValid(false);
@@ -64,9 +52,7 @@ function NumberOfSubSamples({
     }
   };
 
-  const errorMessage = valid
-    ? ""
-    : `Must be an integer value of at least ${MIN} and no more than ${MAX}.`;
+  const errorMessage = valid ? "" : `Must be an integer value of at least ${MIN} and no more than ${MAX}.`;
 
   return (
     <>
@@ -98,9 +84,8 @@ function NumberOfSubSamples({
                   <>
                     <OptionHeading>Individual Sample</OptionHeading>
                     <OptionExplanation>
-                      The sample is made up of <strong>one subsample</strong>,
-                      representing the physical location of the sample. Sample
-                      actions are equivalent to subsample actions.
+                      The sample is made up of <strong>one subsample</strong>, representing the physical location of the
+                      sample. Sample actions are equivalent to subsample actions.
                     </OptionExplanation>
                   </>
                 ),
@@ -111,10 +96,8 @@ function NumberOfSubSamples({
                   <>
                     <OptionHeading>Sample with subsamples</OptionHeading>
                     <OptionExplanation>
-                      The sample is made up of{" "}
-                      <strong>multiple subsamples</strong>, which represent
-                      related physical items originating from the same source.
-                      Sample actions affect the entire group of subsamples.
+                      The sample is made up of <strong>multiple subsamples</strong>, which represent related physical
+                      items originating from the same source. Sample actions affect the entire group of subsamples.
                     </OptionExplanation>
                   </>
                 ),

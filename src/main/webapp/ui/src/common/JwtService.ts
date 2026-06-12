@@ -3,6 +3,8 @@ import { jwtDecode } from "jwt-decode";
 /**
  * @deprecated Use the functions in `src/modules/common/utils/auth.ts` instead.
  */
+
+// biome-ignore lint/complexity/noStaticOnlyClass: initial biome migration
 class JwtService {
   // if you change this, change login.jsp and logout.jsp accordingly
   static ID_TOKEN_KEY: string = "id_token";
@@ -10,9 +12,7 @@ class JwtService {
 
   private static getSessionStorage(): Storage | null {
     try {
-      return typeof globalThis.sessionStorage?.getItem === "function"
-        ? globalThis.sessionStorage
-        : null;
+      return typeof globalThis.sessionStorage?.getItem === "function" ? globalThis.sessionStorage : null;
     } catch {
       return null;
     }
@@ -43,6 +43,7 @@ class JwtService {
   }
 
   static secondsToExpiry(token: string): number {
+    // biome-ignore lint/complexity/noThisInStatic: initial biome migration
     if (!token.match(this.JWT_TOKEN_PATTERN)) {
       // This is an API key
       return Infinity;

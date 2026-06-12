@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from "react";
-import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
-import LoadingFade from "../components/LoadingFade";
+import Stack from "@mui/material/Stack";
+import { observable, runInAction } from "mobx";
+import type React from "react";
+import { useEffect, useState } from "react";
 import axios from "@/common/axios";
+import { useConfirm } from "../components/ConfirmProvider";
+import LoadingFade from "../components/LoadingFade";
 import { formatFileSize } from "../util/files";
 import { sum } from "../util/iterators";
-import RsSet, { flattenWithUnion } from "../util/set";
-import FoundLinksListing from "./fileStoreComponents/FoundLinksListing";
-import LoginStatus from "./fileStoreComponents/LoginStatus";
-import FileFilters from "./fileStoreComponents/FileFilters";
-import LinkAvailabilityScan from "./fileStoreComponents/LinkAvailabilityScan";
-import { type UseState } from "../util/types";
-import { type Validator } from "../util/Validator";
-import { useConfirm } from "../components/ConfirmProvider";
 import { Optional } from "../util/optional";
-import { runInAction, observable } from "mobx";
-import {
-  type ExportSelection,
-  type FileLink,
-  type FolderLink,
-  type FileSystem,
-  type MixedLink,
-} from "./common";
+import RsSet, { flattenWithUnion } from "../util/set";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type UseState } from "../util/types";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Validator } from "../util/Validator";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ExportSelection, type FileLink, type FileSystem, type FolderLink, type MixedLink } from "./common";
+import FileFilters from "./fileStoreComponents/FileFilters";
+import FoundLinksListing from "./fileStoreComponents/FoundLinksListing";
+import LinkAvailabilityScan from "./fileStoreComponents/LinkAvailabilityScan";
+import LoginStatus from "./fileStoreComponents/LoginStatus";
 
 /*
  * When exporting RSpace documents that contain references to files in
@@ -90,21 +88,17 @@ export default function ExportFileStore({
   updateFilters,
   validator,
 }: ExportFileStoreArgs): React.ReactNode {
-  const [loadingQuickPlan, setLoadingQuickPlan]: UseState<boolean> =
-    useState(false);
-  const [loadingFullPlan, setLoadingFullPlan]: UseState<boolean> =
-    useState(false);
+  const [loadingQuickPlan, setLoadingQuickPlan]: UseState<boolean> = useState(false);
+  const [loadingFullPlan, setLoadingFullPlan]: UseState<boolean> = useState(false);
 
   const [totalFilesFound, setTotalFilesFound]: UseState<number> = useState(0);
   const [fileSystems, setFileSystems] = useState<Array<FileSystem>>([]);
-  const [checkedFileSystems, setCheckedFileSystems] = useState<
-    Array<FileSystem>
-  >([]);
+  const [checkedFileSystems, setCheckedFileSystems] = useState<Array<FileSystem>>([]);
   const [planId, setPlanId]: UseState<ExportPlanId> = useState(0);
-  const [maxFileSizeInMB, setMaxFileSizeInMB]: UseState<number | string> =
-    useState(nfsConfig.maxFileSizeInMB);
-  const [excludedFileExtensions, setExcludedFileExtensions]: UseState<string> =
-    useState(nfsConfig.excludedFileExtensions);
+  const [maxFileSizeInMB, setMaxFileSizeInMB]: UseState<number | string> = useState(nfsConfig.maxFileSizeInMB);
+  const [excludedFileExtensions, setExcludedFileExtensions]: UseState<string> = useState(
+    nfsConfig.excludedFileExtensions,
+  );
 
   // extracted and computed data from full export plan scan
   const [scanResultsPresent, setScanResultsPresent] = useState(false);
@@ -127,10 +121,7 @@ export default function ExportFileStore({
 
   useEffect(() => {
     validator.setValidFunc(async () => {
-      if (
-        validationData.totalFilesFound > 0 &&
-        validationData.loggedOut.length > 0
-      ) {
+      if (validationData.totalFilesFound > 0 && validationData.loggedOut.length > 0) {
         if (
           !(await confirm(
             "",
@@ -155,28 +146,24 @@ export default function ExportFileStore({
       if (
         validationData.scanResultsPresent &&
         validationData.maxArchiveSizeBytes !== 0 &&
-        validationData.scanResultsTotalFileSize >=
-          validationData.currentlyAllowedArchiveSizeBytes
+        validationData.scanResultsTotalFileSize >= validationData.currentlyAllowedArchiveSizeBytes
       ) {
         await confirm(
           "",
           <>
             The size of filestore files to be included in export (
             {formatFileSize(validationData.scanResultsTotalFileSize)})
-            {validationData.scanResultsTotalFileSize >
-            validationData.maxArchiveSizeBytes ? (
+            {validationData.scanResultsTotalFileSize > validationData.maxArchiveSizeBytes ? (
               <span>
                 {" "}
-                exceeds the global limit set for size of RSpace archive file.
-                Use file filters to exclude some files, or ask your System Admin
-                to raise the limit on archive size.
+                exceeds the global limit set for size of RSpace archive file. Use file filters to exclude some files, or
+                ask your System Admin to raise the limit on archive size.
               </span>
             ) : (
               <span>
                 {" "}
-                exceeds disk space currently available on RSpace server. Use
-                file filters to exclude some files, or contact your System
-                Admin.
+                exceeds disk space currently available on RSpace server. Use file filters to exclude some files, or
+                contact your System Admin.
               </span>
             )}
           </>,
@@ -203,9 +190,7 @@ export default function ExportFileStore({
       const fileSystems = response.data.foundFileSystems;
       setFileSystems(fileSystems);
 
-      const newTotalFilesFound = sum(
-        fileSystems.map((fs) => fs.foundNfsLinks.length),
-      );
+      const newTotalFilesFound = sum(fileSystems.map((fs) => fs.foundNfsLinks.length));
       setTotalFilesFound(newTotalFilesFound);
 
       runInAction(() => {
@@ -234,15 +219,12 @@ export default function ExportFileStore({
     );
 
     const isFile = (link: MixedLink): link is FileLink => link.type === "file";
-    const isFolder = (link: MixedLink): link is FolderLink =>
-      link.type === "folder";
+    const isFolder = (link: MixedLink): link is FolderLink => link.type === "folder";
 
     // FileSystem is bundled with each link for further filtering
     const links: RsSet<{ fs: FileSystem; link: MixedLink }> = flattenWithUnion(
       fileSystems.map((fs) =>
-        new RsSet(fs.checkedNfsLinks).mapOptional((link) =>
-          link ? Optional.present({ fs, link }) : Optional.empty(),
-        ),
+        new RsSet(fs.checkedNfsLinks).mapOptional((link) => (link ? Optional.present({ fs, link }) : Optional.empty())),
       ),
     );
 
@@ -256,28 +238,22 @@ export default function ExportFileStore({
     const rootFileLinks: RsSet<FileLink> = includedLinks.mapOptional((link) =>
       isFile(link) ? Optional.present(link) : Optional.empty(),
     );
-    const rootFolderLinks: RsSet<FolderLink> = includedLinks.mapOptional(
-      (link) => (isFolder(link) ? Optional.present(link) : Optional.empty()),
+    const rootFolderLinks: RsSet<FolderLink> = includedLinks.mapOptional((link) =>
+      isFolder(link) ? Optional.present(link) : Optional.empty(),
     );
 
     const linksToFilesInsideAFolder: RsSet<FileLink> = flattenWithUnion(
       rootFolderLinks.map((link) =>
-        new RsSet(link.content).mapOptional((link) =>
-          isFile(link) ? Optional.present(link) : Optional.empty(),
-        ),
+        new RsSet(link.content).mapOptional((link) => (isFile(link) ? Optional.present(link) : Optional.empty())),
       ),
     );
-    const fileLinks: RsSet<FileLink> = rootFileLinks.union(
-      linksToFilesInsideAFolder,
-    );
+    const fileLinks: RsSet<FileLink> = rootFileLinks.union(linksToFilesInsideAFolder);
 
     setScanResultsOmittedCount(omittedCount);
     setScanResultsAvailableCount(fileLinks.size);
     setScanResultsTotalFileSize(sum(fileLinks.map((link) => link.size)));
     runInAction(() => {
-      validationData.scanResultsTotalFileSize = sum(
-        fileLinks.map((link) => link.size),
-      );
+      validationData.scanResultsTotalFileSize = sum(fileLinks.map((link) => link.size));
     });
   };
 
@@ -296,10 +272,8 @@ export default function ExportFileStore({
       setScanResultsPresent(true);
       runInAction(() => {
         validationData.scanResultsPresent = true;
-        validationData.maxArchiveSizeBytes =
-          response.data.maxArchiveSizeMBProp * 1024 * 1024;
-        validationData.currentlyAllowedArchiveSizeBytes =
-          response.data.currentlyAllowedArchiveSizeMB * 1024 * 1024;
+        validationData.maxArchiveSizeBytes = response.data.maxArchiveSizeMBProp * 1024 * 1024;
+        validationData.currentlyAllowedArchiveSizeBytes = response.data.currentlyAllowedArchiveSizeMB * 1024 * 1024;
       });
     } catch (error) {
       console.error(error);
@@ -328,9 +302,7 @@ export default function ExportFileStore({
         <Card sx={{ p: 1 }}>
           <div>
             <h4>No filestore links found in exported content.</h4>
-            <h4>
-              If that&apos;s unexpected, you should check your export selection.
-            </h4>
+            <h4>If that&apos;s unexpected, you should check your export selection.</h4>
             <h4>Otherwise you can proceed with the export.</h4>
           </div>
         </Card>
@@ -338,15 +310,9 @@ export default function ExportFileStore({
 
       {!loadingQuickPlan && totalFilesFound > 0 && (
         <>
-          <FoundLinksListing
-            filesCount={totalFilesFound}
-            fileSystems={fileSystems}
-          />
+          <FoundLinksListing filesCount={totalFilesFound} fileSystems={fileSystems} />
 
-          <LoginStatus
-            fileSystems={fileSystems}
-            fileStoreCheck={() => void fileStoreCheck()}
-          />
+          <LoginStatus fileSystems={fileSystems} fileStoreCheck={() => void fileStoreCheck()} />
 
           <FileFilters
             maxFileSizeInMB={maxFileSizeInMB}

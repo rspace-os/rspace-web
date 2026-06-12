@@ -1,21 +1,22 @@
-import React, { useState } from "react";
-import { observer } from "mobx-react-lite";
-import StringField from "../../../components/Inputs/StringField";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+// biome-ignore lint/style/useImportType: initial biome migration
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useState } from "react";
+import StringField from "../../../components/Inputs/StringField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
 import BatchFormField from "../Inputs/BatchFormField";
-import Box from "@mui/material/Box";
 
 const MIN = 2;
 const MAX = 255;
 
-function Name<
-  Fields extends { name: BatchName },
-  FieldOwner extends HasEditableFields<Fields>,
->({
+function Name<Fields extends { name: BatchName }, FieldOwner extends HasEditableFields<Fields>>({
   fieldOwner,
   allowAlphabeticalSuffix,
   onErrorStateChange,
@@ -33,11 +34,7 @@ function Name<
     CREATED: 19,
   }[fieldOwner.fieldValues.name.suffix];
 
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { value: string };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { value: string } }) => {
     const suffix = fieldOwner.fieldValues.name.suffix;
     fieldOwner.setFieldsDirty({ name: { common: value, suffix } });
     setInitial(false);
@@ -48,11 +45,7 @@ function Name<
     );
   };
 
-  const handleChangeSuffix = (
-    event: SelectChangeEvent<
-      "NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED"
-    >,
-  ) => {
+  const handleChangeSuffix = (event: SelectChangeEvent<"NONE" | "INDEX_NUMBER" | "INDEX_LETTER" | "CREATED">) => {
     const value = event.target.value;
     const common = fieldOwner.fieldValues.name.common;
     fieldOwner.setFieldsDirty({ name: { common, suffix: value } });
@@ -66,10 +59,7 @@ function Name<
       !initial
     )
       return "Name must include at least one non-whitespace character.";
-    if (
-      fieldOwner.fieldValues.name.common.length + lengthOfSuffix < MIN &&
-      !initial
-    )
+    if (fieldOwner.fieldValues.name.common.length + lengthOfSuffix < MIN && !initial)
       return `Name must be at least ${MIN} characters.`;
     if (fieldOwner.fieldValues.name.common.length + lengthOfSuffix > MAX)
       return `Name must be no longer than ${MAX - lengthOfSuffix} characters.`;
@@ -104,19 +94,10 @@ function Name<
                 <InputAdornment position="end">
                   <Box sx={{ mx: 1 }}>
                     Suffix:&nbsp;
-                    <Select
-                      variant="standard"
-                      value={fieldOwner.fieldValues.name.suffix}
-                      onChange={handleChangeSuffix}
-                    >
+                    <Select variant="standard" value={fieldOwner.fieldValues.name.suffix} onChange={handleChangeSuffix}>
                       <MenuItem value="NONE">None</MenuItem>
-                      <MenuItem value="INDEX_NUMBER">
-                        Numerical Index: 1, 2, 3...
-                      </MenuItem>
-                      <MenuItem
-                        disabled={!allowAlphabeticalSuffix}
-                        value="INDEX_LETTER"
-                      >
+                      <MenuItem value="INDEX_NUMBER">Numerical Index: 1, 2, 3...</MenuItem>
+                      <MenuItem disabled={!allowAlphabeticalSuffix} value="INDEX_LETTER">
                         Alphabetical Index: A, B, C...
                       </MenuItem>
                       <MenuItem value="CREATED">Date of Creation</MenuItem>

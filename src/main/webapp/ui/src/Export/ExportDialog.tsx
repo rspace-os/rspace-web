@@ -1,53 +1,54 @@
-import React, { startTransition, Suspense, useEffect, useState } from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../theme";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@mui/material/Button";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
 import MobileStepper from "@mui/material/MobileStepper";
-import axios from "@/common/axios";
-import FormatChoice, { type ArchiveType } from "./FormatChoice";
-import FormatSpecificOptions from "./FormatSpecificOptions";
-import ExportRepo from "./ExportRepo";
-import ExportFileStore from "./ExportFileStore";
-import LoadingFade from "../components/LoadingFade";
-import Confirm from "../components/ConfirmProvider";
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { action, observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import {
-  appendPane,
-  getIndexOfPane,
-  getPaneByKey,
-  makePane,
-  numberOfPanes,
-} from "./WizardPanes";
-import { DEFAULT_REPO_CONFIG, type Repo } from "./repositories/common";
-import { lift3 } from "../util/optional";
-import { type Tag } from "./repositories/Tags";
-import * as ArrayUtils from "../util/ArrayUtils";
-import * as Parsers from "../util/parsers";
-import Result from "../util/result";
-import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
-import Divider from "@mui/material/Divider";
-import AlertContext, { mkAlert } from "../stores/contexts/Alert";
-import useViewportDimensions from "../hooks/browser/useViewportDimensions";
-import { type ExportSelection } from "./common";
-import { PdfExportDetails } from "./PdfExport";
-import { HtmlXmlExportDetails } from "./HtmlXmlExport";
-import { WordExportDetails } from "./WordExport";
-import AnalyticsContext from "../stores/contexts/Analytics";
-import ExportDialogRaid from "@/Export/ExportDialogRaid";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import React, { Suspense, startTransition, useEffect, useState } from "react";
+import axios from "@/common/axios";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { DEFAULT_STATE, ExportConfig } from "@/Export/constants";
+import ExportDialogRaid from "@/Export/ExportDialogRaid";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GroupInfo } from "@/modules/groups/schema";
 import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";
-import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
-import { GroupInfo } from "@/modules/groups/schema";
+import Confirm from "../components/ConfirmProvider";
+import LoadingFade from "../components/LoadingFade";
+import { parseEncodedTags } from "../components/Tags/ParseEncodedTagStrings";
+import useViewportDimensions from "../hooks/browser/useViewportDimensions";
+import AlertContext, { mkAlert } from "../stores/contexts/Alert";
+import AnalyticsContext from "../stores/contexts/Analytics";
+import materialTheme from "../theme";
+import * as ArrayUtils from "../util/ArrayUtils";
+import { lift3 } from "../util/optional";
+import * as Parsers from "../util/parsers";
+import Result from "../util/result";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ExportSelection } from "./common";
+import ExportFileStore from "./ExportFileStore";
+import ExportRepo from "./ExportRepo";
+import FormatChoice, { type ArchiveType } from "./FormatChoice";
+import FormatSpecificOptions from "./FormatSpecificOptions";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { HtmlXmlExportDetails } from "./HtmlXmlExport";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { PdfExportDetails } from "./PdfExport";
+import { DEFAULT_REPO_CONFIG, type Repo } from "./repositories/common";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Tag } from "./repositories/Tags";
+import { appendPane, getIndexOfPane, getPaneByKey, makePane, numberOfPanes } from "./WizardPanes";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { WordExportDetails } from "./WordExport";
 
 /*
  * This react component implements the entire export flow for ELN documents.
@@ -68,40 +69,27 @@ type ExportDialogArgs = {
   allowFileStores: boolean;
 };
 
-const isArchiveExport = (
-  archiveType: (typeof DEFAULT_STATE)["exportConfig"]["archiveType"],
-) => {
-  return (
-    archiveType === "html" || archiveType === "xml" || archiveType === "eln"
-  );
+const isArchiveExport = (archiveType: (typeof DEFAULT_STATE)["exportConfig"]["archiveType"]) => {
+  return archiveType === "html" || archiveType === "xml" || archiveType === "eln";
 };
 
-function ExportDialog({
-  open,
-  onClose,
-  exportSelection,
-  allowFileStores,
-}: ExportDialogArgs): React.ReactNode {
+function ExportDialog({ open, onClose, exportSelection, allowFileStores }: ExportDialogArgs): React.ReactNode {
   const { data: token } = useOauthTokenQuery();
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const [state, setState] = useState<typeof DEFAULT_STATE>(
-    observable(DEFAULT_STATE),
-  );
+  const [state, setState] = useState<typeof DEFAULT_STATE>(observable(DEFAULT_STATE));
 
   const { data: raidData } = useRaidIntegrationInfoAjaxQuery();
   const raidEnabled = raidData.success ? raidData.data.enabled : false;
 
   const exportIds = exportSelection.exportIds ?? [];
-  const shouldFetchCommonGroups =
-    exportSelection.type === "selection" && exportIds.length > 0 && Boolean(token);
-  const { data: commonGroups = new Map<number, GroupInfo | null>() } =
-    useCommonGroupsShareListingQuery({
-      token,
-      params: { sharedItemIds: exportIds as string[] },
-      enabled: shouldFetchCommonGroups,
-    });
+  const shouldFetchCommonGroups = exportSelection.type === "selection" && exportIds.length > 0 && Boolean(token);
+  const { data: commonGroups = new Map<number, GroupInfo | null>() } = useCommonGroupsShareListingQuery({
+    token,
+    params: { sharedItemIds: exportIds as string[] },
+    enabled: shouldFetchCommonGroups,
+  });
 
   useEffect(() => {
     if (!shouldFetchCommonGroups) {
@@ -110,16 +98,12 @@ function ExportDialog({
     }
     const raidExportStatus = getRaidExportEligibility(commonGroups);
 
-    const projectGroupId = raidExportStatus.isEligible
-      ? raidExportStatus.projectGroup.id
-      : null;
+    const projectGroupId = raidExportStatus.isEligible ? raidExportStatus.projectGroup.id : null;
 
     updateProjectGroupId(projectGroupId);
   }, [commonGroups, shouldFetchCommonGroups]);
 
-  const [firstPane, setFirstPane] = useState(
-    makePane("FormatChoice", "Export"),
-  );
+  const [firstPane, setFirstPane] = useState(makePane("FormatChoice", "Export"));
   const [activePane, setActivePane] = useState(firstPane);
 
   const createWizardPanes = () => {
@@ -134,10 +118,7 @@ function ExportDialog({
     }
 
     if (state.exportConfig.fileStores) {
-      appendPane(
-        newListOfPanes,
-        makePane("ExportFileStore", "Filestore Links Export Configuration"),
-      );
+      appendPane(newListOfPanes, makePane("ExportFileStore", "Filestore Links Export Configuration"));
     }
 
     setFirstPane(newListOfPanes);
@@ -158,16 +139,16 @@ function ExportDialog({
 
   const setInitialDocPDF = (exportSelection: ExportSelection) => {
     // Add initial export name data to the loaded dialog (it is used in PDF and WORD exports)
+    // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let initialExportName;
 
-    if (
-      exportSelection.type === "selection" &&
-      exportSelection.exportNames.length > 0
-    ) {
+    if (exportSelection.type === "selection" && exportSelection.exportNames.length > 0) {
       initialExportName = exportSelection.exportNames[0].trimStart();
     } else if (exportSelection.type === "user") {
+      // biome-ignore lint/style/useTemplate: initial biome migration
       initialExportName = exportSelection.username + " - all work";
     } else if (exportSelection.type === "group") {
+      // biome-ignore lint/style/useTemplate: initial biome migration
       initialExportName = exportSelection.groupName + " - all work";
     } else {
       initialExportName = "Export Data";
@@ -179,9 +160,7 @@ function ExportDialog({
 
   useEffect(() => {
     axios
-      .get<{ data: { pageSize: string; defaultPDFConfig: string } }>(
-        "/export/ajax/defaultPDFConfig",
-      )
+      .get<{ data: { pageSize: string; defaultPDFConfig: string } }>("/export/ajax/defaultPDFConfig")
       .then((response) => {
         const format = response.data.data.pageSize;
 
@@ -211,6 +190,7 @@ function ExportDialog({
       });
     } else {
       startTransition(() => {
+        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
         setActivePane(activePane.next!);
       });
     }
@@ -224,11 +204,9 @@ function ExportDialog({
     return {
       exportSelection: { ...state.exportSelection },
       exportConfig: { ...state.exportDetails },
-      repositoryConfig: state.repositoryConfig.depositToRepository
-        ? { ...state.repositoryConfig }
-        : {},
+      repositoryConfig: state.repositoryConfig.depositToRepository ? { ...state.repositoryConfig } : {},
       nfsConfig: { ...state.nfsConfig },
-      ...(raidEnabled ? { projectGroupId: state.projectGroupId } : {})
+      ...(raidEnabled ? { projectGroupId: state.projectGroupId } : {}),
     };
   };
 
@@ -238,9 +216,7 @@ function ExportDialog({
       state.loading = true;
     });
 
-    const url = isArchiveExport(archiveType)
-      ? "/export/ajax/exportArchive"
-      : "/export/ajax/export";
+    const url = isArchiveExport(archiveType) ? "/export/ajax/exportArchive" : "/export/ajax/export";
     const data = prepareExportData();
     axios
       .post<string>(url, data)
@@ -328,27 +304,13 @@ function ExportDialog({
     }
   };
 
-  function exportConfigUpdate(
-    itemToUpdate: "archiveType",
-    value: ArchiveType,
-  ): void;
+  function exportConfigUpdate(itemToUpdate: "archiveType", value: ArchiveType): void;
   function exportConfigUpdate(itemToUpdate: "repository", value: boolean): void;
-  function exportConfigUpdate(
-    itemToUpdate: "allVersions",
-    value: boolean,
-  ): void;
+  function exportConfigUpdate(itemToUpdate: "allVersions", value: boolean): void;
   function exportConfigUpdate(itemToUpdate: "fileStores", value: boolean): void;
+  function exportConfigUpdate(itemToUpdate: "repoData", value: ReadonlyArray<Repo>): void;
   function exportConfigUpdate(
-    itemToUpdate: "repoData",
-    value: ReadonlyArray<Repo>,
-  ): void;
-  function exportConfigUpdate(
-    itemToUpdate:
-      | "archiveType"
-      | "repository"
-      | "allVersions"
-      | "fileStores"
-      | "repoData",
+    itemToUpdate: "archiveType" | "repository" | "allVersions" | "fileStores" | "repoData",
     value: ArchiveType | boolean | ReadonlyArray<Repo>,
   ) {
     action((newState: typeof DEFAULT_STATE) => {
@@ -364,8 +326,7 @@ function ExportDialog({
       newState.exportConfig[itemToUpdate] = value;
 
       // some of the switches change which panes are reachable so recreate panes
-      if (itemToUpdate === "repository" || itemToUpdate === "fileStores")
-        createWizardPanes();
+      if (itemToUpdate === "repository" || itemToUpdate === "fileStores") createWizardPanes();
     })(state);
   }
 
@@ -393,22 +354,13 @@ function ExportDialog({
     });
   };
 
-  function updateExportDetails<Key extends keyof PdfExportDetails>(
-    name: Key,
-    value: PdfExportDetails[Key],
-  ): void;
+  function updateExportDetails<Key extends keyof PdfExportDetails>(name: Key, value: PdfExportDetails[Key]): void;
   function updateExportDetails<Key extends keyof HtmlXmlExportDetails>(
     name: Key,
     value: HtmlXmlExportDetails[Key],
   ): void;
-  function updateExportDetails<Key extends keyof WordExportDetails>(
-    name: Key,
-    value: WordExportDetails[Key],
-  ): void;
-  function updateExportDetails<Key extends keyof ExportConfig>(
-    name: Key,
-    value: (typeof state.exportDetails)[Key],
-  ) {
+  function updateExportDetails<Key extends keyof WordExportDetails>(name: Key, value: WordExportDetails[Key]): void;
+  function updateExportDetails<Key extends keyof ExportConfig>(name: Key, value: (typeof state.exportDetails)[Key]) {
     runInAction(() => {
       state.exportDetails[name] = value;
     });
@@ -430,20 +382,10 @@ function ExportDialog({
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <Confirm>
-          <Dialog
-            open={state.open}
-            fullWidth={true}
-            maxWidth="sm"
-            onClose={handleClose}
-            fullScreen={isViewportSmall}
-          >
-            <DialogTitle data-test-id="modalTitle">
-              {activePane.title}
-            </DialogTitle>
+          <Dialog open={state.open} fullWidth={true} maxWidth="sm" onClose={handleClose} fullScreen={isViewportSmall}>
+            <DialogTitle data-test-id="modalTitle">{activePane.title}</DialogTitle>
             <DialogContent>
-              <Suspense
-                fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}
-              >
+              <Suspense fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}>
                 {activePane.key === "FormatChoice" && (
                   <FormatChoice
                     exportSelection={state.exportSelection}
@@ -454,26 +396,21 @@ function ExportDialog({
                     fileStoresSelected={state.exportConfig.fileStores}
                     allVersions={state.exportConfig.allVersions}
                     updateFileStores={updateFileStoreFilters}
-                    validator={
-                      getPaneByKey(firstPane, "FormatChoice").validator
-                    }
+                    validator={getPaneByKey(firstPane, "FormatChoice").validator}
                   />
                 )}
-                {activePane.key === "FormatSpecificOptions" &&
-                  state.exportConfig.archiveType !== "" && (
-                    <>
-                      <FormatSpecificOptions
-                        exportType={state.exportConfig.archiveType}
-                        // @ts-expect-error Impossible to type check this
-                        exportDetails={state.exportDetails}
-                        updateExportDetails={updateExportDetails}
-                        validator={
-                          getPaneByKey(firstPane, "FormatSpecificOptions")
-                            .validator
-                        }
-                      />
-                    </>
-                  )}
+                {activePane.key === "FormatSpecificOptions" && state.exportConfig.archiveType !== "" && (
+                  // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+                  <>
+                    <FormatSpecificOptions
+                      exportType={state.exportConfig.archiveType}
+                      // @ts-expect-error Impossible to type check this
+                      exportDetails={state.exportDetails}
+                      updateExportDetails={updateExportDetails}
+                      validator={getPaneByKey(firstPane, "FormatSpecificOptions").validator}
+                    />
+                  </>
+                )}
                 {activePane.key === "ExportRepo" && (
                   <ExportRepo
                     state={state}
@@ -485,10 +422,7 @@ function ExportDialog({
                   />
                 )}
                 {activePane.key === "ExportDialogRaid" && (
-                  <ExportDialogRaid
-                    state={state}
-                    updateRepoConfig={updateRepoConfig}
-                  ></ExportDialogRaid>
+                  <ExportDialogRaid state={state} updateRepoConfig={updateRepoConfig}></ExportDialogRaid>
                 )}
                 {activePane.key === "ExportFileStore" && (
                   <ExportFileStore
@@ -496,9 +430,7 @@ function ExportDialog({
                     exportSelection={state.exportSelection}
                     nfsConfig={state.nfsConfig}
                     updateFilters={updateFileStoreFilters}
-                    validator={
-                      getPaneByKey(firstPane, "ExportFileStore").validator
-                    }
+                    validator={getPaneByKey(firstPane, "ExportFileStore").validator}
                   />
                 )}
               </Suspense>

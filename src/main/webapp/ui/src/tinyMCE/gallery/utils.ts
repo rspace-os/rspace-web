@@ -16,16 +16,8 @@ declare function generateIconSrc(
   id?: number,
 ): string;
 declare function isPlayableOnJWPlayer(extension?: string | null): boolean;
-declare function setUpJWMediaPlayer(
-  id: number,
-  name: string,
-  extension: string,
-): string;
-declare function insertChemElement(
-  id: number,
-  fieldId: string,
-  fileName: string,
-): Promise<unknown>;
+declare function setUpJWMediaPlayer(id: number, name: string, extension: string): string;
+declare function insertChemElement(id: number, fieldId: string, fileName: string): Promise<unknown>;
 
 declare global {
   interface RSGlobal {
@@ -84,8 +76,8 @@ const typeMapping: Record<string, string> = {
 };
 
 // @TODO pass this down from React
+// biome-ignore lint/style/useConst: initial biome migration
 let chemistryAvailable = false;
-
 
 export function getFieldIdFromTextFieldId(textFieldId: string) {
   return textFieldId.slice("rtf_".length);
@@ -159,12 +151,7 @@ export function addFromGallery(data: WorkspaceRecordInformation) {
  * Import folders from gallery to tinymce, irrelevent to their gallery type
  */
 function insertFolder(data: WorkspaceRecordInformation) {
-  getRS().tinymceInsertInternalLink(
-    data.id,
-    data.oid.idString,
-    data.name,
-    getActiveEditor(),
-  );
+  getRS().tinymceInsertInternalLink(data.id, data.oid.idString, data.name, getActiveEditor());
 }
 
 /*
@@ -189,19 +176,13 @@ function insertImagesFromGallery(data: WorkspaceRecordInformation) {
  * @param mediaType - either MEDIA_TYPE_AUDIOS or MEDIA_TYPE_VIDEOS
  * @param data - the record information for an item(returned by getRecordInformation)
  */
-function insertAVFromGallery(
-  mediaType: string,
-  data: WorkspaceRecordInformation,
-) {
+function insertAVFromGallery(mediaType: string, data: WorkspaceRecordInformation) {
   const fieldId = getActiveFieldId();
   const extension = data.extension ?? "";
   const json = {
     compositeId: `${fieldId}-${data.id}`,
-    imgClass:
-      mediaType === MEDIA_TYPE_VIDEOS ? "videoDropped" : "audioDropped",
-    videoHTML: isPlayableOnJWPlayer(extension)
-      ? setUpJWMediaPlayer(data.id, data.name, extension)
-      : "",
+    imgClass: mediaType === MEDIA_TYPE_VIDEOS ? "videoDropped" : "audioDropped",
+    videoHTML: isPlayableOnJWPlayer(extension) ? setUpJWMediaPlayer(data.id, data.name, extension) : "",
     iconSrc: generateIconSrc(mediaType, extension, data.thumbnailId, data.id),
     filename: data.name,
     extension,
@@ -215,24 +196,13 @@ function insertAVFromGallery(
  * @param mediaType - either MEDIA_TYPE_DOCS, MEDIA_TYPE_EXPORTED, or MEDIA_TYPE_MISCDOCS
  * @param data - the record information for an item(returned by getRecordInformation)
  */
-function insertGenericDoc(
-  mediaType: string,
-  data: WorkspaceRecordInformation,
-) {
-  const templateId =
-    mediaType === MEDIA_TYPE_DOCS
-      ? "#insertedDocumentTemplate"
-      : "#insertedMiscdocTemplate";
+function insertGenericDoc(mediaType: string, data: WorkspaceRecordInformation) {
+  const templateId = mediaType === MEDIA_TYPE_DOCS ? "#insertedDocumentTemplate" : "#insertedMiscdocTemplate";
   const extension = data.extension ?? "";
   const json = {
     id: data.id,
     name: data.name,
-    iconPath: generateIconSrc(
-      mediaType,
-      extension,
-      data.thumbnailId,
-      data.id,
-    ),
+    iconPath: generateIconSrc(mediaType, extension, data.thumbnailId, data.id),
   };
   getRS().insertTemplateIntoTinyMCE(templateId, json);
 }

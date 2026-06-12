@@ -1,13 +1,13 @@
-import React, { useEffect } from "react";
+import SearchIcon from "@mui/icons-material/Search";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import InputBase from "@mui/material/InputBase";
+import Paper from "@mui/material/Paper";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../theme";
-import Paper from "@mui/material/Paper";
-import InputBase from "@mui/material/InputBase";
-import IconButton from "@mui/material/IconButton";
-import SearchIcon from "@mui/icons-material/Search";
+import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import Box from "@mui/material/Box";
+import materialTheme from "../theme";
 
 function BaseSearch(props: {
   onSubmit?: string | (() => void);
@@ -35,17 +35,14 @@ function BaseSearch(props: {
   };
 
   useEffect(() => {
+    // biome-ignore lint/complexity/useArrowFunction: initial biome migration
     document.addEventListener("reset-search-input", function () {
       setSearch("");
     });
   }, []);
 
   return (
-    <Paper
-      sx={{ boxShadow: "none" }}
-      variant={props.variant}
-      data-test-id="base-search-content"
-    >
+    <Paper sx={{ boxShadow: "none" }} variant={props.variant} data-test-id="base-search-content">
       <Box
         component="form"
         onSubmit={submitSearch}
@@ -68,12 +65,7 @@ function BaseSearch(props: {
           onChange={handleChange}
           sx={{ pl: 1, flexGrow: 1 }}
         />
-        <IconButton
-          id={`${props.elId}-submit`}
-          type="submit"
-          aria-label="Search"
-          data-test-id="base-search-submit"
-        >
+        <IconButton id={`${props.elId}-submit`} type="submit" aria-label="Search" data-test-id="base-search-submit">
           <SearchIcon />
         </IconButton>
       </Box>
@@ -85,9 +77,7 @@ function BaseSearch(props: {
  * This is necessary because as of MUI v5 useStyles cannot be used in the same
  * component as the root MuiThemeProvider
  */
-export default function WrappedBaseSearch(
-  props: React.ComponentProps<typeof BaseSearch>
-) {
+export default function WrappedBaseSearch(props: React.ComponentProps<typeof BaseSearch>) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
@@ -104,10 +94,7 @@ function renderElements() {
       [].map.call(domContainers, (container) => {
         const htmlContainer = container as HTMLElement;
         const { dataset } = htmlContainer;
-        const variant =
-          dataset.variant === "outlined" || dataset.variant === "elevation"
-            ? dataset.variant
-            : undefined;
+        const variant = dataset.variant === "outlined" || dataset.variant === "elevation" ? dataset.variant : undefined;
         const root = createRoot(container);
         root.render(
           <WrappedBaseSearch
@@ -115,7 +102,7 @@ function renderElements() {
             onSubmit={dataset.onsubmit}
             elId={dataset.elid ?? "base-search"}
             variant={variant}
-          />
+          />,
         );
       });
     }

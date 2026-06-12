@@ -1,86 +1,72 @@
-import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import Box from "@mui/material/Box";
-import CustomTooltip from "./CustomTooltip";
+import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import InputBase, { inputBaseClasses } from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React, { useState } from "react";
-import CloseIcon from "@mui/icons-material/Close";
+import CustomTooltip from "./CustomTooltip";
+
 type FormArgs = {
   handleSearch: (newQuery: string) => void;
   placeholder: string;
   searchToolTip: string;
 };
 
-const Form = observer(
-  ({ handleSearch, placeholder, searchToolTip }: FormArgs) => {
-    const [query, setQuery] = useState("");
+const Form = observer(({ handleSearch, placeholder, searchToolTip }: FormArgs) => {
+  const [query, setQuery] = useState("");
 
-    const handleChange = ({
-      target: { value },
-    }: {
-      target: { value: string };
-    }) => {
-      setQuery(value);
-    };
+  const handleChange = ({ target: { value } }: { target: { value: string } }) => {
+    setQuery(value);
+  };
 
-    const onSearch = () => {
-      handleSearch(query);
-    };
+  const onSearch = () => {
+    handleSearch(query);
+  };
 
-    const handleReset = () => {
-      setQuery("");
-      handleSearch("");
-    };
+  const handleReset = () => {
+    setQuery("");
+    handleSearch("");
+  };
 
-    return (
-      <>
-        <Box
-          component="form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSearch();
+  return (
+    <>
+      <Box
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSearch();
+        }}
+        sx={{ width: "100%" }}
+      >
+        <InputBase
+          data-test-id="s-search-input-normal"
+          placeholder={placeholder}
+          slotProps={{
+            input: { "aria-label": searchToolTip },
           }}
-          sx={{ width: "100%" }}
-        >
-          <InputBase
-            data-test-id="s-search-input-normal"
-            placeholder={placeholder}
-            slotProps={{
-              input: { "aria-label": searchToolTip },
-            }}
-            value={query ?? ""}
-            onChange={handleChange}
-          />
-          <CustomTooltip title={searchToolTip}>
-            <IconButton
-              aria-label="Search"
-              data-test-id="s-search-submit"
-              onClick={onSearch}
-            >
-              {" "}
-              <SearchOutlinedIcon />
-            </IconButton>
-          </CustomTooltip>
-        </Box>
-        {query && (
-          <CustomTooltip title="Clear search">
-            <IconButton
-              size="small"
-              data-test-id="reset-search"
-              aria-label="close"
-              color="inherit"
-              onClick={handleReset}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </CustomTooltip>
-        )}
-      </>
-    );
-  }
-);
+          value={query ?? ""}
+          onChange={handleChange}
+        />
+        <CustomTooltip title={searchToolTip}>
+          <IconButton aria-label="Search" data-test-id="s-search-submit" onClick={onSearch}>
+            {" "}
+            <SearchOutlinedIcon />
+          </IconButton>
+        </CustomTooltip>
+      </Box>
+      {query && (
+        <CustomTooltip title="Clear search">
+          <IconButton size="small" data-test-id="reset-search" aria-label="close" color="inherit" onClick={handleReset}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </CustomTooltip>
+      )}
+    </>
+  );
+});
 
 type GenericsearchbarArgs = {
   handleSearch: (newQuery: string) => void;
@@ -132,11 +118,7 @@ function Genericsearchbar({
           }}
           elevation={0}
         >
-          <Form
-            handleSearch={handleSearch}
-            placeholder={placeholder}
-            searchToolTip={searchToolTip}
-          />
+          <Form handleSearch={handleSearch} placeholder={placeholder} searchToolTip={searchToolTip} />
         </Paper>
       </Box>
     </Box>

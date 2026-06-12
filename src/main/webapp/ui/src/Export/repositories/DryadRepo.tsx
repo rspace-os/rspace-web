@@ -1,11 +1,11 @@
-import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import Autocomplete, { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import Autocomplete, {
-  AutocompleteInputChangeReason,
-} from "@mui/material/Autocomplete";
 import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import type React from "react";
 import Users from "../ExportRepoUser";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Person, type Repo, type StandardValidations } from "./common";
 
 /**
@@ -23,14 +23,11 @@ type DryadRepoArgs = {
       value: string;
     };
   }) => void;
-  handleCrossrefFunderChange: (
-    _unused: unknown,
-    event: { name: string }
-  ) => void;
+  handleCrossrefFunderChange: (_unused: unknown, event: { name: string }) => void;
   handleFetchCrossrefFunder: (
     event: React.SyntheticEvent<Element, Event>,
     value: string,
-    reason: AutocompleteInputChangeReason
+    reason: AutocompleteInputChangeReason,
   ) => void;
   crossrefFunders: Array<{ name: string }>;
   inputValidations: DryadValidations;

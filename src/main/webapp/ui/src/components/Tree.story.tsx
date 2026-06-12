@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
-import { Button, Box, Stack, Typography } from "@mui/material";
+import type React from "react";
+import { useState } from "react";
 import theme from "../theme";
 import { Tree, TreeItem } from "./Tree";
 
@@ -59,6 +61,7 @@ export const SimpleTreeExample = ({
   const [selectedItem, setSelectedItem] = useState<TreeItemData | null>(null);
 
   const handleSelectionChange = (
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     event: React.SyntheticEvent | null,
     item: TreeItemData | null,
   ) => {
@@ -72,17 +75,11 @@ export const SimpleTreeExample = ({
         <Typography variant="h5" gutterBottom>
           Simple Tree Selection
         </Typography>
-        <Tree
-          getId={(item) => item.id}
-          selectedItems={selectedItem}
-          onSelectedItemsChange={handleSelectionChange}
-        >
+        <Tree getId={(item) => item.id} selectedItems={selectedItem} onSelectedItemsChange={handleSelectionChange}>
           {renderTreeItems(sampleData)}
         </Tree>
         <Box sx={{ mt: 2 }}>
-          <Typography variant="body2">
-            Selected: {selectedItem?.name || "None"}
-          </Typography>
+          <Typography variant="body2">Selected: {selectedItem?.name || "None"}</Typography>
         </Box>
       </Box>
     </ThemeProvider>
@@ -97,6 +94,7 @@ export const MultiSelectTreeExample = ({
   const [selectedItems, setSelectedItems] = useState<TreeItemData[]>([]);
 
   const handleSelectionChange = (
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     event: React.SyntheticEvent | null,
     items: TreeItemData[],
   ) => {
@@ -128,8 +126,7 @@ export const MultiSelectTreeExample = ({
         </Tree>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
-            Selected:{" "}
-            {selectedItems.map((item) => item.name).join(", ") || "None"}
+            Selected: {selectedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>
@@ -145,6 +142,7 @@ export const ExpandableTreeExample = ({
   const [expandedItems, setExpandedItems] = useState<TreeItemData[]>([]);
 
   const handleExpansionChange = (
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     event: React.SyntheticEvent | null,
     items: TreeItemData[],
   ) => {
@@ -182,17 +180,12 @@ export const ExpandableTreeExample = ({
           <Button onClick={expandAll}>Expand All</Button>
           <Button onClick={collapseAll}>Collapse All</Button>
         </Stack>
-        <Tree
-          getId={(item) => item.id}
-          expandedItems={expandedItems}
-          onExpandedItemsChange={handleExpansionChange}
-        >
+        <Tree getId={(item) => item.id} expandedItems={expandedItems} onExpandedItemsChange={handleExpansionChange}>
           {renderTreeItems(hierarchicalData)}
         </Tree>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
-            Expanded:{" "}
-            {expandedItems.map((item) => item.name).join(", ") || "None"}
+            Expanded: {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>
@@ -211,6 +204,7 @@ export const ControlledTreeExample = ({
   const [expandedItems, setExpandedItems] = useState<TreeItemData[]>([]);
 
   const handleSelectionChange = (
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     event: React.SyntheticEvent | null,
     item: TreeItemData | null,
   ) => {
@@ -219,6 +213,7 @@ export const ControlledTreeExample = ({
   };
 
   const handleExpansionChange = (
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     event: React.SyntheticEvent | null,
     items: TreeItemData[],
   ) => {
@@ -272,12 +267,9 @@ export const ControlledTreeExample = ({
           {renderTreeItems(hierarchicalData)}
         </Tree>
         <Box sx={{ mt: 2 }}>
+          <Typography variant="body2">Selected: {selectedItem?.name || "None"}</Typography>
           <Typography variant="body2">
-            Selected: {selectedItem?.name || "None"}
-          </Typography>
-          <Typography variant="body2">
-            Expanded:{" "}
-            {expandedItems.map((item) => item.name).join(", ") || "None"}
+            Expanded: {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>

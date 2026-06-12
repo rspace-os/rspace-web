@@ -1,14 +1,15 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import SearchContext from "../../../stores/contexts/Search";
-import SearchView from "../../Search/SearchView";
-import Search from "../../Search/Search";
-import { menuIDs } from "../../../util/menuIDs";
 import Stack from "@mui/material/Stack";
-import TemplateModel from "../../../stores/models/TemplateModel";
-import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import TemplateModel from "../../../stores/models/TemplateModel";
+import useStores from "../../../stores/use-stores";
+import { menuIDs } from "../../../util/menuIDs";
+import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
+import Search from "../../Search/Search";
+import SearchView from "../../Search/SearchView";
 
 const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
 
@@ -16,8 +17,7 @@ function SamplesList(): React.ReactNode {
   const {
     searchStore: { activeResult, search },
   } = useStores();
-  if (!activeResult || !(activeResult instanceof TemplateModel))
-    throw new Error("ActiveResult must be a Template");
+  if (!activeResult || !(activeResult instanceof TemplateModel)) throw new Error("ActiveResult must be a Template");
 
   const samplesSearch = () => activeResult.search;
 

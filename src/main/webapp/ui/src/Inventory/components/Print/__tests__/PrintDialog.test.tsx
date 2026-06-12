@@ -1,25 +1,19 @@
-
-import { test, describe, expect, beforeAll, vi } from 'vitest';
-import React from "react";
-import {
-  act,
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
-import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import { persistedBarcode1 } from "./mocking";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import { beforeAll, describe, expect, test, vi } from "vitest";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
-import {
-  makeMockRootStore,
-  type MockStores,
-} from "../../../../stores/stores/__tests__/RootStore/mocking";
-import { storesContext } from "../../../../stores/stores-context";
+import { type MockStores, makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import { storesContext } from "../../../../stores/stores-context";
+import materialTheme from "../../../../theme";
+import { persistedBarcode1 } from "./mocking";
 
 vi.mock("mobx-react-lite", () => ({
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   observer: (component: React.ComponentType<any>) => component,
   useObserver: (fn: () => React.ReactNode) => fn(),
   useLocalObservable: (initializer: () => unknown) => initializer(),
@@ -45,7 +39,6 @@ const mockContainer = {
   barcodes: [persistedBarcode1],
 } as unknown as InventoryRecord;
 describe("Print Tests", () => {
-
   const openDialog = true; // if false, then dialog is null
   const modalRoot = document.createElement("div");
 
@@ -54,11 +47,7 @@ describe("Print Tests", () => {
     return (
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={mockRootStore()}>
-          <PrintDialog
-            showPrintDialog={openDialog}
-            itemsToPrint={[mockContainer]}
-            onClose={() => {}}
-          />
+          <PrintDialog showPrintDialog={openDialog} itemsToPrint={[mockContainer]} onClose={() => {}} />
         </storesContext.Provider>
       </ThemeProvider>
     );
@@ -71,7 +60,6 @@ describe("Print Tests", () => {
     });
   };
   describe("PrintDialog with items to print (barcodes)", () => {
-
     test("renders, has radio options for printerType, printMode, printSize (plus help text)", async () => {
       await renderDialog();
 
@@ -87,13 +75,12 @@ describe("Print Tests", () => {
       const previewHeader = "Preview Barcode Label Layout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
-
   });
   describe("PrintDialog with items to print (barcodes)", () => {
-
     test("renders, content responds to clicked options", async () => {
       await renderDialog();
       const globalId = mockContainer.globalId;
+      // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
       const location = "Location:";
 
       if (!globalId) throw new Error("Missing globalId");

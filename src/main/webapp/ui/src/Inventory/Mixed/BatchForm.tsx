@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
-import useStores from "../../stores/use-stores";
-import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
-import FormWrapper from "../components/BatchEditing/FormWrapper";
-import StepperPanel from "../components/Stepper/StepperPanel";
-import { MixedInventoryBaseRecordCollection } from "../../stores/models/InventoryBaseRecordCollection";
-import BatchName from "../components/Fields/BatchName";
-import Image from "../components/Fields/Image";
-import Description from "../components/Fields/Description";
-import Tags from "../components/Fields/Tags";
-import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import BarcodesField from "../components/Fields/Barcodes/FormField";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useState } from "react";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
-import {
-  useFormSectionError,
-  setFormSectionError,
-} from "../components/Stepper/StepperPanelHeader";
-import AccessPermissions from "../components/Fields/AccessPermissions";
-import SubSampleModel from "../../stores/models/SubSampleModel";
+// biome-ignore lint/style/useImportType: initial biome migration
 import InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
+import { MixedInventoryBaseRecordCollection } from "../../stores/models/InventoryBaseRecordCollection";
+import SubSampleModel from "../../stores/models/SubSampleModel";
+import useStores from "../../stores/use-stores";
+// biome-ignore lint/style/useImportType: initial biome migration
 import RsSet from "../../util/set";
+import BatchEditingItemsTable from "../components/BatchEditing/BatchEditingItemsTable";
+import FormWrapper from "../components/BatchEditing/FormWrapper";
+import AccessPermissions from "../components/Fields/AccessPermissions";
+import BarcodesField from "../components/Fields/Barcodes/FormField";
+import BatchName from "../components/Fields/BatchName";
+import Description from "../components/Fields/Description";
+import Image from "../components/Fields/Image";
+import Tags from "../components/Fields/Tags";
+import StepperPanel from "../components/Stepper/StepperPanel";
+import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
 
 function OverviewSection({
   collection,
@@ -35,54 +35,35 @@ function OverviewSection({
   });
 
   return (
-    <StepperPanel
-      title="Overview"
-      formSectionError={formSectionError}
-      sectionName="overview"
-      recordType="mixed"
-    >
+    <StepperPanel title="Overview" formSectionError={formSectionError} sectionName="overview" recordType="mixed">
       <Image fieldOwner={collection} alt="What all of the items look like" />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
           <Alert severity="info">
-            Please note, on slower network connections uploading large images
-            may trigger an error.
+            Please note, on slower network connections uploading large images may trigger an error.
           </Alert>
         </Box>
       )}
       <BatchName
         fieldOwner={collection}
         allowAlphabeticalSuffix={recordsCount <= 26}
-        onErrorStateChange={(value) =>
-          setFormSectionError(formSectionError, "name", value)
-        }
+        onErrorStateChange={(value) => setFormSectionError(formSectionError, "name", value)}
       />
     </StepperPanel>
   );
 }
 
-function DetailsSection({
-  collection,
-}: {
-  collection: MixedInventoryBaseRecordCollection;
-}) {
+function DetailsSection({ collection }: { collection: MixedInventoryBaseRecordCollection }) {
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
   });
 
   return (
-    <StepperPanel
-      title="Details"
-      formSectionError={formSectionError}
-      sectionName="details"
-      recordType="mixed"
-    >
+    <StepperPanel title="Details" formSectionError={formSectionError} sectionName="details" recordType="mixed">
       <Description
         fieldOwner={collection}
-        onErrorStateChange={(value) =>
-          setFormSectionError(formSectionError, "description", value)
-        }
+        onErrorStateChange={(value) => setFormSectionError(formSectionError, "description", value)}
       />
       <Tags fieldOwner={collection} />
     </StepperPanel>
@@ -96,9 +77,7 @@ type BatchFormArgs = {
 function BatchForm({ records }: BatchFormArgs): React.ReactNode {
   const { searchStore } = useStores();
 
-  const [collection, setCollection] = useState(
-    new MixedInventoryBaseRecordCollection(records),
-  );
+  const [collection, setCollection] = useState(new MixedInventoryBaseRecordCollection(records));
   useEffect(() => {
     setCollection(new MixedInventoryBaseRecordCollection(records));
   }, [records]);
@@ -109,27 +88,16 @@ function BatchForm({ records }: BatchFormArgs): React.ReactNode {
       titleText={`Batch editing ${records.size} items`}
       editableObject={searchStore.search.batchEditableInstance}
     >
-      <StepperPanel
-        title="Information"
-        sectionName="information"
-        recordType="mixed"
-      >
+      <StepperPanel title="Information" sectionName="information" recordType="mixed">
         <BatchEditingItemsTable records={records} label="Items being edited" />
       </StepperPanel>
       <OverviewSection collection={collection} recordsCount={records.size} />
       <DetailsSection collection={collection} />
       <StepperPanel title="Barcodes" sectionName="barcodes" recordType="mixed">
-        <BarcodesField
-          fieldOwner={collection}
-          factory={new AlwaysNewFactory()}
-        />
+        <BarcodesField fieldOwner={collection} factory={new AlwaysNewFactory()} />
       </StepperPanel>
       {!records.some((r) => r instanceof SubSampleModel) && (
-        <StepperPanel
-          title="Access Permissions"
-          sectionName="permissions"
-          recordType="mixed"
-        >
+        <StepperPanel title="Access Permissions" sectionName="permissions" recordType="mixed">
           <AccessPermissions fieldOwner={collection} hideOwnersGroups />
         </StepperPanel>
       )}

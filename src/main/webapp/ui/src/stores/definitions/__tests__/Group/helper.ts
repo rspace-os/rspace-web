@@ -1,6 +1,7 @@
 import fc, { type Arbitrary } from "fast-check";
-import { arbitraryId, arbitraryGlobalId } from "../Record/helper";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Group, type SharedWithGroup } from "../../Group";
+import { arbitraryGlobalId, arbitraryId } from "../Record/helper";
 
 export const arbitraryGroup: Arbitrary<Group> = fc.record({
   id: arbitraryId,

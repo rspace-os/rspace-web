@@ -1,11 +1,12 @@
 import Grid from "@mui/material/Grid";
-import React from "react";
-import NoValue from "../../components/NoValue";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { format, isValid, parse } from "date-fns";
 import { enGB } from "date-fns/locale";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import NoValue from "../../components/NoValue";
 
 export type TimeFieldArgs = {
   onChange: (event: { target: { value: string | null } }) => void;
@@ -14,15 +15,9 @@ export type TimeFieldArgs = {
   id?: string;
 };
 
-export default function TimeField({
-  disabled,
-  value,
-  onChange,
-  id,
-}: TimeFieldArgs): React.ReactNode {
+export default function TimeField({ disabled, value, onChange, id }: TimeFieldArgs): React.ReactNode {
   const parsedValue = value ? parse(value, "HH:mm", new Date()) : null;
-  const pickerValue =
-    parsedValue && isValid(parsedValue) ? parsedValue : null;
+  const pickerValue = parsedValue && isValid(parsedValue) ? parsedValue : null;
 
   return (
     <Grid container spacing={0}>
@@ -30,10 +25,7 @@ export default function TimeField({
         <NoValue label="None" />
       ) : (
         <Grid size={{ md: 6, xs: 12 }}>
-          <LocalizationProvider
-            dateAdapter={AdapterDateFns}
-            adapterLocale={enGB}
-          >
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
             <TimePicker
               value={pickerValue}
               onChange={(newValue) => {

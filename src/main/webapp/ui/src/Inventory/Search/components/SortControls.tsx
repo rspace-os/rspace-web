@@ -1,14 +1,17 @@
-import React, { useContext, useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
-import { match, toTitleCase } from "../../../util/Util";
-import SvgIcon from "@mui/material/SvgIcon";
-import StyledMenu from "../../../components/StyledMenu";
 import MenuItem from "@mui/material/MenuItem";
+import SvgIcon from "@mui/material/SvgIcon";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useState } from "react";
+import DropdownButton from "../../../components/DropdownButton";
+import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
-import DropdownButton from "../../../components/DropdownButton";
+import { match, toTitleCase } from "../../../util/Util";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type SortProperty } from "../../components/Tables/SortableProperty";
 
 const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
@@ -47,9 +50,7 @@ function SortControls(): React.ReactNode {
 
   const setOrder = ({ key, label, adjustColumn }: SortProperty) => {
     search.fetcher.setOrder(
-      search.fetcher.isCurrentSort(key)
-        ? search.fetcher.invertSortOrder()
-        : search.fetcher.defaultSortOrder(key),
+      search.fetcher.isCurrentSort(key) ? search.fetcher.invertSortOrder() : search.fetcher.defaultSortOrder(key),
       key,
     );
     if (adjustColumn) search.setAdjustableColumn(label, 0);
@@ -59,36 +60,21 @@ function SortControls(): React.ReactNode {
   const menuItemLabel = (key: string, label: AdjustableTableRowLabel) =>
     `${label} ${match<string, string>([
       [(k) => !search.fetcher.isCurrentSort(k), ""],
-      [
-        (k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc,
-        "(A-Z)",
-      ],
-      [
-        (k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc,
-        "(Z-A)",
-      ],
+      [(k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc, "(A-Z)"],
+      [(k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc, "(Z-A)"],
     ])(key)}`;
 
-  const disabled =
-    search.searchView === "IMAGE" || search.searchView === "GRID";
+  const disabled = search.searchView === "IMAGE" || search.searchView === "GRID";
   return (
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
     <>
       <DropdownButton
         name={<SortAZIcon disabled={disabled} />}
         onClick={handleClick}
         disabled={disabled}
-        title={
-          disabled
-            ? `Cannot sort ${toTitleCase(search.searchView)} view.`
-            : "Sort by"
-        }
+        title={disabled ? `Cannot sort ${toTitleCase(search.searchView)} view.` : "Sort by"}
       >
-        <StyledMenu
-          anchorEl={anchorEl}
-          keepMounted
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-        >
+        <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
           {sortProperties.map(({ key, label, adjustColumn }) => {
             return (
               <MenuItem

@@ -1,7 +1,7 @@
-import React from "react";
-import Editor from "./StyledTinyMceEditor";
-import NoValue from "../../components/NoValue";
 import DOMPurify from "dompurify";
+import type React from "react";
+import NoValue from "../../components/NoValue";
+import Editor from "./StyledTinyMceEditor";
 
 export type TextFieldArgs = {
   value: string;
@@ -17,10 +17,7 @@ export type TextFieldArgs = {
   onChange?: (event: { target: { name: string; value: string } }) => void;
 };
 
-export default function TextField({
-  onChange,
-  ...props
-}: TextFieldArgs): React.ReactNode {
+export default function TextField({ onChange, ...props }: TextFieldArgs): React.ReactNode {
   const handleEditorChange = (content: string) => {
     const e = {
       target: {

@@ -1,8 +1,9 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
 import { SimpleCarousel } from "./Carousel.story";
 
-import AxeBuilder from "@axe-core/playwright";
 const feature = test.extend<{
   Given: {
     "the carousel is shown": () => Promise<void>;
@@ -50,27 +51,18 @@ const feature = test.extend<{
              * 2. Component tests typically don't have h1 headings as they're not full pages
              * 3. Content not in landmarks is expected in component testing context
              */
-            return (
-              v.id !== "landmark-one-main" &&
-              v.id !== "page-has-heading-one" &&
-              v.id !== "region"
-            );
-          })
+            return v.id !== "landmark-one-main" && v.id !== "page-has-heading-one" && v.id !== "region";
+          }),
         ).toEqual([]);
       },
       "the progress indicator should read": async (text: string) => {
-        await expect(
-          page.getByRole("status", { name: "Current file index" })
-        ).toHaveText(text);
+        await expect(page.getByRole("status", { name: "Current file index" })).toHaveText(text);
       },
       "the zoom level should be the initial value": async () => {
-        await expect(
-          page.getByRole("button", { name: /reset zoom/i })
-        ).toBeDisabled();
+        await expect(page.getByRole("button", { name: /reset zoom/i })).toBeDisabled();
       },
     });
   },
-
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/deploymentproperties/ajax/property*", (route) => {
@@ -93,7 +85,7 @@ feature.beforeEach(async ({ router }) => {
       contentType: "image/png",
       body: Buffer.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8//8/AwAI/wH+9Q4AAAAASUVORK5CYII=",
-        "base64"
+        "base64",
       ),
     });
   });
@@ -103,37 +95,29 @@ feature.beforeEach(async ({ router }) => {
       contentType: "image/png",
       body: Buffer.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8//8/AwAI/wH+9Q4AAAAASUVORK5CYII=",
-        "base64"
+        "base64",
       ),
     });
   });
-
 });
 
+// biome-ignore lint/correctness/noEmptyPattern: initial biome migration
 feature.afterEach(({}) => {});
 test.describe("Carousel", () => {
   feature("Should have no axe violations", async ({ Given, Then }) => {
     await Given["the carousel is shown"]();
     await Then["there shouldn't be any axe violations"]();
-
   });
-  feature(
-    "Should show an indicator of progress through listing.",
-    async ({ Given, When, Then }) => {
-      await Given["the carousel is shown"]();
-      await Then["the progress indicator should read"]("1 / 8");
-      await When["the user clicks the next button"]();
-      await Then["the progress indicator should read"]("2 / 8");
-    }
-
-  );
-  feature(
-    "Moving to a different file resets the zoom level",
-    async ({ Given, When, Then }) => {
-      await Given["the carousel is shown"]();
-      await When["the user zooms in on the image"]();
-      await When["the user clicks the next button"]();
-      await Then["the zoom level should be the initial value"]();
-    }
-  );
+  feature("Should show an indicator of progress through listing.", async ({ Given, When, Then }) => {
+    await Given["the carousel is shown"]();
+    await Then["the progress indicator should read"]("1 / 8");
+    await When["the user clicks the next button"]();
+    await Then["the progress indicator should read"]("2 / 8");
+  });
+  feature("Moving to a different file resets the zoom level", async ({ Given, When, Then }) => {
+    await Given["the carousel is shown"]();
+    await When["the user zooms in on the image"]();
+    await When["the user clicks the next button"]();
+    await Then["the zoom level should be the initial value"]();
+  });
 });

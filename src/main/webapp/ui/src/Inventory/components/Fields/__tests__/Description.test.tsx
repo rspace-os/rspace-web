@@ -1,17 +1,12 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React,
-  { useState } from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-import Description from "../Description";
-import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import fc from "fast-check";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React, { useState } from "react";
 import materialTheme from "../../../../theme";
+import Description from "../Description";
 
 vi.mock("@tinymce/tinymce-react", () => ({
   __esModule: true,
@@ -23,12 +18,8 @@ vi.mock("@tinymce/tinymce-react", () => ({
       }}
     />
   )),
-
 }));
-function renderDescriptionField(
-  initialValue: string,
-  onErrorStateChange: (isError: boolean) => void
-) {
+function renderDescriptionField(initialValue: string, onErrorStateChange: (isError: boolean) => void) {
   const Wrapper = () => {
     const [description, setDescription] = useState(initialValue);
     return (
@@ -39,11 +30,7 @@ function renderDescriptionField(
               description,
             },
             isFieldEditable: () => true,
-            setFieldsDirty: ({
-              description: newDescription,
-            }: {
-              description: string;
-            }) => {
+            setFieldsDirty: ({ description: newDescription }: { description: string }) => {
               setDescription(newDescription);
             },
             canChooseWhichToEdit: false,
@@ -58,7 +45,6 @@ function renderDescriptionField(
     );
   };
   return render(<Wrapper />);
-
 }
 describe("Description", () => {
   test("Should not enter an error state when value is shorter than 251.", () => {
@@ -70,15 +56,13 @@ describe("Description", () => {
         const { container } = renderDescriptionField("foo", onErrorStateChange);
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
-
         });
         expect(container).not.toHaveTextContent(
-          "Description must be no longer than 250 characters (including HTML tags)."
+          "Description must be no longer than 250 characters (including HTML tags).",
         );
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
-      })
+      }),
     );
-
   });
   test("Should enter an error state when value is longer than 250 characters.", () => {
     fc.assert(
@@ -89,15 +73,11 @@ describe("Description", () => {
         const { container } = renderDescriptionField("", onErrorStateChange);
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
-
         });
-        expect(container).toHaveTextContent(
-          "Description must be no longer than 250 characters (including HTML tags)."
-        );
+        expect(container).toHaveTextContent("Description must be no longer than 250 characters (including HTML tags).");
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
-      })
+      }),
     );
-
   });
   test("When the entered text is of a valid length, there should be character count shown.", () => {
     fc.assert(
@@ -108,13 +88,9 @@ describe("Description", () => {
         const { container } = renderDescriptionField("", onErrorStateChange);
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
-
         });
-        expect(container).toHaveTextContent(
-          `${generatedDescription.length} / 250`
-        );
-      })
+        expect(container).toHaveTextContent(`${generatedDescription.length} / 250`);
+      }),
     );
   });
 });
-

@@ -28,4 +28,5 @@ declare global {
   const __TINYMCE_BASE__: string;
 }
 
+// biome-ignore lint/complexity/noUselessEmptyExport: initial biome migration
 export {};

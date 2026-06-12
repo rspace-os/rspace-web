@@ -1,21 +1,19 @@
-import React, { useEffect, useState, useContext, type ReactNode } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import RsSet, { unionWith, nullishToSingleton } from "../../../util/set";
-import Autocomplete from "@mui/material/Autocomplete";
-import { autocompleteClasses } from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
+import Autocomplete, { autocompleteClasses } from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
-import PersonModel, { sortPeople } from "../../../stores/models/PersonModel";
-import { type Username, type Person } from "../../../stores/definitions/Person";
+import TextField from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode, useContext, useEffect, useState } from "react";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Person, type Username } from "../../../stores/definitions/Person";
+// biome-ignore lint/style/useImportType: initial biome migration
+import PersonModel, { sortPeople } from "../../../stores/models/PersonModel";
+import useStores from "../../../stores/use-stores";
+import RsSet, { nullishToSingleton, unionWith } from "../../../util/set";
 
 type PeopleFieldArgs = {
-  onSelection: (
-    person: Person | null,
-    doSearch?: boolean | null,
-  ) => Promise<void> | void;
+  onSelection: (person: Person | null, doSearch?: boolean | null) => Promise<void> | void;
   label?: string;
   outsideGroup?: boolean;
   recipient: PersonModel | null;
@@ -38,9 +36,7 @@ function PeopleField({
   } = useStores();
   const { addAlert } = useContext(AlertContext);
 
-  const [searchResults, setSearchResults] = useState<RsSet<PersonModel>>(
-    new RsSet<PersonModel>(),
-  );
+  const [searchResults, setSearchResults] = useState<RsSet<PersonModel>>(new RsSet<PersonModel>());
 
   const handleUserChange = (user: Person | null, doSearch?: boolean) => {
     void onSelection(user, doSearch);
@@ -103,10 +99,7 @@ function PeopleField({
           searchResults,
           nullishToSingleton(peopleStore.currentUser),
         ],
-      ).filter(
-        (u: PersonModel) =>
-          !(excludedUsernames ?? new RsSet<Username>()).has(u.username),
-      ),
+      ).filter((u: PersonModel) => !(excludedUsernames ?? new RsSet<Username>()).has(u.username)),
     ],
     { placeCurrentFirst: true },
   );
@@ -131,11 +124,7 @@ function PeopleField({
               ...inputSlotProps?.input,
               ...(label !== undefined
                 ? {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        &nbsp;{label}
-                      </InputAdornment>
-                    ),
+                    startAdornment: <InputAdornment position="start">&nbsp;{label}</InputAdornment>,
                   }
                 : {}),
               endAdornment: (
@@ -150,20 +139,13 @@ function PeopleField({
       )}
       size="small"
       value={recipient}
-      onChange={(_: React.SyntheticEvent, user: Person | null) =>
-        handleUserChange(user)
-      }
-      onInputChange={(_: React.SyntheticEvent, searchTerm: string) =>
-        searchPeople(searchTerm)
-      }
-      isOptionEqualToValue={(option: Person, value: Person) =>
-        option.username === value.username
-      }
+      onChange={(_: React.SyntheticEvent, user: Person | null) => handleUserChange(user)}
+      onInputChange={(_: React.SyntheticEvent, searchTerm: string) => searchPeople(searchTerm)}
+      isOptionEqualToValue={(option: Person, value: Person) => option.username === value.username}
       openOnFocus
       loading={loading}
     />
   );
 }
-
 
 export default observer(PeopleField);

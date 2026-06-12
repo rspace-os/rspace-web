@@ -1,18 +1,18 @@
-import React, { useId } from "react";
-import { observer } from "mobx-react-lite";
+import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
+import { formControlLabelClasses } from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
 import FormHelperText from "@mui/material/FormHelperText";
-import FieldLabel from "./FieldLabel";
 import { inputBaseClasses } from "@mui/material/InputBase";
-import { formControlLabelClasses } from "@mui/material/FormControlLabel";
-import { svgIconClasses } from "@mui/material/SvgIcon";
 import { selectClasses } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import { type SxProps, type Theme, useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useId } from "react";
 import { Heading } from "../DynamicHeadingLevel";
-
+import FieldLabel from "./FieldLabel";
 
 function FullLabel({
   label,
@@ -74,6 +74,7 @@ function CustomFormControl({
   "data-test-id": dataTestId,
   required,
   explanation,
+  // biome-ignore lint/complexity/useLiteralKeys: initial biome migration
   ["aria-label"]: ariaLabel,
   flexWrap = "initial",
   disabled,
@@ -98,10 +99,9 @@ function CustomFormControl({
               display: "none",
             },
           },
-        [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]:
-          {
-            padding: "11px 10px 10px 10px",
-          },
+        [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]: {
+          padding: "11px 10px 10px 10px",
+        },
         [`& .${inputBaseClasses.disabled}::before`]: { borderBottom: "0px !important" },
       }}
     >
@@ -120,19 +120,12 @@ function CustomFormControl({
             sx={slotProps?.label?.sx}
             required={required}
           >
-            <FullLabel
-              label={label}
-              explanation={explanation}
-              explanationId={explanationId}
-              disabled={disabled}
-            />
+            <FullLabel label={label} explanation={explanation} explanationId={explanationId} disabled={disabled} />
           </FieldLabel>
         )}
         {actions}
       </Stack>
-      <FormGroup sx={{ display: inline ? "inline" : "inherit", flexWrap }}>
-        {children}
-      </FormGroup>
+      <FormGroup sx={{ display: inline ? "inline" : "inherit", flexWrap }}>{children}</FormGroup>
       {error && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );

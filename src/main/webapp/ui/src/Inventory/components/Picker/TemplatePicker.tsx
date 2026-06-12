@@ -1,12 +1,14 @@
-import React, { type ReactNode, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import TemplateModel from "../../../stores/models/TemplateModel";
-import Search from "../../../stores/models/Search";
-import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
-import InventoryPicker from "./Picker";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
+import React, { type ReactNode, useEffect, useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Sample } from "@/stores/definitions/Sample";
+import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import AlwaysNewFactory from "../../../stores/models/Factory/AlwaysNewFactory";
+import Search from "../../../stores/models/Search";
+import TemplateModel from "../../../stores/models/TemplateModel";
+import InventoryPicker from "./Picker";
 
 type TemplatePickerArgs = {
   setTemplate: (template: TemplateModel) => void;
@@ -14,11 +16,7 @@ type TemplatePickerArgs = {
   sample?: Sample;
 };
 
-function TemplatePicker({
-  setTemplate,
-  disabled,
-  sample,
-}: TemplatePickerArgs): ReactNode {
+function TemplatePicker({ setTemplate, disabled, sample }: TemplatePickerArgs): ReactNode {
   const [search] = useState(
     new Search({
       factory: new AlwaysNewFactory(),
@@ -29,12 +27,7 @@ function TemplatePicker({
         order: "asc",
       },
       uiConfig: {
-        allowedSearchModules: new Set([
-          "TYPE",
-          "OWNER",
-          "SAVEDSEARCHES",
-          "TAG",
-        ]),
+        allowedSearchModules: new Set(["TYPE", "OWNER", "SAVEDSEARCHES", "TAG"]),
         allowedTypeFilters: new Set(["TEMPLATE"]),
         selectionMode: "SINGLE",
       },
@@ -48,10 +41,7 @@ function TemplatePicker({
    * sample's template may change based on other actions.
    */
   useEffect(() => {
-    if (
-      typeof sample !== "undefined" &&
-      search.activeResult !== sample.template
-    ) {
+    if (typeof sample !== "undefined" && search.activeResult !== sample.template) {
       search.setActiveResult(sample.template, { defaultToFirstResult: false });
     }
   }, [sample?.template]);
@@ -77,11 +67,7 @@ function TemplatePicker({
 
   return (
     <AlwaysNewWindowNavigationContext>
-      <InventoryPicker
-        search={search}
-        paddingless
-        onAddition={handleOnAddition}
-      />
+      <InventoryPicker search={search} paddingless onAddition={handleOnAddition} />
     </AlwaysNewWindowNavigationContext>
   );
 }

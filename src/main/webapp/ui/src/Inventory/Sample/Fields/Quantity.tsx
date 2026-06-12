@@ -1,29 +1,29 @@
-import React, { useState } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import InputAdornment from "@mui/material/InputAdornment";
-import UnitSelect from "../../../components/Inputs/UnitSelect";
-import StringField from "../../../components/Inputs/StringField";
-import NumberField from "../../../components/Inputs/NumberField";
-import { SelectChangeEvent } from "@mui/material/Select";
-import SampleModel from "../../../stores/models/SampleModel";
-import FormField from "../../components/Inputs/FormField";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import Link from "@mui/material/Link";
-import { Optional } from "../../../util/optional";
-import Box from "@mui/material/Box";
-import { textFieldClasses } from "@mui/material/TextField";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { inputBaseClasses } from "@mui/material";
+import Box from "@mui/material/Box";
+import InputAdornment from "@mui/material/InputAdornment";
+import Link from "@mui/material/Link";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { SelectChangeEvent } from "@mui/material/Select";
+import { textFieldClasses } from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import React, { useState } from "react";
+import NumberField from "../../../components/Inputs/NumberField";
+import StringField from "../../../components/Inputs/StringField";
+import UnitSelect from "../../../components/Inputs/UnitSelect";
+import NavigateContext from "../../../stores/contexts/Navigate";
+// biome-ignore lint/style/useImportType: initial biome migration
+import SampleModel from "../../../stores/models/SampleModel";
+import useStores from "../../../stores/use-stores";
+import { Optional } from "../../../util/optional";
+import FormField from "../../components/Inputs/FormField";
 
 type QuantityArgs = {
   onErrorStateChange: (value: boolean) => void;
   sample: SampleModel;
 };
 
-function Quantity({
-  onErrorStateChange,
-  sample,
-}: QuantityArgs): React.ReactNode {
+function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode {
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const { unitStore } = useStores();
@@ -71,16 +71,13 @@ function Quantity({
     if (!valid) return Optional.empty<string>();
 
     const count = sample.newSampleSubSamplesCount;
-    if (count === null || typeof count === "undefined")
-      return Optional.empty<string>();
+    if (count === null || typeof count === "undefined") return Optional.empty<string>();
     if (count === 1) return Optional.empty<string>();
 
     if (unitStore.units.length) {
       const totalQuantity = sample.quantityValue * count;
       return Optional.present(
-        `${totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2)} ${
-          sample.quantityUnitLabel
-        } in total`,
+        `${totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2)} ${sample.quantityUnitLabel} in total`,
       );
     }
 
@@ -100,8 +97,7 @@ function Quantity({
     if (sample.template?.defaultUnitId) {
       const defaultUnitId = sample.template.defaultUnitId;
       const unit = unitStore.getUnit(defaultUnitId);
-      if (!unit)
-        throw new Error(`Could not find unit with id: ${defaultUnitId}`);
+      if (!unit) throw new Error(`Could not find unit with id: ${defaultUnitId}`);
       return [unit.category];
     }
     return ["dimensionless", "volume", "mass"];
@@ -125,7 +121,8 @@ function Quantity({
           <FormField
             label={`Quantity${
               (sample.newSampleSubSamplesCount ?? 2) > 1
-                ? " per " + alias.alias
+                ? // biome-ignore lint/style/useTemplate: initial biome migration
+                  " per " + alias.alias
                 : ""
             }`}
             explanation="Quantity units can also be changed by editing templates."
@@ -167,45 +164,35 @@ function Quantity({
           />
         </Box>
       )}
-      {sample.id !== null &&
-        typeof sample.id !== "undefined" &&
-        Boolean(sample.quantity) && (
-          <FormField
-            label="Total Quantity"
-            value={totalQuantityString}
-            disabled
-            explanation={
-              sample.subSamplesCount === 1 ? (
-                `There is only one ${sample.subSampleAlias.alias}.`
-              ) : (
-                <>
-                  Total is calculated from the quantites of{" "}
-                  <Link
-                    href={
-                      typeof sample.globalId === "string"
-                        ? `/inventory/search?parentGlobalId=${sample.globalId}`
-                        : "#"
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (sample.globalId)
-                        navigate(
-                          `/inventory/search?parentGlobalId=${sample.globalId}`,
-                        );
-                    }}
-                  >
-                    all {sample.subSamplesCount} {sample.subSampleAlias.plural}
-                  </Link>
-                  , which can be changed by editing the{" "}
-                  {sample.subSampleAlias.plural} individually.
-                </>
-              )
-            }
-            renderInput={() => (
-              <StringField disabled={true} value={totalQuantityString} />
-            )}
-          />
-        )}
+      {sample.id !== null && typeof sample.id !== "undefined" && Boolean(sample.quantity) && (
+        <FormField
+          label="Total Quantity"
+          value={totalQuantityString}
+          disabled
+          explanation={
+            sample.subSamplesCount === 1 ? (
+              `There is only one ${sample.subSampleAlias.alias}.`
+            ) : (
+              <>
+                Total is calculated from the quantites of{" "}
+                <Link
+                  href={
+                    typeof sample.globalId === "string" ? `/inventory/search?parentGlobalId=${sample.globalId}` : "#"
+                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
+                  }}
+                >
+                  all {sample.subSamplesCount} {sample.subSampleAlias.plural}
+                </Link>
+                , which can be changed by editing the {sample.subSampleAlias.plural} individually.
+              </>
+            )
+          }
+          renderInput={() => <StringField disabled={true} value={totalQuantityString} />}
+        />
+      )}
     </>
   );
 }

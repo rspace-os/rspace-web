@@ -1,9 +1,8 @@
 import { useDndContext } from "@dnd-kit/core";
-import {
-  type Location,
-  type Container,
-} from "../../../../stores/definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Container, type Location } from "../../../../stores/definitions/Container";
 
 /*
  * Specifically a string of the form "<coordX>,<coordY>".
@@ -93,30 +92,20 @@ export function useHelpers(): {
 
     thisLocationIsTheOrigin: (location) =>
       (relativeCoords ?? []).some(
-        ({ globalId, x, y }) =>
-          globalId === location.content?.globalId && x === 0 && y === 0
+        ({ globalId, x, y }) => globalId === location.content?.globalId && x === 0 && y === 0,
       ),
 
     anItemIsBeingMoveOutOfLocation: (location) =>
-      (relativeCoords ?? []).some(
-        ({ globalId }) => globalId === location.content?.globalId
-      ),
+      (relativeCoords ?? []).some(({ globalId }) => globalId === location.content?.globalId),
 
     isChoosing: (location) => {
       const id = dndContext.over?.id;
       if (!id) return false;
-      const [, col, row] = (id as string).match(/(\d+),(\d+)/) as [
-        unknown,
-        string,
-        string
-      ];
+      const [, col, row] = (id as string).match(/(\d+),(\d+)/) as [unknown, string, string];
       const overCol = parseInt(col, 10);
       const overRow = parseInt(row, 10);
       if (!relativeCoords) return false;
-      return relativeCoords.some(
-        ({ x, y }) =>
-          overCol + x === location.coordX && overRow + y === location.coordY
-      );
+      return relativeCoords.some(({ x, y }) => overCol + x === location.coordX && overRow + y === location.coordY);
     },
   };
 }
@@ -146,7 +135,7 @@ export function useContainerHelpers(container: Container): {
       };
       over: null | { id: DroppableId };
     },
-    location: Location
+    location: Location,
   ) => Location;
 } {
   return {
@@ -168,30 +157,17 @@ export function useContainerHelpers(container: Container): {
        * the data model is instantiated.
        */
       if (!overLocation) throw new Error("No destination dropzone selected.");
-      if (!sourceLocation.content)
-        throw new Error("Selected location cannot be empty when moving.");
+      if (!sourceLocation.content) throw new Error("Selected location cannot be empty when moving.");
       if (!sourceLocation.content.globalId)
-        throw new Error(
-          "Content of selected location must have a Global ID when moving."
-        );
+        throw new Error("Content of selected location must have a Global ID when moving.");
       const g = sourceLocation.content.globalId;
-      const relCoords = (relativeCoords ?? []).find(
-        ({ globalId }) => g === globalId
-      );
-      if (!relCoords)
-        throw new Error(
-          `Could not find relative coordinates for location content with globalId ${g}`
-        );
+      const relCoords = (relativeCoords ?? []).find(({ globalId }) => g === globalId);
+      if (!relCoords) throw new Error(`Could not find relative coordinates for location content with globalId ${g}`);
       const { x, y } = relCoords;
-      const dest = container.findLocation(
-        overLocation.coordX + x,
-        overLocation.coordY + y
-      );
+      const dest = container.findLocation(overLocation.coordX + x, overLocation.coordY + y);
       if (!dest)
         throw new Error(
-          `Could not find location at coordinates ${overLocation.coordX + x},${
-            overLocation.coordY + y
-          }.`
+          `Could not find location at coordinates ${overLocation.coordX + x},${overLocation.coordY + y}.`,
         );
       return dest;
     },

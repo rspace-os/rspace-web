@@ -1,9 +1,12 @@
-import ApiServiceBase from "./ApiServiceBase";
 import { when } from "mobx";
-import getRootStore from "../stores/stores/RootStore";
-import { type ApiRecordType } from "../stores/definitions/InventoryRecord";
-import { type Id } from "../stores/definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { AxiosResponse } from "@/common/axios";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Id } from "../stores/definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type ApiRecordType } from "../stores/definitions/InventoryRecord";
+import getRootStore from "../stores/stores/RootStore";
+import ApiServiceBase from "./ApiServiceBase";
 
 export type BulkEndpointRecordSerialisation = {
   id: Id;
@@ -13,15 +16,8 @@ export type BulkEndpointRecordSerialisation = {
 class InvApiService extends ApiServiceBase {
   bulk<T>(
     records: ReadonlyArray<BulkEndpointRecordSerialisation>,
-    operationType:
-      | "CREATE"
-      | "UPDATE"
-      | "DELETE"
-      | "RESTORE"
-      | "DUPLICATE"
-      | "MOVE"
-      | "CHANGE_OWNER",
-    rollbackOnError: boolean
+    operationType: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "DUPLICATE" | "MOVE" | "CHANGE_OWNER",
+    rollbackOnError: boolean,
   ): Promise<AxiosResponse<T>> {
     const params = {
       operationType,

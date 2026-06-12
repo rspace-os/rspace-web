@@ -1,23 +1,18 @@
-import { test, describe, expect, vi } from 'vitest';
-import ExportRepo from "../ExportRepo";
-import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  within,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
-import repoList from "./repoList.json";
-import repoConfig from "./repoConfig.json";
-import funders from "./funders.json";
-import zenodoRepoList from "./zenodoRepoList.json";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import fc, { type Arbitrary } from "fast-check";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 import { mkValidator } from "../../util/Validator";
+import ExportRepo from "../ExportRepo";
+import funders from "./funders.json";
+import repoConfig from "./repoConfig.json";
+import repoList from "./repoList.json";
+import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
-import { type Tag } from "../repositories/Tags";
 import { DEFAULT_STATE } from "@/Export/constants";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Tag } from "../repositories/Tags";
 
 type DMP = {
   dmpUserInternalId: number;
@@ -31,7 +26,6 @@ window.fetch = vi.fn(() =>
     ok: true,
     json: () => Promise.resolve(funders),
   } as Response),
-
 );
 const props = {
   repoList: repoList.map((repo) => ({
@@ -51,9 +45,7 @@ describe("ExportRepo", () => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
     expect(
-      screen.getByText(
-        "Please choose one of your configured repositories to submit your export to:",
-      ),
+      screen.getByText("Please choose one of your configured repositories to submit your export to:"),
     ).toBeInTheDocument();
   });
   test("Should display repository list with two repositories", async () => {
@@ -70,11 +62,8 @@ describe("ExportRepo", () => {
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
-    const repo1RadioButton = screen.getByTestId<HTMLInputElement>(
-      "radio-button-app.repo1",
-    );
+    const repo1RadioButton = screen.getByTestId<HTMLInputElement>("radio-button-app.repo1");
     expect(repo1RadioButton).toBeChecked();
-
   });
   const arbListOfDMPs = (n: number): Arbitrary<Array<DMP>> =>
     fc.array(
@@ -84,7 +73,6 @@ describe("ExportRepo", () => {
         dmpId: fc.string(),
       }),
       { maxLength: n, minLength: n },
-
     );
   const arbSetOfIndexes = (min: number, max: number): Arbitrary<Set<number>> =>
     fc
@@ -100,22 +88,13 @@ describe("ExportRepo", () => {
             // limit of 10 DMPs is set to cap memory usage
             fc
               .integer({ min: 2, max: 10 })
-              .chain((n) =>
-                fc.tuple<[Set<number>, Array<DMP>]>(
-                  arbSetOfIndexes(2, n),
-                  arbListOfDMPs(n),
-                ),
-              )
+              .chain((n) => fc.tuple<[Set<number>, Array<DMP>]>(arbSetOfIndexes(2, n), arbListOfDMPs(n)))
               .filter(([, linkedDMPs]) => {
-                const ids = new Set(
-                  linkedDMPs.map((dmp) => dmp.dmpUserInternalId),
-                );
+                const ids = new Set(linkedDMPs.map((dmp) => dmp.dmpUserInternalId));
                 return ids.size === linkedDMPs.length;
               }),
             async ([indexes, linkedDMPs]) => {
-              const generatedRepoList = [
-                { ...zenodoRepoList[0], linkedDMPs, repoCfg: -1 },
-              ];
+              const generatedRepoList = [{ ...zenodoRepoList[0], linkedDMPs, repoCfg: -1 }];
               render(
                 <ExportRepo
                   repoDetails={props.repoDetails}
@@ -131,19 +110,16 @@ describe("ExportRepo", () => {
               });
               const repoChoice = await screen.findByRole("radiogroup", {
                 name: "Repository choice",
-
               });
               expect(
                 await within(repoChoice).findByRole("radio", {
                   name: "Zenodo",
                 }),
-
               ).toBeChecked();
               fireEvent.click(
                 await screen.findByRole("checkbox", {
                   name: "Associate export with a Data Management Plans (DMPs)",
                 }),
-
               );
 
               const dmpTable = await screen.findByRole("table");
@@ -153,7 +129,6 @@ describe("ExportRepo", () => {
                 })
               ).forEach((c, i) => {
                 if (indexes.has(i)) fireEvent.click(c);
-
               });
               expect(await screen.findByRole("alert")).toHaveTextContent(
                 "Only one DMP can be associated with an export to Zenodo.",
@@ -163,12 +138,10 @@ describe("ExportRepo", () => {
           .beforeEach(() => {
             cleanup();
             props.fetchTags.mockClear();
-
           }),
-        { numRuns: 1 }
+        { numRuns: 1 },
       );
     },
     30 * 1000,
   );
 });
-

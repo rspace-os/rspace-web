@@ -1,6 +1,7 @@
 //booking centric view
-import { BookingType } from "./Enums";
+
 import * as ArrayUtils from "../../util/ArrayUtils";
+import type { BookingType } from "./Enums";
 
 export type BOOKING_TYPE = typeof BookingType;
 export type Requester = { name: string };
@@ -79,24 +80,14 @@ export const replaceNullWithEmptyString = (data: object): void => {
   }
 };
 
-function getRelevantForMaintenanceType(
-  isMaintenance: boolean,
-  bookingDetails: Array<BookingDetails>
-) {
+function getRelevantForMaintenanceType(isMaintenance: boolean, bookingDetails: Array<BookingDetails>) {
   return isMaintenance
-    ? bookingDetails.filter(
-        (bookingDetail) => bookingDetail.booking_type === "maintenance"
-      )
+    ? bookingDetails.filter((bookingDetail) => bookingDetail.booking_type === "maintenance")
     : bookingDetails;
 }
 
-const getEquipment = (
-  id: number,
-  equipmentDetails: Array<EquipmentDetails>
-): EquipmentDetails => {
-  let find = equipmentDetails.find(
-    (equipmentDetail) => equipmentDetail.id === id
-  );
+const getEquipment = (id: number, equipmentDetails: Array<EquipmentDetails>): EquipmentDetails => {
+  let find = equipmentDetails.find((equipmentDetail) => equipmentDetail.id === id);
   if (!find) {
     find = EquipmentDetailsNotFound;
   }
@@ -106,15 +97,14 @@ const getEquipment = (
 const formatDate = (date: string) => {
   const dateTime = date.split("T");
   const roundedTime = dateTime[1].split(".");
+  // biome-ignore lint/style/useTemplate: initial biome migration
   return dateTime[0] + " " + roundedTime[0];
 };
 
 const getBookingSummary = (id: string, bookingsList: BookingsList) => {
-  return ArrayUtils.find((item) => item.id === id, bookingsList).orElseGet(
-    () => {
-      throw new Error(`There is no booking with the id ${id}.`);
-    }
-  );
+  return ArrayUtils.find((item) => item.id === id, bookingsList).orElseGet(() => {
+    throw new Error(`There is no booking with the id ${id}.`);
+  });
 };
 
 const getStartTime = (id: string, bookingsList: BookingsList): string => {
@@ -132,17 +122,11 @@ const getEndTime = (id: string, bookingsList: BookingsList): string => {
 export const getMostRecentCompletedBooking = (
   relevantBookings: Array<BookingDetails>,
   bookingList: BookingsList,
-  equipmentID: number
+  equipmentID: number,
 ): BookingDetails | null => {
   const matching = relevantBookings
-    .filter(
-      (bookingDetail: BookingDetails) =>
-        bookingDetail.equipment.id === equipmentID
-    )
-    .filter(
-      (bookingDetail: BookingDetails) =>
-        getStatus(bookingDetail.id, bookingList).toLowerCase() === "completed"
-    );
+    .filter((bookingDetail: BookingDetails) => bookingDetail.equipment.id === equipmentID)
+    .filter((bookingDetail: BookingDetails) => getStatus(bookingDetail.id, bookingList).toLowerCase() === "completed");
   if (matching.length > 1) {
     return matching.sort((first, second) => {
       const firstStart = getStartTime(first.id, bookingList);
@@ -164,16 +148,15 @@ export const getMostRecentCompletedBooking = (
 
 const getALabID = (bookingDetails: Array<BookingDetails>): number => {
   // @ts-expect-error Possibly a bug found by the migration to TypeScript
-  return bookingDetails.find(
-    (booking: BookingDetails) => typeof booking.requester_lab.id !== "undefined"
-  ).requester_lab.id;
+  return bookingDetails.find((booking: BookingDetails) => typeof booking.requester_lab.id !== "undefined").requester_lab
+    .id;
 };
 
 export const makeBookingAndEquipmentData = (
   bookingsList: BookingsList,
   bookingDetails: Array<BookingDetails>,
   equipmentDetails: Array<EquipmentDetails>,
-  isMaintenance: boolean
+  isMaintenance: boolean,
 ): Array<BookingAndEquipmentDetails> => {
   const relevant = getRelevantForMaintenanceType(isMaintenance, bookingDetails);
   return relevant.map((bookingDetail) => {
@@ -187,8 +170,7 @@ export const makeBookingAndEquipmentData = (
       duration: bookingDetail.duration,
       status: getStatus(bookingDetail.id, bookingsList),
       equipmentName: bookingDetail.equipment.name,
-      manufacturer: getEquipment(bookingDetail.equipment.id, equipmentDetails)
-        .manufacturer,
+      manufacturer: getEquipment(bookingDetail.equipment.id, equipmentDetails).manufacturer,
       model: getEquipment(bookingDetail.equipment.id, equipmentDetails).model,
       equipmentID: bookingDetail.equipment.id,
       labID: bookingDetail.requester_lab.id,
@@ -203,15 +185,11 @@ export const makeEquipmentWithBookingData = (
   bookingsList: BookingsList,
   bookingDetails: Array<BookingDetails>,
   equipmentDetails: Array<EquipmentDetails>,
-  isMaintenance: boolean
+  isMaintenance: boolean,
 ): Array<EquipmentWithBookingDetails> => {
   const relevant = getRelevantForMaintenanceType(isMaintenance, bookingDetails);
   return equipmentDetails.map((equipmentDetail: EquipmentDetails) => {
-    const booking = getMostRecentCompletedBooking(
-      relevant,
-      bookingsList,
-      equipmentDetail.id
-    );
+    const booking = getMostRecentCompletedBooking(relevant, bookingsList, equipmentDetail.id);
     //if there is no matching booking, labID from another booking will be used to generate links to Clustermarket
     const labID = getALabID(bookingDetails);
     const equipmentAndBookingDetail: EquipmentWithBookingDetails = {

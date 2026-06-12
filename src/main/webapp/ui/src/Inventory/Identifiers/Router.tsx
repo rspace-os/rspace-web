@@ -1,7 +1,8 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
-import { Navigate, Routes, Route } from "react-router-dom";
-import IGSNs from "./IGSN";
+import { Navigate, Route, Routes } from "react-router-dom";
 import PageNotFoundScreen from "../components/Layout/PageNotFoundScreen";
+import IGSNs from "./IGSN";
 import NavigationContext from "./NavigationContext";
 
 /**
@@ -17,10 +18,7 @@ export default function Router(): React.ReactNode {
   return (
     <NavigationContext>
       <Routes>
-        <Route
-          path="/"
-          element={<Navigate to="/inventory/identifiers/igsn" />}
-        />
+        <Route path="/" element={<Navigate to="/inventory/identifiers/igsn" />} />
         <Route path="igsn" element={<IGSNs />} />
         <Route path="*" element={<PageNotFoundScreen />} />
       </Routes>

@@ -1,12 +1,12 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
 import { render } from "@testing-library/react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import ErrorBoundary from "../ErrorBoundary";
 
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 function AlwaysError(): React.ReactNode {
   throw new Error("foo");
-
 }
 describe("ErrorBoundary", () => {
   test("Reports the support email address.", () => {
@@ -25,7 +25,7 @@ describe("ErrorBoundary", () => {
       const { container } = render(
         <ErrorBoundary>
           <AlwaysError />
-        </ErrorBoundary>
+        </ErrorBoundary>,
       );
       expect(container).toHaveTextContent("support@researchspace.com");
     } finally {

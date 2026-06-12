@@ -20,6 +20,7 @@ export function useDSWTestEndpoint(): {
   });
 
   const test = async (serverAlias: string): Promise<void> => {
+    // biome-ignore lint/style/useTemplate: initial biome migration
     const response = await api.get<JSON>("/currentUser?serverAlias=" + serverAlias);
 
     if (null == response.data) {

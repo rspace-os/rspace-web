@@ -1,12 +1,14 @@
-import React from "react";
-import { DataGridWithRadioSelection } from "./DataGridWithRadioSelection";
+import Box from "@mui/material/Box";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
+  // biome-ignore lint/correctness/noUnusedImports: initial biome migration
   ExportCsv,
   GridColDef,
   GridRowId,
   Toolbar,
 } from "@mui/x-data-grid";
-import Box from "@mui/material/Box";
+import React from "react";
+import { DataGridWithRadioSelection } from "./DataGridWithRadioSelection";
 
 type DemoRow = {
   id: number;
@@ -33,9 +35,7 @@ const columns: GridColDef<DemoRow>[] = [
  * Basic uncontrolled example of DataGridWithRadioSelection
  */
 export function DataGridWithRadioSelectionExample() {
-  const [lastSelectedId, setLastSelectedId] = React.useState<GridRowId | null>(
-    null
-  );
+  const [lastSelectedId, setLastSelectedId] = React.useState<GridRowId | null>(null);
 
   const handleSelectionChange = (selectedId: GridRowId) => {
     setLastSelectedId(selectedId);
@@ -48,15 +48,11 @@ export function DataGridWithRadioSelectionExample() {
         rows={rows}
         columns={columns}
         onSelectionChange={handleSelectionChange}
-        selectRadioAriaLabelFunc={(row) =>
-          `Select ${row.firstName} ${row.lastName}`
-        }
+        selectRadioAriaLabelFunc={(row) => `Select ${row.firstName} ${row.lastName}`}
         data-testid="data-grid"
       />
       <div data-testid="selection-indicator">
-        {lastSelectedId !== null
-          ? `Selected ID: ${lastSelectedId}`
-          : "Nothing selected"}
+        {lastSelectedId !== null ? `Selected ID: ${lastSelectedId}` : "Nothing selected"}
       </div>
     </Box>
   );
@@ -72,9 +68,7 @@ export function ControlledDataGridWithRadioSelectionExample({
   initialSelectedRowId?: GridRowId | null;
   onSelectionChangeSpy?: (selectedId: GridRowId) => void;
 }) {
-  const [selectedRowId, setSelectedRowId] = React.useState<GridRowId | null>(
-    initialSelectedRowId
-  );
+  const [selectedRowId, setSelectedRowId] = React.useState<GridRowId | null>(initialSelectedRowId);
 
   const handleSelectionChange = (selectedId: GridRowId) => {
     setSelectedRowId(selectedId);
@@ -88,17 +82,15 @@ export function ControlledDataGridWithRadioSelectionExample({
         columns={columns}
         onSelectionChange={handleSelectionChange}
         selectedRowId={selectedRowId}
-        selectRadioAriaLabelFunc={(row) =>
-          `Select ${row.firstName} ${row.lastName}`
-        }
+        selectRadioAriaLabelFunc={(row) => `Select ${row.firstName} ${row.lastName}`}
         data-testid="controlled-data-grid"
       />
       <div data-testid="selection-indicator">
-        {selectedRowId !== null
-          ? `Selected ID: ${selectedRowId}`
-          : "Nothing selected"}
+        {selectedRowId !== null ? `Selected ID: ${selectedRowId}` : "Nothing selected"}
       </div>
+      {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
       <button onClick={() => setSelectedRowId(null)}>Reset Selection</button>
+      {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
       <button onClick={() => setSelectedRowId(2)}>Select Row 2</button>
     </Box>
   );
@@ -108,9 +100,7 @@ export function ControlledDataGridWithRadioSelectionExample({
  * Example with sorting and filtering enabled
  */
 export function DataGridWithFeatures() {
-  const [lastSelectedId, setLastSelectedId] = React.useState<GridRowId | null>(
-    null
-  );
+  const [lastSelectedId, setLastSelectedId] = React.useState<GridRowId | null>(null);
 
   const handleSelectionChange = (selectedId: GridRowId) => {
     setLastSelectedId(selectedId);
@@ -122,9 +112,7 @@ export function DataGridWithFeatures() {
         rows={rows}
         columns={columns}
         onSelectionChange={handleSelectionChange}
-        selectRadioAriaLabelFunc={(row) =>
-          `Select ${row.firstName} ${row.lastName}`
-        }
+        selectRadioAriaLabelFunc={(row) => `Select ${row.firstName} ${row.lastName}`}
         initialState={{
           pagination: {
             paginationModel: { pageSize: 3 },
@@ -134,11 +122,8 @@ export function DataGridWithFeatures() {
         data-testid="featured-data-grid"
       />
       <div data-testid="selection-indicator">
-        {lastSelectedId !== null
-          ? `Selected ID: ${lastSelectedId}`
-          : "Nothing selected"}
+        {lastSelectedId !== null ? `Selected ID: ${lastSelectedId}` : "Nothing selected"}
       </div>
     </Box>
   );
 }
-

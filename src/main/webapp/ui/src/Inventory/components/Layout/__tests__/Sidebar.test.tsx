@@ -1,15 +1,16 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import { render } from "@testing-library/react";
-import Sidebar from "../Sidebar";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
-import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-import { storesContext } from "../../../../stores/stores-context";
+import { render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
+import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../stores/stores-context";
+import materialTheme from "../../../../theme";
+import Sidebar from "../Sidebar";
 
 vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   useIntegrationIsAllowedAndEnabled: () => ({
@@ -42,7 +43,7 @@ describe("Sidebar", () => {
             <Sidebar id="foo" />
           </storesContext.Provider>
         </LandmarksProvider>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest

@@ -1,33 +1,33 @@
 // @flow
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  getAllBookingDetails,
-  getAllEquipmentDetails,
-  getBookings,
-} from "./ClustermarketClient";
+
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
+import CircularProgress from "@mui/material/CircularProgress";
+import FormControl from "@mui/material/FormControl";
+import Grid from "@mui/material/Grid";
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import React, { useEffect, useMemo, useState } from "react";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+import materialTheme from "../../theme";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type UseState } from "../../util/types";
+import { getAllBookingDetails, getAllEquipmentDetails, getBookings } from "./ClustermarketClient";
 import {
+  type BOOKING_TYPE,
   type BookingAndEquipmentDetails,
   type BookingDetails,
   type EquipmentDetails,
-  type BOOKING_TYPE,
   type EquipmentWithBookingDetails,
   makeBookingAndEquipmentData,
   makeEquipmentWithBookingData,
 } from "./ClustermarketData";
-import Grid from "@mui/material/Grid";
-import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
-import CircularProgress from "@mui/material/CircularProgress";
-import materialTheme from "../../theme";
-import { ErrorReason, Order, BookingType } from "./Enums";
+import { BookingType, ErrorReason, Order } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
-import useLocalStorage from "../../hooks/browser/useLocalStorage";
-import FormControl from "@mui/material/FormControl";
-import { type UseState } from "../../util/types";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { ThemeProvider } from "@mui/material/styles";
-import AnalyticsContext from "../../stores/contexts/Analytics";
+
 const TABLE_HEADER_CELLS = [
   {
     id: "bookingID" as const,
@@ -128,55 +128,35 @@ type ClustermarketArgs = {
   defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
   clustermarket_web_url: string;
 };
-let VISIBLE_HEADER_CELLS:
-  | typeof TABLE_HEADER_CELLS
-  | typeof EQUIPMENT_TABLE_HEADER_CELLS = TABLE_HEADER_CELLS;
-let SELECTED_BOOKINGS: ReadonlyArray<
-  BookingAndEquipmentDetails | EquipmentWithBookingDetails
-> = [];
-export const getSelectedBookings = (): ReadonlyArray<
-  BookingAndEquipmentDetails | EquipmentWithBookingDetails
-> => SELECTED_BOOKINGS;
-export const getHeaders = (): typeof VISIBLE_HEADER_CELLS =>
-  VISIBLE_HEADER_CELLS;
+let VISIBLE_HEADER_CELLS: typeof TABLE_HEADER_CELLS | typeof EQUIPMENT_TABLE_HEADER_CELLS = TABLE_HEADER_CELLS;
+let SELECTED_BOOKINGS: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> = [];
+export const getSelectedBookings = (): ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =>
+  SELECTED_BOOKINGS;
+export const getHeaders = (): typeof VISIBLE_HEADER_CELLS => VISIBLE_HEADER_CELLS;
 const ORDER_KEY = "clustermarketSearchOrder";
 const ORDER_BY_KEY = "clustermarketSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
 const DEFAULT_ORDERBY = "start_time";
-export const getOrder = (): string =>
-  (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
-export const getOrderBy = (): string =>
-  (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
+export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
+export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Clustermarket({
   defaultBookingType = BookingType.BOOKED,
   clustermarket_web_url,
 }: ClustermarketArgs): React.ReactNode {
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> =
-    useState([] as Array<BookingAndEquipmentDetails>);
-  const [equipment, setEquipment]: UseState<
-    Array<EquipmentWithBookingDetails>
-  > = useState([] as Array<EquipmentWithBookingDetails>);
+  const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> = useState(
+    [] as Array<BookingAndEquipmentDetails>,
+  );
+  const [equipment, setEquipment]: UseState<Array<EquipmentWithBookingDetails>> = useState(
+    [] as Array<EquipmentWithBookingDetails>,
+  );
   const [fetchDone, setFetchDone] = useState(false);
-  const [errorReason, setErrorReason] = useState<
-    (typeof ErrorReason)[keyof typeof ErrorReason]
-  >(ErrorReason.None);
+  const [errorReason, setErrorReason] = useState<(typeof ErrorReason)[keyof typeof ErrorReason]>(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
-  const [selectedBookingIds, setSelectedBookingIds] = useState<Array<string>>(
-    [],
-  );
-  const [order, setOrder] = useLocalStorage<(typeof Order)[keyof typeof Order]>(
-    ORDER_KEY,
-    DEFAULT_ORDER,
-  );
-  const [bookingType, setBookingType] = useLocalStorage(
-    "clustermarketBookingType",
-    defaultBookingType,
-  );
-  const [isMaintenance, setIsMaintenance] = useLocalStorage(
-    "clustermarketIsMaintenance",
-    false,
-  );
+  const [selectedBookingIds, setSelectedBookingIds] = useState<Array<string>>([]);
+  const [order, setOrder] = useLocalStorage<(typeof Order)[keyof typeof Order]>(ORDER_KEY, DEFAULT_ORDER);
+  const [bookingType, setBookingType] = useLocalStorage("clustermarketBookingType", defaultBookingType);
+  const [isMaintenance, setIsMaintenance] = useLocalStorage("clustermarketIsMaintenance", false);
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
   const addMaintanceNotesToHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
     if (!headers.find((header) => header.id === maintenanceNotes.id)) {
@@ -185,18 +165,13 @@ function Clustermarket({
     }
     return headers;
   };
-  const removeMaintanceNotesFromHeaders = (
-    headers: typeof VISIBLE_HEADER_CELLS,
-  ) => {
+  const removeMaintanceNotesFromHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
     if (headers.find((header) => header.id === maintenanceNotes.id)) {
       headers.splice(4, 1);
     }
     return headers;
   };
-  const setHeadersByBookingType = (
-    newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE],
-    newIsMaintenance: boolean,
-  ) => {
+  const setHeadersByBookingType = (newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE], newIsMaintenance: boolean) => {
     if (newBookingType === BookingType.EQUIPMENT) {
       VISIBLE_HEADER_CELLS = isMaintenance
         ? addMaintanceNotesToHeaders(EQUIPMENT_TABLE_HEADER_CELLS)
@@ -240,18 +215,15 @@ function Clustermarket({
     try {
       const bookingsList = await getBookings(bookingType);
       if (bookingsList.length !== 0) {
-        const bookingDetails: Array<BookingDetails> =
-          await getAllBookingDetails(bookingsList);
-        const equipmentDetails: Array<EquipmentDetails> =
-          await getAllEquipmentDetails(bookingsList);
+        const bookingDetails: Array<BookingDetails> = await getAllBookingDetails(bookingsList);
+        const equipmentDetails: Array<EquipmentDetails> = await getAllEquipmentDetails(bookingsList);
         if (bookingType === BookingType.EQUIPMENT) {
-          const equipmentTableRows: Array<EquipmentWithBookingDetails> =
-            makeEquipmentWithBookingData(
-              bookingsList,
-              bookingDetails,
-              equipmentDetails,
-              isMaintenance,
-            );
+          const equipmentTableRows: Array<EquipmentWithBookingDetails> = makeEquipmentWithBookingData(
+            bookingsList,
+            bookingDetails,
+            equipmentDetails,
+            isMaintenance,
+          );
           setEquipment(equipmentTableRows);
           trackEvent("FetchClustermarketEquipmentData", {
             count: equipmentTableRows.length,
@@ -259,13 +231,12 @@ function Clustermarket({
             isMaintenance: isMaintenance,
           });
         } else {
-          const bookingTableRows: Array<BookingAndEquipmentDetails> =
-            makeBookingAndEquipmentData(
-              bookingsList,
-              bookingDetails,
-              equipmentDetails,
-              isMaintenance,
-            );
+          const bookingTableRows: Array<BookingAndEquipmentDetails> = makeBookingAndEquipmentData(
+            bookingsList,
+            bookingDetails,
+            equipmentDetails,
+            isMaintenance,
+          );
           setBookings(bookingTableRows);
           trackEvent("FetchClustermarketBookingData", {
             count: bookingTableRows.length,
@@ -280,9 +251,7 @@ function Clustermarket({
       handleRequestError(error);
     }
   };
-  const handleBookingTypeChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleBookingTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newBookingType = event.target.value;
     setBookingType(newBookingType);
     setHeadersByBookingType(newBookingType, isMaintenance);
@@ -294,16 +263,10 @@ function Clustermarket({
     void fetchBookings();
   }, [bookingType, isMaintenance]);
   SELECTED_BOOKINGS = useMemo(() => {
-    const selected_bookings: ReadonlyArray<
-      BookingAndEquipmentDetails | EquipmentWithBookingDetails
-    > =
+    const selected_bookings: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =
       bookingType === BookingType.EQUIPMENT
-        ? equipment.filter((item) =>
-            selectedBookingIds.includes(item.equipmentID),
-          )
-        : bookings.filter((booking) =>
-            selectedBookingIds.includes(booking.bookingID),
-          );
+        ? equipment.filter((item) => selectedBookingIds.includes(item.equipmentID))
+        : bookings.filter((booking) => selectedBookingIds.includes(booking.bookingID));
     window.parent.postMessage(
       {
         mceAction: selected_bookings.length > 0 ? "enable" : "disable",
@@ -319,12 +282,7 @@ function Clustermarket({
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <FormControl>
-          <RadioGroup
-            row
-            defaultValue={bookingType}
-            name="radio-booking-type-group"
-            onChange={handleBookingTypeChange}
-          >
+          <RadioGroup row defaultValue={bookingType} name="radio-booking-type-group" onChange={handleBookingTypeChange}>
             <FormControlLabel
               data-testid="booked_radio"
               value={BookingType.BOOKED}
@@ -337,11 +295,7 @@ function Clustermarket({
               control={<Radio />}
               label="Booked and Completed"
             />
-            <FormControlLabel
-              value={BookingType.EQUIPMENT}
-              control={<Radio />}
-              label="Booked Equipment"
-            />
+            <FormControlLabel value={BookingType.EQUIPMENT} control={<Radio />} label="Booked Equipment" />
           </RadioGroup>
         </FormControl>
         <FormControlLabel
@@ -367,9 +321,7 @@ function Clustermarket({
               // @ts-expect-error type mismatch
               visibleHeaderCells={VISIBLE_HEADER_CELLS}
               // @ts-expect-error type mismatch
-              results={
-                bookingType === BookingType.EQUIPMENT ? equipment : bookings
-              }
+              results={bookingType === BookingType.EQUIPMENT ? equipment : bookings}
               selectedBookingIds={selectedBookingIds}
               setSelectedBookingIds={setSelectedBookingIds}
               order={order}

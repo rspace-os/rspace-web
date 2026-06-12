@@ -1,7 +1,8 @@
-import { describe, expect, test, vi } from 'vitest';
-import { ExistingAttachment } from "../../AttachmentModel";
-import ApiService from "../../../../common/InvApiService";
+import { describe, expect, test, vi } from "vitest";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { AxiosResponse } from "@/common/axios";
+import ApiService from "../../../../common/InvApiService";
+import { ExistingAttachment } from "../../AttachmentModel";
 
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({}),
@@ -18,7 +19,7 @@ describe("getFile", () => {
         _links: [{ rel: "enclosure", link: "MOCK_URL" }],
       },
       "",
-      () => {}
+      () => {},
     );
     const spy = vi.spyOn(ApiService, "query").mockImplementation(() =>
       Promise.resolve({
@@ -27,12 +28,10 @@ describe("getFile", () => {
         statusText: "OK",
         headers: {},
         config: {} as unknown,
-      } as AxiosResponse)
-
+      } as AxiosResponse),
     );
     await attachment.getFile();
     await attachment.getFile();
     expect(spy).toHaveBeenCalledTimes(1);
   });
 });
-

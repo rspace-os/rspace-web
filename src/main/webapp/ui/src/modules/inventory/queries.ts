@@ -1,5 +1,5 @@
-import React from "react";
 import { useQueries } from "@tanstack/react-query";
+import React from "react";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
@@ -35,11 +35,7 @@ export type InventoryQuantityQueryResult =
 export const inventoryQueryKeys = {
   all: ["rspace.api.inventory"] as const,
   subSampleQuantity: (inventoryItemGlobalId: string) =>
-    [
-      ...inventoryQueryKeys.all,
-      "subSampleQuantity",
-      inventoryItemGlobalId,
-    ] as const,
+    [...inventoryQueryKeys.all, "subSampleQuantity", inventoryItemGlobalId] as const,
 };
 
 function parseSubSampleIdFromGlobalId(inventoryItemGlobalId: string): number | null {
@@ -52,9 +48,7 @@ function parseSubSampleIdFromGlobalId(inventoryItemGlobalId: string): number | n
   return Number.isInteger(parsedId) ? parsedId : null;
 }
 
-function toInventoryQuantityQueryResult(
-  subSample: InventorySubSample,
-): InventoryQuantityQueryResult {
+function toInventoryQuantityQueryResult(subSample: InventorySubSample): InventoryQuantityQueryResult {
   return {
     status: "available",
     quantity: subSample.quantity,
@@ -89,9 +83,7 @@ export async function getSubSampleQuantity({
     };
   }
 
-  return toInventoryQuantityQueryResult(
-    parseOrThrow(InventorySubSampleSchema, await response.json()),
-  );
+  return toInventoryQuantityQueryResult(parseOrThrow(InventorySubSampleSchema, await response.json()));
 }
 
 export function useSubSampleQuantitiesQuery({
@@ -100,10 +92,7 @@ export function useSubSampleQuantitiesQuery({
 }: {
   inventoryItemGlobalIds: ReadonlyArray<string>;
   token: string;
-}): ReadonlyMap<
-  string,
-  InventoryQuantityQueryResult
-> {
+}): ReadonlyMap<string, InventoryQuantityQueryResult> {
   const uniqueInventoryItemGlobalIds = React.useMemo(
     () => Array.from(new Set(inventoryItemGlobalIds.filter(Boolean))),
     [inventoryItemGlobalIds],

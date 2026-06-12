@@ -1,13 +1,13 @@
-import React, { useContext, type SyntheticEvent } from "react";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { treeItemClasses, getTreeItemUtilityClass } from "@mui/x-tree-view/TreeItem";
+import { getTreeItemUtilityClass, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { observer } from "mobx-react-lite";
-import Node from "./Node";
+import React, { type SyntheticEvent, useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GlobalId } from "../../../stores/definitions/BaseRecord";
+import Node from "./Node";
 
-const tappedToggleIcon = (event: SyntheticEvent) =>
-  !(event.target as HTMLElement).closest(`.${treeItemClasses.label}`);
+const tappedToggleIcon = (event: SyntheticEvent) => !(event.target as HTMLElement).closest(`.${treeItemClasses.label}`);
 
 function RecordTree(): React.ReactNode {
   const { search } = useContext(SearchContext);
@@ -30,10 +30,9 @@ function RecordTree(): React.ReactNode {
         flexGrow: 1,
         // Tree View exposes no state-class constant; getTreeItemUtilityClass
         // resolves the global Mui-selected class.
-        [`& .${getTreeItemUtilityClass("selected")} > .${treeItemClasses.content} .${treeItemClasses.label}`]:
-          {
-            backgroundColor: "rgba(0, 173, 239, 0.08) !important",
-          },
+        [`& .${getTreeItemUtilityClass("selected")} > .${treeItemClasses.content} .${treeItemClasses.label}`]: {
+          backgroundColor: "rgba(0, 173, 239, 0.08) !important",
+        },
       }}
       expandedItems={search.tree.expanded}
       selectedItems={search.tree.selected}

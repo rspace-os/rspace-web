@@ -1,3 +1,4 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
 
 export type CurrentStoichiometry = {
@@ -5,13 +6,9 @@ export type CurrentStoichiometry = {
   revision?: number;
 };
 
-export type SetCurrentStoichiometry = React.Dispatch<
-  React.SetStateAction<CurrentStoichiometry | null>
->;
+export type SetCurrentStoichiometry = React.Dispatch<React.SetStateAction<CurrentStoichiometry | null>>;
 
-export type RegisterCloseHandler = (
-  handler: (() => Promise<void>) | null,
-) => void;
+export type RegisterCloseHandler = (handler: (() => Promise<void>) | null) => void;
 
 export const STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX = {
   minHeight: 36,

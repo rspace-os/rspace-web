@@ -1,26 +1,20 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React, { useState } from "react";
 import "leaflet/dist/leaflet.css";
-import {
-  boxComplete,
-  pointComplete,
-} from "../../../../stores/models/GeoLocationModel";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Grid from "@mui/material/Grid";
 import FormGroup from "@mui/material/FormGroup";
+import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Circle,
-  Rectangle,
-} from "react-leaflet";
 import { useTheme } from "@mui/material/styles";
+import { Circle, MapContainer, Polygon, Rectangle, TileLayer } from "react-leaflet";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
   type GeoLocationBox,
   type GeoLocationPolygon,
   type PolygonPoint,
 } from "../../../../stores/definitions/GeoLocation";
+import { boxComplete, pointComplete } from "../../../../stores/models/GeoLocationModel";
+
 type MapViewerArgs = {
   point: PolygonPoint;
   box: GeoLocationBox;
@@ -43,21 +37,12 @@ type MapViewerArgs = {
  * work with. There is some discussion online on how this can be resolved, but those steps
  * alone did not prove fruitful. For example, https://github.com/PaulLeCam/react-leaflet/issues/977
  */
-export default function MapViewer({
-  point,
-  box,
-  polygon,
-}: MapViewerArgs): React.ReactNode {
+export default function MapViewer({ point, box, polygon }: MapViewerArgs): React.ReactNode {
   const theme = useTheme();
   const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
   const [showBox, setShowBox] = useState<boolean>(boxComplete(box));
   const [showPolygon, setShowPolygon] = useState<boolean>(polygon.isValid);
-  const {
-    eastBoundLongitude,
-    northBoundLatitude,
-    southBoundLatitude,
-    westBoundLongitude,
-  } = box;
+  const { eastBoundLongitude, northBoundLatitude, southBoundLatitude, westBoundLongitude } = box;
   const boxToPolygon = [
     {
       latitude: northBoundLatitude,
@@ -90,6 +75,7 @@ export default function MapViewer({
   let latitudeCenter = 0;
   let latitudeDataPoints = 0;
   if (pointComplete(point)) {
+    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
     if (!isNaN(parseFloat(point.pointLatitude))) {
       latitudeCenter += parseFloat(point.pointLatitude);
       latitudeDataPoints++;
@@ -97,12 +83,12 @@ export default function MapViewer({
   }
   if (boxComplete(box)) {
     if (
+      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
       !isNaN(parseFloat(box.northBoundLatitude)) &&
+      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
       !isNaN(parseFloat(box.southBoundLatitude))
     ) {
-      latitudeCenter +=
-        0.5 * parseFloat(box.northBoundLatitude) +
-        0.5 * parseFloat(box.southBoundLatitude);
+      latitudeCenter += 0.5 * parseFloat(box.northBoundLatitude) + 0.5 * parseFloat(box.southBoundLatitude);
       latitudeDataPoints++;
     }
   }
@@ -117,6 +103,7 @@ export default function MapViewer({
   let longitudeCenter = 0;
   let longitudeDataPoints = 0;
   if (pointComplete(point)) {
+    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
     if (!isNaN(parseFloat(point.pointLongitude))) {
       longitudeCenter += parseFloat(point.pointLongitude);
       longitudeDataPoints++;
@@ -124,12 +111,12 @@ export default function MapViewer({
   }
   if (boxComplete(box)) {
     if (
+      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
       !isNaN(parseFloat(box.eastBoundLongitude)) &&
+      // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
       !isNaN(parseFloat(box.westBoundLongitude))
     ) {
-      longitudeCenter +=
-        0.5 * parseFloat(box.eastBoundLongitude) +
-        0.5 * parseFloat(box.westBoundLongitude);
+      longitudeCenter += 0.5 * parseFloat(box.eastBoundLongitude) + 0.5 * parseFloat(box.westBoundLongitude);
       longitudeDataPoints++;
     }
   }
@@ -157,10 +144,7 @@ export default function MapViewer({
         />
         {showPoint && (
           <Circle
-            center={[
-              parseFloat(point.pointLatitude),
-              parseFloat(point.pointLongitude),
-            ]}
+            center={[parseFloat(point.pointLatitude), parseFloat(point.pointLongitude)]}
             pathOptions={{
               fillColor: theme.palette.primary.main,
               fillOpacity: 1.0,
@@ -176,10 +160,7 @@ export default function MapViewer({
               fillOpacity: 0.5,
               stroke: false,
             }}
-            bounds={boxToPolygon.map(({ latitude, longitude }) => [
-              parseFloat(latitude),
-              parseFloat(longitude),
-            ])}
+            bounds={boxToPolygon.map(({ latitude, longitude }) => [parseFloat(latitude), parseFloat(longitude)])}
           />
         )}
         {showPolygon && (
@@ -195,12 +176,10 @@ export default function MapViewer({
               fillOpacity: 0.5,
               stroke: false,
             }}
-            positions={polygon.mapPoints(
-              ({ pointLatitude: lat, pointLongitude: long }) => [
-                parseFloat(lat),
-                parseFloat(long),
-              ],
-            )}
+            positions={polygon.mapPoints(({ pointLatitude: lat, pointLongitude: long }) => [
+              parseFloat(lat),
+              parseFloat(long),
+            ])}
           />
         )}
       </MapContainer>

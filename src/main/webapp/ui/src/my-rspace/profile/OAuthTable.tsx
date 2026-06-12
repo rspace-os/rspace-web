@@ -1,16 +1,17 @@
-import { ChangeEvent, useContext, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
-import { stableSort, getSorting, paginationOptions } from "@/util/table";
-import EnhancedTableHead from "../../components/EnhancedTableHead";
+import { type ChangeEvent, useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
-import OAuthDialog from "./OAuthDialog";
-import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
-import { OAuthApp } from "@/my-rspace/profile/types";
 import OAuthTableRow from "@/my-rspace/profile/OAuthTableRow";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { OAuthApp } from "@/my-rspace/profile/types";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getSorting, paginationOptions, stableSort } from "@/util/table";
+import EnhancedTableHead from "../../components/EnhancedTableHead";
+import OAuthDialog from "./OAuthDialog";
 
 const headCells = [
   { id: "appName", numeric: false, label: "App Name" },
@@ -34,9 +35,9 @@ export default function OAuthTable() {
     const response = await axios.get<{
       data: {
         oauthApps: OAuthApp[];
-      }
-    }>(urlAll)
-    if (response.status !== 200 || 'exceptionMessage' in response.data) {
+      };
+    }>(urlAll);
+    if (response.status !== 200 || "exceptionMessage" in response.data) {
       setApps([]);
     } else {
       setApps(response.data.data.oauthApps);
@@ -52,28 +53,34 @@ export default function OAuthTable() {
     try {
       const response = await axios.delete(`/userform/ajax/oAuthApps/${clientId}`);
       if (response.status === 200) {
-        addAlert(mkAlert({
-          title: "App successfully deleted",
-          message: `App with client ID ${clientId} was successfully deleted.`,
-          duration: 3000,
-          variant: "success",
-        }));
+        addAlert(
+          mkAlert({
+            title: "App successfully deleted",
+            message: `App with client ID ${clientId} was successfully deleted.`,
+            duration: 3000,
+            variant: "success",
+          }),
+        );
         removeApp(clientId);
       } else {
-        addAlert(mkAlert({
-          title: "Unable to delete app",
-          message: `There was a problem deleting app with client ID ${clientId}.`,
-          duration: 5000,
-          variant: "warning",
-        }))
+        addAlert(
+          mkAlert({
+            title: "Unable to delete app",
+            message: `There was a problem deleting app with client ID ${clientId}.`,
+            duration: 5000,
+            variant: "warning",
+          }),
+        );
       }
     } catch (e) {
-      addAlert(mkAlert({
-        title: "Unable to delete app",
-        message: `There was a problem deleting app with client ID ${clientId}: ${e instanceof Error ? e.message : String(e)}.`,
-        isInfinite: true,
-        variant: "error",
-      }))
+      addAlert(
+        mkAlert({
+          title: "Unable to delete app",
+          message: `There was a problem deleting app with client ID ${clientId}: ${e instanceof Error ? e.message : String(e)}.`,
+          isInfinite: true,
+          variant: "error",
+        }),
+      );
     }
   };
 
@@ -82,13 +89,11 @@ export default function OAuthTable() {
   };
 
   const removeApp = (clientId: string) => {
+    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
     setApps((oldApps) => oldApps.filter((oa) => oa.clientId != clientId));
   };
 
-  const handleRequestSort = (
-    _ : unknown,
-    property: string,
-  ) => {
+  const handleRequestSort = (_: unknown, property: string) => {
     const isDesc = orderBy === property && order === "desc";
     setOrder(isDesc ? "asc" : "desc");
     setOrderBy(property);
@@ -99,19 +104,14 @@ export default function OAuthTable() {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
-  ) => {
+  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   return (
     <Box sx={{ width: "690px", padding: "0px 15px" }}>
-      <Box
-        className="api-menu__header"
-        sx={{ marginTop: "15px", display: "flex" }}
-      >
+      <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
         <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>OAuth Apps</Box>
         <OAuthDialog addApp={(app: OAuthApp) => addApp(app)} />
       </Box>
@@ -153,9 +153,7 @@ export default function OAuthTable() {
           />
         </>
       )}
-      {!fetchSuccess && (
-        <>There was a problem fetching your apps. Please, try again.</>
-      )}
+      {!fetchSuccess && <>There was a problem fetching your apps. Please, try again.</>}
     </Box>
   );
 }

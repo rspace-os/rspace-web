@@ -1,15 +1,10 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-} from "@testing-library/react";
-import DryadRepo from "../DryadRepo";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
+import DryadRepo from "../DryadRepo";
 
 const mockAxios = new MockAdapter(axios);
 describe("DryadRepo", () => {
@@ -21,9 +16,7 @@ describe("DryadRepo", () => {
    * call to /directory/ajax/subject, which then triggers a re-rendering when
    * it completes.
    */
-  const renderDryadRepo = ({
-    handleChange,
-  }: { handleChange?: () => void } = {}) => {
+  const renderDryadRepo = ({ handleChange }: { handleChange?: () => void } = {}) => {
     return render(
       <DryadRepo
         repo={{
@@ -54,9 +47,8 @@ describe("DryadRepo", () => {
         updatePeople={() => {}}
         contacts={[]}
         authors={[]}
-      />
+      />,
     );
-
   };
   /*
    * We then want to mock that network call so that it is not attempted for
@@ -67,7 +59,6 @@ describe("DryadRepo", () => {
       email: "joe.bloggs@example.com",
       fullName: "Joe Bloggs",
     },
-
   });
   test("Upon editing, title should be set to the entered value.", async () => {
     const handleChange = vi.fn();
@@ -75,7 +66,6 @@ describe("DryadRepo", () => {
     await act(() => void renderDryadRepo({ handleChange }));
     fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
       target: { value: "foo" },
-
     });
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -83,9 +73,8 @@ describe("DryadRepo", () => {
           value: "foo",
           name: "title",
         }),
-      })
+      }),
     );
-
   });
   test("Upon editing, description should be set to the entered value.", async () => {
     const handleChange = vi.fn();
@@ -93,7 +82,6 @@ describe("DryadRepo", () => {
     await act(() => void renderDryadRepo({ handleChange }));
     fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
       target: { value: "foo" },
-
     });
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -101,8 +89,7 @@ describe("DryadRepo", () => {
           value: "foo",
           name: "description",
         }),
-      })
+      }),
     );
   });
 });
-

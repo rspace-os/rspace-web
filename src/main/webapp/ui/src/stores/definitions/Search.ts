@@ -1,15 +1,24 @@
-import { type InventoryRecord, type Action } from "./InventoryRecord";
-import { type Username, type Person } from "./Person";
-import RsSet from "../../util/set";
-import { type TreeView } from "./TreeView";
-import { type AdjustableTableRowLabel } from "./Tables";
-import { type Sample } from "./Sample";
-import { type Id, type GlobalId } from "./BaseRecord";
-import { type SubSample } from "./SubSample";
-import { type Order } from "../../util/types";
-import { type Basket } from "./Basket";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
+// biome-ignore lint/style/useImportType: initial biome migration
+import RsSet from "../../util/set";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Order } from "../../util/types";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GlobalId, type Id } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Basket } from "./Basket";
+import type { Action, InventoryRecord } from "./InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Person, type Username } from "./Person";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Sample } from "./Sample";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SubSample } from "./SubSample";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type AdjustableTableRowLabel } from "./Tables";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type TreeView } from "./TreeView";
 
 export type SearchView = "LIST" | "TREE" | "CARD" | "IMAGE" | "GRID";
 export const TYPE_LABEL = {
@@ -20,15 +29,7 @@ export const TYPE_LABEL = {
   IMAGE: "Visual",
 };
 
-export type SearchModule =
-  | "BENCHES"
-  | "TYPE"
-  | "STATUS"
-  | "OWNER"
-  | "SCAN"
-  | "TAG"
-  | "SAVEDSEARCHES"
-  | "SAVEDBASKETS";
+export type SearchModule = "BENCHES" | "TYPE" | "STATUS" | "OWNER" | "SCAN" | "TAG" | "SAVEDSEARCHES" | "SAVEDBASKETS";
 /*
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
  * extended functionality of RsSet is not needed.
@@ -38,19 +39,10 @@ export type SelectionMode = "NONE" | "SINGLE" | "MULTIPLE";
 export type DeletedItems = "EXCLUDE" | "INCLUDE" | "DELETED_ONLY";
 
 export function parseDeletedItems(str: string): Result<DeletedItems> {
-  return Result.first(
-    parseString("EXCLUDE", str),
-    parseString("INCLUDE", str),
-    parseString("DELETED_ONLY", str),
-  );
+  return Result.first(parseString("EXCLUDE", str), parseString("INCLUDE", str), parseString("DELETED_ONLY", str));
 }
 
-export type ResultType =
-  | "ALL"
-  | "CONTAINER"
-  | "SAMPLE"
-  | "SUBSAMPLE"
-  | "TEMPLATE";
+export type ResultType = "ALL" | "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "TEMPLATE";
 
 export function parseResultType(str: string): Result<ResultType> {
   return Result.first(
@@ -62,13 +54,7 @@ export function parseResultType(str: string): Result<ResultType> {
   );
 }
 
-export type ParentGlobalIdType =
-  | "SAMPLE"
-  | "SUBSAMPLE"
-  | "CONTAINER"
-  | "TEMPLATE"
-  | "BENCH"
-  | "BASKET";
+export type ParentGlobalIdType = "SAMPLE" | "SUBSAMPLE" | "CONTAINER" | "TEMPLATE" | "BENCH" | "BASKET";
 
 /*
  * Except for container's contentSearch in  'public view case', must include
@@ -148,11 +134,7 @@ export type UiConfig = {
   onlyAllowSelectingEmptyLocations: boolean;
 };
 
-export type PermalinkType =
-  | "sample"
-  | "container"
-  | "subsample"
-  | "sampletemplate";
+export type PermalinkType = "sample" | "container" | "subsample" | "sampletemplate";
 export type Permalink = {
   type: PermalinkType;
   id: number;
@@ -425,23 +407,13 @@ export interface Search {
   /*
    * These methods SHOULD perform the associated contextual action.
    */
-  createTemplateFromSample(
-    name: string,
-    sample: Sample,
-    includeContentForFields: Set<Id>,
-  ): Promise<void>;
+  createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;
   splitRecord(copies: number, subsample: SubSample): Promise<void>;
-  transferRecords(
-    username: Username,
-    records: Array<InventoryRecord>,
-  ): Promise<void>;
-  exportRecords(
-    exportOptions: ExportOptions,
-    records: Array<InventoryRecord>,
-  ): Promise<void>;
+  transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void>;
+  exportRecords(exportOptions: ExportOptions, records: Array<InventoryRecord>): Promise<void>;
 
   /*
    * LIST view MAY provide a mechanism to adjust the column. For more

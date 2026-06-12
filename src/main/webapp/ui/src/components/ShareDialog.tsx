@@ -1,59 +1,53 @@
-import React from "react";
-import Portal from "@mui/material/Portal";
-import ErrorBoundary from "./ErrorBoundary";
-import Alerts from "./Alerts/Alerts";
-import { Dialog, DialogBoundary } from "./DialogBoundary";
+import Alert from "@mui/material/Alert";
+import Autocomplete, { type AutocompleteRenderInputParams } from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
+import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import Portal from "@mui/material/Portal";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
-import Paper from "@mui/material/Paper";
-import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
-import Autocomplete, {
-  type AutocompleteRenderInputParams,
-} from "@mui/material/Autocomplete";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Alert from "@mui/material/Alert";
-import Analytics from "./Analytics";
-import AnalyticsContext from "../stores/contexts/Analytics";
-import ValidatingSubmitButton from "./ValidatingSubmitButton";
-import Result from "../util/result";
-import useShare, {
-  ShareInfo,
-  ShareOption,
-  NewShare,
-  getParentFolderName,
-} from "../hooks/api/useShare";
-import useGroups from "../hooks/api/useGroups";
-import useUserDetails from "../hooks/api/useUserDetails";
-import useWhoAmI from "../hooks/api/useWhoAmI";
-import useFolders from "../hooks/api/useFolders";
-import useDocuments from "../hooks/api/useDocuments";
-import FolderSelectionDialog from "./FolderSelectionDialog";
-import { FolderTreeNode } from "../hooks/api/useFolders";
-import UserDetails from "./UserDetails";
-import GroupDetails from "./GroupDetails";
-import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import React from "react";
+import AlertsContext, { mkAlert } from "@/stores/contexts/Alert";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/workspace";
-import VisuallyHiddenHeading from "./VisuallyHiddenHeading";
-import Stack from "@mui/material/Stack";
+import useDocuments from "../hooks/api/useDocuments";
+// biome-ignore lint/style/useImportType: initial biome migration
+import useFolders, { FolderTreeNode } from "../hooks/api/useFolders";
+import useGroups from "../hooks/api/useGroups";
+// biome-ignore lint/style/useImportType: initial biome migration
+import useShare, { getParentFolderName, NewShare, ShareInfo, ShareOption } from "../hooks/api/useShare";
+import useUserDetails from "../hooks/api/useUserDetails";
+import useWhoAmI from "../hooks/api/useWhoAmI";
+import AnalyticsContext from "../stores/contexts/Analytics";
+import Result from "../util/result";
 import RsSet, { flattenWithIntersectionWithEq } from "../util/set";
+import Alerts from "./Alerts/Alerts";
+import Analytics from "./Analytics";
+import { Dialog, DialogBoundary } from "./DialogBoundary";
+import ErrorBoundary from "./ErrorBoundary";
+import FolderSelectionDialog from "./FolderSelectionDialog";
+import GroupDetails from "./GroupDetails";
+import UserDetails from "./UserDetails";
+import ValidatingSubmitButton from "./ValidatingSubmitButton";
+import VisuallyHiddenHeading from "./VisuallyHiddenHeading";
 import WarningBar from "./WarningBar";
-import AlertsContext, { mkAlert } from "@/stores/contexts/Alert";
 
 type DocumentGlobalId = string;
 type DocumentName = string;
@@ -114,9 +108,7 @@ export type ShareDialogProps = {
  */
 function useSetup(): ShareDialogProps {
   const [open, setOpen] = React.useState(false);
-  const [globalIds, setGlobalIds] = React.useState<
-    ReadonlyArray<DocumentGlobalId>
-  >([]);
+  const [globalIds, setGlobalIds] = React.useState<ReadonlyArray<DocumentGlobalId>>([]);
   const [names, setNames] = React.useState<ReadonlyArray<DocumentName>>([]);
 
   React.useEffect(() => {
@@ -150,14 +142,7 @@ function useSetup(): ShareDialogProps {
 
 function ShareDialogFromGlobalEvent(): React.ReactNode {
   const { open, onClose, globalIds, names } = useSetup();
-  return (
-    <ShareDialog
-      open={open}
-      onClose={onClose}
-      globalIds={globalIds}
-      names={names}
-    />
-  );
+  return <ShareDialog open={open} onClose={onClose} globalIds={globalIds} names={names} />;
 }
 
 export function ShareDialog({
@@ -182,32 +167,24 @@ export function ShareDialog({
   const [saving, setSaving] = React.useState(false);
   const [shareOptions, setShareOptions] = React.useState<ShareOption[]>([]);
   const [optionsLoading, setOptionsLoading] = React.useState(false);
-  const [permissionChanges, setPermissionChanges] = React.useState<
-    Map<ShareId, Permission>
-  >(new Map());
-  const [newShares, setNewShares] = React.useState<
-    Map<DocumentGlobalId, NewShare[]>
-  >(new Map());
+  const [permissionChanges, setPermissionChanges] = React.useState<Map<ShareId, Permission>>(new Map());
+  const [newShares, setNewShares] = React.useState<Map<DocumentGlobalId, NewShare[]>>(new Map());
   // Track folder names for group shares: Map<sharedTargetId, folderName>
-  const [groupFolderNames, setGroupFolderNames] = React.useState<
-    Map<number, string>
-  >(new Map());
+  const [groupFolderNames, setGroupFolderNames] = React.useState<Map<number, string>>(new Map());
   // Track folder selection dialog
   const [folderSelectionOpen, setFolderSelectionOpen] = React.useState(false);
-  const [selectedShareForFolderChange, setSelectedShareForFolderChange] =
-    React.useState<{
-      shareId: ShareId;
-      groupId: number;
-      globalId: DocumentGlobalId;
-      sharedFolderId: number;
-    } | null>(null);
+  const [selectedShareForFolderChange, setSelectedShareForFolderChange] = React.useState<{
+    shareId: ShareId;
+    groupId: number;
+    globalId: DocumentGlobalId;
+    sharedFolderId: number;
+  } | null>(null);
   // Track folder path changes for existing shares: Map<shareId, {name, id}>
-  const [shareFolderChanges, setShareFolderChanges] = React.useState<
-    Map<ShareId, { name: string; id: number }>
-  >(new Map());
+  const [shareFolderChanges, setShareFolderChanges] = React.useState<Map<ShareId, { name: string; id: number }>>(
+    new Map(),
+  );
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { getShareInfoForMultiple, createShare, deleteShare, updateShare } =
-    useShare();
+  const { getShareInfoForMultiple, createShare, deleteShare, updateShare } = useShare();
   const { getGroups } = useGroups();
   const { getGroupMembers } = useUserDetails();
   const { getFolder } = useFolders();
@@ -266,18 +243,13 @@ export function ShareDialog({
             await Promise.allSettled(
               Array.from(groupIds).map(async (groupId) => {
                 const group = groups.find((g) => g.id === groupId);
-                const sharedFolderId = group
-                  ? getGroupFolderId(group, isSnippet)
-                  : null;
+                const sharedFolderId = group ? getGroupFolderId(group, isSnippet) : null;
                 if (sharedFolderId) {
                   try {
                     const folder = await getFolder(sharedFolderId);
                     folderNameMap.set(groupId, folder.name);
                   } catch (error) {
-                    console.error(
-                      `Failed to fetch folder for group ${groupId}:`,
-                      error,
-                    );
+                    console.error(`Failed to fetch folder for group ${groupId}:`, error);
                     folderNameMap.set(groupId, "Unknown folder");
                   }
                 }
@@ -334,10 +306,7 @@ export function ShareDialog({
                     const folder = await getFolder(sharedFolderId);
                     folderNameMap.set(group.id, folder.name);
                   } catch (error) {
-                    console.error(
-                      `Failed to fetch folder for group ${group.id}:`,
-                      error,
-                    );
+                    console.error(`Failed to fetch folder for group ${group.id}:`, error);
                     folderNameMap.set(group.id, "Unknown folder");
                   }
                 }
@@ -370,19 +339,14 @@ export function ShareDialog({
                         const folder = await getFolder(sharedFolderId);
                         folderNameMap.set(group.id, folder.name);
                       } catch (error) {
-                        console.error(
-                          `Failed to fetch folder for group ${group.id}:`,
-                          error,
-                        );
+                        console.error(`Failed to fetch folder for group ${group.id}:`, error);
                         folderNameMap.set(group.id, "Unknown folder");
                       }
                     }
                   }),
                 );
 
-                setGroupFolderNames(
-                  (prev) => new Map([...prev, ...folderNameMap]),
-                );
+                setGroupFolderNames((prev) => new Map([...prev, ...folderNameMap]));
               }
             })
             .catch((groupError) => {
@@ -407,8 +371,7 @@ export function ShareDialog({
     const commonShares = flattenWithIntersectionWithEq(
       new RsSet(
         globalIds.map((gId) => {
-          const alreadySharedWith: ReadonlyArray<ShareIdentifier> =
-            shareData.get(gId)?.directShares ?? [];
+          const alreadySharedWith: ReadonlyArray<ShareIdentifier> = shareData.get(gId)?.directShares ?? [];
           const toBeSharedWith: ShareIdentifier[] = newShares.get(gId) ?? [];
           return new RsSet([...alreadySharedWith, ...toBeSharedWith]);
         }),
@@ -417,18 +380,12 @@ export function ShareDialog({
     );
     return shareOptions.map((option) => ({
       ...option,
-      isDisabled: commonShares.hasWithEq(
-        { recipientType: option.optionType, recipientId: option.id },
-        eqFunc,
-      ),
+      isDisabled: commonShares.hasWithEq({ recipientType: option.optionType, recipientId: option.id }, eqFunc),
     }));
   }, [shareOptions, shareData, newShares, globalIds]);
 
   // Check if there are any permission changes, new shares, or folder changes
-  const hasChanges =
-    permissionChanges.size > 0 ||
-    newShares.size > 0 ||
-    shareFolderChanges.size > 0;
+  const hasChanges = permissionChanges.size > 0 || newShares.size > 0 || shareFolderChanges.size > 0;
 
   // Handle permission change
   function handlePermissionChange(shareId: ShareId, newPermission: Permission) {
@@ -447,19 +404,13 @@ export function ShareDialog({
   }
 
   // Handle permission change for new shares
-  function handleNewSharePermissionChange(
-    globalId: DocumentGlobalId,
-    newShareId: ShareId,
-    newPermission: Permission,
-  ) {
+  function handleNewSharePermissionChange(globalId: DocumentGlobalId, newShareId: ShareId, newPermission: Permission) {
     const updatedNewShares = new Map(newShares);
     const docNewShares = updatedNewShares.get(globalId) || [];
 
     if (newPermission === "UNSHARE") {
       // Remove the share if marked for unshare
-      const updatedDocNewShares = docNewShares.filter(
-        (share) => share.id !== newShareId,
-      );
+      const updatedDocNewShares = docNewShares.filter((share) => share.id !== newShareId);
       if (updatedDocNewShares.length === 0) {
         updatedNewShares.delete(globalId);
       } else {
@@ -468,9 +419,7 @@ export function ShareDialog({
     } else {
       // Update the permission
       const updatedDocNewShares = docNewShares.map((share) =>
-        share.id === newShareId
-          ? { ...share, permission: newPermission }
-          : share,
+        share.id === newShareId ? { ...share, permission: newPermission } : share,
       );
       updatedNewShares.set(globalId, updatedDocNewShares);
     }
@@ -520,26 +469,21 @@ export function ShareDialog({
       }
 
       // Handle permission and folder modifications sequentially
-      const allChangedShareIds = new Set([
-        ...permissionChanges.keys(),
-        ...shareFolderChanges.keys(),
-      ]);
+      const allChangedShareIds = new Set([...permissionChanges.keys(), ...shareFolderChanges.keys()]);
 
       for (const shareId of allChangedShareIds) {
         const newPermission = permissionChanges.get(shareId);
         const newLocationId = shareFolderChanges.get(shareId)?.id;
         if (newPermission !== "UNSHARE") {
           // Find the original share to get its details
+          // biome-ignore lint/complexity/useFlatMap: initial biome migration
           const originalShare = Array.from(shareData.values())
             .map((s) => s.directShares)
             .flat()
             .find((share) => share.shareId.toString() === shareId);
 
           if (originalShare) {
-            if (
-              newPermission !== originalShare.permission &&
-              typeof newPermission !== "undefined"
-            ) {
+            if (newPermission !== originalShare.permission && typeof newPermission !== "undefined") {
               await updateShare({
                 ...originalShare,
                 permission: newPermission,
@@ -549,12 +493,12 @@ export function ShareDialog({
             if (newLocationId !== originalShare.parentId && newLocationId) {
               await move({
                 documentId: originalShare.sharedDocId,
+                // biome-ignore lint/style/noNonNullAssertion: initial biome migration
                 sourceFolderId: originalShare.parentId!,
                 destinationFolderId: newLocationId,
-                ...(originalShare.grandparentId != null
-                  ? { currentGrandparentId: originalShare.grandparentId }
-                  : {}),
+                ...(originalShare.grandparentId != null ? { currentGrandparentId: originalShare.grandparentId } : {}),
               });
+              // biome-ignore lint/complexity/noUselessContinue: initial biome migration
               continue;
             }
           }
@@ -567,6 +511,7 @@ export function ShareDialog({
           id: parseInt(globalId.replace(/\D/g, ""), 10),
           shares,
         }))
+        // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
         .filter(({ id, shares }) => !isNaN(id) && shares.length > 0);
 
       for (const { id, shares } of creations) {
@@ -598,18 +543,13 @@ export function ShareDialog({
         await Promise.allSettled(
           Array.from(groupIds).map(async (groupId) => {
             const group = groups.find((g) => g.id === groupId);
-            const sharedFolderId = group
-              ? getGroupFolderId(group, isSnippet)
-              : null;
+            const sharedFolderId = group ? getGroupFolderId(group, isSnippet) : null;
             if (sharedFolderId) {
               try {
                 const folder = await getFolder(sharedFolderId);
                 folderNameMap.set(groupId, folder.name);
               } catch (error) {
-                console.error(
-                  `Failed to fetch folder for group ${groupId}:`,
-                  error,
-                );
+                console.error(`Failed to fetch folder for group ${groupId}:`, error);
                 folderNameMap.set(groupId, "Unknown folder");
               }
             }
@@ -665,9 +605,7 @@ export function ShareDialog({
       </DialogTitle>
       <DialogContent>
         <Box sx={{ mb: 3, mt: 0.75 }}>
-          <VisuallyHiddenHeading variant="h3">
-            Add users or groups to share with
-          </VisuallyHiddenHeading>
+          <VisuallyHiddenHeading variant="h3">Add users or groups to share with</VisuallyHiddenHeading>
           <Autocomplete
             options={shareOptionsWithState}
             loading={optionsLoading}
@@ -690,57 +628,39 @@ export function ShareDialog({
                 const updatedPermissionChanges = new Map(permissionChanges);
 
                 globalIds.forEach((globalId) => {
-                  const existingShares =
-                    shareData.get(globalId)?.directShares || [];
-                  const existingNewShares =
-                    updatedNewShares.get(globalId) || [];
+                  const existingShares = shareData.get(globalId)?.directShares || [];
+                  const existingNewShares = updatedNewShares.get(globalId) || [];
 
                   // Check if this user/group is already shared with this document
                   const alreadyShared = existingShares.find(
-                    (share) =>
-                      share.recipientId === newValue.id &&
-                      share.recipientType === newValue.optionType,
+                    (share) => share.recipientId === newValue.id && share.recipientType === newValue.optionType,
                   );
 
                   // Check if this user/group is already in new shares for this document
                   const alreadyInNewShares = existingNewShares.find(
-                    (share) =>
-                      share.recipientId === newValue.id &&
-                      share.recipientType === newValue.optionType,
+                    (share) => share.recipientId === newValue.id && share.recipientType === newValue.optionType,
                   );
 
                   if (alreadyShared) {
                     // Update the existing share's permission to READ and set new folder location
-                    updatedPermissionChanges.set(
-                      alreadyShared.shareId.toString(),
-                      "READ",
-                    );
+                    updatedPermissionChanges.set(alreadyShared.shareId.toString(), "READ");
 
                     // Set the new folder location if it's a group share
                     const sharedFolderId =
-                      newValue.optionType === "GROUP"
-                        ? getGroupFolderId(newValue, isSnippet)
-                        : null;
+                      newValue.optionType === "GROUP" ? getGroupFolderId(newValue, isSnippet) : null;
                     if (sharedFolderId) {
                       const currentFolderChanges = new Map(shareFolderChanges);
-                      currentFolderChanges.set(
-                        alreadyShared.shareId.toString(),
-                        {
-                          id: sharedFolderId,
-                          name: groupFolderNames.get(newValue.id) || "",
-                        },
-                      );
+                      currentFolderChanges.set(alreadyShared.shareId.toString(), {
+                        id: sharedFolderId,
+                        name: groupFolderNames.get(newValue.id) || "",
+                      });
                       setShareFolderChanges(currentFolderChanges);
                     }
                   } else {
                     // Remove from new shares if already there
                     if (alreadyInNewShares) {
                       const filteredNewShares = existingNewShares.filter(
-                        (share) =>
-                          !(
-                            share.recipientId === newValue.id &&
-                            share.recipientType === newValue.optionType
-                          ),
+                        (share) => !(share.recipientId === newValue.id && share.recipientType === newValue.optionType),
                       );
                       updatedNewShares.set(globalId, filteredNewShares);
                     }
@@ -749,28 +669,15 @@ export function ShareDialog({
                     const newShare: NewShare = {
                       id: `new-${newValue.id}-${Date.now()}`, // temporary ID
                       recipientId: newValue.id,
-                      recipientName:
-                        newValue.optionType === "GROUP"
-                          ? newValue.name
-                          : newValue.username,
+                      recipientName: newValue.optionType === "GROUP" ? newValue.name : newValue.username,
                       recipientType: newValue.optionType,
                       permission: "READ", // default permission
-                      locationName:
-                        newValue.optionType === "GROUP"
-                          ? groupFolderNames.get(newValue.id) || ""
-                          : null,
-                      locationId:
-                        newValue.optionType === "GROUP"
-                          ? getGroupFolderId(newValue, isSnippet)
-                          : null,
+                      locationName: newValue.optionType === "GROUP" ? groupFolderNames.get(newValue.id) || "" : null,
+                      locationId: newValue.optionType === "GROUP" ? getGroupFolderId(newValue, isSnippet) : null,
                     };
 
-                    const currentNewShares =
-                      updatedNewShares.get(globalId) || [];
-                    updatedNewShares.set(globalId, [
-                      ...currentNewShares,
-                      newShare,
-                    ]);
+                    const currentNewShares = updatedNewShares.get(globalId) || [];
+                    updatedNewShares.set(globalId, [...currentNewShares, newShare]);
                   }
                 });
 
@@ -801,16 +708,12 @@ export function ShareDialog({
                 >
                   <Box sx={{ width: "100%" }}>
                     <Typography variant="body2" sx={{ fontWeight: "medium" }}>
-                      {option.optionType === "GROUP"
-                        ? option.name
-                        : `${option.firstName} ${option.lastName}`}
+                      {option.optionType === "GROUP" ? option.name : `${option.firstName} ${option.lastName}`}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {option.isDisabled
                         ? `All of the ${pluralName} have already been shared with ${
-                            option.optionType === "GROUP"
-                              ? option.name
-                              : `${option.firstName} ${option.lastName}`
+                            option.optionType === "GROUP" ? option.name : `${option.firstName} ${option.lastName}`
                           }`
                         : option.optionType === "GROUP"
                           ? `${option.type} • ${option.members?.length || 0} members`
@@ -836,9 +739,7 @@ export function ShareDialog({
                       ...inputSlotProps,
                       endAdornment: (
                         <>
-                          {optionsLoading ? (
-                            <CircularProgress color="inherit" size={20} />
-                          ) : null}
+                          {optionsLoading ? <CircularProgress color="inherit" size={20} /> : null}
                           {inputSlotProps.endAdornment}
                         </>
                       ),
@@ -856,8 +757,8 @@ export function ShareDialog({
 
         {isSnippet && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Shared snippets can be found in the <strong>SNIPPETS_Shared</strong>{" "}
-            folder, inside the Snippets section of the Gallery.
+            Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of
+            the Gallery.
           </Alert>
         )}
 
@@ -880,29 +781,19 @@ export function ShareDialog({
                   {(() => {
                     const globalId = globalIds[0];
                     const docName = names[0] || `this ${singularName}`;
-                    const directShares =
-                      shareData.get(globalId)?.directShares ?? [];
-                    const notebookShares =
-                      shareData.get(globalId)?.notebookShares ?? [];
+                    const directShares = shareData.get(globalId)?.directShares ?? [];
+                    const notebookShares = shareData.get(globalId)?.notebookShares ?? [];
                     const docNewShares = newShares.get(globalId) ?? [];
                     const allDirectShares = [...directShares, ...docNewShares];
                     return (
                       <Box>
                         <Stack spacing={3}>
                           {allDirectShares.length === 0 ? (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ fontStyle: "italic" }}
-                            >
-                              This {singularName} is not directly shared with
-                              anyone.
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                              This {singularName} is not directly shared with anyone.
                             </Typography>
                           ) : (
-                            <TableContainer
-                              component={Paper}
-                              variant="outlined"
-                            >
+                            <TableContainer component={Paper} variant="outlined">
                               <Table size="small" sx={{ mb: 0 }}>
                                 <TableHead>
                                   <TableRow>
@@ -937,19 +828,12 @@ export function ShareDialog({
                                         <Chip
                                           size="small"
                                           label={share.recipientType}
-                                          color={
-                                            share.recipientType === "USER"
-                                              ? "primary"
-                                              : "secondary"
-                                          }
+                                          color={share.recipientType === "USER" ? "primary" : "secondary"}
                                           variant="outlined"
                                         />
                                       </TableCell>
                                       <TableCell>
-                                        <FormControl
-                                          size="small"
-                                          sx={{ minWidth: 120 }}
-                                        >
+                                        <FormControl size="small" sx={{ minWidth: 120 }}>
                                           <Select
                                             inputProps={{
                                               "aria-label": `Set permission for sharing with ${share.recipientName}`,
@@ -957,31 +841,15 @@ export function ShareDialog({
                                             value={getCurrentPermission(share)}
                                             onChange={(e) => {
                                               const newValue = e.target.value;
-                                              if (
-                                                ![
-                                                  "EDIT",
-                                                  "READ",
-                                                  "UNSHARE",
-                                                ].includes(newValue)
-                                              )
+                                              if (!["EDIT", "READ", "UNSHARE"].includes(newValue))
                                                 throw new Error("Impossible");
-                                              handlePermissionChange(
-                                                share.shareId.toString(),
-                                                newValue,
-                                              );
+                                              handlePermissionChange(share.shareId.toString(), newValue);
                                             }}
                                             size="small"
                                           >
-                                            <MenuItem value="READ">
-                                              Read
-                                            </MenuItem>
-                                            <MenuItem value="EDIT">
-                                              Edit
-                                            </MenuItem>
-                                            <MenuItem
-                                              value="UNSHARE"
-                                              sx={{ color: "error.main" }}
-                                            >
+                                            <MenuItem value="READ">Read</MenuItem>
+                                            <MenuItem value="EDIT">Edit</MenuItem>
+                                            <MenuItem value="UNSHARE" sx={{ color: "error.main" }}>
                                               Unshare
                                             </MenuItem>
                                           </Select>
@@ -992,41 +860,24 @@ export function ShareDialog({
                                           <>&mdash;</>
                                         ) : (
                                           <>
-                                            {shareFolderChanges.get(
-                                              share.shareId.toString(),
-                                            )?.name ||
+                                            {shareFolderChanges.get(share.shareId.toString())?.name ||
                                               getParentFolderName(share)}
                                             <Button
                                               size="small"
                                               sx={{ ml: 1 }}
                                               onClick={() => {
-                                                const groups =
-                                                  shareOptions.filter(
-                                                    (opt) =>
-                                                      opt.optionType ===
-                                                      "GROUP",
-                                                  );
-                                                const group = groups.find(
-                                                  (g) =>
-                                                    g.id === share.recipientId,
-                                                );
+                                                const groups = shareOptions.filter((opt) => opt.optionType === "GROUP");
+                                                const group = groups.find((g) => g.id === share.recipientId);
                                                 const sharedFolderId = group
-                                                  ? getGroupFolderId(
-                                                      group,
-                                                      isSnippet,
-                                                    )
+                                                  ? getGroupFolderId(group, isSnippet)
                                                   : null;
                                                 if (sharedFolderId) {
-                                                  setSelectedShareForFolderChange(
-                                                    {
-                                                      shareId:
-                                                        share.shareId.toString(),
-                                                      groupId:
-                                                        share.recipientId,
-                                                      globalId,
-                                                      sharedFolderId,
-                                                    },
-                                                  );
+                                                  setSelectedShareForFolderChange({
+                                                    shareId: share.shareId.toString(),
+                                                    groupId: share.recipientId,
+                                                    globalId,
+                                                    sharedFolderId,
+                                                  });
                                                   setFolderSelectionOpen(true);
                                                 }
                                               }}
@@ -1047,15 +898,9 @@ export function ShareDialog({
                                       }}
                                     >
                                       <TableCell>
-                                        <Stack
-                                          direction="row"
-                                          spacing={1}
-                                          sx={{ alignItems: "center" }}
-                                        >
+                                        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                                           {newShare.recipientType === "USER" ? (
-                                            <Typography variant="body2">
-                                              {newShare.recipientName}
-                                            </Typography>
+                                            <Typography variant="body2">{newShare.recipientName}</Typography>
                                           ) : (
                                             <Typography
                                               variant="body2"
@@ -1071,19 +916,12 @@ export function ShareDialog({
                                         <Chip
                                           size="small"
                                           label={newShare.recipientType}
-                                          color={
-                                            newShare.recipientType === "USER"
-                                              ? "primary"
-                                              : "secondary"
-                                          }
+                                          color={newShare.recipientType === "USER" ? "primary" : "secondary"}
                                           variant="outlined"
                                         />
                                       </TableCell>
                                       <TableCell>
-                                        <FormControl
-                                          size="small"
-                                          sx={{ minWidth: 120 }}
-                                        >
+                                        <FormControl size="small" sx={{ minWidth: 120 }}>
                                           <Select
                                             inputProps={{
                                               "aria-label": `Set permission for sharing with ${newShare.recipientName}`,
@@ -1091,33 +929,15 @@ export function ShareDialog({
                                             value={newShare.permission}
                                             onChange={(e) => {
                                               const newValue = e.target.value;
-                                              if (
-                                                ![
-                                                  "EDIT",
-                                                  "READ",
-                                                  "UNSHARE",
-                                                ].includes(newValue)
-                                              )
+                                              if (!["EDIT", "READ", "UNSHARE"].includes(newValue))
                                                 throw new Error("Impossible");
-                                              handleNewSharePermissionChange(
-                                                globalId,
-                                                newShare.id,
-                                                newValue,
-                                              );
+                                              handleNewSharePermissionChange(globalId, newShare.id, newValue);
                                             }}
                                             size="small"
                                           >
-                                            <MenuItem value="READ">
-                                              Read
-                                            </MenuItem>
-                                            <MenuItem value="EDIT">
-                                              Edit
-                                            </MenuItem>
-                                            <MenuItem
-                                              value="UNSHARE"
-                                              sx={{ color: "error.main" }}
-                                              disabled
-                                            >
+                                            <MenuItem value="READ">Read</MenuItem>
+                                            <MenuItem value="EDIT">Edit</MenuItem>
+                                            <MenuItem value="UNSHARE" sx={{ color: "error.main" }} disabled>
                                               Unshare
                                             </MenuItem>
                                           </Select>
@@ -1128,43 +948,25 @@ export function ShareDialog({
                                           <>&mdash;</>
                                         ) : (
                                           <>
-                                            <Typography
-                                              variant="body2"
-                                              color="text.secondary"
-                                            >
+                                            <Typography variant="body2" color="text.secondary">
                                               {newShare.locationName || "/"}
                                             </Typography>
                                             <Button
                                               size="small"
                                               sx={{ ml: 1 }}
                                               onClick={() => {
-                                                const groups =
-                                                  shareOptions.filter(
-                                                    (opt) =>
-                                                      opt.optionType ===
-                                                      "GROUP",
-                                                  );
-                                                const group = groups.find(
-                                                  (g) =>
-                                                    g.id ===
-                                                    newShare.recipientId,
-                                                );
+                                                const groups = shareOptions.filter((opt) => opt.optionType === "GROUP");
+                                                const group = groups.find((g) => g.id === newShare.recipientId);
                                                 const sharedFolderId = group
-                                                  ? getGroupFolderId(
-                                                      group,
-                                                      isSnippet,
-                                                    )
+                                                  ? getGroupFolderId(group, isSnippet)
                                                   : null;
                                                 if (sharedFolderId) {
-                                                  setSelectedShareForFolderChange(
-                                                    {
-                                                      shareId: newShare.id,
-                                                      groupId:
-                                                        newShare.recipientId,
-                                                      globalId,
-                                                      sharedFolderId,
-                                                    },
-                                                  );
+                                                  setSelectedShareForFolderChange({
+                                                    shareId: newShare.id,
+                                                    groupId: newShare.recipientId,
+                                                    globalId,
+                                                    sharedFolderId,
+                                                  });
                                                   setFolderSelectionOpen(true);
                                                 }
                                               }}
@@ -1182,19 +984,10 @@ export function ShareDialog({
                           )}
                           {notebookShares.length > 0 && (
                             <Box>
-                              <Typography
-                                variant="body1"
-                                component="h3"
-                                gutterBottom
-                              >
-                                As {docName} is shared into Notebooks, it is
-                                also shared with:
+                              <Typography variant="body1" component="h3" gutterBottom>
+                                As {docName} is shared into Notebooks, it is also shared with:
                               </Typography>
-                              <TableContainer
-                                component={Paper}
-                                variant="outlined"
-                                sx={{ my: 1 }}
-                              >
+                              <TableContainer component={Paper} variant="outlined" sx={{ my: 1 }}>
                                 <Table size="small" sx={{ mb: 0 }}>
                                   <TableHead>
                                     <TableRow>
@@ -1207,9 +1000,7 @@ export function ShareDialog({
                                   <TableBody>
                                     {notebookShares.map((share) => (
                                       <TableRow key={share.shareId}>
-                                        <TableCell>
-                                          {getParentFolderName(share)}
-                                        </TableCell>
+                                        <TableCell>{getParentFolderName(share)}</TableCell>
                                         <TableCell>
                                           <Box>
                                             {share.recipientType === "USER" ? (
@@ -1231,20 +1022,12 @@ export function ShareDialog({
                                           <Chip
                                             size="small"
                                             label={share.recipientType}
-                                            color={
-                                              share.recipientType === "USER"
-                                                ? "primary"
-                                                : "secondary"
-                                            }
+                                            color={share.recipientType === "USER" ? "primary" : "secondary"}
                                             variant="outlined"
                                           />
                                         </TableCell>
                                         <TableCell>
-                                          <FormControl
-                                            size="small"
-                                            sx={{ minWidth: 120 }}
-                                            disabled
-                                          >
+                                          <FormControl size="small" sx={{ minWidth: 120 }} disabled>
                                             <Select
                                               inputProps={{
                                                 "aria-label": `Set permission for sharing with ${share.recipientName}`,
@@ -1255,12 +1038,8 @@ export function ShareDialog({
                                               }}
                                               size="small"
                                             >
-                                              <MenuItem value="READ">
-                                                Read
-                                              </MenuItem>
-                                              <MenuItem value="EDIT">
-                                                Edit
-                                              </MenuItem>
+                                              <MenuItem value="READ">Read</MenuItem>
+                                              <MenuItem value="EDIT">Edit</MenuItem>
                                             </Select>
                                           </FormControl>
                                         </TableCell>
@@ -1269,12 +1048,8 @@ export function ShareDialog({
                                   </TableBody>
                                 </Table>
                               </TableContainer>
-                              <Typography
-                                variant="body1"
-                                color="text.secondary"
-                              >
-                                Items in Notebooks inherit the Notebook's
-                                permissions. Contact the notebook's owner to
+                              <Typography variant="body1" color="text.secondary">
+                                Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to
                                 alter the notebook's permissions.
                               </Typography>
                             </Box>
@@ -1288,20 +1063,11 @@ export function ShareDialog({
             ) : (
               <>
                 <Typography variant="h3" gutterBottom>
-                  Adding shares to {globalIds.length}{" "}
-                  {globalIds.length === 1 ? singularName : pluralName}
+                  Adding shares to {globalIds.length} {globalIds.length === 1 ? singularName : pluralName}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 2 }}
-                >
-                  Use the field above to add new shares. The share status of
-                  multiple {pluralName} can be edited on the{" "}
-                  <Link href="/record/share/manage">
-                    shared {pluralName} page
-                  </Link>
-                  .
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the{" "}
+                  <Link href="/record/share/manage">shared {pluralName} page</Link>.
                 </Typography>
                 {newShares.size > 0 && (
                   <Box>
@@ -1320,181 +1086,135 @@ export function ShareDialog({
                         >();
 
                         // Collect all unique shares
-                        Array.from(newShares.entries()).forEach(
-                          ([_globalId, docNewShares]) => {
-                            docNewShares.forEach((share) => {
-                              const key = `${share.recipientType}-${share.recipientId}`;
-                              if (uniqueShares.has(key)) {
-                                uniqueShares.get(key)!.documentCount++;
-                              } else {
-                                uniqueShares.set(key, {
-                                  share,
-                                  documentCount: 1,
-                                });
-                              }
-                            });
-                          },
-                        );
+                        Array.from(newShares.entries()).forEach(([_globalId, docNewShares]) => {
+                          docNewShares.forEach((share) => {
+                            const key = `${share.recipientType}-${share.recipientId}`;
+                            if (uniqueShares.has(key)) {
+                              // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+                              uniqueShares.get(key)!.documentCount++;
+                            } else {
+                              uniqueShares.set(key, {
+                                share,
+                                documentCount: 1,
+                              });
+                            }
+                          });
+                        });
 
-                        return Array.from(uniqueShares.values()).map(
-                          ({ share, documentCount }) => (
-                            <Stack
-                              direction="row"
-                              spacing={2}
-                              key={`${share.recipientType}-${share.recipientId}`}
-                              sx={{
-                                alignItems: "center",
-                                p: 2,
-                                borderRadius: 1,
-                                backgroundColor: "action.hover",
-                              }}
-                            >
-                              <Box sx={{ flexGrow: 1 }}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontWeight: "medium" }}
-                                >
-                                  {share.recipientName}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  {documentCount === globalIds.length
-                                    ? `All ${globalIds.length} ${pluralName}`
-                                    : `${documentCount} of ${globalIds.length} ${globalIds.length === 1 ? singularName : pluralName}`}
-                                </Typography>
-                                {share.recipientType === "GROUP" && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ display: "block" }}
-                                  >
-                                    Location: {share.locationName || "/"}
-                                  </Typography>
-                                )}
-                              </Box>
-
-                              <Chip
-                                size="small"
-                                label={share.recipientType}
-                                color={
-                                  share.recipientType === "USER"
-                                    ? "primary"
-                                    : "secondary"
-                                }
-                                variant="outlined"
-                              />
-
-                              <FormControl size="small" sx={{ minWidth: 80 }}>
-                                <Select
-                                  inputProps={{
-                                    "aria-label": `Set permission for sharing with ${share.recipientName}`,
-                                  }}
-                                  value={share.permission}
-                                  onChange={(e) => {
-                                    const newPermission = e.target
-                                      .value as string;
-                                    if (newPermission === "UNSHARE") {
-                                      // Remove this share from all documents
-                                      const updatedNewShares = new Map(
-                                        newShares,
-                                      );
-                                      globalIds.forEach((globalId) => {
-                                        const docShares =
-                                          updatedNewShares.get(globalId) || [];
-                                        const filteredShares = docShares.filter(
-                                          (s) =>
-                                            !(
-                                              s.recipientType ===
-                                                share.recipientType &&
-                                              s.recipientId ===
-                                                share.recipientId
-                                            ),
-                                        );
-                                        if (filteredShares.length === 0) {
-                                          updatedNewShares.delete(globalId);
-                                        } else {
-                                          updatedNewShares.set(
-                                            globalId,
-                                            filteredShares,
-                                          );
-                                        }
-                                      });
-                                      setNewShares(updatedNewShares);
-                                    } else {
-                                      // Update permission for this share across all documents
-                                      const updatedNewShares = new Map(
-                                        newShares,
-                                      );
-                                      globalIds.forEach((globalId) => {
-                                        const docShares =
-                                          updatedNewShares.get(globalId) || [];
-                                        const updatedDocShares = docShares.map(
-                                          (s) =>
-                                            s.recipientType ===
-                                              share.recipientType &&
-                                            s.recipientId === share.recipientId
-                                              ? {
-                                                  ...s,
-                                                  permission: newPermission as
-                                                    | "READ"
-                                                    | "EDIT",
-                                                }
-                                              : s,
-                                        );
-                                        updatedNewShares.set(
-                                          globalId,
-                                          updatedDocShares,
-                                        );
-                                      });
-                                      setNewShares(updatedNewShares);
-                                    }
-                                  }}
-                                  size="small"
-                                >
-                                  <MenuItem value="READ">Read</MenuItem>
-                                  <MenuItem value="EDIT">Edit</MenuItem>
-                                  <MenuItem
-                                    value="UNSHARE"
-                                    sx={{ color: "error.main" }}
-                                  >
-                                    Remove
-                                  </MenuItem>
-                                </Select>
-                              </FormControl>
-
+                        return Array.from(uniqueShares.values()).map(({ share, documentCount }) => (
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            key={`${share.recipientType}-${share.recipientId}`}
+                            sx={{
+                              alignItems: "center",
+                              p: 2,
+                              borderRadius: 1,
+                              backgroundColor: "action.hover",
+                            }}
+                          >
+                            <Box sx={{ flexGrow: 1 }}>
+                              <Typography variant="body2" sx={{ fontWeight: "medium" }}>
+                                {share.recipientName}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {documentCount === globalIds.length
+                                  ? `All ${globalIds.length} ${pluralName}`
+                                  : `${documentCount} of ${globalIds.length} ${globalIds.length === 1 ? singularName : pluralName}`}
+                              </Typography>
                               {share.recipientType === "GROUP" && (
-                                <Button
-                                  size="small"
-                                  onClick={() => {
-                                    const groups = shareOptions.filter(
-                                      (opt) => opt.optionType === "GROUP",
-                                    );
-                                    const group = groups.find(
-                                      (g) => g.id === share.recipientId,
-                                    );
-                                    const sharedFolderId = group
-                                      ? getGroupFolderId(group, isSnippet)
-                                      : null;
-                                    if (sharedFolderId) {
-                                      // Use the first globalId as a placeholder
-                                      setSelectedShareForFolderChange({
-                                        shareId: share.id,
-                                        groupId: share.recipientId,
-                                        globalId: globalIds[0],
-                                        sharedFolderId,
-                                      });
-                                      setFolderSelectionOpen(true);
-                                    }
-                                  }}
-                                >
-                                  Change Folder
-                                </Button>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                  Location: {share.locationName || "/"}
+                                </Typography>
                               )}
-                            </Stack>
-                          ),
-                        );
+                            </Box>
+
+                            <Chip
+                              size="small"
+                              label={share.recipientType}
+                              color={share.recipientType === "USER" ? "primary" : "secondary"}
+                              variant="outlined"
+                            />
+
+                            <FormControl size="small" sx={{ minWidth: 80 }}>
+                              <Select
+                                inputProps={{
+                                  "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                }}
+                                value={share.permission}
+                                onChange={(e) => {
+                                  const newPermission = e.target.value as string;
+                                  if (newPermission === "UNSHARE") {
+                                    // Remove this share from all documents
+                                    const updatedNewShares = new Map(newShares);
+                                    globalIds.forEach((globalId) => {
+                                      const docShares = updatedNewShares.get(globalId) || [];
+                                      const filteredShares = docShares.filter(
+                                        (s) =>
+                                          !(
+                                            s.recipientType === share.recipientType &&
+                                            s.recipientId === share.recipientId
+                                          ),
+                                      );
+                                      if (filteredShares.length === 0) {
+                                        updatedNewShares.delete(globalId);
+                                      } else {
+                                        updatedNewShares.set(globalId, filteredShares);
+                                      }
+                                    });
+                                    setNewShares(updatedNewShares);
+                                  } else {
+                                    // Update permission for this share across all documents
+                                    const updatedNewShares = new Map(newShares);
+                                    globalIds.forEach((globalId) => {
+                                      const docShares = updatedNewShares.get(globalId) || [];
+                                      const updatedDocShares = docShares.map((s) =>
+                                        s.recipientType === share.recipientType && s.recipientId === share.recipientId
+                                          ? {
+                                              ...s,
+                                              permission: newPermission as "READ" | "EDIT",
+                                            }
+                                          : s,
+                                      );
+                                      updatedNewShares.set(globalId, updatedDocShares);
+                                    });
+                                    setNewShares(updatedNewShares);
+                                  }
+                                }}
+                                size="small"
+                              >
+                                <MenuItem value="READ">Read</MenuItem>
+                                <MenuItem value="EDIT">Edit</MenuItem>
+                                <MenuItem value="UNSHARE" sx={{ color: "error.main" }}>
+                                  Remove
+                                </MenuItem>
+                              </Select>
+                            </FormControl>
+
+                            {share.recipientType === "GROUP" && (
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  const groups = shareOptions.filter((opt) => opt.optionType === "GROUP");
+                                  const group = groups.find((g) => g.id === share.recipientId);
+                                  const sharedFolderId = group ? getGroupFolderId(group, isSnippet) : null;
+                                  if (sharedFolderId) {
+                                    // Use the first globalId as a placeholder
+                                    setSelectedShareForFolderChange({
+                                      shareId: share.id,
+                                      groupId: share.recipientId,
+                                      globalId: globalIds[0],
+                                      sharedFolderId,
+                                    });
+                                    setFolderSelectionOpen(true);
+                                  }
+                                }}
+                              >
+                                Change Folder
+                              </Button>
+                            )}
+                          </Stack>
+                        ));
                       })()}
                     </Stack>
                   </Box>
@@ -1538,9 +1258,7 @@ export function ShareDialog({
             const { globalId } = selectedShareForFolderChange;
             const updatedNewShares = new Map(newShares);
             const docNewShares = updatedNewShares.get(globalId) || [];
-            const isNewShare = docNewShares.some(
-              (share) => share.id === shareId,
-            );
+            const isNewShare = docNewShares.some((share) => share.id === shareId);
 
             if (isNewShare) {
               // Handle new shares
@@ -1574,11 +1292,7 @@ export function ShareDialog({
       />
       <DialogActions>
         {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
-        <ValidatingSubmitButton
-          loading={saving}
-          onClick={() => void handleSave()}
-          validationResult={validationResult}
-        >
+        <ValidatingSubmitButton loading={saving} onClick={() => void handleSave()} validationResult={validationResult}>
           {hasChanges ? "Save" : "Done"}
         </ValidatingSubmitButton>
       </DialogActions>

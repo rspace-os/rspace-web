@@ -1,13 +1,14 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
 import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
 import {
   CallablePdfPreviewStory,
-  CallablePdfPreviewWithLargePdf,
-  CallablePdfPreviewWithError,
   CallablePdfPreviewWithCorruptedFile,
-
+  CallablePdfPreviewWithError,
+  CallablePdfPreviewWithLargePdf,
 } from "./CallablePdfPreview.story";
+
 const feature = test.extend<{
   Given: {
     "the pdf preview component is mounted": () => Promise<void>;
@@ -70,14 +71,10 @@ const feature = test.extend<{
         await page.getByRole("button", { name: /open pdf preview/i }).click();
       },
       "the user clicks the open multi-page pdf button": async () => {
-        await page
-          .getByRole("button", { name: /open multi-page pdf/i })
-          .click();
+        await page.getByRole("button", { name: /open multi-page pdf/i }).click();
       },
       "the user clicks the open single page pdf button": async () => {
-        await page
-          .getByRole("button", { name: /open single page pdf/i })
-          .click();
+        await page.getByRole("button", { name: /open single page pdf/i }).click();
       },
       "the user clicks the open large pdf button": async () => {
         await page.getByRole("button", { name: /open large pdf/i }).click();
@@ -147,15 +144,9 @@ const feature = test.extend<{
         });
       },
       "the zoom controls should be visible": async () => {
-        await expect(
-          page.getByRole("button", { name: /zoom in/i }),
-        ).toBeVisible();
-        await expect(
-          page.getByRole("button", { name: /zoom out/i }),
-        ).toBeVisible();
-        await expect(
-          page.getByRole("button", { name: /reset zoom/i }),
-        ).toBeVisible();
+        await expect(page.getByRole("button", { name: /zoom in/i })).toBeVisible();
+        await expect(page.getByRole("button", { name: /zoom out/i })).toBeVisible();
+        await expect(page.getByRole("button", { name: /reset zoom/i })).toBeVisible();
       },
       "the zoom level should increase": async () => {
         const page1 = page.locator(".react-pdf__Page").first();
@@ -183,19 +174,13 @@ const feature = test.extend<{
 
         await page.waitForTimeout(500);
         // After reset, the button should be disabled again
-        await expect(
-          page.getByRole("button", { name: /reset zoom/i }),
-        ).toBeDisabled();
+        await expect(page.getByRole("button", { name: /reset zoom/i })).toBeDisabled();
       },
       "the reset zoom button should be disabled": async () => {
-        await expect(
-          page.getByRole("button", { name: /reset zoom/i }),
-        ).toBeDisabled();
+        await expect(page.getByRole("button", { name: /reset zoom/i })).toBeDisabled();
       },
       "the reset zoom button should be enabled": async () => {
-        await expect(
-          page.getByRole("button", { name: /reset zoom/i }),
-        ).toBeEnabled();
+        await expect(page.getByRole("button", { name: /reset zoom/i })).toBeEnabled();
       },
       "an error message should be displayed": async () => {
         await expect(page.getByText(/failed to load pdf file/i)).toBeVisible({
@@ -206,14 +191,12 @@ const feature = test.extend<{
         // Wait for document to load first
         await expect(page.locator(".react-pdf__Document")).toBeVisible({
           timeout: 15000,
-
         });
         // Wait for multiple pages to render
         await page.waitForFunction(
           () => document.querySelectorAll(".react-pdf__Page").length > 1,
           {},
           { timeout: 20000 },
-
         );
         const pages = page.locator(".react-pdf__Page");
         const pageCount = await pages.count();
@@ -226,8 +209,7 @@ const feature = test.extend<{
         expect(
           accessibilityScanResults.violations.filter((v) => {
             return (
-              v.description !==
-                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
               v.id !== "region" &&
@@ -239,7 +221,6 @@ const feature = test.extend<{
       },
     });
   },
-
 });
 feature.beforeEach(async ({ router }) => {
   await router.route("/session/ajax/analyticsProperties", (route) => {
@@ -250,7 +231,6 @@ feature.beforeEach(async ({ router }) => {
         analyticsEnabled: false,
       }),
     });
-
   });
   await router.route("/userform/ajax/preference*", (route) => {
     return route.fulfill({
@@ -258,7 +238,6 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify({}),
     });
-
   });
   await router.route("/deploymentproperties/ajax/property*", (route) => {
     return route.fulfill({
@@ -266,7 +245,6 @@ feature.beforeEach(async ({ router }) => {
       contentType: "application/json",
       body: JSON.stringify(false),
     });
-
   });
   // Create a minimal valid PDF for testing
   const createPdfBuffer = (content: string) => {
@@ -307,7 +285,6 @@ startxref
 385
 %%EOF`;
     return Buffer.from(pdfContent);
-
   };
   // Mock successful PDF requests
   await router.route("/test-documents/sample.pdf", (route) => {
@@ -320,7 +297,6 @@ startxref
       },
       body: createPdfBuffer("Sample PDF Content"),
     });
-
   });
   await router.route("/test-documents/single-page.pdf", (route) => {
     return route.fulfill({
@@ -332,7 +308,6 @@ startxref
       },
       body: createPdfBuffer("Single Page"),
     });
-
   });
   // Create a multi-page PDF
   await router.route("/test-documents/multi-page.pdf", (route) => {
@@ -415,7 +390,6 @@ startxref
       },
       body: Buffer.from(multiPagePdf),
     });
-
   });
   await router.route("/test-documents/large-document.pdf", (route) => {
     return route.fulfill({
@@ -427,7 +401,6 @@ startxref
       },
       body: createPdfBuffer("Large PDF Document"),
     });
-
   });
   // Mock failed PDF requests
   await router.route("/test-documents/invalid.pdf", (route) => {
@@ -436,7 +409,6 @@ startxref
       contentType: "text/plain",
       body: "Not Found",
     });
-
   });
   // Mock corrupted PDF
   await router.route("/test-documents/corrupted.pdf", (route) => {
@@ -450,70 +422,45 @@ startxref
       body: Buffer.from("This is not a valid PDF file"),
     });
   });
-
 });
 test.describe("CallablePdfPreview", () => {
   test.describe("Component mounting and rendering", () => {
-    feature(
-      "Should render the component without errors",
-      async ({ Given, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await Then["the component should render without errors"]();
-      },
-
-    );
-    feature(
-      "Should render all interactive buttons",
-      async ({ Given, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await Then["the buttons should be visible and functional"]();
-      },
-    );
-
+    feature("Should render the component without errors", async ({ Given, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await Then["the component should render without errors"]();
+    });
+    feature("Should render all interactive buttons", async ({ Given, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await Then["the buttons should be visible and functional"]();
+    });
   });
   test.describe("PDF dialog functionality", () => {
-    feature(
-      "Should open PDF dialog when preview is triggered",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-      },
-
-    );
-    feature(
-      "Should load and display PDF document",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf document should be loaded"]();
-        await Then["the pdf pages should be visible"]();
-      },
-
-    );
-    feature(
-      "Should close dialog with close button",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await When["the user clicks the close button"]();
-        await Then["the dialog should be closable"]();
-      },
-
-    );
-    feature(
-      "Should close dialog with escape key",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await When["the user presses escape"]();
-        await Then["the dialog should be closable"]();
-      },
-    );
-
+    feature("Should open PDF dialog when preview is triggered", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+    });
+    feature("Should load and display PDF document", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf document should be loaded"]();
+      await Then["the pdf pages should be visible"]();
+    });
+    feature("Should close dialog with close button", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await When["the user clicks the close button"]();
+      await Then["the dialog should be closable"]();
+    });
+    feature("Should close dialog with escape key", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await When["the user presses escape"]();
+      await Then["the dialog should be closable"]();
+    });
   });
   test.describe("Zoom functionality", () => {
     feature("Should display zoom controls", async ({ Given, When, Then }) => {
@@ -521,118 +468,77 @@ test.describe("CallablePdfPreview", () => {
       await When["the user clicks the open pdf button"]();
       await Then["the pdf dialog should open"]();
       await Then["the zoom controls should be visible"]();
-
     });
-    feature(
-      "Should have reset zoom button disabled initially",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the reset zoom button should be disabled"]();
-      },
-
-    );
-    feature(
-      "Should zoom in when zoom in button is clicked",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf pages should be visible"]();
-        await When["the user clicks the zoom in button"]();
-        await Then["the zoom level should increase"]();
-      },
-
-    );
-    feature(
-      "Should enable reset zoom button after zooming",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf pages should be visible"]();
-        await When["the user clicks the zoom in button"]();
-        await Then["the reset zoom button should be enabled"]();
-      },
-
-    );
-    feature(
-      "Should zoom out when zoom out button is clicked",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf pages should be visible"]();
-        await When["the user clicks the zoom in button twice"]();
-        await When["the user clicks the zoom out button"]();
-        await Then["the zoom level should decrease"]();
-      },
-
-    );
-    feature(
-      "Should be able to click reset zoom button when enabled",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf pages should be visible"]();
-        await When["the user clicks the zoom in button"]();
-        await Then["the reset zoom button should be enabled"]();
-      },
-    );
-
+    feature("Should have reset zoom button disabled initially", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the reset zoom button should be disabled"]();
+    });
+    feature("Should zoom in when zoom in button is clicked", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf pages should be visible"]();
+      await When["the user clicks the zoom in button"]();
+      await Then["the zoom level should increase"]();
+    });
+    feature("Should enable reset zoom button after zooming", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf pages should be visible"]();
+      await When["the user clicks the zoom in button"]();
+      await Then["the reset zoom button should be enabled"]();
+    });
+    feature("Should zoom out when zoom out button is clicked", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf pages should be visible"]();
+      await When["the user clicks the zoom in button twice"]();
+      await When["the user clicks the zoom out button"]();
+      await Then["the zoom level should decrease"]();
+    });
+    feature("Should be able to click reset zoom button when enabled", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf pages should be visible"]();
+      await When["the user clicks the zoom in button"]();
+      await Then["the reset zoom button should be enabled"]();
+    });
   });
   test.describe("Multi-page PDF support", () => {
-    feature(
-      "Should open dialog for multi-page PDF",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open multi-page pdf button"]();
-        await Then["the pdf dialog should open"]();
-      },
-
-    );
-    feature(
-      "Should load multi-page PDF document",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open multi-page pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf document should be loaded"]();
-      },
-
-    );
-    feature(
-      "Should render multiple pages for multi-page PDF",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open multi-page pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf document should be loaded"]();
-        await Then["multiple pages should be rendered"]();
-      },
-
-    );
-    feature(
-      "Should open dialog for single page PDF",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open single page pdf button"]();
-        await Then["the pdf dialog should open"]();
-      },
-
-    );
-    feature(
-      "Should load single page PDF document",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open single page pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["the pdf document should be loaded"]();
-      },
-
-    );
+    feature("Should open dialog for multi-page PDF", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open multi-page pdf button"]();
+      await Then["the pdf dialog should open"]();
+    });
+    feature("Should load multi-page PDF document", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open multi-page pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf document should be loaded"]();
+    });
+    feature("Should render multiple pages for multi-page PDF", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open multi-page pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf document should be loaded"]();
+      await Then["multiple pages should be rendered"]();
+    });
+    feature("Should open dialog for single page PDF", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open single page pdf button"]();
+      await Then["the pdf dialog should open"]();
+    });
+    feature("Should load single page PDF document", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open single page pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["the pdf document should be loaded"]();
+    });
     feature("Should display single page PDF", async ({ Given, When, Then }) => {
       await Given["the pdf preview component is mounted"]();
       await When["the user clicks the open single page pdf button"]();
@@ -640,7 +546,6 @@ test.describe("CallablePdfPreview", () => {
       await Then["the pdf document should be loaded"]();
       await Then["the pdf pages should be visible"]();
     });
-
   });
   test.describe("Large PDF handling", () => {
     feature("Should handle large PDF files", async ({ Given, When, Then }) => {
@@ -650,62 +555,41 @@ test.describe("CallablePdfPreview", () => {
       await Then["the pdf document should be loaded"]();
       await Then["the pdf pages should be visible"]();
     });
-
   });
   test.describe("Error handling", () => {
-    feature(
-      "Should open dialog for invalid PDF URLs",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview with error is mounted"]();
-        await When["the user clicks the open invalid pdf button"]();
-        await Then["the pdf dialog should open"]();
-      },
-
-    );
-    feature(
-      "Should display error message for invalid PDF URLs",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview with error is mounted"]();
-        await When["the user clicks the open invalid pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["an error message should be displayed"]();
-      },
-
-    );
-    feature(
-      "Should open dialog for corrupted PDF files",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview with corrupted file is mounted"]();
-        await When["the user clicks the open corrupted pdf button"]();
-        await Then["the pdf dialog should open"]();
-      },
-
-    );
-    feature(
-      "Should display error message for corrupted PDF files",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview with corrupted file is mounted"]();
-        await When["the user clicks the open corrupted pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["an error message should be displayed"]();
-      },
-    );
-
+    feature("Should open dialog for invalid PDF URLs", async ({ Given, When, Then }) => {
+      await Given["the pdf preview with error is mounted"]();
+      await When["the user clicks the open invalid pdf button"]();
+      await Then["the pdf dialog should open"]();
+    });
+    feature("Should display error message for invalid PDF URLs", async ({ Given, When, Then }) => {
+      await Given["the pdf preview with error is mounted"]();
+      await When["the user clicks the open invalid pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["an error message should be displayed"]();
+    });
+    feature("Should open dialog for corrupted PDF files", async ({ Given, When, Then }) => {
+      await Given["the pdf preview with corrupted file is mounted"]();
+      await When["the user clicks the open corrupted pdf button"]();
+      await Then["the pdf dialog should open"]();
+    });
+    feature("Should display error message for corrupted PDF files", async ({ Given, When, Then }) => {
+      await Given["the pdf preview with corrupted file is mounted"]();
+      await When["the user clicks the open corrupted pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["an error message should be displayed"]();
+    });
   });
   test.describe("Accessibility", () => {
     feature("Should have no axe violations", async ({ Given, Then }) => {
       await Given["the pdf preview component is mounted"]();
       await Then["there shouldn't be any axe violations"]();
-
     });
-    feature(
-      "Should have no axe violations in open dialog",
-      async ({ Given, When, Then }) => {
-        await Given["the pdf preview component is mounted"]();
-        await When["the user clicks the open pdf button"]();
-        await Then["the pdf dialog should open"]();
-        await Then["there shouldn't be any axe violations"]();
-      },
-    );
+    feature("Should have no axe violations in open dialog", async ({ Given, When, Then }) => {
+      await Given["the pdf preview component is mounted"]();
+      await When["the user clicks the open pdf button"]();
+      await Then["the pdf dialog should open"]();
+      await Then["there shouldn't be any axe violations"]();
+    });
   });
 });

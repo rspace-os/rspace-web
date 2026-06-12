@@ -1,31 +1,26 @@
-import React, {
-  type ComponentType,
-  type ReactNode,
-  useState,
-  Suspense,
-  lazy,
-} from "react";
-import { observer } from "mobx-react-lite";
-import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
-import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import Alert from "@mui/material/Alert";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import FormControl from "@mui/material/FormControl";
-import PolygonDialog from "./PolygonDialog";
-import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
 import HexagonIcon from "@mui/icons-material/Hexagon";
-import Card from "@mui/material/Card";
-import CardMedia from "@mui/material/CardMedia";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
-import Skeleton from "@mui/material/Skeleton";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import AmberNumberField from "./AmberNumberField";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardMedia from "@mui/material/CardMedia";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Skeleton from "@mui/material/Skeleton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+import React, { type ComponentType, lazy, type ReactNode, Suspense, useState } from "react";
+import InputWrapper from "../../../../components/Inputs/InputWrapper";
+// biome-ignore lint/style/useImportType: initial biome migration
+import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
+import AmberNumberField from "./AmberNumberField";
+import PolygonDialog from "./PolygonDialog";
 
 /**
  * The MapViewer component is lazy loaded in so that the code isn't downloaded by the user's browser
@@ -35,11 +30,7 @@ import { runInAction } from "mobx";
  */
 const LazyMapViewer = lazy(() => import("./MapViewer"));
 
-function CustomFieldset({
-  children,
-}: {
-  children: React.ReactNode;
-}): ReactNode {
+function CustomFieldset({ children }: { children: React.ReactNode }): ReactNode {
   return (
     <Box
       component="fieldset"
@@ -60,11 +51,9 @@ function CustomFieldset({
 }
 
 export const COORD_RANGE_X = { min: -180, max: 180 };
-export const isOutOfRangeX = (v: number): boolean =>
-  v < COORD_RANGE_X.min || v > COORD_RANGE_X.max;
+export const isOutOfRangeX = (v: number): boolean => v < COORD_RANGE_X.min || v > COORD_RANGE_X.max;
 export const COORD_RANGE_Y = { min: -90, max: 90 };
-export const isOutOfRangeY = (v: number): boolean =>
-  v < COORD_RANGE_Y.min || v > COORD_RANGE_Y.max;
+export const isOutOfRangeY = (v: number): boolean => v < COORD_RANGE_Y.min || v > COORD_RANGE_Y.max;
 
 export type PolygonMessages = {
   empty: string;
@@ -88,8 +77,7 @@ export const PolygonStateAlert = ({
   textMessages: PolygonMessages;
 }): ReactNode => {
   if (polygonEmpty) return <Alert severity="info">{textMessages.empty}</Alert>;
-  if (polygonComplete)
-    return <Alert severity="info">{textMessages.complete}</Alert>;
+  if (polygonComplete) return <Alert severity="info">{textMessages.complete}</Alert>;
   return <Alert severity="warning">{textMessages.incomplete}</Alert>;
 };
 
@@ -134,13 +122,11 @@ const GeoLocationField = ({
             doUpdateIdentifiers();
           }}
           error={
-            (geoLocation.pointIncomplete &&
-              geoLocationPoint.pointLatitude === "") ||
+            (geoLocation.pointIncomplete && geoLocationPoint.pointLatitude === "") ||
             isOutOfRangeY(Number(geoLocationPoint.pointLatitude))
           }
           helperText={
-            geoLocation.pointIncomplete &&
-            geoLocationPoint.pointLatitude === "" ? (
+            geoLocation.pointIncomplete && geoLocationPoint.pointLatitude === "" ? (
               "Add value to enable publishing."
             ) : (
               <>Between &minus;90.0˚ and 90.0˚.</>
@@ -177,13 +163,11 @@ const GeoLocationField = ({
             doUpdateIdentifiers();
           }}
           error={
-            (geoLocation.pointIncomplete &&
-              geoLocationPoint.pointLongitude === "") ||
+            (geoLocation.pointIncomplete && geoLocationPoint.pointLongitude === "") ||
             isOutOfRangeX(Number(geoLocationPoint.pointLongitude))
           }
           helperText={
-            geoLocation.pointIncomplete &&
-            geoLocationPoint.pointLongitude === "" ? (
+            geoLocation.pointIncomplete && geoLocationPoint.pointLongitude === "" ? (
               "Add value to enable publishing."
             ) : (
               <>Between &minus;180.0˚ and 180.0˚.</>
@@ -272,13 +256,11 @@ const GeoLocationField = ({
                     doUpdateIdentifiers();
                   }}
                   error={
-                    (geoLocation.boxIncomplete &&
-                      geoLocationBox.northBoundLatitude === "") ||
+                    (geoLocation.boxIncomplete && geoLocationBox.northBoundLatitude === "") ||
                     isOutOfRangeY(Number(geoLocationBox.northBoundLatitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete &&
-                    geoLocationBox.northBoundLatitude === "" ? (
+                    geoLocation.boxIncomplete && geoLocationBox.northBoundLatitude === "" ? (
                       "Add value to enable publishing."
                     ) : (
                       <>Between &minus;90.0˚ and 90.0˚.</>
@@ -304,13 +286,11 @@ const GeoLocationField = ({
                     doUpdateIdentifiers();
                   }}
                   error={
-                    (geoLocation.boxIncomplete &&
-                      geoLocationBox.westBoundLongitude === "") ||
+                    (geoLocation.boxIncomplete && geoLocationBox.westBoundLongitude === "") ||
                     isOutOfRangeX(Number(geoLocationBox.westBoundLongitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete &&
-                    geoLocationBox.westBoundLongitude === "" ? (
+                    geoLocation.boxIncomplete && geoLocationBox.westBoundLongitude === "" ? (
                       "Add value to enable publishing."
                     ) : (
                       <>Between &minus;180.0˚ and 180.0˚.</>
@@ -336,13 +316,11 @@ const GeoLocationField = ({
                     doUpdateIdentifiers();
                   }}
                   error={
-                    (geoLocation.boxIncomplete &&
-                      geoLocationBox.southBoundLatitude === "") ||
+                    (geoLocation.boxIncomplete && geoLocationBox.southBoundLatitude === "") ||
                     isOutOfRangeY(Number(geoLocationBox.southBoundLatitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete &&
-                    geoLocationBox.southBoundLatitude === "" ? (
+                    geoLocation.boxIncomplete && geoLocationBox.southBoundLatitude === "" ? (
                       "Add value to enable publishing."
                     ) : (
                       <>Between &minus;90.0˚ and 90.0˚.</>
@@ -368,13 +346,11 @@ const GeoLocationField = ({
                     doUpdateIdentifiers();
                   }}
                   error={
-                    (geoLocation.boxIncomplete &&
-                      geoLocationBox.eastBoundLongitude === "") ||
+                    (geoLocation.boxIncomplete && geoLocationBox.eastBoundLongitude === "") ||
                     isOutOfRangeX(Number(geoLocationBox.eastBoundLongitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete &&
-                    geoLocationBox.eastBoundLongitude === "" ? (
+                    geoLocation.boxIncomplete && geoLocationBox.eastBoundLongitude === "" ? (
                       "Add value to enable publishing."
                     ) : (
                       <>Between &minus;180.0˚ and 180.0˚.</>
@@ -390,21 +366,14 @@ const GeoLocationField = ({
   });
 
   const PolygonBlock = observer(
-    ({
-      setOpenPolygonDialog,
-    }: {
-      setOpenPolygonDialog: (open: boolean) => void;
-    }): ReactNode => {
+    ({ setOpenPolygonDialog }: { setOpenPolygonDialog: (open: boolean) => void }): ReactNode => {
       const { polygonEmpty } = geoLocation;
       return (
         <Grid onClick={() => setOpenPolygonDialog(true)}>
           <CustomFieldset>
             <legend>Polygon</legend>
             <Grid container direction="row" sx={{ alignItems: "center" }}>
-              <IconButton
-                title={"Open Polygon Dialog"}
-                onClick={() => setOpenPolygonDialog(true)}
-              >
+              <IconButton title={"Open Polygon Dialog"} onClick={() => setOpenPolygonDialog(true)}>
                 <HexagonIcon color="primary" aria-label="hexagon icon" />
               </IconButton>
               <Typography component="span" variant="body2">
@@ -423,18 +392,13 @@ const GeoLocationField = ({
   );
 
   const GeoLocationEditor = observer(
-    ({
-      setOpenPolygonDialog,
-    }: {
-      setOpenPolygonDialog: (open: boolean) => void;
-    }): ReactNode => {
+    ({ setOpenPolygonDialog }: { setOpenPolygonDialog: (open: boolean) => void }): ReactNode => {
       return (
         <Card variant="outlined">
           <CardContent>
             <Alert severity="info">
-              At least one of four elements must be completed (Point, Place,
-              Box, Polygon). Point, Box and Polygon cannot be completed
-              partially.
+              At least one of four elements must be completed (Point, Place, Box, Polygon). Point, Box and Polygon
+              cannot be completed partially.
             </Alert>
             <FormControl sx={{ width: "100%" }}>
               <Stack spacing={1}>
@@ -451,30 +415,12 @@ const GeoLocationField = ({
   );
 
   const GeoLocationPreview = observer(
-    ({
-      setOpenPolygonDialog,
-    }: {
-      setOpenPolygonDialog: (open: boolean) => void;
-    }): ReactNode => {
-      const {
-        geoLocationPoint,
-        geoLocationPlace,
-        geoLocationBox,
-        polygonEmpty,
-      } = geoLocation;
+    ({ setOpenPolygonDialog }: { setOpenPolygonDialog: (open: boolean) => void }): ReactNode => {
+      const { geoLocationPoint, geoLocationPlace, geoLocationBox, polygonEmpty } = geoLocation;
       return (
         <Card variant="outlined">
           <CardMedia>
-            <Suspense
-              fallback={
-                <Skeleton
-                  variant="rectangular"
-                  width="100%"
-                  height={200}
-                  sx={{ mb: 1 }}
-                />
-              }
-            >
+            <Suspense fallback={<Skeleton variant="rectangular" width="100%" height={200} sx={{ mb: 1 }} />}>
               <LazyMapViewer
                 point={geoLocation.geoLocationPoint}
                 box={geoLocation.geoLocationBox}
@@ -502,14 +448,16 @@ const GeoLocationField = ({
                   <Grid size={6}>
                     <InputWrapper label="Latitude">
                       {geoLocationPoint.pointLatitude
-                        ? String(geoLocationPoint.pointLatitude) + "˚"
+                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                          String(geoLocationPoint.pointLatitude) + "˚"
                         : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="Longitude">
                       {geoLocationPoint.pointLongitude
-                        ? String(geoLocationPoint.pointLongitude) + "˚"
+                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                          String(geoLocationPoint.pointLongitude) + "˚"
                         : "-"}
                     </InputWrapper>
                   </Grid>
@@ -532,11 +480,7 @@ const GeoLocationField = ({
                   {geoLocationPlace ? (
                     geoLocationPlace
                   ) : (
-                    <Typography
-                      variant="inherit"
-                      component="em"
-                      sx={{ color: "#949494" }}
-                    >
+                    <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
                       None
                     </Typography>
                   )}
@@ -559,28 +503,32 @@ const GeoLocationField = ({
                   <Grid size={6}>
                     <InputWrapper label="North Latitude">
                       {geoLocationBox.northBoundLatitude
-                        ? String(geoLocationBox.northBoundLatitude) + "˚"
+                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                          String(geoLocationBox.northBoundLatitude) + "˚"
                         : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="West Longitude">
                       {geoLocationBox.westBoundLongitude
-                        ? String(geoLocationBox.westBoundLongitude) + "˚"
+                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                          String(geoLocationBox.westBoundLongitude) + "˚"
                         : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="South Latitude">
                       {geoLocationBox.southBoundLatitude
-                        ? String(geoLocationBox.southBoundLatitude) + "˚"
+                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                          String(geoLocationBox.southBoundLatitude) + "˚"
                         : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
                     <InputWrapper label="East Longitude">
                       {geoLocationBox.eastBoundLongitude
-                        ? String(geoLocationBox.eastBoundLongitude) + "˚"
+                        ? // biome-ignore lint/style/useTemplate: initial biome migration
+                          String(geoLocationBox.eastBoundLongitude) + "˚"
                         : "-"}
                     </InputWrapper>
                   </Grid>
@@ -590,18 +538,12 @@ const GeoLocationField = ({
                 <legend>Polygon</legend>
                 <Stack direction="row">
                   {!polygonEmpty && (
-                    <Button
-                      onClick={() => setOpenPolygonDialog(true)}
-                      color="callToAction"
-                      variant="outlined"
-                    >
+                    <Button onClick={() => setOpenPolygonDialog(true)} color="callToAction" variant="outlined">
                       View Polygon
                     </Button>
                   )}
                   <Typography component="span" variant="body2" sx={{ m: 1 }}>
-                    {polygonEmpty
-                      ? "To create a Polygon, press Edit first."
-                      : "To modify it, press Edit first."}
+                    {polygonEmpty ? "To create a Polygon, press Edit first." : "To modify it, press Edit first."}
                   </Typography>
                 </Stack>
                 <PolygonStateAlert
@@ -638,6 +580,4 @@ const GeoLocationField = ({
   );
 };
 
-export default observer(
-  GeoLocationField,
-) as ComponentType<GeoLocationFieldArgs>;
+export default observer(GeoLocationField) as ComponentType<GeoLocationFieldArgs>;

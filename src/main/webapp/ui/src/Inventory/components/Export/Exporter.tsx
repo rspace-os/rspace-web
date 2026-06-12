@@ -1,14 +1,16 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
-import Box from "@mui/material/Box";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type ExportOptions } from "../../../stores/definitions/Search";
-import Alert from "@mui/material/Alert";
 import { ExportOptionsWrapper } from "./ExportDialog";
 
 type ExporterArgs = {
@@ -72,6 +74,7 @@ function Exporter({
       </CardContent>
       {showActions && (
         <CardActions>
+          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
           <>
             <Button
               variant="contained"

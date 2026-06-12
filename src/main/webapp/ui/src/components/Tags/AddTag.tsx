@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import Chip from "@mui/material/Chip";
 import AddIcon from "@mui/icons-material/Add";
-import TagsCombobox from "./TagsCombobox";
-import RsSet from "../../util/set";
+import Chip from "@mui/material/Chip";
+import type React from "react";
+import { useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Optional } from "../../util/optional";
+import RsSet from "../../util/set";
+import TagsCombobox from "./TagsCombobox";
 
 type AddTagArgs<
   Toggle extends
@@ -24,7 +26,7 @@ type AddTagArgs<
           uri: Optional<string>;
           version: Optional<string>;
         };
-      }
+      },
 > = {
   enforceOntologies?: Toggle["enforce"];
   onSelection: (tag: Toggle["tag"]) => void;
@@ -56,13 +58,8 @@ export default function AddTag<
           uri: Optional<string>;
           version: Optional<string>;
         };
-      }
->({
-  onSelection,
-  value,
-  enforceOntologies = false,
-  disabled = false,
-}: AddTagArgs<Toggle>): React.ReactNode {
+      },
+>({ onSelection, value, enforceOntologies = false, disabled = false }: AddTagArgs<Toggle>): React.ReactNode {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   return (
     <>

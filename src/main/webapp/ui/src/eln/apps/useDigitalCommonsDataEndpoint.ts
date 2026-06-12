@@ -20,7 +20,7 @@ export function useDigitalCommonsDataEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from Digital Commons Data.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useDigitalCommonsDataEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from Digital Commons Data.",
-        })
+        }),
       );
     }
   };

@@ -1,0 +1,451 @@
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
+import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
+import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Alert, AlertTitle } from "@mui/material";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Tooltip from "@mui/material/Tooltip";
+import { produce } from "immer";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import {
+  arraysEqual,
+  humanize,
+  isShiftwithsomeKey,
+  isShortcutForbidden,
+  isShortcutSingle,
+  rev_humanize,
+} from "../../util/shortcuts";
+import ActionsTab from "./ActionsTab";
+import configJson from "./config.json";
+import SymbolsTab from "./SymbolsTab";
+
+// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+const config: any = configJson;
+
+const used = config.used.split(" ");
+const forbidden = config.forbidden.split(" ");
+
+type ShortcutMap = Record<string, string>;
+
+type ShortcutsState = {
+  instructions: boolean;
+  tab: number;
+  actionShortcuts: ShortcutMap;
+  symbolShortcuts: ShortcutMap;
+  selectedKey: string | null;
+  hasError: boolean;
+  errorMessage: string;
+};
+
+// biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+class Shortcuts extends React.Component<any, ShortcutsState> {
+  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      instructions: false,
+      tab: 0,
+      actionShortcuts: {},
+      symbolShortcuts: {},
+      selectedKey: null,
+      hasError: false,
+      errorMessage: "",
+    };
+  }
+
+  componentDidMount = () => {
+    this.applyCurrentConfigActions();
+    this.applyCurrentConfigSymbols();
+
+    // handle reset
+    parent.document.addEventListener("shortcuts-reset", this.applyCurrentConfig);
+
+    // handle reset to default
+    parent.document.addEventListener("shortcuts-resetDefault", this.applyDefaultConfig);
+
+    // handle submit
+    parent.document.addEventListener("shortcuts-submit", this.saveSettings);
+  };
+
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
+  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  handleChange = (event: any, newValue: number) => {
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        tab: newValue,
+      };
+    });
+  };
+
+  applyCurrentConfig = () => {
+    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+    if (this.state.tab == 0) {
+      this.applyCurrentConfigActions();
+    } else {
+      this.applyCurrentConfigSymbols();
+    }
+  };
+
+  applyCurrentConfigActions = () => {
+    let saved_config_actions = JSON.parse(localStorage.getItem("custom_shortcuts_actions") as string);
+
+    // backward compatibility
+    if (!saved_config_actions) {
+      saved_config_actions = JSON.parse(localStorage.getItem("custom_shortcuts") as string);
+    }
+
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        actionShortcuts:
+          saved_config_actions && Object.keys(saved_config_actions).length
+            ? { ...saved_config_actions }
+            : { ...config.default_actions },
+        hasError: false,
+      };
+    });
+  };
+
+  applyCurrentConfigSymbols = () => {
+    const saved_config_symbols = JSON.parse(localStorage.getItem("custom_shortcuts_symbols") as string);
+
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        symbolShortcuts:
+          saved_config_symbols && Object.keys(saved_config_symbols).length
+            ? { ...saved_config_symbols }
+            : { ...config.default_symbols },
+        hasError: false,
+      };
+    });
+  };
+
+  applyDefaultConfig = () => {
+    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+    if (this.state.tab == 0) {
+      this.setState((oldState) => {
+        return {
+          ...oldState,
+          actionShortcuts: { ...config.default_actions },
+          hasError: false,
+        };
+      });
+    } else {
+      this.setState((oldState) => {
+        return {
+          ...oldState,
+          symbolShortcuts: { ...config.default_symbols },
+          hasError: false,
+        };
+      });
+    }
+  };
+
+  saveSettings = () => {
+    let new_config: Record<string, unknown> = {},
+      shortcut = "";
+
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    Object.keys(this.state.actionShortcuts).map((k) => {
+      new_config[k] = rev_humanize(this.state.actionShortcuts[k]);
+    });
+    localStorage.setItem("custom_shortcuts_actions", JSON.stringify(new_config));
+
+    new_config = {};
+
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    Object.keys(this.state.symbolShortcuts).map((k) => {
+      shortcut = rev_humanize(this.state.symbolShortcuts[k]);
+      // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+      if (shortcut != "") {
+        //don't save empty shortcut
+        new_config[k] = shortcut;
+      }
+    });
+    localStorage.setItem("custom_shortcuts_symbols", JSON.stringify(new_config));
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  detectShortcut = (key: string, e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        selectedKey: key,
+      };
+    });
+
+    const combination =
+      (e.ctrlKey ? "Ctrl " : "") +
+      (e.shiftKey ? "Shift " : "") +
+      (e.altKey ? "Alt " : "") +
+      (e.metaKey ? "Meta " : "") +
+      String.fromCharCode(e.which);
+
+    // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+    if (combination.split(" ").length >= 2 && e.which != 9) {
+      // escape tab
+      this.setShortcut(key, combination);
+    }
+  };
+
+  setShortcut = (key: string, combination: string) => {
+    const isReserved = this.isShortcutReserved(combination);
+    const isForbidden = isShortcutForbidden(combination, forbidden);
+    const isSingle = isShortcutSingle(combination);
+    const isTwowithShift = isShiftwithsomeKey(combination);
+
+    let errorMessage = "";
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        hasError: true,
+      };
+    });
+
+    if (isReserved) {
+      errorMessage = `${humanize(combination)} is being used.`;
+    } else if (isForbidden) {
+      errorMessage = `${humanize(combination)} is not allowed. Try another one.`;
+    } else if (isSingle) {
+      errorMessage = `${humanize(combination.split(" ")[0])} alone is not allowed. Try another one.`;
+    } else if (isTwowithShift) {
+      errorMessage = `Shift+Somekey is not allowed. Try another one.`;
+    } else {
+      combination = humanize(combination.split(" ").join("+"));
+
+      this.setState((oldState) => {
+        return {
+          ...oldState,
+          hasError: false,
+          symbolShortcuts:
+            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+            this.state.tab == 1
+              ? produce(oldState.symbolShortcuts, (draft) => {
+                  draft[key] = combination;
+                })
+              : oldState.symbolShortcuts,
+          actionShortcuts:
+            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+            this.state.tab == 0
+              ? produce(oldState.actionShortcuts, (draft) => {
+                  draft[key] = combination;
+                })
+              : oldState.actionShortcuts,
+        };
+      });
+    }
+
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        errorMessage,
+      };
+    });
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  isShortcutReserved = (combination: any) => {
+    combination = humanize(combination).split(" ");
+    let isReserved = false;
+
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+    used.forEach((command: any) => {
+      if (arraysEqual(command.split("+"), combination)) {
+        isReserved = true;
+        return false;
+      }
+    });
+    if (isReserved) return true;
+
+    const all_shortcuts = {
+      ...this.state.actionShortcuts,
+      ...this.state.symbolShortcuts,
+    };
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+    Object.keys(all_shortcuts).map((key) => {
+      if (arraysEqual(humanize(all_shortcuts[key]).split("+"), combination)) {
+        isReserved = true;
+      }
+    });
+    return isReserved;
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: pragmatic jsx->tsx conversion
+  addShortcut = (symbol: any) => {
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        symbolShortcuts: {
+          ...oldState.symbolShortcuts,
+          [symbol[0]]: "",
+        },
+      };
+    });
+  };
+
+  resetInput = () => {
+    if (this.state.hasError) {
+      this.setState((oldState) => {
+        return {
+          ...oldState,
+          symbolShortcuts:
+            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+            this.state.tab == 1
+              ? produce(oldState.symbolShortcuts, (draft) => {
+                  draft[this.state.selectedKey as string] = "";
+                })
+              : oldState.symbolShortcuts,
+          actionShortcuts:
+            // biome-ignore lint/suspicious/noDoubleEquals: initial biome migration
+            this.state.tab == 0
+              ? produce(oldState.actionShortcuts, (draft) => {
+                  draft[this.state.selectedKey as string] = "";
+                })
+              : oldState.actionShortcuts,
+        };
+      });
+    }
+  };
+
+  toggleInstructions = () => {
+    this.setState((oldState) => {
+      return {
+        ...oldState,
+        instructions: !oldState.instructions,
+      };
+    });
+  };
+
+  render() {
+    return (
+      <Grid container className="shortcut-inputs">
+        <Box
+          sx={{
+            width: "100%",
+            margin: "10px 0px",
+            "& .MuiAlert-root, & .MuiAlert-message": {
+              width: "100%",
+            },
+            "& .MuiAlertTitle-root": {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
+          }}
+        >
+          <Alert
+            icon={<FontAwesomeIcon icon={faInfo} size="2x" style={{ height: "30px" }} />}
+            variant="outlined"
+            severity="info"
+          >
+            <AlertTitle>
+              Instructions
+              <Tooltip title="Toggle instructions" aria-label="Toggle instructions">
+                <IconButton onClick={() => this.toggleInstructions()}>
+                  {this.state.instructions && <FontAwesomeIcon icon={faChevronUp} />}
+                  {!this.state.instructions && <FontAwesomeIcon icon={faChevronDown} />}
+                </IconButton>
+              </Tooltip>
+            </AlertTitle>
+            {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
+            {this.state.tab == 0 && this.state.instructions && (
+              <ul>
+                <li>Click on the input field next to the command you would like to configure.</li>
+                <li>On your keyboard, press the key combination you would like to use for that command.</li>
+                <li>Click on 'Save'.</li>
+              </ul>
+            )}
+            {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
+            {this.state.tab == 1 && this.state.instructions && (
+              <ul>
+                <li>
+                  All configurable symbols are divided into sections. Click on a section to find the desired symbol. For
+                  example, Greek characters are in the 'Extended Latin' section.
+                </li>
+                <li>Click on the symbol to configure its shortcut.</li>
+                <li>Click on the input field next to the symbol you would like to configure.</li>
+                <li>On your keyboard, press the key combination you would like to use for that symbol.</li>
+                <li>Click on 'Save'.</li>
+              </ul>
+            )}
+            {this.state.instructions && (
+              <p>
+                Here's{" "}
+                <a
+                  target="_blank"
+                  href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
+                  rel="noreferrer"
+                >
+                  a list
+                </a>{" "}
+                of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key,
+                are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl +
+                Shift + number/letter, or Alt + Shift + number/letter.
+              </p>
+            )}
+          </Alert>
+        </Box>
+        <Grid size={12}>
+          <Tabs
+            value={this.state.tab}
+            onChange={this.handleChange}
+            indicatorColor="primary"
+            textColor="primary"
+            sx={{ marginBottom: "15px" }}
+            centered
+          >
+            <Tab label="Actions" />
+            <Tab label="Symbols" />
+          </Tabs>
+        </Grid>
+        {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
+        {this.state.tab == 0 && (
+          <ActionsTab
+            actionShortcuts={this.state.actionShortcuts}
+            config={config}
+            hasError={this.state.hasError}
+            selectedKey={this.state.selectedKey}
+            errorMessage={this.state.errorMessage}
+            detectShortcut={this.detectShortcut}
+            onKeyUp={this.resetInput}
+          />
+        )}
+        {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
+        {this.state.tab == 1 && (
+          <SymbolsTab
+            config={config}
+            symbolShortcuts={this.state.symbolShortcuts}
+            hasError={this.state.hasError}
+            selectedKey={this.state.selectedKey}
+            errorMessage={this.state.errorMessage}
+            detectShortcut={this.detectShortcut}
+            onNewShortcut={this.addShortcut}
+            onKeyUp={this.resetInput}
+          />
+        )}
+      </Grid>
+    );
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const domContainer = document.getElementById("tinymce-shortcuts");
+  const root = createRoot(domContainer as HTMLElement);
+  root.render(
+    <MuiCssLayerProvider>
+      <Shortcuts />
+    </MuiCssLayerProvider>,
+  );
+});

@@ -1,27 +1,26 @@
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { WorkbenchId } from "@/stores/definitions/container/types";
+import { getErrorMessage } from "@/util/error";
 import ApiService from "../../common/InvApiService";
+import { showToastWhilstPending } from "../../util/alerts";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type _LINK } from "../../util/types";
+import { mkAlert } from "../contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Container } from "../definitions/Container";
-import getRootStore from "../stores/RootStore";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
-  observable,
-  computed,
-  makeObservable,
-  action,
-  runInAction,
-} from "mobx";
-import {
+  type Email,
   type Person,
-  type Username,
+  type PersonAttrs,
   type PersonId,
   type PersonName,
-  type Email,
-  type PersonAttrs,
+  type Username,
 } from "../definitions/Person";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type ExportOptions } from "../definitions/Search";
-import { mkAlert } from "../contexts/Alert";
-import { showToastWhilstPending } from "../../util/alerts";
-import { getErrorMessage } from "@/util/error";
-import { WorkbenchId } from "@/stores/definitions/container/types";
+import getRootStore from "../stores/RootStore";
 
 export default class PersonModel implements Person {
   id: PersonId;
@@ -100,8 +99,7 @@ export default class PersonModel implements Person {
   }
 
   async getBench(): Promise<Container> {
-    if (!this.workbenchId)
-      throw new Error("This user doesn't have a Workbench ID");
+    if (!this.workbenchId) throw new Error("This user doesn't have a Workbench ID");
     const bench = await getRootStore().searchStore.getBench(this.workbenchId);
     runInAction(() => {
       this.bench = bench;
@@ -109,15 +107,11 @@ export default class PersonModel implements Person {
     return bench;
   }
 
-  async exportRecords(
-    exportOptions: ExportOptions,
-    username: Username,
-  ): Promise<void> {
+  async exportRecords(exportOptions: ExportOptions, username: Username): Promise<void> {
     this.setProcessingUserActions(true);
     const { uiStore, trackingStore } = getRootStore();
     try {
-      const { exportMode, includeContainerContent, resultFileType } =
-        exportOptions;
+      const { exportMode, includeContainerContent, resultFileType } = exportOptions;
       const params = new FormData();
       params.append(
         "exportSettings",
@@ -136,10 +130,7 @@ export default class PersonModel implements Person {
 
       const { data } = await showToastWhilstPending(
         "Exporting User Data...",
-        ApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
-          "export",
-          params,
-        ),
+        ApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -149,10 +140,7 @@ export default class PersonModel implements Person {
       link.setAttribute("rel", downloadLink.rel);
       link.setAttribute("download", fileName);
       link.click(); // trigger download
-      trackingStore.trackEvent(
-        "user:export:allTheirItems:Inventory",
-        exportOptions,
-      );
+      trackingStore.trackEvent("user:export:allTheirItems:Inventory", exportOptions);
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
@@ -181,10 +169,7 @@ type SortOptions = {
   placeCurrentFirst?: boolean;
 };
 
-export const sortPeople = (
-  people: Array<PersonModel>,
-  options: SortOptions = {},
-): Array<PersonModel> => {
+export const sortPeople = (people: Array<PersonModel>, options: SortOptions = {}): Array<PersonModel> => {
   const { placeCurrentFirst = false } = options;
 
   return people.sort((u1, u2) => {

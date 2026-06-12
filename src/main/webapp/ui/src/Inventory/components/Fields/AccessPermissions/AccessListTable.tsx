@@ -1,18 +1,17 @@
-import React, { useState } from "react";
-import Table from "@mui/material/Table";
-import TableCell from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import Grid from "@mui/material/Grid";
 import AddIcon from "@mui/icons-material/Add";
-import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import Checkbox from "@mui/material/Checkbox";
-import {
-  type SharedWithGroup,
-  type Group,
-} from "../../../../stores/definitions/Group";
+import Grid from "@mui/material/Grid";
 import Popover from "@mui/material/Popover";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import type React from "react";
+import { useState } from "react";
+import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Group, type SharedWithGroup } from "../../../../stores/definitions/Group";
 import GroupsField from "../../Inputs/GroupsField";
 
 type AccessListTableArgs = {
@@ -36,10 +35,7 @@ export default function AccessListTable({
         <TableRow>
           <TableCell></TableCell>
           <TableCell>
-            <Grid
-              container
-              sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap" }}
-            >
+            <Grid container sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap" }}>
               <Grid>Group Name</Grid>
               <Grid>
                 <IconButtonWithTooltip
@@ -79,9 +75,7 @@ export default function AccessListTable({
                     }}
                     label=""
                     getOptionDisabled={(group) => {
-                      return sharedWith.some(
-                        ({ group: { id } }) => group.id === id,
-                      );
+                      return sharedWith.some(({ group: { id } }) => group.id === id);
                     }}
                   />
                 </Popover>
@@ -94,12 +88,7 @@ export default function AccessListTable({
         {sharedWith.map(({ group, shared }) => (
           <TableRow key={group.id}>
             <TableCell padding="checkbox">
-              <Checkbox
-                onClick={() => onCheckboxClick(group)}
-                checked={shared}
-                color="default"
-                disabled={disabled}
-              />
+              <Checkbox onClick={() => onCheckboxClick(group)} checked={shared} color="default" disabled={disabled} />
             </TableCell>
             <TableCell>{group.name}</TableCell>
           </TableRow>

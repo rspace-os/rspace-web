@@ -1,5 +1,6 @@
-import { type Id, type GlobalId } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type _LINK } from "../../util/types";
+import type { GlobalId, Id } from "./BaseRecord";
 
 /**
  * A simple definition of a group of users (Lab group, Collaboration group,

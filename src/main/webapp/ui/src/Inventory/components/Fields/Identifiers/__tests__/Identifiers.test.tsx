@@ -1,15 +1,17 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
 import { render, screen } from "@testing-library/react";
-import { mockIGSNIdentifier } from "./mocking";
-import { IdentifiersList } from "../Identifiers";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
-import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
+import { IdentifiersList } from "../Identifiers";
+import { mockIGSNIdentifier } from "./mocking";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 
 import materialTheme from "../../../../../theme";
+
 const sample1: InventoryRecord = makeMockSample();
 sample1.identifiers = [mockIGSNIdentifier("sample")];
 const container1: InventoryRecord = makeMockContainer();
@@ -21,7 +23,7 @@ describe("Identifiers section", () => {
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={sample1} />
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(container).toHaveTextContent("Required Identifier Properties");
       expect(container).toHaveTextContent("Recommended Identifier Properties");
@@ -32,7 +34,7 @@ describe("Identifiers section", () => {
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={container1} />
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(container).toHaveTextContent("Material Sample");
     });
@@ -47,16 +49,11 @@ describe("Identifiers section", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={historicalSample} />
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(screen.getByRole("button", { name: /preview/i })).toBeDisabled();
-      expect(
-        screen.getByRole("button", { name: /republish|publish/i })
-      ).toBeDisabled();
-      expect(
-        screen.getByRole("button", { name: /delete|retract/i })
-      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
     });
   });
 });
-

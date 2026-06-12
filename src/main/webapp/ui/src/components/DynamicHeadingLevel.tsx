@@ -42,9 +42,7 @@ const DEFAULT_HEADING_CONTEXT: HeadingContextType = {
   level: 1,
 };
 
-const HContext: React.Context<HeadingContextType> = React.createContext(
-  DEFAULT_HEADING_CONTEXT
-);
+const HContext: React.Context<HeadingContextType> = React.createContext(DEFAULT_HEADING_CONTEXT);
 
 export function HeadingContext({
   children,
@@ -77,12 +75,11 @@ export function HeadingContext({
 
   if (typeof overridenLevel !== "undefined" && level > 1)
     throw new Error(
-      "Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations"
+      "Only root HeadingContexts can specify a level. Skipping heading levels and reseting to a lower level are both accessibility violations",
     );
 
   const l = overridenLevel ?? Math.min(6, level + 1);
-  if (l !== 1 && l !== 2 && l !== 3 && l !== 4 && l !== 5 && l !== 6)
-    throw new Error("impossible");
+  if (l !== 1 && l !== 2 && l !== 3 && l !== 4 && l !== 5 && l !== 6) throw new Error("impossible");
 
   return (
     <HContext.Provider
@@ -111,67 +108,37 @@ export function Heading({
 
   if (level === 1)
     return (
-      <Typography
-        variant={v}
-        component="h1"
-        id={id}
-        sx={sx}
-      >
+      <Typography variant={v} component="h1" id={id} sx={sx}>
         {children}
       </Typography>
     );
   if (level === 2)
     return (
-      <Typography
-        variant={v}
-        component="h2"
-        id={id}
-        sx={sx}
-      >
+      <Typography variant={v} component="h2" id={id} sx={sx}>
         {children}
       </Typography>
     );
   if (level === 3)
     return (
-      <Typography
-        variant={v}
-        component="h3"
-        id={id}
-        sx={sx}
-      >
+      <Typography variant={v} component="h3" id={id} sx={sx}>
         {children}
       </Typography>
     );
   if (level === 4)
     return (
-      <Typography
-        variant={v}
-        component="h4"
-        id={id}
-        sx={sx}
-      >
+      <Typography variant={v} component="h4" id={id} sx={sx}>
         {children}
       </Typography>
     );
   if (level === 5)
     return (
-      <Typography
-        variant={v}
-        component="h5"
-        id={id}
-        sx={sx}
-      >
+      <Typography variant={v} component="h5" id={id} sx={sx}>
         {children}
       </Typography>
     );
   if (level === 6)
     return (
-      <Typography
-        variant={v}
-        component="h6"
-        id={id}
-        sx={sx}
-      >
+      <Typography variant={v} component="h6" id={id} sx={sx}>
         {children}
       </Typography>
     );

@@ -1,13 +1,13 @@
 import AuthStore from "./AuthStore";
+import ImageStore from "./ImageStore";
+import ImportStore from "./ImportStore";
+import MaterialsStore from "./MaterialsStore";
+import MoveStore from "./MoveStore";
+import PeopleStore from "./PeopleStore";
+import SearchStore from "./SearchStore";
+import TrackingStore from "./TrackingStore";
 import UiStore from "./UiStore";
 import UnitStore from "./UnitStore";
-import SearchStore from "./SearchStore";
-import PeopleStore from "./PeopleStore";
-import MoveStore from "./MoveStore";
-import TrackingStore from "./TrackingStore";
-import ImportStore from "./ImportStore";
-import ImageStore from "./ImageStore";
-import MaterialsStore from "./MaterialsStore";
 
 export type StoreContainer = {
   authStore: AuthStore;

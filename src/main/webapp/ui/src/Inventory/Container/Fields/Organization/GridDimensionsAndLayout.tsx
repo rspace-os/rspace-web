@@ -1,20 +1,21 @@
-import React, { useState, useId } from "react";
-import GridDimensions from "./GridDimensions";
-import GridLayoutConfig from "./GridLayoutConfig";
-import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
-import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
-import IconButton from "@mui/material/IconButton";
+import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
+import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
+import type React from "react";
+import { useId, useState } from "react";
+import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Container } from "../../../../stores/definitions/Container";
+import GridDimensions from "./GridDimensions";
+import GridLayoutConfig from "./GridLayoutConfig";
+
 type GridDimensionsAndLayoutArgs = {
   container: Container;
 };
-export default function GridDimensionsAndLayout({
-  container,
-}: GridDimensionsAndLayoutArgs): React.ReactNode {
+export default function GridDimensionsAndLayout({ container }: GridDimensionsAndLayoutArgs): React.ReactNode {
   const [open, setOpen] = useState(false);
   const headingId = useId();
   const contentId = useId();
@@ -45,10 +46,7 @@ export default function GridDimensionsAndLayout({
             aria-controls={contentId}
             aria-expanded={open}
             action={
-              <IconButton
-                onClick={() => setOpen(!open)}
-                aria-label="Expand grid dimension controls group"
-              >
+              <IconButton onClick={() => setOpen(!open)} aria-label="Expand grid dimension controls group">
                 <ExpandCollapseIcon open={open} />
               </IconButton>
             }

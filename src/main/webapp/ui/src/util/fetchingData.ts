@@ -11,10 +11,7 @@ import Result from "./result";
 /**
  * Represents the state of a network call for data.
  */
-export type Fetched<A> =
-  | { tag: "loading" }
-  | { tag: "error"; error: string }
-  | { tag: "success"; value: A };
+export type Fetched<A> = { tag: "loading" } | { tag: "error"; error: string } | { tag: "success"; value: A };
 
 /**
  * Decompose the state of some fetched data, considering all of the possible
@@ -26,7 +23,7 @@ export function match<A, B>(
     loading: () => B;
     error: (error: string) => B;
     success: (loadedValue: A) => B;
-  }
+  },
 ): B {
   if (fetched.tag === "loading") return matcher.loading();
   if (fetched.tag === "error") return matcher.error(fetched.error);
@@ -40,8 +37,7 @@ export function match<A, B>(
  */
 export function getSuccessValue<A>(fetched: Fetched<A>): Result<A> {
   if (fetched.tag === "loading") return Result.Error([new Error("loading")]);
-  if (fetched.tag === "error")
-    return Result.Error([new Error("error", { cause: fetched.error })]);
+  if (fetched.tag === "error") return Result.Error([new Error("error", { cause: fetched.error })]);
   return Result.Ok(fetched.value);
 }
 

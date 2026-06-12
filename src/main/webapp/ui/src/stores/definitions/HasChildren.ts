@@ -1,5 +1,6 @@
 //@flow
 
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "./InventoryRecord";
 
 /**

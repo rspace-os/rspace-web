@@ -1,11 +1,12 @@
-import FileField from "../../../components/Inputs/FileField";
-import React from "react";
-import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import TitledBox from "@/components/TitledBox";
-import RemoveButton from "@/components/RemoveButton";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
+import RemoveButton from "@/components/RemoveButton";
+import TitledBox from "@/components/TitledBox";
+import FileField from "../../../components/Inputs/FileField";
+import useStores from "../../../stores/use-stores";
 
 type FileArgs = {
   loadedFile?: File | null;
@@ -14,10 +15,8 @@ type FileArgs = {
 function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
   const { importStore } = useStores();
 
-  const labelByRecordType =
-    (importStore.importData?.byRecordType("label") as string) || "records";
-  const fileByRecordTypeLoaded =
-    importStore.importData?.byRecordType("fileLoaded");
+  const labelByRecordType = (importStore.importData?.byRecordType("label") as string) || "records";
+  const fileByRecordTypeLoaded = importStore.importData?.byRecordType("fileLoaded");
   const fileLoaded = importStore.importData?.byRecordType("fileLoaded");
   const submitting = importStore.isCurrentImportState("submitting");
 
@@ -28,9 +27,7 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
           <Grid sx={{ flexGrow: 1 }}>
             <FileField
               accept=".csv"
-              buttonLabel={`${
-                fileByRecordTypeLoaded ? "Replace" : "Select"
-              } ${labelByRecordType} CSV File`}
+              buttonLabel={`${fileByRecordTypeLoaded ? "Replace" : "Select"} ${labelByRecordType} CSV File`}
               name="file"
               data-test-id="csvFile"
               onChange={({ file }) => importStore.importData?.setFile(file)}

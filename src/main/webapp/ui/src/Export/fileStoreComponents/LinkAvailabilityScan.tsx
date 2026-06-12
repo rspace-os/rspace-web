@@ -1,19 +1,21 @@
-import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import { formatFileSize } from "../../util/files";
-import LoadingFade from "../../components/LoadingFade";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { type FileSystem } from "../common";
+import type React from "react";
+import { useState } from "react";
+import LoadingFade from "../../components/LoadingFade";
 import * as ArrayUtils from "../../util/ArrayUtils";
+import { formatFileSize } from "../../util/files";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type FileSystem } from "../common";
 
 type FoundLinksListingArgs = {
   scanResultsPresent: boolean;
@@ -45,8 +47,8 @@ export default function LinkAvailabilityScan({
       <h2>Link availability scan</h2>
       {scanResultsPresent === false ? (
         <p>
-          Before continuing please run the filestore links availability scan,
-          which will report on any unaccessible or filtered links.
+          Before continuing please run the filestore links availability scan, which will report on any unaccessible or
+          filtered links.
         </p>
       ) : (
         <p>
@@ -56,23 +58,16 @@ export default function LinkAvailabilityScan({
             </span>
           ) : (
             <span>
-              Export will include{" "}
-              <strong>{scanResultsAvailableCount} filestore file(s) </strong>
-              of total size{" "}
-              <strong>{formatFileSize(scanResultsTotalFileSize)}</strong>.{" "}
+              Export will include <strong>{scanResultsAvailableCount} filestore file(s) </strong>
+              of total size <strong>{formatFileSize(scanResultsTotalFileSize)}</strong>.{" "}
             </span>
           )}
           {scanResultsAvailableCount > 0 && scanResultsOmittedCount > 0 && (
             <span>
-              <strong>
-                {scanResultsOmittedCount} file(s) or folder(s) will be skipped
-              </strong>
-              .{" "}
+              <strong>{scanResultsOmittedCount} file(s) or folder(s) will be skipped</strong>.{" "}
             </span>
           )}
-          {scanResultsOmittedCount > 0 && (
-            <span>Please check the scan results for details.</span>
-          )}
+          {scanResultsOmittedCount > 0 && <span>Please check the scan results for details.</span>}
         </p>
       )}
       <Button
@@ -88,12 +83,7 @@ export default function LinkAvailabilityScan({
         Scan filestore links
       </Button>
       {scanResultsPresent && (
-        <Button
-          variant="outlined"
-          onClick={() => setOpen(true)}
-          data-test-id="show-last-scan"
-          fullWidth
-        >
+        <Button variant="outlined" onClick={() => setOpen(true)} data-test-id="show-last-scan" fullWidth>
           Show last scan results
         </Button>
       )}
@@ -107,13 +97,10 @@ export default function LinkAvailabilityScan({
             <DialogTitle>Availability scan results</DialogTitle>
             <DialogContent>
               {checkedFileSystems.map((fileSystem) => {
-                const issues = Object.entries(
-                  fileSystem.checkedNfsLinkMessages
-                );
-                const checkedFiles = ArrayUtils.filterNull(
-                  fileSystem.checkedNfsLinks
-                );
+                const issues = Object.entries(fileSystem.checkedNfsLinkMessages);
+                const checkedFiles = ArrayUtils.filterNull(fileSystem.checkedNfsLinks);
                 return (
+                  // biome-ignore lint/style/useTemplate: initial biome migration
                   <div key={"skippedLinks" + fileSystem.id}>
                     {issues.length > 0 ? (
                       <div>
@@ -121,9 +108,7 @@ export default function LinkAvailabilityScan({
                         <Table>
                           <TableHead>
                             <TableRow>
-                              <TableCell>
-                                Full path on the File System
-                              </TableCell>
+                              <TableCell>Full path on the File System</TableCell>
                               <TableCell align="right">Reason</TableCell>
                             </TableRow>
                           </TableHead>
@@ -131,6 +116,7 @@ export default function LinkAvailabilityScan({
                             {issues.map((file) => {
                               return (
                                 <TableRow
+                                  // biome-ignore lint/style/useTemplate: initial biome migration
                                   key={"skippedLink" + fileSystem.id + file[0]}
                                 >
                                   <TableCell component="th" scope="row">
@@ -152,66 +138,35 @@ export default function LinkAvailabilityScan({
                         <Table>
                           <TableHead>
                             <TableRow>
-                              <TableCell>
-                                Full path on the File System
-                              </TableCell>
+                              <TableCell>Full path on the File System</TableCell>
                               <TableCell align="right">Type</TableCell>
                               <TableCell align="right">Size</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {checkedFiles.map((file) => {
-                              if (
-                                !fileSystem.checkedNfsLinkMessages[
-                                  file.fileSystemFullPath
-                                ]
-                              ) {
+                              if (!fileSystem.checkedNfsLinkMessages[file.fileSystemFullPath]) {
                                 return (
                                   <>
-                                    <TableRow
-                                      key={
-                                        "scannedLink" +
-                                        fileSystem.id +
-                                        file.fileSystemFullPath
-                                      }
-                                    >
+                                    <TableRow key={`scannedLink${fileSystem.id}${file.fileSystemFullPath}`}>
                                       <TableCell component="th" scope="row">
                                         {file.fileSystemFullPath}
                                       </TableCell>
-                                      <TableCell align="right">
-                                        {file.type}
-                                      </TableCell>
-                                      <TableCell align="right">
-                                        {formatFileSize(file.size)}
-                                      </TableCell>
+                                      <TableCell align="right">{file.type}</TableCell>
+                                      <TableCell align="right">{formatFileSize(file.size)}</TableCell>
                                     </TableRow>
                                     {file.type === "folder" &&
                                       file.content.map((childFile) => {
-                                        if (
-                                          !fileSystem.checkedNfsLinkMessages[
-                                            childFile.fileSystemFullPath
-                                          ]
-                                        ) {
+                                        if (!fileSystem.checkedNfsLinkMessages[childFile.fileSystemFullPath]) {
                                           return (
                                             <TableRow
-                                              key={
-                                                "scannedLink" +
-                                                fileSystem.id +
-                                                childFile.fileSystemFullPath
-                                              }
+                                              key={`scannedLink${fileSystem.id}${childFile.fileSystemFullPath}`}
                                             >
-                                              <TableCell
-                                                component="th"
-                                                scope="row"
-                                              >
+                                              <TableCell component="th" scope="row">
                                                 {childFile.fileSystemFullPath}
                                               </TableCell>
-                                              <TableCell align="right">
-                                                {childFile.type}
-                                              </TableCell>
-                                              <TableCell align="right">
-                                                {formatFileSize(childFile.size)}
-                                              </TableCell>
+                                              <TableCell align="right">{childFile.type}</TableCell>
+                                              <TableCell align="right">{formatFileSize(childFile.size)}</TableCell>
                                             </TableRow>
                                           );
                                         }
@@ -233,11 +188,7 @@ export default function LinkAvailabilityScan({
               })}
             </DialogContent>
             <DialogActions>
-              <Button
-                onClick={() => setOpen(false)}
-                color="primary"
-                data-test-id="button-loading-scan-ok"
-              >
+              <Button onClick={() => setOpen(false)} color="primary" data-test-id="button-loading-scan-ok">
                 OK
               </Button>
             </DialogActions>

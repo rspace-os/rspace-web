@@ -1,6 +1,7 @@
-import React from "react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
 import TextField from "../../../components/Inputs/TextField";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import BatchFormField from "../Inputs/BatchFormField";
 
@@ -25,7 +26,7 @@ function Description<
   Fields extends {
     description: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   onErrorStateChange,
@@ -56,9 +57,7 @@ function Description<
       helperText={errorMessage()}
       // ID is not used because TinyMCE does not expose an HTMLInputElement to attach it to
       doNotAttachIdToLabel
-      renderInput={({ error: _error, id: _id, ...props }) => (
-        <TextField {...props} onChange={handleChange} />
-      )}
+      renderInput={({ error: _error, id: _id, ...props }) => <TextField {...props} onChange={handleChange} />}
       noValueLabel={fieldOwner.noValueLabel.description}
       canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
       setDisabled={(d) => {

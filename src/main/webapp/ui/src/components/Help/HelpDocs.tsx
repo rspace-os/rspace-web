@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useContext, useRef, useId } from "react";
-import AnalyticsContext from "../../stores/contexts/Analytics";
-import { observer } from "mobx-react-lite";
-import axios from "@/common/axios";
 import Intercom from "@intercom/messenger-js-sdk";
-import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
-import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
 import HelpIcon from "@mui/icons-material/Help";
-import { Menu } from '../DialogBoundary';
-import MenuItem from "@mui/material/MenuItem";
-import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import { observer } from "mobx-react-lite";
+import React, { useContext, useEffect, useId, useRef, useState } from "react";
+import axios from "@/common/axios";
+import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
+import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+import { Menu } from "../DialogBoundary";
 
 declare global {
   interface Window {
@@ -68,7 +68,7 @@ function HelpDocs() {
     axios.create({
       baseURL: "/session/ajax",
       timeout: ONE_MINUTE_IN_MS,
-    })
+    }),
   );
   const analyticsContext = useContext(AnalyticsContext);
   const { trackEvent } = analyticsContext;
@@ -97,6 +97,8 @@ function HelpDocs() {
       };
     }
 
+    // biome-ignore lint/style/useTemplate: initial biome migration
+    // biome-ignore lint/complexity/useDateNow: initial biome migration
     loadScript("https://lighthouse.helpdocs.io/load?t=" + new Date().getTime());
   }
 
@@ -131,12 +133,7 @@ function HelpDocs() {
       brand: "Support",
       color_mode: "light",
       disable_authorship: true,
-      suggestions: [
-        "article:pfsj1e1u7j",
-        "article:xw0ds8tee1",
-        "article:bzgr8ea9e3",
-        "article:dagfzhl3yw",
-      ],
+      suggestions: ["article:pfsj1e1u7j", "article:xw0ds8tee1", "article:bzgr8ea9e3", "article:dagfzhl3yw"],
       i18n: {
         contact_button: "Chat with us",
         search_placeholder: "Type to search for articles...",
@@ -146,19 +143,13 @@ function HelpDocs() {
       onReady() {
         if (typeof window.Intercom !== "undefined") {
           const intercom = window.Intercom;
-          (intercom as unknown as (event: "onShow", cb: () => void) => void)(
-            "onShow",
-            () => {
-              window.Lighthouse.hide();
-              window.Lighthouse.showButton();
-            }
-          );
-          (intercom as unknown as (event: "onHide", cb: () => void) => void)(
-            "onHide",
-            () => {
-              window.Lighthouse.show();
-            }
-          );
+          (intercom as unknown as (event: "onShow", cb: () => void) => void)("onShow", () => {
+            window.Lighthouse.hide();
+            window.Lighthouse.showButton();
+          });
+          (intercom as unknown as (event: "onHide", cb: () => void) => void)("onHide", () => {
+            window.Lighthouse.show();
+          });
           if (document.getElementById("intercom-container")) {
             window.Lighthouse.showButton();
           }
@@ -185,7 +176,7 @@ function HelpDocs() {
     window.Lighthouse.showButton();
     window.Lighthouse.show();
     trackEvent("NeedHelpClicked");
-  }
+  };
 
   const handleMenuButtonClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!hasExtraHelpLinks) {
@@ -195,7 +186,6 @@ function HelpDocs() {
     }
 
     setAnchorEl(event.currentTarget);
-
   };
 
   const handleMenuClose = () => {
@@ -205,7 +195,7 @@ function HelpDocs() {
   const handleHelpButtonClicked = () => {
     handleMenuClose();
     _showLighthouse();
-  }
+  };
 
   return (
     <div>
@@ -217,8 +207,8 @@ function HelpDocs() {
         title="Open Help"
         disabled={!window.Lighthouse}
         aria-controls={open ? menuId : undefined}
-        aria-haspopup={hasExtraHelpLinks ? 'menu' : undefined}
-        aria-expanded={open ? 'true' : undefined}
+        aria-haspopup={hasExtraHelpLinks ? "menu" : undefined}
+        aria-expanded={open ? "true" : undefined}
       />
       <Menu
         id={menuId}
@@ -227,15 +217,16 @@ function HelpDocs() {
         open={open}
         onClose={handleMenuClose}
         anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
       >
         {hasExtraHelpLinks && (
+          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           <>
             {uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
               <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
@@ -247,8 +238,11 @@ function HelpDocs() {
         )}
         <Divider />
         <MenuItem onClick={handleHelpButtonClicked}>
-          <ListItemIcon><Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon2.svg" /></ListItemIcon>
-          <ListItemText>RSpace Documentation</ListItemText></MenuItem>
+          <ListItemIcon>
+            <Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon2.svg" />
+          </ListItemIcon>
+          <ListItemText>RSpace Documentation</ListItemText>
+        </MenuItem>
       </Menu>
     </div>
   );

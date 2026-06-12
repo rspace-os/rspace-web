@@ -1,5 +1,6 @@
-import * as v from "valibot";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { Either, Left, Right } from "purify-ts/Either";
+import * as v from "valibot";
 import { ValiError } from "valibot";
 
 /**
@@ -10,9 +11,10 @@ import { ValiError } from "valibot";
  * @param data - The data to validate
  * @returns Either<Error, T> where T is the validated type
  */
-export function parse<
-  TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
->(schema: TSchema, data: unknown): Either<Error, v.InferOutput<TSchema>> {
+export function parse<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+  schema: TSchema,
+  data: unknown,
+): Either<Error, v.InferOutput<TSchema>> {
   try {
     const result: v.InferOutput<TSchema> = v.parse(schema, data);
     return Right<v.InferOutput<TSchema>>(result);
@@ -24,9 +26,7 @@ export function parse<
       }>;
       const errorMessage = issues
         .map((issue) => {
-          const pathStr = issue.path
-            ?.map((p) => String(p.key))
-            .join(".") || "";
+          const pathStr = issue.path?.map((p) => String(p.key)).join(".") || "";
           return pathStr ? `${pathStr}: ${issue.message}` : issue.message;
         })
         .join("; ");
@@ -46,9 +46,10 @@ export function parse<
  * @returns The validated and typed data
  * @throws Error if validation fails
  */
-export function parseOrThrow<
-  TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
->(schema: TSchema, data: unknown): v.InferOutput<TSchema> {
+export function parseOrThrow<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+  schema: TSchema,
+  data: unknown,
+): v.InferOutput<TSchema> {
   const result: Either<Error, v.InferOutput<TSchema>> = parse(schema, data);
   return result.caseOf({
     Left: (error: Error) => {
@@ -57,4 +58,3 @@ export function parseOrThrow<
     Right: (validatedData: v.InferOutput<TSchema>) => validatedData,
   });
 }
-

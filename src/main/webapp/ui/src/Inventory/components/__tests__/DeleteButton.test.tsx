@@ -1,16 +1,14 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import DeleteButton from "../DeleteButton";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../theme";
-
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
+import materialTheme from "../../../theme";
+import DeleteButton from "../DeleteButton";
+
 describe("DeleteButton", () => {
-  function renderDeleteButton(props?: {
-    disabled?: boolean;
-    onClick?: () => void;
-  }) {
+  function renderDeleteButton(props?: { disabled?: boolean; onClick?: () => void }) {
     return render(
       <ThemeProvider theme={materialTheme}>
         <DeleteButton
@@ -21,19 +19,16 @@ describe("DeleteButton", () => {
           tooltipWhenDisabled="baz"
           {...props}
         />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
-
   }
   test("Shows disabled tooltip.", () => {
     renderDeleteButton({ disabled: true });
     expect(screen.getByLabelText("baz"));
-
   });
   test("Shows before clicked tooltip.", () => {
     renderDeleteButton();
     expect(screen.getByLabelText("bar"));
-
   });
   test("Shows after clicked tooltip.", async () => {
     const user = userEvent.setup();
@@ -42,7 +37,6 @@ describe("DeleteButton", () => {
     await user.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
     expect(screen.getByLabelText("foo"));
-
   });
   test("Becomes disabled once clicked.", async () => {
     const user = userEvent.setup();
@@ -53,4 +47,3 @@ describe("DeleteButton", () => {
     expect(screen.getByRole("button")).toBeDisabled();
   });
 });
-

@@ -1,8 +1,9 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
 import DMPDialog from "./DMPDialog";
 
-import AxeBuilder from "@axe-core/playwright";
 test.beforeEach(async ({ router, page }) => {
   /*
    * Emulate reduced motion so the dialog renders without its fade/grow
@@ -94,17 +95,11 @@ test("Should have no axe violations.", async ({ mount, page }) => {
        * There's nothing we can do about it and Chrome and Safari, which the
        * vast majority of our users use, does not consider it a violation.
        */
-      return (
-        v.description !==
-        "Ensure elements with an ARIA role that require child roles contain them"
-      );
+      return v.description !== "Ensure elements with an ARIA role that require child roles contain them";
     }),
   ).toEqual([]);
 });
-test("Importing a selected DMP should call the import endpoint.", async ({
-  mount,
-  page,
-}) => {
+test("Importing a selected DMP should call the import endpoint.", async ({ mount, page }) => {
   await mount(<DMPDialog open={true} setOpen={() => {}} />);
   await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -116,14 +111,12 @@ test("Importing a selected DMP should call the import endpoint.", async ({
   let importRequestUrl = "";
   await test.step("When the selected DMP is imported", async () => {
     await radio.check();
-    const [request] = await Promise.all([
-      page.waitForRequest(/\/apps\/argos\/importPlan/),
-      importButton.click(),
-    ]);
+    const [request] = await Promise.all([page.waitForRequest(/\/apps\/argos\/importPlan/), importButton.click()]);
     importRequestUrl = request.url();
   });
   await test.step("Then the import endpoint is called for the selected DMP", async () => {
     expect(importRequestUrl).toMatch(
+      // biome-ignore lint/complexity/useRegexLiterals: initial biome migration
       new RegExp("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e"),
     );
   });

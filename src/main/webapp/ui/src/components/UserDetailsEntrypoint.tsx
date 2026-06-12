@@ -1,7 +1,6 @@
-import React from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { createRoot, type Root } from "react-dom/client";
 import materialTheme from "@/theme";
 import UserDetails from "./UserDetails";
 
@@ -28,6 +27,7 @@ function getPosition(position?: string): Position {
       return ["top", "right"];
     case "bottom_left":
       return ["bottom", "left"];
+    // biome-ignore lint/complexity/noUselessSwitchCase: initial biome migration
     case "bottom_right":
     default:
       return ["bottom", "right"];
@@ -82,10 +82,7 @@ function mountUserDetails(domContainer: Element): void {
     return;
   }
 
-  const userId = Number.parseInt(
-    domContainer.getAttribute("data-user-id") ?? "",
-    10,
-  );
+  const userId = Number.parseInt(domContainer.getAttribute("data-user-id") ?? "", 10);
   if (Number.isNaN(userId)) {
     return;
   }
@@ -93,8 +90,7 @@ function mountUserDetails(domContainer: Element): void {
   const username = domContainer.getAttribute("data-username") ?? undefined;
   const firstName = domContainer.getAttribute("data-first-name") ?? undefined;
   const lastName = domContainer.getAttribute("data-last-name") ?? undefined;
-  const fullNameAttribute =
-    domContainer.getAttribute("data-full-name") ?? undefined;
+  const fullNameAttribute = domContainer.getAttribute("data-full-name") ?? undefined;
   const fullName = buildFullName({
     fullName: fullNameAttribute,
     firstName,
@@ -108,9 +104,7 @@ function mountUserDetails(domContainer: Element): void {
     firstName,
     lastName,
   });
-  const position = getPosition(
-    domContainer.getAttribute("data-position") ?? undefined,
-  );
+  const position = getPosition(domContainer.getAttribute("data-position") ?? undefined);
 
   const root = createRoot(domContainer);
   mountedRoots.set(domContainer, root);

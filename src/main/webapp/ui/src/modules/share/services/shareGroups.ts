@@ -1,7 +1,9 @@
-import { findCommonGroups } from "@/modules/share/utils";
 import { getGroupById } from "@/modules/groups/queries";
-import { getShareListing, ShareListingParams } from "@/modules/share/queries";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { GroupInfo } from "@/modules/groups/schema";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { getShareListing, ShareListingParams } from "@/modules/share/queries";
+import { findCommonGroups } from "@/modules/share/utils";
 
 export async function getCommonGroupsInShares(
   params: ShareListingParams = {},
@@ -9,9 +11,7 @@ export async function getCommonGroupsInShares(
 ): Promise<Map<number, GroupInfo | null>> {
   const shares = await getShareListing(params, { token });
 
-  const sharesWithFolders = shares.folderShares
-    ? [...shares.shares, ...shares.folderShares]
-    : shares.shares;
+  const sharesWithFolders = shares.folderShares ? [...shares.shares, ...shares.folderShares] : shares.shares;
 
   const commonGroupShares = findCommonGroups({
     shares: sharesWithFolders,
@@ -21,11 +21,7 @@ export async function getCommonGroupsInShares(
   return new Map(
     await Promise.all(
       commonGroupShares.map(
-        async ({ sharedTargetId }) =>
-          [
-            sharedTargetId,
-            await getGroupById(String(sharedTargetId), { token }),
-          ] as const,
+        async ({ sharedTargetId }) => [sharedTargetId, await getGroupById(String(sharedTargetId), { token })] as const,
       ),
     ),
   );

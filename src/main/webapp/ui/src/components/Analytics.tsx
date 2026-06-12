@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useContext } from "react";
+import { runInAction } from "mobx";
+import posthog from "posthog-js";
+import { PostHogProvider, usePostHog } from "posthog-js/react";
+import React, { useContext, useEffect, useRef } from "react";
 import axios from "@/common/axios";
 import AnalyticsContext from "../stores/contexts/Analytics";
-import { runInAction } from "mobx";
-import { usePostHog, PostHogProvider } from "posthog-js/react";
-import posthog from "posthog-js";
 
 declare global {
   interface Window {
@@ -11,14 +11,9 @@ declare global {
       initialize: unknown;
       invoked: boolean;
       methods: Array<string>;
-      factory: (
-        method: unknown
-      ) => (...args: unknown[]) => typeof window.analytics;
+      factory: (method: unknown) => (...args: unknown[]) => typeof window.analytics;
       push: (...args: unknown[]) => void;
-      load: (
-        key: string,
-        options?: typeof window.analytics._loadOptions
-      ) => void;
+      load: (key: string, options?: typeof window.analytics._loadOptions) => void;
       identify: (userId: string) => void;
       track: (event: string, properties?: Record<string, unknown>) => void;
       page: () => void;
@@ -57,9 +52,11 @@ function loadIntercom({
 
       // Segment tracking
       // The following code is copied from https://segment.com/docs/connections/sources/catalog/libraries/website/javascript/quickstart/
+      // biome-ignore lint/complexity/useArrowFunction: initial biome migration
       (function () {
         // Create a queue, but don't obliterate an existing one!
-        var analytics = (window.analytics = window.analytics || []);  
+        // biome-ignore lint/suspicious/noAssignInExpressions: initial biome migration
+        var analytics = (window.analytics = window.analytics || []);
         // If the real analytics.js is already on the page return.
         if (analytics.initialize) return;
         // If the snippet was invoked already show an error.
@@ -99,7 +96,9 @@ function loadIntercom({
         // for methods in Analytics.js so that you never have to wait
         // for it to load to actually record data. The `method` is
         // stored as the first argument, so we can replay the data.
+        // biome-ignore lint/complexity/useArrowFunction: initial biome migration
         analytics.factory = function (method) {
+          // biome-ignore lint/complexity/useArrowFunction: initial biome migration
           return function (...args) {
             analytics.push([method, ...args]);
             return analytics;
@@ -113,16 +112,13 @@ function loadIntercom({
         }
         // Define a method to load Analytics.js from our CDN,
         // and that will be sure to only ever load it once.
+        // biome-ignore lint/complexity/useArrowFunction: initial biome migration
         analytics.load = function (key, options) {
-
           // Create an async script element based on your key.
           const script = document.createElement("script");
           script.type = "text/javascript";
           script.async = true;
-          script.src =
-            "https://cdn.segment.com/analytics.js/v1/" +
-            key +
-            "/analytics.min.js";
+          script.src = `https://cdn.segment.com/analytics.js/v1/${key}/analytics.min.js`;
           // Insert our script next to the first script element.
           const first = document.getElementsByTagName("script")[0];
           first.parentNode?.insertBefore(script, first);
@@ -159,6 +155,7 @@ function PostHogAnalyticsContext() {
     });
   }, []);
 
+  // biome-ignore lint/complexity/noUselessFragments: initial biome migration
   return <></>;
 }
 
@@ -166,28 +163,20 @@ type AnalyticsArgs = {
   children: React.ReactNode;
 };
 
-export default function Analytics({
-  children,
-}: AnalyticsArgs): React.ReactNode {
+export default function Analytics({ children }: AnalyticsArgs): React.ReactNode {
   const [postHogEnabled, setPostHogEnable] = React.useState(false);
   const analyticsContext = useContext(AnalyticsContext);
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
       timeout: ONE_MINUTE_IN_MS,
-    })
+    }),
   );
 
   useEffect(() => {
     void (async () => {
       const {
-        data: {
-          analyticsEnabled,
-          analyticsServerType,
-          analyticsServerHost,
-          analyticsServerKey,
-          analyticsUserId,
-        },
+        data: { analyticsEnabled, analyticsServerType, analyticsServerHost, analyticsServerKey, analyticsUserId },
       } = await api.current.get<{
         analyticsEnabled: boolean;
         analyticsServerType: "posthog" | "segment";

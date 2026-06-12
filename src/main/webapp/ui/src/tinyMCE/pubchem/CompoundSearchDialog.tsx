@@ -1,36 +1,32 @@
-import React from "react";
-import { Dialog } from "@/components/DialogBoundary";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Link from "@mui/material/Link";
-import DialogContent from "@mui/material/DialogContent";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Grid from "@mui/material/Grid";
-import InputAdornment from "@mui/material/InputAdornment";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
-import CardActions from "@mui/material/CardActions";
 import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
-import ValidatingSubmitButton, {
-  IsValid,
-  IsInvalid,
-} from "../../components/ValidatingSubmitButton";
-import useChemicalImport, {
-  type ChemicalCompound,
-} from "@/hooks/api/useChemicalImport";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
+import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
 import { alpha } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import React from "react";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
-import CardActionArea from "@mui/material/CardActionArea";
-import AppBar from "../../components/AppBar";
+import { Dialog } from "@/components/DialogBoundary";
+import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
 import docLinks from "../../assets/DocLinks";
+import AppBar from "../../components/AppBar";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
+
 function Dl({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     <Typography
@@ -91,12 +87,8 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
       role="region"
       sx={(theme) => ({
         border: `2px solid ${selected ? theme.palette.callToAction.main : theme.palette.primary.main}`,
-        backgroundColor: selected
-          ? `${alpha(theme.palette.callToAction.background, 0.15)}`
-          : "initial",
-        boxShadow: selected
-          ? "none"
-          : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
+        backgroundColor: selected ? `${alpha(theme.palette.callToAction.background, 0.15)}` : "initial",
+        boxShadow: selected ? "none" : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
         "&:hover": {
           border: window.matchMedia("(prefers-contrast: more)").matches
             ? "2px solid black !important"
@@ -104,9 +96,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
           backgroundColor: `${alpha(theme.palette.callToAction.background, 0.05)} !important`,
         },
         [`& .${checkboxClasses.root}`]: {
-          color: selected
-            ? theme.palette.callToAction.main
-            : theme.palette.primary.main,
+          color: selected ? theme.palette.callToAction.main : theme.palette.primary.main,
         },
       })}
     >
@@ -220,12 +210,8 @@ export default function CompoundSearchDialog({
   const { search } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
-  const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>(
-    [],
-  );
-  const [selectedCompounds, setSelectedCompounds] = React.useState<
-    Record<string, boolean>
-  >({});
+  const [results, setResults] = React.useState<ReadonlyArray<ChemicalCompound>>([]);
+  const [selectedCompounds, setSelectedCompounds] = React.useState<Record<string, boolean>>({});
   const [hasSearched, setHasSearched] = React.useState(false);
   const [displayedSearchTerm, setDisplayedSearchTerm] = React.useState("");
   const validationResult = React.useMemo(() => {
@@ -241,11 +227,7 @@ export default function CompoundSearchDialog({
     }).then((newResults) => {
       setResults(newResults);
       // Auto-select when there's exactly one result.
-      setSelectedCompounds(
-        Object.fromEntries(
-          newResults.map((c) => [c.pubchemId, newResults.length === 1]),
-        ),
-      );
+      setSelectedCompounds(Object.fromEntries(newResults.map((c) => [c.pubchemId, newResults.length === 1])));
       setHasSearched(true);
       setDisplayedSearchTerm(searchTerm);
     });
@@ -260,10 +242,7 @@ export default function CompoundSearchDialog({
       setDisplayedSearchTerm("");
     }
   }, [open]);
-  function handleCompoundSelection(
-    compound: ChemicalCompound,
-    checked: boolean,
-  ) {
+  function handleCompoundSelection(compound: ChemicalCompound, checked: boolean) {
     if (allowMultipleSelection) {
       setSelectedCompounds((prev) => ({
         ...prev,
@@ -281,13 +260,7 @@ export default function CompoundSearchDialog({
     onClose();
   }
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      aria-labelledby={titleId}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="sm" fullWidth>
       <AppBar variant="dialog" currentPage="PubChem" accessibilityTips={{}} />
       <DialogTitle id={titleId} component="h3">
         {title}
@@ -302,17 +275,14 @@ export default function CompoundSearchDialog({
           {showPubChemInfo && (
             <Box>
               <Typography variant="body2">
-                Search PubChem for chemical compounds by name, CAS number, or
-                SMILES string.
+                Search PubChem for chemical compounds by name, CAS number, or SMILES string.
               </Typography>
               <Typography variant="body2">
                 See{" "}
                 <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer">
                   https://pubchem.ncbi.nlm.nih.gov/
                 </Link>{" "}
-                and our{" "}
-                <Link href={docLinks.pubchem}>PubChem integration docs</Link>{" "}
-                for more.
+                and our <Link href={docLinks.pubchem}>PubChem integration docs</Link> for more.
               </Typography>
             </Box>
           )}
@@ -333,11 +303,7 @@ export default function CompoundSearchDialog({
                   }}
                   variant="outlined"
                   fullWidth
-                  placeholder={
-                    searchType === "NAME"
-                      ? "Enter a compound name or CAS number"
-                      : "Enter a SMILES string"
-                  }
+                  placeholder={searchType === "NAME" ? "Enter a compound name or CAS number" : "Enter a SMILES string"}
                   slotProps={{
                     input: {
                       startAdornment: (
@@ -382,16 +348,14 @@ export default function CompoundSearchDialog({
               {!hasSearched && (
                 <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
-                    Enter a search term and click Search to find chemical
-                    compounds.
+                    Enter a search term and click Search to find chemical compounds.
                   </Typography>
                 </Grid>
               )}
               {hasSearched && results.length === 0 && (
                 <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
-                    No compounds found for "{displayedSearchTerm}". Try a
-                    different search term.
+                    No compounds found for "{displayedSearchTerm}". Try a different search term.
                   </Typography>
                 </Grid>
               )}
@@ -410,11 +374,7 @@ export default function CompoundSearchDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
-        <ValidatingSubmitButton
-          validationResult={validationResult}
-          loading={false}
-          onClick={handleSubmit}
-        >
+        <ValidatingSubmitButton validationResult={validationResult} loading={false} onClick={handleSubmit}>
           {submitButtonText}
         </ValidatingSubmitButton>
       </DialogActions>

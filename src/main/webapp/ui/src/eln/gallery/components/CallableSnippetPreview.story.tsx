@@ -1,11 +1,8 @@
-import React from "react";
-import {
-  CallableSnippetPreview,
-  useSnippetPreview,
-} from "./CallableSnippetPreview";
-import { Description, GalleryFile } from "../useGalleryListing";
 import Button from "@mui/material/Button";
 import Result from "../../../util/result";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Description, GalleryFile } from "../useGalleryListing";
+import { CallableSnippetPreview, useSnippetPreview } from "./CallableSnippetPreview";
 
 const mockSnippetFile: GalleryFile = {
   id: 123,
@@ -55,11 +52,7 @@ const mockSnippetFile: GalleryFile = {
 function TestComponent() {
   const { openSnippetPreview } = useSnippetPreview();
 
-  return (
-    <Button onClick={() => openSnippetPreview(mockSnippetFile)}>
-      Open Snippet Preview
-    </Button>
-  );
+  return <Button onClick={() => openSnippetPreview(mockSnippetFile)}>Open Snippet Preview</Button>;
 }
 
 export function CallableSnippetPreviewStory() {
@@ -80,11 +73,7 @@ export function CallableSnippetPreviewWithTableContent() {
   function TestComponentWithTable() {
     const { openSnippetPreview } = useSnippetPreview();
 
-    return (
-      <Button onClick={() => openSnippetPreview(mockFileWithTable)}>
-        Open Table Snippet Preview
-      </Button>
-    );
+    return <Button onClick={() => openSnippetPreview(mockFileWithTable)}>Open Table Snippet Preview</Button>;
   }
 
   return (
@@ -104,11 +93,7 @@ export function CallableSnippetPreviewWithError() {
   function TestComponentWithError() {
     const { openSnippetPreview } = useSnippetPreview();
 
-    return (
-      <Button onClick={() => openSnippetPreview(mockFileWithError)}>
-        Open Error Snippet Preview
-      </Button>
-    );
+    return <Button onClick={() => openSnippetPreview(mockFileWithError)}>Open Error Snippet Preview</Button>;
   }
 
   return (

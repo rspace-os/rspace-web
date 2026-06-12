@@ -1,8 +1,9 @@
 import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../../hooks/auth/useOauthToken";
-import { type Filestore } from "./useGalleryListing";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Filestore } from "./useGalleryListing";
 
 export default function useFilestoresEndpoint(): {
   logout: (filestore: Filestore) => Promise<void>;

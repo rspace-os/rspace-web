@@ -1,4 +1,6 @@
-import React from "react";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Radio } from "@mui/material";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
   DataGrid,
   type DataGridProps,
@@ -9,7 +11,7 @@ import {
   type GridValidRowModel,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import { Radio } from "@mui/material";
+import React from "react";
 
 /**
  * A DataGrid, where the first column is a Radio field for selecting a single
@@ -50,19 +52,12 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
   selectRadioAriaLabelFunc: (row: R) => string;
 } & Omit<
   DataGridProps<R>,
-  | "columns"
-  | "checkboxSelection"
-  | "disableMultipleRowSelection"
-  | "rowSelectionModel"
-  | "onRowSelectionModelChange"
+  "columns" | "checkboxSelection" | "disableMultipleRowSelection" | "rowSelectionModel" | "onRowSelectionModelChange"
 >) {
   const apiRef = useGridApiRef();
   const isControlled = externalSelectedRowId !== undefined;
-  const [internalSelectedRowId, setInternalSelectedRowId] =
-    React.useState<GridRowId | null>(null);
-  const selectedRowId = isControlled
-    ? externalSelectedRowId
-    : internalSelectedRowId;
+  const [internalSelectedRowId, setInternalSelectedRowId] = React.useState<GridRowId | null>(null);
+  const selectedRowId = isControlled ? externalSelectedRowId : internalSelectedRowId;
   const radioSelectionColumn: GridColDef<R> = React.useMemo(() => {
     const handleSelectionChange = (newSelectedId: GridRowId | null) => {
       if (!isControlled) {
@@ -81,6 +76,7 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
           <Radio
             color="primary"
             checked={isSelected}
+            // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
             onChange={(event: unknown, selected: boolean | null) => {
               if (selected === null) {
                 handleSelectionChange(null);
@@ -109,12 +105,7 @@ export function DataGridWithRadioSelection<R extends GridValidRowModel>({
       hideable: false,
       disableMenuColumn: true,
     };
-  }, [
-    selectedRowId,
-    onSelectionChange,
-    selectRadioAriaLabelFunc,
-    isControlled,
-  ]);
+  }, [selectedRowId, onSelectionChange, selectRadioAriaLabelFunc, isControlled]);
   const allColumns = React.useMemo(() => {
     return [radioSelectionColumn, ...columns];
   }, [radioSelectionColumn, columns]);

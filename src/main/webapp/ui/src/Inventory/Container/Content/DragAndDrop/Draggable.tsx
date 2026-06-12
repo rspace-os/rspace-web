@@ -1,13 +1,13 @@
-import React, { type ReactNode } from "react";
-import useStores from "../../../../stores/use-stores";
 import { useDraggable } from "@dnd-kit/core";
 import Badge from "@mui/material/Badge";
-import {
-  type Location,
-  type Container,
-} from "../../../../stores/definitions/Container";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import React, { type ReactNode } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Container, type Location } from "../../../../stores/definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import useStores from "../../../../stores/use-stores";
 import { useHelpers } from "./common";
 
 /**
@@ -26,7 +26,7 @@ import { useHelpers } from "./common";
  */
 function calculateRelativeCoords(
   container: Container,
-  location: Location
+  location: Location,
 ): ReadonlyArray<{ x: number; y: number; globalId: GlobalId | null }> {
   return (container.selectedLocations ?? []).map((l) => ({
     globalId: l.content?.globalId ?? null,
@@ -104,20 +104,9 @@ type DraggableProps = {
  * a drag-and-drop operation. It is used to wrap the rendering of a location's
  * content so that the user may move that content to a different location.
  */
-export function Draggable({
-  container,
-  location,
-  content,
-  tabIndex,
-  hasFocus,
-  children,
-}: DraggableProps): ReactNode {
+export function Draggable({ container, location, content, tabIndex, hasFocus, children }: DraggableProps): ReactNode {
   const { moveStore } = useStores();
-  const {
-    thisLocationIsTheOrigin,
-    dragAndDropInProgress,
-    numberOfItemsBeingDragged,
-  } = useHelpers();
+  const { thisLocationIsTheOrigin, dragAndDropInProgress, numberOfItemsBeingDragged } = useHelpers();
 
   /*
    * Drag-and-drop is disabled within the move dialog as it could get quite
@@ -131,12 +120,11 @@ export function Draggable({
    * than having to cancel the current move operation, move it to where it
    * should be, and then re-attempt the A to B move.
    */
-  const disabled =
-    areAnyOfTheSelectedLocationsEmpty(container) || moveStore.isMoving;
+  const disabled = areAnyOfTheSelectedLocationsEmpty(container) || moveStore.isMoving;
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     disabled,
-    id: content.globalId || '',
+    id: content.globalId || "",
     data: {
       location,
       content,
@@ -188,11 +176,7 @@ export function Draggable({
       <Badge
         color="secondary"
         component="div"
-        badgeContent={
-          dragAndDropInProgress && thisLocationIsTheOrigin(location)
-            ? numberOfItemsBeingDragged
-            : 0
-        }
+        badgeContent={dragAndDropInProgress && thisLocationIsTheOrigin(location) ? numberOfItemsBeingDragged : 0}
         sx={{ display: "contents" }}
       >
         {children}

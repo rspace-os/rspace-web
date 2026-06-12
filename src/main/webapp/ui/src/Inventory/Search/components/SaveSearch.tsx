@@ -1,11 +1,12 @@
 import BookmarkBorderOutlinedIcon from "@mui/icons-material/BookmarkBorderOutlined";
-import React, { useContext, useState } from "react";
-import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import SearchContext from "../../../stores/contexts/Search";
-import NameDialog from "./NameDialog";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import type { SxProps, Theme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React, { useContext, useState } from "react";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import SearchContext from "../../../stores/contexts/Search";
+import useStores from "../../../stores/use-stores";
+import NameDialog from "./NameDialog";
 
 type SaveSearchArgs = {
   sx?: SxProps<Theme>;
@@ -29,9 +30,7 @@ function SaveSearch({ sx }: SaveSearchArgs): React.ReactNode {
 
   return (
     <>
-      {!search.fetcher.permalink &&
-      !search.fetcher.error &&
-      !searchStore.searchIsSaved ? (
+      {!search.fetcher.permalink && !search.fetcher.error && !searchStore.searchIsSaved ? (
         <IconButtonWithTooltip
           title="Save search"
           size="small"

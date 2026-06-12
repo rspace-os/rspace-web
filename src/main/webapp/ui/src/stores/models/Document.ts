@@ -1,12 +1,8 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Document, type DocumentAttrs } from "../definitions/Document";
 import PersonModel from "./PersonModel";
 
-export function newDocument({
-  globalId,
-  name,
-  id,
-  owner,
-}: DocumentAttrs): Document {
+export function newDocument({ globalId, name, id, owner }: DocumentAttrs): Document {
   return {
     id,
     name,

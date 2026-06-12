@@ -1,19 +1,14 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import {
-  ProgressExample,
-  SimpleExample,
-  HighContrastExample,
-} from "./ValidatingSubmitButton.story";
-
 import AxeBuilder from "@axe-core/playwright";
 import { touchRippleClasses } from "@mui/material/ButtonBase";
-const createOnClickSpy = () => {
+import { expect, test } from "@playwright/experimental-ct-react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { HighContrastExample, ProgressExample, SimpleExample } from "./ValidatingSubmitButton.story";
 
+const createOnClickSpy = () => {
   let clicked = false;
   const handler = () => {
     clicked = true;
-
   };
 
   const hasBeenClicked = () => clicked;
@@ -21,7 +16,6 @@ const createOnClickSpy = () => {
     handler,
     hasBeenClicked,
   };
-
 };
 const feature = test.extend<{
   Given: {
@@ -147,8 +141,7 @@ const feature = test.extend<{
              * 4. Content not in landmarks is expected in component testing context
              */
             return (
-              v.description !==
-                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
               v.id !== "region"
@@ -163,15 +156,12 @@ const feature = test.extend<{
          * before performing the analysis.
          */
         await page.evaluate((rippleClass) => {
-          const button = Array.from(document.querySelectorAll("button")).find(
-            (btn) => btn.textContent === "Submit",
-          );
+          const button = Array.from(document.querySelectorAll("button")).find((btn) => btn.textContent === "Submit");
           if (!button) return;
           const ripple = button.querySelector(`.${rippleClass}`);
           if (ripple) {
             ripple.remove();
           }
-
         }, touchRippleClasses.root);
         const { violations } = await new AxeBuilder({
           page,
@@ -186,57 +176,39 @@ const feature = test.extend<{
         expect(violations).toEqual([]);
       },
       "the button should have type 'submit'": async () => {
-        await expect(
-          page.getByRole("button", { name: /Submit/ }),
-        ).toHaveAttribute("type", "submit");
+        await expect(page.getByRole("button", { name: /Submit/ })).toHaveAttribute("type", "submit");
       },
-      "the validation error popover should contain a warning alert with the correct aria-label":
-        async () => {
-          const alert = page.getByRole("alert", { name: "Warning" });
-          await expect(alert).toBeVisible();
-        },
+      "the validation error popover should contain a warning alert with the correct aria-label": async () => {
+        const alert = page.getByRole("alert", { name: "Warning" });
+        await expect(alert).toBeVisible();
+      },
     });
   },
-
 });
 test.describe("ValidatingSubmitButton", () => {
   feature("The button shows its descendants", async ({ Given, Then }) => {
     await Given["the ValidatingSubmitButton is rendered"]();
     await Then["the button should have the label 'Submit'"]();
-
   });
   feature("The button should have type 'submit'", async ({ Given, Then }) => {
     await Given["the ValidatingSubmitButton with progress is rendered"]();
     await Then["the button should have type 'submit'"]();
-
   });
-  feature(
-    "When the button is loading, it should be disabled",
-    async ({ Given, When, Then }) => {
-      await Given["the ValidatingSubmitButton is rendered"]();
-      await When["the loading state is triggered"]();
-      await Then["the button should be disabled"]();
-    },
-
-  );
-  feature(
-    "When the button is not loading, it should be enabled",
-    async ({ Given, Then }) => {
-      await Given["the ValidatingSubmitButton is rendered"]();
-      await Then["the button should be enabled"]();
-    },
-
-  );
-  feature(
-    "When validation fails, the validation error popover should be visible",
-    async ({ Given, When, Then }) => {
-      await Given["the ValidatingSubmitButton is rendered"]();
-      await When["an invalid state is triggered"]();
-      await When["the user clicks the button"]();
-      await Then["the validation error popover should be visible"]();
-    },
-
-  );
+  feature("When the button is loading, it should be disabled", async ({ Given, When, Then }) => {
+    await Given["the ValidatingSubmitButton is rendered"]();
+    await When["the loading state is triggered"]();
+    await Then["the button should be disabled"]();
+  });
+  feature("When the button is not loading, it should be enabled", async ({ Given, Then }) => {
+    await Given["the ValidatingSubmitButton is rendered"]();
+    await Then["the button should be enabled"]();
+  });
+  feature("When validation fails, the validation error popover should be visible", async ({ Given, When, Then }) => {
+    await Given["the ValidatingSubmitButton is rendered"]();
+    await When["an invalid state is triggered"]();
+    await When["the user clicks the button"]();
+    await Then["the validation error popover should be visible"]();
+  });
   feature(
     "When validation passes, the validation error popover should not be visible",
     async ({ Given, When, Then }) => {
@@ -244,55 +216,34 @@ test.describe("ValidatingSubmitButton", () => {
       await When["the user clicks the button"]();
       await Then["the validation error popover should not be visible"]();
     },
-
   );
-  feature(
-    "When validation passes, the onClick handler should be called",
-    async ({ Given, When, Then }) => {
-      const { onClickSpy } =
-        await Given["the ValidatingSubmitButton is rendered"]();
-      await When["the user clicks the button"]();
-      Then["the {onClickSpy} should have been triggered"]({
-        onClickSpy,
-      });
-    },
-
-  );
+  feature("When validation passes, the onClick handler should be called", async ({ Given, When, Then }) => {
+    const { onClickSpy } = await Given["the ValidatingSubmitButton is rendered"]();
+    await When["the user clicks the button"]();
+    Then["the {onClickSpy} should have been triggered"]({
+      onClickSpy,
+    });
+  });
   test.describe("Progress prop", () => {
-    feature(
-      "When progress is undefined, the progress indicator should not be visible",
-      async ({ Given, Then }) => {
-        await Given["the ValidatingSubmitButton is rendered"]();
-        await Then["the progress indicator should not be visible"]();
-      },
-
-    );
-    feature(
-      "When progress is set, the progress indicator should be visible",
-      async ({ Given, When, Then }) => {
-        await Given["the ValidatingSubmitButton with progress is rendered"]();
-        await When["the user clicks the button"]();
-        await Then["the progress indicator should be visible"]();
-      },
-
-    );
-    feature(
-      "When progress reaches 100, the progress indicator should disappear",
-      async ({ Given, When, Then }) => {
-        await Given["the ValidatingSubmitButton with progress is rendered"]();
-        await When["the user clicks the button"]();
-        await Then[
-          "the progress indicator should disappear after completion"
-        ]();
-      },
-    );
-
+    feature("When progress is undefined, the progress indicator should not be visible", async ({ Given, Then }) => {
+      await Given["the ValidatingSubmitButton is rendered"]();
+      await Then["the progress indicator should not be visible"]();
+    });
+    feature("When progress is set, the progress indicator should be visible", async ({ Given, When, Then }) => {
+      await Given["the ValidatingSubmitButton with progress is rendered"]();
+      await When["the user clicks the button"]();
+      await Then["the progress indicator should be visible"]();
+    });
+    feature("When progress reaches 100, the progress indicator should disappear", async ({ Given, When, Then }) => {
+      await Given["the ValidatingSubmitButton with progress is rendered"]();
+      await When["the user clicks the button"]();
+      await Then["the progress indicator should disappear after completion"]();
+    });
   });
   test.describe("Accessibility", () => {
     feature("Should have no axe violations", async ({ Given, Then }) => {
       await Given["the ValidatingSubmitButton with progress is rendered"]();
       await Then["there shouldn't be any axe violations"]();
-
     });
     /*
      * Note that the accessible role of the popup is asserted by the
@@ -307,22 +258,18 @@ test.describe("ValidatingSubmitButton", () => {
         await When["an invalid state is triggered"]();
         await When["the user clicks the button"]();
         await Then["the validation error popover should be visible"]();
-        await Then[
-          "the validation error popover should contain a warning alert with the correct aria-label"
-        ]();
+        await Then["the validation error popover should contain a warning alert with the correct aria-label"]();
       },
-
     );
     feature(
       "When user prefers more contrast, button should meet WCAG AAA contrast requirements",
       async ({ Given, Then, page }) => {
-
-        await page.emulateMedia({ forcedColors: 'active' });
+        await page.emulateMedia({ forcedColors: "active" });
         // Stub prefers-contrast
         await page.addInitScript(() => {
           const originalMatchMedia = window.matchMedia;
           window.matchMedia = (query: string) => {
-            if (query === '(prefers-contrast: more)') {
+            if (query === "(prefers-contrast: more)") {
               return {
                 matches: true,
                 media: query,
@@ -331,16 +278,15 @@ test.describe("ValidatingSubmitButton", () => {
                 removeListener() {},
                 addEventListener() {},
                 removeEventListener() {},
-                dispatchEvent() { return false; },
+                dispatchEvent() {
+                  return false;
+                },
               } as MediaQueryList;
             }
             return originalMatchMedia(query);
           };
-
         });
-        await Given[
-          "the ValidatingSubmitButton with high contrast is rendered"
-        ]();
+        await Given["the ValidatingSubmitButton with high contrast is rendered"]();
         await Then["there shouldn't be any contrast violations at AAA level"]();
       },
     );

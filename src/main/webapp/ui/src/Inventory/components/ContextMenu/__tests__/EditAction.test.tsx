@@ -1,18 +1,14 @@
-import { test, describe, expect, vi } from 'vitest';
+import { ThemeProvider } from "@mui/material/styles";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import {
-  render,
-  waitFor,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-import EditAction from "../EditAction";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
-import { ThemeProvider } from "@mui/material/styles";
-
 import materialTheme from "../../../../theme";
+import EditAction from "../EditAction";
+
 describe("EditAction", () => {
   describe("When tapped the context action should", () => {
     /*
@@ -39,24 +35,14 @@ describe("EditAction", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
-            <EditAction
-              as="button"
-              disabled=""
-              selectedResults={[makeMockContainer()]}
-              closeMenu={() => {}}
-            />
+            <EditAction as="button" disabled="" selectedResults={[makeMockContainer()]} closeMenu={() => {}} />
           </storesContext.Provider>
         </ThemeProvider>,
       );
 
-      const setVisiblePanelSpy = vi.spyOn(
-        rootStore.uiStore,
-        "setVisiblePanel",
-
-      );
+      const setVisiblePanelSpy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
       await waitFor(() => {
         expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
-
       });
 
       fireEvent.click(screen.getByRole("button", { name: "Edit" }));
@@ -66,4 +52,3 @@ describe("EditAction", () => {
     });
   });
 });
-

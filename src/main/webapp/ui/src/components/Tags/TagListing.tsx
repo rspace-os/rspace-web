@@ -1,14 +1,16 @@
-import React, { useState } from "react";
-import Chip from "@mui/material/Chip";
-import Grid from "@mui/material/Grid";
-import IconButtonWithTooltip from "../IconButtonWithTooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSitemap } from "@fortawesome/free-solid-svg-icons/faSitemap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import DescriptionList from "../DescriptionList";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
 import Popover from "@mui/material/Popover";
+import type React from "react";
+import { useState } from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Tag } from "../../stores/definitions/Tag";
+import DescriptionList from "../DescriptionList";
+import IconButtonWithTooltip from "../IconButtonWithTooltip";
 
 function cardContent(tag: Tag) {
   return [
@@ -80,11 +82,7 @@ export default function TagListing({
              */
             component={onDelete ? "div" : "a"}
             variant={
-              tag.uri.isPresent() &&
-              tag.version.isPresent() &&
-              tag.vocabulary.isPresent()
-                ? "filled"
-                : "outlined"
+              tag.uri.isPresent() && tag.version.isPresent() && tag.vocabulary.isPresent() ? "filled" : "outlined"
             }
             sx={{
               /*
@@ -147,10 +145,7 @@ export default function TagListing({
         >
           <Card>
             <CardContent>
-              <DescriptionList
-                content={cardContent(metadataPopup.tag)}
-                dividers={true}
-              />
+              <DescriptionList content={cardContent(metadataPopup.tag)} dividers={true} />
             </CardContent>
           </Card>
         </Popover>

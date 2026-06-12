@@ -14,38 +14,35 @@
  *
  * ============================================================================
  */
-import {
-  observable,
-  action,
-  computed,
-  makeObservable,
-  runInAction,
-} from "mobx";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
-import GeoLocationModel from "./GeoLocationModel";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
-import { type URL, type _LINK } from "../../util/types";
+import { getErrorMessage } from "@/util/error";
+// biome-ignore lint/style/useImportType: initial biome migration
+import InvApiService from "../../common/InvApiService";
+import type { RadioOption } from "../../components/Inputs/RadioField";
+import * as ArrayUtils from "../../util/ArrayUtils";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type _LINK, type URL } from "../../util/types";
+import { type Alert, mkAlert } from "../contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GlobalId, type Id } from "../definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GeoLocation, type GeoLocationPolygon } from "../definitions/GeoLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
+  type AlternateIdentifier,
+  type CreatorType,
+  type DropdownOption,
   type Identifier,
   type IdentifierAttrs,
-  type AlternateIdentifier,
-  type IdentifierDescription,
-  type IdentifierSubject,
-  type IdentifierField,
-  type DropdownOption,
-  type CreatorType,
-  type IGSNPublishingState,
   type IdentifierDate,
+  type IdentifierDescription,
+  type IdentifierField,
+  type IdentifierSubject,
+  type IGSNPublishingState,
 } from "../definitions/Identifier";
-import type { RadioOption } from "../../components/Inputs/RadioField";
-import {
-  type GeoLocation,
-  type GeoLocationPolygon,
-} from "../definitions/GeoLocation";
-import { mkAlert, type Alert } from "../contexts/Alert";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import InvApiService from "../../common/InvApiService";
-import { getErrorMessage } from "@/util/error";
+import GeoLocationModel from "./GeoLocationModel";
 
 type GeoLocationBox = {
   eastBoundLongitude: string;
@@ -101,12 +98,8 @@ const identifierDateOptions: Array<DropdownOption> = [
  * and their schema is defined by datacite, not RS.
  * this function lets us extract all properties different from "value" and "type".
  */
-export const subFields = <
-  Key extends string,
-  Value,
-  Field extends Record<Key, Value>
->(
-  field: Field
+export const subFields = <Key extends string, Value, Field extends Record<Key, Value>>(
+  field: Field,
 ): Array<{ key: Key; value: Value }> =>
   (Object.entries(field) as Array<[Key, Value]>)
     .filter((item) => item[0] !== "value" && item[0] !== "type")
@@ -164,11 +157,7 @@ export default class IdentifierModel implements Identifier {
 
   ApiServiceBase: typeof InvApiService | null = null;
 
-  constructor(
-    attrs: IdentifierAttrs,
-    parentGlobalId: GlobalId,
-    ApiServiceBase?: typeof InvApiService
-  ) {
+  constructor(attrs: IdentifierAttrs, parentGlobalId: GlobalId, ApiServiceBase?: typeof InvApiService) {
     makeObservable(this, {
       parentGlobalId: observable,
       id: observable,
@@ -244,8 +233,7 @@ export default class IdentifierModel implements Identifier {
       attrs.dates?.map((d) => {
         return { value: new Date(d.value), type: d.type };
       }) ?? [];
-    this.geoLocations =
-      attrs.geoLocations?.map((gl) => new GeoLocationModel(gl)) ?? [];
+    this.geoLocations = attrs.geoLocations?.map((gl) => new GeoLocationModel(gl)) ?? [];
     this._links = attrs._links;
     this.customFieldsOnPublicPage = attrs.customFieldsOnPublicPage;
 
@@ -298,12 +286,9 @@ export default class IdentifierModel implements Identifier {
 
   /* some recommended fields may have required values */
   get optionalCompleted(): boolean {
-    if (!this.alternateIdentifiers?.length && !this.geoLocations?.length)
-      return true;
+    if (!this.alternateIdentifiers?.length && !this.geoLocations?.length) return true;
     return (
-      (this.geoLocations && this.geoLocations.length > 0
-        ? this.geoLocations.every((gl) => gl.isValid)
-        : true) &&
+      (this.geoLocations && this.geoLocations.length > 0 ? this.geoLocations.every((gl) => gl.isValid) : true) &&
       (this.alternateIdentifiers && this.alternateIdentifiers.length > 0
         ? this.alternateIdentifiers.every((id) => Boolean(id.freeType))
         : true)
@@ -336,8 +321,7 @@ export default class IdentifierModel implements Identifier {
       {
         key: "Alternate Identifiers",
         value: this.alternateIdentifiers,
-        handler: (v) =>
-          this.setAlternateIdentifiers(v as Array<AlternateIdentifier>),
+        handler: (v) => this.setAlternateIdentifiers(v as Array<AlternateIdentifier>),
       },
       {
         key: "Dates",
@@ -350,23 +334,15 @@ export default class IdentifierModel implements Identifier {
         key: "Geolocations",
         value: this.geoLocations,
         handler: (v) => {
-          if (Array.isArray(v))
-            this.setGeoLocations(ArrayUtils.filterClass(GeoLocationModel, v));
+          if (Array.isArray(v)) this.setGeoLocations(ArrayUtils.filterClass(GeoLocationModel, v));
         },
       },
     ];
   }
 
   get anyRecommendedGiven(): boolean {
-    return [
-      this.subjects,
-      this.descriptions,
-      this.alternateIdentifiers,
-      this.dates,
-      this.geoLocations,
-    ].some(
-      (recommendedGroup) =>
-        Array.isArray(recommendedGroup) && recommendedGroup.length > 0
+    return [this.subjects, this.descriptions, this.alternateIdentifiers, this.dates, this.geoLocations].some(
+      (recommendedGroup) => Array.isArray(recommendedGroup) && recommendedGroup.length > 0,
     );
   }
 
@@ -435,37 +411,29 @@ export default class IdentifierModel implements Identifier {
     confirm,
     addAlert,
   }: {
-    confirm: (
-      title: React.ReactNode,
-      message: React.ReactNode,
-      yesLabel: string,
-      noLabel: string
-    ) => Promise<boolean>;
+    confirm: (title: React.ReactNode, message: React.ReactNode, yesLabel: string, noLabel: string) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
   }): Promise<void> {
-    if (!this.ApiServiceBase)
-      throw new Error("This operation requires the user be authenticated");
+    if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
     try {
       if (
         await confirm(
           "You are about to publish this Identifier",
           <>
-            The IGSN ID landing page, DataCite Commons, and the DataCite APIs
-            will be updated with these changes.
+            The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.
             <br />
             <br />
             <strong>
-              Please ensure the IGSN ID metadata you provided does not contain
-              any information you do not want to make public before publishing,
-              as this action cannot be fully undone.
+              Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make
+              public before publishing, as this action cannot be fully undone.
             </strong>
             <br />
             <br />
             Do you want to proceed?
           </>,
           "OK",
-          "CANCEL"
+          "CANCEL",
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
@@ -476,13 +444,7 @@ export default class IdentifierModel implements Identifier {
           creatorAffiliation: string | null;
           creatorAffiliationIdentifier: string | null;
         }>(`/identifiers/${this.id}/publish`, {});
-        const {
-          state,
-          url,
-          publicUrl,
-          creatorAffiliation,
-          creatorAffiliationIdentifier,
-        } = response.data;
+        const { state, url, publicUrl, creatorAffiliation, creatorAffiliationIdentifier } = response.data;
         this.updateState(state);
         if (state === "findable") {
           this.creatorAffiliation = creatorAffiliation;
@@ -496,7 +458,7 @@ export default class IdentifierModel implements Identifier {
           mkAlert({
             message: `The identifier ${this.doi} has been published.`,
             variant: "success",
-          })
+          }),
         );
       }
     } catch (error) {
@@ -506,7 +468,7 @@ export default class IdentifierModel implements Identifier {
           title: `The identifier could not be published.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       throw new Error("An error occurred while publishing the identifier", {
         cause: error,
@@ -523,37 +485,27 @@ export default class IdentifierModel implements Identifier {
     confirm,
     addAlert,
   }: {
-    confirm: (
-      title: React.ReactNode,
-      message: React.ReactNode,
-      yesLabel: string,
-      noLabel: string
-    ) => Promise<boolean>;
+    confirm: (title: React.ReactNode, message: React.ReactNode, yesLabel: string, noLabel: string) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
   }): Promise<void> {
-    if (!this.ApiServiceBase)
-      throw new Error("This operation requires the user be authenticated");
+    if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
     try {
       if (
         await confirm(
           "You are about to retract this Identifier",
           <>
-            The IGSN ID will be set to <strong>Registered</strong>. It will be
-            removed from DataCite Commons and the Public API, and the landing
-            page will not display any metadata.
+            The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the
+            Public API, and the landing page will not display any metadata.
             <br />
             <br />
-            <strong>
-              The metadata will remain visible to other DataCite Members via the
-              Member API.
-            </strong>
+            <strong>The metadata will remain visible to other DataCite Members via the Member API.</strong>
             <br />
             <br />
             Do you want to proceed?
           </>,
           "OK",
-          "CANCEL"
+          "CANCEL",
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
@@ -565,7 +517,7 @@ export default class IdentifierModel implements Identifier {
           mkAlert({
             message: `The identifier ${this.doi} has been retracted.`,
             variant: "success",
-          })
+          }),
         );
       }
     } catch (error) {
@@ -574,7 +526,7 @@ export default class IdentifierModel implements Identifier {
           title: `The identifier could not be retracted.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       throw new Error("An error occurred while retracting the identifier", {
         cause: error,
@@ -596,13 +548,8 @@ export default class IdentifierModel implements Identifier {
    * the UiStore as this class is used on the public page where the global
    * stores are not available as the user is not authenticated.
    */
-  async republish({
-    addAlert,
-  }: {
-    addAlert: (alert: Alert) => void;
-  }): Promise<void> {
-    if (!this.ApiServiceBase)
-      throw new Error("This operation requires the user be authenticated");
+  async republish({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void> {
+    if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
     if (this.id === null || typeof this.id === "undefined") {
       addAlert(
@@ -610,7 +557,7 @@ export default class IdentifierModel implements Identifier {
           title: "Identifier could not be re-published",
           message: "DOI must be known",
           variant: "error",
-        })
+        }),
       );
     } else {
       const id: number = this.id;
@@ -627,7 +574,7 @@ export default class IdentifierModel implements Identifier {
             title: `The identifier could not be republished.`,
             message: getErrorMessage(error, "Unknown reason."),
             variant: "error",
-          })
+          }),
         );
         throw new Error("An error occurred while retracting the identifier", {
           cause: error,
@@ -643,13 +590,7 @@ export default class IdentifierModel implements Identifier {
           creatorAffiliation: string | null;
           creatorAffiliationIdentifier: string | null;
         }>(`/identifiers/${id}/publish`, {});
-        const {
-          state,
-          url,
-          publicUrl,
-          creatorAffiliation,
-          creatorAffiliationIdentifier,
-        } = response.data;
+        const { state, url, publicUrl, creatorAffiliation, creatorAffiliationIdentifier } = response.data;
         this.updateState(state);
         if (state === "findable") {
           this.creatorAffiliation = creatorAffiliation;
@@ -663,7 +604,7 @@ export default class IdentifierModel implements Identifier {
           mkAlert({
             message: `The identifier ${this.doi} has been republished.`,
             variant: "success",
-          })
+          }),
         );
       } catch (error) {
         /*
@@ -674,11 +615,9 @@ export default class IdentifierModel implements Identifier {
         addAlert(
           mkAlert({
             title: `The identifier could not be republished.`,
-            message:
-              "Identifier has been retracted. Tap publish to try again.\n" +
-              getErrorMessage(error, "Unknown reason."),
+            message: `Identifier has been retracted. Tap publish to try again.\n${getErrorMessage(error, "Unknown reason.")}`,
             variant: "error",
-          })
+          }),
         );
         throw new Error("An error occurred while republishing the identifier", {
           cause: error,

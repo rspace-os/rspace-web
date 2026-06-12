@@ -20,7 +20,7 @@ export function useDryadEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from Dryad.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useDryadEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from Dryad.",
-        })
+        }),
       );
     }
   };

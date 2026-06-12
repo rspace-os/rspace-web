@@ -1,4 +1,4 @@
-import { type Validator, mkValidator } from "../util/Validator";
+import { mkValidator, type Validator } from "../util/Validator";
 
 // A unique identifier for each pane
 type Key = string;

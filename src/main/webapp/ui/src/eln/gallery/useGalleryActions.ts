@@ -1,23 +1,25 @@
 import React from "react";
 import axios from "@/common/axios";
+import { getErrorMessage } from "@/util/error";
+import useOauthToken from "../../hooks/auth/useOauthToken";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
-import RsSet from "../../util/set";
 import Result from "../../util/result";
-import {
-  type GalleryFile,
-  LocalGalleryFile,
-  Filestore,
-  type Description,
-  idToString,
-  type Id,
-} from "./useGalleryListing";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import useOauthToken from "../../hooks/auth/useOauthToken";
+// biome-ignore lint/style/useImportType: initial biome migration
+import RsSet from "../../util/set";
 import { partitionAllSettled } from "../../util/Util";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GallerySection } from "./common";
-import AnalyticsContext from "../../stores/contexts/Analytics";
-import { getErrorMessage } from "@/util/error";
+import {
+  type Description,
+  Filestore,
+  type GalleryFile,
+  type Id,
+  idToString,
+  LocalGalleryFile,
+} from "./useGalleryListing";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
@@ -61,11 +63,7 @@ export function useGalleryActions(): {
    *               instead.
    * @arg files    The File objects being uploaded.
    */
-  uploadFiles: (
-    parentId: Id,
-    files: ReadonlyArray<File>,
-    options?: { originalImageId: Id },
-  ) => Promise<void>;
+  uploadFiles: (parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) => Promise<void>;
 
   /**
    * For creating new folders.
@@ -87,11 +85,7 @@ export function useGalleryActions(): {
    *                  particular folder.
    * @arg files       The files being moved.
    */
-  moveFiles: (
-    section: GallerySection,
-    destination: Destination,
-    files: RsSet<GalleryFile>,
-  ) => Promise<void>;
+  moveFiles: (section: GallerySection, destination: Destination, files: RsSet<GalleryFile>) => Promise<void>;
 
   /**
    * Delete the specified files. If the files are Filestores then they are disconnected.
@@ -121,11 +115,7 @@ export function useGalleryActions(): {
    * @arg file     The file whose contents are being updated.
    * @arg newFile  The contents that *file* is being updated to.
    */
-  uploadNewVersion: (
-    folderId: Id,
-    file: GalleryFile,
-    newFile: File,
-  ) => Promise<void>;
+  uploadNewVersion: (folderId: Id, file: GalleryFile, newFile: File) => Promise<void>;
 
   /**
    * Modify the description of a specified file.
@@ -133,10 +123,7 @@ export function useGalleryActions(): {
    * @arg file           The file whose description is being modified.
    * @arg newDescription The new description.
    */
-  changeDescription: (
-    file: GalleryFile,
-    newDescription: Description,
-  ) => Promise<void>;
+  changeDescription: (file: GalleryFile, newDescription: Description) => Promise<void>;
 
   /**
    * Download the specified files.
@@ -162,11 +149,7 @@ export function useGalleryActions(): {
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  async function uploadFiles(
-    parentId: Id,
-    files: ReadonlyArray<File>,
-    options?: { originalImageId: Id },
-  ) {
+  async function uploadFiles(parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -177,6 +160,7 @@ export function useGalleryActions(): {
     const api = axios.create({
       baseURL: "/api/v1/files",
       headers: {
+        // biome-ignore lint/style/useTemplate: initial biome migration
         Authorization: "Bearer " + (await getToken()),
       },
     });
@@ -188,10 +172,7 @@ export function useGalleryActions(): {
           formData.append("file", file);
           formData.append("folderId", idToString(parentId).elseThrow());
           if (options?.originalImageId)
-            formData.append(
-              "originalImageId",
-              idToString(options.originalImageId).elseThrow(),
-            );
+            formData.append("originalImageId", idToString(options.originalImageId).elseThrow());
           return api.post<unknown>("/", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
@@ -201,13 +182,7 @@ export function useGalleryActions(): {
       );
 
       addAlert(
-        Result.any(
-          ...data.map((d) =>
-            Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(
-              Parsers.isString,
-            ),
-          ),
-        )
+        Result.any(...data.map((d) => Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(Parsers.isString)))
           .map((exceptionMessages) =>
             mkAlert({
               message: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
@@ -220,9 +195,7 @@ export function useGalleryActions(): {
           )
           .orElse(
             mkAlert({
-              message: `Successfully uploaded file${
-                files.length === 1 ? "" : "s"
-              }.`,
+              message: `Successfully uploaded file${files.length === 1 ? "" : "s"}.`,
               variant: "success",
             }),
           ),
@@ -311,8 +284,7 @@ export function useGalleryActions(): {
         mkAlert({
           variant: "error",
           title: "Cannot move files into SNIPPETS folders.",
-          message:
-            "Share them and they will automatically appear in these folders.",
+          message: "Share them and they will automatically appear in these folders.",
         }),
       );
       return;
@@ -325,25 +297,15 @@ export function useGalleryActions(): {
     try {
       addAlert(movingAlert);
       const formData = new FormData();
-      formData.append(
-        "target",
-        destination.key === "root"
-          ? "0"
-          : idToString(destination.folder.id).elseThrow(),
-      );
-      for (const file of files)
-        formData.append("filesId[]", idToString(file.id).elseThrow());
+      formData.append("target", destination.key === "root" ? "0" : idToString(destination.folder.id).elseThrow());
+      for (const file of files) formData.append("filesId[]", idToString(file.id).elseThrow());
       // mediaType is required, but only actually used if target is 0
       formData.append("mediaType", section);
-      const data = await galleryApi.post<unknown>(
-        "moveGalleriesElements",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      const data = await galleryApi.post<unknown>("moveGalleriesElements", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
@@ -390,17 +352,12 @@ export function useGalleryActions(): {
     try {
       addAlert(deletingAlert);
       const formData = new FormData();
-      for (const file of files)
-        formData.append("idsToDelete[]", idToString(file.id).elseThrow());
-      const data = await galleryApi.post<unknown>(
-        "deleteElementFromGallery",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+      for (const file of files) formData.append("idsToDelete[]", idToString(file.id).elseThrow());
+      const data = await galleryApi.post<unknown>("deleteElementFromGallery", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
         },
-      );
+      });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
@@ -432,13 +389,12 @@ export function useGalleryActions(): {
     const api = axios.create({
       baseURL: "/api/v1/gallery",
       headers: {
+        // biome-ignore lint/style/useTemplate: initial biome migration
         Authorization: "Bearer " + (await getToken()),
       },
     });
     try {
-      await api.delete<unknown>(
-        `filestores/${idToString(filestore.id).elseThrow()}`,
-      );
+      await api.delete<unknown>(`filestores/${idToString(filestore.id).elseThrow()}`);
       addAlert(
         mkAlert({
           message: "Successfully deleted filestore.",
@@ -474,8 +430,7 @@ export function useGalleryActions(): {
       return;
     }
     try {
-      if (files.some((f) => !(f instanceof LocalGalleryFile)))
-        throw new Error("Can only delete local files");
+      if (files.some((f) => !(f instanceof LocalGalleryFile))) throw new Error("Can only delete local files");
       await deleteLocalFiles(files.filterClass(LocalGalleryFile));
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -506,6 +461,7 @@ export function useGalleryActions(): {
       formData.append("idToCopy[]", idToString(file.id).elseThrow());
       formData.append(
         "newName[]",
+        // biome-ignore lint/style/useTemplate: initial biome migration
         file.transformFilename((name) => name + "_copy"),
       );
     }
@@ -538,9 +494,7 @@ export function useGalleryActions(): {
           )
           .orElse(
             mkAlert({
-              message: `Successfully duplicated item${
-                files.size > 0 ? "s" : ""
-              }.`,
+              message: `Successfully duplicated item${files.size > 0 ? "s" : ""}.`,
               variant: "success",
             }),
           ),
@@ -584,18 +538,13 @@ export function useGalleryActions(): {
     );
     try {
       addAlert(renamingAlert);
-      if (typeof file.setName === "undefined")
-        throw new Error("This file cannot be renamed");
+      if (typeof file.setName === "undefined") throw new Error("This file cannot be renamed");
       const setName = file.setName;
-      const data = await structuredDocumentApi.post<unknown>(
-        "rename",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+      const data = await structuredDocumentApi.post<unknown>("rename", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
         },
-      );
+      });
 
       Parsers.objectPath(["data", "exceptionMessage"], data)
         .flatMap(Parsers.isString)
@@ -626,11 +575,7 @@ export function useGalleryActions(): {
     }
   }
 
-  async function uploadNewVersion(
-    folderId: Id,
-    file: GalleryFile,
-    newFile: File,
-  ) {
+  async function uploadNewVersion(folderId: Id, file: GalleryFile, newFile: File) {
     if (file.canUploadNewVersion.isError) {
       addAlert(
         mkAlert({
@@ -660,11 +605,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .flatMap(Parsers.isString)
-          .orElseTry(() =>
-            Parsers.objectPath(["exceptionMessage"], data).flatMap(
-              Parsers.isString,
-            ),
-          )
+          .orElseTry(() => Parsers.objectPath(["exceptionMessage"], data).flatMap(Parsers.isString))
           .map((exceptionMessage) =>
             mkAlert({
               title: `Failed to upload new version.`,
@@ -694,10 +635,7 @@ export function useGalleryActions(): {
     }
   }
 
-  async function changeDescription(
-    file: GalleryFile,
-    newDescription: Description,
-  ) {
+  async function changeDescription(file: GalleryFile, newDescription: Description) {
     if (
       !file.description.match({
         missing: () => false,
@@ -727,18 +665,13 @@ export function useGalleryActions(): {
       }),
     );
     try {
-      if (typeof file.setDescription === "undefined")
-        throw new Error("Cannot edit description");
+      if (typeof file.setDescription === "undefined") throw new Error("Cannot edit description");
       const setDescription = file.setDescription;
-      const data = await structuredDocumentApi.post<unknown>(
-        "description",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+      const data = await structuredDocumentApi.post<unknown>("description", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
         },
-      );
+      });
 
       Parsers.objectPath(["data", "exceptionMessage"], data)
         .flatMap(Parsers.isString)
@@ -775,8 +708,7 @@ export function useGalleryActions(): {
         await Promise.allSettled(
           [...files].map(async (file) => {
             const link = document.createElement("a");
-            if (!file.downloadHref)
-              throw new Error(`Cannot download ${file.name}`);
+            if (!file.downloadHref) throw new Error(`Cannot download ${file.name}`);
             link.href = await file.downloadHref();
             link.download = file.name;
             link.click();
@@ -788,9 +720,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "success",
-            message: `Successfully downloaded ${
-              rejected.length > 0 ? "some of " : ""
-            }the files.`,
+            message: `Successfully downloaded ${rejected.length > 0 ? "some of " : ""}the files.`,
             ...(rejected.length > 0
               ? {
                   details: fulfilled.map((f) => ({
@@ -806,16 +736,10 @@ export function useGalleryActions(): {
         const rejectedResponses = await Promise.all(
           rejected.map(async (response) => {
             try {
-              const data = Parsers.objectPath(
-                ["response", "data"],
-                response,
-              ).elseThrow();
-              if (!(data instanceof Blob))
-                throw new Error("Response is not a blob");
+              const data = Parsers.objectPath(["response", "data"], response).elseThrow();
+              if (!(data instanceof Blob)) throw new Error("Response is not a blob");
               const json = JSON.parse(await data.text()) as unknown;
-              return Parsers.objectPath(["message"], json)
-                .flatMap(Parsers.isString)
-                .elseThrow();
+              return Parsers.objectPath(["message"], json).flatMap(Parsers.isString).elseThrow();
             } catch (e) {
               if (e instanceof Error) {
                 return Promise.resolve(e.message);
@@ -827,9 +751,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "error",
-            message: `Failed to download ${
-              fulfilled.length > 0 ? "some of " : ""
-            }the files.`,
+            message: `Failed to download ${fulfilled.length > 0 ? "some of " : ""}the files.`,
             details: rejectedResponses.map((errorMsg) => ({
               variant: "error",
               title: errorMsg,

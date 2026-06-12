@@ -1,17 +1,17 @@
-import React from "react";
-import DSWImportDialog from "./DSWImportDialog";
-import AccentMenuItem from "../../components/AccentMenuItem";
-import DSWIcon from "../../assets/branding/dsw/logo.svg";
-import { LOGO_COLOR } from "../../assets/branding/dsw";
 import CardMedia from "@mui/material/CardMedia";
+import React from "react";
+import { LOGO_COLOR } from "../../assets/branding/dsw";
+import DSWIcon from "../../assets/branding/dsw/logo.svg";
+import AccentMenuItem from "../../components/AccentMenuItem";
 import EventBoundary from "../../components/EventBoundary";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import DSWImportDialog from "./DSWImportDialog";
 
 export type DswConfig = {
   DSW_APIKEY: string;
   DSW_URL: string;
   DSW_ALIAS: string;
-}
+};
 
 type DSWAccentMenuItemArgs = {
   onDialogClose: () => void;
@@ -21,10 +21,7 @@ type DSWAccentMenuItemArgs = {
 /**
  * The menu item for the create menu for importing DMPs from DSW/FAIR Wizard.
  */
-export default function DSWAccentMenuItem({
-  onDialogClose,
-    connection
-}: DSWAccentMenuItemArgs): React.ReactNode {
+export default function DSWAccentMenuItem({ onDialogClose, connection }: DSWAccentMenuItemArgs): React.ReactNode {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [showDSWDialog, setShowDSWDialog] = React.useState(false);
 

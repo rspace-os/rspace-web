@@ -1,10 +1,10 @@
-import React from "react";
-import DMPDialog from "./DMPDialog";
-import AccentMenuItem from "../../components/AccentMenuItem";
-import DMPAssistantIcon from "../../assets/branding/dmpassistant/logo.svg";
-import { LOGO_COLOR } from "../../assets/branding/dmpassistant";
 import CardMedia from "@mui/material/CardMedia";
+import React from "react";
+import { LOGO_COLOR } from "../../assets/branding/dmpassistant";
+import DMPAssistantIcon from "../../assets/branding/dmpassistant/logo.svg";
+import AccentMenuItem from "../../components/AccentMenuItem";
 import EventBoundary from "../../components/EventBoundary";
+import DMPDialog from "./DMPDialog";
 
 type DMPAssistantAccentMenuItemArgs = {
   onDialogClose: () => void;
@@ -13,9 +13,7 @@ type DMPAssistantAccentMenuItemArgs = {
 /**
  * The menu item for the create menu for importing DMPs from DMP Assistant.
  */
-export default function DMPAssistantAccentMenuItem({
-  onDialogClose,
-}: DMPAssistantAccentMenuItemArgs): React.ReactNode {
+export default function DMPAssistantAccentMenuItem({ onDialogClose }: DMPAssistantAccentMenuItemArgs): React.ReactNode {
   const [showDialog, setShowDialog] = React.useState(false);
 
   return (

@@ -1,12 +1,10 @@
-import { mapObject } from "./Util";
-import { type Order } from "./types";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GridColDef } from "@mui/x-data-grid";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Order } from "./types";
+import { mapObject } from "./Util";
 
-export function desc<T extends string, U>(
-  a: { [K in T]: U },
-  b: { [K in T]: U },
-  orderBy: T
-): -1 | 0 | 1 {
+export function desc<T extends string, U>(a: { [K in T]: U }, b: { [K in T]: U }, orderBy: T): -1 | 0 | 1 {
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -25,14 +23,8 @@ export function desc<T extends string, U>(
  * but not so for older browsers. For more information, see
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#sort_stability
  */
-export function stableSort<T>(
-  array: ReadonlyArray<T>,
-  cmp: (t1: T, t2: T) => -1 | 0 | 1
-): Array<T> {
-  const stabilizedThis: Array<[T, number]> = array.map((el, index) => [
-    el,
-    index,
-  ]);
+export function stableSort<T>(array: ReadonlyArray<T>, cmp: (t1: T, t2: T) => -1 | 0 | 1): Array<T> {
+  const stabilizedThis: Array<[T, number]> = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = cmp(a[0], b[0]);
     if (order !== 0) return order;
@@ -43,18 +35,19 @@ export function stableSort<T>(
 
 export function getSorting<T extends string, U>(
   order: Order,
-  orderBy: T
+  orderBy: T,
 ): (a: { [K in T]: U }, b: { [K in T]: U }) => -1 | 0 | 1 {
-  return (
-    order === "desc"
-      ? (a, b) => desc(a, b, orderBy)
-      : (a, b) => -desc(a, b, orderBy)
-  ) as (a: { [K in T]: U }, b: { [K in T]: U }) => -1 | 0 | 1;
+  return (order === "desc" ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy)) as (
+    a: { [K in T]: U },
+    b: { [K in T]: U },
+  ) => -1 | 0 | 1;
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: initial biome migration
 const transformObject = <T, U extends keyof T, V>(
   obj: T,
-  map: { [K in U]: (t: T) => V }
+  map: { [K in U]: (t: T) => V },
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
 ): { [K in U]: V } => mapObject((k, v) => v(obj), map);
 
 /**
@@ -65,13 +58,9 @@ const transformObject = <T, U extends keyof T, V>(
  * override is set, then a further option of all the available rows is also
  * included.
  */
-export const paginationOptions = (
-  resultsLength: number
-): Array<number | { value: number; label: string }> => [
+export const paginationOptions = (resultsLength: number): Array<number | { value: number; label: string }> => [
   ...[5, 10, 25, 100].filter((p) => p < resultsLength),
-  ...(resultsLength <= 100
-    ? [{ value: resultsLength, label: `${resultsLength} (All)` }]
-    : []),
+  ...(resultsLength <= 100 ? [{ value: resultsLength, label: `${resultsLength} (All)` }] : []),
 ];
 
 export const DataGridColumn = {
@@ -79,13 +68,10 @@ export const DataGridColumn = {
    * Define a new column where the cell's value is simply the property of the
    * object `Row` with key `Field`.
    */
-  newColumnWithFieldName<
-    Field extends string,
-    Row extends object & { [K in Field]: unknown }
-  >(
+  newColumnWithFieldName<Field extends string, Row extends object & { [K in Field]: unknown }>(
     // Also acts as the unique identifier for the column
     field: Field,
-    rest: Omit<GridColDef<Row>, "field">
+    rest: Omit<GridColDef<Row>, "field">,
   ): GridColDef<Row> {
     return {
       field,
@@ -100,15 +86,12 @@ export const DataGridColumn = {
    * This allows for simple transformations to the data such as formatting a
    * date in the user's locale.
    */
-  newColumnWithValueMapper<
-    Field extends string,
-    Row extends object & { [K in Field]: unknown }
-  >(
+  newColumnWithValueMapper<Field extends string, Row extends object & { [K in Field]: unknown }>(
     // The name of field to be transformed
     field: Field,
     // Function that does the transformation
     mapFunction: (value: Row[Field]) => string,
-    rest: Omit<GridColDef<Row>, "field" | "valueGetter">
+    rest: Omit<GridColDef<Row>, "field" | "valueGetter">,
   ): GridColDef<Row> {
     return {
       field,
@@ -127,7 +110,7 @@ export const DataGridColumn = {
     field: Field,
     // Function for getting a cell's value from a Row
     valueGetter: (row: Row) => Value,
-    rest: Omit<GridColDef<Row>, "field" | "valueGetter">
+    rest: Omit<GridColDef<Row>, "field" | "valueGetter">,
   ): GridColDef<Row> {
     return {
       field,

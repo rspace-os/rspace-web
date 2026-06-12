@@ -1,7 +1,10 @@
-import { type Attachment } from "./Attachment";
-import { type BaseRecord } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type ValidationResult } from "../../components/ValidatingSubmitButton";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { Attachment } from "./Attachment";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type BaseRecord } from "./BaseRecord";
 
 export type FieldType =
   | "choice"

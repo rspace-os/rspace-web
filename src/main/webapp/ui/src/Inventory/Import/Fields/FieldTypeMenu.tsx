@@ -1,10 +1,11 @@
 import Box from "@mui/material/Box";
+import Menu from "@mui/material/Menu";
+import { observer } from "mobx-react-lite";
+import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import FieldTypeMenuItem from "./FieldTypeMenuItem";
 import UploadFormControl from "./FormControl";
-import Menu from "@mui/material/Menu";
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { ColumnFieldMap } from "../../../stores/models/ImportModel";
 
 type FieldTypeMenuArgs = {
   columnFieldMap: ColumnFieldMap;

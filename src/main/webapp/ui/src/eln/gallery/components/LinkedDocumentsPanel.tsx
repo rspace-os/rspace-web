@@ -1,12 +1,13 @@
-import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { type GalleryFile } from "../useGalleryListing";
-import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
-import { DataGridColumn } from "../../../util/table";
+import React from "react";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import { DataGridColumn } from "../../../util/table";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type GalleryFile } from "../useGalleryListing";
+import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 
 /**
  * This table lists all of the ELN documents that reference the passed
@@ -19,11 +20,7 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
  *
  * @param file The GalleryFile that can be referenced by ELN documents.
  */
-export function LinkedDocumentsPanel({
-  file,
-}: {
-  file: GalleryFile;
-}): React.ReactNode {
+export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.ReactNode {
   const apiRef = useGridApiRef();
   const linkedDocuments = useLinkedDocuments(file);
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -38,10 +35,7 @@ export function LinkedDocumentsPanel({
   }, [linkedDocuments.documents]);
 
   return (
-    <Box
-      component="section"
-      sx={{ flexGrow: 1, mt: 0.5, "--DataGrid-overlayHeight": "40px" }}
-    >
+    <Box component="section" sx={{ flexGrow: 1, mt: 0.5, "--DataGrid-overlayHeight": "40px" }}>
       <Typography variant="h4" component="h4">
         Linked Documents
       </Typography>
@@ -53,23 +47,20 @@ export function LinkedDocumentsPanel({
             sortable: false,
             resizable: true,
           }),
-          DataGridColumn.newColumnWithFieldName<"globalId", Document>(
-            "globalId",
-            {
-              headerName: "Global ID",
-              flex: 0,
-              resizable: true,
-              sortable: false,
-              renderCell: ({ row }) => (
-                <GlobalId
-                  record={row.linkableRecord}
-                  onClick={() => {
-                    trackEvent("user:click:globalId:galleryLinkedDocuments");
-                  }}
-                />
-              ),
-            },
-          ),
+          DataGridColumn.newColumnWithFieldName<"globalId", Document>("globalId", {
+            headerName: "Global ID",
+            flex: 0,
+            resizable: true,
+            sortable: false,
+            renderCell: ({ row }) => (
+              <GlobalId
+                record={row.linkableRecord}
+                onClick={() => {
+                  trackEvent("user:click:globalId:galleryLinkedDocuments");
+                }}
+              />
+            ),
+          }),
         ]}
         rows={linkedDocuments.documents}
         initialState={{

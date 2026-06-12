@@ -1,14 +1,12 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  act,
-} from "@testing-library/react";
-import ExportRepoUser from "../ExportRepoUser";
-import { type Person } from "../repositories/common";
+import { act, render } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
+import ExportRepoUser from "../ExportRepoUser";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Person } from "../repositories/common";
 
 const mockAxios = new MockAdapter(axios, { onNoMatch: "throwException" });
 function renderExportRepoUser({
@@ -24,9 +22,8 @@ function renderExportRepoUser({
       updatePeople={updatePeople ?? (() => {})}
       inputValidations={{ author: true, contact: true }}
       submitAttempt={false}
-    />
+    />,
   );
-
 }
 describe("ExportRepoUser", () => {
   test("If no people are passed as prop, then the current user should be fetched.", async () => {
@@ -40,7 +37,6 @@ describe("ExportRepoUser", () => {
     const updatePeople = vi.fn<(people: Array<Person>) => void>();
     await act(() => renderExportRepoUser({ people: [], updatePeople }));
     expect(updatePeople).toHaveBeenCalled();
-
   });
   test("If people are passed as prop, current user is not fetched.", async () => {
     // `/directory/ajax/subject` is not mocked so that if ExportRepoUser
@@ -57,9 +53,8 @@ describe("ExportRepoUser", () => {
           },
         ],
         updatePeople,
-      })
+      }),
     );
     expect(updatePeople).not.toHaveBeenCalled();
   });
 });
-

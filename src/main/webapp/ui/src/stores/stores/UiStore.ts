@@ -1,12 +1,15 @@
-import { action, observable, computed, makeObservable } from "mobx";
+import { action, computed, makeObservable, observable } from "mobx";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
 import { isMobile } from "react-device-detect";
+import theme from "../../theme";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Panel } from "../../util/types";
+import { match } from "../../util/Util";
+import { pick } from "../../util/unsafeUtils";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Alert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
-import { match } from "../../util/Util";
-import theme from "../../theme";
-import React from "react";
-import { type Panel } from "../../util/types";
-import { pick } from "../../util/unsafeUtils";
 
 type ConfirmationDialogProps = {
   title: React.ReactNode;
@@ -24,18 +27,16 @@ const beforeUnloadAction: EventListener = (e: Event) => {
   e.returnValue = "";
 };
 
-const breakpoints: Record<"xs" | "sm" | "md" | "lg" | "xl", symbol> =
-  Object.freeze({
-    xs: Symbol("xs"),
-    sm: Symbol("sm"),
-    md: Symbol("md"),
-    lg: Symbol("lg"),
-    xl: Symbol("xl"),
-  });
+const breakpoints: Record<"xs" | "sm" | "md" | "lg" | "xl", symbol> = Object.freeze({
+  xs: Symbol("xs"),
+  sm: Symbol("sm"),
+  md: Symbol("md"),
+  lg: Symbol("lg"),
+  xl: Symbol("xl"),
+});
 
-const isSingleColumnLayout = (
-  viewportSize: (typeof breakpoints)[keyof typeof breakpoints]
-) => [breakpoints.xs, breakpoints.sm].includes(viewportSize);
+const isSingleColumnLayout = (viewportSize: (typeof breakpoints)[keyof typeof breakpoints]) =>
+  [breakpoints.xs, breakpoints.sm].includes(viewportSize);
 
 export default class UiStore {
   rootStore: RootStore;
@@ -105,8 +106,7 @@ export default class UiStore {
       this.updateViewportSize();
       const isNowSingleColumnLayout = isSingleColumnLayout(this.viewportSize);
 
-      if (!wasSingleColumnLayout && isNowSingleColumnLayout)
-        this.toggleSidebar(false);
+      if (!wasSingleColumnLayout && isNowSingleColumnLayout) this.toggleSidebar(false);
       if (wasSingleColumnLayout && !isNowSingleColumnLayout) {
         this.toggleSidebar(true);
 
@@ -122,25 +122,16 @@ export default class UiStore {
     });
     this.updateViewportSize();
     this.sidebarOpen = Object.values(
-      pick("md", "lg", "xl")(breakpoints) as Pick<
-        typeof breakpoints,
-        "md" | "lg" | "xl"
-      >
+      pick("md", "lg", "xl")(breakpoints) as Pick<typeof breakpoints, "md" | "lg" | "xl">,
       // @ts-expect-error this.viewportSize is initialised by the updateViewportSize call above
     ).includes(this.viewportSize);
   }
 
   updateViewportSize() {
-    this.viewportSize = match<
-      number,
-      (typeof breakpoints)[keyof typeof breakpoints]
-    >(
+    this.viewportSize = match<number, (typeof breakpoints)[keyof typeof breakpoints]>(
       (Object.keys(breakpoints) as ReadonlyArray<keyof typeof breakpoints>)
         .toReversed()
-        .map((bp) => [
-          (width) => width > theme.breakpoints.values[bp],
-          breakpoints[bp],
-        ])
+        .map((bp) => [(width) => width > theme.breakpoints.values[bp], breakpoints[bp]]),
     )(window.innerWidth);
   }
 
@@ -149,10 +140,7 @@ export default class UiStore {
   }
 
   get isLarge(): boolean {
-    return (
-      this.viewportSize === breakpoints.lg ||
-      this.viewportSize === breakpoints.xl
-    );
+    return this.viewportSize === breakpoints.lg || this.viewportSize === breakpoints.xl;
   }
 
   get isTouchDevice(): boolean {
@@ -169,12 +157,7 @@ export default class UiStore {
   }
 
   get alwaysVisibleSidebar(): boolean {
-    return [
-      breakpoints.sm,
-      breakpoints.md,
-      breakpoints.lg,
-      breakpoints.xl,
-    ].includes(this.viewportSize);
+    return [breakpoints.sm, breakpoints.md, breakpoints.lg, breakpoints.xl].includes(this.viewportSize);
   }
 
   toggleSidebar(isOpen: boolean = !this.sidebarOpen): void {
@@ -229,7 +212,7 @@ export default class UiStore {
      * will turn into a spinner. Once the promise returned by onConfirm
      * resolves, the promise returned by confirm also resolves with true.
      */
-    onConfirm?: () => Promise<void>
+    onConfirm?: () => Promise<void>,
   ): Promise<boolean> {
     if (!this.confirmationDialogProps) {
       return new Promise((resolve) => {
@@ -244,8 +227,7 @@ export default class UiStore {
               resolve(true);
             });
             if (onConfirm) {
-              if (this.confirmationDialogProps)
-                this.confirmationDialogProps.confirmationSpinner = true;
+              if (this.confirmationDialogProps) this.confirmationDialogProps.confirmationSpinner = true;
               void onConfirm().then(returnYes);
             } else {
               returnYes();
@@ -281,12 +263,8 @@ export default class UiStore {
   confirmDiscardAnyChanges(): Promise<boolean> {
     // returns boolean -- true means the caller is free to navigate away from record
     if (this.dirty) {
-      return this.confirm(
-        "Leave the editor?",
-        "Changes that you made will not be saved.",
-        "Leave",
-        "Cancel",
-        () => this.discardChangesCallback()
+      return this.confirm("Leave the editor?", "Changes that you made will not be saved.", "Leave", "Cancel", () =>
+        this.discardChangesCallback(),
       );
     }
     return Promise.resolve(true);

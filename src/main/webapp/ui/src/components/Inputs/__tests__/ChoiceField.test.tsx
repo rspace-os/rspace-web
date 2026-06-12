@@ -1,26 +1,16 @@
-
-import {
-  describe,
-  expect,
-  afterEach,
-  test,
-  vi,
-} from "vitest";
-import React from "react";
-import { render } from "@testing-library/react";
-import ChoiceField from "../ChoiceField";
 import Checkbox from "@mui/material/Checkbox";
 import { ThemeProvider } from "@mui/material/styles";
+import { render } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
+import ChoiceField from "../ChoiceField";
 
 vi.mock("@mui/material/Checkbox", () => ({
   default: vi.fn(() => <div></div>),
 }));
-const renderChoiceField = (props: {
-  disabled?: boolean;
-  hideWhenDisabled?: boolean;
-  value: Array<"foo" | "bar">;
-}) =>
+const renderChoiceField = (props: { disabled?: boolean; hideWhenDisabled?: boolean; value: Array<"foo" | "bar"> }) =>
   render(
     <ThemeProvider theme={materialTheme}>
       <ChoiceField
@@ -32,8 +22,7 @@ const renderChoiceField = (props: {
         ]}
         {...props}
       />
-    </ThemeProvider>
-
+    </ThemeProvider>,
   );
 const expectAllOptionsAreShown = () => {
   expect(Checkbox).toHaveBeenCalledTimes(2);
@@ -41,19 +30,17 @@ const expectAllOptionsAreShown = () => {
     expect.objectContaining({
       value: "foo",
     }),
-    expect.anything()
+    expect.anything(),
   );
   expect(Checkbox).toHaveBeenCalledWith(
     expect.objectContaining({
       value: "bar",
     }),
-    expect.anything()
+    expect.anything(),
   );
-
 };
 const expectNoOptions = () => {
   expect(Checkbox).not.toHaveBeenCalled();
-
 };
 const expectJustFoo = () => {
   expect(Checkbox).toHaveBeenCalledTimes(1);
@@ -61,9 +48,8 @@ const expectJustFoo = () => {
     expect.objectContaining({
       value: "foo",
     }),
-    expect.anything()
+    expect.anything(),
   );
-
 };
 describe("ChoiceField", () => {
   afterEach(() => {
@@ -105,8 +91,7 @@ describe("ChoiceField", () => {
       }) => {
         renderChoiceField({ disabled, hideWhenDisabled, value });
         expectFn();
-      }
+      },
     );
   });
 });
-

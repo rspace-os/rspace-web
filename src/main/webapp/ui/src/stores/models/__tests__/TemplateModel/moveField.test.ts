@@ -1,17 +1,17 @@
-import { describe, expect, test, vi } from 'vitest';
 import fc from "fast-check";
-import { makeMockTemplate } from "./mocking";
+import { describe, expect, test, vi } from "vitest";
 import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type FieldModelAttrs } from "../../FieldModel";
+import { makeMockTemplate } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/RootStore", () => ({
   default: () => ({
-  unitStore: {
-    assertValidUnitId: () => {},
-  },
-})
-
+    unitStore: {
+      assertValidUnitId: () => {},
+    },
+  }),
 }));
 const fieldData: Array<FieldModelAttrs> = [
   {
@@ -126,7 +126,6 @@ const fieldData: Array<FieldModelAttrs> = [
     attachment: null,
     mandatory: false,
   },
-
 ];
 describe("action: moveField", () => {
   describe("Property Tests", () => {
@@ -142,7 +141,7 @@ describe("action: moveField", () => {
           template.moveField(field, 0);
           const afterTwice = [...template.fields];
           expect(arrayOfSameElements(afterOnce, afterTwice)).toBe(true);
-        })
+        }),
       );
     });
     test("Moving to bottom should be idempotent.", () => {
@@ -157,17 +156,13 @@ describe("action: moveField", () => {
           template.moveField(field, template.fields.length - 1);
           const afterTwice = [...template.fields];
           expect(arrayOfSameElements(afterOnce, afterTwice)).toBe(true);
-        })
+        }),
       );
     });
     test("Re-ordering never changes count.", () => {
       fc.assert(
         fc.property(
-          fc
-            .nat(fieldData.length - 1)
-            .chain((maxLength) =>
-              fc.array(fc.tuple(fc.nat(maxLength), fc.nat(maxLength)))
-            ),
+          fc.nat(fieldData.length - 1).chain((maxLength) => fc.array(fc.tuple(fc.nat(maxLength), fc.nat(maxLength)))),
           (changes) => {
             const template = makeMockTemplate({
               fields: fieldData,
@@ -177,10 +172,9 @@ describe("action: moveField", () => {
               template.moveField(field, positionIndex);
             }
             expect(template.fields.length).toBe(fieldData.length);
-          }
-        )
+          },
+        ),
       );
     });
   });
 });
-

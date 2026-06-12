@@ -1,42 +1,42 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
 import { render } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
+import SearchContext from "../../../../stores/contexts/Search";
+import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../../../stores/models/Search";
-import SearchContext from "../../../../stores/contexts/Search";
 import MoveInstructions from "../MoveInstructions";
-import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  query: vi.fn(() => {
-    return Promise.resolve({
-      data: {
-        id: 1,
-        globalId: "IC1",
-        attachments: [],
-        _links: [],
-        tags: null,
-        permittedActions: ["UPDATE"],
-        cType: "IMAGE",
-        locations: [],
-        barcodes: [],
-        locationsCount: 0,
-        contentSummary: {
-          totalCount: 0,
-          subSampleCount: 0,
-          containerCount: 0,
+    query: vi.fn(() => {
+      return Promise.resolve({
+        data: {
+          id: 1,
+          globalId: "IC1",
+          attachments: [],
+          _links: [],
+          tags: null,
+          permittedActions: ["UPDATE"],
+          cType: "IMAGE",
+          locations: [],
+          barcodes: [],
+          locationsCount: 0,
+          contentSummary: {
+            totalCount: 0,
+            subSampleCount: 0,
+            containerCount: 0,
+          },
         },
-      },
-    });
-  }),
-
-  }}));
+      });
+    }),
+  },
+}));
 describe("MoveInstructions", () => {
   test("Visual container without locations image", async () => {
     const search = new Search({
       factory: mockFactory(),
-
     });
     const scopedResult = makeMockContainer({});
     vi.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
@@ -54,24 +54,20 @@ describe("MoveInstructions", () => {
         }}
       >
         <MoveInstructions />
-      </SearchContext.Provider>
-
+      </SearchContext.Provider>,
     );
     expect(container).toHaveTextContent(
-      "This visual container doesn't yet have a locations image onto which locations can be marked. Please edit first."
+      "This visual container doesn't yet have a locations image onto which locations can be marked. Please edit first.",
     );
-
   });
   test("Visual container with locations image but without locations", async () => {
     const search = new Search({
       factory: mockFactory(),
-
     });
     const scopedResult = makeMockContainer({});
     vi.spyOn(scopedResult, "fetchImage").mockImplementation((name) => {
       if (name === "locationsImage") scopedResult.locationsImage = "foo";
       return Promise.resolve("foo");
-
     });
     /*
      * fetchAdditionalInfo is called so that _link gets converted to locationsImage
@@ -87,12 +83,10 @@ describe("MoveInstructions", () => {
         }}
       >
         <MoveInstructions />
-      </SearchContext.Provider>
-
+      </SearchContext.Provider>,
     );
     expect(container).toHaveTextContent(
-      "This visual container doesn't yet have any marked locations into which items can be placed. Please edit first."
+      "This visual container doesn't yet have any marked locations into which items can be placed. Please edit first.",
     );
   });
 });
-

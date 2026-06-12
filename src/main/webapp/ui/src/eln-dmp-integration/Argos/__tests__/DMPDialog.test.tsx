@@ -1,13 +1,13 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import { screen, waitFor, fireEvent, render } from "@testing-library/react";
-import MockAdapter from "axios-mock-adapter";
-import DMPDialog from "../DMPDialog";
-import axios from "@/common/axios";
-import { within } from "@/__tests__/customQueries";
-
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import MockAdapter from "axios-mock-adapter";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { within } from "@/__tests__/customQueries";
+import axios from "@/common/axios";
+import DMPDialog from "../DMPDialog";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -42,9 +42,9 @@ describe("DMPDialog", () => {
       },
       {
         contentType: "application/json",
-      }
+      },
     );
-  })
+  });
   test("Should render mock data correctly.", async () => {
     vi.clearAllMocks();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, {
@@ -72,32 +72,24 @@ describe("DMPDialog", () => {
       success: true,
     });
     mockAxios.resetHistory();
-    render(
-      <DMPDialog open={true} setOpen={() => {}} />
-
-    );
+    render(<DMPDialog open={true} setOpen={() => {}} />);
     await waitFor(
       () => {
         expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
         // i.e. the table body has been rendered
       },
-      { timeout: 2000 }
-
+      { timeout: 2000 },
     );
     expect(
-      await(
+      await (
         within as (element: HTMLElement) => {
-          findTableCell: (options: {
-            columnHeading: string;
-            rowIndex: number;
-          }) => Promise<HTMLElement>;
+          findTableCell: (options: { columnHeading: string; rowIndex: number }) => Promise<HTMLElement>;
         }
       )(screen.getByRole("grid")).findTableCell({
         columnHeading: "Label",
         rowIndex: 0,
-      })
+      }),
     ).toHaveTextContent("Foo");
-
   });
   describe.skip("Pagination should work.", () => {
     test(
@@ -119,44 +111,33 @@ describe("DMPDialog", () => {
           errorMsg: null,
           success: true,
         });
-        render(
-            <DMPDialog open={true} setOpen={() => {}} />
-
-        );
+        render(<DMPDialog open={true} setOpen={() => {}} />);
         await waitFor(
           () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 }
-
+          { timeout: 2000 },
         );
         await user.click(
           screen.getByRole("button", {
             name: "Go to next page",
-          })
-
+          }),
         );
         await user.click(
           screen.getByRole("button", {
             name: "Go to previous page",
-          })
-
+          }),
         );
-        const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url ?? "")
-        );
+        const plansRequests = mockAxios.history.get.filter(({ url }) => /\/apps\/argos\/plans/.test(url ?? ""));
         expect(plansRequests.length).toBe(3);
         expect(
           plansRequests.map(({ url }) =>
-            new URLSearchParams(
-              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
-            ).get("page")
-          )
+            new URLSearchParams(url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]).get("page"),
+          ),
         ).toEqual(["0", "1", "0"]);
       },
-      20 * 1000
-
+      20 * 1000,
     );
     test(
       "Changing the page size should make the right API call.",
@@ -203,39 +184,27 @@ describe("DMPDialog", () => {
           errorMsg: null,
           success: true,
         });
-        render(
-          <DMPDialog open={true} setOpen={() => {}} />
-
-        );
+        render(<DMPDialog open={true} setOpen={() => {}} />);
         await waitFor(
           () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 }
-
+          { timeout: 2000 },
         );
 
         fireEvent.mouseDown(screen.getByRole("combobox"));
-        await user.click(
-          within(screen.getByRole("listbox")).getByRole("option", { name: "5" })
-
-        );
-        const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url ?? "")
-        );
+        await user.click(within(screen.getByRole("listbox")).getByRole("option", { name: "5" }));
+        const plansRequests = mockAxios.history.get.filter(({ url }) => /\/apps\/argos\/plans/.test(url ?? ""));
         expect(plansRequests.length).toBe(2);
         expect(
           plansRequests.map(({ url }) =>
-            new URLSearchParams(
-              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
-            ).get("pageSize")
-          )
+            new URLSearchParams(url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]).get("pageSize"),
+          ),
         ).toEqual(["10", "5"]);
       },
-      10 * 1000
+      10 * 1000,
     );
-
   });
   describe.skip("Search filters should work.", () => {
     test(
@@ -268,23 +237,18 @@ describe("DMPDialog", () => {
           success: true,
         });
         mockAxios.resetHistory();
-        render(
-          <DMPDialog open={true} setOpen={() => {}} />
-
-        );
+        render(<DMPDialog open={true} setOpen={() => {}} />);
         await waitFor(
           () => {
             expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
             // i.e. the table body has been rendered
           },
-          { timeout: 2000 }
-
+          { timeout: 2000 },
         );
         await user.click(
           screen.getByRole("button", {
             name: "Label",
-          })
-
+          }),
         );
         // first type in the label filter, and then press enter
         fireEvent.input(screen.getByRole("textbox"), {
@@ -292,26 +256,19 @@ describe("DMPDialog", () => {
         });
         fireEvent.submit(screen.getByRole("textbox"), {
           target: { value: "" },
-
         });
         await waitFor(() => {
           expect(screen.getByText("Foo")).toBeVisible();
-
         });
-        const plansRequests = mockAxios.history.get.filter(({ url }) =>
-          /\/apps\/argos\/plans/.test(url ?? "")
-        );
+        const plansRequests = mockAxios.history.get.filter(({ url }) => /\/apps\/argos\/plans/.test(url ?? ""));
         expect(plansRequests.length).toBe(2);
         expect(
           plansRequests.map(({ url }) =>
-            new URLSearchParams(
-              url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]
-            ).get("like")
-          )
+            new URLSearchParams(url?.match(/\/apps\/argos\/plans?(.*)$/)?.[1]).get("like"),
+          ),
         ).toEqual([null, "Foo"]);
       },
-      10 * 1000
+      10 * 1000,
     );
   });
 });
-

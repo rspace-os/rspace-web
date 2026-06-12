@@ -1,16 +1,18 @@
-import React from "react";
+import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
-import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
-import { DialogBoundary } from "@/components/DialogBoundary";
-import GalleryPicker from "../../eln/gallery/picker";
-import { MemoryRouter } from "react-router-dom";
-import { LandmarksProvider } from "@/components/LandmarksContext";
 import Alerts from "@/components/Alerts/Alerts";
+import { DialogBoundary } from "@/components/DialogBoundary";
+import { LandmarksProvider } from "@/components/LandmarksContext";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { GalleryFile } from "@/eln/gallery/useGalleryListing";
-import RsSet from "@/util/set";
+// biome-ignore lint/style/useImportType: initial biome migration
 import Result from "@/util/result";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// biome-ignore lint/style/useImportType: initial biome migration
+import RsSet from "@/util/set";
+import GalleryPicker from "../../eln/gallery/picker";
 
 const queryClient = new QueryClient();
 
@@ -47,4 +49,4 @@ const GalleryEntrypoint = ({
   </QueryClientProvider>
 );
 
-export default GalleryEntrypoint
+export default GalleryEntrypoint;

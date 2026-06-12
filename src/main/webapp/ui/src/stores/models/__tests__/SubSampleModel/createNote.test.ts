@@ -1,33 +1,34 @@
-import { test, describe, expect, vi } from 'vitest';
-import { makeMockSubSample } from "./mocking";
+import { describe, expect, test, vi } from "vitest";
 import ApiService from "../../../../common/InvApiService";
+import { makeMockSubSample } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/RootStore", () => ({
   default: () => ({
-  peopleStore: {
-    currentUser: {
-      firstName: "Joe",
-      lastName: "Bloggs",
-      id: 1,
+    peopleStore: {
+      currentUser: {
+        firstName: "Joe",
+        lastName: "Bloggs",
+        id: 1,
+      },
     },
-  },
-  uiStore: {
-    addAlert: () => {},
-    setPageNavigationConfirmation: () => {},
-    setDirty: () => {},
-    unsetDirty: () => {},
-  },
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
+    uiStore: {
+      addAlert: () => {},
+      setPageNavigationConfirmation: () => {},
+      setDirty: () => {},
+      unsetDirty: () => {},
+    },
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  post: vi.fn(() => ({ data: { notes: [] } })),
-  }}));
+    post: vi.fn(() => ({ data: { notes: [] } })),
+  },
+}));
 describe("action: createNote", () => {
   /*
    * When previewing a subsample, the user can create a note that is
@@ -43,7 +44,6 @@ describe("action: createNote", () => {
         content: "A new note",
       });
     });
-
   });
   /*
    * When editing a subsample, the user can create a note, but it is only saved
@@ -53,15 +53,13 @@ describe("action: createNote", () => {
     test("append to notes observable.", () => {
       const subSample = makeMockSubSample();
       subSample.editing = true;
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       (subSample as any).lastEditInput = new Date();
       const setAttributesDirtySpy = vi.spyOn(subSample, "setAttributesDirty");
       void subSample.createNote({ content: "A new note" });
       expect(setAttributesDirtySpy).toHaveBeenCalledWith({
-        notes: expect.arrayContaining([
-          expect.objectContaining({ content: "A new note" }),
-        ]),
+        notes: expect.arrayContaining([expect.objectContaining({ content: "A new note" })]),
       });
     });
   });
 });
-

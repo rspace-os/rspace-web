@@ -1,7 +1,11 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type _LINK, type IsoTimestamp, type URL } from "../../util/types";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Id } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Username } from "./Person";
-import { type IsoTimestamp, type _LINK, type URL } from "../../util/types";
 
 /**
  * @module Barcode

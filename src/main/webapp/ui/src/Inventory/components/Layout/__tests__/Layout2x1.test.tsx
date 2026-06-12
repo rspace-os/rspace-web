@@ -1,14 +1,14 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { storesContext } from "../../../../stores/stores-context";
-import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-
-import fc from "fast-check";
-import Layout2x1 from "../Layout2x1";
 import { ThemeProvider } from "@mui/material/styles";
-
+import { render, screen } from "@testing-library/react";
+import fc from "fast-check";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
+import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
+import Layout2x1 from "../Layout2x1";
+
 const fooBarTest = ({
   isSingleColumnLayout,
   visiblePanel,
@@ -31,13 +31,12 @@ const fooBarTest = ({
       <storesContext.Provider value={rootStore}>
         <Layout2x1 colLeft="foo" colRight="bar" />
       </storesContext.Provider>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
   expect(screen.getByText("foo")).toBeInTheDocument();
   if (showFoo) expect(screen.getByText("foo")).toBeVisible();
   expect(screen.getByText("bar")).toBeInTheDocument();
   if (showBar) expect(screen.getByText("bar")).toBeVisible();
-
 };
 describe("Layout2x1", () => {
   /*
@@ -59,7 +58,6 @@ describe("Layout2x1", () => {
         showFoo: true,
         showBar: true,
       }));
-
   });
   /*
    * When isSingleColumnLayout is true (when the viewport is not wide enough)
@@ -80,7 +78,6 @@ describe("Layout2x1", () => {
         showFoo: false,
         showBar: true,
       }));
-
   });
   describe("When isSingleColumnLayout = true and the content is the same", () => {
     test("both sides show the same.", () => {
@@ -95,12 +92,11 @@ describe("Layout2x1", () => {
           const { container } = render(
             <storesContext.Provider value={rootStore}>
               <Layout2x1 colLeft="foo" colRight="foo" />
-            </storesContext.Provider>
+            </storesContext.Provider>,
           );
           expect(container).toHaveTextContent("foo");
-        })
+        }),
       );
     });
   });
 });
-

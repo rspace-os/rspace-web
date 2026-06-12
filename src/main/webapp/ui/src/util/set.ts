@@ -1,6 +1,6 @@
 import { computed, makeObservable } from "mobx";
-import { filterMap } from "./Util";
 import { Optional } from "./optional";
+import { filterMap } from "./Util";
 
 /**
  * This is an extension of the standard Set data structure, with the addition
@@ -129,6 +129,8 @@ export default class RsSet<A> extends Set<A> {
    * filter.
    * Usage: see test
    */
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   filterClass<U>(clazz: { new (...args: any[]): U }): RsSet<U> {
     const setOft = new RsSet<U>();
     for (const a of this) {
@@ -190,9 +192,7 @@ export default class RsSet<A> extends Set<A> {
    */
   intersection(...sets: Array<RsSet<A>>): RsSet<A> {
     const allSets = [this, ...sets];
-    return new RsSet<A>()
-      .union(...allSets)
-      .filter((e) => allSets.every((s) => s.has(e)));
+    return new RsSet<A>().union(...allSets).filter((e) => allSets.every((s) => s.has(e)));
   }
 
   /*
@@ -349,16 +349,13 @@ export default class RsSet<A> extends Set<A> {
     class Empty {}
 
     const setOfOptionals: RsSet<Optional<B>> = this.map(f);
-    const setOfPresentOrEmpty: RsSet<Present<B> | Empty> = setOfOptionals.map(
-      (opt) =>
-        opt.destruct(
-          () => new Empty(),
-          (v) => new Present(v),
-        ),
+    const setOfPresentOrEmpty: RsSet<Present<B> | Empty> = setOfOptionals.map((opt) =>
+      opt.destruct(
+        () => new Empty(),
+        (v) => new Present(v),
+      ),
     );
-    const setOfPresent: RsSet<Present<B>> = setOfPresentOrEmpty.filterClass<
-      Present<B>
-    >(Present<B>);
+    const setOfPresent: RsSet<Present<B>> = setOfPresentOrEmpty.filterClass<Present<B>>(Present<B>);
     return setOfPresent.map((opt) => opt.value);
   }
 }
@@ -369,9 +366,7 @@ export default class RsSet<A> extends Set<A> {
  * Usage:
  *  flattenWithIntersection(new RsSet([new RsSet([1,2]), new RsSet([2,3])]))    // new RsSet([2])
  */
-export const flattenWithIntersection = <A>(
-  setOfSets: RsSet<RsSet<A>>,
-): RsSet<A> => {
+export const flattenWithIntersection = <A>(setOfSets: RsSet<RsSet<A>>): RsSet<A> => {
   if (setOfSets.isEmpty) return new RsSet();
   const [first, ...rest] = setOfSets.toArray();
   return first.intersection(...rest);
@@ -432,10 +427,7 @@ export const flattenWithIntersectionWithEq = <A>(
  *    new RsSet([{id: 1, foo: "B"}, {id: 2, foo: "C"}])
  *  ])  // new RsSet([{id: 1, foo: "A"}, {id: 2, foo: "C"}])
  */
-export const unionWith = <A, B>(
-  eqFunc: (elem: A) => B,
-  sets: Array<RsSet<A>>,
-): RsSet<A> => {
+export const unionWith = <A, B>(eqFunc: (elem: A) => B, sets: Array<RsSet<A>>): RsSet<A> => {
   const uniqueBs = new RsSet<B>();
   const uniqueAs = new RsSet<A>();
   for (const set of sets) {

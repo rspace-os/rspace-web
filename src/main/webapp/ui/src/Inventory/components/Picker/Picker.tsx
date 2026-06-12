@@ -1,22 +1,23 @@
-import React, { useCallback, useEffect } from "react";
-import { observer } from "mobx-react-lite";
-import Button from "@mui/material/Button";
-import Search from "../../../stores/models/Search";
-import SearchContext from "../../../stores/contexts/Search";
-import SearchViewComponent from "../../Search/SearchView";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
-import CardHeader from "@mui/material/CardHeader";
-import SearchComponent from "../../Search/Search";
-import { menuIDs } from "../../../util/menuIDs";
-import Box from "@mui/material/Box";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import {
-  type CoreFetcherArgs,
-  type SearchView as SearchViewType,
-} from "../../../stores/definitions/Search";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useCallback, useEffect } from "react";
+import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type CoreFetcherArgs, type SearchView as SearchViewType } from "../../../stores/definitions/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import Search from "../../../stores/models/Search";
+import { menuIDs } from "../../../util/menuIDs";
+import SearchComponent from "../../Search/Search";
+import SearchViewComponent from "../../Search/SearchView";
 import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 
 const TABS: Array<SearchViewType> = ["LIST", "TREE"];
@@ -77,12 +78,7 @@ function InventoryPicker({
     } finally {
       resetActiveResultIfNeeded();
     }
-  }, [
-    handleAddition,
-    onCancel,
-    resetActiveResultIfNeeded,
-    search.uiConfig.instantConfirm,
-  ]);
+  }, [handleAddition, onCancel, resetActiveResultIfNeeded, search.uiConfig.instantConfirm]);
 
   /*
    * When the user selects a result, the activeResult is set. This logic then
@@ -96,19 +92,13 @@ function InventoryPicker({
     if (singularSelection && instantConfirm && search.activeResult) {
       handleAddition([search.activeResult]);
     }
-  }, [
-    handleAddition,
-    search.activeResult,
-    search.uiConfig.selectionMode,
-    search.uiConfig.instantConfirm,
-  ]);
+  }, [handleAddition, search.activeResult, search.uiConfig.selectionMode, search.uiConfig.instantConfirm]);
 
   const getSelectedRecords = () => {
     if (search.uiConfig.selectionMode === "SINGLE") {
       return search.activeResult ? [search.activeResult] : [];
     }
-    const selectedRecords =
-      search.searchView === "LIST" ? [...search.selectedResults] : [];
+    const selectedRecords = search.searchView === "LIST" ? [...search.selectedResults] : [];
     if (search.searchView === "TREE" && search.tree.selectedNode) {
       selectedRecords.push(search.tree.selectedNode);
     }
@@ -117,9 +107,7 @@ function InventoryPicker({
   };
 
   const selectedRecords = getSelectedRecords();
-  const hasDisallowedSelection = selectedRecords.some((record) =>
-    search.alwaysFilterOut(record),
-  );
+  const hasDisallowedSelection = selectedRecords.some((record) => search.alwaysFilterOut(record));
 
   return (
     <Card
@@ -148,9 +136,7 @@ function InventoryPicker({
         }}
       >
         <InnerSearchNavigationContext>
-          {typeof header !== "undefined" && (
-            <CardHeader title={header} sx={{ flexWrap: "nowrap", py: 1 }} />
-          )}
+          {typeof header !== "undefined" && <CardHeader title={header} sx={{ flexWrap: "nowrap", py: 1 }} />}
           <CardContent
             sx={{
               flexGrow: 1,
@@ -166,9 +152,7 @@ function InventoryPicker({
               <SearchComponent
                 TABS={TABS}
                 size="small"
-                handleSearch={(query) =>
-                  handleSearch({ query, resultType: search.fetcher.resultType })
-                }
+                handleSearch={(query) => handleSearch({ query, resultType: search.fetcher.resultType })}
               />
             </Box>
             {selectionHelpText && (
@@ -182,6 +166,7 @@ function InventoryPicker({
       </SearchContext.Provider>
       {showActions && (
         <CardActions>
+          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
           <>
             <Button
               variant="contained"

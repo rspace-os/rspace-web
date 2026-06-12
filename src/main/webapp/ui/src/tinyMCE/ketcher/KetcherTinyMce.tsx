@@ -1,24 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-
-import { createRoot, type Root } from "react-dom/client";
-import { blobToBase64 } from "@/util/files";
-import axios from "@/common/axios";
-import AnalyticsContext from "../../stores/contexts/Analytics";
-import Analytics from "../../components/Analytics";
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "../../theme";
-import useChemicalImport, {
-  type RspaceCompoundId,
-} from "../../hooks/api/useChemicalImport";
-import Alerts from "../../components/Alerts/Alerts";
-import {
-  IsInvalid,
-  IsValid,
-  type ValidationResult,
-} from "@/components/ValidatingSubmitButton";
-import CircularProgress from "@mui/material/CircularProgress";
 import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import { ThemeProvider } from "@mui/material/styles";
 import type { Ketcher } from "ketcher-core";
+import React, { useEffect, useRef, useState } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import axios from "@/common/axios";
+import { IsInvalid, IsValid, type ValidationResult } from "@/components/ValidatingSubmitButton";
+import { blobToBase64 } from "@/util/files";
+import Alerts from "../../components/Alerts/Alerts";
+import Analytics from "../../components/Analytics";
+import useChemicalImport, { type RspaceCompoundId } from "../../hooks/api/useChemicalImport";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+import theme from "../../theme";
 
 type TinyMceEditor = {
   id: string;
@@ -42,16 +35,14 @@ type MustacheRenderer = {
 const CHEM_CLASS_NAME = "chem";
 const KETCHER_DIALOG_CONTAINER_ID = "tinymce-ketcher";
 const OPEN_KETCHER_DIALOG_EVENT = "OPEN_KETCHER_DIALOG";
-const EMPTY_MOLECULE_MESSAGE =
-  "Please draw, paste, or open a molecule to insert into the document";
+const EMPTY_MOLECULE_MESSAGE = "Please draw, paste, or open a molecule to insert into the document";
 
 const ketcherDialogRoots = new WeakMap<HTMLElement, Root>();
 
 let ketcherDialogListenerRegistered = false;
 
 function getTinyMceDialogUtils(): TinyMceDialogUtils | undefined {
-  return (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils })
-    .tinymceDialogUtils;
+  return (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils }).tinymceDialogUtils;
 }
 
 function getMustacheRenderer(): MustacheRenderer | undefined {
@@ -59,7 +50,7 @@ function getMustacheRenderer(): MustacheRenderer | undefined {
 }
 
 function getActiveEditor(): TinyMceEditor | null {
-  return (window.tinymce?.activeEditor) ?? null;
+  return window.tinymce?.activeEditor ?? null;
 }
 
 function getSelectedNode(editor: TinyMceEditor | null): Node | null {
@@ -67,12 +58,7 @@ function getSelectedNode(editor: TinyMceEditor | null): Node | null {
 }
 
 function isElementNode(node: EventTarget | Node | null): node is Element {
-  return (
-    typeof node === "object" &&
-    node !== null &&
-    "nodeType" in node &&
-    node.nodeType === Node.ELEMENT_NODE
-  );
+  return typeof node === "object" && node !== null && "nodeType" in node && node.nodeType === Node.ELEMENT_NODE;
 }
 
 function isChemicalElement(node: Node | null): node is Element {
@@ -104,9 +90,7 @@ function containsMolecule(ketData: string): boolean {
   }
 }
 
-const KetcherDialog = React.lazy(
-  () => import("../../components/Ketcher/KetcherDialog"),
-);
+const KetcherDialog = React.lazy(() => import("../../components/Ketcher/KetcherDialog"));
 
 function showErrorAlert(message: string): void {
   getTinyMceDialogUtils()?.showErrorAlert(message);
@@ -158,11 +142,7 @@ function registerKetcherDialogListener(): void {
   ketcherDialogListenerRegistered = true;
 }
 
-export const KetcherTinyMce = ({
-  onUnmount,
-}: {
-  onUnmount: () => void;
-}): React.ReactNode => {
+export const KetcherTinyMce = ({ onUnmount }: { onUnmount: () => void }): React.ReactNode => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [existingChemical, setExistingChemical] = useState("");
   const [isValid, setIsValid] = useState<ValidationResult>(IsValid());
@@ -190,20 +170,16 @@ export const KetcherTinyMce = ({
 
     void (async () => {
       try {
-        const response = await axios.get<{ data: { chemElements: string } } | null>(
-          "/chemical/ajax/loadChemElements",
-          {
-            params: {
-              chemId: chemElemId,
-              ...(revision === null ? {} : { revision }),
-            },
+        const response = await axios.get<{ data: { chemElements: string } } | null>("/chemical/ajax/loadChemElements", {
+          params: {
+            chemId: chemElemId,
+            ...(revision === null ? {} : { revision }),
           },
-        );
+        });
 
         if (isCurrent && response.data !== null) {
           setExistingChemical(response.data.data.chemElements);
         }
-
       } catch {
         if (isCurrent) {
           showErrorAlert("Loading chemical elements failed.");
@@ -216,10 +192,7 @@ export const KetcherTinyMce = ({
     };
   }, []);
 
-  const saveFullSizeImage = async (
-    chemical: string,
-    newChemElemId: RspaceCompoundId,
-  ): Promise<void> => {
+  const saveFullSizeImage = async (chemical: string, newChemElemId: RspaceCompoundId): Promise<void> => {
     const ketcher = ketcherRef.current;
 
     if (!ketcher) {
@@ -240,9 +213,7 @@ export const KetcherTinyMce = ({
     }
   };
 
-  const insertChemicalIntoDoc = async (
-    newChemElemId: RspaceCompoundId,
-  ): Promise<void> => {
+  const insertChemicalIntoDoc = async (newChemElemId: RspaceCompoundId): Promise<void> => {
     const editor = getActiveEditor();
 
     if (!editor) {
@@ -277,12 +248,9 @@ export const KetcherTinyMce = ({
 
     if (html !== "") {
       editor.execCommand("mceInsertContent", false, html);
-      const event = new CustomEvent<RspaceCompoundId>(
-        "tinymce-chem-inserted",
-        {
-          detail: templateData.id,
-        },
-      );
+      const event = new CustomEvent<RspaceCompoundId>("tinymce-chem-inserted", {
+        detail: templateData.id,
+      });
       document.dispatchEvent(event);
       trackEvent("user:add:chemistry_object:document", { from: "ketcher" });
     }

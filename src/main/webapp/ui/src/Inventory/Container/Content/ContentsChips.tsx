@@ -1,4 +1,6 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Container } from "../../../stores/definitions/Container";
 import CountChip from "./CountChip";
 
@@ -6,14 +8,10 @@ type ContentsChipsArgs = {
   record: Container;
 };
 
-export default function ContentsChips({
-  record,
-}: ContentsChipsArgs): React.ReactNode {
+export default function ContentsChips({ record }: ContentsChipsArgs): React.ReactNode {
   return (
     <>
-      {record.canStoreContainers && (
-        <CountChip type="container" record={record} />
-      )}
+      {record.canStoreContainers && <CountChip type="container" record={record} />}
       {record.canStoreSamples && <CountChip type="subSample" record={record} />}
     </>
   );

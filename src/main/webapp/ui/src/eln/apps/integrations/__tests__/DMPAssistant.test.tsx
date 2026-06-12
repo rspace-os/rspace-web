@@ -1,16 +1,11 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-  waitFor,
-} from "@testing-library/react";
-import DMPAssistant from "../DMPAssistant";
-import { Optional } from "../../../../util/optional";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test } from "vitest";
 import axios from "@/common/axios";
+import { Optional } from "../../../../util/optional";
+import DMPAssistant from "../DMPAssistant";
 
 import "@/__tests__/__mocks__/matchMedia";
 describe("DMPAssistant", () => {
@@ -25,7 +20,7 @@ describe("DMPAssistant", () => {
             },
           }}
           update={() => {}}
-        />
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -45,7 +40,7 @@ describe("DMPAssistant", () => {
           },
         }}
         update={() => {}}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -61,7 +56,7 @@ describe("DMPAssistant", () => {
           },
         }}
         update={() => {}}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -77,7 +72,7 @@ describe("DMPAssistant", () => {
           },
         }}
         update={() => {}}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -88,9 +83,7 @@ describe("DMPAssistant", () => {
       window.dispatchEvent(new Event("DMPASSISTANT_CONNECTED"));
     });
 
-    expect(
-      await screen.findByRole("button", { name: /disconnect/i })
-    ).toBeVisible();
+    expect(await screen.findByRole("button", { name: /disconnect/i })).toBeVisible();
   });
   test("Clicking disconnect issues the DELETE call and flips back to connect.", async () => {
     const mockAxios = new MockAdapter(axios);
@@ -104,15 +97,13 @@ describe("DMPAssistant", () => {
           },
         }}
         update={() => {}}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
     fireEvent.click(screen.getByRole("button", { name: /disconnect/i }));
 
     await waitFor(() => expect(mockAxios.history.delete.length).toBe(1));
-    expect(
-      await screen.findByRole("button", { name: /connect/i })
-    ).toBeVisible();
+    expect(await screen.findByRole("button", { name: /connect/i })).toBeVisible();
   });
 });

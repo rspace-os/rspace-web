@@ -1,29 +1,29 @@
-import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import {
-  useIntegrationsEndpoint,
-  type IntegrationStates,
-  type IntegrationState,
-  type OptionsId,
-} from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import { Optional } from "../../../util/optional";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import TextField from "@mui/material/TextField";
 import CardActions from "@mui/material/CardActions";
-import { useLocalObservable, observer } from "mobx-react-lite";
-import { runInAction, observable } from "mobx";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { useDSWTestEndpoint } from "../useDSWTestEndpoint";
-import RsSet from "../../../util/set";
-import DSWIcon from "../../../assets/branding/dsw/logo.svg";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import * as ArrayUtils from "../../../util/ArrayUtils";
-import { LOGO_COLOR } from "../../../assets/branding/dsw";
+import { observable, runInAction } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import React, { useContext, useState } from "react";
 import AnalyticsContext from "@/stores/contexts/Analytics";
+import { LOGO_COLOR } from "../../../assets/branding/dsw";
+import DSWIcon from "../../../assets/branding/dsw/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import { Optional } from "../../../util/optional";
+import RsSet from "../../../util/set";
+import IntegrationCard from "../IntegrationCard";
+import { useDSWTestEndpoint } from "../useDSWTestEndpoint";
+import {
+  type IntegrationState,
+  type IntegrationStates,
+  type OptionsId,
+  useIntegrationsEndpoint,
+} from "../useIntegrationsEndpoint";
 
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
@@ -60,13 +60,7 @@ type NewConfig = {
 };
 
 const DialogContent = observer(
-  ({
-    configs,
-    integrationState,
-  }: {
-    configs: Configurations;
-    integrationState: IntegrationStates["DSW"];
-  }) => {
+  ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DSW"] }) => {
     const { addAlert } = useContext(AlertContext);
     const { test } = useDSWTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -78,9 +72,7 @@ const DialogContent = observer(
      * call in a careful manner so that each configuration can be
      * independently edited and saved.
      */
-    const copyOfState = useLocalObservable<
-      IntegrationState<Array<ExistingConfig>>
-    >(() => ({
+    const copyOfState = useLocalObservable<IntegrationState<Array<ExistingConfig>>>(() => ({
       mode: integrationState.mode,
       credentials: configs.map((c) => observable({ ...c, dirty: false })),
     }));
@@ -90,24 +82,18 @@ const DialogContent = observer(
 
     async function saveExistingConfig(config: ExistingConfig, index: number) {
       try {
-        const newState = await saveAppOptions(
-          "DSW",
-          Optional.present(config.optionsId),
-          {
-            DSW_ALIAS: config.DSW_ALIAS,
-            DSW_URL: config.DSW_URL,
-            DSW_APIKEY: config.DSW_APIKEY,
-          },
-        );
+        const newState = await saveAppOptions("DSW", Optional.present(config.optionsId), {
+          DSW_ALIAS: config.DSW_ALIAS,
+          DSW_URL: config.DSW_URL,
+          DSW_APIKEY: config.DSW_APIKEY,
+        });
         runInAction(() => {
           integrationState.credentials = newState.credentials;
           ArrayUtils.all(newState.credentials)
+            // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
             .map((newCreds) => {
-              const indexOfNewConfig = newCreds.findIndex(
-                (c) => c.optionsId === config.optionsId,
-              );
-              if (indexOfNewConfig === -1)
-                throw new Error("Save completed but cannot show results.");
+              const indexOfNewConfig = newCreds.findIndex((c) => c.optionsId === config.optionsId);
+              if (indexOfNewConfig === -1) throw new Error("Save completed but cannot show results.");
 
               copyOfState.credentials.splice(
                 index,
@@ -149,19 +135,12 @@ const DialogContent = observer(
         });
         runInAction(() => {
           integrationState.credentials = newState.credentials;
-          const optionIdsOfExistingConfigs = new RsSet(
-            copyOfState.credentials.map(({ optionsId }) => optionsId),
-          );
+          const optionIdsOfExistingConfigs = new RsSet(copyOfState.credentials.map(({ optionsId }) => optionsId));
           try {
             const newlySavedConfig = new RsSet(newState.credentials)
               .mapOptional((x) => x)
-              .subtractMap(
-                ({ optionsId }) => optionsId,
-                optionIdsOfExistingConfigs,
-              ).first;
-            copyOfState.credentials.push(
-              observable({ ...newlySavedConfig, dirty: false }),
-            );
+              .subtractMap(({ optionsId }) => optionsId, optionIdsOfExistingConfigs).first;
+            copyOfState.credentials.push(observable({ ...newlySavedConfig, dirty: false }));
           } catch {
             throw new Error("Save completed but cannot show results.");
           }
@@ -210,9 +189,7 @@ const DialogContent = observer(
                       }}
                       label="Label"
                       error={config.DSW_ALIAS === ""}
-                      helperText={
-                        config.DSW_ALIAS === "" && "Label is required."
-                      }
+                      helperText={config.DSW_ALIAS === "" && "Label is required."}
                     />
                     <TextField
                       fullWidth
@@ -239,9 +216,7 @@ const DialogContent = observer(
                       type="password"
                       label="API key"
                       error={config.DSW_APIKEY === ""}
-                      helperText={
-                        config.DSW_APIKEY === "" && "API key is required."
-                      }
+                      helperText={config.DSW_APIKEY === "" && "API key is required."}
                     />
                   </Stack>
                 </CardContent>
@@ -253,14 +228,10 @@ const DialogContent = observer(
                         try {
                           await deleteAppOptions("DSW", config.optionsId);
                           runInAction(() => {
-                            const deletedIndex = observableConfigs.findIndex(
-                              (c) => c === config,
-                            );
+                            // biome-ignore lint/complexity/useIndexOf: initial biome migration
+                            const deletedIndex = observableConfigs.findIndex((c) => c === config);
                             observableConfigs.splice(deletedIndex, 1);
-                            integrationState.credentials.splice(
-                              deletedIndex,
-                              1,
-                            );
+                            integrationState.credentials.splice(deletedIndex, 1);
                           });
                           addAlert(
                             mkAlert({
@@ -312,11 +283,7 @@ const DialogContent = observer(
                   </Button>
                   <Button
                     type="submit"
-                    disabled={
-                      config.DSW_ALIAS === "" ||
-                      config.DSW_URL === "" ||
-                      config.DSW_APIKEY === ""
-                    }
+                    disabled={config.DSW_ALIAS === "" || config.DSW_URL === "" || config.DSW_APIKEY === ""}
                   >
                     Save
                   </Button>
@@ -345,9 +312,7 @@ const DialogContent = observer(
                       }}
                       label="Label"
                       error={newConfig.DSW_ALIAS === ""}
-                      helperText={
-                        newConfig.DSW_ALIAS === "" && "Label is required."
-                      }
+                      helperText={newConfig.DSW_ALIAS === "" && "Label is required."}
                     />
                     <TextField
                       fullWidth
@@ -359,9 +324,7 @@ const DialogContent = observer(
                       }}
                       label="Server URL"
                       error={newConfig.DSW_URL === ""}
-                      helperText={
-                        newConfig.DSW_URL === "" && "URL is required."
-                      }
+                      helperText={newConfig.DSW_URL === "" && "URL is required."}
                     />
                     <TextField
                       fullWidth
@@ -374,9 +337,7 @@ const DialogContent = observer(
                       type="password"
                       label="API key"
                       error={newConfig.DSW_APIKEY === ""}
-                      helperText={
-                        newConfig.DSW_APIKEY === "" && "API key is required."
-                      }
+                      helperText={newConfig.DSW_APIKEY === "" && "API key is required."}
                     />
                   </Stack>
                 </CardContent>
@@ -400,11 +361,7 @@ const DialogContent = observer(
                   <Button
                     variant="outlined"
                     type="submit"
-                    disabled={
-                      newConfig.DSW_ALIAS === "" ||
-                      newConfig.DSW_URL === "" ||
-                      newConfig.DSW_APIKEY === ""
-                    }
+                    disabled={newConfig.DSW_ALIAS === "" || newConfig.DSW_URL === "" || newConfig.DSW_APIKEY === ""}
                   >
                     Save
                   </Button>
@@ -462,9 +419,7 @@ function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
         explanatoryText="Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard."
         image={DSWIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText="DSW integration docs"
         website="guide.ds-wizard.org/en/latest/"
         docLink="dsw"
@@ -472,30 +427,20 @@ function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
         setupSection={
           <>
             <Typography variant="body2">
-              You can configure multiple DSW or FAIR Wizard instances to connect
-              to.
+              You can configure multiple DSW or FAIR Wizard instances to connect to.
             </Typography>
             <ol>
               <li>Enter the required credentials and Save.</li>
               <li>Click on Test to ensure your credentials are correct.</li>
               <li>Enable the integration.</li>
               <li>
-                You can now import a DSW or FAIR Wizard project as a DMP when in
-                the Gallery, and associate that DMP with data when in the export
-                dialog.
+                You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP
+                with data when in the export dialog.
               </li>
             </ol>
             {ArrayUtils.all(integrationState.credentials)
-              .map((configs) => (
-                <DialogContent
-                  key={null}
-                  configs={configs}
-                  integrationState={integrationState}
-                />
-              ))
-              .orElse(
-                <>There was an error getting the configured DSW instances.</>,
-              )}
+              .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
+              .orElse(<>There was an error getting the configured DSW instances.</>)}
           </>
         }
       />

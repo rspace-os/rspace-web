@@ -1,14 +1,17 @@
-import React, { useState } from "react";
-import { observer } from "mobx-react-lite";
-import StringField from "../../../components/Inputs/StringField";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-import GlobalId from "../../../components/GlobalId";
 import Box from "@mui/material/Box";
+import FormControl from "@mui/material/FormControl";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import FormLabel from "@mui/material/FormLabel";
+import { observer } from "mobx-react-lite";
+import React, { useState } from "react";
+import { Heading } from "@/components/DynamicHeadingLevel";
+import GlobalId from "../../../components/GlobalId";
+import StringField from "../../../components/Inputs/StringField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Record } from "../../../stores/definitions/Record";
 import FormField from "../../components/Inputs/FormField";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import { Heading } from "@/components/DynamicHeadingLevel";
 
 const MIN = 2;
 const MAX = 255;
@@ -29,25 +32,17 @@ function Name<
 }): React.ReactNode {
   const [initial, setInitial] = useState(true);
 
-  const handleChange = ({
-    target: { value: name },
-  }: {
-    target: { value: string };
-  }) => {
+  const handleChange = ({ target: { value: name } }: { target: { value: string } }) => {
     fieldOwner.setFieldsDirty({ name });
     setInitial(false);
-    onErrorStateChange(
-      name.length > MAX || name.length < MIN || name.trim().length === 0,
-    );
+    onErrorStateChange(name.length > MAX || name.length < MIN || name.trim().length === 0);
   };
 
   const errorMessage = () => {
     if (fieldOwner.fieldValues.name.trim().length === 0 && !initial)
       return "Name must include at least one non-whitespace character.";
-    if (fieldOwner.fieldValues.name.length < MIN && !initial)
-      return `Name must be at least ${MIN} characters.`;
-    if (fieldOwner.fieldValues.name.length > MAX)
-      return `Name must be no longer than ${MAX} characters.`;
+    if (fieldOwner.fieldValues.name.length < MIN && !initial) return `Name must be at least ${MIN} characters.`;
+    if (fieldOwner.fieldValues.name.length > MAX) return `Name must be no longer than ${MAX} characters.`;
     return null;
   };
 

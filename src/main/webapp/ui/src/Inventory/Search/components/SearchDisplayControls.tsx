@@ -1,19 +1,19 @@
-import React, { useContext } from "react";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
+import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type SearchView } from "../../../stores/definitions/Search";
 import SortControls from "./SortControls";
 import ToggleView from "./ToggleView";
-import SearchContext from "../../../stores/contexts/Search";
-import Box from "@mui/material/Box";
-import { type SearchView } from "../../../stores/definitions/Search";
-import Grid from "@mui/material/Grid";
 
 type SearchDisplayControlsArgs = {
   TABS: Array<SearchView>;
 };
 
-function SearchDisplayControls({
-  TABS,
-}: SearchDisplayControlsArgs): React.ReactNode {
+function SearchDisplayControls({ TABS }: SearchDisplayControlsArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
 
   return (

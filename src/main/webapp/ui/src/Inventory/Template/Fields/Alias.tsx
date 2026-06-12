@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
-import TextField from "@mui/material/TextField";
-import { inputBaseClasses } from "@mui/material/InputBase";
 import Box from "@mui/material/Box";
-import type { Alias } from "@/stores/definitions/Sample";
-import { toTitleCase } from "@/util/Util";
-import type { UseState } from "@/util/types";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import TextField from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useState } from "react";
 import type { HasEditableFields } from "@/stores/definitions/Editable";
-import RadioField, {
-  type RadioOption,
-} from "../../../components/Inputs/RadioField";
+import type { Alias } from "@/stores/definitions/Sample";
+import type { UseState } from "@/util/types";
+import { toTitleCase } from "@/util/Util";
+import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import FormField from "../../components/Inputs/FormField";
 
 type DefaultAliasOption =
@@ -46,9 +45,7 @@ type AliasSelection =
 
 function convert(a: Alias): AliasSelection {
   // use of find is to make Flow happy; includes doens't do the trick
-  const option = ALIAS_DEFAULTS.find(
-    (aliasDefault) => aliasDefault === a.alias
-  );
+  const option = ALIAS_DEFAULTS.find((aliasDefault) => aliasDefault === a.alias);
   if (option) {
     return { source: "radio", option };
   }
@@ -85,9 +82,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
   const aliasDisabled = !fieldOwner.isFieldEditable("subSampleAlias");
   const aliasValue = fieldOwner.fieldValues.subSampleAlias;
 
-  const [value, setValue]: UseState<AliasSelection> = useState(
-    convert(aliasValue)
-  );
+  const [value, setValue]: UseState<AliasSelection> = useState(convert(aliasValue));
 
   useEffect(() => {
     /*
@@ -132,10 +127,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
   return (
     <FormField
       label="Subsample Alias"
-      explanation={
-        !aliasDisabled &&
-        "The name for subsamples of the samples created from this template."
-      }
+      explanation={!aliasDisabled && "The name for subsamples of the samples created from this template."}
       value={customSelected ? "custom" : value.option}
       asFieldset
       renderInput={() => (
@@ -181,14 +173,11 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                       alias: e.target.value,
                     },
                   });
-                  onErrorStateChange(
-                    error(e.target.value) || error(aliasValue.plural)
-                  );
+                  onErrorStateChange(error(e.target.value) || error(aliasValue.plural));
                 }}
                 error={error(aliasValue.alias)}
                 helperText={error(aliasValue.alias) ? helperText : ""}
                 disabled={aliasDisabled || !customSelected}
-
                 autoFocus={customSelected}
               />
               <TextField
@@ -212,9 +201,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                       plural: e.target.value,
                     },
                   });
-                  onErrorStateChange(
-                    error(aliasValue.alias) || error(e.target.value)
-                  );
+                  onErrorStateChange(error(aliasValue.alias) || error(e.target.value));
                 }}
                 error={error(aliasValue.plural)}
                 helperText={error(aliasValue.plural) ? helperText : ""}

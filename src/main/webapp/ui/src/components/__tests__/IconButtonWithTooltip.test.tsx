@@ -1,19 +1,19 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
 import CloseIcon from "@mui/icons-material/Close";
-import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../theme";
-
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import React from "react";
+import { describe, expect, test, vi } from "vitest";
+import materialTheme from "../../theme";
+import IconButtonWithTooltip from "../IconButtonWithTooltip";
+
 describe("IconButtonWithTooltip", () => {
   test("Renders title and aria-label attributes.", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <IconButtonWithTooltip title="foo" icon={<CloseIcon />} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     screen.getByLabelText("foo");
   });
@@ -23,17 +23,11 @@ describe("IconButtonWithTooltip", () => {
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
-        <IconButtonWithTooltip
-          title="foo"
-          icon={<CloseIcon />}
-          onClick={onClick}
-        />
-      </ThemeProvider>
-
+        <IconButtonWithTooltip title="foo" icon={<CloseIcon />} onClick={onClick} />
+      </ThemeProvider>,
     );
 
     await user.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
   });
 });
-

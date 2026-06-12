@@ -4,35 +4,18 @@ import type { InventoryStockUpdateResult } from "@/tinyMCE/stoichiometry/Stoichi
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 export type StoichiometryTableController = {
   allMolecules: ReadonlyArray<EditableMolecule>;
-  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<
-    string,
-    InventoryQuantityQueryResult
-  >;
+  linkedInventoryQuantityInfoByGlobalId: ReadonlyMap<string, InventoryQuantityQueryResult>;
   isGettingMoleculeInfo: boolean;
-  addReagent: (
-    smilesString: string,
-    name: string,
-    source: string,
-  ) => Promise<void>;
+  addReagent: (smilesString: string, name: string, source: string) => Promise<void>;
   deleteReagent: (moleculeId: number) => void;
-  updateInventoryStock: (
-    selectedMoleculeIds: number[],
-  ) => Promise<InventoryStockUpdateResult>;
-  pickInventoryLink: (
-    moleculeId: number,
-    inventoryItemId: number,
-    inventoryItemGlobalId: string,
-  ) => void;
+  updateInventoryStock: (selectedMoleculeIds: number[]) => Promise<InventoryStockUpdateResult>;
+  pickInventoryLink: (moleculeId: number, inventoryItemId: number, inventoryItemGlobalId: string) => void;
   removeInventoryLink: (moleculeId: number) => void;
   undoRemoveInventoryLink: (moleculeId: number) => void;
   selectLimitingReagent: (molecule: EditableMolecule) => void;
-  processRowUpdate: (
-    newRow: EditableMolecule,
-    oldRow: EditableMolecule,
-  ) => EditableMolecule;
+  processRowUpdate: (newRow: EditableMolecule, oldRow: EditableMolecule) => EditableMolecule;
 };
-const StoichiometryTableControllerContext =
-  React.createContext<StoichiometryTableController | null>(null);
+const StoichiometryTableControllerContext = React.createContext<StoichiometryTableController | null>(null);
 type StoichiometryTableControllerProviderProps = {
   value: StoichiometryTableController;
   children: React.ReactNode;

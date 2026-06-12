@@ -1,12 +1,9 @@
-import { test, describe, expect } from 'vitest';
+import { fireEvent, render, screen } from "@testing-library/react";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-import Figshare from "../Figshare";
+import { describe, expect, test } from "vitest";
 import { Optional } from "../../../../util/optional";
+import Figshare from "../Figshare";
 
 import "@/__tests__/__mocks__/matchMedia";
 describe("Figshare", () => {
@@ -21,8 +18,7 @@ describe("Figshare", () => {
             },
           }}
           update={() => {}}
-        />
-
+        />,
       );
 
       fireEvent.click(screen.getByRole("button"));
@@ -42,8 +38,7 @@ describe("Figshare", () => {
           },
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));
@@ -59,8 +54,7 @@ describe("Figshare", () => {
           },
         }}
         update={() => {}}
-      />
-
+      />,
     );
 
     fireEvent.click(screen.getByRole("button"));

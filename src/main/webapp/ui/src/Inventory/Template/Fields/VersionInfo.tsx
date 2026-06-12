@@ -1,10 +1,11 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
-import GlobalId from "../../../components/GlobalId";
 import AlertTitle from "@mui/material/AlertTitle";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import GlobalId from "../../../components/GlobalId";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Template } from "../../../stores/definitions/Template";
 
 type VersionInfoArgs = {
@@ -13,11 +14,7 @@ type VersionInfoArgs = {
   disabled?: boolean;
 };
 
-function VersionInfo({
-  template,
-  onUpdate,
-  disabled,
-}: VersionInfoArgs): React.ReactNode {
+function VersionInfo({ template, onUpdate, disabled }: VersionInfoArgs): React.ReactNode {
   React.useEffect(() => {
     template.getLatest();
   }, []);
@@ -28,22 +25,14 @@ function VersionInfo({
       action={
         onUpdate && (
           <Box sx={{ mr: 2 }}>
-            <Button
-              color="inherit"
-              size="small"
-              variant="outlined"
-              onClick={onUpdate}
-              disabled={disabled}
-            >
+            <Button color="inherit" size="small" variant="outlined" onClick={onUpdate} disabled={disabled}>
               Update
             </Button>
           </Box>
         )
       }
     >
-      <AlertTitle>
-        This is version {template.version} of the template.
-      </AlertTitle>
+      <AlertTitle>This is version {template.version} of the template.</AlertTitle>
       {template.latest && (
         <span>
           Latest version: <GlobalId record={template.latest} />

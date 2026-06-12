@@ -1,9 +1,10 @@
 // @flow strict
 
-import React from "react";
 import { observer } from "mobx-react-lite";
-import IconButtonWithTooltip from "../../IconButtonWithTooltip";
+// biome-ignore lint/style/useImportType: initial biome migration
+import React from "react";
 import ExpandCollapseIcon from "../../ExpandCollapseIcon";
+import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 
 type ExpandButtonArgs = {
   ariaLabel: string;
@@ -13,6 +14,7 @@ type ExpandButtonArgs = {
 };
 
 function ExpandButton({
+  // biome-ignore lint/complexity/noUselessRename: initial biome migration
   ariaLabel: ariaLabel,
   expanded,
   setExpanded,

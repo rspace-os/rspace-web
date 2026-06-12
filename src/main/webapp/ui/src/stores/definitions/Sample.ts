@@ -1,7 +1,11 @@
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Template } from "./Template";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Id } from "./BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Field } from "./Field";
+import type { InventoryRecord } from "./InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Template } from "./Template";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type Temperature } from "./Units";
 
 export type Alias = { alias: string; plural: string };

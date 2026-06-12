@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 
 import { encodeA1Z26, layoutToLabel, layoutToLabels } from "@/util/labels";
+
 describe("labels", () => {
   describe("encodeA1Z26", () => {
     test("encodes 1 -> A and 26 -> Z", () => {
@@ -11,7 +12,6 @@ describe("labels", () => {
     test("documents behaviour for values > 26 (char arithmetic)", () => {
       expect(encodeA1Z26(27)).toBe(String.fromCharCode(64 + 27));
     });
-
   });
   describe("layoutToLabel", () => {
     test("returns numeric ascending for N123", () => {
@@ -48,7 +48,6 @@ describe("labels", () => {
       const layout = "N123";
       expect(() => layoutToLabel(layout, 5, 6)).toThrow("position must be between 1 and n");
     });
-
   });
   describe("layoutToLabels", () => {
     test("generates an array of value/label for N123", () => {
@@ -78,4 +77,3 @@ describe("labels", () => {
     });
   });
 });
-

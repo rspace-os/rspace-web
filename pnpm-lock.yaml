@@ -328,9 +328,6 @@ importers:
       playwright-core:
         specifier: 1.60.0
         version: 1.60.0
-      prop-types:
-        specifier: 15.8.1
-        version: 15.8.1
       rollup-plugin-visualizer:
         specifier: 7.0.1
         version: 7.0.1(rolldown@1.0.1)(rollup@4.60.4)

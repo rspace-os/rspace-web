@@ -1,7 +1,8 @@
-import FormControl from "./FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import { observer } from "mobx-react-lite";
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
+import FormControl from "./FormControl";
 
 export type InputWrapperArgs = {
   label?: string;
@@ -40,11 +41,7 @@ function InputWrapper({
    * the type checker. See flow docs on `%checks`.
    */
   function showCharacterCount(mightBeString: unknown): mightBeString is string {
-    return (
-      !disabled &&
-      typeof maxLength === "number" &&
-      typeof mightBeString === "string"
-    );
+    return !disabled && typeof maxLength === "number" && typeof mightBeString === "string";
   }
 
   return (
@@ -61,14 +58,11 @@ function InputWrapper({
     >
       {children}
       {!error && showCharacterCount(value) && (
-        <FormHelperText component="div">
-          {`${value.length} / ${maxLength ?? ""}`}
-        </FormHelperText>
+        <FormHelperText component="div">{`${value.length} / ${maxLength ?? ""}`}</FormHelperText>
       )}
       {error && showCharacterCount(value) && (
         <FormHelperText error component="div">
-          {helperText ??
-            `No more than ${maxLength ?? ""} characters permitted.`}
+          {helperText ?? `No more than ${maxLength ?? ""} characters permitted.`}
         </FormHelperText>
       )}
       {error && !showCharacterCount(value) && (

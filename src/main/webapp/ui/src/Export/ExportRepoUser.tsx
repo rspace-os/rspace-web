@@ -1,31 +1,33 @@
-import React, { useState, useEffect } from "react";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
+import { faUserPlus } from "@fortawesome/free-solid-svg-icons/faUserPlus";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Account from "@mui/icons-material/AccountCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import FormHelperText from "@mui/material/FormHelperText";
+import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
-import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import ListItemText from "@mui/material/ListItemText";
-import Avatar from "@mui/material/Avatar";
-import DeleteIcon from "@mui/icons-material/Delete";
-import IconButton from "@mui/material/IconButton";
-import Account from "@mui/icons-material/AccountCircle";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import EmailValidator from "email-validator";
-import FormHelperText from "@mui/material/FormHelperText";
+import type React from "react";
+import { useEffect, useState } from "react";
 import axios from "@/common/axios";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserPlus } from "@fortawesome/free-solid-svg-icons/faUserPlus";
-import { type Person } from "./repositories/common";
 import * as ArrayUtils from "../util/ArrayUtils";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Person } from "./repositories/common";
 
 const VALIDATIONS = {
   nameCheck: false,
@@ -43,9 +45,7 @@ function AdditionalUserDialog({
   open: boolean;
 }) {
   const [contactsName, setContactsName] = useState("");
-  const [contactsType, setContactsType] = useState<"" | "Author" | "Contact">(
-    ""
-  );
+  const [contactsType, setContactsType] = useState<"" | "Author" | "Contact">("");
   const [contactsEmail, setContactsEmail] = useState("");
 
   /*
@@ -53,8 +53,7 @@ function AdditionalUserDialog({
    * new user to their repository export options, but has been prevented from
    * doing so due to an error.
    */
-  const [addPersonDialogSubmitAttempt, setAddPersonDialogSubmitAttempt] =
-    useState(false);
+  const [addPersonDialogSubmitAttempt, setAddPersonDialogSubmitAttempt] = useState(false);
 
   const [validations, setValidations] = useState(VALIDATIONS);
 
@@ -70,10 +69,8 @@ function AdditionalUserDialog({
   const validateDetails = (details: Person) => {
     const newValidations = VALIDATIONS;
 
-    if (/(.*[a-z]){3}/i.test(details.uniqueName))
-      newValidations.nameCheck = true;
-    if (EmailValidator.validate(details.email))
-      newValidations.emailCheck = true;
+    if (/(.*[a-z]){3}/i.test(details.uniqueName)) newValidations.nameCheck = true;
+    if (EmailValidator.validate(details.email)) newValidations.emailCheck = true;
     if (details.type !== "") newValidations.typeCheck = true;
 
     setValidations(newValidations);
@@ -95,12 +92,7 @@ function AdditionalUserDialog({
   };
 
   return (
-    <Dialog
-      onClose={handleClose}
-      aria-labelledby="simple-dialog-title"
-      open={open}
-      maxWidth={"md"}
-    >
+    <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open} maxWidth={"md"}>
       <DialogTitle>Add new person</DialogTitle>
       <DialogContent>
         <FormControl error aria-describedby="name-error-text" fullWidth>
@@ -155,18 +147,10 @@ function AdditionalUserDialog({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={handleClose}
-          color="primary"
-          data-test-id="button-cancel"
-        >
+        <Button onClick={handleClose} color="primary" data-test-id="button-cancel">
           Cancel
         </Button>
-        <Button
-          onClick={handleAddPerson}
-          color="primary"
-          data-test-id="button-add"
-        >
+        <Button onClick={handleAddPerson} color="primary" data-test-id="button-add">
           Add
         </Button>
       </DialogActions>
@@ -203,17 +187,15 @@ export default function ExportRepoUser({
   const [people, setPeople] = useState(initialPeople);
 
   const getCurrentUser = () => {
-    void axios
-      .get<{ fullName: string; email: string }>("/directory/ajax/subject")
-      .then((response) => {
-        const user = response.data;
-        const currentUserRoles = [
-          { uniqueName: user.fullName, email: user.email, type: "Author" },
-          { uniqueName: user.fullName, email: user.email, type: "Contact" },
-        ];
-        setPeople(currentUserRoles);
-        updatePeople(currentUserRoles);
-      });
+    void axios.get<{ fullName: string; email: string }>("/directory/ajax/subject").then((response) => {
+      const user = response.data;
+      const currentUserRoles = [
+        { uniqueName: user.fullName, email: user.email, type: "Author" },
+        { uniqueName: user.fullName, email: user.email, type: "Contact" },
+      ];
+      setPeople(currentUserRoles);
+      updatePeople(currentUserRoles);
+    });
   };
 
   useEffect(() => {
@@ -232,19 +214,13 @@ export default function ExportRepoUser({
         <Grid container sx={{ display: "flex" }}>
           <Grid sx={{ flexGrow: 1 }}>
             <FormLabel
-              error={
-                exportDialogSubmitAttempt &&
-                (!inputValidations.author || !inputValidations.contact)
-              }
+              error={exportDialogSubmitAttempt && (!inputValidations.author || !inputValidations.contact)}
               component="legend"
             >
               People
             </FormLabel>
             <FormHelperText
-              error={
-                exportDialogSubmitAttempt &&
-                (!inputValidations.author || !inputValidations.contact)
-              }
+              error={exportDialogSubmitAttempt && (!inputValidations.author || !inputValidations.contact)}
             >
               Add author(s) AND contact(s) to your repository export.
             </FormHelperText>
@@ -273,10 +249,7 @@ export default function ExportRepoUser({
                   <Account />
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText
-                primary={`${option.uniqueName} - ${option.type}`}
-                secondary={option.email}
-              />
+              <ListItemText primary={`${option.uniqueName} - ${option.type}`} secondary={option.email} />
               <ListItemSecondaryAction>
                 <IconButton
                   aria-label="Delete"
@@ -293,4 +266,3 @@ export default function ExportRepoUser({
     </Grid>
   );
 }
-

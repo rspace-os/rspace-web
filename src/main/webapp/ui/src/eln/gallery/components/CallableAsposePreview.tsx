@@ -1,11 +1,11 @@
 import React from "react";
-import { type GalleryFile, idToString } from "../useGalleryListing";
-import { usePdfPreview } from "./CallablePdfPreview";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import * as Parsers from "../../../util/parsers";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
+import { type GalleryFile, idToString } from "../useGalleryListing";
+import { usePdfPreview } from "./CallablePdfPreview";
 
 /*
  * If aspose is configured, then users can preview the contents of various
@@ -55,8 +55,7 @@ export function useAsposePreview(): {
     setFile: openAsposePreview,
     setDetails: openAsposePreviewFromDetails,
     loading,
-  } =
-    React.useContext(AsposePreviewContext);
+  } = React.useContext(AsposePreviewContext);
   return {
     openAsposePreview,
     openAsposePreviewFromDetails,
@@ -74,22 +73,13 @@ export function useAsposePreview(): {
  * Relies on being inside of an AlertContext and the context created by
  * CallablePdfPreview
  */
-export function CallableAsposePreview({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
+export function CallableAsposePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [loading, setLoading] = React.useState(false);
   const { openPdfPreview } = usePdfPreview();
   const { addAlert } = React.useContext(AlertContext);
 
   const openConvertedFile = React.useCallback(
-    async ({
-      documentId,
-      fileExtension,
-      revisionId = null,
-      publicView = false,
-    }: AsposePreviewDetails) => {
+    async ({ documentId, fileExtension, revisionId = null, publicView = false }: AsposePreviewDetails) => {
       const revisionUrlSuffix = revisionId != null ? `&revision=${revisionId}` : "";
       const { data } = await axios.get<unknown>(
         `/Streamfile/ajax/convert/${documentId}?outputFormat=pdf${revisionUrlSuffix}`,
@@ -101,8 +91,7 @@ export function CallableAsposePreview({
         .orElse(null);
       if (fileName) {
         openPdfPreview(
-          (publicView ? "/public/publicView" : "") +
-            `/Streamfile/direct/${documentId}?fileName=${fileName}`,
+          `${publicView ? "/public/publicView" : ""}/Streamfile/direct/${documentId}?fileName=${fileName}`,
         );
         return;
       }
@@ -120,9 +109,7 @@ export function CallableAsposePreview({
         .do((msg) => {
           throw new Error(msg);
         });
-      throw new Error(
-        `Could not generate a PDF preview for .${fileExtension} documents.`,
-      );
+      throw new Error(`Could not generate a PDF preview for .${fileExtension} documents.`);
     },
     [openPdfPreview],
   );
@@ -138,7 +125,7 @@ export function CallableAsposePreview({
           variant: "error",
           title: "Could not generate preview.",
           message: e.message ?? "Unknown reason",
-        })
+        }),
       );
     } finally {
       setLoading(false);
@@ -153,10 +140,9 @@ export function CallableAsposePreview({
   };
 
   return (
+    // biome-ignore lint/complexity/noUselessFragments: initial biome migration
     <>
-      <AsposePreviewContext.Provider value={{ setFile, setDetails, loading }}>
-        {children}
-      </AsposePreviewContext.Provider>
+      <AsposePreviewContext.Provider value={{ setFile, setDetails, loading }}>{children}</AsposePreviewContext.Provider>
     </>
   );
 }
@@ -183,11 +169,8 @@ export function supportedAsposeFile(file: GalleryFile): Result<null> {
   ];
 
   if (!file.id) return Result.Error([new Error("Aspose requires a file ID")]);
-  if (!file.extension)
-    return Result.Error([new Error("Aspose requires a file extension")]);
+  if (!file.extension) return Result.Error([new Error("Aspose requires a file extension")]);
   if (!ASPOSE_EXTENSIONS.includes(file.extension))
-    return Result.Error([
-      new Error("Aspose does not support the extension of the file"),
-    ]);
+    return Result.Error([new Error("Aspose does not support the extension of the file")]);
   return Result.Ok(null);
 }

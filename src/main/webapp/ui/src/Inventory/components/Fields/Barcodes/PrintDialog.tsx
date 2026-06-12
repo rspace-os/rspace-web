@@ -1,27 +1,29 @@
-import React, { useState, useRef, useCallback } from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import ContextDialog from "../../ContextMenu/ContextDialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import useStores from "../../../../stores/use-stores";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
-import Alert from "@mui/material/Alert";
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-import PrintContents, { PreviewPrintItem } from "./PrintContents";
+import { observer } from "mobx-react-lite";
+import { useCallback, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import docLinks from "../../../../assets/DocLinks";
 import { mkAlert } from "../../../../stores/contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import useStores from "../../../../stores/use-stores";
+import ContextDialog from "../../ContextMenu/ContextDialog";
 import { useIsSingleColumnLayout } from "../../Layout/Layout2x1";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
-import Stack from "@mui/material/Stack";
+import PrintContents, { PreviewPrintItem } from "./PrintContents";
 
 export type PrinterType = "GENERIC" | "LABEL";
 export type PrintLayout = "BASIC" | "FULL";
@@ -49,17 +51,11 @@ type OptionsWrapperArgs = {
   setPrintOptions: (options: PrintOptions) => void;
 };
 
-export const PrintOptionsWrapper = ({
-  printOptions,
-  setPrintOptions,
-}: OptionsWrapperArgs) => {
+export const PrintOptionsWrapper = ({ printOptions, setPrintOptions }: OptionsWrapperArgs) => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
-    <FormControl
-      component="fieldset"
-      sx={{ width: isSingleColumnLayout ? "100%" : "50%" }}
-    >
+    <FormControl component="fieldset" sx={{ width: isSingleColumnLayout ? "100%" : "50%" }}>
       <Stack spacing={3}>
         <FormControl>
           <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
@@ -75,25 +71,13 @@ export const PrintOptionsWrapper = ({
             }}
             row
           >
-            <FormControlLabel
-              value="GENERIC"
-              control={<Radio size="small" />}
-              label="Standard Printer"
-            />
-            <FormControlLabel
-              value="LABEL"
-              control={<Radio size="small" />}
-              label="Label Printer"
-            />
+            <FormControlLabel value="GENERIC" control={<Radio size="small" />} label="Standard Printer" />
+            <FormControlLabel value="LABEL" control={<Radio size="small" />} label="Label Printer" />
           </RadioGroup>
           {printOptions.printerType === "GENERIC" ? (
-            <Alert severity="info">
-              Print multiple labels per sheet (e.g. A4 / A3 / Letter).
-            </Alert>
+            <Alert severity="info">Print multiple labels per sheet (e.g. A4 / A3 / Letter).</Alert>
           ) : (
-            <Alert severity="info">
-              Print one label per sticker (Zebra printer).
-            </Alert>
+            <Alert severity="info">Print one label per sticker (Zebra printer).</Alert>
           )}
         </FormControl>
         <FormControl>
@@ -110,26 +94,14 @@ export const PrintOptionsWrapper = ({
             }}
             row
           >
-            <FormControlLabel
-              value="FULL"
-              control={<Radio size="small" />}
-              label="Full"
-            />
-            <FormControlLabel
-              value="BASIC"
-              control={<Radio size="small" />}
-              label="Basic"
-            />
+            <FormControlLabel value="FULL" control={<Radio size="small" />} label="Full" />
+            <FormControlLabel value="BASIC" control={<Radio size="small" />} label="Basic" />
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              The label shape should match the selected layout. Also, you might
-              have problems when using Safari. Please check barcodes{" "}
-              <a
-                href={docLinks.barcodesPrinting}
-                target="_blank"
-                rel="noreferrer"
-              >
+              The label shape should match the selected layout. Also, you might have problems when using Safari. Please
+              check barcodes{" "}
+              <a href={docLinks.barcodesPrinting} target="_blank" rel="noreferrer">
                 documentation
               </a>
               .
@@ -151,16 +123,8 @@ export const PrintOptionsWrapper = ({
               }}
               row
             >
-              <FormControlLabel
-                value="LARGE"
-                control={<Radio size="small" />}
-                label="Large"
-              />
-              <FormControlLabel
-                value="SMALL"
-                control={<Radio size="small" />}
-                label="Small"
-              />
+              <FormControlLabel value="LARGE" control={<Radio size="small" />} label="Large" />
+              <FormControlLabel value="SMALL" control={<Radio size="small" />} label="Small" />
             </RadioGroup>
           )}
           <Alert severity="info">
@@ -207,6 +171,7 @@ function PrintDialog({
     onAfterPrint: () => {
       handleClose();
     },
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     onPrintError: (errorLocation, error) => {
       uiStore.addAlert(
         mkAlert({
@@ -220,12 +185,7 @@ function PrintDialog({
   });
 
   return (
-    <ContextDialog
-      open={showPrintDialog}
-      onClose={handleClose}
-      fullWidth
-      maxWidth="lg"
-    >
+    <ContextDialog open={showPrintDialog} onClose={handleClose} fullWidth maxWidth="lg">
       <DialogTitle>Print Options</DialogTitle>
       <DialogContent>
         <Box
@@ -237,10 +197,7 @@ function PrintDialog({
             justifyContent: "space-between",
           }}
         >
-          <PrintOptionsWrapper
-            printOptions={printOptions}
-            setPrintOptions={setPrintOptions}
-          />
+          <PrintOptionsWrapper printOptions={printOptions} setPrintOptions={setPrintOptions} />
           <Box
             sx={{
               display: "flex",
@@ -270,11 +227,7 @@ function PrintDialog({
               printOptions={printOptions}
               itemsToPrint={itemsToPrint}
               imageLinks={imageLinks}
-              target={
-                printOptions.printerType === "GENERIC"
-                  ? "multiplePrint"
-                  : "singlePrint"
-              }
+              target={printOptions.printerType === "GENERIC" ? "multiplePrint" : "singlePrint"}
             />
           </Box>
         </Box>
@@ -283,13 +236,7 @@ function PrintDialog({
         <Button onClick={handleClose} disabled={false}>
           Cancel
         </Button>
-        <Button
-          onClick={handlePrint}
-          color="callToAction"
-          variant="contained"
-          disableElevation
-          disabled={false}
-        >
+        <Button onClick={handlePrint} color="callToAction" variant="contained" disableElevation disabled={false}>
           {`Print selected (${itemsToPrint.length})`}
         </Button>
       </DialogActions>

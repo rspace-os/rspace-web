@@ -1,62 +1,50 @@
-import React from "react";
-import SkipToContentMenu from "../../components/SkipToContentMenu";
-import { LandmarksProvider } from "../../components/LandmarksContext";
-import { createRoot } from "react-dom/client";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import { ThemeProvider, lighten } from "@mui/material/styles";
-import createAccentedTheme from "../../accentedTheme";
-import {
-  SELECTED_OR_FOCUS_BLUE,
-  GALLERY_SECTION,
-  type GallerySection,
-  gallerySectionLabel,
-} from "./common";
-import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
-import AppBar from "../../components/AppBar";
-import Sidebar from "./components/Sidebar";
-import MainPanel from "./components/MainPanel";
 import Box from "@mui/material/Box";
-import {
-  useGalleryListing,
-  idToString,
-  type GalleryFile,
-} from "./useGalleryListing";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import CssBaseline from "@mui/material/CssBaseline";
-import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import Stack from "@mui/material/Stack";
+import { lighten, ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import axios from "@/common/axios";
+import Result from "@/util/result";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import Alerts from "../../components/Alerts/Alerts";
-import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
 import Analytics from "../../components/Analytics";
-import { GallerySelection, useGallerySelection } from "./useGallerySelection";
-import { BrowserRouter, Navigate, Routes, Route, useParams } from "react-router-dom";
-import useUiPreference, {
-  PREFERENCES,
-  UiPreferences,
-} from "../../hooks/api/useUiPreference";
-import RouterNavigationProvider from "./components/RouterNavigationProvider";
+import AppBar from "../../components/AppBar";
+import SidebarToggle from "../../components/AppBar/SidebarToggle";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import GoogleLoginProvider from "../../components/GoogleLoginProvider";
+import { LandmarksProvider } from "../../components/LandmarksContext";
+import SkipToContentMenu from "../../components/SkipToContentMenu";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
+import useUiPreference, { PREFERENCES, UiPreferences } from "../../hooks/api/useUiPreference";
+import useOauthToken from "../../hooks/auth/useOauthToken";
+import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 import NavigateContext from "../../stores/contexts/Navigate";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import * as FetchingData from "../../util/fetchingData";
+import * as Parsers from "../../util/parsers";
+import RsSet from "../../util/set";
+import { GALLERY_SECTION, type GallerySection, gallerySectionLabel, SELECTED_OR_FOCUS_BLUE } from "./common";
+import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
-import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { CallableSnapGenePreview } from "./components/CallableSnapGenePreview";
-import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
-import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
-import OpenFolderProvider from "./components/OpenFolderProvider";
-import * as FetchingData from "../../util/fetchingData";
-import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
-import PlaceholderLabel from "./components/PlaceholderLabel";
-import AnalyticsContext from "../../stores/contexts/Analytics";
-import SidebarToggle from "../../components/AppBar/SidebarToggle";
-import GoogleLoginProvider from "../../components/GoogleLoginProvider";
-import * as Parsers from "../../util/parsers";
-import axios from "@/common/axios";
-import useOauthToken from "../../hooks/auth/useOauthToken";
-import RsSet from "../../util/set";
-import Stack from "@mui/material/Stack";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import Result from "@/util/result";
 import { CallableSnippetPreview } from "./components/CallableSnippetPreview";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
+import MainPanel from "./components/MainPanel";
+import OpenFolderProvider from "./components/OpenFolderProvider";
+import PlaceholderLabel from "./components/PlaceholderLabel";
+import RouterNavigationProvider from "./components/RouterNavigationProvider";
+import Sidebar from "./components/Sidebar";
+import { type GalleryFile, idToString, useGalleryListing } from "./useGalleryListing";
+import { GallerySelection, useGallerySelection } from "./useGallerySelection";
 
 /**
  * We use this constant to represent an empty path in the gallery to avoid
@@ -87,237 +75,195 @@ const WholePage = ({
   setSelectedSection: ({ mediaType }: { mediaType: GallerySection }) => void;
   setPath: (path: ReadonlyArray<GalleryFile>) => void;
   autoSelect?: ReadonlyArray<number>;
-  title: ({
-    path,
-    section,
-  }: {
-    path: ReadonlyArray<GalleryFile>;
-    section: GallerySection;
-  }) => string;
+  title: ({ path, section }: { path: ReadonlyArray<GalleryFile>; section: GallerySection }) => string;
 }) => {
-    const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-    const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
-      PREFERENCES.GALLERY_SORT_BY,
-      {
-        defaultValue: "modificationDate",
-      },
-    );
-    const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
-      PREFERENCES.GALLERY_SORT_ORDER,
-      {
-        defaultValue: "DESC",
-      },
-    );
-    const { galleryListing, folderId, path, refreshListing, selectedSection } =
-      useGalleryListing({
-        listingOf,
-        searchTerm: appliedSearchTerm,
-        orderBy,
-        sortOrder,
+  const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
+  const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(PREFERENCES.GALLERY_SORT_BY, {
+    defaultValue: "modificationDate",
+  });
+  const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(PREFERENCES.GALLERY_SORT_ORDER, {
+    defaultValue: "DESC",
+  });
+  const { galleryListing, folderId, path, refreshListing, selectedSection } = useGalleryListing({
+    listingOf,
+    searchTerm: appliedSearchTerm,
+    orderBy,
+    sortOrder,
+  });
+  const { isViewportSmall } = useViewportDimensions();
+
+  const selection = useGallerySelection();
+  React.useEffect(() => {
+    try {
+      FetchingData.getSuccessValue(galleryListing).do((listing) => {
+        if (listing.tag === "empty") return;
+        for (const f of new RsSet(listing.list).intersectionMap(
+          ({ id }) => idToString(id).elseThrow(),
+          new RsSet(autoSelect ?? []).map((id) => `${id}`),
+        )) {
+          selection.append(f);
+        }
       });
-    const { isViewportSmall } = useViewportDimensions();
+    } catch {
+      /*
+       * This will throw when processing files from external filestores that
+       * do not have an id, but that's fine as external filestores cannot be
+       * encoded in the URL and so cannot be autoselected.
+       */
+    }
+  }, [autoSelect, galleryListing]);
 
-    const selection = useGallerySelection();
-    React.useEffect(() => {
-      try {
-        FetchingData.getSuccessValue(galleryListing).do((listing) => {
-          if (listing.tag === "empty") return;
-          for (const f of new RsSet(listing.list).intersectionMap(
-            ({ id }) => idToString(id).elseThrow(),
-            new RsSet(autoSelect ?? []).map((id) => `${id}`),
-          )) {
-            selection.append(f);
-          }
-        });
-      } catch {
-        /*
-         * This will throw when processing files from external filestores that
-         * do not have an id, but that's fine as external filestores cannot be
-         * encoded in the URL and so cannot be autoselected.
-         */
-      }
+  const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
+    PREFERENCES.GALLERY_SIDEBAR_OPEN,
+    {
+      defaultValue: true,
+    },
+  );
+  const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] = React.useState(false);
+  const drawerOpen = isViewportSmall ? smallViewportSidebarOpenState : largerViewportSidebarOpenState;
+  const setDrawerOpen = isViewportSmall ? setSmallViewportSidebarOpenState : setLargerViewportSidebarOpenState;
 
-    }, [autoSelect, galleryListing]);
+  const sidebarId = React.useId();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
 
-    const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
-      useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
-        defaultValue: true,
-      });
-    const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] =
-      React.useState(false);
-    const drawerOpen = isViewportSmall
-      ? smallViewportSidebarOpenState
-      : largerViewportSidebarOpenState;
-    const setDrawerOpen = isViewportSmall
-      ? setSmallViewportSidebarOpenState
-      : setLargerViewportSidebarOpenState;
+  const { trackEvent } = React.useContext(AnalyticsContext);
+  React.useEffect(() => {
+    trackEvent("user:load:page:gallery", { section: selectedSection });
+  }, []);
 
-    const sidebarId = React.useId();
-    const { useNavigate } = React.useContext(NavigateContext);
-    const navigate = useNavigate();
+  React.useEffect(() => {
+    try {
+      Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
+        document.title = `${title({ path: p, section: s })} | RSpace Gallery`;
+      })(FetchingData.getSuccessValue(path), FetchingData.getSuccessValue(selectedSection));
+    } catch (e) {
+      console.error("Error setting document title", e);
+      document.title = "RSpace Gallery";
+    }
+  }, [listingOf, path]);
 
-    const { trackEvent } = React.useContext(AnalyticsContext);
-    React.useEffect(() => {
-      trackEvent("user:load:page:gallery", { section: selectedSection });
-
-    }, []);
-
-    React.useEffect(() => {
-      try {
-        Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>(
-          (p, s) => {
-            document.title = `${title({ path: p, section: s })} | RSpace Gallery`;
+  return (
+    <Box
+      sx={{
+        "@keyframes drop": {
+          "0%": {
+            borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
           },
-        )(
-          FetchingData.getSuccessValue(path),
-          FetchingData.getSuccessValue(selectedSection),
-        );
-      } catch (e) {
-        console.error("Error setting document title", e);
-        document.title = "RSpace Gallery";
-      }
-    }, [listingOf, path]);
-
-    return (
-      <Box
-        sx={{
-          "@keyframes drop": {
-            "0%": {
-              borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
-            },
-            "50%": {
-              borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.8),
-            },
-            "100%": {
-              borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
-            },
+          "50%": {
+            borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.8),
           },
-          height: "100%",
-        }}
-      >
-        <CallableImagePreview>
-          <CallablePdfPreview>
-            <CallableAsposePreview>
-              <CallableSnapGenePreview>
-                <CallableSnippetPreview>
-                  <OpenFolderProvider
-                    setPath={(newPath) => {
-                      FetchingData.getSuccessValue(selectedSection).do(
-                        (section) => {
-                          if (section === GALLERY_SECTION.NETWORKFILES) {
-                            setPath(newPath);
-                            return;
-                          }
-                          if (newPath.length > 0) {
-                            navigate(
-                              `/gallery/${idToString(
-                                newPath[newPath.length - 1].id,
-                              ).elseThrow()}`,
-                            );
-                          } else {
-                            try {
-                              navigate(`/gallery?mediaType=${section}`);
-                            } catch {
-                              // do nothing
-                            }
-                          }
-                        },
-                      );
-                    }}
-                  >
-                    <Stack sx={{ height: "100%" }}>
-                      <AppBar
-                        variant="page"
-                        currentPage="Gallery"
-                        sidebarToggle={
-                          <SidebarToggle
-                            setSidebarOpen={setDrawerOpen}
-                            sidebarOpen={drawerOpen}
-                            sidebarId={sidebarId}
-                          />
+          "100%": {
+            borderColor: lighten(SELECTED_OR_FOCUS_BLUE, 0.6),
+          },
+        },
+        height: "100%",
+      }}
+    >
+      <CallableImagePreview>
+        <CallablePdfPreview>
+          <CallableAsposePreview>
+            <CallableSnapGenePreview>
+              <CallableSnippetPreview>
+                <OpenFolderProvider
+                  setPath={(newPath) => {
+                    FetchingData.getSuccessValue(selectedSection).do((section) => {
+                      if (section === GALLERY_SECTION.NETWORKFILES) {
+                        setPath(newPath);
+                        return;
+                      }
+                      if (newPath.length > 0) {
+                        navigate(`/gallery/${idToString(newPath[newPath.length - 1].id).elseThrow()}`);
+                      } else {
+                        try {
+                          navigate(`/gallery?mediaType=${section}`);
+                        } catch {
+                          // do nothing
                         }
-                        accessibilityTips={{
-                          supportsHighContrastMode: true,
-                          supportsReducedMotion: true,
-                          supports2xZoom: true,
-                          supportsSkipToContent: true,
+                      }
+                    });
+                  }}
+                >
+                  <Stack sx={{ height: "100%" }}>
+                    <AppBar
+                      variant="page"
+                      currentPage="Gallery"
+                      sidebarToggle={
+                        <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
+                      }
+                      accessibilityTips={{
+                        supportsHighContrastMode: true,
+                        supportsReducedMotion: true,
+                        supports2xZoom: true,
+                        supportsSkipToContent: true,
+                      }}
+                    />
+                    <Box sx={{ display: "flex", minHeight: "0", flexGrow: 1 }} component="main">
+                      <Sidebar
+                        selectedSection={FetchingData.getSuccessValue(selectedSection).orElse(null)}
+                        setSelectedSection={(mediaType) => {
+                          setSelectedSection({ mediaType });
+                          setPath(EMPTY_PATH);
+                          setAppliedSearchTerm("");
+                          trackEvent("user:change:section:gallery", {
+                            section: mediaType,
+                          });
                         }}
+                        drawerOpen={drawerOpen}
+                        setDrawerOpen={setDrawerOpen}
+                        folderId={folderId}
+                        refreshListing={refreshListing}
+                        id={sidebarId}
                       />
                       <Box
-                        sx={{ display: "flex", minHeight: "0", flexGrow: 1 }}
-                        component="main"
+                        sx={{
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          flexGrow: 1,
+                          minWidth: 0,
+                        }}
                       >
-                        <Sidebar
-                          selectedSection={FetchingData.getSuccessValue(
-                            selectedSection,
-                          ).orElse(null)}
+                        <MainPanel
+                          selectedSection={FetchingData.getSuccessValue(selectedSection).orElse(null)}
+                          path={FetchingData.getSuccessValue(path).orElse(null)}
                           setSelectedSection={(mediaType) => {
                             setSelectedSection({ mediaType });
                             setPath(EMPTY_PATH);
                             setAppliedSearchTerm("");
-                            trackEvent("user:change:section:gallery", {
-                              section: mediaType,
-                            });
                           }}
-                          drawerOpen={drawerOpen}
-                          setDrawerOpen={setDrawerOpen}
+                          galleryListing={galleryListing}
                           folderId={folderId}
                           refreshListing={refreshListing}
-                          id={sidebarId}
-                        />
-                        <Box
-                          sx={{
-                            height: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            flexGrow: 1,
-                            minWidth: 0,
+                          key={null}
+                          sortOrder={sortOrder}
+                          orderBy={orderBy}
+                          setSortOrder={setSortOrder}
+                          setOrderBy={setOrderBy}
+                          appliedSearchTerm={appliedSearchTerm}
+                          setAppliedSearchTerm={(newTerm) => {
+                            FetchingData.getSuccessValue(path).do((p) => {
+                              if (p.length > 0) {
+                                trackEvent("user:search:folder:gallery");
+                              } else {
+                                trackEvent("user:search:section:gallery");
+                              }
+                            });
+                            setAppliedSearchTerm(newTerm);
                           }}
-                        >
-                          <MainPanel
-                            selectedSection={FetchingData.getSuccessValue(
-                              selectedSection,
-                            ).orElse(null)}
-                            path={FetchingData.getSuccessValue(path).orElse(
-                              null,
-                            )}
-                            setSelectedSection={(mediaType) => {
-                              setSelectedSection({ mediaType });
-                              setPath(EMPTY_PATH);
-                              setAppliedSearchTerm("");
-                            }}
-                            galleryListing={galleryListing}
-                            folderId={folderId}
-                            refreshListing={refreshListing}
-                            key={null}
-                            sortOrder={sortOrder}
-                            orderBy={orderBy}
-                            setSortOrder={setSortOrder}
-                            setOrderBy={setOrderBy}
-                            appliedSearchTerm={appliedSearchTerm}
-                            setAppliedSearchTerm={(newTerm) => {
-                              FetchingData.getSuccessValue(path).do((p) => {
-                                if (p.length > 0) {
-                                  trackEvent("user:search:folder:gallery");
-                                } else {
-                                  trackEvent("user:search:section:gallery");
-                                }
-                              });
-                              setAppliedSearchTerm(newTerm);
-                            }}
-                          />
-                        </Box>
+                        />
                       </Box>
-                    </Stack>
-                  </OpenFolderProvider>
-                </CallableSnippetPreview>
-              </CallableSnapGenePreview>
-            </CallableAsposePreview>
-          </CallablePdfPreview>
-        </CallableImagePreview>
-      </Box>
-    );
-  };
+                    </Box>
+                  </Stack>
+                </OpenFolderProvider>
+              </CallableSnippetPreview>
+            </CallableSnapGenePreview>
+          </CallableAsposePreview>
+        </CallablePdfPreview>
+      </CallableImagePreview>
+    </Box>
+  );
+};
 
 /**
  * This component is responsible for rendering the gallery when no folder is
@@ -332,8 +278,7 @@ function LandingPage() {
     mediaType: GALLERY_SECTION.IMAGES,
   });
   const selectedSection = searchParams.mediaType;
-  const [path, setPath] =
-    React.useState<ReadonlyArray<GalleryFile>>(EMPTY_PATH);
+  const [path, setPath] = React.useState<ReadonlyArray<GalleryFile>>(EMPTY_PATH);
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const listingOf = React.useMemo(() => {
     return {
@@ -344,11 +289,7 @@ function LandingPage() {
   }, [selectedSection, path]);
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
-    error: () => (
-      <PlaceholderLabel>
-        Error checking if filestores are enabled.
-      </PlaceholderLabel>
-    ),
+    error: () => <PlaceholderLabel>Error checking if filestores are enabled.</PlaceholderLabel>,
     success: (fsEnabled) => {
       const validGallerySections = new Set([
         "Images",
@@ -363,9 +304,7 @@ function LandingPage() {
         "PdfDocuments",
       ]);
       if (!validGallerySections.has(selectedSection))
-        return (
-          <PlaceholderLabel>Not a valid Gallery section.</PlaceholderLabel>
-        );
+        return <PlaceholderLabel>Not a valid Gallery section.</PlaceholderLabel>;
       return (
         <WholePage
           listingOf={listingOf}
@@ -422,25 +361,19 @@ function GalleryFileInFolder() {
   async function fetchFileDetails() {
     try {
       const token = await getToken();
-      const { data } = await axios.get<unknown>(
-        `/api/v1/files/${fileIdParam}`,
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
+      const { data } = await axios.get<unknown>(`/api/v1/files/${fileIdParam}`, {
+        headers: {
+          // biome-ignore lint/style/useTemplate: initial biome migration
+          Authorization: "Bearer " + token,
         },
-      );
+      });
       setFolderId(
         Parsers.objectPath(["parentFolderId"], data)
           .flatMap(Parsers.isNumber)
           .map((id) => ({ tag: "success" as const, value: id }))
           .orElseGet(([e]) => ({ tag: "error", error: e.message })),
       );
-      setFileName(
-        Parsers.objectPath(["name"], data)
-          .flatMap(Parsers.isString)
-          .orElse(null),
-      );
+      setFileName(Parsers.objectPath(["name"], data).flatMap(Parsers.isString).orElse(null));
     } catch (error) {
       console.error("Error fetching file details", error);
       if (error instanceof Error) {
@@ -451,7 +384,6 @@ function GalleryFileInFolder() {
 
   React.useEffect(() => {
     void fetchFileDetails();
-
   }, []);
 
   return FetchingData.match<number, React.ReactNode>(folderId, {
@@ -527,10 +459,7 @@ export function Gallery() {
                             </RouterNavigationProvider>
                           }
                         />
-                        <Route
-                          path="*"
-                          element={<Navigate to="/gallery" replace />}
-                        />
+                        <Route path="*" element={<Navigate to="/gallery" replace />} />
                       </Routes>
                     </DisableDragAndDropByDefault>
                   </UiPreferences>

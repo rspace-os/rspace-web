@@ -1,14 +1,14 @@
-import React, { useEffect } from "react";
+import CloseIcon from "@mui/icons-material/Close";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
 import IconButton from "@mui/material/IconButton";
-import CloseIcon from "@mui/icons-material/Close";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
+import React, { useEffect } from "react";
 import axios from "@/common/axios";
 import { isUrl } from "@/util/Util";
 
@@ -59,9 +59,7 @@ function renderFormattedFormula(formula?: string): React.ReactNode {
   return formula
     .split(/(\d+)/)
     .filter((part) => part !== "")
-    .map((part, index) =>
-      /^\d+$/.test(part) ? <sub key={`formula-sub-${index}`}>{part}</sub> : part,
-    );
+    .map((part, index) => (/^\d+$/.test(part) ? <sub key={`formula-sub-${index}`}>{part}</sub> : part));
 }
 
 function getAdditionalMetadata(additionalMetadata?: string): MetadataMap {
@@ -75,9 +73,7 @@ function getAdditionalMetadata(additionalMetadata?: string): MetadataMap {
       return {};
     }
 
-    return Object.fromEntries(
-      Object.entries(parsed).map(([key, value]) => [key, String(value)]),
-    );
+    return Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, String(value)]));
   } catch {
     return {};
   }
@@ -101,13 +97,7 @@ const tableCellSx = {
 } as const;
 
 /** A label/value row: a `th` label and a right-aligned value cell. */
-function PropertyRow({
-  label,
-  value,
-}: {
-  label: React.ReactNode;
-  value: React.ReactNode;
-}): React.ReactElement {
+function PropertyRow({ label, value }: { label: React.ReactNode; value: React.ReactNode }): React.ReactElement {
   return (
     <TableRow>
       <TableCell component="th" scope="row">
@@ -121,13 +111,7 @@ function PropertyRow({
 }
 
 /** Renders arbitrary metadata key/value pairs, linkifying URL values. */
-function MetadataRows({
-  metadata,
-  keyPrefix,
-}: {
-  metadata: MetadataMap;
-  keyPrefix: string;
-}): React.ReactNode {
+function MetadataRows({ metadata, keyPrefix }: { metadata: MetadataMap; keyPrefix: string }): React.ReactNode {
   return Object.entries(metadata).map(([key, value]) => (
     <PropertyRow
       key={`${keyPrefix}-${key}`}
@@ -151,13 +135,9 @@ export default function ChemCard(props: ChemCardProps) {
     products: [],
     molecules: [],
   });
-  const chemId =
-    props.item.id !== undefined ? Number.parseInt(props.item.id, 10) : Number.NaN;
+  const chemId = props.item.id !== undefined ? Number.parseInt(props.item.id, 10) : Number.NaN;
   const additionalMetadata = getAdditionalMetadata(chem.additionalMetadata);
-  const inlineHeight =
-    Number(props.height) < 200
-      ? "200px"
-      : `${Number.parseInt(String(props.height), 10) + 6}px`;
+  const inlineHeight = Number(props.height) < 200 ? "200px" : `${Number.parseInt(String(props.height), 10) + 6}px`;
 
   // fetch chem details
   useEffect(() => {
@@ -175,6 +155,7 @@ export default function ChemCard(props: ChemCardProps) {
           setChem(response.data.data);
         } else {
           console.warn(
+            // biome-ignore lint/style/useTemplate: initial biome migration
             "error when retrieving info for chem elem " + props.item.id,
             response.data.error,
           );
@@ -209,24 +190,17 @@ export default function ChemCard(props: ChemCardProps) {
     ];
 
     return (
-      <React.Fragment
-        key={`${chemical.role ?? "chemical"}-${chemical.formula ?? ""}`}
-      >
+      <React.Fragment key={`${chemical.role ?? "chemical"}-${chemical.formula ?? ""}`}>
         <TableRow sx={{ background: "rgb(240,240,240" }}>
           <TableCell component="th" scope="row"></TableCell>
           <TableCell component="th" scope="row" align="center">
             {chemical.role}
           </TableCell>
         </TableRow>
-        {chemical.name != "" && (
-          <PropertyRow label="Name" value={chemical.name} />
-        )}
+        {/** biome-ignore lint/suspicious/noDoubleEquals: initial biome migration */}
+        {chemical.name != "" && <PropertyRow label="Name" value={chemical.name} />}
         {properties.map((property, index) => (
-          <PropertyRow
-            key={`${keyPrefix}-prop-${index}`}
-            label={property.label}
-            value={property.value}
-          />
+          <PropertyRow key={`${keyPrefix}-prop-${index}`} label={property.label} value={property.value} />
         ))}
         <MetadataRows metadata={chemicalMetadata} keyPrefix={keyPrefix} />
       </React.Fragment>
@@ -309,12 +283,7 @@ export default function ChemCard(props: ChemCardProps) {
           }}
         >
           <TableBody>
-            {chem.reaction && (
-              <PropertyRow
-                label="Formula"
-                value={renderFormattedFormula(chem.formula)}
-              />
-            )}
+            {chem.reaction && <PropertyRow label="Formula" value={renderFormattedFormula(chem.formula)} />}
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}
             {chem.molecules.map((m) => chemInfoTable(m))}

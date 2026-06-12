@@ -1,27 +1,25 @@
-import React, { type ReactNode, type ComponentType } from "react";
+import FormControl from "@mui/material/FormControl";
+import Grid from "@mui/material/Grid";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
-import { type IdentifierField } from "../../../../stores/definitions/Identifier";
-import {
-  subFields,
-  subFieldsForNew,
-  RECOMMENDED_FIELDS_LABELS,
-} from "../../../../stores/models/IdentifierModel";
-import { newGeoLocation } from "../../../../stores/definitions/GeoLocation";
-import GeoLocationField from "./GeoLocationField";
-import InputWrapper from "../../../../components/Inputs/InputWrapper";
+import type { ComponentType, ReactNode } from "react";
 import AddButton from "../../../../components/AddButton";
-import RemoveButton from "../../../../components/RemoveButton";
 import DateField from "../../../../components/Inputs/DateField";
-import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Typography from "@mui/material/Typography";
-import { capitaliseJustFirstChar } from "../../../../util/Util";
+import InputWrapper from "../../../../components/Inputs/InputWrapper";
+import RemoveButton from "../../../../components/RemoveButton";
+import { newGeoLocation } from "../../../../stores/definitions/GeoLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type IdentifierField } from "../../../../stores/definitions/Identifier";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import GeoLocationModel from "../../../../stores/models/GeoLocationModel";
+import { RECOMMENDED_FIELDS_LABELS, subFields, subFieldsForNew } from "../../../../stores/models/IdentifierModel";
+import { capitaliseJustFirstChar } from "../../../../util/Util";
+import GeoLocationField from "./GeoLocationField";
 
 export const isEmpty = (v: string): boolean => v === "";
 
@@ -37,11 +35,7 @@ type MultipleInputArgs = {
  * If field has subFields in values, an additional array of text fields is rendered.
  * If field has options, an additional dropdown is rendered.
  */
-const MultipleInputHandler = ({
-  field,
-  activeResult,
-  editable,
-}: MultipleInputArgs): ReactNode => {
+const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputArgs): ReactNode => {
   const itemLabel: string = field.key.slice(0, field.key.length - 1);
 
   const isDuplicate = (v: string): boolean =>
@@ -83,11 +77,7 @@ const MultipleInputHandler = ({
     doUpdateIdentifiers();
   };
 
-  const handleUpdateValue = (
-    index: number,
-    key: string,
-    newValue: string | Date,
-  ): void => {
+  const handleUpdateValue = (index: number, key: string, newValue: string | Date): void => {
     runInAction(() => {
       // @ts-expect-error - field.value is an array
       field.value[index][key] = newValue;
@@ -100,214 +90,173 @@ const MultipleInputHandler = ({
     i: number;
   };
 
-  const RecommendedField = observer(
-    ({ v, i }: RecommendedFieldArgs): ReactNode => {
-      return (
-        <>
-          <Grid
-            sx={{
-              flexGrow: 1,
-              mb: 0.5,
-              p: 1,
-              border: "1px dotted grey",
-              borderRadius: "4px",
-            }}
-          >
-            {editable ? (
-              // FormControl required to prevent warning (although may prevent flexGrow to work)
-              <FormControl sx={{ width: "100%" }}>
-                {v.value instanceof Date ? (
-                  <DateField
-                    variant="outlined"
-                    value={v.value.toString()}
-                    disabled={false}
-                    onChange={({ target: { value } }) => {
-                      if (value) handleUpdateValue(i, "value", value);
-                    }}
-                    data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
-                  />
-                ) : (
-                  <TextField
-                    sx={{
-                      marginBottom:
-                        // @ts-expect-error - subFields accepts field.value[i]
-                        subFields(field.value[i]).length > 0 ? "10px" : "0px",
-                    }}
-                    size="small"
-                    variant="standard"
-                    fullWidth
-                    id={`IdentifierRecommendedField-${field.key}-${i}`}
-                    disabled={false}
-                    value={v.value ?? ""}
-                    placeholder={`Enter value for new ${itemLabel}`}
-                    onChange={({ target: { value } }) => {
-                      handleUpdateValue(i, "value", value);
-                    }}
-                    error={
-                      (editable && isDuplicate(String(v.value))) ||
-                      isEmpty(String(v.value))
-                    }
-                    helperText={
-                      editable && isEmpty(String(v.value))
-                        ? "Enter a value (or remove entry)"
-                        : editable && isDuplicate(String(v.value))
-                          ? "This value is a duplicate. Please enter a unique one."
-                          : null
-                    }
-                    slotProps={{
-                      inputLabel: { shrink: true },
-                    }}
-                  />
-                )}
-                {
+  const RecommendedField = observer(({ v, i }: RecommendedFieldArgs): ReactNode => {
+    return (
+      <>
+        <Grid
+          sx={{
+            flexGrow: 1,
+            mb: 0.5,
+            p: 1,
+            border: "1px dotted grey",
+            borderRadius: "4px",
+          }}
+        >
+          {editable ? (
+            // FormControl required to prevent warning (although may prevent flexGrow to work)
+            <FormControl sx={{ width: "100%" }}>
+              {v.value instanceof Date ? (
+                <DateField
+                  variant="outlined"
+                  value={v.value.toString()}
+                  disabled={false}
+                  onChange={({ target: { value } }) => {
+                    if (value) handleUpdateValue(i, "value", value);
+                  }}
+                  data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
+                />
+              ) : (
+                <TextField
+                  sx={{
+                    marginBottom:
+                      // @ts-expect-error - subFields accepts field.value[i]
+                      subFields(field.value[i]).length > 0 ? "10px" : "0px",
+                  }}
+                  size="small"
+                  variant="standard"
+                  fullWidth
+                  id={`IdentifierRecommendedField-${field.key}-${i}`}
+                  disabled={false}
+                  value={v.value ?? ""}
+                  placeholder={`Enter value for new ${itemLabel}`}
+                  onChange={({ target: { value } }) => {
+                    handleUpdateValue(i, "value", value);
+                  }}
+                  error={(editable && isDuplicate(String(v.value))) || isEmpty(String(v.value))}
+                  helperText={
+                    editable && isEmpty(String(v.value))
+                      ? "Enter a value (or remove entry)"
+                      : editable && isDuplicate(String(v.value))
+                        ? "This value is a duplicate. Please enter a unique one."
+                        : null
+                  }
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                  }}
+                />
+              )}
+              {
+                // @ts-expect-error - subFields accepts field.value[i]
+                subFields(field.value[i]).length > 0 &&
                   // @ts-expect-error - subFields accepts field.value[i]
-                  subFields(field.value[i]).length > 0 &&
-                    // @ts-expect-error - subFields accepts field.value[i]
-                    subFields(field.value[i]).map((subField) => (
-                      <InputWrapper
-                        label={
-                          RECOMMENDED_FIELDS_LABELS[
-                            subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS
-                          ]
-                        }
-                        key={subField.key}
-                      >
-                        <Grid
-                          container
-                          direction="row"
-                          spacing={1}
-                          sx={{
-                            justifyContent: "space-between",
-                            width: "95%",
-                            m: 1,
-                          }}
-                        >
-                          <Grid sx={{ flexGrow: 1 }}>
-                            <TextField
-                              size="small"
-                              variant="standard"
-                              fullWidth
-                              id={`IdentifierRecommendedSubField-${subField.key}-${i}`}
-                              disabled={false}
-                              value={subField.value ?? ""}
-                              placeholder={`Enter value for ${
-                                RECOMMENDED_FIELDS_LABELS[
-                                  subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS
-                                ]
-                              }`}
-                              onChange={({ target: { value } }) => {
-                                handleUpdateValue(i, subField.key, value);
-                              }}
-                              /* value is optional for most subFields, not all */
-                              error={
-                                isEmpty(String(subField.value)) &&
-                                isRequired(subField.key)
-                              }
-                              helperText={
-                                isEmpty(String(subField.value)) &&
-                                isRequired(subField.key)
-                                  ? "A value is required"
-                                  : null
-                              }
-                              slotProps={{
-                                inputLabel: { shrink: true },
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </InputWrapper>
-                    ))
-                }
-              </FormControl>
-            ) : (
-              <>
-                <Grid>
-                  {v.value instanceof Date
-                    ? v.value.toISOString().split("T")[0]
-                    : String(v.value)}
-                </Grid>
-                {
-                  // @ts-expect-error - subFields accepts field.value[i]
-                  subFields(field.value[i]).length > 0 &&
-                    // @ts-expect-error - subFields accepts field.value[i]
-                    subFields(field.value[i]).map((sf) => (
+                  subFields(field.value[i]).map((subField) => (
+                    <InputWrapper
+                      label={RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}
+                      key={subField.key}
+                    >
                       <Grid
                         container
                         direction="row"
-                        key={sf.key}
                         spacing={1}
-                        sx={{ margin: "8px" }}
+                        sx={{
+                          justifyContent: "space-between",
+                          width: "95%",
+                          m: 1,
+                        }}
                       >
-                        <Grid sx={{ minWidth: "150px" }}>
-                          <>
-                            {
-                              RECOMMENDED_FIELDS_LABELS[
-                                sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS
-                              ]
+                        <Grid sx={{ flexGrow: 1 }}>
+                          <TextField
+                            size="small"
+                            variant="standard"
+                            fullWidth
+                            id={`IdentifierRecommendedSubField-${subField.key}-${i}`}
+                            disabled={false}
+                            value={subField.value ?? ""}
+                            placeholder={`Enter value for ${
+                              RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS]
+                            }`}
+                            onChange={({ target: { value } }) => {
+                              handleUpdateValue(i, subField.key, value);
+                            }}
+                            /* value is optional for most subFields, not all */
+                            error={isEmpty(String(subField.value)) && isRequired(subField.key)}
+                            helperText={
+                              isEmpty(String(subField.value)) && isRequired(subField.key) ? "A value is required" : null
                             }
-                            :
-                          </>
-                        </Grid>
-                        <Grid>
-                          {sf.value ? (
-                            <>{String(sf.value)}</>
-                          ) : (
-                            <Typography
-                              variant="inherit"
-                              component="em"
-                              sx={{ color: "#949494" }}
-                            >
-                              None
-                            </Typography>
-                          )}
+                            slotProps={{
+                              inputLabel: { shrink: true },
+                            }}
+                          />
                         </Grid>
                       </Grid>
-                    ))
+                    </InputWrapper>
+                  ))
+              }
+            </FormControl>
+          ) : (
+            <>
+              <Grid>{v.value instanceof Date ? v.value.toISOString().split("T")[0] : String(v.value)}</Grid>
+              {
+                // @ts-expect-error - subFields accepts field.value[i]
+                subFields(field.value[i]).length > 0 &&
+                  // @ts-expect-error - subFields accepts field.value[i]
+                  subFields(field.value[i]).map((sf) => (
+                    <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
+                      <Grid sx={{ minWidth: "150px" }}>
+                        {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
+                        <>{RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}:</>
+                      </Grid>
+                      <Grid>
+                        {sf.value ? (
+                          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+                          <>{String(sf.value)}</>
+                        ) : (
+                          <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
+                            None
+                          </Typography>
+                        )}
+                      </Grid>
+                    </Grid>
+                  ))
+              }
+            </>
+          )}
+        </Grid>
+        {field.options && (
+          <Grid sx={{ minWidth: "135px" }}>
+            {editable ? (
+              <FormControl>
+                <Select
+                  variant="standard"
+                  data-test-id={`${field.key}-option-selector`}
+                  // @ts-expect-error - field.value[i].type exists
+                  value={field.value[i].type}
+                  onChange={({ target: { value } }) => handleUpdateValue(i, "type", value as string)}
+                  inputProps={{
+                    "aria-label": field.selectAriaLabel ?? "",
+                  }}
+                >
+                  {field.options.map((option) => (
+                    <MenuItem key={option.value} value={option.value} data-test-id={`field-option-${option.value}`}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            ) : (
+              // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+              <>
+                {
+                  // @ts-expect-error - field.value[i].type exists
+                  capitaliseJustFirstChar(field.value[i].type.toLowerCase())
                 }
               </>
             )}
           </Grid>
-          {field.options && (
-            <Grid sx={{ minWidth: "135px" }}>
-              {editable ? (
-                <FormControl>
-                  <Select
-                    variant="standard"
-                    data-test-id={`${field.key}-option-selector`}
-                    // @ts-expect-error - field.value[i].type exists
-                    value={field.value[i].type}
-                    onChange={({ target: { value } }) =>
-                      handleUpdateValue(i, "type", value as string)
-                    }
-                    inputProps={{
-                      "aria-label": field.selectAriaLabel ?? "",
-                    }}
-                  >
-                    {field.options.map((option) => (
-                      <MenuItem
-                        key={option.value}
-                        value={option.value}
-                        data-test-id={`field-option-${option.value}`}
-                      >
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              ) : (
-                <>
-                  {
-                    // @ts-expect-error - field.value[i].type exists
-                    capitaliseJustFirstChar(field.value[i].type.toLowerCase())
-                  }
-                </>
-              )}
-            </Grid>
-          )}
-        </>
-      );
-    },
-  );
+        )}
+      </>
+    );
+  });
 
   return (
     <InputWrapper
@@ -315,11 +264,7 @@ const MultipleInputHandler = ({
       actions={
         <AddButton
           disabled={!editable}
-          title={
-            editable
-              ? `Add a new ${itemLabel}`
-              : `To add a ${itemLabel}, press Edit first`
-          }
+          title={editable ? `Add a new ${itemLabel}` : `To add a ${itemLabel}, press Edit first`}
           onClick={handleAdd}
         />
       }
@@ -355,11 +300,7 @@ const MultipleInputHandler = ({
             <Grid sx={{ marginRight: "6px" }}>
               <RemoveButton
                 disabled={!editable}
-                title={
-                  editable
-                    ? `Remove this ${itemLabel}`
-                    : `To remove any ${itemLabel}, press Edit first`
-                }
+                title={editable ? `Remove this ${itemLabel}` : `To remove any ${itemLabel}, press Edit first`}
                 onClick={() => handleRemove(i)}
               />
             </Grid>
@@ -370,6 +311,4 @@ const MultipleInputHandler = ({
   );
 };
 
-export default observer(
-  MultipleInputHandler,
-) as ComponentType<MultipleInputArgs>;
+export default observer(MultipleInputHandler) as ComponentType<MultipleInputArgs>;

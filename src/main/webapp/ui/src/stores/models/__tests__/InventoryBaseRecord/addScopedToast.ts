@@ -1,14 +1,17 @@
 /*
  */
-import { expect } from "vitest";
-import InventoryBaseRecord from "../../InventoryBaseRecord";
-import { type Alert } from "../../../contexts/Alert";
-import { type Model } from "./common";
-import { type Command } from "fast-check";
 
-export class AddScopedToastCommand
-  implements Command<Model, InventoryBaseRecord>
-{
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Command } from "fast-check";
+import { expect } from "vitest";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Alert } from "../../../contexts/Alert";
+// biome-ignore lint/style/useImportType: initial biome migration
+import InventoryBaseRecord from "../../InventoryBaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Model } from "./common";
+
+export class AddScopedToastCommand implements Command<Model, InventoryBaseRecord> {
   toast: Alert;
 
   constructor(toast: Alert) {
@@ -29,4 +32,3 @@ export class AddScopedToastCommand
     return "addScopedToast";
   }
 }
-

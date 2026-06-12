@@ -1,28 +1,22 @@
+// biome-ignore lint/style/useImportType: initial biome migration
 import React from "react";
-import { RecordLink, TopLink, InTrash } from "./RecordLink";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { HasLocation } from "../../stores/definitions/HasLocation";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
 import { Optional } from "../../util/optional";
-import { HasLocation } from "../../stores/definitions/HasLocation";
+import { InTrash, RecordLink, TopLink } from "./RecordLink";
 
 type RecordLocationArgs = {
   record: InventoryRecord;
 };
 
-export default function RecordLocation({
-  record,
-}: RecordLocationArgs): React.ReactNode {
+export default function RecordLocation({ record }: RecordLocationArgs): React.ReactNode {
   return hasLocation(record)
     .flatMap((r: HasLocation & InventoryRecord) => {
-      if (!r.immediateParentContainer)
-        return Optional.empty<React.ReactElement<typeof RecordLink>>();
-      return Optional.present(
-        <RecordLink
-          key={r.globalId}
-          record={r.immediateParentContainer}
-          overflow
-        />
-      );
+      if (!r.immediateParentContainer) return Optional.empty<React.ReactElement<typeof RecordLink>>();
+      return Optional.present(<RecordLink key={r.globalId} record={r.immediateParentContainer} overflow />);
     })
     .orElseGet(() => {
       if (record.deleted) return <InTrash />;

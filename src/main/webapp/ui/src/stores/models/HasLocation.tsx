@@ -1,28 +1,35 @@
-import {
-  Container,
-  Location,
-} from "../definitions/Container";
-import { Factory } from "../definitions/Factory";
-import { Person } from "../definitions/Person";
-import * as Parsers from "../../util/parsers";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import { AdjustableTableRowOptions } from "../definitions/Tables";
-import { type InventoryRecord } from "../definitions/InventoryRecord";
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
 import React from "react";
-import { Optional, lift2 } from "../../util/optional";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
+import { layoutToLabel } from "@/util/labels";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { lift2, Optional } from "../../util/optional";
+import * as Parsers from "../../util/parsers";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { GlobalId } from "../definitions/BaseRecord";
+import type { Container, Location } from "../definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Factory } from "../definitions/Factory";
+// biome-ignore lint/style/useImportType: initial biome migration
 import {
   HasLocation,
   HasLocationEditableFields,
   HasLocationMarker,
   HasLocationUneditableFields,
 } from "../definitions/HasLocation";
-import { GlobalId } from "../definitions/BaseRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+// biome-ignore lint/correctness/noUnusedImports: initial biome migration
+import { type InventoryRecord } from "../definitions/InventoryRecord";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { Person } from "../definitions/Person";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { AdjustableTableRowOptions } from "../definitions/Tables";
+// biome-ignore lint/style/useImportType: initial biome migration
 import InventoryBaseRecord, {
   InventoryBaseRecordEditableFields,
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
-import { layoutToLabel } from "@/util/labels";
-import { GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -30,9 +37,8 @@ import { GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types
  * class provides the state and methods common to all of these Inventory
  * records.
  */
-export function HasLocationMixin<
-  TBase extends new (...args: any[]) => InventoryBaseRecord
->(Base: TBase) {
+// biome-ignore lint/suspicious/noExplicitAny: mixin constructor constraint must use any[] to be extendable
+export function HasLocationMixin<TBase extends new (...args: any[]) => InventoryBaseRecord>(Base: TBase) {
   return class extends Base implements HasLocation {
     [HasLocationMarker] = true as const;
 
@@ -70,12 +76,11 @@ export function HasLocationMixin<
      */
     public immediateParentContainer: Container | null;
 
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     constructor(...args: any[]) {
       super(...args);
       const [factory, params] = args as [factory: Factory, params: object];
-      this.immediateParentContainer = Parsers.getValueWithKey(
-        "parentContainers"
-      )(params)
+      this.immediateParentContainer = Parsers.getValueWithKey("parentContainers")(params)
         .flatMap(Parsers.isArray)
         .flatMap(ArrayUtils.head)
         .map(
@@ -83,28 +88,22 @@ export function HasLocationMixin<
             factory.newRecord(
               immediateParentContainerParams as Record<string, unknown> & {
                 globalId: GlobalId;
-              }
-            ) as Container
+              },
+            ) as Container,
         )
         .orElse(null);
-      this.parentLocation = Parsers.getValueWithKey("parentLocation")(
-        params
-      ).elseThrow() as Location | null;
+      this.parentLocation = Parsers.getValueWithKey("parentLocation")(params).elseThrow() as Location | null;
       this.lastMoveDate = Parsers.getValueWithKey("lastMoveDate")(params)
         .flatMap(Parsers.isString)
         .flatMap(Parsers.parseDate)
         .orElse(null);
-      const lastNonWorkbenchParentParams = Parsers.getValueWithKey(
-        "lastNonWorkbenchParent"
-      )(params).elseThrow() as
+      const lastNonWorkbenchParentParams = Parsers.getValueWithKey("lastNonWorkbenchParent")(params).elseThrow() as
         | (Record<string, unknown> & {
             globalId: GlobalId;
           })
         | null;
       if (lastNonWorkbenchParentParams) {
-        this.lastNonWorkbenchParent = factory.newRecord(
-          lastNonWorkbenchParentParams
-        ) as Container | null;
+        this.lastNonWorkbenchParent = factory.newRecord(lastNonWorkbenchParentParams) as Container | null;
       } else {
         this.lastNonWorkbenchParent = null;
       }
@@ -144,10 +143,7 @@ export function HasLocationMixin<
      */
     get rootParentContainer(): Container | null {
       if (this.immediateParentContainer === null) return null;
-      return (
-        this.immediateParentContainer.rootParentContainer ??
-        this.immediateParentContainer
-      );
+      return this.immediateParentContainer.rootParentContainer ?? this.immediateParentContainer;
     }
 
     /**
@@ -160,10 +156,7 @@ export function HasLocationMixin<
      */
     get allParentContainers(): ReadonlyArray<Container> {
       if (this.immediateParentContainer === null) return [];
-      return [
-        this.immediateParentContainer,
-        ...this.immediateParentContainer.allParentContainers,
-      ];
+      return [this.immediateParentContainer, ...this.immediateParentContainer.allParentContainers];
     }
 
     /**
@@ -185,10 +178,7 @@ export function HasLocationMixin<
      * the item's location, then false is returned.
      */
     get isDirectlyOnWorkbench(): boolean {
-      return (
-        this.isOnWorkbench &&
-        this.immediateParentContainer === this.rootParentContainer
-      );
+      return this.isOnWorkbench && this.immediateParentContainer === this.rootParentContainer;
     }
 
     /**
@@ -197,9 +187,7 @@ export function HasLocationMixin<
      * permission to view the location of this item.
      */
     isOnWorkbenchOfUser(user: Person): boolean {
-      return (
-        this.isOnWorkbench && this.rootParentContainer?.id === user.workbenchId
-      );
+      return this.isOnWorkbench && this.rootParentContainer?.id === user.workbenchId;
     }
 
     /**
@@ -208,35 +196,34 @@ export function HasLocationMixin<
      * permission to view the location of this item.
      */
     isDirectlyOnWorkbenchOfUser(user: Person): boolean {
-      return (
-        this.isDirectlyOnWorkbench &&
-        this.rootParentContainer?.id === user.workbenchId
-      );
+      return this.isDirectlyOnWorkbench && this.rootParentContainer?.id === user.workbenchId;
     }
 
     adjustableTableOptions(): AdjustableTableRowOptions<string> {
-      const options: AdjustableTableRowOptions<string> = new Map([
-        ...super.adjustableTableOptions(),
-      ]);
+      const options: AdjustableTableRowOptions<string> = new Map([...super.adjustableTableOptions()]);
 
       const gridCoordinatesLabel = lift2<GridLayout, Location, string>(
         ({ rowsLabelType, rowsNumber, columnsLabelType, columnsNumber }, parentLocation) => {
           const rowLabel = layoutToLabel(rowsLabelType, rowsNumber !== "" ? rowsNumber : 1, parentLocation.coordY);
-          const columnLabel = layoutToLabel(columnsLabelType, columnsNumber !== "" ? columnsNumber : 1, parentLocation.coordX);
+          const columnLabel = layoutToLabel(
+            columnsLabelType,
+            columnsNumber !== "" ? columnsNumber : 1,
+            parentLocation.coordX,
+          );
           // Disambiguate the row and column numbers if needed (row 1, column 11 vs row 11, column 1)
           const insertComma = NUMERICAL_AXES.includes(rowsLabelType) && NUMERICAL_AXES.includes(columnsLabelType);
 
-          return `${rowLabel}${insertComma ? ',' : ''}${columnLabel}`
+          return `${rowLabel}${insertComma ? "," : ""}${columnLabel}`;
         },
         Optional.fromNullable(this.immediateParentContainer?.gridLayout),
-        Optional.fromNullable(this.parentLocation)
+        Optional.fromNullable(this.parentLocation),
       ).orElse("");
 
       if (this.readAccessLevel !== "public") {
         options.set("Previous Location", () =>
           this.lastNonWorkbenchParent
             ? { renderOption: "name", data: this.lastNonWorkbenchParent }
-            : { renderOption: "node", data: null }
+            : { renderOption: "node", data: null },
         );
         options.set("Current Location", () => ({
           renderOption: "location",
@@ -250,11 +237,7 @@ export function HasLocationMixin<
         }
         options.set("Last Moved", () => ({
           renderOption: "node",
-          data: this.lastMoveDate ? (
-            this.lastMoveDate.toLocaleString()
-          ) : (
-            <>&mdash;</>
-          ),
+          data: this.lastMoveDate ? this.lastMoveDate.toLocaleString() : <>&mdash;</>,
         }));
       } else {
         options.set("Previous Location", () => ({
@@ -281,21 +264,17 @@ export function HasLocationMixin<
 /**
  * Checks if a given object has a location.
  */
-export function hasLocation<T extends object>(
-  input: T
-): Optional<HasLocation & T> {
-  return input.hasOwnProperty(HasLocationMarker)
-    ? Optional.present(input as HasLocation & T)
-    : Optional.empty();
+export function hasLocation<T extends object>(input: T): Optional<HasLocation & T> {
+  // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
+  return input.hasOwnProperty(HasLocationMarker) ? Optional.present(input as HasLocation & T) : Optional.empty();
 }
 
 /**
  * Filters an iterable collection for those with locations
  */
-export function* filterForThoseWithLocations<T extends object>(
-  input: Iterable<T>
-): Iterable<HasLocation & T> {
+export function* filterForThoseWithLocations<T extends object>(input: Iterable<T>): Iterable<HasLocation & T> {
   for (const val of input) {
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
     if (val.hasOwnProperty(HasLocationMarker)) yield val as HasLocation & T;
   }
 }

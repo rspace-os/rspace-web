@@ -1,6 +1,8 @@
-import { type _LINK } from "../../util/types";
-import { type Container } from "../definitions/Container";
+// biome-ignore lint/style/useImportType: initial biome migration
 import { WorkbenchId } from "@/stores/definitions/container/types";
+import type { _LINK } from "../../util/types";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type Container } from "../definitions/Container";
 
 export type Username = string;
 export type PersonId = number;

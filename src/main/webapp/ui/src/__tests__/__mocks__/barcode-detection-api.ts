@@ -1,6 +1,7 @@
 import type { Barcode, BarcodeFormat } from "../../util/barcode";
 
 class BarcodeDetector {
+  // biome-ignore lint/complexity/noUselessConstructor: initial biome migration
   constructor() {}
 
   detect(): Promise<Array<Barcode>> {

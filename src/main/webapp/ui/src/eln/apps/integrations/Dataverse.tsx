@@ -1,28 +1,28 @@
-import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import {
-  useIntegrationsEndpoint,
-  type IntegrationStates,
-  type IntegrationState,
-  type OptionsId,
-} from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import { Optional } from "../../../util/optional";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import TextField from "@mui/material/TextField";
 import CardActions from "@mui/material/CardActions";
-import { useLocalObservable, observer } from "mobx-react-lite";
-import { runInAction, observable } from "mobx";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
-import RsSet from "../../../util/set";
-import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import * as ArrayUtils from "../../../util/ArrayUtils";
+import { observable, runInAction } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import React, { useContext, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
+import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import { Optional } from "../../../util/optional";
+import RsSet from "../../../util/set";
+import IntegrationCard from "../IntegrationCard";
+import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
+import {
+  type IntegrationState,
+  type IntegrationStates,
+  type OptionsId,
+  useIntegrationsEndpoint,
+} from "../useIntegrationsEndpoint";
 
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
@@ -37,9 +37,7 @@ type UnwrapArray<T extends Array<unknown>> = {
  * such, we can discard the Optional wrapper around each Dataverse
  * configuration.
  */
-type Configurations = UnwrapArray<
-  IntegrationStates["DATAVERSE"]["credentials"]
->;
+type Configurations = UnwrapArray<IntegrationStates["DATAVERSE"]["credentials"]>;
 
 /*
  * Within this component we model the state of the configurations slightly
@@ -62,13 +60,7 @@ type NewConfig = {
 };
 
 const DialogContent = observer(
-  ({
-    configs,
-    integrationState,
-  }: {
-    configs: Configurations;
-    integrationState: IntegrationStates["DATAVERSE"];
-  }) => {
+  ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DATAVERSE"] }) => {
     const { addAlert } = useContext(AlertContext);
     const { test } = useDataverseTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -79,9 +71,7 @@ const DialogContent = observer(
      * call in a careful manner so that each configuration can be
      * independently edited and saved.
      */
-    const copyOfState = useLocalObservable<
-      IntegrationState<Array<ExistingConfig>>
-    >(() => ({
+    const copyOfState = useLocalObservable<IntegrationState<Array<ExistingConfig>>>(() => ({
       mode: integrationState.mode,
       credentials: configs.map((c) => observable({ ...c, dirty: false })),
     }));
@@ -91,24 +81,18 @@ const DialogContent = observer(
 
     async function saveExistingConfig(config: ExistingConfig, index: number) {
       try {
-        const newState = await saveAppOptions(
-          "DATAVERSE",
-          Optional.present(config.optionsId),
-          {
-            DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
-            DATAVERSE_URL: config.DATAVERSE_URL,
-            DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
-          },
-        );
+        const newState = await saveAppOptions("DATAVERSE", Optional.present(config.optionsId), {
+          DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
+          DATAVERSE_URL: config.DATAVERSE_URL,
+          DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
+        });
         runInAction(() => {
           integrationState.credentials = newState.credentials;
           ArrayUtils.all(newState.credentials)
+            // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
             .map((newCreds) => {
-              const indexOfNewConfig = newCreds.findIndex(
-                (c) => c.optionsId === config.optionsId,
-              );
-              if (indexOfNewConfig === -1)
-                throw new Error("Save completed but cannot show results.");
+              const indexOfNewConfig = newCreds.findIndex((c) => c.optionsId === config.optionsId);
+              if (indexOfNewConfig === -1) throw new Error("Save completed but cannot show results.");
 
               copyOfState.credentials.splice(
                 index,
@@ -150,19 +134,12 @@ const DialogContent = observer(
         });
         runInAction(() => {
           integrationState.credentials = newState.credentials;
-          const optionIdsOfExistingConfigs = new RsSet(
-            copyOfState.credentials.map(({ optionsId }) => optionsId),
-          );
+          const optionIdsOfExistingConfigs = new RsSet(copyOfState.credentials.map(({ optionsId }) => optionsId));
           try {
             const newlySavedConfig = new RsSet(newState.credentials)
               .mapOptional((x) => x)
-              .subtractMap(
-                ({ optionsId }) => optionsId,
-                optionIdsOfExistingConfigs,
-              ).first;
-            copyOfState.credentials.push(
-              observable({ ...newlySavedConfig, dirty: false }),
-            );
+              .subtractMap(({ optionsId }) => optionsId, optionIdsOfExistingConfigs).first;
+            copyOfState.credentials.push(observable({ ...newlySavedConfig, dirty: false }));
           } catch {
             throw new Error("Save completed but cannot show results.");
           }
@@ -211,9 +188,7 @@ const DialogContent = observer(
                       }}
                       label="Dataverse Name"
                       error={config.DATAVERSE_ALIAS === ""}
-                      helperText={
-                        config.DATAVERSE_ALIAS === "" && "Name is required."
-                      }
+                      helperText={config.DATAVERSE_ALIAS === "" && "Name is required."}
                     />
                     <TextField
                       fullWidth
@@ -226,9 +201,7 @@ const DialogContent = observer(
                       }}
                       label="Server URL"
                       error={config.DATAVERSE_URL === ""}
-                      helperText={
-                        config.DATAVERSE_URL === "" && "URL is required."
-                      }
+                      helperText={config.DATAVERSE_URL === "" && "URL is required."}
                     />
                     <TextField
                       fullWidth
@@ -242,9 +215,7 @@ const DialogContent = observer(
                       type="password"
                       label="API key"
                       error={config.DATAVERSE_APIKEY === ""}
-                      helperText={
-                        config.DATAVERSE_APIKEY === "" && "API key is required."
-                      }
+                      helperText={config.DATAVERSE_APIKEY === "" && "API key is required."}
                     />
                   </Stack>
                 </CardContent>
@@ -255,14 +226,10 @@ const DialogContent = observer(
                         try {
                           await deleteAppOptions("DATAVERSE", config.optionsId);
                           runInAction(() => {
-                            const deletedIndex = observableConfigs.findIndex(
-                              (c) => c === config,
-                            );
+                            // biome-ignore lint/complexity/useIndexOf: initial biome migration
+                            const deletedIndex = observableConfigs.findIndex((c) => c === config);
                             observableConfigs.splice(deletedIndex, 1);
-                            integrationState.credentials.splice(
-                              deletedIndex,
-                              1,
-                            );
+                            integrationState.credentials.splice(deletedIndex, 1);
                           });
                           addAlert(
                             mkAlert({
@@ -315,9 +282,7 @@ const DialogContent = observer(
                   <Button
                     type="submit"
                     disabled={
-                      config.DATAVERSE_ALIAS === "" ||
-                      config.DATAVERSE_URL === "" ||
-                      config.DATAVERSE_APIKEY === ""
+                      config.DATAVERSE_ALIAS === "" || config.DATAVERSE_URL === "" || config.DATAVERSE_APIKEY === ""
                     }
                   >
                     Save
@@ -346,9 +311,7 @@ const DialogContent = observer(
                       }}
                       label="Dataverse Name"
                       error={newConfig.DATAVERSE_ALIAS === ""}
-                      helperText={
-                        newConfig.DATAVERSE_ALIAS === "" && "Name is required."
-                      }
+                      helperText={newConfig.DATAVERSE_ALIAS === "" && "Name is required."}
                     />
                     <TextField
                       fullWidth
@@ -360,9 +323,7 @@ const DialogContent = observer(
                       }}
                       label="Server URL"
                       error={newConfig.DATAVERSE_URL === ""}
-                      helperText={
-                        newConfig.DATAVERSE_URL === "" && "URL is required."
-                      }
+                      helperText={newConfig.DATAVERSE_URL === "" && "URL is required."}
                     />
                     <TextField
                       fullWidth
@@ -375,10 +336,7 @@ const DialogContent = observer(
                       type="password"
                       label="API key"
                       error={newConfig.DATAVERSE_APIKEY === ""}
-                      helperText={
-                        newConfig.DATAVERSE_APIKEY === "" &&
-                        "API key is required."
-                      }
+                      helperText={newConfig.DATAVERSE_APIKEY === "" && "API key is required."}
                     />
                   </Stack>
                 </CardContent>
@@ -450,10 +408,7 @@ type DataverseArgs = {
   update: (newIntegrationState: IntegrationStates["DATAVERSE"]) => void;
 };
 
-function Dataverse({
-  integrationState,
-  update,
-}: DataverseArgs): React.ReactNode {
+function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode {
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -467,9 +422,7 @@ function Dataverse({
         explanatoryText="Explore, analyse, and share data through an open-source research data repository software."
         image={DataverseIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         integrationState={integrationState}
         helpLinkText="Dataverse integration docs"
         website="dataverse.org"
@@ -479,29 +432,16 @@ function Dataverse({
             vocabulary terms for the deposit."
         setupSection={
           <>
-            <Typography variant="body2">
-              You can configure multiple Dataverses to connect to.
-            </Typography>
+            <Typography variant="body2">You can configure multiple Dataverses to connect to.</Typography>
             <ol>
               <li>Enter the required credentials and Save.</li>
               <li>Click on Test to ensure your credentials are correct.</li>
               <li>Enable the integration.</li>
-              <li>
-                Dataverse will now be available as an option in the export
-                dialog.
-              </li>
+              <li>Dataverse will now be available as an option in the export dialog.</li>
             </ol>
             {ArrayUtils.all(integrationState.credentials)
-              .map((configs) => (
-                <DialogContent
-                  key={null}
-                  configs={configs}
-                  integrationState={integrationState}
-                />
-              ))
-              .orElse(
-                <>There was an error getting the configured Dataverses.</>,
-              )}
+              .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
+              .orElse(<>There was an error getting the configured Dataverses.</>)}
           </>
         }
       />
