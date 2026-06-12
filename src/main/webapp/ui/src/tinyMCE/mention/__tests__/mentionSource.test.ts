@@ -1,0 +1,330 @@
+/**
+ * RSDEV-992: @mentions returned an empty list for large labgroups.
+ *
+ * Root cause: in this TinyMCE version the mention plugin's caret lands in the
+ * '#autocomplete-delimiter' span, so typed text never reaches '#autocomplete-searchtext'
+ * and the plugin always passes an empty `query` to `source`. Every lookup therefore sent
+ * term="" and the server returned the ENTIRE shared group; for large labgroups the client
+ * then rendered everything and stalled, surfacing as an empty list.
+ *
+ * Fixes under test:
+ *  - `source` reads the actually-typed text from the '#autocomplete' span (in the editor
+ *    iframe), strips the delimiter and the plugin's \ufeff caret placeholder, and uses it
+ *    as the search term, so the server filters the recipient list.
+ *  - lookups are sequence-tagged so a slow, broad response (term="") arriving late cannot
+ *    clobber the dropdown rendered by a newer, narrower lookup.
+ *  - `highlighter` is a no-op for the (always-empty) plugin query, instead of building the
+ *    pathological /()/ig regex that wraps every character of every entry in <strong>.
+ *
+ * This test loads the real (legacy) tinymce config via a vm sandbox and asserts on the
+ * requests made and the data passed to the plugin's `process` callback.
+ */
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
+import { describe, expect, it, vi } from "vitest";
+
+// Resolve from this file's location rather than process.cwd(): the jsdom test
+// environment polyfills `process` (vite-plugin-node-polyfills), so
+// `process.cwd()` returns "/" instead of the ui directory. Do not use the
+// `new URL("...", import.meta.url)` form - Vite rewrites that pattern into a
+// non-file asset URL.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+type ServerUser = { firstName: string; lastName: string; username: string };
+type SuccessCb = (data: { data: Array<ServerUser> | null }) => void;
+type GetCall = { url: string; params: Record<string, unknown>; respond: SuccessCb; fail: () => void };
+type MentionSource = (query: string, process: (items: unknown) => void, delimiter: string) => void;
+type Mentions = {
+  source: MentionSource;
+  highlighter: (this: { query: string }, text: string) => string;
+};
+
+type DomNode = {
+  textContent: string;
+  nextSibling: DomNode | null;
+  firstChild: DomNode | null;
+  contains: (n: unknown) => boolean;
+};
+type LoadOptions = {
+  /** the active session's span (caret inside it); null = no span in the document */
+  activeText: string | null;
+  /** stale spans from aborted sessions, earlier in document order */
+  staleTexts?: string[];
+  /** simulate the caret having escaped the span (selection cannot resolve it) */
+  caretOutside?: boolean;
+  /**
+   * text nodes following the active span (engines where typed characters land
+   * after the span); the caret sits in the LAST one at `caretOffset` (default: its end)
+   */
+  trailingTexts?: string[];
+  caretOffset?: number;
+  /** explicit sibling nodes after the span (overrides trailingTexts) */
+  trailingNodes?: DomNode[];
+  /** explicit caret container (defaults to the last trailing node) */
+  caretContainer?: DomNode;
+};
+
+const mkNode = (textContent: string): DomNode => ({
+  textContent,
+  nextSibling: null,
+  firstChild: null,
+  contains: () => false,
+});
+
+/** element node whose children are linked as siblings, like a real DOM element */
+const mkElement = (children: DomNode[]): DomNode => {
+  for (let i = 0; i < children.length - 1; i++) children[i].nextSibling = children[i + 1];
+  return {
+    textContent: children.map((c) => c.textContent).join(""),
+    nextSibling: null,
+    firstChild: children[0] ?? null,
+    contains: (n: unknown) => children.some((c) => c === n || c.contains(n)),
+  };
+};
+
+/** Loads the config into a sandbox modelling the editor body, spans, siblings and caret. */
+function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls: GetCall[] } {
+  const o: LoadOptions = typeof opts === "object" && opts !== null ? opts : { activeText: opts };
+  const getCalls: GetCall[] = [];
+  const jq = vi.fn((_sel: string) => ({ text: () => "SD2838" })) as unknown as {
+    (sel: string): { text: () => string };
+    get: (url: string, params: Record<string, unknown>, cb: SuccessCb) => { fail: (cb: () => void) => void };
+  };
+  jq.get = (url, params, cb) => {
+    const call: GetCall = { url, params, respond: cb, fail: () => {} };
+    getCalls.push(call);
+    return {
+      fail: (failCb) => {
+        call.fail = failCb;
+      },
+    };
+  };
+
+  const active: DomNode | null = o.activeText !== null ? mkNode(o.activeText) : null;
+  const trailing = o.trailingNodes ?? (o.trailingTexts ?? []).map(mkNode);
+  if (active) {
+    let prev: DomNode = active;
+    for (const t of trailing) {
+      prev.nextSibling = t;
+      prev = t;
+    }
+  }
+  // document order: stale debris first, active session last
+  const spans: DomNode[] = [...(o.staleTexts ?? []).map(mkNode), ...(active ? [active] : [])];
+
+  const editorBody = {
+    querySelector: (sel: string) => (sel === "#autocomplete" ? (spans[0] ?? null) : null),
+    querySelectorAll: (sel: string) => (sel === "#autocomplete" ? spans : []),
+  };
+  const caretNode = {
+    closest: (sel: string) => (sel === "#autocomplete" && !o.caretOutside ? active : null),
+  };
+  const caretContainer = o.caretContainer ?? (trailing.length > 0 ? trailing[trailing.length - 1] : null);
+  const rng = caretContainer
+    ? { startContainer: caretContainer, startOffset: o.caretOffset ?? caretContainer.textContent.length }
+    : { startContainer: caretNode, startOffset: 0 };
+
+  const sandbox: Record<string, unknown> = {
+    tinymce: {
+      PluginManager: { add: () => {} },
+      activeEditor: {
+        getBody: () => editorBody,
+        selection: { getNode: () => caretNode, getRng: () => rng },
+      },
+    },
+    $: jq,
+    window: {},
+    document: { querySelector: () => null },
+    console,
+  };
+
+  const src = readFileSync(
+    resolve(
+      __dirname,
+      "../../../../../scripts/pages/workspace/editor/tinymce5_configuration.js",
+    ),
+    "utf8",
+  );
+  runInNewContext(src, sandbox);
+  const setup = sandbox.tinymcesetup as { mentions: Mentions };
+  return { mentions: setup.mentions, getCalls };
+}
+
+const aUser = (username: string): ServerUser => ({
+  firstName: username,
+  lastName: "User",
+  username,
+});
+
+describe("RSDEV-992 mention source uses the typed text as the search term", () => {
+  it("sends the typed text (minus the delimiter) as the term, not the empty plugin query", () => {
+    // plugin passes query="" because the caret landed in the delimiter span; #autocomplete holds "@ro"
+    const { mentions, getCalls } = load("@ro");
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls).toHaveLength(1);
+    expect(getCalls[0].url).toBe("/messaging/ajax/recipients");
+    expect(getCalls[0].params.term).toBe("ro");
+  });
+
+  it("strips only the leading delimiter", () => {
+    const { mentions, getCalls } = load("@john.doe");
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("john.doe");
+  });
+
+  it("strips the plugin's \\ufeff caret placeholder and surrounding whitespace", () => {
+    // the dummy caret span inside #autocomplete-searchtext holds a zero-width no-break space
+    const { mentions, getCalls } = load("@ro\ufeff");
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("ro");
+  });
+
+  it("falls back to the plugin query when only the delimiter and placeholder are present", () => {
+    const { mentions, getCalls } = load("@\ufeff");
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("");
+  });
+
+  it("falls back to the plugin query when the autocomplete span is absent", () => {
+    const { mentions, getCalls } = load(null);
+    mentions.source("smith", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("smith");
+  });
+
+  it("reads the active session's span (via the caret), not stale debris earlier in the document", () => {
+    // aborted sessions / autosaves can leave old #autocomplete spans in the content;
+    // document-order querySelector would return the stale "@perf" instead of the typed text
+    const { mentions, getCalls } = load({ activeText: "@perf02", staleTexts: ["@perf"] });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("falls back to the last span in document order when the caret cannot resolve one", () => {
+    const { mentions, getCalls } = load({ activeText: "@perf02", staleTexts: ["@perf"], caretOutside: true });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("collects typed text from siblings after the span when the caret escapes it", () => {
+    // some engines normalise the caret out of the span, so typed characters land in a
+    // following text node: <span id=autocomplete>@\ufeff</span>"perf02|"
+    const { mentions, getCalls } = load({
+      activeText: "@\ufeff",
+      caretOutside: true,
+      trailingTexts: ["perf02"],
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("collects sibling text only up to the caret, not pre-existing trailing text", () => {
+    // mention typed mid-sentence: <span>@</span>"perf02| tomorrow" with the caret after "perf02"
+    const { mentions, getCalls } = load({
+      activeText: "@",
+      caretOutside: true,
+      trailingTexts: ["perf02 tomorrow"],
+      caretOffset: 6,
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("does not append trailing siblings when the caret is still inside the span", () => {
+    // normal layout: typed text inside the span, pre-existing sentence text after it
+    const { mentions, getCalls } = load({
+      activeText: "@ro",
+      trailingTexts: [" see you tomorrow"],
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("ro");
+  });
+
+  it("descends into an element sibling and stops at the caret inside it", () => {
+    // caret sits inside a formatted element: <span>@</span><strong>perf02| tomorrow</strong>
+    const inner = mkNode("perf02");
+    const after = mkNode(" tomorrow");
+    const strong = mkElement([inner, after]);
+    const { mentions, getCalls } = load({
+      activeText: "@",
+      caretOutside: true,
+      trailingNodes: [strong],
+      caretContainer: inner,
+    });
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("perf02");
+  });
+
+  it("trims whitespace that survives the delimiter strip", () => {
+    // "@ ro": the first trim happens while the delimiter is still in front,
+    // so the space after '@' must be trimmed again after the delimiter strip
+    const { mentions, getCalls } = load("@ ro");
+    mentions.source("", vi.fn(), "@");
+    expect(getCalls[0].params.term).toBe("ro");
+  });
+});
+
+describe("RSDEV-992 stale lookup responses are discarded", () => {
+  it("ignores an earlier broad response that resolves after a newer lookup", () => {
+    const { mentions, getCalls } = load("@ro");
+    const process = vi.fn();
+    mentions.source("", process, "@"); // broad lookup (e.g. the initial '@')
+    mentions.source("", process, "@"); // newer lookup
+    expect(getCalls).toHaveLength(2);
+
+    // newer response arrives first, then the stale broad one
+    getCalls[1].respond({ data: [aUser("rob")] });
+    getCalls[0].respond({ data: [aUser("rob"), aUser("roberta"), aUser("rocco")] });
+
+    expect(process).toHaveBeenCalledTimes(1);
+    expect((process.mock.calls[0][0] as Array<ServerUser>).map((u) => u.username)).toEqual(["rob"]);
+  });
+
+  it("ignores a stale failure arriving after a newer lookup", () => {
+    const { mentions, getCalls } = load("@ro");
+    const process = vi.fn();
+    mentions.source("", process, "@");
+    mentions.source("", process, "@");
+
+    getCalls[1].respond({ data: [aUser("rob")] });
+    getCalls[0].fail();
+
+    expect(process).toHaveBeenCalledTimes(1);
+    expect(process).not.toHaveBeenCalledWith({});
+  });
+
+  it("still reports a failure of the latest lookup", () => {
+    const { mentions, getCalls } = load("@ro");
+    const process = vi.fn();
+    mentions.source("", process, "@");
+    getCalls[0].fail();
+    expect(process).toHaveBeenCalledWith({});
+  });
+});
+
+describe("RSDEV-992 results are sorted", () => {
+  it("sorts the unordered server response by display name before rendering", () => {
+    const { mentions, getCalls } = load("@ro");
+    const process = vi.fn();
+    mentions.source("", process, "@");
+    getCalls[0].respond({ data: [aUser("rocco"), aUser("rob"), aUser("roberta")] });
+    expect((process.mock.calls[0][0] as Array<{ name: string }>).map((u) => u.name)).toEqual([
+      "rob User <rob>",
+      "roberta User <roberta>",
+      "rocco User <rocco>",
+    ]);
+  });
+});
+
+describe("RSDEV-992 highlighter", () => {
+  it("is a no-op for an empty query instead of wrapping every character", () => {
+    const { mentions } = load(null);
+    expect(mentions.highlighter.call({ query: "" }, "Rob Principal <rob>")).toBe("Rob Principal <rob>");
+  });
+
+  it("still wraps case-insensitive matches of a non-empty query", () => {
+    const { mentions } = load(null);
+    expect(mentions.highlighter.call({ query: "ro" }, "Rob")).toBe("<strong>Ro</strong>b");
+  });
+});
