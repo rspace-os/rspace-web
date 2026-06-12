@@ -64,8 +64,23 @@ describe("ExtraFieldModel link validation", () => {
     expect(message).toMatch(/target global id/i);
   });
 
-  it("is invalid when the link has no target at all", () => {
+  it("treats an unset link as a valid empty field rather than blocking Save", () => {
+    // the backend allows Link extra-fields with no payload (API-created or
+    // migrated records) and the card renders them as "No link set"; that
+    // empty view state must not block record-level Save, since no editor is
+    // open and there is nothing for the user to correct
     const field = makeLinkField(null);
+    expect(field.isValid.isOk).toBe(true);
+  });
+
+  it("is invalid when the link is half-set", () => {
+    // a payload missing its relation or target is corrupt, unlike an absent
+    // payload, which is the legitimate "No link set" empty state
+    const field = makeLinkField({
+      relationType: "",
+      targetGlobalId: "SA2",
+      versionPin: null,
+    });
     expect(field.isValid.isOk).toBe(false);
   });
 });

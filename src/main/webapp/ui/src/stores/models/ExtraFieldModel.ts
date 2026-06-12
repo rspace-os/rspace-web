@@ -129,7 +129,11 @@ export default class ExtraFieldModel implements ExtraField {
         return IsInvalid(
           `The link field "${this.name}" needs its Target Global ID set. Set a target or cancel the edit.`
         );
-      if (!this.link || !this.link.relationType || !this.link.targetGlobalId) {
+      // an absent payload is the legitimate "No link set" empty state (the
+      // backend allows payload-less Link extra-fields), so it must not block
+      // record-level Save; only a half-set payload is invalid
+      if (!this.link) return IsValid();
+      if (!this.link.relationType || !this.link.targetGlobalId) {
         return IsInvalid("Link fields require a relation type and target.");
       }
       return IsValid();
