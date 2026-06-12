@@ -405,6 +405,7 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
 var initTinyMCE_cachedBoxSelectRequest;
+var initTinyMCE_cachedDropboxScriptRequest;
 var initTinyMCE_cachedOneDriveScriptRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
@@ -431,6 +432,23 @@ function loadBoxSelectScript() {
 	}
 
 	return initTinyMCE_cachedBoxSelectRequest;
+}
+
+function loadDropboxScript() {
+	if (typeof Dropbox === 'object') {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedDropboxScriptRequest) {
+		initTinyMCE_cachedDropboxScriptRequest = $.getScript("https://www.dropbox.com/static/api/2/dropins.js");
+		initTinyMCE_cachedDropboxScriptRequest.fail(function () {
+			initTinyMCE_cachedDropboxScriptRequest = null;
+		});
+	} else {
+		console.log('using cached dropbox script request');
+	}
+
+	return initTinyMCE_cachedDropboxScriptRequest;
 }
 
 function loadOneDriveScript() {
@@ -745,6 +763,9 @@ function initTinyMCE(selector) {
 		}
 
 		var dependencyRequests = [];
+		if (dropboxEnabled) {
+			dependencyRequests.push(loadDropboxScript());
+		}
 		if (boxEnabled && hasValidBoxClientId) {
 			dependencyRequests.push(loadBoxSelectScript());
 		}
