@@ -791,7 +791,7 @@ function initTinyMCE(selector) {
 	requestsPromise.always(function () {
 		Promise.all([
 			legacyDependencyLoadPromise.catch(function (error) {
-				console.log('box, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				console.log('box, dropbox, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
 				console.error(error);
 			}),
 			vitePluginLoadPromise.catch(function (error) {
