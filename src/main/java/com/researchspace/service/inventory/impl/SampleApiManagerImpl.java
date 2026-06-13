@@ -20,6 +20,7 @@ import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
@@ -35,6 +36,8 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventorySeriesNamingHelper;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IActiveUserStrategy;
@@ -57,13 +60,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("sampleApiManager")
-public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
+public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     implements SampleApiManager {
 
   public static final String SAMPLE_DEFAULT_NAME = "Generic Sample";
 
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleDao sampleDao;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
@@ -94,15 +98,15 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public ApiSampleTemplateSearchResult getTemplatesForUser(
-      PaginationCriteria<Sample> pgCrit,
+      PaginationCriteria<SampleTemplate> pgCrit,
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
       User user) {
 
-    ISearchResults<Sample> dbTemplates =
-        sampleDao.getTemplatesForUser(pgCrit, ownedBy, deletedOption, user);
+    ISearchResults<SampleTemplate> dbTemplates =
+        sampleTemplateDao.getTemplatesForUser(pgCrit, ownedBy, deletedOption, user);
     List<ApiSampleTemplateInfo> templateInfos = new ArrayList<>();
-    for (Sample st : dbTemplates.getResults()) {
+    for (SampleTemplate st : dbTemplates.getResults()) {
       ApiSampleTemplateInfo apiInvRec = new ApiSampleTemplateInfo(st);
       setOtherFieldsForOutgoingApiInventoryRecord(apiInvRec, st, user);
       templateInfos.add(apiInvRec);
@@ -118,59 +122,59 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public boolean exists(long id) {
-    return sampleDao.exists(id);
+    return sampleDao.exists(id) || sampleTemplateDao.exists(id);
   }
 
   @Override
-  public Sample assertUserCanReadSample(Long id, User user) {
-    Sample sample = getIfExists(id);
+  public SampleEntity assertUserCanReadSample(Long id, User user) {
+    SampleEntity sample = getIfExists(id);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
-  public Sample assertUserCanEditSample(Long id, User user) {
-    Sample sample = getIfExists(id);
+  public SampleEntity assertUserCanEditSample(Long id, User user) {
+    SampleEntity sample = getIfExists(id);
     invPermissions.assertUserCanEditInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
-  public Sample assertUserCanDeleteSample(Long id, User user) {
-    Sample sample = getIfExists(id);
+  public SampleEntity assertUserCanDeleteSample(Long id, User user) {
+    SampleEntity sample = getIfExists(id);
     invPermissions.assertUserCanDeleteInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
-  public Sample assertUserCanTransferSample(Long id, User user) {
-    Sample sample = getIfExists(id);
+  public SampleEntity assertUserCanTransferSample(Long id, User user) {
+    SampleEntity sample = getIfExists(id);
     invPermissions.assertUserCanTransferInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
   public boolean nameExistsForUser(String sampleName, User user) {
-    return sampleDao.findSamplesByName(sampleName, user).size() > 0;
+    return sampleDao.entityNameExistsForUser(sampleName, user);
   }
 
   @Override
   public ApiSampleWithFullSubSamples createNewApiSample(
       ApiSampleWithFullSubSamples apiSample, User user) {
 
-    Sample template = getSampleTemplateIfExists(apiSample);
+    SampleTemplate template = getSampleTemplateIfExists(apiSample);
 
     String sampleName = getNameForIncomingApiSample(apiSample);
     return createSample(sampleName, apiSample, template, user);
   }
 
-  private Sample getSampleTemplateIfExists(ApiSampleWithFullSubSamples apiSample) {
-    Sample template = null;
+  private SampleTemplate getSampleTemplateIfExists(ApiSampleWithFullSubSamples apiSample) {
+    SampleTemplate template = null;
     Long templateId = apiSample.getTemplateId();
     // if templateId is null(we're creating a new sample), that's ok, but if not null, we expect it
     // to exist
     if (templateId != null) {
-      template = sampleDao.get(templateId);
+      template = sampleTemplateDao.get(templateId);
     }
     return template;
   }
@@ -182,7 +186,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   private ApiSampleWithFullSubSamples createSample(
-      String sampleName, ApiSampleWithFullSubSamples apiSample, Sample sampleTemplate, User user) {
+      String sampleName,
+      ApiSampleWithFullSubSamples apiSample,
+      SampleTemplate sampleTemplate,
+      User user) {
     Sample sample =
         sampleTemplate != null
             ? recordFactory.createSample(sampleName, user, sampleTemplate)
@@ -265,7 +272,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     }
   }
 
-  private void setSampleCoreProperties(ApiSampleInfo apiSample, Sample sample) {
+  private void setSampleCoreProperties(ApiSampleInfo apiSample, SampleEntity sample) {
 
     if (apiSample.getStorageTempMin() != null) {
       sample.setStorageTempMin(apiSample.getStorageTempMin().toQuantityInfo());
@@ -347,8 +354,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   private ApiSample doGetSample(Long id, User user, boolean asTemplate) {
-    Sample sample = getIfExists(id);
-    if (asTemplate != sample.isTemplate()) {
+    SampleEntity sample = getIfExists(id);
+    if (asTemplate != sample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           String.format("Sample template flag doesn't match the request (id %d)", id));
     }
@@ -356,13 +363,16 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     return getOutgoingApiSample(sample, user);
   }
 
-  private ApiSample getOutgoingApiSample(Sample sample, User user) {
-    ApiSample result = sample.isTemplate() ? new ApiSampleTemplate(sample) : new ApiSample(sample);
+  private ApiSample getOutgoingApiSample(SampleEntity sample, User user) {
+    ApiSample result =
+        sample.isSampleTemplate()
+            ? new ApiSampleTemplate((SampleTemplate) sample)
+            : new ApiSample((Sample) sample);
     populateOutgoingApiSample(result, sample, user);
     return result;
   }
 
-  private void populateOutgoingApiSample(ApiSample apiSample, Sample sample, User user) {
+  private void populateOutgoingApiSample(ApiSample apiSample, SampleEntity sample, User user) {
     if (apiSample == null) {
       return;
     }
@@ -398,7 +408,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       PaginationCriteria<InventoryRecord> pgCrit,
       User user) {
 
-    Sample sample = getIfExists(sampleId);
+    SampleEntity sample = getIfExists(sampleId);
     boolean canRead = invPermissions.canUserReadInventoryRecord(sample, user);
 
     if (!canRead
@@ -430,7 +440,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
       PaginationCriteria<Sample> pgCrit,
       User user) {
 
-    Sample template = getIfExists(templateId);
+    SampleEntity template = getIfExists(templateId);
     boolean canRead = invPermissions.canUserReadInventoryRecord(template, user);
     if (!canRead) {
       return ApiInventorySearchResult
@@ -450,7 +460,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   @Override
   public List<ApiInventoryRecordInfo> getSamplesLinkingOldTemplateVersion(
       Long templateId, User user) {
-    Sample template = getIfExists(templateId, true);
+    SampleEntity template = getIfExists(templateId, true);
     List<Sample> samples =
         sampleDao.getSamplesLinkingOlderTemplateVersionForUser(
             templateId, template.getVersion(), user);
@@ -461,17 +471,20 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   @Override
-  public Sample getIfExists(Long id) {
+  public SampleEntity getIfExists(Long id) {
     return getIfExists(id, false);
   }
 
-  private Sample getIfExists(Long id, boolean onlyIfTemplate) {
-    boolean exists = sampleDao.exists(id);
-    if (!exists) {
+  private SampleEntity getIfExists(Long id, boolean onlyIfTemplate) {
+    SampleEntity s;
+    if (sampleDao.exists(id)) {
+      s = sampleDao.get(id);
+    } else if (sampleTemplateDao.exists(id)) {
+      s = sampleTemplateDao.get(id);
+    } else {
       throw new NotFoundException(
           "No sample " + (onlyIfTemplate ? "template " : "") + "with id: " + id);
     }
-    Sample s = sampleDao.get(id);
     if (onlyIfTemplate && !s.isTemplate()) {
       throw new NotFoundException("No sample template with id: " + id);
     }
@@ -483,12 +496,13 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public ApiSample updateApiSample(ApiSampleWithoutSubSamples apiSample, User user) {
-    Sample dbSample = assertUserCanEditSample(apiSample.getId(), user);
-    ApiSample original = new ApiSample(dbSample);
-    if (dbSample.isTemplate()) {
+    SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
+    if (dbSample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           "trying to update sample template through sample update method");
     }
+    // safe for ApiSample: the SampleTemplate case was rejected above
+    ApiSample original = new ApiSample(dbSample);
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
@@ -512,7 +526,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
     assertUserCanTransferSample(apiSample.getId(), user);
 
-    Sample dbSample = getIfExists(apiSample.getId());
+    SampleEntity dbSample = getIfExists(apiSample.getId());
     boolean temporaryLock = lockItemForEdit(dbSample, user);
 
     try {
@@ -529,7 +543,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
         dbSample
             .getActiveSubSamples()
             .forEach(ss -> moveItemBetweenWorkbenches(ss, originalOwner, newOwner));
-        dbSample = sampleDao.saveAndReindexSubSamples(dbSample);
+        if (dbSample.isSampleTemplate()) {
+          dbSample = sampleTemplateDao.saveAndReindexSubSamples((SampleTemplate) dbSample);
+        } else {
+          dbSample = sampleDao.saveAndReindexSubSamples((Sample) dbSample);
+        }
         publisher.publishEvent(new InventoryTransferEvent(dbSample, user, originalOwner, newOwner));
       }
     } finally {
@@ -544,7 +562,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   private void updateDbSample(
-      ApiSampleWithoutSubSamples apiSample, Sample dbSample, boolean alreadyChanged, User user) {
+      ApiSampleWithoutSubSamples apiSample,
+      SampleEntity dbSample,
+      boolean alreadyChanged,
+      User user) {
     boolean contentChanged = alreadyChanged;
     contentChanged |=
         extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSample(
@@ -568,17 +589,25 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   @Override
-  public void saveDbSampleUpdate(Sample dbSample, User user) {
+  public void saveDbSampleUpdate(SampleEntity dbSample, User user) {
     dbSample.setModificationDate(new Date());
     dbSample.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
     dbSample.increaseVersion();
-    dbSample = sampleDao.save(dbSample);
+    dbSample = saveSampleEntity(dbSample);
     publisher.publishEvent(new InventoryEditingEvent(dbSample, user));
+  }
+
+  /** Routes a plain save to the DAO matching the entity's concrete kind. */
+  private SampleEntity saveSampleEntity(SampleEntity dbSample) {
+    if (dbSample.isSampleTemplate()) {
+      return sampleTemplateDao.save((SampleTemplate) dbSample);
+    }
+    return sampleDao.save((Sample) dbSample);
   }
 
   @Override
   public ApiSample markSampleAsDeleted(Long sampleId, boolean forceDelete, User user) {
-    Sample dbSample = assertUserCanDeleteSample(sampleId, user);
+    SampleEntity dbSample = assertUserCanDeleteSample(sampleId, user);
     boolean temporaryLock = lockItemForEdit(dbSample, user);
 
     try {
@@ -597,7 +626,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
           /* then delete the sample */
           dbSample.setRecordDeleted(true);
-          dbSample = sampleDao.save(dbSample);
+          dbSample = saveSampleEntity(dbSample);
           publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
         }
       }
@@ -614,7 +643,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   @Override
   public ApiSample restoreDeletedSample(
       Long sampleId, User user, boolean includeSubSamplesDeletedOnSampleDeletion) {
-    Sample dbSample = assertUserCanDeleteSample(sampleId, user);
+    SampleEntity dbSample = assertUserCanDeleteSample(sampleId, user);
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
       dbSample = getIfExists(dbSample.getId());
@@ -630,7 +659,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
         dbSample.setRecordDeleted(false);
         dbSample.refreshActiveSubSamples();
         dbSample.recalculateTotalQuantity();
-        dbSample = sampleDao.save(dbSample);
+        dbSample = saveSampleEntity(dbSample);
         publisher.publishEvent(new InventoryRestoreEvent(dbSample, user));
       }
     } finally {
@@ -650,44 +679,65 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
    * @throws IOException
    * @returns true if any images were saved
    */
-  private boolean saveIncomingSampleImage(Sample dbSample, ApiSampleInfo apiSample, User user) {
+  private boolean saveIncomingSampleImage(
+      SampleEntity dbSample, ApiSampleInfo apiSample, User user) {
+    if (dbSample.isTemplate()) {
+      return saveIncomingImage(
+          dbSample,
+          apiSample,
+          user,
+          SampleTemplate.class,
+          template -> sampleTemplateDao.save(template));
+    }
     return saveIncomingImage(
         dbSample, apiSample, user, Sample.class, sample -> sampleDao.save(sample));
   }
 
   @Override
-  public Sample getSampleById(Long id, User user) {
+  public SampleEntity getSampleById(Long id, User user) {
     return getIfExists(id);
   }
 
   @Override
   public ApiSampleWithFullSubSamples duplicate(Long sampleId, User user) {
-    Sample copy = copyDbSample(sampleId, user);
-    return new ApiSampleWithFullSubSamples(copy);
+    SampleEntity copy = copyDbSample(sampleId, user);
+    // cast is safe: copyDbSample persists and returns a Sample for non-template ids (controller
+    // guards the endpoint)
+    return new ApiSampleWithFullSubSamples((Sample) copy);
   }
 
   @Override
   public ApiSampleTemplate duplicateTemplate(Long sampleId, User user) {
-    Sample copy = copyDbSample(sampleId, user);
-    return new ApiSampleTemplate(copy);
+    SampleEntity copy = copyDbSample(sampleId, user);
+    // cast is safe: copyDbSample persists and returns a SampleTemplate for template ids (controller
+    // guards the endpoint)
+    return new ApiSampleTemplate((SampleTemplate) copy);
   }
 
-  private Sample copyDbSample(Long sampleId, User user) {
-    Sample dbSample = assertUserCanReadSample(sampleId, user);
-    Sample copy = dbSample.copy(user);
-    if (!dbSample.isTemplate()) {
-      setWorkbenchAsParentForNewSubSamples(copy, user);
+  private SampleEntity copyDbSample(Long sampleId, User user) {
+    SampleEntity dbSample = assertUserCanReadSample(sampleId, user);
+    SampleEntity copy;
+    if (dbSample.isSample()) {
+      Sample sampleCopy = ((Sample) dbSample).copy(user);
+      setWorkbenchAsParentForNewSubSamples(sampleCopy, user);
+      copy = sampleDao.persistNewSample(sampleCopy);
+    } else {
+      SampleTemplate templateCopy = ((SampleTemplate) dbSample).copy(user);
+      /* persistSampleTemplate's choice/radio-definition pre-save is a no-op here: the copied
+       * fields share the original template's already-persistent definitions, so this matches
+       * the plain persist the legacy persistNewSample call performed for template copies. */
+      copy = sampleTemplateDao.persistSampleTemplate(templateCopy);
     }
-    copy = sampleDao.persistNewSample(copy);
     publisher.publishEvent(new InventoryCreationEvent(copy, user));
     return copy;
   }
 
   @Override
-  public List<Sample> getAllTemplates(User user) {
-    PaginationCriteria<Sample> pg = PaginationCriteria.createDefaultForClass(Sample.class);
+  public List<SampleTemplate> getAllTemplates(User user) {
+    PaginationCriteria<SampleTemplate> pg =
+        PaginationCriteria.createDefaultForClass(SampleTemplate.class);
     pg.setGetAllResults();
-    return sampleDao.getTemplatesForUser(pg, null, null, user).getResults();
+    return sampleTemplateDao.getTemplatesForUser(pg, null, null, user).getResults();
   }
 
   @Override
@@ -696,16 +746,17 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   @Override
-  public Sample getSampleTemplateByIdWithPopulatedFields(Long id, User user) {
-    Sample template = getIfExists(id, true);
+  public SampleTemplate getSampleTemplateByIdWithPopulatedFields(Long id, User user) {
+    // cast is safe: getIfExists(id, true) throws NotFoundException unless the entity is a template
+    SampleTemplate template = (SampleTemplate) getIfExists(id, true);
     template.getActiveFields().size(); // initialize lazy-loaded collection
     return template;
   }
 
   @Override
   public ApiSampleTemplate getApiSampleTemplateVersion(Long templateId, Long version, User user) {
-    Sample currentVersion = getIfExists(templateId);
-    if (!currentVersion.isTemplate()) {
+    SampleEntity currentVersion = getIfExists(templateId);
+    if (!currentVersion.isSampleTemplate()) {
       throw new IllegalArgumentException(
           String.format("Requested id (%d) points to the sample, not template", templateId));
     }
@@ -714,7 +765,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     }
 
     ApiSampleTemplate apiTemplateVersion =
-        inventoryAuditMgr.getApiTemplateVersion(currentVersion, version);
+        inventoryAuditMgr.getApiTemplateVersion((SampleTemplate) currentVersion, version);
     populateOutgoingApiSample(apiTemplateVersion, currentVersion, user);
     return apiTemplateVersion;
   }
@@ -727,7 +778,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     // drop that reduction in a refactor or this would leak full historical data. (The sibling
     // /revisions endpoint asserts at the controller instead and hard-errors; the same data is
     // exposed either way, only the HTTP status differs.)
-    Sample currentSample = getIfExists(sampleId);
+    SampleEntity currentSample = getIfExists(sampleId);
     if (version.equals(currentSample.getVersion())) {
       return getApiSampleById(sampleId, user);
     }
@@ -745,7 +796,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
    * inherits the sample's permissions.
    */
   private void populateOutgoingHistoricalApiSample(
-      ApiSample apiSample, Sample currentSample, User user) {
+      ApiSample apiSample, SampleEntity currentSample, User user) {
     if (apiSample == null) {
       return;
     }
@@ -760,8 +811,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public ApiSampleTemplate createSampleTemplate(ApiSampleTemplatePost apiSample, User user) {
-    Sample sampleTemplate = recordFactory.createSample(apiSample.getName(), user);
-    sampleTemplate.setTemplate(true);
+    SampleTemplate sampleTemplate = recordFactory.createSampleTemplate(apiSample.getName(), user);
     sampleTemplate.setIconId(DEFAULT_ICON_ID);
     sampleTemplate.setSubSampleAliases(
         apiSample.getSubSampleAlias().getAlias(), apiSample.getSubSampleAlias().getPlural());
@@ -771,7 +821,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     createFields(apiSample, sampleTemplate);
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sampleTemplate);
-    Sample savedSampleTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedSampleTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     saveIncomingSampleImage(savedSampleTemplate, apiSample, user);
     publisher.publishEvent(new InventoryCreationEvent(savedSampleTemplate, user));
     ApiSampleTemplate rc = new ApiSampleTemplate(savedSampleTemplate);
@@ -780,7 +830,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
     return rc;
   }
 
-  private void createFields(ApiSampleTemplatePost apiSample, Sample sample) {
+  private void createFields(ApiSampleTemplatePost apiSample, SampleTemplate sample) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
     for (ApiInventoryEntityField field : apiSample.getFields()) {
@@ -791,29 +841,31 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public ApiSampleTemplate updateApiSampleTemplate(ApiSampleTemplate apiSample, User user) {
-    Sample dbSample = assertUserCanEditSample(apiSample.getId(), user);
-    if (!dbSample.isTemplate()) {
+    SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
+    if (!dbSample.isSampleTemplate()) {
       throw new IllegalArgumentException(
           "trying to update sample through sample template update method");
     }
+    SampleTemplate dbTemplate = (SampleTemplate) dbSample;
 
-    boolean temporaryLock = lockItemForEdit(dbSample, user);
+    boolean temporaryLock = lockItemForEdit(dbTemplate, user);
     try {
-      dbSample = getIfExists(dbSample.getId());
-      boolean contentChanged = createDeleteRequestedFieldsInDbSampleTemplate(apiSample, dbSample);
-      contentChanged |= apiSample.applyChangesToDatabaseTemplate(dbSample, user);
-      updateDbSample(apiSample, dbSample, contentChanged, user);
+      // cast is safe: re-fetch by id returns the same template row
+      dbTemplate = (SampleTemplate) getIfExists(dbTemplate.getId());
+      boolean contentChanged = createDeleteRequestedFieldsInDbSampleTemplate(apiSample, dbTemplate);
+      contentChanged |= apiSample.applyChangesToDatabaseTemplate(dbTemplate, user);
+      updateDbSample(apiSample, dbTemplate, contentChanged, user);
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbSample, user);
+        unlockItemAfterEdit(dbTemplate, user);
       }
     }
 
-    return (ApiSampleTemplate) getOutgoingApiSample(dbSample, user);
+    return (ApiSampleTemplate) getOutgoingApiSample(dbTemplate, user);
   }
 
   private boolean createDeleteRequestedFieldsInDbSampleTemplate(
-      ApiSampleWithoutSubSamples apiSample, Sample dbTemplate) {
+      ApiSampleWithoutSubSamples apiSample, SampleTemplate dbTemplate) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
     boolean changed = false;
@@ -849,17 +901,23 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
 
   @Override
   public ApiSample updateSampleToLatestTemplateVersion(Long sampleId, User user) {
-    Sample dbSample = assertUserCanEditSample(sampleId, user);
-    Sample dbTemplate = assertUserCanReadSample(dbSample.getParentTemplateId(), user);
+    SampleEntity dbSample = assertUserCanEditSample(sampleId, user);
+    // templates have no parent template; a null id keeps the legacy not-found behaviour of the
+    // assert call below
+    Long parentTemplateId = dbSample.isSample() ? ((Sample) dbSample).getParentTemplateId() : null;
+    SampleEntity dbTemplate = assertUserCanReadSample(parentTemplateId, user);
     if (dbTemplate == null) {
       throw new IllegalArgumentException("Sample is not based on any template");
     }
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
+      // casts below are safe: templates throw earlier on the null parent-template id, and a
+      // re-fetch by the same id cannot change the entity kind (discriminator is written only on
+      // insert)
       dbSample = getIfExists(dbSample.getId());
-      if (!dbTemplate.getVersion().equals(dbSample.getSTemplateLinkedVersion())) {
-        dbSample.updateToLatestTemplateVersion();
+      if (!dbTemplate.getVersion().equals(((Sample) dbSample).getSTemplateLinkedVersion())) {
+        ((Sample) dbSample).updateToLatestTemplateVersion();
         saveDbSampleUpdate(dbSample, user);
       }
     } finally {
@@ -872,7 +930,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
   }
 
   @Override
-  public Sample saveIconId(Sample sample, Long iconId) {
+  public SampleEntity saveIconId(SampleEntity sample, Long iconId) {
+    // either DAO works here: saveIconId's DML targets SampleEntity, covering both kinds
     sampleDao.saveIconId(sample, iconId);
     return sample;
   }

@@ -44,8 +44,14 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
         getOwnedByAndPermittedItemsSqlQueryFragment(
             ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners, "ss.sample.");
 
-    // prepare fragment limiting to non-template subsamples
-    String nonTemplateFragment = "ss.sample.template = false ";
+    /*
+     * Fragment limiting to non-template subsamples. With the Sample/SampleTemplate single-table
+     * hierarchy the legacy 'template' boolean property no longer exists; the discriminator-based
+     * '.class' comparison expresses the same restriction. The 'type(ss.sample) = Sample' form is
+     * NOT used because Hibernate 5's classic HQL translator cannot apply type() to an
+     * implicit-join path ("could not resolve property: class").
+     */
+    String nonTemplateFragment = "ss.sample.class = Sample ";
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(SubSample.class);

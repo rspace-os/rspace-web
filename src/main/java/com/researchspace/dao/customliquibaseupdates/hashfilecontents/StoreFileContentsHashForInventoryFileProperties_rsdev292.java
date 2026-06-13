@@ -94,9 +94,11 @@ public class StoreFileContentsHashForInventoryFileProperties_rsdev292
         sessionFactory
             .getCurrentSession()
             .createQuery(
+                // SampleEntity spans samples and sample templates so the backfill processes
+                // template rows too, as it did when Sample was a single entity
                 "select new com.researchspace.dao.customliquibaseupdates"
                     + ".hashfilecontents.ImageThumbnailDTO(s.imageFileProperty,"
-                    + " s.thumbnailFileProperty) from Sample s",
+                    + " s.thumbnailFileProperty) from SampleEntity s",
                 ImageThumbnailDTO.class)
             .list();
 

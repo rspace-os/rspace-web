@@ -9,7 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.record.IRecordFactory;
@@ -57,7 +57,7 @@ public class ApiExtraFieldsHelper implements Validator {
   }
 
   public boolean createDeleteRequestedExtraFieldsInDatabaseSample(
-      ApiSampleWithoutSubSamples apiSample, Sample sample, User user) {
+      ApiSampleWithoutSubSamples apiSample, SampleEntity sample, User user) {
     return createDeleteRequestedExtraFields(
         apiSample.getExtraFields(), sample.getActiveExtraFields(), sample, user);
   }

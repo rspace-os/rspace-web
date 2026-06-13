@@ -21,6 +21,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.UserManager;
@@ -110,7 +111,8 @@ public class InventoryAuditApiManagerVersionTest {
     // the audit layer resolves a user version to the newest revision carrying it
     when(auditManager.getRevisionNumberForInventoryRecordVersion(current.getClass(), 42L, 2L))
         .thenReturn(380L);
-    when(auditManager.getObjectForRevision(Sample.class, 42L, 380L))
+    // the revision read targets SampleEntity so either discriminator value resolves
+    when(auditManager.getObjectForRevision(SampleEntity.class, 42L, 380L))
         .thenReturn(new AuditedEntity<>(v2, 380L));
 
     ApiSample result = mgr.getApiSampleVersion(current, 2L);
@@ -130,7 +132,7 @@ public class InventoryAuditApiManagerVersionTest {
     Sample v1 = sampleWithVersion(42L, 1L);
     when(auditManager.getRevisionNumberForInventoryRecordVersion(current.getClass(), 42L, 1L))
         .thenReturn(100L);
-    when(auditManager.getObjectForRevision(Sample.class, 42L, 100L))
+    when(auditManager.getObjectForRevision(SampleEntity.class, 42L, 100L))
         .thenReturn(new AuditedEntity<>(v1, 100L));
 
     ApiSample result = mgr.getApiSampleVersion(current, 1L);

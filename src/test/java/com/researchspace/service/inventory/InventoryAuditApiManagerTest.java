@@ -9,7 +9,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ public class InventoryAuditApiManagerTest extends SpringTransactionalTest {
     User user = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(user);
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(user);
-    Sample sample = sampleApiMgr.assertUserCanEditSample(basicSample.getId(), user);
+    SampleEntity sample = sampleApiMgr.assertUserCanEditSample(basicSample.getId(), user);
 
     ApiInventoryRecordRevisionList revisions =
         inventoryAuditMgr.getInventoryRecordRevisions(sample);

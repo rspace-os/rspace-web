@@ -129,6 +129,7 @@
         <mapping class="com.researchspace.model.events.GroupMembershipEvent"/>
 
         <mapping class="com.researchspace.model.inventory.Sample"/>
+        <mapping class="com.researchspace.model.inventory.SampleTemplate"/>
         <mapping class="com.researchspace.model.inventory.SubSample"/>
         <mapping class="com.researchspace.model.inventory.SubSampleNote"/>
 

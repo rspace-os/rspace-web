@@ -9,8 +9,8 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Sample;
 import java.util.List;
 
-/** For DAO operations on Inventory Sample. */
-public interface SampleDao extends GenericDao<Sample, Long> {
+/** For DAO operations specific to Inventory {@link Sample} (not templates). */
+public interface SampleDao extends SampleEntityDao<Sample> {
 
   /**
    * @return Samples with a given name belonging to the user, or empty Array
@@ -57,50 +57,20 @@ public interface SampleDao extends GenericDao<Sample, Long> {
   Sample persistNewSample(Sample sample);
 
   /**
-   * Use this method over standard 'save' if subsamples of the sample were not modified but still
-   * should be re-indexed, e.g. after owner change.
-   *
-   * @return saved sample
+   * Returns all (non-template) samples that reference the given {@link FileProperty} as their image
+   * or thumbnail.
    */
-  Sample saveAndReindexSubSamples(Sample sample);
-
-  /**
-   * Get non-deleted sample templates ({@code template == true}) visible to the current user.
-   * Optionally, limit to templates belonging to particular owner
-   *
-   * @param pgCrit
-   * @param ownedBy (optional) limits results to samples belonging to particular owner
-   * @param deletedItemsOption
-   * @param user
-   * @return
-   */
-  ISearchResults<Sample> getTemplatesForUser(
-      PaginationCriteria<Sample> pgCrit,
-      String ownedBy,
-      InventorySearchDeletedOption deletedItemsOption,
-      User user);
-
-  /**
-   * @return username of the user who owns the default sample templates.
-   */
-  String getDefaultTemplatesOwner();
-
-  /**
-   * For use with new Templates RSINV-41 based on Samples. <br>
-   * Saves the sample, fields plus radio/choice definitions
-   *
-   * @return saved sample
-   */
-  Sample persistSampleTemplate(Sample sample);
-
-  Long getTemplateCount();
-
-  int saveIconId(Sample sample, Long iconId);
-
-  /** Should be only called in unit tests (I think). Sets stored default template owner to null. */
-  void resetDefaultTemplateOwner();
-
   List<Sample> getAllUsingImage(FileProperty fileProperty);
 
-  List<Sample> getAllTemplatesUsingImage(FileProperty fileProperty);
+  /**
+   * Returns {@code true} if an entity (sample <em>or</em> template) with the given name already
+   * exists for the given owner. This method deliberately counts across both discriminator values to
+   * preserve the legacy name-uniqueness behaviour that prevented a user from creating a sample and
+   * a template with the same name.
+   *
+   * @param name the name to check
+   * @param owner the owning user
+   * @return {@code true} if at least one sample or template with that name is owned by the user
+   */
+  boolean entityNameExistsForUser(String name, User owner);
 }
