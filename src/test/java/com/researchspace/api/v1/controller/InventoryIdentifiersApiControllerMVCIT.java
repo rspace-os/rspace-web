@@ -53,11 +53,13 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
 
   private void enableDataCiteRealConnectionSettings(boolean enabled) throws BindException {
     ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setEnabled(String.valueOf(enabled));
-    update.getDatacite().setServerUrl("https://api.test.datacite.org");
-    update.getDatacite().setUsername(testDataciteUsername);
-    update.getDatacite().setPassword(testDatacitePassword);
-    update.getDatacite().setRepositoryPrefix(testDatacitePrefix);
+    ApiInventorySystemSettings.IdentifierSettings igsnSettings =
+        update.getOrCreate(ApiInventorySystemSettings.InventorySettingType.IGSN);
+    igsnSettings.setEnabled(String.valueOf(enabled));
+    igsnSettings.setServerUrl("https://api.test.datacite.org");
+    igsnSettings.setUsername(testDataciteUsername);
+    igsnSettings.setPassword(testDatacitePassword);
+    igsnSettings.setRepositoryPrefix(testDatacitePrefix);
     settingsController.updateInventorySettings(
         new MockHttpServletRequest(), update, mockBindingResult, getSysAdminUser());
   }
@@ -65,7 +67,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   @After
   public void disableDataCiteConnection() throws BindException {
     ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setEnabled("false");
+    update.getOrCreate(ApiInventorySystemSettings.InventorySettingType.IGSN).setEnabled("false");
     settingsController.updateInventorySettings(
         new MockHttpServletRequest(), update, mockBindingResult, getSysAdminUser());
   }

@@ -1,19 +1,28 @@
 /** RSpace API Access your RSpace documents programmatically. */
 package com.researchspace.api.v1.model;
 
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** DocumentSearchResults */
+/** Inventory system-wide settings for identifier (IGSN/PDINST) registration. */
 @Data
 public class ApiInventorySystemSettings {
+
+  /** The category of identifier a settings entry configures. */
+  public enum InventorySettingType {
+    IGSN,
+    PDINST
+  }
 
   @Data
   @AllArgsConstructor
   @NoArgsConstructor
-  public static class DataCiteSettings {
+  public static class IdentifierSettings {
+    private IdentifierType provider;
     private String serverUrl;
     private String username;
     private String password;
@@ -21,5 +30,9 @@ public class ApiInventorySystemSettings {
     private String enabled;
   }
 
-  @Getter private DataCiteSettings datacite = new DataCiteSettings();
+  private Map<InventorySettingType, IdentifierSettings> identifiersSettings = new HashMap<>();
+
+  public IdentifierSettings getOrCreate(InventorySettingType type) {
+    return identifiersSettings.computeIfAbsent(type, t -> new IdentifierSettings());
+  }
 }

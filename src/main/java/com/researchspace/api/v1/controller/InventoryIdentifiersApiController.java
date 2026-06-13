@@ -4,8 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.api.v1.InventoryIdentifiersApi;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -54,10 +57,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   public ApiInventoryDOI registerNewIdentifier(
       @RequestBody ApiInventoryIdentifierPost registerPost,
       @RequestAttribute(name = "user") User user) {
-    apiHandler.assertInventoryAndDataciteEnabled(user);
     String globalId = registerPost.getParentGlobalId();
     Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
     GlobalIdentifier oid = new GlobalIdentifier(globalId);
+    apiHandler.assertInventoryAndIdentifierTypeEnabled(user, settingTypeForOid(oid));
     assertUserCanEditInventoryRecord(oid, user);
 
     ApiInventoryRecordInfo result = identifierMgr.registerNewIdentifier(oid, user);
@@ -95,12 +98,11 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       @PathVariable Long identifierId,
       @RequestBody ApiInventoryIdentifierPost inventoryItem,
       @RequestAttribute(name = "user") User user) {
-    apiHandler.assertInventoryAndDataciteEnabled(user);
-
     String globalId = inventoryItem.getParentGlobalId();
     Validate.isTrue(GlobalIdentifier.isValid(globalId), "not a valid global id: " + globalId);
     Validate.isTrue(identifierId != null, "identifier must not be null");
     GlobalIdentifier inventoryOid = new GlobalIdentifier(globalId);
+    apiHandler.assertInventoryAndIdentifierTypeEnabled(user, settingTypeForOid(inventoryOid));
     assertUserCanEditInventoryRecord(inventoryOid, user);
 
     ApiInventoryRecordInfo result =
@@ -111,10 +113,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public boolean deleteIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
-    apiHandler.assertInventoryAndDataciteEnabled(user);
-
     boolean result = false;
     ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
+    apiHandler.assertInventoryAndIdentifierTypeEnabled(
+        user, settingTypeForDoiType(identifier.getDoiType()));
     Validate.isTrue(
         identifier.getState().equals("draft"),
         "you can only delete identifiers " + "in \"draft\" status");
@@ -134,7 +136,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public ApiInventoryDOI publishIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
-    apiHandler.assertInventoryAndDataciteEnabled(user);
+    assertInventoryAndIdentifierEnabledForId(identifierId, user);
 
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.publishIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
@@ -143,7 +145,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   @Override
   public ApiInventoryDOI retractIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
-    apiHandler.assertInventoryAndDataciteEnabled(user);
+    assertInventoryAndIdentifierEnabledForId(identifierId, user);
 
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.retractIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
@@ -161,5 +163,24 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     }
     assertUserCanEditInventoryRecord(invRec.getOid(), user);
     return invRec;
+  }
+
+  private void assertInventoryAndIdentifierEnabledForId(Long identifierId, User user) {
+    ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
+    apiHandler.assertInventoryAndIdentifierTypeEnabled(
+        user, settingTypeForDoiType(identifier == null ? null : identifier.getDoiType()));
+  }
+
+  private InventorySettingType settingTypeForOid(GlobalIdentifier oid) {
+    return GlobalIdPrefix.IN.equals(oid.getPrefix())
+        ? InventorySettingType.PDINST
+        : InventorySettingType.IGSN;
+  }
+
+  private InventorySettingType settingTypeForDoiType(String doiType) {
+    boolean pdinst =
+        IdentifierType.DATACITE_PDINST.name().equals(doiType)
+            || IdentifierType.B2INST_PDINST.name().equals(doiType);
+    return pdinst ? InventorySettingType.PDINST : InventorySettingType.IGSN;
   }
 }

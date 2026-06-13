@@ -4515,12 +4515,21 @@ parameters:
     required: true
     schema:
       example:
-        datacite:
-          serverUrl: "https://api.test.datacite.org/"
-          username: "AJFO.JIJEMD"
-          password: "<AJFO.JIJEMD password>"
-          repositoryPrefix: "10.82316"
-          enabled: "true"
+        identifiersSettings:
+          IGSN:
+            provider: "DATACITE_IGSN"
+            serverUrl: "https://api.test.datacite.org/"
+            username: "AJFO.JIJEED"
+            password: "<AJFO.JIJEED password>"
+            repositoryPrefix: "10.82316"
+            enabled: "true"
+          PDINST:
+            provider: "DATACITE_PDINST"
+            serverUrl: "https://api.test.datacite.org/"
+            username: "AJFO.PDINST"
+            password: "<AJFO.PDINST password>"
+            repositoryPrefix: "10.82317"
+            enabled: "true"
   basketIdParam:
     name: basketId
     in: path
