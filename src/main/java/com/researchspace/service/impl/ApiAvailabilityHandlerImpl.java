@@ -1,8 +1,10 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
@@ -13,6 +15,7 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   @Autowired private SystemPropertyPermissionManager systemPropertyManager;
   @Autowired private DataCiteConnector dataCiteConnector;
+  @Autowired private MessageSourceUtils messages;
 
   private static final ServiceOperationResult<String> enabledResult =
       new ServiceOperationResult<>("Enabled", true);
@@ -25,6 +28,10 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   void setSystemPropertyManager(SystemPropertyPermissionManager systemPropertyManager) {
     this.systemPropertyManager = systemPropertyManager;
+  }
+
+  void setMessages(MessageSourceUtils messages) {
+    this.messages = messages;
   }
 
   @Override
@@ -60,19 +67,37 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   @Override
   public void assertInventoryAndDataciteEnabled(User user) {
-    assertInventoryAvailable(user);
-    assertDataCiteConnectorEnabled();
+    assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.IGSN);
   }
 
   @Override
   public boolean isInventoryAndDataciteEnabled(User user) {
-    return isInventoryAvailable(user) && isDataCiteConnectorEnabled();
+    return isInventoryAndIdentifierTypeEnabled(user, InventorySettingType.IGSN);
   }
 
-  private void assertDataCiteConnectorEnabled() {
-    if (!isDataCiteConnectorEnabled()) {
+  @Override
+  public void assertInventoryAndIdentifierTypeEnabled(User user, InventorySettingType settingType) {
+    assertInventoryAvailable(user);
+    assertIdentifierConnectorEnabled(settingType);
+  }
+
+  @Override
+  public boolean isInventoryAndIdentifierTypeEnabled(User user, InventorySettingType settingType) {
+    return isInventoryAvailable(user) && isIdentifierConnectorEnabled(settingType);
+  }
+
+  private boolean isIdentifierConnectorEnabled(InventorySettingType settingType) {
+    return dataCiteConnector != null
+        && dataCiteConnector.isDataCiteConfiguredAndEnabled(settingType);
+  }
+
+  private void assertIdentifierConnectorEnabled(InventorySettingType settingType) {
+    if (!isIdentifierConnectorEnabled(settingType)) {
+      String integrationName = InventorySettingType.IGSN.equals(settingType) ? "IGSN" : "PDINST";
       throw new UnsupportedOperationException(
-          "IGSN integration is not enabled on this RSpace instance.");
+          messages.getMessage(
+              "errors.inventory.identifier.integration.not.enabled",
+              new Object[] {integrationName}));
     }
   }
 

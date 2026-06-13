@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
@@ -33,6 +34,19 @@ public interface ApiAvailabilityHandler {
   void assertInventoryAndDataciteEnabled(User user);
 
   boolean isInventoryAndDataciteEnabled(User user);
+
+  /**
+   * Asserts that inventory is available for the user and that the identifier integration for the
+   * given setting type (IGSN or PDINST) is configured and enabled, throwing {@link
+   * UnsupportedOperationException} otherwise.
+   */
+  void assertInventoryAndIdentifierTypeEnabled(User user, InventorySettingType settingType);
+
+  /**
+   * @return whether inventory is available for the user and the identifier integration for the
+   *     given setting type (IGSN or PDINST) is configured and enabled
+   */
+  boolean isInventoryAndIdentifierTypeEnabled(User user, InventorySettingType settingType);
 
   boolean isDataCiteConnectorEnabled();
 

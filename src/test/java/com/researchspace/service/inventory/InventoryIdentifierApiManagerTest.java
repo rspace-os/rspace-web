@@ -5,12 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryDOIGeoLocation;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -18,9 +22,13 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
@@ -35,13 +43,127 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   private User user;
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
+  @Autowired private SystemPropertyManager sysPropertyMgr;
+
+  private DataCiteConnectorDummy dataCiteConnectorDummy;
 
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());
+    dataCiteConnectorDummy = new DataCiteConnectorDummy();
+    inventoryIdentifierApiMgr.setDataCiteConnector(dataCiteConnectorDummy);
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(user);
+  }
+
+  @Test
+  public void registerNewIdentifierForInstrumentUsesPdinstWorkflow() {
+    ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+    assertEquals(0, createdInstrument.getIdentifiers().size());
+
+    ApiInventoryRecordInfo updatedInstrument =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdInstrument.getOid(), user);
+    assertEquals(1, updatedInstrument.getIdentifiers().size());
+
+    ApiInventoryDOI createdDoi = updatedInstrument.getIdentifiers().get(0);
+    assertEquals("DATACITE_PDINST", createdDoi.getDoiType());
+    assertEquals("Instrument", createdDoi.getResourceType());
+    assertEquals("Instrument", createdDoi.getResourceTypeGeneral());
+    assertEquals(createdInstrument.getGlobalId(), createdDoi.getAssociatedGlobalId());
+    assertEquals(InventorySettingType.PDINST, dataCiteConnectorDummy.getLastSettingTypeUsed());
+    assertEquals(IdentifierType.DATACITE_PDINST, doiDao.get(createdDoi.getId()).getType());
+  }
+
+  @Test
+  public void registerNewIdentifierForSampleStaysIgsn() {
+    ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
+
+    ApiInventoryRecordInfo updatedSample =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
+
+    ApiInventoryDOI createdDoi = updatedSample.getIdentifiers().get(0);
+    assertEquals("DATACITE_IGSN", createdDoi.getDoiType());
+    assertEquals("Material Sample", createdDoi.getResourceType());
+    assertEquals("PhysicalObject", createdDoi.getResourceTypeGeneral());
+    assertEquals(InventorySettingType.IGSN, dataCiteConnectorDummy.getLastSettingTypeUsed());
+    assertEquals(IdentifierType.DATACITE_IGSN, doiDao.get(createdDoi.getId()).getType());
+  }
+
+  @Test
+  public void registerInstrumentIdentifierWithB2instProviderThrows() {
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    sysPropertyMgr.save(SystemPropertyName.PDINST_PROVIDER, "B2INST_PDINST", sysadmin);
+    logoutAndLoginAs(user);
+    ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> inventoryIdentifierApiMgr.registerNewIdentifier(createdInstrument.getOid(), user));
+    // checks ran before any DataCite call, so no draft DOI was leaked
+    assertNull(dataCiteConnectorDummy.getDoiSentToDatacite());
+  }
+
+  @Test
+  public void registerInstrumentIdentifierWhenPdinstDisabledThrows() {
+    dataCiteConnectorDummy.setEnabled(InventorySettingType.PDINST, false);
+    ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> inventoryIdentifierApiMgr.registerNewIdentifier(createdInstrument.getOid(), user));
+    assertNull(dataCiteConnectorDummy.getDoiSentToDatacite());
+  }
+
+  @Test
+  public void instrumentIdentifierLifecycleUsesPdinstClient() {
+    ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+    ApiInventoryRecordInfo updatedInstrument =
+        inventoryIdentifierApiMgr.registerNewIdentifier(createdInstrument.getOid(), user);
+    GlobalIdentifier instrumentOid = createdInstrument.getOid();
+
+    ApiInventoryRecordInfo publishedInstrument =
+        inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
+    assertEquals("findable", publishedInstrument.getIdentifiers().get(0).getState());
+    assertEquals(InventorySettingType.PDINST, dataCiteConnectorDummy.getLastSettingTypeUsed());
+
+    ApiInventoryRecordInfo retractedInstrument =
+        inventoryIdentifierApiMgr.retractIdentifier(instrumentOid, user);
+    assertEquals("registered", retractedInstrument.getIdentifiers().get(0).getState());
+    assertEquals(InventorySettingType.PDINST, dataCiteConnectorDummy.getLastSettingTypeUsed());
+
+    ApiInventoryRecordInfo deletedIdentifierInstrument =
+        inventoryIdentifierApiMgr.deleteAssociatedIdentifier(instrumentOid, user);
+    assertEquals(0, deletedIdentifierInstrument.getIdentifiers().size());
+    assertEquals(InventorySettingType.PDINST, dataCiteConnectorDummy.getLastSettingTypeUsed());
+  }
+
+  @Test
+  public void registerIdentifierForInstrumentTemplateUnsupported() {
+    ApiInstrumentTemplate createdTemplate = createBasicInstrumentTemplateForUser(user);
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> inventoryIdentifierApiMgr.registerNewIdentifier(createdTemplate.getOid(), user));
+    assertTrue(iae.getMessage().contains("unsupported type for minting"), iae.getMessage());
+    // the type check runs before any DataCite call, so no draft DOI was leaked
+    assertNull(dataCiteConnectorDummy.getDoiSentToDatacite());
+  }
+
+  @Test
+  public void assignIgsnIdentifierToInstrumentRejected() {
+    List<ApiInventoryDOI> allocatedIgsns =
+        inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user);
+    ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            inventoryIdentifierApiMgr.assignIdentifier(
+                createdInstrument.getOid(), allocatedIgsns.get(0).getId(), user));
+
+    // cleanup the unassociated allocated identifier
+    inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(allocatedIgsns.get(0), user);
   }
 
   @Test

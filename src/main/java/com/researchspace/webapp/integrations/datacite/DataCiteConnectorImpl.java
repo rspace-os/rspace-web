@@ -1,13 +1,16 @@
 package com.researchspace.webapp.integrations.datacite;
 
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.datacite.client.DataCiteClient;
 import com.researchspace.datacite.client.DataCiteClientImpl;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.EnumMap;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -19,74 +22,116 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
-  private DataCiteClient dataCiteClient;
+  private final Map<InventorySettingType, DataCiteClient> dataCiteClients =
+      new EnumMap<>(InventorySettingType.class);
 
-  private boolean dataCiteEnabled;
+  private final Map<InventorySettingType, Boolean> dataCiteEnabled =
+      new EnumMap<>(InventorySettingType.class);
 
   @PostConstruct
   public void reloadDataCiteClient() {
-    dataCiteClient = null;
-
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
-    dataCiteEnabled = Boolean.valueOf(propertiesMap.get("datacite.enabled").getValue());
-    String dataciteServerUrl = propertiesMap.get("datacite.server.url").getValue();
-    String dataciteUsername = propertiesMap.get("datacite.username").getValue();
-    String datacitePassword = propertiesMap.get("datacite.password").getValue();
-    String repositoryPrefix = propertiesMap.get("datacite.repositoryPrefix").getValue();
+    reloadClientForType(
+        InventorySettingType.IGSN,
+        propertiesMap,
+        SystemPropertyName.DATACITE_ENABLED,
+        SystemPropertyName.DATACITE_SERVER_URL,
+        SystemPropertyName.DATACITE_USERNAME,
+        SystemPropertyName.DATACITE_PASSWORD,
+        SystemPropertyName.DATACITE_REPOSITORY_PREFIX);
+    reloadClientForType(
+        InventorySettingType.PDINST,
+        propertiesMap,
+        SystemPropertyName.PDINST_ENABLED,
+        SystemPropertyName.PDINST_SERVER_URL,
+        SystemPropertyName.PDINST_USERNAME,
+        SystemPropertyName.PDINST_PASSWORD,
+        SystemPropertyName.PDINST_REPOSITORY_PREFIX);
+  }
 
-    if (StringUtils.isEmpty(dataciteServerUrl)
-        || StringUtils.isEmpty(dataciteUsername)
-        || StringUtils.isEmpty(datacitePassword)
+  private void reloadClientForType(
+      InventorySettingType settingType,
+      Map<String, SystemPropertyValue> propertiesMap,
+      SystemPropertyName enabledProperty,
+      SystemPropertyName serverUrlProperty,
+      SystemPropertyName usernameProperty,
+      SystemPropertyName passwordProperty,
+      SystemPropertyName repositoryPrefixProperty) {
+
+    dataCiteClients.remove(settingType);
+    dataCiteEnabled.put(
+        settingType, Boolean.valueOf(getPropertyValue(propertiesMap, enabledProperty)));
+    String serverUrl = getPropertyValue(propertiesMap, serverUrlProperty);
+    String username = getPropertyValue(propertiesMap, usernameProperty);
+    String password = getPropertyValue(propertiesMap, passwordProperty);
+    String repositoryPrefix = getPropertyValue(propertiesMap, repositoryPrefixProperty);
+
+    if (StringUtils.isEmpty(serverUrl)
+        || StringUtils.isEmpty(username)
+        || StringUtils.isEmpty(password)
         || StringUtils.isEmpty(repositoryPrefix)) {
-      log.info("IGSN configuration incomplete, skipping DataCite client initialization");
+      log.info("{} configuration incomplete, skipping DataCite client initialization", settingType);
       return;
     }
 
     try {
-      URI dataciteUri = new URI(dataciteServerUrl);
+      URI dataciteUri = new URI(serverUrl);
       log.info(
-          "Configuring datacite client for server {} with user {} and repository prefix {} ",
+          "Configuring {} datacite client for server {} with user {} and repository prefix {} ",
+          settingType,
           dataciteUri,
-          dataciteUsername,
+          username,
           repositoryPrefix);
-      dataCiteClient =
-          new DataCiteClientImpl(dataciteUri, dataciteUsername, datacitePassword, repositoryPrefix);
+      dataCiteClients.put(
+          settingType, new DataCiteClientImpl(dataciteUri, username, password, repositoryPrefix));
     } catch (URISyntaxException e) {
-      log.warn("Cannot parse dataciteUri {}: {}", dataciteServerUrl, e.getMessage());
+      log.warn("Cannot parse dataciteUri {}: {}", serverUrl, e.getMessage());
     }
   }
 
-  @Override
-  public boolean isDataCiteConfiguredAndEnabled() {
-    return dataCiteEnabled && dataCiteClient != null;
+  private String getPropertyValue(
+      Map<String, SystemPropertyValue> propertiesMap, SystemPropertyName property) {
+    SystemPropertyValue value = propertiesMap.get(property.getPropertyName());
+    return value == null ? null : value.getValue();
   }
 
-  @Override
-  public boolean testDataCiteConnection() {
-    if (dataCiteClient == null) {
+  private DataCiteClient getClient(InventorySettingType settingType) {
+    DataCiteClient client = dataCiteClients.get(settingType);
+    if (client == null) {
       throw new DataCiteConnectionException(
           "DataCite client not initialized. Are all DataCite settings provided?", null);
     }
-    return dataCiteClient.testConnectionToDataCite();
+    return client;
   }
 
   @Override
-  public DataCiteDoi registerDoi(DataCiteDoi dataCiteDoi) {
-    return dataCiteClient.registerDoi(dataCiteDoi);
+  public boolean isDataCiteConfiguredAndEnabled(InventorySettingType settingType) {
+    return Boolean.TRUE.equals(dataCiteEnabled.get(settingType))
+        && dataCiteClients.get(settingType) != null;
   }
 
   @Override
-  public boolean deleteDoi(String s) {
-    return dataCiteClient.deleteDoi(s);
+  public boolean testDataCiteConnection(InventorySettingType settingType) {
+    return getClient(settingType).testConnectionToDataCite();
   }
 
   @Override
-  public DataCiteDoi publishDoi(DataCiteDoi dataCiteDoi) {
-    return dataCiteClient.publishDoi(dataCiteDoi);
+  public DataCiteDoi registerDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    return getClient(settingType).registerDoi(dataCiteDoi);
   }
 
   @Override
-  public DataCiteDoi retractDoi(DataCiteDoi dataCiteDoi) {
-    return dataCiteClient.retractDoi(dataCiteDoi);
+  public boolean deleteDoi(String s, InventorySettingType settingType) {
+    return getClient(settingType).deleteDoi(s);
+  }
+
+  @Override
+  public DataCiteDoi publishDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    return getClient(settingType).publishDoi(dataCiteDoi);
+  }
+
+  @Override
+  public DataCiteDoi retractDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    return getClient(settingType).retractDoi(dataCiteDoi);
   }
 }
