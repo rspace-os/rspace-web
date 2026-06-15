@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** A single fact (title/value pair) within a {@link FactSet}. */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-class Fact {
-  private String name, value;
+class CardFact {
+  private String title;
+  private String value;
 }

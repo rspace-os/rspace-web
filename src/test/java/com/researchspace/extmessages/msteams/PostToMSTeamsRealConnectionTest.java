@@ -1,8 +1,7 @@
 package com.researchspace.extmessages.msteams;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
@@ -17,6 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 @RunWith(ConditionalTestRunner.class)
@@ -54,6 +55,13 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
     }
 
     @Override
+    protected HttpHeaders createPostHeaders() {
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      return headers;
+    }
+
+    @Override
     protected void postSendMessage(
         ResponseEntity<String> rc, URI uri, MessageDetails message, User subject) {}
   }
@@ -71,17 +79,25 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
   public void postToMSTeam() throws URISyntaxException {
-    Fact owner = new Fact("Owner", "Bob Smith");
-    Fact id = new Fact("ID", "SD4005");
-    Section section = new Section();
-    section.setFacts(TransformerUtils.toList(owner, id));
-    section.setActivityTitle(
-        "Message about [SD4005](https://ops.researchspace.com/globalId/SD4005)");
-    section.setActivityText(LREM_IPSUM);
-    MSCard card = new MSCard();
-    card.setSections(TransformerUtils.toList(section));
-    card.setSummary("Message about [SD4005](https://ops.researchspace.com/globalId/SD4005");
-    String json = card.toJSON();
-    assertEquals("1", poster.doSendMessage(json, new URI(msTeamsTestWebhookUrl)).getBody());
+    AdaptiveCard card = new AdaptiveCard();
+    card.getBody().add(TextBlock.heading("From Bob Smith"));
+    card.getBody()
+        .add(
+            TextBlock.body(
+                "Message about [SD4005](https://ops.researchspace.com/globalId/SD4005)"));
+    card.getBody().add(TextBlock.body(LREM_IPSUM));
+    FactSet facts = new FactSet();
+    facts.add("Owner", "Bob Smith");
+    facts.add("ID", "SD4005");
+    card.getBody().add(facts);
+
+    AdaptiveCardMessage payload = new AdaptiveCardMessage();
+    payload.addCard(card);
+
+    ResponseEntity<String> response =
+        poster.doSendMessage(payload.toJSON(), new URI(msTeamsTestWebhookUrl));
+    assertTrue(
+        "Workflows webhook should accept the Adaptive Card",
+        response.getStatusCode().is2xxSuccessful());
   }
 }
