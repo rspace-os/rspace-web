@@ -11,6 +11,7 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
 import { faList } from "@fortawesome/free-solid-svg-icons/faList";
 import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
 import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
@@ -313,6 +314,16 @@ class WorkspaceToolbar extends React.Component {
             <SocialActions
               onCreateRequest={this.props.eventHandlers.onCreateRequest}
             />
+            <Tooltip title="Create a calendar entry" enterDelay={300}>
+              <IconButton
+                id="createCalendarEntryDlgLink"
+                color="inherit"
+                data-test-id="toolbar-calendar"
+                aria-label="Create a calendar entry"
+              >
+                <FontAwesomeIcon icon={faCalendarAlt} />
+              </IconButton>
+            </Tooltip>
           </Box>
         )}
         <Box

@@ -553,6 +553,25 @@
       <version>${jstl.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.mnode.ical4j</groupId>
+      <artifactId>ical4j</artifactId>
+      <version>${ical4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-collections4</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>javax.servlet.jsp</groupId>
       <artifactId>jsp-api</artifactId>
       <version>${jsp.version}</version>
@@ -1893,7 +1912,7 @@
 
   <profiles>
     <!-- Generates the React/Vite frontend dist files and bundles them into the WAR.
-      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the pnpm
+      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the npm
       install and Vite build out of everyday `mvn compile`/`test` runs, while CI
       packaging and release stages pass the flag explicitly (see Jenkinsfile). The
       executions use the implicit generate-resources phase so that
@@ -1915,29 +1934,29 @@
             <version>2.0.0</version>
             <configuration>
               <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.3.0</pnpmVersion>
-              <workingDirectory>.</workingDirectory>
+              <npmVersion>11.14.1</npmVersion>
+              <workingDirectory>src/main/webapp/ui</workingDirectory>
             </configuration>
             <executions>
               <execution>
-                <id>Install node and pnpm locally to the project</id>
+                <id>Install node and npm locally to the project</id>
                 <goals>
-                  <goal>install-node-and-pnpm</goal>
+                  <goal>install-node-and-npm</goal>
                 </goals>
               </execution>
               <execution>
-                <id>Collect frontend dependencies</id>
+                <id>Collect npm dependencies</id>
                 <goals>
-                  <goal>pnpm</goal>
+                  <goal>npm</goal>
                 </goals>
                 <configuration>
-                  <arguments>${frontend.dependencies.install.arg}</arguments>
+                  <arguments>${npm.dependencies.collection.arg}</arguments>
                 </configuration>
               </execution>
               <execution>
                 <id>Build react dist files</id>
                 <goals>
-                  <goal>pnpm</goal>
+                  <goal>npm</goal>
                 </goals>
                 <configuration>
                   <arguments>run build</arguments>
@@ -2597,7 +2616,7 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>3.5.1</spotless.version>
-    <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
+    <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>

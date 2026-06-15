@@ -102,6 +102,7 @@
                               <c:if test="${not empty message.requestedCompletionDate }">
                                   <strong>Due for completion by: </strong>
                                   <fmt:formatDate pattern="E dd MMM yyyy HH:mm" value="${message.requestedCompletionDate}"></fmt:formatDate>
+                                  <a href="/messaging/ical?id=${message.id}"><img src="/images/ics-icon.png" style="margin-top: -4px;"/></a>
                               </c:if>
                               <c:if test="${not empty message.messageType.moreInfo}">
                                   <div class="messageMoreInfo">${message.messageType.moreInfo}</div>
