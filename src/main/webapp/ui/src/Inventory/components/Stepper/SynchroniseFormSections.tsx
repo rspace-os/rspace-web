@@ -64,6 +64,15 @@ type InstrumentSections = {
   customFields: boolean;
 };
 
+type InstrumentTemplateSections = {
+  overview: boolean;
+  details: boolean;
+  barcodes: boolean;
+  identifiers: boolean;
+  attachments: boolean;
+  customFields: boolean;
+};
+
 type FormSectionsState = {
   container: ContainerSections;
   sample: SampleSections;
@@ -71,6 +80,7 @@ type FormSectionsState = {
   sampleTemplate: SampleTemplateSections;
   mixed: MixedSections;
   instrument: InstrumentSections;
+  instrumentTemplate: InstrumentTemplateSections;
 };
 
 type RecordType = keyof FormSectionsState;
@@ -119,6 +129,14 @@ const defaultFormSectionExpandedState = (): FormSectionsState =>
       samples: true,
     },
     instrument: {
+      overview: true,
+      details: false,
+      barcodes: false,
+      identifiers: false,
+      attachments: false,
+      customFields: false,
+    },
+    instrumentTemplate: {
       overview: true,
       details: false,
       barcodes: false,

@@ -84,6 +84,7 @@ declare module "@mui/material/styles/createPalette" {
       subSample: RecordPalette;
       sampleTemplate: RecordPalette;
       instrument: RecordPalette;
+      instrumentTemplate: RecordPalette;
       document: RecordPalette;
       mixed: RecordPalette;
       attachment: Pick<RecordPalette, "fg">;
@@ -116,6 +117,7 @@ declare module "@mui/material/styles/createPalette" {
       subSample: RecordPalette;
       sampleTemplate: RecordPalette;
       instrument: RecordPalette;
+      instrumentTemplate: RecordPalette;
       document: RecordPalette;
       mixed: RecordPalette;
       attachment: Pick<RecordPalette, "fg">;
@@ -293,6 +295,11 @@ const baseTheme = createTheme({
         fg: "#f57c00",
         bg: "#bf5000",
         lighter: "#fce8d5",
+      },
+      instrumentTemplate: {
+        fg: "#00897b",
+        bg: "#00695c",
+        lighter: "#e0f2f1",
       },
       document: {
         bg: "#af5076",

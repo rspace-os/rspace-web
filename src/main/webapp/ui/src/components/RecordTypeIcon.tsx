@@ -88,6 +88,14 @@ export default function RecordTypeIcon({
         />
       );
       break;
+    case "instrumentTemplate":
+      icon = (
+        <TemplateIcon
+          color={color ?? theme.palette.record.instrumentTemplate.fg}
+          style={style}
+        />
+      );
+      break;
     case "attachment":
       icon = (
         <FontAwesomeIcon

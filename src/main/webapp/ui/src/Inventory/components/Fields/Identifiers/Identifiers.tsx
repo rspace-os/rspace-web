@@ -684,7 +684,9 @@ const IdentifiersCard = observer((): ReactNode => {
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
-  const isInstrument = activeResult.recordType === "instrument";
+  const isInstrument =
+    activeResult.recordType === "instrument" ||
+    activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? "PIDINST" : "IGSN ID";
 
   return (

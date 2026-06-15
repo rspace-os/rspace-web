@@ -20,12 +20,14 @@ import SubSampleForm from "../Subsample/Form";
 import SubSampleBatchForm from "../Subsample/BatchForm";
 import MixedBatchForm from "../Mixed/BatchForm";
 import InstrumentForm from "../Instrument/Form";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockTemplate } from "../../stores/models/__tests__/TemplateModel/mocking";
 import { makeMockSubSample } from "../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockInstrument } from "../../stores/models/__tests__/InstrumentModel/mocking";
+import { makeMockInstrumentTemplate } from "../../stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { storesContext } from "../../stores/stores-context";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../theme";
@@ -255,6 +257,14 @@ describe("Form Section Order", () => {
           "Instrument Form",
           getSectionNames(<InstrumentForm />, {
             activeResult: makeMockInstrument({
+              owner: personAttrs(),
+            }),
+          }),
+        ],
+        [
+          "Instrument Template Form",
+          getSectionNames(<InstrumentTemplateForm />, {
+            activeResult: makeMockInstrumentTemplate({
               owner: personAttrs(),
             }),
           }),

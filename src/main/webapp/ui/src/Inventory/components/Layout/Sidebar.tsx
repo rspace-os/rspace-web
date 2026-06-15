@@ -328,7 +328,7 @@ const TemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label="Templates"
+        label="Sample Templates"
         selected={
           !benchSearch &&
           isSearchListing() &&
@@ -351,6 +351,53 @@ const TemplateNavItem = observer(
         onClick={() => {
           navigateToSearch({
             resultType: "TEMPLATE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const InstrumentTemplateNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Instrument Templates"
+        selected={
+          !benchSearch &&
+          isSearchListing() &&
+          searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")
+        }
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "instrumentTemplate",
+              recordTypeLabel: "",
+            }}
+            style={{ width: "16px", height: "16px" }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT_TEMPLATE",
           });
         }}
       />
@@ -550,7 +597,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   const { getTabIndex, getRef, eventHandlers } =
     useOneDimensionalRovingTabIndex<HTMLDivElement>({
-      max: isSysAdmin ? 8 : 7,
+      max: isSysAdmin ? 9 : 8,
     });
 
   const afterClick = () => {
@@ -606,19 +653,24 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
               tabIndex={getTabIndex(5)}
               getRef={getRef}
             />
-            <IgsnNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
+            <InstrumentTemplateNavItem
+              index={6}
+              tabIndex={getTabIndex(6)}
+              getRef={getRef}
+            />
+            <IgsnNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
           </List>
           <Divider />
           <List component="ul" aria-label="Other places and action">
             <ExportNavItem
-              index={7}
-              tabIndex={getTabIndex(7)}
+              index={8}
+              tabIndex={getTabIndex(8)}
               getRef={getRef}
             />
             {isSysAdmin && (
               <SettingsNavItem
-                index={8}
-                tabIndex={getTabIndex(8)}
+                index={9}
+                tabIndex={getTabIndex(9)}
                 getRef={getRef}
               />
             )}

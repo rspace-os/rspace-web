@@ -96,8 +96,12 @@ public class InventorySearchApiController extends BaseApiInventoryController
   }
 
   private boolean isValidSearchConfig(GlobalIdentifier parentOid, InventorySearchType searchType) {
-    // instruments have a dedicated endpoint; the general search does not index them
+    // instruments and instrument templates have dedicated endpoints; the general search does not
+    // index them
     if (InventorySearchType.INSTRUMENT.equals(searchType)) {
+      return false;
+    }
+    if (InventorySearchType.INSTRUMENT_TEMPLATE.equals(searchType)) {
       return false;
     }
     if (parentOid != null) {

@@ -28,7 +28,9 @@ const MoveAction = forwardRef<
   };
 
   const invalidTypeSelected = () =>
-    selectedResults.some((r) => r.recordType === "sampleTemplate");
+    selectedResults.some(
+      (r) => r.recordType === "sampleTemplate" || r.recordType === "instrumentTemplate"
+    );
 
   const disabledHelp = match<void, string>([
     [() => disabled !== "", disabled],

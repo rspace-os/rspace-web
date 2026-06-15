@@ -259,6 +259,7 @@ export default class CoreFetcher {
         [(t) => t === "subsample", "subSamples"],
         [(t) => t === "sampletemplate", "sampleTemplates"],
         [(t) => t === "instrument", "instruments"],
+        [(t) => t === "instrumenttemplate", "instrumentTemplates"],
       ])(type);
       return;
     }
@@ -278,6 +279,9 @@ export default class CoreFetcher {
       }
       if (!this.query && this.resultType === "INSTRUMENT") {
         this.endpoint = "instruments";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT_TEMPLATE") {
+        this.endpoint = "instrumentTemplates";
       }
     }
   }
@@ -402,6 +406,12 @@ export default class CoreFetcher {
           [
             () => endpoint === "instruments",
             data.instruments as Array<
+              Record<string, unknown> & { globalId: GlobalId }
+            >,
+          ],
+          [
+            () => endpoint === "instrumentTemplates",
+            data.templates as Array<
               Record<string, unknown> & { globalId: GlobalId }
             >,
           ],

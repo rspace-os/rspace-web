@@ -166,7 +166,7 @@ export default function TypeFilter({
             />
           </ListItemIcon>
           <ListItemText
-            primary="Templates"
+            primary="Sample Templates"
             secondary={match<void, string>([
               [
                 () => search.benchSearch,
@@ -179,6 +179,30 @@ export default function TypeFilter({
               [() => true, ""],
             ])()}
           />
+        </StyledMenuItem>
+        <StyledMenuItem
+          selected={current === "INSTRUMENT_TEMPLATE"}
+          aria-current={current === "INSTRUMENT_TEMPLATE"}
+          onClick={() => {
+            onClose("INSTRUMENT_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
+          data-test-id="instrumentTemplateType"
+        >
+          <ListItemIcon>
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Instrument Template",
+                iconName: "instrumentTemplate",
+              }}
+              color={theme.palette.standardIcon.main}
+              style={{
+                height: 18,
+                width: 18,
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText primary="Instrument Templates" />
         </StyledMenuItem>
       </StyledMenu>
     </div>

@@ -75,6 +75,10 @@ function SearchFeedback(): React.ReactNode {
       resultsStatusText("instruments"),
     ],
     [
+      () => search.fetcher.resultType === "INSTRUMENT_TEMPLATE",
+      resultsStatusText("instrument templates"),
+    ],
+    [
       () => search.fetcher.resultType === "TEMPLATE",
       resultsStatusText("templates"),
     ],

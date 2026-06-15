@@ -136,6 +136,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
     "SUBSAMPLE",
     "INSTRUMENT",
     "TEMPLATE",
+    "INSTRUMENT_TEMPLATE",
   ]),
   mainColumn: "Name",
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"

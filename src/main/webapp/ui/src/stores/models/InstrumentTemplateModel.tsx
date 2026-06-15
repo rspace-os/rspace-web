@@ -4,7 +4,6 @@ import {
   type GlobalId,
   inventoryRecordTypeLabels,
 } from "../definitions/BaseRecord";
-import { type RecordDetails } from "../definitions/Record";
 import {
   type RecordType,
   type Action,
@@ -28,26 +27,18 @@ import {
   type HasEditableFields,
   type HasUneditableFields,
 } from "../definitions/Editable";
-import { HasLocationMixin } from "./HasLocation";
-import {
-  type HasLocationEditableFields,
-  type HasLocationUneditableFields,
-} from "../definitions/HasLocation";
-import { type ContainerAttrs } from "./ContainerModel";
+import { type InstrumentTemplate } from "../definitions/InstrumentTemplate";
 import React from "react";
-import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
+import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import { action, computed, makeObservable, observable, override } from "mobx";
-import { type Instrument } from "../definitions/Instrument";
 import getRootStore from "../stores/RootStore";
 import { type CoreFetcherArgs } from "../definitions/Search";
 
-type InstrumentEditableFields = HasLocationEditableFields &
-  InventoryBaseRecordEditableFields;
+type InstrumentTemplateEditableFields = InventoryBaseRecordEditableFields;
 
-type InstrumentUneditableFields = HasLocationUneditableFields &
-  InventoryBaseRecordUneditableFields;
+type InstrumentTemplateUneditableFields = InventoryBaseRecordUneditableFields;
 
-export type InstrumentAttrs = {
+export type InstrumentTemplateAttrs = {
   id: Id;
   type: string;
   globalId: GlobalId | null;
@@ -58,10 +49,6 @@ export type InstrumentAttrs = {
   iconId?: string;
   newBase64Image?: string;
   image?: string;
-  parentContainers: Array<ContainerAttrs>;
-  parentLocation: Location | null;
-  lastMoveDate: string | null;
-  lastNonWorkbenchParent: ContainerAttrs | null;
   owner: PersonAttrs | null;
   created: string | null;
   lastModified: string | null;
@@ -78,20 +65,16 @@ const FIELDS = new Set([...RESULT_FIELDS]);
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
 const defaultEditableFields = new Set([...defaultEditableResultFields]);
 
-export default class InstrumentModel
-  extends HasLocationMixin(InventoryBaseRecord)
+export default class InstrumentTemplateModel
+  extends InventoryBaseRecord
   implements
-    Instrument,
-    HasEditableFields<InstrumentEditableFields>,
-    HasUneditableFields<InstrumentUneditableFields>
+    InstrumentTemplate,
+    HasEditableFields<InstrumentTemplateEditableFields>,
+    HasUneditableFields<InstrumentTemplateUneditableFields>
 {
-  // @ts-expect-error parentContainers is initialised by populateFromJson
-  parentContainers: Array<import("./ContainerModel").default>;
-
-  constructor(factory: Factory, params: InstrumentAttrs) {
+  constructor(factory: Factory, params: InstrumentTemplateAttrs) {
     super(factory, params);
     makeObservable(this, {
-      parentContainers: observable,
       paramsForBackend: override,
       updateFieldsState: override,
       cardTypeLabel: override,
@@ -104,38 +87,32 @@ export default class InstrumentModel
       showNewlyCreatedRecordSearchParams: override,
     });
 
-    if (this.recordType === "instrument")
+    if (this.recordType === "instrumentTemplate")
       this.populateFromJson(factory, params, {});
   }
 
   get recordType(): RecordType {
-    return "instrument";
+    return "instrumentTemplate";
   }
 
   get cardTypeLabel(): string {
-    return "Instrument";
+    return "Instrument Template";
   }
 
   get recordTypeLabel(): string {
-    return inventoryRecordTypeLabels.instrument;
+    return inventoryRecordTypeLabels.instrumentTemplate;
   }
 
   get iconName(): string {
-    return "instrument";
+    return "instrumentTemplate";
   }
 
   get illustration(): React.ReactNode {
-    return <InstrumentHeader/>;
+    return <TemplateIllustration />;
   }
 
   get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs {
-    return { resultType: "INSTRUMENT" };
-  }
-
-  get recordDetails(): RecordDetails {
-    return Object.assign({ ...super.recordDetails }, {
-      location: this,
-    });
+    return { resultType: "INSTRUMENT_TEMPLATE" };
   }
 
   get paramsForBackend(): Record<string, unknown> {
@@ -171,14 +148,15 @@ export default class InstrumentModel
     return false;
   }
 
-  get fieldValues(): InstrumentEditableFields & InstrumentUneditableFields {
+  get fieldValues(): InstrumentTemplateEditableFields &
+    InstrumentTemplateUneditableFields {
     return { ...super.fieldValues };
   }
 
   get noValueLabel(): {
-    [key in keyof InstrumentEditableFields]: string | null;
+    [key in keyof InstrumentTemplateEditableFields]: string | null;
   } & {
-    [key in keyof InstrumentUneditableFields]: string | null;
+    [key in keyof InstrumentTemplateUneditableFields]: string | null;
   } {
     return { ...super.noValueLabel };
   }
@@ -188,7 +166,7 @@ export default class InstrumentModel
   }
 
   get usableInLoM(): boolean {
-    return true;
+    return false;
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {

@@ -10,6 +10,7 @@ import ContainerNewRecordForm from "../Container/NewRecordForm";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
 import InstrumentForm from "../Instrument/Form";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 import { withStyles } from "../../util/styles";
 import clsx from "clsx";
 import NoActiveResultPlaceholder from "./components/NoActiveResultPlaceholder";
@@ -175,6 +176,11 @@ function RightPanelView(): ReactNode {
     if (activeResult.recordType === "instrument") {
       if (activeResult.id) return <InstrumentForm />;
       throw new Error("Creating new instruments is not supported.");
+    }
+
+    if (activeResult.recordType === "instrumentTemplate") {
+      if (activeResult.id) return <InstrumentTemplateForm />;
+      throw new Error("Creating new instrument templates is not supported.");
     }
 
     throw Error("The active item's type is not valid.");
