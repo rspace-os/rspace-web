@@ -235,7 +235,7 @@ public class MessageAndRequestController extends BaseController implements Appli
   }
 
   // requires ISO8601 input from the browser
-  DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
   @PostMapping("/create_calendar_event")
   @ResponseBody
@@ -244,12 +244,12 @@ public class MessageAndRequestController extends BaseController implements Appli
     User subject = userManager.getAuthenticatedUserInSession();
 
     if (calendarEvent.getStart() != null && !calendarEvent.getStart().isEmpty()) {
-      Instant startI = dateTimeFormatter.parse(calendarEvent.getStart(), Instant::from);
+      Instant startI = DATE_TIME_FORMATTER.parse(calendarEvent.getStart(), Instant::from);
       calendarEvent.setStartTime(new Date(startI.toEpochMilli()));
     }
 
     if (calendarEvent.getEnd() != null && !calendarEvent.getEnd().isEmpty()) {
-      Instant endI = dateTimeFormatter.parse(calendarEvent.getEnd(), Instant::from);
+      Instant endI = DATE_TIME_FORMATTER.parse(calendarEvent.getEnd(), Instant::from);
       calendarEvent.setEndTime(new Date(endI.toEpochMilli()));
     }
     // If both times are specified, start time should not be after end time
