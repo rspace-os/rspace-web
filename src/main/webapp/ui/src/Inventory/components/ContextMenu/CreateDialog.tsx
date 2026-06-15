@@ -302,7 +302,8 @@ const NewSubsampleQuantity = observer(
                  * prohibited from submitting if the field is empty.
                  */
                 const newValue = parseFloat(target.value);
-                if (target.checkValidity()) state.quantity = Number.isNaN(newValue) ? "" : newValue;
+                // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
+                if (target.checkValidity()) state.quantity = isNaN(newValue) ? "" : newValue;
               });
             }}
             variant="outlined"
@@ -566,8 +567,10 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
                   </FormControl>
                 </StepContent>
               </Step>
-              {selectedCreateOptionIndex &&
-                existingRecord.createOptions[selectedCreateOptionIndex].parameters?.map(
+              {/* biome-ignore lint/complexity/useOptionalChain: initial biome migration */}
+              {selectedCreateOptionIndex !== null &&
+                existingRecord.createOptions[selectedCreateOptionIndex].parameters &&
+                existingRecord.createOptions[selectedCreateOptionIndex].parameters.map(
                   ({ label, explanation, state, validState }, index) => (
                     <ParameterField
                       label={label}
