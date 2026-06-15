@@ -94,6 +94,7 @@
     "@mui/x-data-grid": "9.2.0",
     "@mui/x-date-pickers": "9.2.0",
     "@mui/x-tree-view": "9.1.0",
+    "@scalar/api-reference-react": "0.9.42",
     "@stomp/stompjs": "7.3.0",
     "@tanstack/query-core": "5.100.10",
     "@tanstack/react-form": "1.32.0",
