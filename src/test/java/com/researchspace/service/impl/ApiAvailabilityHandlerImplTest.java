@@ -90,7 +90,7 @@ class ApiAvailabilityHandlerImplTest {
 
   @Test
   void testInventoryAndDataciteEnabled() {
-    setSystemProperty(SystemPropertyName.DATACITE_ENABLED, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.IGSN_DATACITE_ENABLED, Boolean.TRUE);
     setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
     assertTrue(handler.isInventoryAndDataciteEnabled(anyUser));
     handler.assertInventoryAndDataciteEnabled(anyUser);

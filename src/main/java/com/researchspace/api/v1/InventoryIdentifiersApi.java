@@ -60,6 +60,11 @@ public interface InventoryIdentifiersApi {
   @PostMapping(value = "/{identifierId}/retract")
   ApiInventoryDOI retractIdentifier(Long identifierId, User user);
 
-  @GetMapping(value = "/testDataCiteConnection")
-  boolean testDataCiteConnection(User user);
+  /** Test the connection to the DataCite IGSN identifier service. */
+  @GetMapping(value = "/testIgsnConnection")
+  boolean testIgsnConnection(User user);
+
+  /** Test the connection to the DataCite PDINST identifier service. */
+  @GetMapping(value = "/testPdinstConnection")
+  boolean testPdinstConnection(User user);
 }

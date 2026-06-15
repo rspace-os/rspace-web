@@ -19,7 +19,7 @@ class ApiInventorySystemSettingsTest {
   void serializesIdentifiersSettingsMap() throws Exception {
     ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
     IdentifierSettings igsnSettings = settings.getOrCreate(InventorySettingType.IGSN);
-    igsnSettings.setProvider(IdentifierType.DATACITE_IGSN);
+    igsnSettings.setProvider(IdentifierType.IGSN_DATACITE);
     igsnSettings.setServerUrl("https://api.test.datacite.org");
     igsnSettings.setUsername("testuser");
     igsnSettings.setPassword("testpassword");
@@ -30,7 +30,7 @@ class ApiInventorySystemSettingsTest {
 
     assertTrue(json.contains("\"identifiersSettings\""), json);
     assertTrue(json.contains("\"IGSN\""), json);
-    assertTrue(json.contains("\"provider\":\"DATACITE_IGSN\""), json);
+    assertTrue(json.contains("\"provider\":\"IGSN_DATACITE\""), json);
     assertTrue(json.contains("\"serverUrl\":\"https://api.test.datacite.org\""), json);
     assertTrue(json.contains("\"username\":\"testuser\""), json);
     assertTrue(json.contains("\"password\":\"testpassword\""), json);
@@ -43,7 +43,7 @@ class ApiInventorySystemSettingsTest {
   void deserializesIdentifiersSettingsMap() throws Exception {
     String json =
         "{\"identifiersSettings\": {"
-            + "\"IGSN\": {\"provider\": \"DATACITE_IGSN\", \"serverUrl\":"
+            + "\"IGSN\": {\"provider\": \"IGSN_DATACITE\", \"serverUrl\":"
             + " \"https://api.test.datacite.org\", \"username\": \"testuser\", \"password\":"
             + " \"testpassword\", \"repositoryPrefix\": \"TESTPREFIX\", \"enabled\": \"true\"}}}";
 
@@ -52,7 +52,7 @@ class ApiInventorySystemSettingsTest {
     IdentifierSettings igsnSettings =
         settings.getIdentifiersSettings().get(InventorySettingType.IGSN);
     assertNotNull(igsnSettings);
-    assertEquals(IdentifierType.DATACITE_IGSN, igsnSettings.getProvider());
+    assertEquals(IdentifierType.IGSN_DATACITE, igsnSettings.getProvider());
     assertEquals("https://api.test.datacite.org", igsnSettings.getServerUrl());
     assertEquals("testuser", igsnSettings.getUsername());
     assertEquals("testpassword", igsnSettings.getPassword());
@@ -64,10 +64,10 @@ class ApiInventorySystemSettingsTest {
   void deserializesFullTicketExampleWithBothEntries() throws Exception {
     String json =
         "{\"identifiersSettings\": {"
-            + "\"IGSN\": {\"provider\": \"DATACITE_IGSN\", \"serverUrl\":"
+            + "\"IGSN\": {\"provider\": \"IGSN_DATACITE\", \"serverUrl\":"
             + " \"https://api.test.datacite.org\", \"username\": \"testuser\", \"password\":"
             + " \"testpassword\", \"repositoryPrefix\": \"TESTPREFIX\", \"enabled\": \"true\"},"
-            + "\"PDINST\": {\"provider\": \"DATACITE_PDINST\", \"serverUrl\":"
+            + "\"PDINST\": {\"provider\": \"PDINST_DATACITE\", \"serverUrl\":"
             + " \"https://api.test.datacite.org\", \"username\": \"testuser2\", \"password\":"
             + " \"testpassword2\", \"repositoryPrefix\": \"TESTPREFIX2\", \"enabled\": \"true\"}}}";
 
@@ -76,16 +76,16 @@ class ApiInventorySystemSettingsTest {
     IdentifierSettings pdinstSettings =
         settings.getIdentifiersSettings().get(InventorySettingType.PDINST);
     assertNotNull(pdinstSettings);
-    assertEquals(IdentifierType.DATACITE_PDINST, pdinstSettings.getProvider());
+    assertEquals(IdentifierType.PDINST_DATACITE, pdinstSettings.getProvider());
     assertEquals("testuser2", pdinstSettings.getUsername());
     assertEquals("testpassword2", pdinstSettings.getPassword());
     assertEquals("TESTPREFIX2", pdinstSettings.getRepositoryPrefix());
     assertEquals("true", pdinstSettings.getEnabled());
 
-    // round-trips, including the B2INST_PDINST provider value
-    pdinstSettings.setProvider(IdentifierType.B2INST_PDINST);
+    // round-trips, including the PDINST_B2INST provider value
+    pdinstSettings.setProvider(IdentifierType.PDINST_B2INST);
     String reserialized = mapper.writeValueAsString(settings);
-    assertTrue(reserialized.contains("\"provider\":\"B2INST_PDINST\""), reserialized);
+    assertTrue(reserialized.contains("\"provider\":\"PDINST_B2INST\""), reserialized);
   }
 
   @Test

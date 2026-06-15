@@ -55,10 +55,10 @@ public class ApiIdentifiersHelperTest {
   @Test
   public void createDoiToSavePersistsPdinstType() {
     ApiInventoryDOI apiDoi = new ApiInventoryDOI();
-    apiDoi.setDoiType(IdentifierType.DATACITE_PDINST.name());
+    apiDoi.setDoiType(IdentifierType.PDINST_DATACITE.name());
 
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
-    assertEquals(IdentifierType.DATACITE_PDINST, result.getType());
+    assertEquals(IdentifierType.PDINST_DATACITE, result.getType());
   }
 
   @Test
@@ -66,7 +66,7 @@ public class ApiIdentifiersHelperTest {
     ApiInventoryDOI apiDoi = new ApiInventoryDOI();
 
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
-    assertEquals(IdentifierType.DATACITE_IGSN, result.getType());
+    assertEquals(IdentifierType.IGSN_DATACITE, result.getType());
   }
 
   @Test
@@ -76,6 +76,6 @@ public class ApiIdentifiersHelperTest {
     apiDoi.setDoiType("dois");
 
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
-    assertEquals(IdentifierType.DATACITE_IGSN, result.getType());
+    assertEquals(IdentifierType.IGSN_DATACITE, result.getType());
   }
 }

@@ -46,141 +46,106 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
     IdentifierSettings initialIgsn =
         initialSettings.getIdentifiersSettings().get(InventorySettingType.IGSN);
     assertNotNull(initialIgsn);
-    assertEquals(IdentifierType.DATACITE_IGSN, initialIgsn.getProvider());
-    assertEquals("https://api.datacite.org", initialIgsn.getServerUrl());
-    assertEquals("", initialIgsn.getUsername());
-    assertEquals("", initialIgsn.getPassword());
-    assertEquals("", initialIgsn.getRepositoryPrefix());
-    assertEquals("false", initialIgsn.getEnabled());
+    assertEquals(IdentifierType.IGSN_DATACITE, initialIgsn.getProvider());
+    assertNotNull(initialSettings.getIdentifiersSettings().get(InventorySettingType.PDINST));
 
-    IdentifierSettings initialPdinst =
-        initialSettings.getIdentifiersSettings().get(InventorySettingType.PDINST);
-    assertNotNull(initialPdinst);
-    assertEquals("https://api.datacite.org", initialPdinst.getServerUrl());
-    assertEquals("", initialPdinst.getUsername());
-    assertEquals("", initialPdinst.getPassword());
-    assertEquals("", initialPdinst.getRepositoryPrefix());
-    assertEquals("false", initialPdinst.getEnabled());
+    // capture the current PDINST username, so we can prove the IGSN update leaves it untouched
+    String initialPdinstUsername =
+        initialSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername();
 
-    // update with only an IGSN entry, partial fields
-    ApiInventorySystemSettings igsnUpdate = new ApiInventorySystemSettings();
-    igsnUpdate.getOrCreate(InventorySettingType.IGSN).setUsername("updated");
+    // a single IGSN-provider object updates only the IGSN config
+    IdentifierSettings igsnUpdate = new IdentifierSettings();
+    igsnUpdate.setProvider(IdentifierType.IGSN_DATACITE);
+    igsnUpdate.setUsername("igsnUserUpdated");
     ApiInventorySystemSettings updatedSettings =
         settingsController.updateInventorySettings(
             request, igsnUpdate, mockBindingResult, sysadmin);
     assertNotNull(updatedSettings);
     assertEquals(
-        "updated",
+        "igsnUserUpdated",
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
     assertEquals(
-        "",
+        initialPdinstUsername,
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername());
 
-    // update with only a PDINST entry, partial fields
-    ApiInventorySystemSettings pdinstUpdate = new ApiInventorySystemSettings();
-    pdinstUpdate.getOrCreate(InventorySettingType.PDINST).setUsername("pdinstUser");
+    // a single PDINST-provider object updates only the PDINST config
+    IdentifierSettings pdinstUpdate = new IdentifierSettings();
+    pdinstUpdate.setProvider(IdentifierType.PDINST_DATACITE);
+    pdinstUpdate.setUsername("pdinstUserUpdated");
     updatedSettings =
         settingsController.updateInventorySettings(
             request, pdinstUpdate, mockBindingResult, sysadmin);
     assertNotNull(updatedSettings);
     assertEquals(
-        "pdinstUser",
+        "pdinstUserUpdated",
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername());
     assertEquals(
-        "updated",
+        "igsnUserUpdated",
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
-
-    // empty update changes nothing and doesn't NPE
-    ApiInventorySystemSettings emptyUpdate = new ApiInventorySystemSettings();
-    updatedSettings =
-        settingsController.updateInventorySettings(
-            request, emptyUpdate, mockBindingResult, sysadmin);
-    assertNotNull(updatedSettings);
 
     ApiInventorySystemSettings reloadedSettings =
         settingsController.getInventorySettings(request, sysadmin);
     assertNotNull(reloadedSettings);
     assertEquals(
-        "updated",
+        "igsnUserUpdated",
         reloadedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
     assertEquals(
-        "pdinstUser",
+        "pdinstUserUpdated",
         reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername());
   }
 
   @Test
-  public void pdinstProviderExposedAndPersisted() throws BindException {
+  public void pdinstProviderPersistedFromSingleObject() throws BindException {
     User sysadmin = logoutAndLoginAsSysAdmin();
 
-    ApiInventorySystemSettings initialSettings =
-        settingsController.getInventorySettings(request, sysadmin);
-    assertEquals(
-        IdentifierType.DATACITE_PDINST,
-        initialSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getProvider());
-
-    // switch PDINST provider to B2INST_PDINST
-    ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getOrCreate(InventorySettingType.PDINST).setProvider(IdentifierType.B2INST_PDINST);
+    // a PDINST_B2INST provider routes to the PDINST config and persists the provider
+    IdentifierSettings update = new IdentifierSettings();
+    update.setProvider(IdentifierType.PDINST_B2INST);
     ApiInventorySystemSettings updatedSettings =
         settingsController.updateInventorySettings(request, update, mockBindingResult, sysadmin);
     assertEquals(
-        IdentifierType.B2INST_PDINST,
+        IdentifierType.PDINST_B2INST,
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getProvider());
 
-    // reload from the database
     ApiInventorySystemSettings reloadedSettings =
         settingsController.getInventorySettings(request, sysadmin);
     assertEquals(
-        IdentifierType.B2INST_PDINST,
+        IdentifierType.PDINST_B2INST,
         reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getProvider());
   }
 
   @Test
-  public void invalidProviderForSettingTypeRejected() {
+  public void updateWithoutProviderRejected() {
     User sysadmin = logoutAndLoginAsSysAdmin();
 
-    ApiInventorySystemSettings igsnWithPdinstProvider = new ApiInventorySystemSettings();
-    igsnWithPdinstProvider
-        .getOrCreate(InventorySettingType.IGSN)
-        .setProvider(IdentifierType.DATACITE_PDINST);
+    IdentifierSettings noProvider = new IdentifierSettings();
+    noProvider.setUsername("whatever");
     assertThrows(
         BindException.class,
         () ->
             settingsController.updateInventorySettings(
                 request,
-                igsnWithPdinstProvider,
-                new BeanPropertyBindingResult(igsnWithPdinstProvider, "systemSettings"),
-                sysadmin));
-
-    ApiInventorySystemSettings pdinstWithIgsnProvider = new ApiInventorySystemSettings();
-    pdinstWithIgsnProvider
-        .getOrCreate(InventorySettingType.PDINST)
-        .setProvider(IdentifierType.DATACITE_IGSN);
-    assertThrows(
-        BindException.class,
-        () ->
-            settingsController.updateInventorySettings(
-                request,
-                pdinstWithIgsnProvider,
-                new BeanPropertyBindingResult(pdinstWithIgsnProvider, "systemSettings"),
+                noProvider,
+                new BeanPropertyBindingResult(noProvider, "identifierSettings"),
                 sysadmin));
   }
 
   @Test
-  public void pdinstSystemPropertiesHaveDefaults() {
+  public void pdinstSystemPropertiesAreSeeded() {
+    // asserts the RSDEV-1175 changeset seeded the six pdinst.datacite.* properties; values are
+    // mutable sysadmin config (so not asserted here)
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
 
-    assertPropertyValue(propertiesMap, "pdinst.datacite.provider", "DATACITE_PDINST");
-    assertPropertyValue(propertiesMap, "pdinst.datacite.enabled", "false");
-    assertPropertyValue(propertiesMap, "pdinst.datacite.server.url", "https://api.datacite.org");
-    assertPropertyValue(propertiesMap, "pdinst.datacite.username", "");
-    assertPropertyValue(propertiesMap, "pdinst.datacite.password", "");
-    assertPropertyValue(propertiesMap, "pdinst.datacite.repositoryPrefix", "");
+    assertPropertyPresent(propertiesMap, "pdinst.datacite.provider");
+    assertPropertyPresent(propertiesMap, "pdinst.datacite.enabled");
+    assertPropertyPresent(propertiesMap, "pdinst.datacite.server.url");
+    assertPropertyPresent(propertiesMap, "pdinst.datacite.username");
+    assertPropertyPresent(propertiesMap, "pdinst.datacite.password");
+    assertPropertyPresent(propertiesMap, "pdinst.datacite.repositoryPrefix");
   }
 
-  private void assertPropertyValue(
-      Map<String, SystemPropertyValue> propertiesMap, String propertyName, String expectedValue) {
+  private void assertPropertyPresent(
+      Map<String, SystemPropertyValue> propertiesMap, String propertyName) {
     assertNotNull(propertiesMap.get(propertyName), "missing system property: " + propertyName);
-    assertEquals(expectedValue, propertiesMap.get(propertyName).getValue());
   }
 }

@@ -186,9 +186,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
   private InventorySettingType settingTypeFor(IdentifierType identifierType) {
     switch (identifierType) {
-      case DATACITE_IGSN:
+      case IGSN_DATACITE:
         return InventorySettingType.IGSN;
-      case DATACITE_PDINST:
+      case PDINST_DATACITE:
         return InventorySettingType.PDINST;
       default:
         throw new UnsupportedOperationException(
@@ -205,7 +205,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
               new Object[] {InventorySettingType.PDINST}));
     }
     String providerValue = getPdinstProviderValue();
-    if (!IdentifierType.DATACITE_PDINST.equals(
+    if (!IdentifierType.PDINST_DATACITE.equals(
         EnumUtils.getEnum(IdentifierType.class, providerValue))) {
       throw new UnsupportedOperationException(
           messages.getMessage(
@@ -218,7 +218,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     SystemPropertyValue providerProperty =
         sysPropertyMgr
             .getAllSysadminPropertiesAsMap()
-            .get(SystemPropertyName.PDINST_PROVIDER.getPropertyName());
+            .get(SystemPropertyName.PDINST_DATACITE_PROVIDER.getPropertyName());
     return providerProperty == null ? null : providerProperty.getValue();
   }
 
@@ -377,11 +377,11 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     newDoi.setPublisher(properties.getCustomerName());
     newDoi.setPublicationYear(Year.now().getValue());
     if (InventorySettingType.PDINST.equals(settingType)) {
-      newDoi.setDoiType(IdentifierType.DATACITE_PDINST.name());
+      newDoi.setDoiType(IdentifierType.PDINST_DATACITE.name());
       newDoi.setResourceType("Instrument");
       newDoi.setResourceTypeGeneral("Instrument");
     } else {
-      newDoi.setDoiType(IdentifierType.DATACITE_IGSN.name());
+      newDoi.setDoiType(IdentifierType.IGSN_DATACITE.name());
       newDoi.setResourceType("Material Sample");
       newDoi.setResourceTypeGeneral("PhysicalObject");
     }

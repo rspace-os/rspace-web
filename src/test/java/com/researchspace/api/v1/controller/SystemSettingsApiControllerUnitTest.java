@@ -6,11 +6,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.model.ApiInventorySystemSettings;
-import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
@@ -56,7 +56,7 @@ class SystemSettingsApiControllerUnitTest {
     propertiesMap.put("datacite.username", propertyValue(""));
     propertiesMap.put("datacite.password", propertyValue(""));
     propertiesMap.put("datacite.repositoryPrefix", propertyValue(""));
-    propertiesMap.put("pdinst.datacite.provider", propertyValue("DATACITE_PDINST"));
+    propertiesMap.put("pdinst.datacite.provider", propertyValue("PDINST_DATACITE"));
     propertiesMap.put("pdinst.datacite.enabled", propertyValue("false"));
     propertiesMap.put("pdinst.datacite.server.url", propertyValue("https://api.datacite.org"));
     propertiesMap.put("pdinst.datacite.username", propertyValue(""));
@@ -71,23 +71,29 @@ class SystemSettingsApiControllerUnitTest {
 
   @Test
   void reloadCalledOnceWhenPdinstSettingChanged() throws Exception {
-    ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getOrCreate(InventorySettingType.PDINST).setUsername("newPdinstUser");
+    IdentifierSettings update = new IdentifierSettings();
+    update.setProvider(IdentifierType.PDINST_DATACITE);
+    update.setUsername("newPdinstUser");
 
     controller.updateInventorySettings(
-        request, update, new BeanPropertyBindingResult(update, "systemSettings"), sysadmin);
+        request, update, new BeanPropertyBindingResult(update, "identifierSettings"), sysadmin);
 
     verify(mockDataCiteConnector, times(1)).reloadDataCiteClient();
   }
 
   @Test
   void reloadNotCalledWhenNothingChanged() throws Exception {
-    ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getOrCreate(InventorySettingType.PDINST).setUsername("");
-    update.getOrCreate(InventorySettingType.IGSN).setEnabled("false");
+    // values matching the current PDINST defaults, so nothing changes
+    IdentifierSettings update = new IdentifierSettings();
+    update.setProvider(IdentifierType.PDINST_DATACITE);
+    update.setEnabled("false");
+    update.setServerUrl("https://api.datacite.org");
+    update.setUsername("");
+    update.setPassword("");
+    update.setRepositoryPrefix("");
 
     controller.updateInventorySettings(
-        request, update, new BeanPropertyBindingResult(update, "systemSettings"), sysadmin);
+        request, update, new BeanPropertyBindingResult(update, "identifierSettings"), sysadmin);
 
     verify(mockDataCiteConnector, never()).reloadDataCiteClient();
   }

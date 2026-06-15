@@ -2282,10 +2282,10 @@ paths:
           description: Details of connected attachment (ApiInventoryFile object).
   /identifiers:
     get:
-      summary: Get all the identifiers created by the `user` with a given `state`
+      summary: Get all the DataCite IGSN identifiers created by the `user` with a given `state`
       description: >
-        It will return a list of identifiers that are created by the specific
-        `user`  and having the specific `state`. 
+        It will return a list of all the DataCite IGSN identifiers created by the specific `user` 
+        and having the specific `state`. 
 
         Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers  that have already been bound to a record.
 
@@ -2293,7 +2293,7 @@ paths:
          * `10.47366/3bgk.v5n1a3`
          * `https://doi.org/10.47366/3bgk.v5n1a3`
       tags:
-        - IGSN Identifiers
+        - IGSN Identifiers bulk operation
       parameters:
         - name: state
           description: The state of the Identifier you want to filter in the list
@@ -2317,10 +2317,14 @@ paths:
         "200":
           description: The list is successfully returned
     post:
-      summary: Register a new DataCite IGSN identifier for an inventory item
+      summary: Register a new External Identifier (IGSN/PDINST) for an inventory item
       description: >
         Creates an identifier for the requested inventory item. Requires object
         with one "parentGlobalId" property as a request body.
+
+        The type of identifier created depends on the kind of inventory item referenced by `parentGlobalId`:
+         * an `IGSN` identifier is created when the `parentGlobalId` references a Sample, SubSample or Container
+         * a `PDINST` identifier is created when the `parentGlobalId` references an Instrument
 
         You must have UPDATE permission for the item to create an identifier for it.
 
@@ -2330,7 +2334,7 @@ paths:
 
         | --- | --- |
 
-        { "parentGlobalId": "IC8" } | Register new identifier for a container with id=8
+        `{ "parentGlobalId": "IC8" }` | Register new identifier for a container with id=8
       tags:
         - IGSN Identifiers
       requestBody:
@@ -2350,7 +2354,7 @@ paths:
         Register a number of DataCite IGSN identifier without associating them
         to any inventory item
       tags:
-        - IGSN Identifiers
+        - IGSN Identifiers bulk operation
       parameters:
         - name: count
           description: The id for the formIcon
@@ -2385,7 +2389,7 @@ paths:
 
         { "parentGlobalId": "SS12" } | Register new identifier for a SubSample with id=12
       tags:
-        - IGSN Identifiers
+        - IGSN Identifiers bulk operation
       parameters:
         - name: doiId
           in: path
@@ -2405,13 +2409,13 @@ paths:
           description: Identifier is assigned to the inventory item
   "/identifiers/{doiId}":
     delete:
-      summary: Delete a draft DataCite IGSN identifier that was not associated or that
-        was registered for the inventory item
-      description: |
-        Attempts to delete a connected DataCite IGSN identifier.
+      summary: Delete a draft External Identifier (IGSN/PDINST) that was not associated or that was registered for the inventory item
+      description: >
+        Attempts to delete a connected External Identifier (IGSN/PDINST).
+
         You must have UPDATE permission for the item to delete its identifier.
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       parameters:
         - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
       responses:
@@ -2420,10 +2424,13 @@ paths:
   "/identifiers/{doiId}/publish":
     post:
       summary: Publish an identifier, and the connected inventory item
-      description: |
-        Publishes DataCite IGSN identifier and connected record.
+      description: >
+        Publishes External Identifier (IGSN/PDINST) and connected record.
+
+      produces:
+        - application/json
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       parameters:
         - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
       responses:
@@ -2433,22 +2440,40 @@ paths:
     post:
       summary: Retract an identifier, and unpublish connected inventory item
       description: >
-        Retracts DataCite IGSN identifier and hides previously published
-        connected record.
+        Retracts External Identifier (IGSN/PDINST) and hides previously published connected record.
+
+      produces:
+        - application/json
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       parameters:
         - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
       responses:
         "200":
           description: Identifier is retracted and inventory item is hidden.
-  /identifiers/testDataCiteConnection:
+
+  '/identifiers/testIgsnConnection':
     get:
-      summary: Test connection settings saved for DataCite integration
-      description: |
-        Test connection settings saved for DataCite integration
+      summary: Test connection settings saved for the DataCite IGSN integration
+      description: >
+        Test connection settings saved for the DataCite IGSN integration
+      produces:
+        - application/json
       tags:
-        - IGSN Identifiers
+        - External Identifiers
+      responses:
+        '200':
+          description: boolean saying whether connection was successful
+
+  '/identifiers/testPdinstConnection':
+    get:
+      summary: Test connection settings saved for the DataCite PDINST integration
+      description: >
+        Test connection settings saved for the DataCite PDINST integration
+      produces:
+        - application/json
+      tags:
+        - External Identifiers
       responses:
         "200":
           description: boolean saying whether connection was successful

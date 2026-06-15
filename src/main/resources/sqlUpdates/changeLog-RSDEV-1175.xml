@@ -152,4 +152,24 @@
         </update>
     </changeSet>
 
+    <!--
+      The IdentifierType enum constants were renamed (DATACITE_IGSN -> IGSN_DATACITE,
+      DATACITE_PDINST -> PDINST_DATACITE, B2INST_PDINST -> PDINST_B2INST). The configured PDINST
+      provider is persisted by name in the pdinst.datacite.provider value, so migrate any stored
+      value to the new name. The seeding changeset above still writes the old default name and is
+      left untouched (checksum), so fresh installs are migrated here in the same way as existing
+      databases. The DigitalObjectIdentifier.type column is ordinal-mapped and unaffected.
+    -->
+    <changeSet id="2026-06-15b" context="run,dev-test" author="nico">
+        <comment>RSDEV-1175 migrate persisted pdinst.datacite.provider value to renamed IdentifierType names</comment>
+        <update tableName="SystemPropertyValue">
+            <column name="value" value="PDINST_DATACITE"/>
+            <where>value = 'DATACITE_PDINST' AND property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.datacite.provider')</where>
+        </update>
+        <update tableName="SystemPropertyValue">
+            <column name="value" value="PDINST_B2INST"/>
+            <where>value = 'B2INST_PDINST' AND property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.datacite.provider')</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>

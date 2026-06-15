@@ -66,12 +66,12 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, updatedInstrument.getIdentifiers().size());
 
     ApiInventoryDOI createdDoi = updatedInstrument.getIdentifiers().get(0);
-    assertEquals("DATACITE_PDINST", createdDoi.getDoiType());
+    assertEquals("PDINST_DATACITE", createdDoi.getDoiType());
     assertEquals("Instrument", createdDoi.getResourceType());
     assertEquals("Instrument", createdDoi.getResourceTypeGeneral());
     assertEquals(createdInstrument.getGlobalId(), createdDoi.getAssociatedGlobalId());
     assertEquals(InventorySettingType.PDINST, dataCiteConnectorDummy.getLastSettingTypeUsed());
-    assertEquals(IdentifierType.DATACITE_PDINST, doiDao.get(createdDoi.getId()).getType());
+    assertEquals(IdentifierType.PDINST_DATACITE, doiDao.get(createdDoi.getId()).getType());
   }
 
   @Test
@@ -82,17 +82,17 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
 
     ApiInventoryDOI createdDoi = updatedSample.getIdentifiers().get(0);
-    assertEquals("DATACITE_IGSN", createdDoi.getDoiType());
+    assertEquals("IGSN_DATACITE", createdDoi.getDoiType());
     assertEquals("Material Sample", createdDoi.getResourceType());
     assertEquals("PhysicalObject", createdDoi.getResourceTypeGeneral());
     assertEquals(InventorySettingType.IGSN, dataCiteConnectorDummy.getLastSettingTypeUsed());
-    assertEquals(IdentifierType.DATACITE_IGSN, doiDao.get(createdDoi.getId()).getType());
+    assertEquals(IdentifierType.IGSN_DATACITE, doiDao.get(createdDoi.getId()).getType());
   }
 
   @Test
   public void registerInstrumentIdentifierWithB2instProviderThrows() {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    sysPropertyMgr.save(SystemPropertyName.PDINST_PROVIDER, "B2INST_PDINST", sysadmin);
+    sysPropertyMgr.save(SystemPropertyName.PDINST_DATACITE_PROVIDER, "PDINST_B2INST", sysadmin);
     logoutAndLoginAs(user);
     ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
 

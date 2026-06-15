@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -20,6 +21,7 @@ import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.TestFactory;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +36,7 @@ class InventoryIdentifiersApiControllerTest {
   @Mock private ApiAvailabilityHandler mockApiHandler;
   @Mock private InstrumentEntityApiManager mockInstrumentApiMgr;
   @Mock private SampleApiManager mockSampleApiMgr;
+  @Mock private DataCiteConnector mockDataCiteConnector;
 
   private InventoryIdentifiersApiController controller;
   private User user;
@@ -45,7 +48,25 @@ class InventoryIdentifiersApiControllerTest {
     ReflectionTestUtils.setField(controller, "apiHandler", mockApiHandler);
     ReflectionTestUtils.setField(controller, "instrumentApiMgr", mockInstrumentApiMgr);
     ReflectionTestUtils.setField(controller, "sampleApiMgr", mockSampleApiMgr);
+    ReflectionTestUtils.setField(controller, "dataCiteConnector", mockDataCiteConnector);
     user = TestFactory.createAnyUser("any");
+  }
+
+  @Test
+  void testIgsnConnectionTestsIgsnClient() {
+    when(mockDataCiteConnector.testDataCiteConnection(InventorySettingType.IGSN)).thenReturn(true);
+
+    assertTrue(controller.testIgsnConnection(user));
+    verify(mockDataCiteConnector).testDataCiteConnection(InventorySettingType.IGSN);
+  }
+
+  @Test
+  void testPdinstConnectionTestsPdinstClient() {
+    when(mockDataCiteConnector.testDataCiteConnection(InventorySettingType.PDINST))
+        .thenReturn(true);
+
+    assertTrue(controller.testPdinstConnection(user));
+    verify(mockDataCiteConnector).testDataCiteConnection(InventorySettingType.PDINST);
   }
 
   private ApiInventoryRecordInfo recordWithOneIdentifier() {
@@ -90,7 +111,7 @@ class InventoryIdentifiersApiControllerTest {
   @Test
   void publishGatesByIdentifierType() {
     ApiInventoryDOI pdinstDoi = new ApiInventoryDOI();
-    pdinstDoi.setDoiType("DATACITE_PDINST");
+    pdinstDoi.setDoiType("PDINST_DATACITE");
     InventoryRecord instrumentRecord = recordWithOid("IN12345");
     when(mockIdentifierMgr.getIdentifierById(5L)).thenReturn(pdinstDoi);
     when(mockIdentifierMgr.getInventoryRecordByIdentifierId(5L)).thenReturn(instrumentRecord);
@@ -106,7 +127,7 @@ class InventoryIdentifiersApiControllerTest {
   @Test
   void retractGatesByIdentifierType() {
     ApiInventoryDOI igsnDoi = new ApiInventoryDOI();
-    igsnDoi.setDoiType("DATACITE_IGSN");
+    igsnDoi.setDoiType("IGSN_DATACITE");
     InventoryRecord sampleRecord = recordWithOid("SA12345");
     when(mockIdentifierMgr.getIdentifierById(6L)).thenReturn(igsnDoi);
     when(mockIdentifierMgr.getInventoryRecordByIdentifierId(6L)).thenReturn(sampleRecord);
@@ -121,7 +142,7 @@ class InventoryIdentifiersApiControllerTest {
   @Test
   void deleteGatesByIdentifierType() {
     ApiInventoryDOI pdinstDraftDoi = new ApiInventoryDOI();
-    pdinstDraftDoi.setDoiType("DATACITE_PDINST");
+    pdinstDraftDoi.setDoiType("PDINST_DATACITE");
     pdinstDraftDoi.setState("draft");
     when(mockIdentifierMgr.getIdentifierById(7L)).thenReturn(pdinstDraftDoi);
     when(mockIdentifierMgr.deleteUnassociatedIdentifier(pdinstDraftDoi, user)).thenReturn(true);
