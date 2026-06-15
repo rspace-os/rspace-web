@@ -76,7 +76,6 @@ jobs:
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
-              - 'src/main/webapp/ui/webpack.config.mjs'
             java:
               - 'src/main/java/**'
               - 'src/test/java/**'
