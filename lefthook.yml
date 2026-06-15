@@ -12,7 +12,7 @@ pre-commit:
       glob: "**/*.java"
       run: |
         spotless_files=$(printf '%s\n' {staged_files} \
-          | sed '/^$/d; s#^#.*#' \
+          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#^#.*#' \
           | paste -sd, -)
         if [ -n "$spotless_files" ]; then
           ./mvnw -q spotless:check -DspotlessFiles="$spotless_files"
