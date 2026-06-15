@@ -45,7 +45,7 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
     final int docCount = message.getRecords().size();
 
     if (docCount == 0) {
-      log.warn("No records, can't add attachment");
+      log.debug("Message has no associated documents; sending card without document summaries");
       body.add(TextBlock.heading("Message from " + message.getOriginator().getFullName()));
       body.add(TextBlock.body(convert(message.getMessage())));
     } else {

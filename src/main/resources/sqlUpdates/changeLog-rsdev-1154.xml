@@ -18,9 +18,10 @@
       STRING (max 255 chars) to TEXT (max 65535 chars) so validation accepts
       Teams Workflows webhook URLs. Type ordinal 4 = SettingsType.TEXT.
     </comment>
-    <sql>
-      UPDATE PropertyDescriptor SET type=4 WHERE name='MSTEAMS_WEBHOOK_URL';
-    </sql>
+    <update tableName="PropertyDescriptor">
+      <column name="type" value="4" type="int"/>
+      <where>name='MSTEAMS_WEBHOOK_URL'</where>
+    </update>
   </changeSet>
 
 </databaseChangeLog>

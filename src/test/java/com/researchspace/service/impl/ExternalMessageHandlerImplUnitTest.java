@@ -14,6 +14,7 @@ import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.ExternalMessageHandler;
 import com.researchspace.service.ExternalMessageSenderFactory;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
@@ -116,7 +117,7 @@ public class ExternalMessageHandlerImplUnitTest {
     setUpConfigForApp(App.APP_MSTEAMS);
     when(sender.sendMessage(any(), any(), eq(user)))
         .thenThrow(new ResourceAccessException("connection refused"));
-    when(messageSource.getMessage(ExternalMessageHandlerImpl.SEND_FAILED_MSG_KEY))
+    when(messageSource.getMessage(ExternalMessageHandler.SEND_FAILED_MSG_KEY))
         .thenReturn("could not send message");
 
     ServiceOperationResult<ResponseEntity<String>> result = sendMessage();
