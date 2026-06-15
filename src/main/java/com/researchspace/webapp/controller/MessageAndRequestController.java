@@ -261,8 +261,7 @@ public class MessageAndRequestController extends BaseController implements Appli
 
       if (startTimeCal.after(endTimeCalendar)) {
         return new AjaxReturnObject<>(
-            null,
-            ErrorList.createErrListWithSingleMsg("Event start time must be before end time."));
+            null, ErrorList.createErrListWithSingleMsg(getText("calendar.event.start.before.end")));
       }
     }
 
@@ -298,8 +297,7 @@ public class MessageAndRequestController extends BaseController implements Appli
 
     // Show an error message if there's no calendar file available.
     if (calendarEventFileContents == null) {
-      throw new IllegalStateException(
-          "No calendar file available. Please try creating the calendar event again.");
+      throw new IllegalStateException(getText("calendar.event.not.available"));
     }
 
     // Output the calendar file
