@@ -30,6 +30,7 @@ function SearchFeedback(): React.ReactNode {
     [() => search.fetcher.resultType === "SAMPLE", resultsStatusText("samples")],
     [() => search.fetcher.resultType === "SUBSAMPLE", resultsStatusText("subsamples")],
     [() => search.fetcher.resultType === "INSTRUMENT", resultsStatusText("instruments")],
+    [() => search.fetcher.resultType === "INSTRUMENT_TEMPLATE", resultsStatusText("instrument templates")],
     [() => search.fetcher.resultType === "TEMPLATE", resultsStatusText("templates")],
     [() => search.fetcher.parentGlobalIdType === "SAMPLE", resultsStatusText("subsamples")],
     [() => search.fetcher.parentGlobalIdType === "CONTAINER", resultsStatusText("container contents")],

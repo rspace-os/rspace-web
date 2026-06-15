@@ -24,7 +24,7 @@ export type GlobalId = string;
  * record that the Global ID refers to. Various record classes supported by the
  * frontend code are detailed below.
  */
-export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "SF" | "SD" | "GP" | "IN";
+export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "SF" | "SD" | "GP" | "IN" | "NT";
 
 /**
  * The Global ID pattern is a regular expression that matches all Global IDs of
@@ -45,6 +45,7 @@ export const globalIdPatterns: Record<string, RegExp> = {
   document: /^sd\d+$/i,
   group: /^gp\d+$/i,
   instrument: /^in\d+$/i,
+  instrumentTemplate: /^nt\d+(v\d+)?$/i,
 };
 
 export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
@@ -59,6 +60,7 @@ export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
   document: "SD",
   group: "GP",
   instrument: "IN",
+  instrumentTemplate: "NT",
 };
 
 /*
@@ -73,6 +75,7 @@ export const inventoryRecordTypeLabels = {
   bench: "Bench",
   basket: "Basket",
   instrument: "Instrument",
+  instrumentTemplate: "Instrument Template",
 };
 
 /**
@@ -89,6 +92,7 @@ export const globalIdToInventoryRecordTypeLabel: (
   [(globalId: GlobalId) => globalIdPatterns.bench.test(globalId), inventoryRecordTypeLabels.bench],
   [(globalId: GlobalId) => globalIdPatterns.basket.test(globalId), inventoryRecordTypeLabels.basket],
   [(globalId: GlobalId) => globalIdPatterns.instrument.test(globalId), inventoryRecordTypeLabels.instrument],
+  [(globalId: GlobalId) => globalIdPatterns.instrumentTemplate.test(globalId), inventoryRecordTypeLabels.instrumentTemplate],
 ]);
 
 /**

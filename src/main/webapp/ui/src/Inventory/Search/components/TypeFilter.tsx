@@ -157,13 +157,37 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             />
           </ListItemIcon>
           <ListItemText
-            primary="Templates"
+            primary="Sample Templates"
             secondary={match<void, string>([
               [() => search.benchSearch, "Templates cannot be found on benches."],
               [() => search.fetcher.parentIsContainer, "Templates cannot be found in containers."],
               [() => true, ""],
             ])()}
           />
+        </MenuItem>
+        <MenuItem
+            selected={current === "INSTRUMENT_TEMPLATE"}
+            aria-current={current === "INSTRUMENT_TEMPLATE"}
+            onClick={() => {
+              onClose("INSTRUMENT_TEMPLATE");
+            }}
+            disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
+            data-test-id="instrumentTemplateType"
+        >
+          <ListItemIcon>
+            <RecordTypeIcon
+                record={{
+                  recordTypeLabel: "Instrument Template",
+                  iconName: "instrumentTemplate",
+                }}
+                color={theme.palette.standardIcon.main}
+                style={{
+                  height: 18,
+                  width: 18,
+                }}
+            />
+          </ListItemIcon>
+          <ListItemText primary="Instrument Templates" />
         </MenuItem>
       </StyledMenu>
     </div>

@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
@@ -19,6 +20,9 @@ public interface InstrumentTemplateDao extends InstrumentEntityDao<InstrumentTem
 
   /** Returns all instrument templates with the given name owned by the given user. */
   List<InstrumentTemplate> findInstrumentTemplatesByName(String name, User user);
+
+  /** Returns all instrument templates using the given image file property. */
+  List<InstrumentTemplate> getAllUsingImage(FileProperty fileProperty);
 
   /**
    * Persists a new InstrumentTemplate, explicitly saving transient Choice/Radio field defs first.

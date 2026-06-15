@@ -4,6 +4,7 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentTemplateDao;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -114,6 +115,18 @@ public class InstrumentTemplateDaoHibernateImpl
         .forEach(cf -> currentSession.save(cf.getRadioDef()));
     currentSession.persist(template);
     return get(template.getId());
+  }
+
+  @Override
+  public List<InstrumentTemplate> getAllUsingImage(FileProperty fileProperty) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from InstrumentTemplate where imageFileProperty=:fileProperty"
+                + " OR thumbnailFileProperty=:fileProperty",
+            InstrumentTemplate.class)
+        .setParameter("fileProperty", fileProperty)
+        .list();
   }
 
   /*

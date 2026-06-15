@@ -81,7 +81,7 @@ type SearchArgs = {
 
 const DEFAULT_UI_CONFIG: UiConfig = {
   allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
-  allowedTypeFilters: new Set(["ALL", "CONTAINER", "SAMPLE", "SUBSAMPLE", "INSTRUMENT", "TEMPLATE"]),
+  allowedTypeFilters: new Set(["ALL", "CONTAINER", "SAMPLE", "SUBSAMPLE", "INSTRUMENT", "TEMPLATE", "INSTRUMENT_TEMPLATE"]),
   mainColumn: "Name",
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
   adjustableColumns: ["Global ID", "Owner", "Last Modified"],

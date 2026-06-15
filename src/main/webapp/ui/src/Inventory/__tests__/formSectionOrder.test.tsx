@@ -241,6 +241,14 @@ describe("Form Section Order", () => {
           }),
         ],
         [
+          "Instrument Template Form",
+          getSectionNames(<InstrumentTemplateForm />, {
+            activeResult: makeMockInstrumentTemplate({
+              owner: personAttrs(),
+            }),
+          }),
+        ],
+        [
           "Mixed Batch Edit Form",
           getSectionNames(<MixedBatchForm records={new RsSet([makeMockSubSample(), makeMockContainer()])} />, {
             activeResult: null,

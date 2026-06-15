@@ -9,6 +9,9 @@ import SampleModel, { SampleAttrs } from "../SampleModel";
 import SubSampleModel, { SubSampleAttrs } from "../SubSampleModel";
 import TemplateModel, { TemplateAttrs } from "../TemplateModel";
 import InstrumentModel, { InstrumentAttrs } from "../InstrumentModel";
+import InstrumentTemplateModel, {
+  InstrumentTemplateAttrs,
+} from "../InstrumentTemplateModel";
 import { type Factory } from "../../definitions/Factory";
 import {
   type PersistedBarcodeAttrs,
@@ -53,7 +56,9 @@ export default class AlwaysNewFactory implements Factory {
               ? new ContainerModel(this, params as ContainerAttrs)
               : patterns.instrument.test(g)
                 ? new InstrumentModel  (this, params as InstrumentAttrs)
-                : /* otherwise */ null;
+                : patterns.instrumentTemplate.test(g)
+                  ? new InstrumentTemplateModel(this, params as InstrumentTemplateAttrs)
+                  : /* otherwise */ null;
     if (!record) throw new Error("Unknown Global ID");
     return record;
   }
