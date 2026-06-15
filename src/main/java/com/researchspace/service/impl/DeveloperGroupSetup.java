@@ -46,12 +46,30 @@ public class DeveloperGroupSetup extends AbstractAppInitializor {
       return;
     }
 
+    String[] users = new String[] {"user1a", "user2b", "user3c", "user4d"};
+    List<String> missingUsers = new ArrayList<>();
+    if (!userdao.userExists(AbstractAppInitializor.SYSADMIN_UNAME)) {
+      missingUsers.add(AbstractAppInitializor.SYSADMIN_UNAME);
+    }
+    for (String uname : users) {
+      if (!userdao.userExists(uname)) {
+        missingUsers.add(uname);
+      }
+    }
+    if (!missingUsers.isEmpty()) {
+      logger.warn(
+          "rs.dev.groupcreation=true but expected dev users are not present ({}), so dev group"
+              + " creation was skipped. This is expected when the dev-test seed was not applied,"
+              + " i.e. when running without liquibase 'dev-test' context.",
+          missingUsers);
+      return;
+    }
+
     UsernamePasswordToken admintoken =
         new UsernamePasswordToken(
             AbstractAppInitializor.SYSADMIN_UNAME, AbstractAppInitializor.SYSADMIN_PWD, false);
     final User admin = userdao.getUserByUsername(admintoken.getUsername());
 
-    String[] users = new String[] {"user1a", "user2b", "user3c", "user4d"};
     List<UsernamePasswordToken> tokesn = new ArrayList<>();
     for (String uname : users) {
       UsernamePasswordToken token2 = new UsernamePasswordToken(uname, devUserPassword, false);
