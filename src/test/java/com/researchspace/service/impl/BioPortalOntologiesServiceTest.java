@@ -9,8 +9,10 @@ import static org.mockito.Mockito.when;
 import com.researchspace.client.BioPortalOntologiesClient;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,15 +63,16 @@ public class BioPortalOntologiesServiceTest {
   @Test
   public void shouldReturnFormattedValuesWhenFilterMatchesDataReturnedFromBioPortal() {
     when(bioOntologiesClientMock.getBioOntologyData(any(String.class))).thenReturn(realBioData);
+    when(bioOntologiesClientMock.getBioportalBaseUrl()).thenReturn("https://bioportal.bioontology.org");
     List<String> data = testee.getBioOntologyDataForQuery("cen");
     assertEquals(2, data.size());
-    assertTrue(
+    assertTrue("unexpected: " + Arrays.toString(data.toArray()),
         data.contains(
             "Ctenotus"
                 + " hanloni__RSP_EXTONT_URL_DELIM__http://purl.bioontology.org/ontology/NCBITAXON/480744__RSP_EXTONT_NAME_DELIM__NCBITAXON__RSP_EXTONT_VERSION_DELIM__https://bioportal.bioontology.org/ontologies/NCBITAXON"
                 + "  on: "
                 + getTodayDateFormatted()));
-    assertTrue(
+    assertTrue("unexpected: " + Arrays.toString(data.toArray()),
         data.contains(
             "Ctenotus"
                 + " hanloni__RSP_EXTONT_URL_DELIM__http://purl.obolibrary.org/obo/VTO_0018361__RSP_EXTONT_NAME_DELIM__VTO__RSP_EXTONT_VERSION_DELIM__https://bioportal.bioontology.org/ontologies/VTO"
