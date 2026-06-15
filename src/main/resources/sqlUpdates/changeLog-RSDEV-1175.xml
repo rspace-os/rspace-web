@@ -116,4 +116,40 @@
         </insert>
     </changeSet>
 
+    <!--
+      Namespace the PDINST DataCite settings under pdinst.datacite.* (renamed from pdinst.*),
+      leaving room for a future pdinst.b2inst.* provider. Done as a rename of the existing
+      PropertyDescriptor names rather than editing the seeding changeset above, so the already
+      executed changeset keeps its checksum and any database that ran it is migrated in place.
+      SystemProperty/SystemPropertyValue rows reference the descriptor by id, so only the names
+      change here.
+    -->
+    <changeSet id="2026-06-15a" context="run,dev-test" author="nico">
+        <comment>RSDEV-1175 rename pdinst.* system settings to pdinst.datacite.*</comment>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="pdinst.datacite.provider"/>
+            <where>name = 'pdinst.provider'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="pdinst.datacite.enabled"/>
+            <where>name = 'pdinst.enabled'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="pdinst.datacite.server.url"/>
+            <where>name = 'pdinst.server.url'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="pdinst.datacite.username"/>
+            <where>name = 'pdinst.username'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="pdinst.datacite.password"/>
+            <where>name = 'pdinst.password'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="pdinst.datacite.repositoryPrefix"/>
+            <where>name = 'pdinst.repositoryPrefix'</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>

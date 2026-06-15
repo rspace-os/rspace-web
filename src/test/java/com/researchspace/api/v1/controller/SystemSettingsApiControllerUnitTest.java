@@ -56,12 +56,12 @@ class SystemSettingsApiControllerUnitTest {
     propertiesMap.put("datacite.username", propertyValue(""));
     propertiesMap.put("datacite.password", propertyValue(""));
     propertiesMap.put("datacite.repositoryPrefix", propertyValue(""));
-    propertiesMap.put("pdinst.provider", propertyValue("DATACITE_PDINST"));
-    propertiesMap.put("pdinst.enabled", propertyValue("false"));
-    propertiesMap.put("pdinst.server.url", propertyValue("https://api.datacite.org"));
-    propertiesMap.put("pdinst.username", propertyValue(""));
-    propertiesMap.put("pdinst.password", propertyValue(""));
-    propertiesMap.put("pdinst.repositoryPrefix", propertyValue(""));
+    propertiesMap.put("pdinst.datacite.provider", propertyValue("DATACITE_PDINST"));
+    propertiesMap.put("pdinst.datacite.enabled", propertyValue("false"));
+    propertiesMap.put("pdinst.datacite.server.url", propertyValue("https://api.datacite.org"));
+    propertiesMap.put("pdinst.datacite.username", propertyValue(""));
+    propertiesMap.put("pdinst.datacite.password", propertyValue(""));
+    propertiesMap.put("pdinst.datacite.repositoryPrefix", propertyValue(""));
     return propertiesMap;
   }
 

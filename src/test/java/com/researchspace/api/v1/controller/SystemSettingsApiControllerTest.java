@@ -170,12 +170,12 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
   public void pdinstSystemPropertiesHaveDefaults() {
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
 
-    assertPropertyValue(propertiesMap, "pdinst.provider", "DATACITE_PDINST");
-    assertPropertyValue(propertiesMap, "pdinst.enabled", "false");
-    assertPropertyValue(propertiesMap, "pdinst.server.url", "https://api.datacite.org");
-    assertPropertyValue(propertiesMap, "pdinst.username", "");
-    assertPropertyValue(propertiesMap, "pdinst.password", "");
-    assertPropertyValue(propertiesMap, "pdinst.repositoryPrefix", "");
+    assertPropertyValue(propertiesMap, "pdinst.datacite.provider", "DATACITE_PDINST");
+    assertPropertyValue(propertiesMap, "pdinst.datacite.enabled", "false");
+    assertPropertyValue(propertiesMap, "pdinst.datacite.server.url", "https://api.datacite.org");
+    assertPropertyValue(propertiesMap, "pdinst.datacite.username", "");
+    assertPropertyValue(propertiesMap, "pdinst.datacite.password", "");
+    assertPropertyValue(propertiesMap, "pdinst.datacite.repositoryPrefix", "");
   }
 
   private void assertPropertyValue(

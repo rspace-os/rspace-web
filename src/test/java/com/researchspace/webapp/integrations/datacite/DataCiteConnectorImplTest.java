@@ -34,11 +34,11 @@ class DataCiteConnectorImplTest {
     addProperty("datacite.username", "igsnUser");
     addProperty("datacite.password", "igsnPassword");
     addProperty("datacite.repositoryPrefix", "IGSNPREFIX");
-    addProperty("pdinst.enabled", "true");
-    addProperty("pdinst.server.url", "https://api.test.datacite.org");
-    addProperty("pdinst.username", "pdinstUser");
-    addProperty("pdinst.password", "pdinstPassword");
-    addProperty("pdinst.repositoryPrefix", "PDINSTPREFIX");
+    addProperty("pdinst.datacite.enabled", "true");
+    addProperty("pdinst.datacite.server.url", "https://api.test.datacite.org");
+    addProperty("pdinst.datacite.username", "pdinstUser");
+    addProperty("pdinst.datacite.password", "pdinstPassword");
+    addProperty("pdinst.datacite.repositoryPrefix", "PDINSTPREFIX");
     when(mockSysPropMgr.getAllSysadminPropertiesAsMap()).thenReturn(propertiesMap);
   }
 
@@ -56,7 +56,7 @@ class DataCiteConnectorImplTest {
 
   @Test
   void incompletePdinstConfigSkipsPdinstClientOnly() {
-    addProperty("pdinst.username", "");
+    addProperty("pdinst.datacite.username", "");
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
@@ -74,7 +74,7 @@ class DataCiteConnectorImplTest {
 
   @Test
   void disabledTypeIsNotEnabledEvenIfConfigured() {
-    addProperty("pdinst.enabled", "false");
+    addProperty("pdinst.datacite.enabled", "false");
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
@@ -83,7 +83,7 @@ class DataCiteConnectorImplTest {
 
   @Test
   void missingPdinstPropertiesAreToleratedAtReload() {
-    propertiesMap.keySet().removeIf(name -> name.startsWith("pdinst."));
+    propertiesMap.keySet().removeIf(name -> name.startsWith("pdinst.datacite."));
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
@@ -92,7 +92,7 @@ class DataCiteConnectorImplTest {
 
   @Test
   void noArgMethodsDelegateToIgsn() {
-    addProperty("pdinst.enabled", "false");
+    addProperty("pdinst.datacite.enabled", "false");
     connector.reloadDataCiteClient();
 
     assertEquals(
