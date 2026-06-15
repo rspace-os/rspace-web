@@ -1,0 +1,63 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- RSDEV-416: seed data that pre-1.98.1 changesets used to insert, consolidated here as end-state.
+         The baseline (rs-dbbaseline-utf8.sql) is pure DDL; this changelog loads all seed on top, run
+         first (before the kept post-1.98.1 changesets).
+
+         FRESH-INSTALL ONLY: the seed targets the 1.98.1-era schema. On an UPGRADE the post-1.98.1
+         changesets have already run (e.g. rsdev-563 renames DMPUser.dmpDownloadPdf_id -> dmpDownloadFile_id),
+         so re-running the seed would hit columns that no longer exist. Each changeset therefore MARK_RANs
+         on any non-fresh DB: run-seed gates on `roles` being empty; the dev-test/cloud seeds gate on
+         "no changeset outside this seed changelog has run yet" (true only on a brand-new, first-migration
+         DB - on a fresh install the seed changelog is the only thing applied when these evaluate). -->
+
+    <changeSet id="rsdev-416-seed-run" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="run seed already present"
+                       onErrorMessage="run seed already present">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM roles</sqlCheck>
+        </preConditions>
+        <comment>Pre-1.98.1 run / no-context seed: roles, permissions, system properties, app configs, the Organisation reference list, sysadmin/system users, batch sequences.</comment>
+        <sqlFile path="initial-seed-run.sql" relativeToChangelogFile="true"
+                 splitStatements="true" stripComments="true" endDelimiter=";"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-seed-dev-test" author="matthias" context="dev-test">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="dev-test seed skipped: not a fresh install (schema already advanced past 1.98.1)"
+                       onErrorMessage="dev-test seed skipped: not a fresh install">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM DATABASECHANGELOG WHERE FILENAME NOT LIKE '%initial-seed-changeLog.xml'</sqlCheck>
+        </preConditions>
+        <comment>Pre-1.98.1 dev-test seed: test users (user1a-user9i), their api keys, role assignments, and dev-test overrides of run-seed system-property values.</comment>
+        <sqlFile path="initial-seed-devtest.sql" relativeToChangelogFile="true"
+                 splitStatements="true" stripComments="true" endDelimiter=";"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-seed-dev-test-bk" author="matthias" context="dev-test">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="dev-test backup table skipped: not a fresh install"
+                       onErrorMessage="dev-test backup table skipped: not a fresh install">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM DATABASECHANGELOG WHERE FILENAME NOT LIKE '%initial-seed-changeLog.xml'</sqlCheck>
+        </preConditions>
+        <comment>RSPAC-964 dev-test backup table, recreated (empty) for schema parity with main; the `external` column is dropped because the original backup predated it. Kept in its own changeset rather than the seed SQL so the DDL's implicit commit cannot split the seed's DML.</comment>
+        <sql>create table if not exists FileStoreRoot_Bk_spac964 select * from FileStoreRoot</sql>
+        <sql>alter table FileStoreRoot_Bk_spac964 drop column external</sql>
+    </changeSet>
+
+    <changeSet id="rsdev-416-seed-cloud" author="matthias" context="cloud">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="cloud seed skipped: not a fresh install (existing role ids differ from the seeded -1..-4)"
+                       onErrorMessage="cloud seed skipped: not a fresh install">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM DATABASECHANGELOG WHERE FILENAME NOT LIKE '%initial-seed-changeLog.xml'</sqlCheck>
+        </preConditions>
+        <comment>Community edition only: grant RECORD:SHARE to the four base roles (Admin/User/PI/Sysadmin), as the original changeLog-0.22 (2015) did.</comment>
+        <sql>insert into Role_permissionStrings (Role_id, permissionStrings) values
+            (-1,'RECORD:SHARE:property_owner=${self}'),
+            (-2,'RECORD:SHARE:property_owner=${self}'),
+            (-3,'RECORD:SHARE:property_owner=${self}'),
+            (-4,'RECORD:SHARE:property_owner=${self}')</sql>
+    </changeSet>
+
+</databaseChangeLog>

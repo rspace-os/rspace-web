@@ -261,6 +261,15 @@ Enterprise Institutional SSO: `-Ddeployment.sso.type=TEST -Dmock.remote.username
 
 Community: `-Ddeployment.cloud=true`
 
+Each variant also selects a Liquibase context, which controls how database changesets
+are applied. RSpace deployments use one of three context strings:
+
+- **`run`** — Enterprise / production (the default, from `defaultDeployment.properties`)
+- **`run,dev-test`** — local dev and test runs (from `dev/deployment.properties`); adds test/sample data
+- **`run,cloud`** — Community / cloud
+
+See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md` for what each context tag means.
+
 #### Configure logging levels for debugging purposes
 
 Adding the following to the command line:
