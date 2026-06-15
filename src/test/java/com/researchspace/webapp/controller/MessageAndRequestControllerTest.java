@@ -13,6 +13,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.comms.CalendarEvent;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.dtos.IControllerInputValidator;
@@ -24,6 +25,7 @@ import com.researchspace.service.impl.PermissionsUtilsStub;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.Set;
+import net.fortuna.ical4j.validate.ValidationException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
 import org.junit.Before;
@@ -34,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
@@ -49,12 +52,14 @@ public class MessageAndRequestControllerTest {
   @Mock IControllerInputValidator validator;
   @Mock ApplicationContext context;
   @Mock MessageOrRequestCreatorManager reqCreateMgr;
+  MockHttpServletRequest request;
   IPermissionUtils permUtilsStub;
 
   //
   @Before
   public void setUp() throws Exception {
     permUtilsStub = new PermissionsUtilsStub();
+    request = new MockHttpServletRequest();
   }
 
   @After
@@ -110,6 +115,20 @@ public class MessageAndRequestControllerTest {
         ctrller.getUsernamesFromInput(
             admin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));
     assertEquals(1, users.size());
+  }
+
+  @Test
+  public void creatCalendarEntry() throws ValidationException {
+    CalendarEvent event = new CalendarEvent();
+    event.setStart("2020-05-19T13:00:00Z");
+    event.setEnd("2020-05-19T15:00:00Z");
+    assertTrue(ctrller.createCalendarEvent(event, request).getData());
+
+    // set start after end fails
+    event.setStart("2020-05-19T17:00:00Z");
+    AjaxReturnObject<Boolean> aro = ctrller.createCalendarEvent(event, request);
+    assertNull(aro.getData());
+    assertEquals(1, aro.getError().getErrorMessages().size());
   }
 
   @Test

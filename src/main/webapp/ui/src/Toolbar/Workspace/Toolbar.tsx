@@ -1,79 +1,63 @@
-import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
-import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
-import { faList } from "@fortawesome/free-solid-svg-icons/faList";
-import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
-import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
-import { faStream } from "@fortawesome/free-solid-svg-icons/faStream";
-import { faThList } from "@fortawesome/free-solid-svg-icons/faThList";
-import { faUsers } from "@fortawesome/free-solid-svg-icons/faUsers";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import { ThemeProvider } from "@mui/material/styles";
-import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { produce } from "immer";
+"use strict";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import Analytics from "../../components/Analytics";
-import BaseToolbar from "../../components/BaseToolbar";
-import ShareDialog from "../../components/ShareDialog";
-import TreeSort from "../../components/TreeSort";
-import AnalyticsContext from "../../stores/contexts/Analytics";
+import { produce } from "immer";
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import materialTheme from "../../theme";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import MenuItem from "@mui/material/MenuItem";
+import Menu from "@mui/material/Menu";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
+import { faList } from "@fortawesome/free-solid-svg-icons/faList";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
+import { faUsers } from "@fortawesome/free-solid-svg-icons/faUsers";
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
+import { faThList } from "@fortawesome/free-solid-svg-icons/faThList";
+import { faStream } from "@fortawesome/free-solid-svg-icons/faStream";
+
+import TagDialog from "./TagDialog";
+import CompareDialog from "./CompareDialog";
+import RenameDialog from "./RenameDialog";
+import ShareDialog from "../../components/ShareDialog";
+
+import BaseToolbar from "../../components/BaseToolbar";
+import TreeSort from "../../components/TreeSort";
 import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
-import CompareDialog from "./CompareDialog";
-import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
-import TagDialog from "./TagDialog";
+import Analytics from "../../components/Analytics";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 
-type WorkspaceToolbarContext = React.ContextType<typeof AnalyticsContext>;
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const workspaceSettings: any;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const $: any;
-declare function abandonSearch(): void;
-declare function resetSearch(): void;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare let resetToolbar: any;
-declare function tree_view(): void;
-declare function list_view(): void;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare function doWorkspaceSearch(url: string, settings: any): void;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare function getAndDisplayWorkspaceResults(url: string, settings: any): void;
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-class WorkspaceToolbar extends React.Component<any, any> {
-  declare context: WorkspaceToolbarContext;
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  simpleSearch: any;
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  advancedSearch: any;
-
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  constructor(props: any) {
+class WorkspaceToolbar extends React.Component {
+  constructor(props) {
     super(props);
     this.state = {
       open: [false, false],
       anchorEl: [null, null],
       advancedOpen: false,
       hideIcons: false,
-      treeView: workspaceSettings.currentViewMode === "TREE_VIEW",
+      treeView: workspaceSettings.currentViewMode == "TREE_VIEW",
       sharedFilter: workspaceSettings.sharedFilter,
       favoritesFilter: workspaceSettings.favoritesFilter,
       templatesFilter: workspaceSettings.templatesFilter,
       viewableItemsFilter: workspaceSettings.viewableItemsFilter,
-      pioEnabled: props.domContainer.getAttribute("data-pio-enabled") === "true",
+      pioEnabled:
+        props.domContainer.getAttribute("data-pio-enabled") === "true",
       ontologiesFilter: workspaceSettings.ontologiesFilter,
-      evernoteEnabled: props.domContainer.getAttribute("data-evernote-enabled") === "true",
-      asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
-      labgroupsFolderId: props.domContainer.getAttribute("data-labgroups-folder-id"),
+      evernoteEnabled:
+        props.domContainer.getAttribute("data-evernote-enabled") === "true",
+      asposeEnabled:
+        props.domContainer.getAttribute("data-aspose-enabled") === "true",
+      labgroupsFolderId: props.domContainer.getAttribute(
+        "data-labgroups-folder-id",
+      ),
     };
 
     this.simpleSearch = React.createRef();
@@ -83,9 +67,11 @@ class WorkspaceToolbar extends React.Component<any, any> {
   componentDidMount() {
     this.checkSavedSettings();
 
+    // Bad practise. Change when the reset button is in React
+    const toolbar = this;
     $(document).on("click", "#resetSearch", () => {
       abandonSearch();
-      this.setState({
+      toolbar.setState({
         sharedFilter: workspaceSettings.sharedFilter,
         favoritesFilter: workspaceSettings.favoritesFilter,
         templatesFilter: workspaceSettings.templatesFilter,
@@ -95,12 +81,12 @@ class WorkspaceToolbar extends React.Component<any, any> {
     });
 
     // Sets up callback function so that regular JS listeners can reset the toolbar after navigating to a folder for e.g.
-    resetToolbar = () => {
+    resetToolbar = function () {
       workspaceSettings.sharedFilter = false;
       workspaceSettings.favoritesFilter = false;
       workspaceSettings.templatesFilter = false;
       resetSearch();
-      this.setState({
+      toolbar.setState({
         sharedFilter: workspaceSettings.sharedFilter,
         favoritesFilter: workspaceSettings.favoritesFilter,
         templatesFilter: workspaceSettings.templatesFilter,
@@ -121,20 +107,13 @@ class WorkspaceToolbar extends React.Component<any, any> {
   // When you search => open a document => go back
   // This function repopulates the searches with saved queries
   checkSavedSettings = () => {
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    let localQueries: any[] = [],
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      term: any,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      filter: any,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      from: any,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      to: any;
+    let localQueries = [],
+      term,
+      filter,
+      from,
+      to;
 
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-    workspaceSettings.options.map((_: any, idx: any) => {
+    workspaceSettings.options.map((_, idx) => {
       filter = workspaceSettings.options[idx];
       term = workspaceSettings.terms[idx];
 
@@ -145,7 +124,10 @@ class WorkspaceToolbar extends React.Component<any, any> {
       }
 
       localQueries.push({
-        filter: filter === "global" && workspaceSettings.options.length > 1 ? "fullText" : filter,
+        filter:
+          filter === "global" && workspaceSettings.options.length > 1
+            ? "fullText"
+            : filter,
         term,
         from: from === "null" ? null : from,
         to: to === "null" ? null : to,
@@ -153,7 +135,9 @@ class WorkspaceToolbar extends React.Component<any, any> {
     });
 
     if (localQueries.length > 1) {
-      this.setState({ advancedOpen: true }, () => this.advancedSearch.current.setQueries(localQueries));
+      this.setState({ advancedOpen: true }, () =>
+        this.advancedSearch.current.setQueries(localQueries),
+      );
     } else if (localQueries.length === 1) {
       this.simpleSearch.current.setQueries(localQueries);
 
@@ -163,8 +147,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleOpen = (idx: any, event: any) => {
+  handleOpen = (idx, event) => {
     // Capture the anchor element synchronously, because by the time the
     // setState updater runs, React may have nulled out `event.currentTarget`
     // (it is only valid during the synchronous event handler). If we read it
@@ -172,50 +155,43 @@ class WorkspaceToolbar extends React.Component<any, any> {
     // Menu to render in the top-left corner of the viewport rather than next
     // to the button that opened it.
     const anchor = event.currentTarget;
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      open: produce(prevState.open, (draft: any) => {
+    this.setState((prevState) => ({
+      open: produce(prevState.open, (draft) => {
         draft[idx] = true;
       }),
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      anchorEl: produce(prevState.anchorEl, (draft: any) => {
+      anchorEl: produce(prevState.anchorEl, (draft) => {
         draft[idx] = anchor;
       }),
     }));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleClose = (idx: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      open: produce(prevState.open, (draft: any) => {
+  handleClose = (idx) => {
+    this.setState((prevState) => ({
+      open: produce(prevState.open, (draft) => {
         draft[idx] = false;
       }),
     }));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  toggleAdvanced = (filter: any, term: any, from: any, to: any) => {
+  toggleAdvanced = (filter, term, from, to) => {
     if (this.state.advancedOpen) {
       this.setState({ advancedOpen: false });
     } else {
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      const queries: any[] = [];
+      const queries = [];
 
-      if (filter === "global") {
+      if (filter == "global") {
         queries.push({ filter: "fullText", term });
       } else {
         queries.push({ filter, term, from, to });
       }
 
-      this.setState({ advancedOpen: true }, () => this.advancedSearch.current.setQueries(queries));
+      this.setState({ advancedOpen: true }, () =>
+        this.advancedSearch.current.setQueries(queries),
+      );
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleHideIcons = (state: any) => {
+  handleHideIcons = (state) => {
     this.setState({ hideIcons: state });
   };
 
@@ -245,8 +221,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
     this.context.trackEvent("user:view:all:workspace");
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  toggleFilter = (filter: any) => {
+  toggleFilter = (filter) => {
     this.setState(
       {
         [filter]: !this.state[filter],
@@ -290,7 +265,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
 
   displayWorkspace = () => {
     this.setWorkspaceSettings();
-    const url = `/workspace/ajax/view/${workspaceSettings.parentFolderId}`;
+    const url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
 
     if (workspaceSettings.searchMode) {
       doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
@@ -302,11 +277,14 @@ class WorkspaceToolbar extends React.Component<any, any> {
   setWorkspaceSettingsUrl = () => {
     workspaceSettings.parentFolderId = this.state.labgroupsFolderId;
     workspaceSettings.grandparentFolderId = null;
-    workspaceSettings.url = `/workspace/ajax/view/${this.state.labgroupsFolderId}`;
+    workspaceSettings.url =
+      "/workspace/ajax/view/" + this.state.labgroupsFolderId;
   };
 
   setWorkspaceSettings = () => {
-    workspaceSettings.currentViewMode = this.state.treeView ? "TREE_VIEW" : "LIST_VIEW";
+    workspaceSettings.currentViewMode = this.state.treeView
+      ? "TREE_VIEW"
+      : "LIST_VIEW";
     workspaceSettings.sharedFilter = this.state.sharedFilter;
     workspaceSettings.favoritesFilter = this.state.favoritesFilter;
     workspaceSettings.templatesFilter = this.state.templatesFilter;
@@ -333,7 +311,19 @@ class WorkspaceToolbar extends React.Component<any, any> {
         />
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
-            <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
+            <SocialActions
+              onCreateRequest={this.props.eventHandlers.onCreateRequest}
+            />
+            <Tooltip title="Create a calendar entry" enterDelay={300}>
+              <IconButton
+                id="createCalendarEntryDlgLink"
+                color="inherit"
+                data-test-id="toolbar-calendar"
+                aria-label="Create a calendar entry"
+              >
+                <FontAwesomeIcon icon={faCalendarAlt} />
+              </IconButton>
+            </Tooltip>
           </Box>
         )}
         <Box
@@ -352,7 +342,11 @@ class WorkspaceToolbar extends React.Component<any, any> {
             color="inherit"
             aria-label="View mode"
           >
-            {this.state.treeView ? <FontAwesomeIcon icon={faStream} /> : <FontAwesomeIcon icon={faList} />}
+            {this.state.treeView ? (
+              <FontAwesomeIcon icon={faStream} />
+            ) : (
+              <FontAwesomeIcon icon={faList} />
+            )}
           </IconButton>
         </Tooltip>
         <Menu
@@ -366,7 +360,11 @@ class WorkspaceToolbar extends React.Component<any, any> {
           open={this.state.open[0]}
           onClose={() => this.handleClose(0)}
         >
-          <MenuItem onClick={this.openTreeView} data-test-id="toolbar-view-tree" aria-label="Tree view">
+          <MenuItem
+            onClick={this.openTreeView}
+            data-test-id="toolbar-view-tree"
+            aria-label="Tree view"
+          >
             <FontAwesomeIcon icon={faStream} style={{ paddingRight: "10px" }} />
             Tree view
           </MenuItem>
@@ -410,12 +408,26 @@ class WorkspaceToolbar extends React.Component<any, any> {
               open={this.state.open[1]}
               onClose={() => this.handleClose(1)}
             >
-              <MenuItem onClick={this.openFolderView} id="folderView_1" data-test-id="toolbar-view-folders">
-                <FontAwesomeIcon icon={faFolderOpen} style={{ paddingRight: "10px" }} />
+              <MenuItem
+                onClick={this.openFolderView}
+                id="folderView_1"
+                data-test-id="toolbar-view-folders"
+              >
+                <FontAwesomeIcon
+                  icon={faFolderOpen}
+                  style={{ paddingRight: "10px" }}
+                />
                 Folder view
               </MenuItem>
-              <MenuItem onClick={this.openViewAll} id="viewableItemsView_1" data-test-id="toolbar-view-all">
-                <FontAwesomeIcon icon={faThList} style={{ paddingRight: "10px" }} />
+              <MenuItem
+                onClick={this.openViewAll}
+                id="viewableItemsView_1"
+                data-test-id="toolbar-view-all"
+              >
+                <FontAwesomeIcon
+                  icon={faThList}
+                  style={{ paddingRight: "10px" }}
+                />
                 View all
               </MenuItem>
             </Menu>
@@ -456,7 +468,9 @@ class WorkspaceToolbar extends React.Component<any, any> {
               <IconButton
                 onClick={() => {
                   this.toggleFilter("sharedFilter");
-                  this.context.trackEvent("user:filter:shared_with_me:workspace");
+                  this.context.trackEvent(
+                    "user:filter:shared_with_me:workspace",
+                  );
                 }}
                 id="sharedFilter_1"
                 color={this.state.sharedFilter ? "default" : "inherit"}
@@ -547,7 +561,9 @@ class WorkspaceToolbar extends React.Component<any, any> {
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />
-            {this.state.advancedOpen && <AdvancedSearch ref={this.advancedSearch} />}
+            {this.state.advancedOpen && (
+              <AdvancedSearch ref={this.advancedSearch} />
+            )}
             <TagDialog />
             <CompareDialog />
             <RenameDialog />
@@ -561,10 +577,8 @@ class WorkspaceToolbar extends React.Component<any, any> {
 
 WorkspaceToolbar.contextType = AnalyticsContext;
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let rootNode: any;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let domContainer: any;
+let rootNode;
+let domContainer;
 
 /*
  * We remember the last props so that renderToolbar only needs to be passed the
@@ -577,8 +591,7 @@ let prevProps = {
   },
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-(window as any).renderToolbar = (newProps: any) => {
+window.renderToolbar = (newProps) => {
   if (!rootNode) {
     domContainer = document.getElementById("toolbar2");
     rootNode = createRoot(domContainer);
@@ -593,7 +606,9 @@ let prevProps = {
       ...(newProps?.eventHandlers ?? {}),
     },
   };
-  rootNode.render(<WorkspaceToolbar domContainer={domContainer} {...prevProps} />);
+  rootNode.render(
+    <WorkspaceToolbar domContainer={domContainer} {...prevProps} />,
+  );
 };
 
 /*
@@ -602,6 +617,5 @@ let prevProps = {
  * dispatched above.
  */
 window.addEventListener("load", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  (window as any).renderToolbar();
+  window.renderToolbar();
 });
