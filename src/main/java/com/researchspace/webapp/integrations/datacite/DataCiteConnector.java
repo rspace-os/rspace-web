@@ -6,7 +6,7 @@ import com.researchspace.datacite.model.DataCiteDoi;
 /**
  * Connects to DataCite for registering identifiers. Holds one client per {@link
  * InventorySettingType}: IGSN (configured from datacite.* system properties) and PDINST (from
- * pdinst.* system properties). The no-arg variants operate on the IGSN client.
+ * pdinst.datacite.* system properties). The no-arg variants operate on the IGSN client.
  */
 public interface DataCiteConnector {
 

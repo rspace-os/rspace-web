@@ -115,6 +115,9 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
     boolean result = false;
     ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
+    if (identifier == null) {
+      throw new NotFoundException(createNotFoundMessage("identifier", identifierId));
+    }
     apiHandler.assertInventoryAndIdentifierTypeEnabled(
         user, settingTypeForDoiType(identifier.getDoiType()));
     Validate.isTrue(

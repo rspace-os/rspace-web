@@ -284,9 +284,13 @@ public class ApiInventoryDOI extends LinkableApiObject {
     boolean contentChanged = false;
 
     // doiType may hold values that are not IdentifierType names (e.g. the "dois" JSON:API
-    // literal copied from DataCite responses), which must not override the entity default
+    // literal copied from DataCite responses), which must not override the entity default.
+    // Only apply the incoming type when creating a new identifier (transient, no id yet):
+    // an existing identifier's type is immutable so it keeps its provider routing (IGSN vs PDINST).
     IdentifierType incomingType = EnumUtils.getEnum(IdentifierType.class, getDoiType());
-    if (incomingType != null && !incomingType.equals(dbIdentifier.getType())) {
+    if (dbIdentifier.getId() == null
+        && incomingType != null
+        && !incomingType.equals(dbIdentifier.getType())) {
       dbIdentifier.setType(incomingType);
       contentChanged = true;
     }

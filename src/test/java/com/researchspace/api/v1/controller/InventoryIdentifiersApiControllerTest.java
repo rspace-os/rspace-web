@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,11 +18,13 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +40,7 @@ class InventoryIdentifiersApiControllerTest {
   @Mock private InstrumentEntityApiManager mockInstrumentApiMgr;
   @Mock private SampleApiManager mockSampleApiMgr;
   @Mock private DataCiteConnector mockDataCiteConnector;
+  @Mock private MessageSourceUtils mockMessages;
 
   private InventoryIdentifiersApiController controller;
   private User user;
@@ -49,6 +53,7 @@ class InventoryIdentifiersApiControllerTest {
     ReflectionTestUtils.setField(controller, "instrumentApiMgr", mockInstrumentApiMgr);
     ReflectionTestUtils.setField(controller, "sampleApiMgr", mockSampleApiMgr);
     ReflectionTestUtils.setField(controller, "dataCiteConnector", mockDataCiteConnector);
+    ReflectionTestUtils.setField(controller, "messages", mockMessages);
     user = TestFactory.createAnyUser("any");
   }
 
@@ -151,5 +156,12 @@ class InventoryIdentifiersApiControllerTest {
 
     verify(mockApiHandler)
         .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PDINST);
+  }
+
+  @Test
+  void deleteThrowsNotFoundWhenIdentifierMissing() {
+    when(mockIdentifierMgr.getIdentifierById(404L)).thenReturn(null);
+
+    assertThrows(NotFoundException.class, () -> controller.deleteIdentifier(404L, user));
   }
 }
