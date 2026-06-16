@@ -45,7 +45,7 @@ describe("createApiDocsConfiguration", () => {
     expect(inventory).toMatchObject({
       title: "RSpace Inventory",
       slug: "rspace-inventory",
-      url: "https://example.com/resources/rspace_api_inventory_specs_2_13_0.yaml",
+      url: "https://example.com/resources/rspace_api_inventory_specs_beta_instruments_3_0.yaml",
     });
     // Only the ELN spec is the default document.
     expect(inventory).not.toHaveProperty("default", true);
