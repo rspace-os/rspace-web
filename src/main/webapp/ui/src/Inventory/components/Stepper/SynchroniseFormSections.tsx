@@ -59,6 +59,7 @@ type InstrumentTemplateSections = {
   barcodes: boolean;
   identifiers: boolean;
   attachments: boolean;
+  permissions: boolean;
   customFields: boolean;
 };
 
@@ -131,6 +132,7 @@ const defaultFormSectionExpandedState = (): FormSectionsState =>
       barcodes: false,
       identifiers: false,
       attachments: false,
+      permissions: false,
       customFields: false,
     },
     mixed: {

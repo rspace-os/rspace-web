@@ -27,6 +27,9 @@ import SubSampleBatchForm from "../Subsample/BatchForm";
 import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 
 class ResizeObserver {
   observe(): void {}
@@ -246,6 +249,12 @@ describe("Form Section Order", () => {
             activeResult: makeMockInstrumentTemplate({
               owner: personAttrs(),
             }),
+          }),
+        ],
+        [
+          "Instrument Template New Form",
+          getSectionNames(<InstrumentTemplateNewRecordForm />, {
+            activeResult: makeMockInstrumentTemplate({ id: null, globalId: null }),
           }),
         ],
         [
