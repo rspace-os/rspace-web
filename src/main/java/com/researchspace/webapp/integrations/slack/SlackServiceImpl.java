@@ -20,6 +20,7 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,9 @@ public class SlackServiceImpl implements SlackService {
 
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired RecordManager recordManager;
+
+  @Value("${slack.api.base.url}")
+  private String slackApiBaseUrl;
 
   private RestTemplate restTemplate = new RestTemplate();
 
@@ -126,7 +130,7 @@ public class SlackServiceImpl implements SlackService {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    URI channelsHistoryURI = new URI("https://slack.com/api/conversations.history");
+    URI channelsHistoryURI = new URI(slackApiBaseUrl + "/conversations.history");
     List<SlackMessage> messages = new ArrayList<>();
 
     RequestEntity<MultiValueMap<String, String>> requestEntity;
@@ -180,7 +184,7 @@ public class SlackServiceImpl implements SlackService {
       throws URISyntaxException, SlackErrorResponseException {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    URI usersListURI = new URI("https://slack.com/api/users.list");
+    URI usersListURI = new URI(slackApiBaseUrl + "/users.list");
 
     RequestEntity<MultiValueMap<String, String>> requestEntity;
     ResponseEntity<MembersList> responseEntity;

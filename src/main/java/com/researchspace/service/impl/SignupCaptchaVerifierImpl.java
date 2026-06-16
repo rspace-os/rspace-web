@@ -36,6 +36,9 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
   @Value("${user.signup.captcha.secret}")
   private String googleCaptchaSecret;
 
+  @Value("${user.signup.captcha.verify.url}")
+  private String googleCaptchaVerifyUrl;
+
   @Override
   public String verifyCaptchaFromRequest(HttpServletRequest request) {
 
@@ -80,7 +83,7 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
 
   public ResponseEntity<Map<Object, Object>> verifyRecaptchaAtGoogle(String captchaResponse) {
 
-    String uri = "https://www.google.com/recaptcha/api/siteverify";
+    String uri = googleCaptchaVerifyUrl;
     RestTemplate template = new RestTemplate();
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -110,5 +113,9 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
 
   public void setGoogleCaptchaSecret(String signupCaptchaSecret) {
     this.googleCaptchaSecret = signupCaptchaSecret;
+  }
+
+  public void setGoogleCaptchaVerifyUrl(String googleCaptchaVerifyUrl) {
+    this.googleCaptchaVerifyUrl = googleCaptchaVerifyUrl;
   }
 }
