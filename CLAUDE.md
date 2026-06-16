@@ -240,7 +240,7 @@ All schema changes via Liquibase changesets in `src/main/resources/sqlUpdates/`.
 
 **Liquibase changeset format:**
 - File name: `changeLog-<ticket-id>.xml`
-- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and `context="run"`
+- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and a `context`. RSpace deployments use one of three context strings: `run` (production), `run,dev-test` (local dev/tests), `run,cloud` (Community). Tag schema changes `context="run"` (applies in all three); use `dev-test` for local/test-only data and `cloud` for Community-only data. See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
 - Use standard Liquibase XML elements: `<createTable>`, `<addColumn>`, `<addForeignKeyConstraint>`, `<createIndex>`, etc.
 - Baseline migration: `rs-dbbaseline-utf8.sql` (fresh installs only)
 
@@ -255,7 +255,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 3. **Test class separation:** `*Test.java` (transactional rollback) and `*IT.java` (real commits) run in different Maven phases. Mixing them causes failures.
 4. **Lazy loading in tests:** Spring transactional tests with auto-rollback mask lazy-loading exceptions that will surface in production.
 5. **Form data size:** Local Jetty limits form data to 200KB (Tomcat: 2MB). Override with `-Dorg.eclipse.jetty.server.Request.maxFormContentSize=2000000`.
-6. **Liquibase context:** Use `-Dliquibase.context=run` when running migrations locally.
+6. **Liquibase context:** A changeset only runs when its `context` matches the active launch string. Local dev/test default to `run,dev-test` (set in `dev/deployment.properties`); production is `run`; Community is `run,cloud`. Tag new changesets `run` unless they are dev/test- or cloud-only — see `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
 7. **Service naming:** Service beans must end in `Manager` for AOP transaction proxying (configured in `applicationContext-service.xml`).
 8. **TinyMCE plugin iframes:** Plugin dialogs (e.g., `internalLink.jsp`) load in iframes and don't inherit the main page decorator. If they use `global.js` functions that depend on DOM templates (e.g., `blockUI.html` for `RS.blockPage()`), those templates must be explicitly `<jsp:include>`d.
 
@@ -322,7 +322,7 @@ DevDocs/                           # Developer documentation
 
 - **GitHub Actions:** `.github/workflows/lint-and-test.yml` (public CI) — auto-detects frontend vs Java changes and runs appropriate test suites
 - **Jenkins:** `Jenkinsfile` (internal CI with code coverage)
-- Code quality: SonarQube, SpotBugs, Checkstyle
+- Code quality: SonarQube, Checkstyle
 - **PR template:** `.github/pull_request_template.md` — requires a description; design decisions and testing notes optional; include screenshots for UI changes
 
 ## Agent-Specific Config Files

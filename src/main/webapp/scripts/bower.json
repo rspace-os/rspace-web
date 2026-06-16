@@ -35,8 +35,7 @@
     "select2": "~4.0",
     "mathjs": "^3.17.0",
     "jquery.scrollTo": "^2.1.2",
-    "js-owncloud-client": "*",
-    "swagger-ui": "^5.31.0"
+    "js-owncloud-client": "*"
   },
   "resolutions": {
     "jquery": "~2.1.3"

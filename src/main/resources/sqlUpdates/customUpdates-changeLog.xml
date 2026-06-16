@@ -5,7 +5,6 @@
     <!--  only customChange changeSets should be placed below here, these must run AFTER all other liquibase updates as they use Java Entities which will need
      to be in sync with the database.  -->
 
-    <include relativeToChangelogFile="true" file="rspac-2559-fix-missing-media-file-acls.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-310-perform-hash-apiKeys.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-292-custom.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-607-perform-doi-bulk-update.xml"/>

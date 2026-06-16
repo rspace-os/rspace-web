@@ -23,7 +23,6 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -251,7 +250,6 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     tags = apiTagInfo;
   }
 
-  @SuppressFBWarnings
   @JsonIgnore
   public String getDBStringFromTags() {
     if (tags == null || tags.isEmpty()) {

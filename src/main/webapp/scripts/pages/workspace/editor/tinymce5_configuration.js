@@ -248,10 +248,110 @@ var tinymcesetup = {
 			return '<ul class="rte-autocomplete dropdown-menu mentions-list-wrapper"></ul>';
 		},
 
+		// RSDEV-992: the plugin's default highlighter builds a regex from its internal query;
+		// because of the caret issue (see `source`) that query is always empty, and an empty
+		// query produces /()/ig which matches every character boundary and wraps each character
+		// of every entry in <strong>, stalling large lists. Skip highlighting when there is
+		// no query.
+		highlighter: function (text) {
+			if (!this.query) {
+				return text;
+			}
+			return text.replace(
+				new RegExp('(' + this.query.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1') + ')', 'ig'),
+				function (match, group) {
+					return '<strong>' + group + '</strong>';
+				}
+			);
+		},
+
 		// get the items to be shown in the pop up box
 		source(query, process, delimiter) {
+			// RSDEV-992: in this TinyMCE version the mention plugin's caret lands in the
+			// '#autocomplete-delimiter' span, so the typed text never reaches '#autocomplete-searchtext'
+			// and the plugin always passes an empty `query`. That made every lookup send term="" and
+			// return the entire shared group, which for large labgroups stalled rendering and showed an
+			// empty list. Read the actually-typed text from the autocomplete span (inside the editor
+			// iframe) and use it as the search term so the server filters the recipient list.
+			var term = query;
+			try {
+				var ed = tinymce.activeEditor;
+				// Locate the ACTIVE session's span via the caret: aborted sessions, autosaves
+				// or reloads can leave stale #autocomplete spans earlier in the document, and
+				// document-order querySelector would read those instead of the typed text.
+				var autocomplete = null;
+				var caretInSpan = false;
+				if (ed) {
+					var selNode = ed.selection && ed.selection.getNode();
+					if (selNode && selNode.closest) {
+						autocomplete = selNode.closest('#autocomplete');
+						caretInSpan = !!autocomplete;
+					}
+					if (!autocomplete) {
+						var spans = ed.getBody().querySelectorAll('#autocomplete');
+						autocomplete = spans.length ? spans[spans.length - 1] : null;
+					}
+				}
+				if (autocomplete) {
+					var typed = autocomplete.textContent || "";
+					// In some engines the caret escapes the span and typed characters land in
+					// nodes AFTER it; collect following-sibling text up to the caret.
+					if (!caretInSpan) {
+						var rng = ed.selection && ed.selection.getRng ? ed.selection.getRng() : null;
+						var holdsCaret = function (node) {
+							return rng && (node === rng.startContainer || (node.contains && node.contains(rng.startContainer)));
+						};
+						// text of `node` up to the caret: full text when the caret is not inside
+						// it, otherwise only the part before the caret (descending into children,
+						// so an element sibling does not contribute text past the caret)
+						var textUpToCaret = function (node) {
+							if (rng && node === rng.startContainer) {
+								return (node.textContent || "").substring(0, rng.startOffset);
+							}
+							if (!holdsCaret(node)) {
+								return node.textContent || "";
+							}
+							var collected = "";
+							for (var child = node.firstChild; child; child = child.nextSibling) {
+								collected += textUpToCaret(child);
+								if (holdsCaret(child)) {
+									break;
+								}
+							}
+							return collected;
+						};
+						for (var node = autocomplete.nextSibling; node; node = node.nextSibling) {
+							typed += textUpToCaret(node);
+							if (holdsCaret(node)) {
+								break;
+							}
+						}
+					}
+					// strip the zero-width no-break space left by the plugin's dummy caret span
+					typed = typed.replace(/\ufeff/g, "").trim();
+					if (delimiter && typed.indexOf(delimiter) === 0) {
+						// trim again: whitespace directly after the delimiter survives the first
+						// trim ("@ ro" -> " ro") and would be sent to the server
+						typed = typed.substring(delimiter.length).trim();
+					}
+					if (typed) {
+						term = typed;
+					}
+				}
+			} catch (e) {
+				console.warn("mentions: could not read typed text, falling back to plugin query", e);
+			}
+			// RSDEV-992: lookups race - the broad term="" request fired on the initial '@' can
+			// resolve after a later, narrower request and clobber the filtered dropdown. Tag each
+			// lookup and ignore responses that are no longer the latest.
+			var mentionsConfig = tinymcesetup.mentions;
+			mentionsConfig._lookupSeq = (mentionsConfig._lookupSeq || 0) + 1;
+			var seq = mentionsConfig._lookupSeq;
 			let id = $('.rs-global-id a:not(.recordInfoIcon)').text().replace(/\D/g, '');
-			var get_users = $.get("/messaging/ajax/recipients", { term: query, messageType: "SIMPLE_MESSAGE", targetFinderPolicy: "STRICT", recordId: id }, function (data) {
+			var get_users = $.get("/messaging/ajax/recipients", { term: term, messageType: "SIMPLE_MESSAGE", targetFinderPolicy: "STRICT", recordId: id }, function (data) {
+				if (seq !== mentionsConfig._lookupSeq) {
+					return; // a newer lookup is in flight or already rendered
+				}
 				data = data.data;
 				if (!data) {
 					process({});
@@ -260,9 +360,17 @@ var tinymcesetup = {
 				for (var i = 0; i < data.length; i++) {
 					data[i].name = data[i].firstName + " " + data[i].lastName + " <" + data[i].username + ">";
 				}
+				// RSDEV-992: the server returns an unordered set; sort so the list is scannable
+				// and narrowing as you type is visible
+				data.sort(function (a, b) {
+					return a.name.localeCompare(b.name);
+				});
 				process(data);
 			});
 			get_users.fail(function () {
+				if (seq !== mentionsConfig._lookupSeq) {
+					return;
+				}
 				process({});
 			});
 		},
@@ -405,6 +513,7 @@ tinymce.PluginManager.add('commandpalette', function (editor) {
 var initTinyMCE_cachedPropertiesResponse;
 var initTinyMCE_cachedIntegrationsResponse;
 var initTinyMCE_cachedBoxSelectRequest;
+var initTinyMCE_cachedDropboxScriptRequest;
 var initTinyMCE_cachedOneDriveScriptRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
@@ -431,6 +540,23 @@ function loadBoxSelectScript() {
 	}
 
 	return initTinyMCE_cachedBoxSelectRequest;
+}
+
+function loadDropboxScript() {
+	if (typeof Dropbox === 'object') {
+		return $.Deferred().resolve().promise();
+	}
+
+	if (!initTinyMCE_cachedDropboxScriptRequest) {
+		initTinyMCE_cachedDropboxScriptRequest = $.getScript("https://www.dropbox.com/static/api/2/dropins.js");
+		initTinyMCE_cachedDropboxScriptRequest.fail(function () {
+			initTinyMCE_cachedDropboxScriptRequest = null;
+		});
+	} else {
+		console.log('using cached dropbox script request');
+	}
+
+	return initTinyMCE_cachedDropboxScriptRequest;
 }
 
 function loadOneDriveScript() {
@@ -745,6 +871,9 @@ function initTinyMCE(selector) {
 		}
 
 		var dependencyRequests = [];
+		if (dropboxEnabled) {
+			dependencyRequests.push(loadDropboxScript());
+		}
 		if (boxEnabled && hasValidBoxClientId) {
 			dependencyRequests.push(loadBoxSelectScript());
 		}
@@ -770,7 +899,7 @@ function initTinyMCE(selector) {
 	requestsPromise.always(function () {
 		Promise.all([
 			legacyDependencyLoadPromise.catch(function (error) {
-				console.log('box, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				console.log('box, dropbox, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
 				console.error(error);
 			}),
 			vitePluginLoadPromise.catch(function (error) {

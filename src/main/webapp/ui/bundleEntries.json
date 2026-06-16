@@ -1,6 +1,7 @@
 {
   "about": "src/eln/about/index.tsx",
   "accountActivity": "src/my-rspace/profile/AccountActivity.jsx",
+  "apiDocs": "src/modules/api/ApiDocsEntrypoint.tsx",
   "appBar": "src/eln/AppBar.tsx",
   "apps": "src/eln/apps/index.tsx",
   "associatedInventoryRecords": "src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",

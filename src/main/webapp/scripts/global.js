@@ -1989,6 +1989,9 @@ function initNetFilesLoginDialog() {
 
 function _getStoreOrSystemById(id, array) {
   var result;
+  if (!array) {
+    return result;
+  }
   $.each(array, function(i, storeOrSystem) {
     if (storeOrSystem.id == id) {
       result = storeOrSystem;
@@ -2247,21 +2250,6 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
     return;
   }
 
-  // Resolve the file system up front (synchronous, from the client's list). A
-  // disabled/removed file system isn't in the list, so show a message rather than
-  // fetching and appending the login dialog and then crashing on fileSystem.authType.
-  var fileSystem;
-  if (fileSystemId != null) {
-    fileSystem = getFileSystemById(fileSystemId);
-  } else if (fileStoreId != null) {
-    var fileStore = getFileStoreById(fileStoreId);
-    fileSystem = fileStore && fileStore.fileSystem;
-  }
-  if (!fileSystem) {
-    apprise('This file system is no longer available; it may have been disabled or removed. Please contact your System Admin.');
-    return;
-  }
-
   var jqxhrPage = $.get('/netFiles/ajax/netFilesLoginView');
 
   jqxhrPage.done(function (page) {
@@ -2269,6 +2257,23 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
     $(document.body).append(page);
 
     initNetFilesLoginDialog();
+
+    // Resolve the file system from the client's list. This must run after
+    // initNetFilesLoginDialog(), which populates userFileStores/fileSystems from
+    // the JSON globals defined in the just-appended netFilesLoginView fragment. A
+    // disabled/removed file system isn't in the list, so show a message rather than
+    // crashing on fileSystem.authType.
+    var fileSystem;
+    if (fileSystemId != null) {
+      fileSystem = getFileSystemById(fileSystemId);
+    } else if (fileStoreId != null) {
+      var fileStore = getFileStoreById(fileStoreId);
+      fileSystem = fileStore && fileStore.fileSystem;
+    }
+    if (!fileSystem) {
+      apprise('This file system is no longer available; it may have been disabled or removed. Please contact your System Admin.');
+      return;
+    }
 
     if (fileSystem.authType === "PASSWORD") {
       showUsernamePasswordDialog(fileSystem, afterLoginCallback);
