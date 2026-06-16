@@ -210,7 +210,15 @@ cmd_down()    { compose down; }
 cmd_build()   { compose build; }
 cmd_ps()      { compose ps; print_urls; }
 cmd_logs()    { compose logs -f "${1:-app}"; }
-cmd_restart() { compose restart app; }
+# NOT `compose restart`: that restarts the SAME container with the env baked in
+# at creation time, so a container created by the first `up` / `reset-db` (which
+# set RSPACE_DB_MODE=drop-recreate-db) would replay the drop and WIPE the schema
+# on every restart. Force-recreate with keepdbintact instead — this also re-reads
+# the launcher env and .env (so debug/hotswap/etc. knobs set in .env take effect).
+cmd_restart() {
+  db_volume_exists || die "no database for this worktree yet — run '${0##*/} up' first"
+  RSPACE_DB_MODE="keepdbintact" compose up -d --force-recreate app
+}
 
 cmd_reload() {
   echo "rspace-dev: recompiling changed Java ..."
