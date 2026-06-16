@@ -185,6 +185,12 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   private InventorySettingType settingTypeFor(IdentifierType identifierType) {
+    if (identifierType == null) {
+      // identifiers persisted before the type column was populated load with a null type;
+      // they predate PDINST, so default to IGSN (matches DigitalObjectIdentifier's own default)
+      // instead of letting the switch below throw a NullPointerException.
+      return InventorySettingType.IGSN;
+    }
     switch (identifierType) {
       case IGSN_DATACITE:
         return InventorySettingType.IGSN;
