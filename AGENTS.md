@@ -76,6 +76,37 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
 
+### Experimental: Dockerized dev stack (per worktree)
+
+An experimental Docker workflow can boot the whole stack (MariaDB + Jetty
+backend + Vite frontend) for the current git worktree, with the worktree source
+bind-mounted in (frontend hot-reloads; Java changes apply via `rspace-dev
+reload`). It lives in `docker/dev/` (launcher `docker/dev/rspace-dev`, docs in
+`docker/dev/README.md`). Each worktree gets its own isolated instance with
+auto-assigned host ports, so several can run concurrently.
+
+```bash
+./docker/dev/rspace-dev up      # build + start db, backend, frontend
+./docker/dev/rspace-dev down    # stop + remove containers (keeps data + caches)
+./docker/dev/rspace-dev nuke    # destroy this worktree's instance AND its volumes
+```
+
+**Agent guidance:** when a developer wants to run RSpace locally — especially
+across multiple worktrees — you MAY mention this option and explain how it
+works. Do NOT start it on their behalf: never run `rspace-dev up` (or otherwise
+launch the containers) unless the user explicitly asks you to. It is
+resource-heavy (a full JVM, database, and Node server per worktree) and not yet
+officially supported, so leave the decision to launch it to the developer.
+
+**Tearing down:** `rspace-dev down` stops an instance (reversible; keeps the
+database, node_modules, build output, and shared caches), while `rspace-dev
+nuke` destroys it along with this worktree's volumes (database, node_modules,
+build output, search indices, filestore). Both are scoped to the current
+worktree and never affect another worktree or the shared Maven/pnpm caches. You
+MAY run these when the user asks you to stop or destroy their instance. `nuke`
+permanently deletes that worktree's local dev data, so confirm first unless the
+user was explicit, and never run it on your own initiative.
+
 ### Frontend Development (watch mode)
 
 ```bash
