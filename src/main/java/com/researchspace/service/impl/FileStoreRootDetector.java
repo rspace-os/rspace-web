@@ -25,6 +25,20 @@ public class FileStoreRootDetector extends AbstractAppInitializor {
   public void onAppStartup(ApplicationContext applicationContext) {
     setupInternalFileStore();
     setupExtFileStore();
+    warnIfFilePropertiesWithoutRoot();
+  }
+
+  /**
+   * Startup diagnostic (formerly the runAlways Liquibase changeset 1-35-16-4-7a, moved here in
+   * RSDEV-416): warn if any FileProperty has no associated FileStoreRoot.
+   */
+  private void warnIfFilePropertiesWithoutRoot() {
+    long orphaned = fileStoreMeta.countFilePropertiesWithoutRoot();
+    if (orphaned > 0) {
+      log.warn(
+          "There are {} FileProperty row(s) not associated with a FileStoreRoot (root_id is null).",
+          orphaned);
+    }
   }
 
   public void onInitialAppDeployment() {
