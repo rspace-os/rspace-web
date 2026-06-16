@@ -8,7 +8,7 @@ import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Model } from "./common";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   searchStore: {},
   uiStore: {

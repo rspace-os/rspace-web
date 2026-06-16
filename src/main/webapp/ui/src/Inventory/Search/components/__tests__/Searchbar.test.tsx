@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
 import {
@@ -73,4 +74,3 @@ describe("Searchbar", () => {
     expect(screen.getByRole("searchbox")).toHaveValue("foo");
   });
 });
-

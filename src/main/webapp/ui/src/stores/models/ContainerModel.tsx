@@ -37,7 +37,7 @@ import {
   mapPermissioned,
 } from "../definitions/PermissionedData";
 import { type BlobUrl } from "../../util/types";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import LocationModel, { type LocationAttrs } from "./LocationModel";

@@ -35,7 +35,7 @@ import ValidatingSubmitButton, {
   IsValid,
 } from "../../components/ValidatingSubmitButton";
 import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
-import getRootStore from "../../stores/stores/RootStore";
+import getRootStore from "../../stores/stores/getRootStore";
 import { hasLocation } from "../../stores/models/HasLocation";
 import Analytics from "../../components/Analytics";
 

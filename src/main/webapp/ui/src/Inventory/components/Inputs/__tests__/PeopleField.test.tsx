@@ -3,7 +3,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import PeopleField from "../PeopleField";
 import Alerts from "../../Alerts";
-import getRootStore from "../../../../stores/stores/RootStore";
+import getRootStore from "../../../../stores/stores/getRootStore";
 import * as PersonMocking from "../../../../stores/models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../../stores/models/PersonModel";
 import { runInAction } from "mobx";

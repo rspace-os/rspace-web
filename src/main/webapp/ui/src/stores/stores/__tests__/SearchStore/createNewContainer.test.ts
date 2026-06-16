@@ -1,5 +1,6 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from 'vitest';
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 import PersonModel from "../../../models/PersonModel";
 import { makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
 import fc from "fast-check";
@@ -89,4 +90,3 @@ describe("method: createNewContainer", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
-

@@ -7,7 +7,7 @@ import { makeMockContainer } from "../ContainerModel/mocking";
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
   }})); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({})
 }));
 describe("batchEditableInstance", () => {

@@ -5,7 +5,7 @@ import { makeMockSubSample } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     uiStore: {
       setVisiblePanel: () => {},

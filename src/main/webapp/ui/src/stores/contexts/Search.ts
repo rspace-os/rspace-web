@@ -1,7 +1,7 @@
 import React, { type Context } from "react";
 import { type Search } from "../definitions/Search";
 import { type Record } from "../definitions/Record";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 
 /*
  * This context is used to encapsulte the entire scope of a search operation,

@@ -7,7 +7,7 @@ import FieldCard from "../FieldCard";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../../stores/stores/getRootStore", () => ({
   default: () => ({})
 }));
 describe("FieldCard", () => {

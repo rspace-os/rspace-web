@@ -7,7 +7,7 @@ import {
 } from "mobx";
 import { mkAlert } from "../../contexts/Alert";
 import ApiService from "../../../common/InvApiService";
-import getRootStore from "../../stores/RootStore";
+import getRootStore from "../../stores/getRootStore";
 import { globalIdPatterns, type GlobalId } from "../../definitions/BaseRecord";
 import { omitNull, match, filterObject } from "../../../util/Util";
 import { parseInteger } from "../../../util/parsers";

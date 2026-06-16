@@ -6,7 +6,7 @@ import { makeMockSubSample } from "../SubSampleModel/mocking";
 import fc, { type Arbitrary } from "fast-check";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),

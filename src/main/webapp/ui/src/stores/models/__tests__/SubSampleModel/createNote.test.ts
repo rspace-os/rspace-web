@@ -3,7 +3,7 @@ import { makeMockSubSample } from "./mocking";
 import ApiService from "../../../../common/InvApiService";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   peopleStore: {
     currentUser: {

@@ -7,7 +7,7 @@ import { subsampleAttrs } from "../SubSampleModel/mocking";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import { type Factory } from "../../../definitions/Factory";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   peopleStore: {},
   unitStore: {

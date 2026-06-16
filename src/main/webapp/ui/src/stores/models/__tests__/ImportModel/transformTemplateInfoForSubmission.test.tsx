@@ -2,7 +2,7 @@ import { test, describe, expect, vi } from 'vitest';
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   authStore: {
     isSynchronizing: true,

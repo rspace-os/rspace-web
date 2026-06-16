@@ -8,7 +8,7 @@ import { type Id, type GlobalId } from "../definitions/BaseRecord";
 import { type InventoryRecord } from "../definitions/InventoryRecord";
 import ApiService from "../../common/InvApiService";
 import { type URL } from "../../util/types";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";

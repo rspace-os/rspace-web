@@ -13,7 +13,7 @@ import { storesContext } from "../../../../stores/stores-context";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 // break import cycles
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),

@@ -5,7 +5,7 @@ import { arrayOfSameElements } from "../../../../util/__tests__/helpers";
 import { type FieldModelAttrs } from "../../FieldModel";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     assertValidUnitId: () => {},

@@ -1,7 +1,7 @@
 import ApiService from "../../common/InvApiService";
 import { type _LINK } from "../../util/types";
 import { type Container } from "../definitions/Container";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import {
   observable,
   computed,

@@ -5,7 +5,7 @@ import RsSet from "../../util/set";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import { type SampleAttrs } from "./SampleModel";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import { mkAlert } from "../contexts/Alert";

@@ -13,7 +13,7 @@ import { mockAttachment } from "../../../../../stores/definitions/__tests__/Atta
 import userEvent from "@testing-library/user-event";
 
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../../stores/stores/getRootStore", () => ({
   default: () => ({})
 }));
 describe("PreviewAction", () => {

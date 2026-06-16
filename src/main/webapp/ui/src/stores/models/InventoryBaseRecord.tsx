@@ -28,7 +28,7 @@ import {
   type AdjustableTableRow,
   type AdjustableTableRowOptions,
 } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { mkAlert, type Alert } from "../contexts/Alert";
 import { AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import ExtraFieldModel from "./ExtraFieldModel";

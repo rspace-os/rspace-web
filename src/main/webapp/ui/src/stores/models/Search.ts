@@ -21,7 +21,7 @@ import {
   type ApiRecordType,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowLabel } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { mkAlert } from "../contexts/Alert";
 import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";

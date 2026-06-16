@@ -3,7 +3,7 @@ import { test, describe, expect, beforeEach, vi } from 'vitest';
 import { makeMockTemplate } from "./mocking";
 
 import { sampleAttrs } from "../SampleModel/mocking";
-import getRootStore from "../../../stores/RootStore";
+import getRootStore from "../../../stores/getRootStore";
 import InvApiService from "../../../../common/InvApiService";
 import {
   type AxiosResponse,
@@ -20,7 +20,7 @@ const mockRootStore = {
   },
 };
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => mockRootStore,
 }));
 vi.mock("../../../../common/InvApiService", () => ({

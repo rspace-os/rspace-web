@@ -4,7 +4,7 @@ import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({})
 }));
 describe("action: populateFromJson", () => {

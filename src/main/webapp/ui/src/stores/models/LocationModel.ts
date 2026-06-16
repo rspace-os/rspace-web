@@ -1,4 +1,4 @@
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import ContainerModel from "./ContainerModel";
 import InventoryBaseRecord from "./InventoryBaseRecord";
 import SubSampleModel from "./SubSampleModel";

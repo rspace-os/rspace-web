@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call */
 import { test, describe, expect, vi } from 'vitest';
 import { makeMockContainer, containerAttrs } from "../ContainerModel/mocking";
@@ -160,4 +161,3 @@ describe("action: deleteRecords", () => {
     });
   });
 });
-

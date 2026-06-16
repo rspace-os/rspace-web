@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from 'vitest';
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
@@ -24,4 +25,3 @@ describe("constructor", () => {
     expect(field.content).toBe(2.03);
   });
 });
-

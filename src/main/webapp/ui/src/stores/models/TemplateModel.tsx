@@ -17,7 +17,7 @@ import {
   type CreateOption,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { mkAlert } from "../contexts/Alert";
 import { type CoreFetcherArgs } from "../definitions/Search";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";

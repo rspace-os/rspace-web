@@ -1,5 +1,6 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from 'vitest';
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 import SampleModel from "../../../models/SampleModel";
 describe("method: createNewSample", () => {
@@ -19,4 +20,3 @@ describe("method: createNewSample", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
-

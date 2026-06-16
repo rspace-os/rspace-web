@@ -4,7 +4,7 @@ import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import "@/__tests__/assertUrlSearchParams";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   authStore: {
     isSynchronizing: false,

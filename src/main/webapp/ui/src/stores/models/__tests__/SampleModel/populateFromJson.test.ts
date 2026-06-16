@@ -6,7 +6,7 @@ import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),

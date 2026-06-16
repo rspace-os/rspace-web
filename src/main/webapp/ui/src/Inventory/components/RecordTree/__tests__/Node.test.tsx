@@ -15,7 +15,7 @@ import materialTheme from "../../../../theme";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import Node from "../Node";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       search: {},

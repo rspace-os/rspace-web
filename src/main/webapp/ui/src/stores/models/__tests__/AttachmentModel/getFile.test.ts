@@ -3,7 +3,7 @@ import { ExistingAttachment } from "../../AttachmentModel";
 import ApiService from "../../../../common/InvApiService";
 import { AxiosResponse } from "@/common/axios";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({}),
 })); // break import cycle
 describe("getFile", () => {

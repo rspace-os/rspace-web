@@ -9,7 +9,7 @@ import { type URL as Url, type _LINK } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
 import ApiService from "../../common/InvApiService";
 import { type RecordDetails } from "../../stores/definitions/Record";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { justFilenameExtension } from "../../util/files";
 import { type Person } from "../definitions/Person";
 import { type Attachment } from "../definitions/Attachment";

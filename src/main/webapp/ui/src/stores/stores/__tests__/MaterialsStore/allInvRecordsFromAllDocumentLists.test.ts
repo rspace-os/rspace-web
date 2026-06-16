@@ -1,5 +1,6 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect } from 'vitest';
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";
 import { sampleAttrs } from "../../../models/__tests__/SampleModel/mocking";
@@ -83,4 +84,3 @@ describe("allInvRecordsFromAllDocumentLists", () => {
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(2);
   });
 });
-

@@ -9,7 +9,7 @@ import { makeMockContainer } from "../../../../stores/models/__tests__/Container
 import { personAttrs } from "../../../../stores/models/__tests__/PersonModel/mocking";
 import Card from "../Card";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   searchStore: {
     search: {
