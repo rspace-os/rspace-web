@@ -8,10 +8,23 @@
         <pattern>/resources/*</pattern>
         <pattern>/image/getImage/**</pattern>
         <pattern>/Streamfile/*</pattern>
-        <pattern>/public/status</pattern>
-        <pattern>/public/version</pattern>
-        <pattern>/public/bannerImageName</pattern>
-        <pattern>/public/apiDocs</pattern>
+        <!-- The trailing * on these otherwise-exact paths is required, not cosmetic.
+             SiteMesh tests the exclude list against servletPath+pathInfo+"?"+queryString
+             (see PageParser2ContentProcessor.extractRequestPath), so a wildcard-free
+             pattern is defeated the moment any query string is appended: the page then
+             falls through to a decorator and renders the header/footer. The legacy
+             swagger link /public/apiDocs?urls.primaryName=... is the canonical example.
+             A trailing * absorbs the ?query so full-page React pages stay undecorated.
+
+             NOTE: any NEW full-page React app (a page that should render bare, without the
+             RSpace header/footer) must add its own exclude pattern here, and that pattern
+             MUST end in * for the same reason. An exact, wildcard-free pattern will appear
+             to work until someone appends a query string, at which point the page silently
+             gets decorated. -->
+        <pattern>/public/status*</pattern>
+        <pattern>/public/version*</pattern>
+        <pattern>/public/bannerImageName*</pattern>
+        <pattern>/public/apiDocs*</pattern>
         <pattern>/slack/callbacks/*</pattern>
         <pattern>/msteams/rspaceAuth*</pattern>
         <pattern>/officeOnline/*</pattern>
@@ -22,15 +35,15 @@
         <pattern>/externalTinymcePlugins/*</pattern>
         <pattern>*/public/publishedView/publishedDocuments/*</pattern>
         <pattern>/molbiol/*</pattern>
-        <pattern>/inventory</pattern>
+        <pattern>/inventory*</pattern>
         <pattern>/inventory/**</pattern>
         <pattern>/listOfMaterials/**</pattern>
         <pattern>*/public/inventory/**</pattern>
-        <pattern>/apps</pattern>
+        <pattern>/apps*</pattern>
         <pattern>/Gallery</pattern>
         <pattern>/Gallery*</pattern>
         <pattern>/Gallery/**</pattern>
-        <pattern>/about</pattern>
+        <pattern>/about*</pattern>
         <pattern>/about/**</pattern>
     </excludes>
     <decorator name="public" page="externalPages.jsp">
