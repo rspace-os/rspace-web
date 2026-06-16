@@ -122,7 +122,7 @@ pipeline {
                 ./mvnw clean package -DgenerateReactDist -DskipTests=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
-                -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
+                -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                 '''
             }
 

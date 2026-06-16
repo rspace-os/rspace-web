@@ -148,9 +148,14 @@ create a separate database called `rspace_hib`, you can do that with the followi
         CREATE DATABASE rspace_hib collate 'utf8mb4_unicode_ci';
         GRANT ALL ON rspace_hib.* TO 'rspacedbuser'@'localhost';
 
-Then you should start the RSpace with `-Denvironment=drop-recreate-hibernate-db` param (rather than
-standard `-Denvironment=drop-recreate-db`), which will generate the schema out of the annotations,
-then start the webapp but with all data coming from `rspace_hib` database.
+Then run a build with `-Denvironment=drop-recreate-hibernate-db` (rather than the standard
+`-Denvironment=drop-recreate-db`): the `hibernate4-maven-plugin` `export` goal drops/recreates
+`rspace_hib` and populates it with the schema generated from the Hibernate/JPA annotations.
+
+This is a DDL-only comparison, so `rspace_hib` should contain *only* the Hibernate-generated schema.
+Do not boot the webapp against `rspace_hib`, and do not run the Liquibase seed/changesets on it: the
+seed targets tables that are not Hibernate entities (e.g. the Spring Batch `BATCH_*` tables) and would
+fail or add noise to the diff.
 
 Next, you can compare a regular database schema created from baseline script and  liquibase updates 
 (i.e. one in your regular `rspace` database), to the schema auto-generated from Hibernate/JPA 
