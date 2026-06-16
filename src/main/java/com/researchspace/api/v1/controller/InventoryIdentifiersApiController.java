@@ -21,6 +21,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -114,10 +115,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   public boolean deleteIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
     boolean result = false;
-    ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
-    if (identifier == null) {
-      throw new NotFoundException(createNotFoundMessage("identifier", identifierId));
-    }
+    ApiInventoryDOI identifier = getIdentifierByIdOr404(identifierId);
     apiHandler.assertInventoryAndIdentifierTypeEnabled(
         user, settingTypeForDoiType(identifier.getDoiType()));
     Validate.isTrue(
@@ -174,9 +172,23 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   }
 
   private void assertInventoryAndIdentifierEnabledForId(Long identifierId, User user) {
-    ApiInventoryDOI identifier = identifierMgr.getIdentifierById(identifierId);
+    ApiInventoryDOI identifier = getIdentifierByIdOr404(identifierId);
     apiHandler.assertInventoryAndIdentifierTypeEnabled(
-        user, settingTypeForDoiType(identifier == null ? null : identifier.getDoiType()));
+        user, settingTypeForDoiType(identifier.getDoiType()));
+  }
+
+  /**
+   * Loads the identifier, translating the DAO's {@link ObjectRetrievalFailureException} for an
+   * unknown id into a {@link NotFoundException} so the API returns 404 rather than 500. {@code
+   * getIdentifierById} delegates to {@code GenericDaoHibernate#get}, which throws (never returns
+   * null) when the id does not exist.
+   */
+  private ApiInventoryDOI getIdentifierByIdOr404(Long identifierId) {
+    try {
+      return identifierMgr.getIdentifierById(identifierId);
+    } catch (ObjectRetrievalFailureException e) {
+      throw new NotFoundException(createNotFoundMessage("identifier", identifierId));
+    }
   }
 
   private InventorySettingType settingTypeForOid(GlobalIdentifier oid) {

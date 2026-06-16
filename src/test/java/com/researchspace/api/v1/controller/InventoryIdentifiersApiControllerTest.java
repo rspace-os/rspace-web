@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettin
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.MessageSourceUtils;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -159,9 +161,19 @@ class InventoryIdentifiersApiControllerTest {
   }
 
   @Test
-  void deleteThrowsNotFoundWhenIdentifierMissing() {
-    when(mockIdentifierMgr.getIdentifierById(404L)).thenReturn(null);
+  void deleteTranslatesMissingIdentifierTo404() {
+    // getIdentifierById -> GenericDaoHibernate#get throws (never returns null) for an unknown id
+    when(mockIdentifierMgr.getIdentifierById(404L))
+        .thenThrow(new ObjectRetrievalFailureException(DigitalObjectIdentifier.class, 404L));
 
     assertThrows(NotFoundException.class, () -> controller.deleteIdentifier(404L, user));
+  }
+
+  @Test
+  void publishTranslatesMissingIdentifierTo404() {
+    when(mockIdentifierMgr.getIdentifierById(404L))
+        .thenThrow(new ObjectRetrievalFailureException(DigitalObjectIdentifier.class, 404L));
+
+    assertThrows(NotFoundException.class, () -> controller.publishIdentifier(404L, user));
   }
 }
