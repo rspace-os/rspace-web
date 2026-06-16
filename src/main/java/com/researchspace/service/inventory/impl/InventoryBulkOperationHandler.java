@@ -9,6 +9,7 @@ import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.controller.SubSamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -311,6 +312,9 @@ public class InventoryBulkOperationHandler {
         case CONTAINER:
           return containersApiController.changeContainerOwner(
               recInfo.getId(), (ApiContainer) recInfo, errors, user);
+        case INSTRUMENT_TEMPLATE:
+          return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
+              recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);
         default:
           throw new IllegalArgumentException(
               "bulk owner change doesn't support records of type: " + recInfo.getType());

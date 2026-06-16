@@ -14,6 +14,7 @@ import Search from "../models/Search";
 import { type Basket, type BasketAttrs } from "../definitions/Basket";
 import BasketModel from "../models/Basket";
 import TemplateModel, { type TemplateAttrs } from "../models/TemplateModel";
+import InstrumentTemplateModel from "../models/InstrumentTemplateModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import { type RootStore } from "./RootStore";
 import {
@@ -377,11 +378,44 @@ export default class SearchStore {
     return template;
   }
 
+  async createNewInstrumentTemplate(): Promise<InstrumentTemplateModel> {
+    const currentUsersGroups =
+      await this.rootStore.peopleStore.fetchCurrentUsersGroups();
+    const instrumentTemplate = new InstrumentTemplateModel(new MemoisedFactory(), {
+      id: null,
+      type: "INSTRUMENT_TEMPLATE",
+      globalId: null,
+      name: "",
+      permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
+      tags: null,
+      owner: null,
+      created: null,
+      deleted: false,
+      lastModified: null,
+      modifiedByFullName: null,
+      attachments: [],
+      barcodes: [],
+      identifiers: [],
+      sharingMode: "OWNER_GROUPS",
+      _links: [],
+    });
+    instrumentTemplate.setAttributes({
+      sharedWith: currentUsersGroups.map((group) => ({
+        group,
+        shared: true,
+        itemOwnerGroup: true,
+      })),
+    });
+    await this.createNewHelper(instrumentTemplate);
+    return instrumentTemplate;
+  }
+
   createNew(
-    type: "sample" | "container" | "template",
+    type: "sample" | "container" | "template" | "instrumentTemplate",
   ): Promise<InventoryBaseRecord> {
     if (type === "sample") return this.createNewSample();
     if (type === "container") return this.createNewContainer();
+    if (type === "instrumentTemplate") return this.createNewInstrumentTemplate();
     return this.createNewTemplate();
   }
 

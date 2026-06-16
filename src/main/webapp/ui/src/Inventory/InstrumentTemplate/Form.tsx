@@ -18,6 +18,7 @@ import {
   setFormSectionError,
 } from "../components/Stepper/StepperPanelHeader";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
+import AccessPermissions from "../components/Fields/AccessPermissions";
 import { type Person } from "../../stores/definitions/Person";
 
 type OverviewSectionArgs = {
@@ -171,6 +172,14 @@ function InstrumentTemplateForm(): ReactNode {
             recordType="instrumentTemplate"
           >
             <AttachmentsField fieldOwner={activeResult} />
+          </StepperPanel>
+          <StepperPanel
+            icon="instrumentTemplate"
+            title="Access Permissions"
+            sectionName="permissions"
+            recordType="instrumentTemplate"
+          >
+            <AccessPermissions fieldOwner={activeResult} />
           </StepperPanel>
           <ExtraFieldSection activeResult={activeResult} />
         </>

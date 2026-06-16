@@ -21,6 +21,7 @@ import SubSampleBatchForm from "../Subsample/BatchForm";
 import MixedBatchForm from "../Mixed/BatchForm";
 import InstrumentForm from "../Instrument/Form";
 import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
@@ -267,6 +268,12 @@ describe("Form Section Order", () => {
             activeResult: makeMockInstrumentTemplate({
               owner: personAttrs(),
             }),
+          }),
+        ],
+        [
+          "Instrument Template New Form",
+          getSectionNames(<InstrumentTemplateNewRecordForm />, {
+            activeResult: makeMockInstrumentTemplate({ id: null, globalId: null }),
           }),
         ],
         [

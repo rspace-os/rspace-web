@@ -57,7 +57,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   ).orElse(false);
 
   const handleCreate = async (
-    recordType: "sample" | "container" | "template",
+    recordType: "sample" | "container" | "template" | "instrumentTemplate",
   ) => {
     trackingStore.trackEvent("CreateInventoryRecordClicked", {
       type: recordType,
@@ -166,7 +166,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title="New Template"
+          title="New Sample Template"
           avatar={
             <RecordTypeIcon
               record={{
@@ -185,6 +185,29 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           }
           onClick={() => {
             void handleCreate("template");
+          }}
+        />
+        <AccentMenuItem
+          compact
+          title="New Instrument Template"
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "instrumentTemplate",
+              }}
+              color=""
+              style={{
+                width: "28px",
+                height: "28px",
+                padding: "2px",
+                paddingTop: "5px",
+                paddingLeft: "5px",
+              }}
+            />
+          }
+          onClick={() => {
+            void handleCreate("instrumentTemplate");
           }}
         />
         <Divider textAlign="left" aria-label="CSV import">
