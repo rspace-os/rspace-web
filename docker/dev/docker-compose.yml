@@ -88,6 +88,16 @@ services:
       # the IDE's hot code replace can redefine changed classes live (README
       # "Hot reloading Java"). Set to false to run plain (no agent).
       RSPACE_HOTSWAP: ${RSPACE_HOTSWAP:-true}
+      # Add the ?v= cache-busting token to legacy /scripts & /styles asset URLs
+      # in dev mode (default on); set false when debugging legacy assets.
+      RSPACE_LEGACY_ASSET_CACHE_BUSTING: ${RSPACE_LEGACY_ASSET_CACHE_BUSTING:-true}
+      # Rebuild the Lucene full-text index on startup (default off; slows boot).
+      RSPACE_INDEX_ON_STARTUP: ${RSPACE_INDEX_ON_STARTUP:-false}
+      # Optional chemistry microservice (started with `rspace-dev up --chemistry`,
+      # which activates the "chemistry" compose profile). When enabled, the
+      # entrypoint passes the chemistry.* properties to the app.
+      RSPACE_CHEMISTRY: ${RSPACE_CHEMISTRY:-false}
+      CHEMISTRY_SERVICE_URL: http://chemistry:8090
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -152,10 +162,25 @@ services:
       - "127.0.0.1:${DEBUG_PORT:-5005}:5005"
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # Chemistry microservice (OPTIONAL): structure rendering/search for the ELN
+  # chemistry features (chemistry.provider=indigo). Off by default — enable with
+  # `rspace-dev up --chemistry` (compose profile "chemistry"). The app reaches it
+  # at http://chemistry:8090 over the project network; no host port is published.
+  # ---------------------------------------------------------------------------
+  chemistry:
+    image: ${CHEMISTRY_IMAGE:-rspaceops/oss-chemistry:latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-chemistry
+    profiles: ["chemistry"]
+    volumes:
+      - chemistry-files:/home/app
+    restart: unless-stopped
+
 volumes:
   # Per-worktree (namespaced by the compose project name): isolated DB, build
   # outputs, indices, filestore, and node_modules.
   db-data:
+  chemistry-files:
   app-target:
   search-index:
   lucene-index:

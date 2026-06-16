@@ -11,8 +11,12 @@
 #   ./docker/dev/rspace-dev <command> [args]
 #
 # Commands:
-#   up [--fresh]   Build images (if needed) and start db + app + frontend.
+#   up [--fresh] [--chemistry|--no-chemistry]
+#                  Build images (if needed) and start db + app + frontend.
 #                  First boot (or --fresh) recreates the DB schema + sample data.
+#                  --chemistry also starts the optional chemistry microservice
+#                  (rspaceops/oss-chemistry) and points the app at it; the choice
+#                  persists in .env until --no-chemistry.
 #   down           Stop and remove the containers (keeps the database + caches).
 #   reload         Recompile and hot-redeploy the whole webapp (rebuilds the
 #                  Spring context) in the same JVM — applies any Java/JSP/config
@@ -128,11 +132,25 @@ env_get() { grep -E "^$1=" "${ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2-; 
 
 compose() {
   ensure_env
-  docker compose \
+  # Activate the optional chemistry profile when enabled in .env, so every
+  # compose subcommand (up/down/ps/logs/...) consistently includes the service.
+  local profiles=""
+  [ "$(env_get RSPACE_CHEMISTRY)" = "true" ] && profiles="chemistry"
+  COMPOSE_PROFILES="${profiles}" docker compose \
     --project-directory "${SCRIPT_DIR}" \
     --env-file "${ENV_FILE}" \
     -f "${COMPOSE_FILE}" \
     "$@"
+}
+
+# Persist a key=value into .env (replace existing line or append).
+env_set() {
+  local key="$1" value="$2"
+  if grep -qE "^${key}=" "${ENV_FILE}" 2>/dev/null; then
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" "${ENV_FILE}" && rm -f "${ENV_FILE}.bak"
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> "${ENV_FILE}"
+  fi
 }
 
 # True once this worktree's database volume exists (i.e. not a first boot).
@@ -143,9 +161,11 @@ db_volume_exists() {
 }
 
 print_urls() {
-  local app_port vite_port db_port debug_port
+  local app_port vite_port db_port debug_port chem
   app_port="$(env_get APP_PORT)"; vite_port="$(env_get VITE_PORT)"; db_port="$(env_get DB_PORT)"
   debug_port="$(env_get DEBUG_PORT)"
+  chem="off (enable with: up --chemistry)"
+  [ "$(env_get RSPACE_CHEMISTRY)" = "true" ] && chem="on (http://chemistry:8090, internal)"
   cat <<EOF
 
   RSpace (this worktree: $(basename "${RSPACE_SRC}"))
@@ -153,6 +173,7 @@ print_urls() {
     Vite (HMR) http://localhost:${vite_port}
     Database   127.0.0.1:${db_port}  (db=rspace user=rspacedbuser pass=rspacedbpwd)
     Debug      127.0.0.1:${debug_port:-5005}  (JDWP — attach IntelliJ "Remote JVM Debug")
+    Chemistry  ${chem}
 
     Logins: user1a .. user8h / user1234   sysadmin1 / sysWisc23!
 EOF
@@ -176,8 +197,20 @@ cmd_up() {
     printf 'DEBUG_PORT=%s\n' "${dbg}" >> "${ENV_FILE}"
     echo "rspace-dev: allocated debug port ${dbg}" >&2
   fi
-  local fresh="false"
-  [ "${1:-}" = "--fresh" ] && fresh="true"
+  local fresh="false" arg
+  for arg in "$@"; do
+    case "${arg}" in
+      --fresh)        fresh="true" ;;
+      --chemistry)    env_set RSPACE_CHEMISTRY true
+                      echo "rspace-dev: chemistry service enabled (persisted in .env)" >&2 ;;
+      --no-chemistry) env_set RSPACE_CHEMISTRY false
+                      # A profile-disabled service is invisible to later compose
+                      # commands, so stop a leftover container explicitly.
+                      docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-chemistry" >/dev/null 2>&1 || true
+                      echo "rspace-dev: chemistry service disabled (persisted in .env)" >&2 ;;
+      *) die "unknown flag for up: '${arg}'" ;;
+    esac
+  done
 
   if [ "${fresh}" = "true" ] || ! db_volume_exists; then
     echo "rspace-dev: initialising database (drop-recreate-db) — this first boot is slower." >&2

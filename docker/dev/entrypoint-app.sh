@@ -17,6 +17,13 @@ JDBC_URL="${JDBC_URL:-jdbc:mysql://db:3306/rspace}"
 JDBC_URL_MAVEN="${JDBC_URL_MAVEN:-jdbc:mysql://db:3306}"
 VITE_ORIGIN="${VITE_ORIGIN:-http://localhost:5173}"
 APP_PUBLIC_PORT="${APP_PUBLIC_PORT:-8080}"
+# Add the ?v= cache-busting token to legacy /scripts & /styles asset URLs even in
+# dev mode (default on). Set RSPACE_LEGACY_ASSET_CACHE_BUSTING=false when
+# debugging legacy frontend assets so the browser always refetches.
+LEGACY_ASSET_CACHE_BUSTING="${RSPACE_LEGACY_ASSET_CACHE_BUSTING:-true}"
+# Rebuild the Lucene full-text index on startup (default off — it slows boot and
+# is rarely needed in dev). Set RSPACE_INDEX_ON_STARTUP=true to force a reindex.
+INDEX_ON_STARTUP="${RSPACE_INDEX_ON_STARTUP:-false}"
 # Browsers scope cookies by host only, so concurrent worktree instances on
 # different localhost ports would overwrite each other's JSESSIONID and log
 # each other out. Each instance therefore gets a session cookie named after
@@ -70,6 +77,18 @@ if [ "${RSPACE_HOTSWAP:-true}" != "false" ]; then
   echo "[entrypoint] HotswapAgent enabled (JBR enhanced class redefinition)"
 fi
 
+# Optional chemistry microservice (rspace-dev up --chemistry). Points the app's
+# chemistry features at the in-network service; with the flag off the chemistry.*
+# properties stay at their (empty/disabled) defaults.
+CHEMISTRY_ARGS=()
+if [ "${RSPACE_CHEMISTRY:-false}" = "true" ]; then
+  CHEMISTRY_ARGS=(
+    -Dchemistry.provider=indigo
+    "-Dchemistry.service.url=${CHEMISTRY_SERVICE_URL:-http://chemistry:8090}"
+  )
+  echo "[entrypoint] Chemistry service enabled at ${CHEMISTRY_SERVICE_URL:-http://chemistry:8090}"
+fi
+
 echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
 echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
 
@@ -77,6 +96,7 @@ echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_P
 # the -D system properties below reach Spring at runtime and the Maven build
 # plugins (e.g. the drop-recreate-db SQL step) at build time.
 exec mvn -B jetty:run \
+  "${CHEMISTRY_ARGS[@]}" \
   -Denvironment="${DB_MODE}" \
   -Dspring.profiles.active=run \
   -DreactDevMode=true \
@@ -86,6 +106,8 @@ exec mvn -B jetty:run \
   -DRS_FILE_BASE="${RS_FILE_BASE}" \
   -Drs.hibernate.searchIndex.folder="${SEARCH_INDEX_DIR}" \
   -Drs.attachment.lucene.index.dir="${LUCENE_INDEX_DIR}" \
+  -DlegacyAssetCacheBustingInDevMode="${LEGACY_ASSET_CACHE_BUSTING}" \
+  -Drs.indexOnstartup="${INDEX_ON_STARTUP}" \
   -Dserver.urls.prefix="http://localhost:${APP_PUBLIC_PORT}" \
   -Drs.session.cookie.name="${SESSION_COOKIE_NAME}" \
   -DRS.devlogLevel=INFO \

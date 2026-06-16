@@ -112,7 +112,8 @@ Subsequent `up`s reuse the existing database and are much faster.
 
 ```bash
 ./docker/dev/rspace-dev up [--fresh]   # start (--fresh recreates the DB)
-./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db
+./docker/dev/rspace-dev up --chemistry # also start the chemistry microservice
+./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp
 ./docker/dev/rspace-dev restart        # full backend JVM restart
@@ -125,6 +126,29 @@ Subsequent `up`s reuse the existing database and are much faster.
 
 `rspace-dev compose <args>` passes anything straight through to
 `docker compose` for this stack if you need an escape hatch.
+
+## Optional: chemistry microservice
+
+RSpace's ELN chemistry features (structure drawing, rendering, and chemical
+search) are backed by a separate microservice
+([`rspaceops/oss-chemistry`](https://hub.docker.com/r/rspaceops/oss-chemistry)).
+It is **off by default**; enable it per worktree with:
+
+```bash
+./docker/dev/rspace-dev up --chemistry     # start it + point the app at it
+./docker/dev/rspace-dev up --no-chemistry  # turn it off again
+```
+
+The choice persists in `docker/dev/.env` (`RSPACE_CHEMISTRY=true`), so plain
+`up`/`down` keep honouring it. When enabled, the app is started with
+`chemistry.provider=indigo` and `chemistry.service.url=http://chemistry:8090`;
+the service is only reachable on the project's internal Docker network (no host
+port). Its working data lives in a per-worktree `chemistry-files` volume,
+removed by `nuke` like the others. Override the image with `CHEMISTRY_IMAGE` in
+`.env`.
+
+Note: toggling the flag changes the app container's environment, so the next
+`up` recreates the backend (expect the usual startup wait).
 
 ## Destroying a worktree's instance
 
