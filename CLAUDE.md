@@ -29,7 +29,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ## Tech Stack
 
 **Backend:**
-- Java 11 source level, Java 17 JDK runtime — do **not** use Java 17+ language features (e.g., records, sealed classes, pattern matching)
+- Java 17 source level and Java 17 JDK runtime (Adoptium Temurin); Java 17 language features are allowed
 - Spring Framework (MVC, Security, WebSocket)
 - Maven 3.8.1+ build tool (`./mvnw`)
 - MariaDB 10.6 or 10.11 with Hibernate ORM + Envers auditing
@@ -46,7 +46,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ## Build & Run
 
 ### Prerequisites
-- Java 17 JDK (Adoptium Temurin recommended) — required even though source level is 11
+- Java 17 JDK (Adoptium Temurin recommended)
 - Maven 3.8.1+ or use `./mvnw`
 - MariaDB 10.6 or 10.11
 - Node 24 (frontend dev only)
@@ -250,7 +250,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 
 ## Common Development Pitfalls
 
-1. **Java language level:** Source is Java 11 (`<release>11</release>`) despite using JDK 17. Do not use records, sealed classes, text blocks, or other post-Java 11 features.
+1. **Java language level:** Source and runtime are both Java 17 (`<release>17</release>`); Java 17 language features (records, sealed classes, text blocks, pattern matching) are allowed.
 2. **Transaction boundary:** Calling a DAO directly from a controller will fail silently or throw — always go through a `*Manager` service.
 3. **Test class separation:** `*Test.java` (transactional rollback) and `*IT.java` (real commits) run in different Maven phases. Mixing them causes failures.
 4. **Lazy loading in tests:** Spring transactional tests with auto-rollback mask lazy-loading exceptions that will surface in production.
