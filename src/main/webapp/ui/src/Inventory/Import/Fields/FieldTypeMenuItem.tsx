@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import MenuList from "@mui/material/MenuList";
 import Paper from "@mui/material/Paper";
 import React, { useState, forwardRef } from "react";
 import Typography from "@mui/material/Typography";
@@ -140,7 +141,13 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                   width: "100%",
                 }}
               >
-                {menuItem}
+                {/*
+                 * MUI v9's MenuItem requires a surrounding MenuList/Menu
+                 * context; when used standalone (as the type-selector trigger)
+                 * it must be wrapped in a MenuList, otherwise it throws
+                 * "MenuListContext is missing".
+                 */}
+                <MenuList disablePadding>{menuItem}</MenuList>
               </Paper>
               <Box
                 sx={{
