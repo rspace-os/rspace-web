@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,14 +26,14 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class PubchemSearcher implements ChemicalSearcher {
 
-  private static final String PUBCHEM_BASE_URL =
-      "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound";
-
   private final RestTemplate restTemplate;
+  private final String pubchemBaseUrl;
 
   @Autowired
-  public PubchemSearcher(RestTemplate restTemplate) {
+  public PubchemSearcher(
+      RestTemplate restTemplate, @Value("${pubchem.base.url}") String pubchemBaseUrl) {
     this.restTemplate = restTemplate;
+    this.pubchemBaseUrl = pubchemBaseUrl;
   }
 
   @Override
@@ -42,8 +43,8 @@ public class PubchemSearcher implements ChemicalSearcher {
     validateSearchParameters(searchType, searchTerm);
     String url =
         String.format(
-            "%s/%s/%s/property/Title,SMILES,MolecularFormula/json",
-            PUBCHEM_BASE_URL, searchType.name(), searchTerm);
+            "%s/rest/pug/compound/%s/%s/property/Title,SMILES,MolecularFormula/json",
+            pubchemBaseUrl, searchType.name(), searchTerm);
     return makeApiRequestAndParseResponse(url, searchTerm);
   }
 
@@ -94,9 +95,8 @@ public class PubchemSearcher implements ChemicalSearcher {
           .formula(property.getMolecularFormula())
           .smiles(property.getSmiles())
           .cas(cas)
-          .pngImage(
-              String.format("https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=%s&t=l", cid))
-          .pubchemUrl(String.format("https://pubchem.ncbi.nlm.nih.gov/compound/%s", cid))
+          .pngImage(String.format("%s/image/imgsrv.fcgi?cid=%s&t=l", pubchemBaseUrl, cid))
+          .pubchemUrl(String.format("%s/compound/%s", pubchemBaseUrl, cid))
           .build();
 
     } catch (Exception e) {
@@ -115,7 +115,7 @@ public class PubchemSearcher implements ChemicalSearcher {
    */
   private String fetchCasNumberFromSynonyms(String cid) {
     try {
-      String url = String.format("%s/cid/%s/synonyms/JSON", PUBCHEM_BASE_URL, cid);
+      String url = String.format("%s/rest/pug/compound/cid/%s/synonyms/JSON", pubchemBaseUrl, cid);
       log.info("Fetching synonyms from PubChem API: {}", url);
 
       ResponseEntity<PubchemSynonymsResponse> response =

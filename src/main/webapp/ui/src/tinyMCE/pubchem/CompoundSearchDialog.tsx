@@ -248,6 +248,12 @@ export default function CompoundSearchDialog({
       );
       setHasSearched(true);
       setDisplayedSearchTerm(searchTerm);
+    }).catch(() => {
+      /*
+       * `useChemicalImport.search` already reports the failure to the user via
+       * an alert toast. Swallow the rejected promise here so a handled API
+       * error does not bubble up as an unhandled rejection in the UI or tests.
+       */
     });
   }
   React.useEffect(() => {

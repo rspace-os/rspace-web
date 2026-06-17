@@ -40,7 +40,7 @@ pipeline {
                        passes green and coverage silently disappears. Guard the inputs explicitly. */
                     sh '''
                         ls ./target/*.war
-                        test -f ./src/main/webapp/ui/package-lock.json
+                        test -f ./pnpm-lock.yaml
                     '''
 
                     /* Scan the specific dependency sources, not the whole tree (which double-counts):
@@ -49,16 +49,16 @@ pipeline {
                          so RetireJS still catches those (e.g. lodash.js). Scanning the WAR alone
                          avoids reporting each dependency twice (once from the WAR, once from the
                          on-disk exploded/source copy under './').
-                       - './src/main/webapp/ui/package-lock.json' is the source of truth for the
-                         modern React/TS npm dependency tree, so scan it directly. An accurate
-                         frontend dependency scan reads the lockfile, not the bundled build output.
+                       - './pnpm-lock.yaml' is the source of truth for the modern React/TS
+                         frontend dependency tree, so scan it directly. An accurate frontend
+                         dependency scan reads the lockfile, not the bundled build output.
                          --nodeAuditSkipDevDependencies keeps coverage to deps that ship to
                          production, mirroring how the WAR excludes test-scope Java deps. */
                     dependencyCheck additionalArguments: '''
                     --nvdApiKey ${NVD_API_KEY}
                     -o './'
                     -s './target/*.war'
-                    -s './src/main/webapp/ui/package-lock.json'
+                    -s './pnpm-lock.yaml'
                     --nodeAuditSkipDevDependencies
                     -f 'XML'
                     --prettyPrint''', odcInstallation: 'OWASP'

@@ -54,6 +54,27 @@ path to your java installation.
 
 **NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>
 
+### Enable git hooks (recommended)
+
+Git pre-commit hooks are managed by [lefthook](https://lefthook.dev). Enable
+them once per clone by installing the root dependencies (Node 24 + pnpm via
+corepack required):
+
+```bash
+corepack enable pnpm
+pnpm install   # run from the repo root; the prepare script runs `lefthook install`
+```
+
+This installs a `pre-commit` hook that, on the relevant staged files:
+
+- runs `mvn spotless:check` on staged `*.java` files and **blocks the commit if
+  any need reformatting** (run `./mvnw spotless:apply` to fix), and
+- runs `pnpm run tsc` when frontend `*.ts`/`*.tsx` files are staged and
+  **blocks the commit if the type-check fails**.
+
+To bypass the hooks for a single commit (e.g. a work-in-progress), set
+`LEFTHOOK=0 git commit …`.
+
 ### Check out and compile the project
 
 Current location of the codebase is https://github.com/rspace-os/rspace-web
@@ -88,9 +109,9 @@ mvn clean package -DgenerateReactDist -DskipTests=true \
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` Maven profile,
-which installs Node/npm locally, runs `npm ci`, and runs the Vite production build,
-bundling the resulting `dist/` files into the WAR. Without this flag the frontend is
-not built.
+which installs Node/pnpm locally, runs `pnpm install --frozen-lockfile`, and runs the
+Vite production build, bundling the resulting `dist/` files into the WAR. Without this
+flag the frontend is not built.
 
 You can also check top-level Jenkinsfile file to see how internal tests builds are created by
 ResearchSpace dev team (check 'Build prodRelease-like package' stage script).  
@@ -171,6 +192,35 @@ This just runs plain Junit tests and is much faster to run:
 
 ## Running RSpace server
 
+### (Experimental) Run the whole stack in Docker
+
+> **Experimental.** This is a newer, convenience-focused workflow and is not yet
+> the officially supported way to run RSpace from source. If you hit problems,
+> fall back to the manual Maven/Jetty workflow described below. Feedback welcome.
+
+If you want a complete, running RSpace (database + backend + frontend) without
+installing Java, Maven, Node, or MariaDB locally, use the Dockerized dev stack
+in [`docker/dev/`](/docker/dev/README.md). From inside your checkout (or any git
+worktree):
+
+```bash
+./docker/dev/rspace-dev up      # build images, start db + backend + frontend
+./docker/dev/rspace-dev logs app   # watch backend startup (first boot is slow)
+```
+
+It boots the same workflow described below, just containerized: the worktree
+source is bind-mounted in (frontend changes hot-reload; Java changes apply via
+`./docker/dev/rspace-dev reload`), and each git worktree gets its own isolated
+instance with its own database and auto-assigned host ports, so several can run
+at once. The launcher prints the URL to open and the test logins. See
+[docker/dev/README.md](/docker/dev/README.md) for the full command set and
+caveats.
+
+Prerequisites: Docker Engine + Docker Compose v2 (Docker Desktop works). Only
+needed for this option; the manual workflow below does not use Docker.
+
+The rest of this section describes the manual (non-Docker) workflow.
+
 ### Launch RSpace with Maven and Jetty
 
 When starting RSpace for the first time use the following command: 
@@ -186,9 +236,9 @@ When `-DreactDevMode=true` is set, Jetty proxies frontend asset requests to a
 local Vite dev server for Hot Module Replacement (HMR). Start the Vite dev
 server in a separate terminal:
 ```bash
-cd src/main/webapp/ui
-npm ci
-npm run serve
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run serve
 ```
 
 Legacy `rst:assetUrl` references under `/scripts/**` and `/styles/**` do not add the `?v=`
@@ -239,6 +289,15 @@ Enterprise Institutional SSO: `-Ddeployment.sso.type=TEST -Dmock.remote.username
 (where the username is for a user already in the database)
 
 Community: `-Ddeployment.cloud=true`
+
+Each variant also selects a Liquibase context, which controls how database changesets
+are applied. RSpace deployments use one of three context strings:
+
+- **`run`** — Enterprise / production (the default, from `defaultDeployment.properties`)
+- **`run,dev-test`** — local dev and test runs (from `dev/deployment.properties`); adds test/sample data
+- **`run,cloud`** — Community / cloud
+
+See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md` for what each context tag means.
 
 #### Configure logging levels for debugging purposes
 

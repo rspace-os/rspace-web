@@ -9,33 +9,21 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
-import com.researchspace.model.comms.CalendarEvent;
-import com.researchspace.model.comms.Communication;
-import com.researchspace.model.comms.ICSEventGenerator;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
-import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.views.ServiceOperationResult;
-import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.ExternalMessageHandler;
 import com.researchspace.service.MessageOrRequestCreatorManager;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.security.Principal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -44,10 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import net.fortuna.ical4j.data.CalendarOutputter;
-import net.fortuna.ical4j.validate.ValidationException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -76,11 +60,9 @@ import org.springframework.web.servlet.ModelAndView;
 @SessionAttributes("request")
 public class MessageAndRequestController extends BaseController implements ApplicationContextAware {
 
-  static final String CALENDAR_FILE_BODY = "CALENDAR_FILE_BODY";
   private static final String RECIPIENT_NAMES = "recipientnames";
   private @Autowired CommunicationManager commMgr;
   private @Autowired ExternalMessageHandler externalMessageHandler;
-  private @Autowired PropertyHolder propertyHolder;
 
   private ApplicationContext context;
 
@@ -201,112 +183,6 @@ public class MessageAndRequestController extends BaseController implements Appli
       return context.getBean("strictTargetFinderPolicy", CommunicationTargetFinderPolicy.class);
     }
     return null; // we'll use default
-  }
-
-  /**
-   * @param requestID
-   * @param response
-   */
-  @GetMapping("/ical")
-  public void getICSForTimedRequest(
-      @RequestParam("id") Long requestID, HttpServletResponse response) {
-    User subject = userManager.getAuthenticatedUserInSession();
-    Communication comm = commMgr.getIfOwnerOrTarget(requestID, subject);
-    if (!comm.isMessageOrRequest()) {
-      return;
-    }
-    MessageOrRequest mor = (MessageOrRequest) comm;
-    if (mor.getRequestedCompletionDate() == null) {
-      return;
-    }
-
-    response.setContentType("text/calendar");
-    response.setHeader("Content-Disposition", "attachment; filename=rspace.ics");
-    ICSEventGenerator icalGenerator = new ICSEventGenerator();
-
-    net.fortuna.ical4j.model.Calendar ical = icalGenerator.createICalEventFor(mor);
-    CalendarOutputter outputter = new CalendarOutputter();
-    try {
-      ical.validate();
-      outputter.output(ical, response.getWriter());
-    } catch (IOException | ValidationException e) {
-      log.error("Error creating ical output.", e);
-    }
-  }
-
-  // requires ISO8601 input from the browser
-  DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
-
-  @PostMapping("/create_calendar_event")
-  @ResponseBody
-  public AjaxReturnObject<Boolean> createCalendarEvent(
-      CalendarEvent calendarEvent, HttpServletRequest request) throws ValidationException {
-    User subject = userManager.getAuthenticatedUserInSession();
-
-    if (calendarEvent.getStart() != null && !calendarEvent.getStart().isEmpty()) {
-      Instant startI = dateTimeFormatter.parse(calendarEvent.getStart(), Instant::from);
-      calendarEvent.setStartTime(new Date(startI.toEpochMilli()));
-    }
-
-    if (calendarEvent.getEnd() != null && !calendarEvent.getEnd().isEmpty()) {
-      Instant endI = dateTimeFormatter.parse(calendarEvent.getEnd(), Instant::from);
-      calendarEvent.setEndTime(new Date(endI.toEpochMilli()));
-    }
-    // If both times are specified, start time should not be after end time
-    if (calendarEvent.getStartTime() != null && calendarEvent.getEndTime() != null) {
-      Calendar startTimeCal = Calendar.getInstance();
-      Calendar endTimeCalendar = Calendar.getInstance();
-      startTimeCal.setTime(calendarEvent.getStartTime());
-      endTimeCalendar.setTime(calendarEvent.getEndTime());
-
-      if (startTimeCal.after(endTimeCalendar)) {
-        return new AjaxReturnObject<>(
-            null,
-            ErrorList.createErrListWithSingleMsg("Event start time must be before end time."));
-      }
-    }
-
-    // Add links to resources to the description field
-    addAttachmentsToDescription(calendarEvent, subject);
-
-    // Generate a calendar event
-    ICSEventGenerator icalGenerator = new ICSEventGenerator();
-    net.fortuna.ical4j.model.Calendar ical = icalGenerator.createICalEventFor(calendarEvent);
-    ical.validate();
-
-    // Store the calendar file in the http session
-    StringWriter calendarEventFileContents = new StringWriter();
-    CalendarOutputter outputter = new CalendarOutputter();
-    try {
-      outputter.output(ical, calendarEventFileContents);
-      request.getSession().setAttribute(CALENDAR_FILE_BODY, calendarEventFileContents.toString());
-
-      // Return a success response
-      return new AjaxReturnObject<>(Boolean.TRUE, null);
-    } catch (ValidationException | IOException e) {
-      log.error("Error creating ical output.", e);
-      return new AjaxReturnObject<>(null, ErrorList.createErrListWithSingleMsg(e.getMessage()));
-    }
-  }
-
-  @GetMapping("/get_calendar_event")
-  public void getCalendarEvent(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    // Get calendar file from the http session
-    String calendarEventFileContents =
-        (String) request.getSession().getAttribute(CALENDAR_FILE_BODY);
-
-    // Show an error message if there's no calendar file available.
-    if (calendarEventFileContents == null) {
-      throw new IllegalStateException(
-          "No calendar file available. Please try creating the calendar event again.");
-    }
-
-    // Output the calendar file
-    response.setContentType("text/calendar");
-    response.setHeader("Content-Disposition", "attachment; filename=rspace.ics");
-    response.setCharacterEncoding("UTF-8");
-    response.getWriter().print(calendarEventFileContents);
   }
 
   @PostMapping("/ajax/sendExternalMessage")
@@ -521,41 +397,5 @@ public class MessageAndRequestController extends BaseController implements Appli
       }
     }
     return completionDate;
-  }
-
-  private void addAttachmentsToDescription(CalendarEvent calendarEvent, User user) {
-    if (calendarEvent.getAttachments() != null && !calendarEvent.getAttachments().isEmpty()) {
-      StringBuilder newDescription = new StringBuilder();
-      newDescription.append(calendarEvent.getDescription());
-      newDescription.append("\nAttached files:\n");
-      for (String globalID : calendarEvent.getAttachments().split(",")) {
-        newDescription.append(getAttachmentText(new GlobalIdentifier(globalID), user));
-      }
-      calendarEvent.setDescription(newDescription.toString());
-    }
-  }
-
-  private String getAttachmentText(GlobalIdentifier attachmentGlobalId, User user) {
-    String attachmentName;
-
-    // Get name of the attachment
-    if (recordManager.exists(attachmentGlobalId.getDbId())) {
-      BaseRecord attachment = recordManager.get(attachmentGlobalId.getDbId());
-      assertAuthorisation(user, attachment, PermissionType.READ);
-      attachmentName = attachment.getName();
-    } else {
-      Folder folder = folderManager.getFolder(attachmentGlobalId.getDbId(), user);
-      assertAuthorisation(user, folder, PermissionType.READ);
-      attachmentName = folder.getName();
-    }
-
-    // Get URL for the resource
-    String recordURL =
-        propertyHolder.getUrlPrefix()
-            + (propertyHolder.getUrlPrefix().endsWith("/") ? "" : "/")
-            + "globalId/"
-            + attachmentGlobalId.toString();
-
-    return String.format("'%s' %s%n", attachmentName, recordURL);
   }
 }

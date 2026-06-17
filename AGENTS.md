@@ -38,7 +38,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 - Parent POM: `rspace-parent` (controls dependency versions — if a version isn't in this project's `pom.xml`, check the parent)
 
 **Frontend** (`src/main/webapp/ui/`):
-- TypeScript + React, Node 24, npm
+- TypeScript + React, Node 24, pnpm
 - Vite bundler, Material-UI v5
 - Vitest (unit tests), Playwright (component/E2E tests)
 - MobX (legacy state) + React Query (newer state)
@@ -76,12 +76,43 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
 
+### Experimental: Dockerized dev stack (per worktree)
+
+An experimental Docker workflow can boot the whole stack (MariaDB + Jetty
+backend + Vite frontend) for the current git worktree, with the worktree source
+bind-mounted in (frontend hot-reloads; Java changes apply via `rspace-dev
+reload`). It lives in `docker/dev/` (launcher `docker/dev/rspace-dev`, docs in
+`docker/dev/README.md`). Each worktree gets its own isolated instance with
+auto-assigned host ports, so several can run concurrently.
+
+```bash
+./docker/dev/rspace-dev up      # build + start db, backend, frontend
+./docker/dev/rspace-dev down    # stop + remove containers (keeps data + caches)
+./docker/dev/rspace-dev nuke    # destroy this worktree's instance AND its volumes
+```
+
+**Agent guidance:** when a developer wants to run RSpace locally — especially
+across multiple worktrees — you MAY mention this option and explain how it
+works. Do NOT start it on their behalf: never run `rspace-dev up` (or otherwise
+launch the containers) unless the user explicitly asks you to. It is
+resource-heavy (a full JVM, database, and Node server per worktree) and not yet
+officially supported, so leave the decision to launch it to the developer.
+
+**Tearing down:** `rspace-dev down` stops an instance (reversible; keeps the
+database, node_modules, build output, and shared caches), while `rspace-dev
+nuke` destroys it along with this worktree's volumes (database, node_modules,
+build output, search indices, filestore). Both are scoped to the current
+worktree and never affect another worktree or the shared Maven/pnpm caches. You
+MAY run these when the user asks you to stop or destroy their instance. `nuke`
+permanently deletes that worktree's local dev data, so confirm first unless the
+user was explicit, and never run it on your own initiative.
+
 ### Frontend Development (watch mode)
 
 ```bash
-cd src/main/webapp/ui
-npm ci
-npm run serve  # Vite dev server
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run serve  # Vite dev server
 ```
 
 ### Full Build (no tests)
@@ -91,7 +122,7 @@ mvn clean package -DgenerateReactDist -DskipTests=true
 ```
 
 The `-DgenerateReactDist` flag activates the `generateReactDistFiles` profile that
-runs `npm ci` and the Vite production build and bundles `dist/` into the WAR. It is
+runs `pnpm install --frozen-lockfile` and the Vite production build and bundles `dist/` into the WAR. It is
 opt-in: omit it and `mvn compile`/`test`/`package` skip the frontend build entirely
 (useful for fast backend-only builds, but the resulting WAR has no frontend).
 
@@ -133,21 +164,19 @@ Choosing a base class:
 ### Frontend
 
 ```bash
-cd src/main/webapp/ui
-
-npm run test          # Vitest unit tests
-npm run test:ui       # Vitest with browser UI
-npm run test-ct       # Playwright component tests
-npm run tsc           # TypeScript type check
-npm run lint          # ESLint
-npm run lint:fix      # ESLint with auto-fix
+pnpm run test          # Vitest unit tests
+pnpm run test:ui       # Vitest with browser UI
+pnpm run test-ct       # Playwright component tests
+pnpm run tsc           # TypeScript type check
+pnpm run lint          # ESLint
+pnpm run lint:fix      # ESLint with auto-fix
 ```
 
-When changing frontend code in `src/main/webapp/ui`, run the most relevant checks before finishing. At minimum, run `npm run tsc`; run `npm run test` for behavioral changes and `npm run lint` when the change could affect linted code or formatting.
+When changing frontend code in `src/main/webapp/ui`, run the most relevant checks from the repo root. At minimum, run `pnpm run tsc`; run `pnpm run test` for behavioral changes and `pnpm run lint` when the change could affect linted code or formatting.
 
 Run a single Vitest test file:
 ```bash
-npx vitest run src/components/MyComponent/__tests__/MyComponent.test.tsx
+pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 ```
 
 ### Frontend Testing Patterns
@@ -242,7 +271,7 @@ All schema changes via Liquibase changesets in `src/main/resources/sqlUpdates/`.
 
 **Liquibase changeset format:**
 - File name: `changeLog-<ticket-id>.xml`
-- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and `context="run"`
+- Each `<changeSet>` requires `id` (date-based, e.g., `2025-06-13a`), `author`, and a `context`. RSpace deployments use one of three context strings: `run` (production), `run,dev-test` (local dev/tests), `run,cloud` (Community). Tag schema changes `context="run"` (applies in all three); use `dev-test` for local/test-only data and `cloud` for Community-only data. See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
 - Use standard Liquibase XML elements: `<createTable>`, `<addColumn>`, `<addForeignKeyConstraint>`, `<createIndex>`, etc.
 - Baseline migration: `rs-dbbaseline-utf8.sql` (fresh installs only)
 
@@ -257,7 +286,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 3. **Test class separation:** `*Test.java` (transactional rollback) and `*IT.java` (real commits) run in different Maven phases. Mixing them causes failures.
 4. **Lazy loading in tests:** Spring transactional tests with auto-rollback mask lazy-loading exceptions that will surface in production.
 5. **Form data size:** Local Jetty limits form data to 200KB (Tomcat: 2MB). Override with `-Dorg.eclipse.jetty.server.Request.maxFormContentSize=2000000`.
-6. **Liquibase context:** Use `-Dliquibase.context=run` when running migrations locally.
+6. **Liquibase context:** A changeset only runs when its `context` matches the active launch string. Local dev/test default to `run,dev-test` (set in `dev/deployment.properties`); production is `run`; Community is `run,cloud`. Tag new changesets `run` unless they are dev/test- or cloud-only — see `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
 7. **Service naming:** Service beans must end in `Manager` for AOP transaction proxying (configured in `applicationContext-service.xml`).
 8. **TinyMCE plugin iframes:** Plugin dialogs (e.g., `internalLink.jsp`) load in iframes and don't inherit the main page decorator. If they use `global.js` functions that depend on DOM templates (e.g., `blockUI.html` for `RS.blockPage()`), those templates must be explicitly `<jsp:include>`d.
 
@@ -279,8 +308,8 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 - Functional components with hooks only
 - Axios for API calls (centralized)
 - DOMPurify for any user-generated HTML (XSS prevention)
-- ESLint + Prettier enforced; run `npm run lint` before committing
-- Use the existing workspace package manager (`npm` for `src/main/webapp/ui`)
+- ESLint + Prettier enforced; run `pnpm run lint` from the repo root before committing
+- Use the existing workspace package manager (`pnpm` for `src/main/webapp/ui`)
 - Install dependencies only when needed for the task
 - Do not add new dependencies unless they are necessary to solve the requested problem
 
@@ -324,7 +353,7 @@ DevDocs/                           # Developer documentation
 
 - **GitHub Actions:** `.github/workflows/lint-and-test.yml` (public CI) — auto-detects frontend vs Java changes and runs appropriate test suites
 - **Jenkins:** `Jenkinsfile` (internal CI with code coverage)
-- Code quality: SonarQube, SpotBugs, Checkstyle
+- Code quality: SonarQube, Checkstyle
 - **PR template:** `.github/pull_request_template.md` — requires a description; design decisions and testing notes optional; include screenshots for UI changes
 
 ## Agent-Specific Config Files

@@ -85,7 +85,7 @@ mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
 When `-DreactDevMode=true` is set, start the Vite dev server in a separate
 terminal for Hot Module Replacement:
 ```bash
-cd src/main/webapp/ui && npm ci && npm run serve
+corepack enable pnpm && pnpm install --frozen-lockfile && pnpm run serve
 ```
 
 In all these cases, the DB is wiped and recreated from scratch from
@@ -112,8 +112,9 @@ which can be used when testing database updates.
 
 ### Making changes to the database schema during development
 
-See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.txt` for
-documentation on this.
+See `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md` for
+documentation on this, including the database update process and how the
+`run` / `dev-test` / `cloud` contexts are used.
 
 ### Coding standards
 

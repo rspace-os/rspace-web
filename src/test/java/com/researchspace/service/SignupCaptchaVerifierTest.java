@@ -42,6 +42,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
   public void setUp() throws Exception {
 
     captchaVerifier.setProperties(propHolder);
+    captchaVerifier.setGoogleCaptchaVerifyUrl("https://www.google.com/recaptcha/api/siteverify");
 
     stringLogger = CoreTestUtils.configureStringLogger(SignupCaptchaVerifierImpl.log);
     mockRequest = new MockHttpServletRequest();

@@ -155,6 +155,13 @@ export default defineConfig([
       ...jestDom.configs.recommended.rules,
       ...vitest.configs.recommended.rules,
       "testing-library/no-manual-cleanup": "off",
+      // `expectAccessible(el)` is our typed wrapper around `@sa11y/vitest`'s
+      // `toBeAccessible` matcher (see src/__tests__/customQueries.ts). It IS an
+      // assertion, but the rule cannot see through the function call.
+      "vitest/expect-expect": [
+        "error",
+        { assertFunctionNames: ["expect", "expectAccessible"] },
+      ],
     },
   },
 

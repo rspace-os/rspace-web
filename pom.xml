@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>2.1.6</version>
+    <version>2.2.0</version>
   </parent>
 
   <repositories>
@@ -206,15 +206,6 @@
         </configuration>
       </plugin>
 
-      <plugin>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <configuration>
-          <failOnError>false</failOnError>
-          <excludeFilterFile>build-resources/findbugs_exclude_rs.xml</excludeFilterFile>
-        </configuration>
-        <version>4.3.0</version>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
@@ -551,25 +542,6 @@
       <groupId>javax.servlet</groupId>
       <artifactId>jstl</artifactId>
       <version>${jstl.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.mnode.ical4j</groupId>
-      <artifactId>ical4j</artifactId>
-      <version>${ical4j.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-collections4</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-lang3</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>javax.servlet.jsp</groupId>
@@ -1452,7 +1424,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.25.0</version>
+      <version>2.26.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1840,24 +1812,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>annotations</artifactId>
-      <version>3.0.1</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.code.findbugs</groupId>
-          <artifactId>jsr305</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-      <version>3.0.2</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-snapgene-adapter</artifactId>
       <version>1.0.3</version>
@@ -1912,7 +1866,7 @@
 
   <profiles>
     <!-- Generates the React/Vite frontend dist files and bundles them into the WAR.
-      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the npm
+      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the pnpm
       install and Vite build out of everyday `mvn compile`/`test` runs, while CI
       packaging and release stages pass the flag explicitly (see Jenkinsfile). The
       executions use the implicit generate-resources phase so that
@@ -1934,29 +1888,29 @@
             <version>2.0.0</version>
             <configuration>
               <nodeVersion>v24.15.0</nodeVersion>
-              <npmVersion>11.14.1</npmVersion>
-              <workingDirectory>src/main/webapp/ui</workingDirectory>
+              <pnpmVersion>11.3.0</pnpmVersion>
+              <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
               <execution>
-                <id>Install node and npm locally to the project</id>
+                <id>Install node and pnpm locally to the project</id>
                 <goals>
-                  <goal>install-node-and-npm</goal>
+                  <goal>install-node-and-pnpm</goal>
                 </goals>
               </execution>
               <execution>
-                <id>Collect npm dependencies</id>
+                <id>Collect frontend dependencies</id>
                 <goals>
-                  <goal>npm</goal>
+                  <goal>pnpm</goal>
                 </goals>
                 <configuration>
-                  <arguments>${npm.dependencies.collection.arg}</arguments>
+                  <arguments>${frontend.dependencies.install.arg}</arguments>
                 </configuration>
               </execution>
               <execution>
                 <id>Build react dist files</id>
                 <goals>
-                  <goal>npm</goal>
+                  <goal>pnpm</goal>
                 </goals>
                 <configuration>
                   <arguments>run build</arguments>
@@ -2616,7 +2570,7 @@
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <spotless.version>3.5.1</spotless.version>
-    <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg>
+    <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>

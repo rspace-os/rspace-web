@@ -18,6 +18,7 @@ import com.researchspace.model.record.Record;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -99,7 +100,10 @@ public class StrictPermissionCheckingRecipientFinderPolicy
       targets.remove(subject); // don't need to send message to self unless review record
     }
 
-    if (searchTerm != null) {
+    // RSDEV-992: a blank term must not trigger searchUsers - it runs an unindexed
+    // ILIKE '%%' over the whole users table and the intersection keeps every target anyway.
+    // The mentions UI sends term="" on the initial '@' keypress.
+    if (StringUtils.isNotBlank(searchTerm)) {
       List<User> matchingUsers = userDao.searchUsers(searchTerm);
       targets.retainAll(matchingUsers);
     }

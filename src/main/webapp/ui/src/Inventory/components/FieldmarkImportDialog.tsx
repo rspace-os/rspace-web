@@ -8,7 +8,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-import { doNotAwait } from "../../util/Util";
 import { DataGridColumn } from "../../util/table";
 import {
   GridToolbarContainer,
@@ -183,8 +182,8 @@ export default function FieldmarkImportDialog({
   const [identifierFieldSelection, setIdentifierFieldSelection] =
     React.useState<IdentifierFieldSelection>({ type: "unselected" });
 
-  React.useEffect(
-    doNotAwait(async () => {
+  React.useEffect(() => {
+    void (async () => {
       if (!open) return;
       setFetchingNotebooks(true);
       setIdentifierFieldSelection({ type: "unselected" });
@@ -225,9 +224,8 @@ export default function FieldmarkImportDialog({
       } finally {
         setFetchingNotebooks(false);
       }
-    }),
-    [open],
-  );
+    })();
+  }, [open]);
 
   async function importNotebook(notebook: Notebook) {
     setImporting(true);
@@ -414,10 +412,7 @@ export default function FieldmarkImportDialog({
         />
         <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
         <DialogContent>
-          <Stack
-            spacing={2}
-            sx={{ height: "100%", flexWrap: "nowrap" }}
-          >
+          <Stack spacing={2} sx={{ height: "100%", flexWrap: "nowrap" }}>
             <Box>
               <Typography
                 variant="body2"

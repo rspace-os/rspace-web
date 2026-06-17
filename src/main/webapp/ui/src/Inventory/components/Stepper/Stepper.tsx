@@ -2,7 +2,6 @@ import { type URL } from "../../../util/types";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import Box from "@mui/material/Box";
 import useStores from "../../../stores/use-stores";
-import { doNotAwait } from "../../../util/Util";
 import CommonEditActions from "../CommonEditActions";
 import MoreInfoSidebar from "../MoreInfoSidebar";
 import Toolbar from "../Toolbar/Toolbar";
@@ -143,15 +142,17 @@ function _Stepper({
     <>
       {state === "create" && (
         <StepperActions
-          onSubmit={doNotAwait(async () => {
-            await activeResult.create();
-            navigate(
-              generateUrlFromCoreFetcherArgs(
-                activeResult.showNewlyCreatedRecordSearchParams,
-              ),
-              { modifyVisiblePanel: false },
-            );
-          })}
+          onSubmit={() => {
+            void (async () => {
+              await activeResult.create();
+              navigate(
+                generateUrlFromCoreFetcherArgs(
+                  activeResult.showNewlyCreatedRecordSearchParams,
+                ),
+                { modifyVisiblePanel: false },
+              );
+            })();
+          }}
         />
       )}
       {state === "edit" && <CommonEditActions editableObject={activeResult} />}

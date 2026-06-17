@@ -34,7 +34,6 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import ResetZoomIcon from "./ResetZoomIcon";
 import Typography from "@mui/material/Typography";
 import { useFolderOpen } from "./OpenFolderProvider";
-import { doNotAwait } from "../../../util/Util";
 import { type URL as Url } from "../../../util/types";
 
 /*
@@ -249,8 +248,8 @@ const Preview = ({
           key: "aspose",
         })),
       )
-      .do(
-        doNotAwait(async (preview) => {
+      .do((preview) => {
+        void (async () => {
           if (preview.key === "image") {
             setImageUrl({ tag: "loading" });
             try {
@@ -311,8 +310,8 @@ const Preview = ({
               });
             }
           }
-        }),
-      );
+        })();
+      });
   }, []);
 
   function onDocumentLoadSuccess({

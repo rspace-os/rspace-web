@@ -25,7 +25,6 @@ import Typography from "@mui/material/Typography";
 import Fade from "@mui/material/Fade";
 import Grid from "@mui/material/Grid";
 import ApiService from "../../../common/InvApiService";
-import { doNotAwait } from "../../../util/Util";
 import { getErrorMessage } from "../../../util/error";
 
 const SETTINGS_LABELS: Record<keyof SystemSettings["datacite"], string> = {
@@ -244,7 +243,7 @@ export default function DataciteCard({
           label="Save"
           disabled={!unsavedChanges || savingInFlight}
           loading={savingInFlight}
-          onClick={doNotAwait(onSubmitHandler)}
+          onClick={() => void onSubmitHandler()}
         />
       </CardActions>
     </Card>

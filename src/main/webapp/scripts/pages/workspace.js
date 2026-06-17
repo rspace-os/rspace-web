@@ -365,10 +365,6 @@ function toolbarButtonsEventHandler() {
     RS.trackEvent("user:open:create_request_dialog:workspace");
   });
 
-  $('#createCalendarEntryDlgLink').click(function () {
-    $('#createCalendarEntryDlg').dialog('open');
-    RS.trackEvent("user:open:create_calendar_entry_dialog:workspace");
-  });
 }
 
 function orderInfoEventHandler() {
@@ -559,8 +555,6 @@ $(document).ready(function () {
   init();
   initFormListDlg();
   initWordChooserDlg();
-  initCreateCalendarEntryDlg();
-  initAttachFileToCalendarEntryDlg();
   initCreateFromTemplateDlg();
 
   doPoll(); //poll immediately for notifications

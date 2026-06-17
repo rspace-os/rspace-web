@@ -28,7 +28,6 @@ import {
 } from "./useDmpAssistantEndpoint";
 import docLinks from "../../assets/DocLinks";
 import NoValue from "../../components/NoValue";
-import { doNotAwait } from "../../util/Util";
 import createAccentedTheme from "../../accentedTheme";
 import AppBar from "../../components/AppBar";
 import ValidatingSubmitButton, {
@@ -297,21 +296,23 @@ const DMPDialogContent = ({
                 FetchingData.match(listing, {
                   loading: () => {},
                   error: () => {},
-                  success: doNotAwait(async (l) => {
-                    const pageSizeChanged = newPageSize !== l.pageSize;
-                    const pageChanged = newPage !== l.page;
-                    if (!pageSizeChanged && !pageChanged) return;
-                    try {
-                      setListing({ tag: "loading" });
-                      const next = pageSizeChanged
-                        ? await l.setPageSize(newPageSize)
-                        : await l.setPage(newPage);
-                      setListing({ tag: "success", value: next });
-                    } catch (error) {
-                      if (error instanceof Error)
-                        setListing({ tag: "error", error: error.message });
-                    }
-                  }),
+                  success: (l) => {
+                    void (async () => {
+                      const pageSizeChanged = newPageSize !== l.pageSize;
+                      const pageChanged = newPage !== l.page;
+                      if (!pageSizeChanged && !pageChanged) return;
+                      try {
+                        setListing({ tag: "loading" });
+                        const next = pageSizeChanged
+                          ? await l.setPageSize(newPageSize)
+                          : await l.setPage(newPage);
+                        setListing({ tag: "success", value: next });
+                      } catch (error) {
+                        if (error instanceof Error)
+                          setListing({ tag: "error", error: error.message });
+                      }
+                    })();
+                  },
                 });
               }}
               slots={{

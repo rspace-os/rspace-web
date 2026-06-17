@@ -5,7 +5,6 @@ import Alert from "@mui/material/Alert";
 import BarcodeScannerSkeleton, {
   type BarcodeInput,
 } from "./BarcodeScannerSkeleton";
-import { doNotAwait } from "../../../util/Util";
 import { BarcodeFormat, type Barcode } from "../../../util/barcode";
 
 // scan once per second
@@ -66,7 +65,6 @@ export default function AllBarcodeScanner({
 
   /* check for API support in browser, init browser's BarcodeDetector */
   if ("BarcodeDetector" in window) {
-
     barcodeDetector = new window.BarcodeDetector({
       formats: supportedFormats,
     });
@@ -89,20 +87,18 @@ export default function AllBarcodeScanner({
 
       /* check (browser) support (also done in parent conditional) */
       if (barcodeDetector) {
-        detectionInterval = window.setInterval(
-          doNotAwait(async () => {
+        detectionInterval = window.setInterval(() => {
+          void (async () => {
             if (!videoEl) throw new TypeError("videoEl must not be null");
-            const barcodes: Array<Barcode> = await barcodeDetector.detect(
-              videoEl
-            );
+            const barcodes: Array<Barcode> =
+              await barcodeDetector.detect(videoEl);
             if (barcodes.length <= 0) return;
             const format: BarcodeFormat = barcodes[0].format;
             const rawValue: string = barcodes[0].rawValue;
             const detectedBarcode = { format, rawValue };
             setBarcode(detectedBarcode);
-          }),
-          SCAN_INTERVAL
-        );
+          })();
+        }, SCAN_INTERVAL);
       } else {
         throw new Error("Barcode Detector API not supported");
       }
@@ -117,7 +113,7 @@ export default function AllBarcodeScanner({
                 : e.message,
             variant: "error",
             isInfinite: true,
-          })
+          }),
         );
       setError(true);
     } finally {
@@ -151,13 +147,13 @@ export default function AllBarcodeScanner({
       setBarcode={setBarcode}
       loading={loading}
       warning={
-        error ? (
-          !loading && (
-            <Alert severity="warning">
-              {"Could not access camera, please enter code below."}
-            </Alert>
-          )
-        ) : null
+        error
+          ? !loading && (
+              <Alert severity="warning">
+                {"Could not access camera, please enter code below."}
+              </Alert>
+            )
+          : null
       }
       error={error}
     />

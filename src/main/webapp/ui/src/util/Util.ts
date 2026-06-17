@@ -16,7 +16,7 @@ export const clamp = (num: number, min: number, max: number): number => {
  */
 export const preventEventBubbling =
   <E extends { stopPropagation: () => void }>(
-    f: (e: E) => void = () => {}
+    f: (e: E) => void = () => {},
   ): ((e: E) => void) =>
   (e: E): void => {
     e.stopPropagation();
@@ -30,7 +30,7 @@ export const preventEventBubbling =
 export const omitNull = <T extends object>(obj: T): Partial<T> => {
   (Object.keys(obj) as Array<keyof T>)
     .filter(
-      (k) => obj[k] === null || obj[k] === "" || typeof obj[k] === "undefined"
+      (k) => obj[k] === null || obj[k] === "" || typeof obj[k] === "undefined",
     )
     .forEach((k) => delete obj[k]);
   return obj;
@@ -43,7 +43,7 @@ export const omitNull = <T extends object>(obj: T): Partial<T> => {
 export const toTitleCase = (str: string): string =>
   str.replace(
     /\w\S*/g,
-    (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
   );
 
 /**
@@ -63,11 +63,11 @@ export const capitaliseJustFirstChar = (str: string): string =>
  */
 export const mapObject = <K extends string | number | symbol, V, W>(
   f: (k: K, v: V) => W,
-  obj: Record<K, V>
+  obj: Record<K, V>,
 ): Record<K, W> =>
   (Object.keys(obj) as Array<K>).reduce(
     (acc, k) => ({ [k]: f(k, obj[k]), ...acc }),
-    {} as Record<K, W>
+    {} as Record<K, W>,
   );
 
 /**
@@ -84,23 +84,26 @@ export const mapObjectKeyAndValue = <
   K1 extends string | number | symbol,
   V1,
   K2 extends string | number | symbol,
-  V2
+  V2,
 >(
   keyFunc: (k1: K1, v1: V1) => K2,
   valueFunc: (k1: K1, v1: V1) => V2,
-  obj: Record<K1, V1>
+  obj: Record<K1, V1>,
 ): Record<K2, V2> =>
-  (Object.keys(obj) as Array<K1>).reduce((acc, k) => {
-    acc[keyFunc(k, obj[k])] = valueFunc(k, obj[k]);
-    return acc;
-  }, {} as Record<K2, V2>);
+  (Object.keys(obj) as Array<K1>).reduce(
+    (acc, k) => {
+      acc[keyFunc(k, obj[k])] = valueFunc(k, obj[k]);
+      return acc;
+    },
+    {} as Record<K2, V2>,
+  );
 
 /**
  * Flow doesn't support Object.values so this function provides a wrapper
  * around the handy method that has the correct type.
  */
 export const values = <K extends string | number | symbol, V>(
-  obj: Record<K, V>
+  obj: Record<K, V>,
 ): Array<V> => Object.values(obj);
 
 /**
@@ -115,12 +118,12 @@ export const values = <K extends string | number | symbol, V>(
  */
 export const filterObject = <K extends string | number | symbol, V>(
   f: (key: K, value: V) => boolean,
-  obj: Record<K, V>
+  obj: Record<K, V>,
 ): Record<K, V> =>
   Object.fromEntries(
     (Object.entries(obj) as Array<[K, V]>).filter(([key, value]) =>
-      f(key, value)
-    )
+      f(key, value),
+    ),
   ) as Record<K, V>;
 
 /**
@@ -128,12 +131,12 @@ export const filterObject = <K extends string | number | symbol, V>(
  */
 export const invertObject = <
   K extends string | number | symbol,
-  V extends string | number | symbol
+  V extends string | number | symbol,
 >(
-  obj: Record<K, V>
+  obj: Record<K, V>,
 ): { [k: string]: K } => {
   return Object.fromEntries(
-    (Object.entries(obj) as Array<[K, V]>).map(([k, v]) => [v, k])
+    (Object.entries(obj) as Array<[K, V]>).map(([k, v]) => [v, k]),
   );
 };
 
@@ -145,7 +148,7 @@ export const sameKeysAndValues = (obj1: object, obj2: object): boolean =>
   ArrayUtils.zipWith(
     Object.entries(obj1),
     Object.entries(obj2),
-    ([k1, v1], [k2, v2]) => k1 === k2 && v1 === v2
+    ([k1, v1], [k2, v2]) => k1 === k2 && v1 === v2,
   ).every(Boolean);
 
 /**
@@ -154,10 +157,10 @@ export const sameKeysAndValues = (obj1: object, obj2: object): boolean =>
  */
 export const dropProperty = <
   Key extends string,
-  Rest extends Record<Key, unknown>
+  Rest extends Record<Key, unknown>,
 >(
   obj: { [K in Key]: unknown } & Rest,
-  key: Key
+  key: Key,
 ): Rest => {
   const copy = { ...obj };
   delete copy[key];
@@ -203,11 +206,11 @@ type IsoToLocalOptions = {
  */
 export const isoToLocale = (
   isoString: string,
-  { locale, dateOnly }: IsoToLocalOptions = {}
+  { locale, dateOnly }: IsoToLocalOptions = {},
 ): string => {
   if (typeof locale === "string") {
     return new Date(Date.parse(isoString)).toLocaleString(locale, {
-      ...(dateOnly ?? false
+      ...((dateOnly ?? false)
         ? {}
         : {
             hour: "numeric",
@@ -227,7 +230,7 @@ export const isoToLocale = (
  */
 export const listToObject = <T extends string | number | symbol, V>(
   list: Array<T>,
-  f: (t: T) => V
+  f: (t: T) => V,
 ): { [k: string]: V } => Object.fromEntries(list.map((x) => [x, f(x)]));
 
 /**
@@ -237,23 +240,11 @@ export const sleep = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 /**
- * Explicitly execute a function that returns a promise whilst ignoring its
- * return value. Useful when flow requires that event handlers return void.
- */
-export function doNotAwait<T extends unknown[], R>(
-  f: (...rest: T) => Promise<R>
-): (...rest: T) => void {
-  return function (...t: T): void {
-    void f(...t);
-  };
-}
-
-/**
  * Returns a new map with only the key-value pairs that satisfy the predicate.
  */
 export const filterMap = <A, B>(
   map: Map<A, B>,
-  f: (a: A, b: B) => boolean
+  f: (a: A, b: B) => boolean,
 ): Map<A, B> => new Map([...map.entries()].filter(([k, v]) => f(k, v)));
 
 /**
@@ -261,7 +252,7 @@ export const filterMap = <A, B>(
  * partitions the returned values and errors into two arrays.
  */
 export const partitionAllSettled = <A>(
-  allSettled: AllSettled<A>
+  allSettled: AllSettled<A>,
 ): {
   fulfilled: Array<A>;
   rejected: Array<Error>;
@@ -320,7 +311,10 @@ export const isUrl = (str: string): boolean => {
  * template, or subsample.
  */
 export const isInventoryPermalink = (str: string): boolean => {
-  return (isUrl(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str));
+  return (
+    isUrl(str) &&
+    /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str)
+  );
 };
 
 /**
@@ -330,7 +324,7 @@ export const isInventoryPermalink = (str: string): boolean => {
  */
 export const mapNullable = <A, B>(
   f: (a: A) => B,
-  a: A | null | undefined
+  a: A | null | undefined,
 ): B | null | undefined => {
   if (a === null) return null;
   if (typeof a !== "undefined") return f(a);

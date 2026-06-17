@@ -15,7 +15,6 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableBody from "@mui/material/TableBody";
 import Button from "@mui/material/Button";
-import { doNotAwait } from "../../../util/Util";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { runInAction } from "mobx";
 import Card from "@mui/material/Card";
@@ -78,11 +77,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((channels) => (
-                <Stack
-                  spacing={1}
-                  key={null}
-                  sx={{ mt: 1 }}
-                >
+                <Stack spacing={1} key={null} sx={{ mt: 1 }}>
                   <Box>
                     <Table size="small">
                       <TableHead>
@@ -100,40 +95,43 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                             </TableCell>
                             <TableCell>
                               <Button
-                                onClick={doNotAwait(async () => {
-                                  try {
-                                    await deleteAppOptions(
-                                      "MSTEAMS",
-                                      channel.optionsId,
-                                    );
-                                    const indexOfDeleted = channels.findIndex(
-                                      (c) => c.optionsId === channel.optionsId,
-                                    );
-                                    runInAction(() => {
-                                      integrationState.credentials.splice(
-                                        indexOfDeleted,
-                                        1,
+                                onClick={() => {
+                                  void (async () => {
+                                    try {
+                                      await deleteAppOptions(
+                                        "MSTEAMS",
+                                        channel.optionsId,
                                       );
-                                    });
-                                    addAlert(
-                                      mkAlert({
-                                        variant: "success",
-                                        message:
-                                          "Successfully removed channel.",
-                                      }),
-                                    );
-                                  } catch (e) {
-                                    if (e instanceof Error) {
+                                      const indexOfDeleted = channels.findIndex(
+                                        (c) =>
+                                          c.optionsId === channel.optionsId,
+                                      );
+                                      runInAction(() => {
+                                        integrationState.credentials.splice(
+                                          indexOfDeleted,
+                                          1,
+                                        );
+                                      });
                                       addAlert(
                                         mkAlert({
-                                          variant: "error",
-                                          title: "Failed to remove channel.",
-                                          message: e.message,
+                                          variant: "success",
+                                          message:
+                                            "Successfully removed channel.",
                                         }),
                                       );
+                                    } catch (e) {
+                                      if (e instanceof Error) {
+                                        addAlert(
+                                          mkAlert({
+                                            variant: "error",
+                                            title: "Failed to remove channel.",
+                                            message: e.message,
+                                          }),
+                                        );
+                                      }
                                     }
-                                  }
-                                })}
+                                  })();
+                                }}
                               >
                                 Remove
                               </Button>
@@ -156,41 +154,43 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                     ) : (
                       <Card variant="outlined">
                         <form
-                          onSubmit={doNotAwait(async (event) => {
-                            event.preventDefault();
-                            try {
-                              const newState = await saveAppOptions(
-                                "MSTEAMS",
-                                Optional.empty(),
-                                {
-                                  MSTEAMS_CHANNEL_LABEL: newChannelName,
-                                  MSTEAMS_WEBHOOK_URL: newWebhook,
-                                },
-                              );
-                              runInAction(() => {
-                                integrationState.credentials =
-                                  newState.credentials;
-                              });
-                              setNewChannelName(null);
-                              setNewWebhook(null);
-                              addAlert(
-                                mkAlert({
-                                  variant: "success",
-                                  message: "Successfully added channel.",
-                                }),
-                              );
-                            } catch (e) {
-                              if (e instanceof Error) {
+                          onSubmit={(event) => {
+                            void (async () => {
+                              event.preventDefault();
+                              try {
+                                const newState = await saveAppOptions(
+                                  "MSTEAMS",
+                                  Optional.empty(),
+                                  {
+                                    MSTEAMS_CHANNEL_LABEL: newChannelName,
+                                    MSTEAMS_WEBHOOK_URL: newWebhook,
+                                  },
+                                );
+                                runInAction(() => {
+                                  integrationState.credentials =
+                                    newState.credentials;
+                                });
+                                setNewChannelName(null);
+                                setNewWebhook(null);
                                 addAlert(
                                   mkAlert({
-                                    variant: "error",
-                                    title: "Failed to add channel.",
-                                    message: e.message,
+                                    variant: "success",
+                                    message: "Successfully added channel.",
                                   }),
                                 );
+                              } catch (e) {
+                                if (e instanceof Error) {
+                                  addAlert(
+                                    mkAlert({
+                                      variant: "error",
+                                      title: "Failed to add channel.",
+                                      message: e.message,
+                                    }),
+                                  );
+                                }
                               }
-                            }
-                          })}
+                            })();
+                          }}
                         >
                           <CardContent>
                             <TextField

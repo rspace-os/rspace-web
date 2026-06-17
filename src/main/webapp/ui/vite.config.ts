@@ -115,6 +115,15 @@ const lightningCssTargets = browserslistToTargets(browserslist());
 const shouldGenerateBuildStats = process.env.FRONTEND_BUILD_STATS === "true";
 const devServerHost = process.env.VITE_DEV_SERVER_HOST ?? "127.0.0.1";
 const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT ?? "5173");
+// When the dev server runs in a container, it binds 0.0.0.0 internally while the
+// browser reaches HMR via a published host port. These let the browser-facing
+// HMR host/port differ from the bind host/port; both default to the bind values
+// so local (non-container) dev is unchanged. VITE_USE_POLLING enables polling-
+// based file watching, which is needed for HMR over bind mounts (macOS/Windows
+// Docker), where native filesystem events are not delivered.
+const hmrHost = process.env.VITE_HMR_HOST ?? devServerHost;
+const hmrClientPort = Number(process.env.VITE_HMR_CLIENT_PORT ?? devServerPort);
+const useFsPolling = process.env.VITE_USE_POLLING === "true";
 
 const vitestAliases: Alias[] = [
   {
@@ -163,6 +172,7 @@ export default defineConfig(async ({ mode }) => {
 
   if (shouldGenerateBuildStats) {
     const { visualizer } = await import("rollup-plugin-visualizer");
+    const { analyzer } = await import("vite-bundle-analyzer");
 
     plugins.push(
       visualizer({
@@ -170,6 +180,11 @@ export default defineConfig(async ({ mode }) => {
         gzipSize: true,
         brotliSize: true,
         sourcemap: true,
+      }),
+      // Emits stats.json consumed by wojtekmaj/vite-compare-bundle-size in CI.
+      analyzer({
+        analyzerMode: "json",
+        fileName: "stats",
       }),
     );
   }
@@ -207,10 +222,13 @@ export default defineConfig(async ({ mode }) => {
       port: devServerPort,
       strictPort: true,
       hmr: {
-        host: devServerHost,
+        host: hmrHost,
         port: devServerPort,
-        clientPort: devServerPort,
+        clientPort: hmrClientPort,
       },
+      ...(useFsPolling
+        ? { watch: { usePolling: true, interval: 200 } }
+        : {}),
     },
     build: {
       outDir: "dist",
@@ -222,6 +240,40 @@ export default defineConfig(async ({ mode }) => {
           entryFileNames: "[name]-[hash].js",
           chunkFileNames: "chunks/[name]-[hash].js",
           assetFileNames: "assets/[name]-[hash][extname]",
+          // Required by the codeSplitting workaround below.
+          strictExecutionOrder: true,
+          codeSplitting: {
+            groups: [
+              /*
+               * Workaround for the Ketcher circular-chunk crash that
+               * rolldown 1.0.1 (pinned in pnpm-workspace.yaml) produces:
+               * without this group, rolldown splits Ketcher into two chunks
+               * that import each other circularly, each calling the other's
+               * __commonJS factory (lodash / regenerator-runtime) before that
+               * chunk has evaluated, crashing as "TypeError: undefined is not
+               * a function" the moment Ketcher is opened in production.
+               * (https://github.com/rolldown/rolldown/issues/9502 tracks the
+               * root cause in rolldown 1.0.2+; 1.0.1 has the same splitting
+               * bug from a different code path.)
+               *
+               * This group forces Ketcher and its CJS-only dependencies into
+               * one chunk family, removing the circular edge. entriesAware is
+               * required: without it rolldown's recursive dependency capture
+               * pulls React and emotion into the group, producing a 25 MB
+               * chunk eagerly loaded by every page. includeDependenciesRecursively:false
+               * was tried as an alternative but only relocated the crash.
+               *
+               * Remove this group (and the rolldown override in
+               * pnpm-workspace.yaml) once rolldown ships a release that fixes
+               * the init_* missing-import bug (rolldown#9502 / vite#22499).
+               */
+              {
+                name: "ketcher",
+                test: /node_modules[\\/](ketcher-(core|react|standalone)|miew|lodash|regenerator-runtime)[\\/]/,
+                entriesAware: true,
+              },
+            ],
+          },
         },
       },
       target: esbuildTargets as NonNullable<UserConfig["build"]>["target"],
