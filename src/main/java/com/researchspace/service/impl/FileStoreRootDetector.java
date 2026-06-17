@@ -28,13 +28,22 @@ public class FileStoreRootDetector extends AbstractAppInitializor {
     warnIfFilePropertiesWithoutRoot();
   }
 
-  /** Startup diagnostic: warn if any FileProperty has no associated FileStoreRoot. */
+  /**
+   * Startup diagnostic: warn if any FileProperty has no associated FileStoreRoot. Never aborts
+   * startup - any error is logged and swallowed (matching the warn-only Liquibase check it
+   * replaced).
+   */
   private void warnIfFilePropertiesWithoutRoot() {
-    long orphaned = fileStoreMeta.countFilePropertiesWithoutRoot();
-    if (orphaned > 0) {
-      log.warn(
-          "There are {} FileProperty row(s) not associated with a FileStoreRoot (root_id is null).",
-          orphaned);
+    try {
+      long orphaned = fileStoreMeta.countFilePropertiesWithoutRoot();
+      if (orphaned > 0) {
+        log.warn(
+            "There are {} FileProperty row(s) not associated with a FileStoreRoot (root_id is"
+                + " null).",
+            orphaned);
+      }
+    } catch (Exception e) {
+      log.warn("Could not run the FileProperty/FileStoreRoot integrity diagnostic", e);
     }
   }
 
