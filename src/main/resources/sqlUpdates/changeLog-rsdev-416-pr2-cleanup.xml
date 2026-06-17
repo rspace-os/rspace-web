@@ -40,4 +40,27 @@
         <dropTable tableName="FileStoreRoot_Bk_spac964"/>
     </changeSet>
 
+    <!-- RSForm.defaultUnitId / subSampleName (and the _AUD copies) are orphaned columns: not mapped
+         by the RSForm entity and referenced by no code. They were most likely added to RSForm in
+         error - they duplicate the inventory Sample/SampleTemplate columns, on a table that is not an
+         inventory entity. Guarded by columnExists so fresh installs (where the baseline no longer
+         defines them) MARK_RAN. -->
+    <changeSet id="rsdev-416-pr2-drop-rsform-orphan-cols" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="RSForm orphan columns absent; nothing to drop">
+            <columnExists tableName="RSForm" columnName="defaultUnitId"/>
+        </preConditions>
+        <comment>Drop unused RSForm.defaultUnitId and RSForm.subSampleName</comment>
+        <dropColumn tableName="RSForm" columnName="defaultUnitId"/>
+        <dropColumn tableName="RSForm" columnName="subSampleName"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-pr2-drop-rsform-aud-orphan-cols" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="RSForm_AUD orphan columns absent; nothing to drop">
+            <columnExists tableName="RSForm_AUD" columnName="defaultUnitId"/>
+        </preConditions>
+        <comment>Drop unused RSForm_AUD.defaultUnitId and RSForm_AUD.subSampleName</comment>
+        <dropColumn tableName="RSForm_AUD" columnName="defaultUnitId"/>
+        <dropColumn tableName="RSForm_AUD" columnName="subSampleName"/>
+    </changeSet>
+
 </databaseChangeLog>

@@ -1749,8 +1749,6 @@ CREATE TABLE `RSForm` (
   `systemForm` bit(1) NOT NULL,
   `temporary` bit(1) NOT NULL,
   `DTYPE` varchar(31) NOT NULL,
-  `defaultUnitId` int(11) DEFAULT NULL,
-  `subSampleName` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `stableid` (`stableId`),
   KEY `FK90A082A5813663E7` (`previousVersion_id`),
@@ -1794,8 +1792,6 @@ CREATE TABLE `RSForm_AUD` (
   `systemForm` bit(1) DEFAULT NULL,
   `temporary` bit(1) DEFAULT NULL,
   `DTYPE` varchar(31) NOT NULL,
-  `defaultUnitId` int(11) DEFAULT NULL,
-  `subSampleName` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`,`REV`),
   KEY `FK71D0D5F6DF74E053` (`REV`),
   CONSTRAINT `FK71D0D5F6DF74E053` FOREIGN KEY (`REV`) REFERENCES `REVINFO` (`REV`)
