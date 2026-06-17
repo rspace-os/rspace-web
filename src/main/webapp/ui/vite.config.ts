@@ -201,9 +201,7 @@ export default defineConfig(async ({ mode }) => {
         port: devServerPort,
         clientPort: hmrClientPort,
       },
-      ...(useFsPolling
-        ? { watch: { usePolling: true, interval: 200 } }
-        : {}),
+      ...(useFsPolling ? { watch: { usePolling: true, interval: 200 } } : {}),
     },
     build: {
       outDir: "dist",
