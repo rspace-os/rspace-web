@@ -99,6 +99,16 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
     return extractSizeFromResult(count);
   }
 
+  @Override
+  public long countFilePropertiesWithoutRoot() {
+    Number count =
+        (Number)
+            getSession()
+                .createSQLQuery("select count(*) from FileProperty where root_id is null")
+                .uniqueResult();
+    return count == null ? 0L : count.longValue();
+  }
+
   private Long extractSizeFromResult(String count) {
     return (!isEmpty(count)) ? parseLong(count) : 0;
   }

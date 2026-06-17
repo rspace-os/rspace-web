@@ -295,6 +295,19 @@
           <include>deployments/${deployment}/**</include>
           <include>deployments/defaultDeployment.properties</include>
         </includes>
+        <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
+          placeholders resolve from deployment.properties at runtime. -->
+        <excludes>
+          <exclude>applicationContext-dao.xml</exclude>
+        </excludes>
+      </resource>
+
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>applicationContext-dao.xml</include>
+        </includes>
       </resource>
 
       <!-- including this folder in the previous section meant that the large font files could be clipped and therefore not work-->
@@ -2335,8 +2348,6 @@
       </build>
       <properties>
         <jdbc.db.maven>rspace_hib</jdbc.db.maven>
-        <!-- only dev-test changesets should be run on top of auto-generated schema -->
-        <liquibase.context>dev-test</liquibase.context>
         <context.path>/</context.path>
         <ssl.enabled>false</ssl.enabled>
         <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false</jdbc.url>
@@ -2371,6 +2382,18 @@
               <!-- see Spring application-resources.xml which uses this variable
                 as well for deployment-dependent property files. -->
               <include>deployments/defaultDeployment.properties</include>
+            </includes>
+            <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
+              placeholders resolve from deployment.properties at runtime. -->
+            <excludes>
+              <exclude>applicationContext-dao.xml</exclude>
+            </excludes>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>false</filtering>
+            <includes>
+              <include>applicationContext-dao.xml</include>
             </includes>
           </resource>
           <resource>

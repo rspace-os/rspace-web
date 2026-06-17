@@ -5,7 +5,7 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
 
-    <changeSet id="2024-10-22n" context="run,dev-test" author="nico">
+    <changeSet id="2024-10-22n" context="run" author="nico">
         <comment>Update label for Digital Commons Data</comment>
         <update tableName="App">
             <column name="label" value="Digital Commons Data / Mendeley Data"></column>

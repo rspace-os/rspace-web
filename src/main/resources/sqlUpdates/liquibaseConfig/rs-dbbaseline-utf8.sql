@@ -236,32 +236,6 @@ CREATE TABLE `BATCH_STEP_EXECUTION_SEQ` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-DROP TABLE IF EXISTS `BR_AUD_TEMP`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `BR_AUD_TEMP` (
-  `id` bigint(20) NOT NULL,
-  `REV` int(11) NOT NULL,
-  `REVTYPE` tinyint(4) DEFAULT NULL,
-  `deleted` bit(1) DEFAULT NULL,
-  `createdBy` varchar(255) DEFAULT NULL,
-  `creationDate` datetime DEFAULT NULL,
-  `creationDateMillis` bigint(20) DEFAULT NULL,
-  `description` varchar(250) DEFAULT NULL,
-  `modificationDate` datetime DEFAULT NULL,
-  `modificationDateMillis` bigint(20) DEFAULT NULL,
-  `modifiedBy` varchar(255) DEFAULT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `iconId` bigint(20) DEFAULT NULL,
-  `acl` varchar(2500) DEFAULT NULL,
-  `signed` bit(1) DEFAULT NULL,
-  `type` varchar(255) DEFAULT NULL,
-  `witnessed` bit(1) DEFAULT NULL,
-  `owner_id` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`,`REV`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
 DROP TABLE IF EXISTS `Barcode`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -1775,8 +1749,6 @@ CREATE TABLE `RSForm` (
   `systemForm` bit(1) NOT NULL,
   `temporary` bit(1) NOT NULL,
   `DTYPE` varchar(31) NOT NULL,
-  `defaultUnitId` int(11) DEFAULT NULL,
-  `subSampleName` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `stableid` (`stableId`),
   KEY `FK90A082A5813663E7` (`previousVersion_id`),
@@ -1820,8 +1792,6 @@ CREATE TABLE `RSForm_AUD` (
   `systemForm` bit(1) DEFAULT NULL,
   `temporary` bit(1) DEFAULT NULL,
   `DTYPE` varchar(31) NOT NULL,
-  `defaultUnitId` int(11) DEFAULT NULL,
-  `subSampleName` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`,`REV`),
   KEY `FK71D0D5F6DF74E053` (`REV`),
   CONSTRAINT `FK71D0D5F6DF74E053` FOREIGN KEY (`REV`) REFERENCES `REVINFO` (`REV`)
@@ -1998,21 +1968,6 @@ CREATE TABLE `Role_permissionStrings` (
   `permissionStrings` varchar(255) DEFAULT NULL,
   KEY `FK10AF424A3944D3AE` (`Role_id`),
   CONSTRAINT `FK10AF424A3944D3AE` FOREIGN KEY (`Role_id`) REFERENCES `roles` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-DROP TABLE IF EXISTS `SD_AUD_TEMP`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `SD_AUD_TEMP` (
-  `id` bigint(20) NOT NULL,
-  `REV` int(11) NOT NULL,
-  `deltaString` varchar(2000) DEFAULT NULL,
-  `docTag` varchar(255) DEFAULT NULL,
-  `temporaryDoc` bit(1) DEFAULT NULL,
-  `version` bigint(20) DEFAULT NULL,
-  `form_id` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`,`REV`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2925,14 +2880,6 @@ CREATE TABLE `user_role` (
   KEY `FK143BF46ADE6F978E` (`user_id`),
   CONSTRAINT `FK143BF46A3944D3AE` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`),
   CONSTRAINT `FK143BF46ADE6F978E` FOREIGN KEY (`user_id`) REFERENCES `User` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-DROP TABLE IF EXISTS `utf8_general_pre_rspac2515`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `utf8_general_pre_rspac2515` (
-  `tableName` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
