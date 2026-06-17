@@ -12,7 +12,6 @@ import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
-import com.researchspace.model.record.RecordFactory;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -49,7 +48,7 @@ public class SampleTemplatesRevisionsEndpointTest {
 
   @Test
   public void templateRevisionsEndpointReturnsRevisionListForTemplate() {
-    SampleTemplate template = new RecordFactory().createSampleTemplate("template", user);
+    SampleTemplate template = new SampleTemplate();
     when(sampleMgr.assertUserCanReadSample(1L, user)).thenReturn(template);
     ApiInventoryRecordRevisionList revisions = new ApiInventoryRecordRevisionList();
     when(auditMgr.getInventoryRecordRevisions(template)).thenReturn(revisions);
