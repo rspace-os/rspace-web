@@ -1470,6 +1470,14 @@
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
         </exclusion>
+        <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
+             slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
+             of the build uses 1.7.21 / 3.18.0). rspace-web does not use ICS (it built against
+             2.26.0 which had no ical4j), so exclude ical4j entirely. -->
+        <exclusion>
+          <groupId>org.mnode.ical4j</groupId>
+          <artifactId>ical4j</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
