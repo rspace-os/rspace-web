@@ -170,6 +170,18 @@ export default class InstrumentTemplateModel
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
-    return [];
+    return [
+      {
+        label: "Instrument",
+        explanation:
+          "Create a new instrument based on this template.",
+        onReset: () => {},
+        onSubmit: async () => {
+          void getRootStore().searchStore.createNewInstrument({
+            templateId: this.id,
+          });
+        },
+      },
+    ];
   }
 }

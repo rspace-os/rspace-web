@@ -10,6 +10,7 @@ import ContainerNewRecordForm from "../Container/NewRecordForm";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
 import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
 import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 import { withStyles } from "../../util/styles";
@@ -176,7 +177,7 @@ function RightPanelView(): ReactNode {
 
     if (activeResult.recordType === "instrument") {
       if (activeResult.id) return <InstrumentForm />;
-      throw new Error("Creating new instruments is not supported.");
+      return <InstrumentNewRecordForm />;
     }
 
     if (activeResult.recordType === "instrumentTemplate") {

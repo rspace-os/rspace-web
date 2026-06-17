@@ -62,6 +62,8 @@ import {
   type ExportOptions,
 } from "../definitions/Search";
 import { type Sample } from "../definitions/Sample";
+import { type Instrument } from "../definitions/Instrument";
+import { type InstrumentTemplateAttrs } from "./InstrumentTemplateModel";
 import {
   getErrorMessage,
   InvalidState,
@@ -1075,6 +1077,66 @@ export default class Search implements SearchInterface {
         }),
       );
       console.error("Could not create template from sample.", error);
+      throw error;
+    }
+  }
+
+  async createInstrumentTemplateFromInstrument(
+    name: string,
+    instrument: Instrument,
+    includeContentForFields: Set<Id>,
+  ): Promise<void> {
+    const { uiStore } = getRootStore();
+    try {
+      const args = {
+        name,
+        extraFields: instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
+          name: fieldName,
+          type,
+          content: includeContentForFields.has(id) ? content : "",
+          definition: null,
+        })),
+      };
+      const { data } = await ApiService.post<InstrumentTemplateAttrs>(
+        "instrumentTemplates",
+        args,
+      );
+      const factory = this.factory.newFactory();
+      const template = factory.newRecord(data);
+      uiStore.addAlert(
+        mkAlert({
+          message: `Instrument template created successfully.`,
+          variant: "success",
+          details: [
+            {
+              title: template.name,
+              variant: "success",
+              record: template,
+            },
+          ],
+        }),
+      );
+      void this.fetcher.performInitialSearch(null);
+    } catch (error) {
+      uiStore.addAlert(
+        mkAlert({
+          title: `Instrument template creation failed.`,
+          message: getErrorMessage(error, "Unknown reason."),
+          variant: "error",
+          details: Parsers.objectPath(["response", "data", "errors"], error)
+            .flatMap(Parsers.isArray)
+            .flatMap((errors) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
+                titles.map((title) => ({
+                  title,
+                  variant: "error" as const,
+                })),
+              ),
+            )
+            .orElse(undefined),
+        }),
+      );
+      console.error("Could not create instrument template from instrument.", error);
       throw error;
     }
   }

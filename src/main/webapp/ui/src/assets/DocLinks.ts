@@ -11,6 +11,7 @@ const docLinks: Record<string, URL> = {
   editLocationsInVisualContainers: mkDocLink("jya8j336dt"),
   createContainer: mkDocLink("e5v4bvcl61"),
   createTemplate: mkDocLink("c8sxesdqpy"),
+  createInstrument: mkDocLink("ct15xwb13m"),
   createInstrumentTemplate: mkDocLink("5f0lakn5nl"),
   updateAllSamplesOfTemplate: mkDocLink(
     "c8sxesdqpy",

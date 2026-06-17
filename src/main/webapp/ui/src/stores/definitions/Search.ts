@@ -4,6 +4,7 @@ import RsSet from "../../util/set";
 import { type TreeView } from "./TreeView";
 import { type AdjustableTableRowLabel } from "./Tables";
 import { type Sample } from "./Sample";
+import { type Instrument } from "./Instrument";
 import { type Id, type GlobalId } from "./BaseRecord";
 import { type SubSample } from "./SubSample";
 import { type Order } from "../../util/types";
@@ -426,6 +427,11 @@ export interface Search {
   createTemplateFromSample(
     name: string,
     sample: Sample,
+    includeContentForFields: Set<Id>
+  ): Promise<void>;
+  createInstrumentTemplateFromInstrument(
+    name: string,
+    instrument: Instrument,
     includeContentForFields: Set<Id>
   ): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;

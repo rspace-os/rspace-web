@@ -15,6 +15,7 @@ import { type Basket, type BasketAttrs } from "../definitions/Basket";
 import BasketModel from "../models/Basket";
 import TemplateModel, { type TemplateAttrs } from "../models/TemplateModel";
 import InstrumentTemplateModel from "../models/InstrumentTemplateModel";
+import InstrumentModel, { type InstrumentAttrs } from "../models/InstrumentModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import { type RootStore } from "./RootStore";
 import {
@@ -378,6 +379,68 @@ export default class SearchStore {
     return template;
   }
 
+  async createNewInstrument(opts?: { templateId?: Id | null }): Promise<InstrumentModel> {
+    const template =
+      opts?.templateId &&
+      this.activeResult instanceof InstrumentTemplateModel &&
+      this.activeResult.id === opts.templateId
+        ? this.activeResult
+        : null;
+
+    const currentUsersGroups =
+      await this.rootStore.peopleStore.fetchCurrentUsersGroups();
+
+    const instrumentAttrs: InstrumentAttrs = {
+      id: null,
+      type: "INSTRUMENT",
+      globalId: null,
+      name: template?.name ?? "",
+      permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
+      tags: null,
+      description: template?.description ?? undefined,
+      templateId: opts?.templateId ?? null,
+      owner: null,
+      created: null,
+      deleted: false,
+      lastModified: null,
+      modifiedByFullName: null,
+      attachments: [],
+      barcodes: [],
+      identifiers: [],
+      extraFields: template?.extraFields.map(({ name, type, content }) => ({
+        id: null,
+        globalId: null,
+        name,
+        type: type.toLowerCase() as "text" | "number",
+        content,
+        lastModified: null,
+        parentGlobalId: null,
+      })) ?? [],
+      parentContainers: [],
+      parentLocation: null,
+      lastNonWorkbenchParent: null,
+      lastMoveDate: null,
+      _links: [],
+    };
+    const instrument = new InstrumentModel(new MemoisedFactory(), instrumentAttrs);
+    instrument.setAttributes({
+      sharedWith: currentUsersGroups.map((group) => ({
+        group,
+        shared: true,
+        itemOwnerGroup: true,
+      })),
+    });
+    if (template) {
+      instrument.setAttributes({
+        tags: [...template.tags],
+        image: template.image,
+        newBase64Image: template.newBase64Image,
+      });
+    }
+    await this.createNewHelper(instrument);
+    return instrument;
+  }
+
   async createNewInstrumentTemplate(): Promise<InstrumentTemplateModel> {
     const currentUsersGroups =
       await this.rootStore.peopleStore.fetchCurrentUsersGroups();
@@ -411,10 +474,11 @@ export default class SearchStore {
   }
 
   createNew(
-    type: "sample" | "container" | "template" | "instrumentTemplate",
+    type: "sample" | "container" | "template" | "instrument" | "instrumentTemplate",
   ): Promise<InventoryBaseRecord> {
     if (type === "sample") return this.createNewSample();
     if (type === "container") return this.createNewContainer();
+    if (type === "instrument") return this.createNewInstrument();
     if (type === "instrumentTemplate") return this.createNewInstrumentTemplate();
     return this.createNewTemplate();
   }
