@@ -1,0 +1,45 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- RSDEV-416 PR2: drop obsolete transient/backup tables. They were also removed from the
+         baseline DDL (rs-dbbaseline-utf8.sql), so on a fresh install the table will not exist and
+         each changeset MARK_RANs via its tableExists precondition; on existing customer DBs (which
+         never load the baseline) the leftover table is dropped. -->
+
+    <!-- BR_AUD_TEMP and SD_AUD_TEMP were checked on demos.r.c and do not have any records older
+         than 2016-11, so they are obsolete migration leftovers and safe to drop. -->
+    <changeSet id="rsdev-416-pr2-drop-br-aud-temp" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="BR_AUD_TEMP not present; nothing to drop">
+            <tableExists tableName="BR_AUD_TEMP"/>
+        </preConditions>
+        <comment>Drop obsolete BR_AUD_TEMP transient table</comment>
+        <dropTable tableName="BR_AUD_TEMP"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-pr2-drop-sd-aud-temp" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="SD_AUD_TEMP not present; nothing to drop">
+            <tableExists tableName="SD_AUD_TEMP"/>
+        </preConditions>
+        <comment>Drop obsolete SD_AUD_TEMP transient table</comment>
+        <dropTable tableName="SD_AUD_TEMP"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-pr2-drop-utf8-general-pre-rspac2515" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="utf8_general_pre_rspac2515 not present; nothing to drop">
+            <tableExists tableName="utf8_general_pre_rspac2515"/>
+        </preConditions>
+        <comment>Drop obsolete utf8_general_pre_rspac2515 transient table (RSPAC-2515 charset-migration leftover)</comment>
+        <dropTable tableName="utf8_general_pre_rspac2515"/>
+    </changeSet>
+
+    <changeSet id="rsdev-416-pr2-drop-filestoreroot-bk-spac964" author="matthias" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="FileStoreRoot_Bk_spac964 not present; nothing to drop">
+            <tableExists tableName="FileStoreRoot_Bk_spac964"/>
+        </preConditions>
+        <comment>Drop obsolete FileStoreRoot_Bk_spac964 backup table (RSPAC-964 migration leftover)</comment>
+        <dropTable tableName="FileStoreRoot_Bk_spac964"/>
+    </changeSet>
+
+</databaseChangeLog>
