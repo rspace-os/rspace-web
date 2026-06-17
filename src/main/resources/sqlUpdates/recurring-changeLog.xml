@@ -3,22 +3,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <!-- RSDEV-416: runAlways changesets that previously executed on every startup and are NOT obsolete,
-         preserved here when their original pre-1.98.1 changelogs were squashed. They are kept verbatim
-         (same id/author) so behaviour is unchanged. To be reviewed in PR2 / phase 2 (RSDEV-416): decide
-         whether each is still worth running on every startup, or can be dropped.
-
-         Kept: filestore integrity diagnostics + Spring Batch sequence re-init.
-         Dropped (obsolete, not preserved): changeLog-1.49 29-01-17/29-01-17b (RSPAC-1446 notification
-         relink, no-ops on modern DBs) and data-changeLog 3a (cleared the checksum of changeset
-         25-08-14a, which is itself pre-1.98.1 and removed). -->
-
-    <changeSet id="1-35-16-4-7a" author="richard" runAlways="true">
-        <preConditions onFail="WARN" onError="WARN" onFailMessage="There are some FileProperty rows that are not associated with a FileStoreRoot!">
-            <sqlCheck expectedResult="0">select count(*) from FileProperty where root_id is null;</sqlCheck>
-        </preConditions>
-        <comment>This is a diagnostic to ensure that there are no FileProperty rows being added which don't have a root.</comment>
-    </changeSet>
+    <!-- runAlways changesets: diagnostics run on every startup. -->
 
     <changeSet id="1-35-16-4-7b" author="richard" runAlways="true">
         <preConditions onFailMessage="There should be 1 current filestoreroot row if a root has been set.">
@@ -30,23 +15,6 @@
             </or>
         </preConditions>
         <comment>This is a diagnostic to ensure that there is only one current root, if there is a root set at all</comment>
-    </changeSet>
-
-    <changeSet id="2016-07-29d" author="richard" runAlways="true" context="run and !dev-test">
-        <preConditions onErrorMessage="There are some FileStoreRoots used in FileProperty that are not valid URIs">
-            <sqlCheck expectedResult="0">select count(*) from FileProperty where id in (select id from FileStoreRoot where fileStoreRoot not like ('file%'))</sqlCheck>
-        </preConditions>
-        <comment>Diagnostic: FileStoreRoots referenced by FileProperty should be valid file URIs.</comment>
-    </changeSet>
-
-    <changeSet id="17-09-13a" author="richard" context="dev-test,run" runAlways="true">
-        <comment>Initialises Batch ID generation system if batch tables are empty following some test clean-up.
-       These statements from Spring batch core jar o.s.batch.core package</comment>
-        <sql>
-            INSERT INTO BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY) select * from (select 0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from BATCH_STEP_EXECUTION_SEQ);
-            INSERT INTO BATCH_JOB_SEQ (ID, UNIQUE_KEY) select * from (select 0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from BATCH_JOB_SEQ);
-            INSERT INTO BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY) select * from (select 0 as ID, '0' as UNIQUE_KEY) as tmp where not exists(select * from BATCH_JOB_EXECUTION_SEQ);
-        </sql>
     </changeSet>
 
 </databaseChangeLog>

@@ -21,6 +21,14 @@ public interface FileMetadataDao extends GenericDao<FileProperty, Long> {
   List<FileProperty> findProperties(Map<String, String> wheres);
 
   /**
+   * Counts FileProperty rows with no associated FileStoreRoot (root_id is null) - a data-integrity
+   * diagnostic; the count should be 0.
+   *
+   * @return number of FileProperty rows whose root_id is null
+   */
+  long countFilePropertiesWithoutRoot();
+
+  /**
    * Runs through FileProperties owned by the user and collects File references to the resources.
    *
    * @return non-null but possibly empty list of Files pointing to user resources,
