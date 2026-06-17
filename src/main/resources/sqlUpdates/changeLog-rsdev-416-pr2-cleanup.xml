@@ -6,7 +6,7 @@
     <!-- Drop obsolete transient/backup tables. Each is guarded by a tableExists precondition, so
          it is a no-op (MARK_RAN) where the table is already absent. -->
 
-    <!-- BR_AUD_TEMP and SD_AUD_TEMP were checked on demos.r.c and have no records older than
+    <!-- BR_AUD_TEMP and SD_AUD_TEMP were checked on demos.r.c and have no records newer than
          2016-11, so they are safe to drop. -->
     <changeSet id="rsdev-416-pr2-drop-br-aud-temp" author="matthias" context="run">
         <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="BR_AUD_TEMP not present; nothing to drop">
