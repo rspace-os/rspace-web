@@ -9,9 +9,8 @@
     <bean depends-on="appContextRetriever, loggingInitializer" id="liquibase" class="liquibase.integration.spring.SpringLiquibase">
         <property name="dataSource" ref="dataSource" />
         <property name="changeLog" value="classpath:sqlUpdates/liquibase-master.xml" />
-        <!-- contexts specifies the runtime Liquibase contexts. This file is deliberately excluded
-            from Maven resource filtering (see pom.xml), so ${liquibase.context} is resolved at runtime
-            from deployment.properties and is never fixed at build time. -->
+        <!-- Runtime Liquibase contexts. This file is excluded from Maven filtering (see pom.xml),
+            so ${liquibase.context} resolves from deployment.properties at runtime. -->
         <property name="contexts" value="${liquibase.context}" />
     </bean>
 

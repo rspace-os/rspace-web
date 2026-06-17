@@ -295,9 +295,8 @@
           <include>deployments/${deployment}/**</include>
           <include>deployments/defaultDeployment.properties</include>
         </includes>
-        <!-- RSDEV-416: applicationContext-dao.xml is excluded from filtering (re-added unfiltered
-          below) so its ${liquibase.context} / ${rs.hibernate.searchIndex.*} placeholders resolve from
-          deployment.properties at runtime, never baked in at build time. -->
+        <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
+          placeholders resolve from deployment.properties at runtime. -->
         <excludes>
           <exclude>applicationContext-dao.xml</exclude>
         </excludes>
@@ -2384,7 +2383,8 @@
                 as well for deployment-dependent property files. -->
               <include>deployments/defaultDeployment.properties</include>
             </includes>
-            <!-- RSDEV-416: keep applicationContext-dao.xml unfiltered (runtime-resolved Liquibase context) -->
+            <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
+              placeholders resolve from deployment.properties at runtime. -->
             <excludes>
               <exclude>applicationContext-dao.xml</exclude>
             </excludes>

@@ -3,23 +3,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <!-- RSDEV-416: runAlways changeset(s) that execute on every startup, preserved here when their
-         original pre-1.98.1 changelogs were squashed. Kept verbatim (same id/author) so behaviour is
-         unchanged.
-
-         PR2 review outcome (RSDEV-416):
-         * Kept: 1-35-16-4-7b - HALT diagnostic enforcing at most one current FileStoreRoot. A real
-           invariant; halting before further changesets/startup if the filestore state is wrong is intended.
-         * Moved to Java: 1-35-16-4-7a (warned if a FileProperty had a null root_id) is now an
-           onAppStartup health check (see FileStoreRootDetector), where startup diagnostics belong.
-         * Dropped: 2016-07-29d - its sqlCheck was buggy (queried FileProperty.id where its sibling
-           migration 2016-07-29c correctly used FileProperty.root_id), and a corrected version would
-           false-HALT external (S3/Egnyte) filestore deployments whose roots are not file: URIs.
-         * Dropped: 17-09-13a - re-seeded BATCH_*_SEQ "after test clean-up"; now redundant, as the
-           run-seed (initial-seed-run.sql) inserts those rows on fresh install and nothing empties them
-           (DatabaseCleaner does not touch the *_SEQ tables).
-         Already dropped in PR1 (obsolete): changeLog-1.49 29-01-17/29-01-17b (RSPAC-1446 notification
-         relink) and data-changeLog 3a (cleared the checksum of pre-1.98.1 changeset 25-08-14a). -->
+    <!-- runAlways changesets: diagnostics run on every startup. -->
 
     <changeSet id="1-35-16-4-7b" author="richard" runAlways="true">
         <preConditions onFailMessage="There should be 1 current filestoreroot row if a root has been set.">

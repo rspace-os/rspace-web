@@ -3,13 +3,11 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <!-- RSDEV-416 PR2: drop obsolete transient/backup tables. They were also removed from the
-         baseline DDL (rs-dbbaseline-utf8.sql), so on a fresh install the table will not exist and
-         each changeset MARK_RANs via its tableExists precondition; on existing customer DBs (which
-         never load the baseline) the leftover table is dropped. -->
+    <!-- Drop obsolete transient/backup tables. Each is guarded by a tableExists precondition, so
+         it is a no-op (MARK_RAN) where the table is already absent. -->
 
-    <!-- BR_AUD_TEMP and SD_AUD_TEMP were checked on demos.r.c and do not have any records older
-         than 2016-11, so they are obsolete migration leftovers and safe to drop. -->
+    <!-- BR_AUD_TEMP and SD_AUD_TEMP were checked on demos.r.c and have no records older than
+         2016-11, so they are safe to drop. -->
     <changeSet id="rsdev-416-pr2-drop-br-aud-temp" author="matthias" context="run">
         <preConditions onFail="MARK_RAN" onError="MARK_RAN" onFailMessage="BR_AUD_TEMP not present; nothing to drop">
             <tableExists tableName="BR_AUD_TEMP"/>
