@@ -10,7 +10,6 @@ import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
-import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -44,7 +43,7 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
   }
 
   private StoichiometryInventoryLink setupSampleTemplateAndStoichiometry(User user) {
-    SampleTemplate sample = new RecordFactory().createSampleTemplate("test sample", user);
+    SampleTemplate sample = recordFactory.createSampleTemplate("test sample", user);
     sampleTemplateDao.save(sample);
 
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "test");

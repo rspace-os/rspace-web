@@ -1,64 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-	<!--
-	  RSDEV-1065: SampleTemplate becomes a real entity. Single-table inheritance over the
-	  existing Sample table now uses Hibernate's default DTYPE discriminator (values
-	  "Sample"/"SampleTemplate"), mirroring InstrumentEntity. The legacy boolean "template"
-	  column is intentionally retained but no longer maintained by Hibernate; DTYPE is
-	  backfilled from it here for both the live and audit tables.
-	-->
+  <!--
+    RSDEV-1065: SampleTemplate becomes a real entity. Single-table inheritance over the
+    existing Sample table now uses Hibernate's default DTYPE discriminator (values
+    "Sample"/"SampleTemplate"), mirroring InstrumentEntity. The legacy boolean "template"
+    column is intentionally retained but no longer maintained by Hibernate; DTYPE is
+    backfilled from it here for both the live and audit tables.
+  -->
 
-	<changeSet id="2026-06-11a-a" context="run" author="nico">
-		<comment>RSDEV-1065 add DTYPE discriminator column to the Sample table</comment>
-		<addColumn tableName="Sample">
-			<column name="DTYPE" type="varchar(20)">
-				<constraints nullable="true"/>
-			</column>
-		</addColumn>
-	</changeSet>
+  <changeSet id="2026-06-11a-a" context="run" author="nico">
+    <comment>RSDEV-1065 add DTYPE discriminator column to the Sample table</comment>
+    <addColumn tableName="Sample">
+      <column name="DTYPE" type="varchar(20)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
 
-	<changeSet id="2026-06-11a-b" context="run" author="nico">
-		<comment>RSDEV-1065 add DTYPE discriminator column to the Sample_AUD table</comment>
-		<addColumn tableName="Sample_AUD">
-			<column name="DTYPE" type="varchar(20)">
-				<constraints nullable="true"/>
-			</column>
-		</addColumn>
-	</changeSet>
+  <changeSet id="2026-06-11a-b" context="run" author="nico">
+    <comment>RSDEV-1065 add DTYPE discriminator column to the Sample_AUD table</comment>
+    <addColumn tableName="Sample_AUD">
+      <column name="DTYPE" type="varchar(20)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
 
-	<changeSet id="2026-06-11b-a" context="run" author="nico">
-		<comment>RSDEV-1065 backfill Sample.DTYPE from the legacy template flag</comment>
-		<update tableName="Sample">
-			<column name="DTYPE" value="SampleTemplate"/>
-			<where>template = 1</where>
-		</update>
-		<update tableName="Sample">
-			<column name="DTYPE" value="Sample"/>
-			<where>DTYPE IS NULL</where>
-		</update>
-	</changeSet>
+  <changeSet id="2026-06-11b-a" context="run" author="nico">
+    <comment>RSDEV-1065 backfill Sample.DTYPE from the legacy template flag</comment>
+    <update tableName="Sample">
+      <column name="DTYPE" value="SampleTemplate"/>
+      <where>template = 1</where>
+    </update>
+    <update tableName="Sample">
+      <column name="DTYPE" value="Sample"/>
+      <where>DTYPE IS NULL</where>
+    </update>
+  </changeSet>
 
-	<changeSet id="2026-06-11b-b" context="run" author="nico">
-		<comment>RSDEV-1065 backfill Sample_AUD.DTYPE from the legacy template flag so Envers can
-			resolve historical Sample/SampleTemplate revisions</comment>
-		<update tableName="Sample_AUD">
-			<column name="DTYPE" value="SampleTemplate"/>
-			<where>template = 1</where>
-		</update>
-		<update tableName="Sample_AUD">
-			<column name="DTYPE" value="Sample"/>
-			<where>DTYPE IS NULL</where>
-		</update>
-	</changeSet>
+  <changeSet id="2026-06-11b-b" context="run" author="nico">
+    <comment>RSDEV-1065 backfill Sample_AUD.DTYPE from the legacy template flag so Envers can
+      resolve historical Sample/SampleTemplate revisions</comment>
+    <update tableName="Sample_AUD">
+      <column name="DTYPE" value="SampleTemplate"/>
+      <where>template = 1</where>
+    </update>
+    <update tableName="Sample_AUD">
+      <column name="DTYPE" value="Sample"/>
+      <where>DTYPE IS NULL</where>
+    </update>
+  </changeSet>
 
-	<changeSet id="2026-06-11c-a" context="run" author="nico">
-		<comment>RSDEV-1065 make Sample.DTYPE NOT NULL once backfilled (audit table stays nullable,
-			matching Envers conventions)</comment>
-		<addNotNullConstraint tableName="Sample" columnName="DTYPE" columnDataType="varchar(20)"/>
-	</changeSet>
+  <changeSet id="2026-06-11c-a" context="run" author="nico">
+    <comment>RSDEV-1065 make Sample.DTYPE NOT NULL once backfilled (audit table stays nullable,
+      matching Envers conventions)</comment>
+    <addNotNullConstraint tableName="Sample" columnName="DTYPE" columnDataType="varchar(20)"/>
+  </changeSet>
 
 </databaseChangeLog>
