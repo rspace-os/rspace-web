@@ -10,7 +10,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../theme";
 import { type Quantity as QuantityType } from "../../../../stores/definitions/HasQuantity";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     unitsOfCategory: vi.fn(() => [

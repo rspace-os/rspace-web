@@ -1,7 +1,7 @@
 import React, { type Context } from "react";
 import { type Search } from "../definitions/Search";
 import { type Record } from "../definitions/Record";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 
 /*
  * This context is used to encapsulte the entire scope of a search operation,
@@ -49,10 +49,21 @@ type SearchContextType = {
   differentSearchForSettingActiveResult: Search;
 };
 
-const DEFAULT_SEARCH_CONTEXT = {
-  search: getRootStore().searchStore.search as Search,
-  differentSearchForSettingActiveResult: getRootStore().searchStore
-    .search as Search,
+/*
+ * The default values are resolved lazily through getters rather than calling
+ * getRootStore() at module-load time. getRootStore reads from a registry that
+ * RootStore.ts populates during bootstrap, so calling it while this module is
+ * being evaluated would reintroduce a bootstrap-ordering dependency (and throw
+ * if RootStore has not been imported yet). Components consuming this context
+ * without a Provider resolve the real store at render time.
+ */
+const DEFAULT_SEARCH_CONTEXT: SearchContextType = {
+  get search(): Search {
+    return getRootStore().searchStore.search as Search;
+  },
+  get differentSearchForSettingActiveResult(): Search {
+    return getRootStore().searchStore.search as Search;
+  },
 };
 
 const SearchContext: Context<SearchContextType> = React.createContext(

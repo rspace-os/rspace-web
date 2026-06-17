@@ -6,7 +6,7 @@ import {
   makeMockSubSample,
   subSampleAttrsArbitrary,
 } from "../SubSampleModel/mocking";
-import getRootStore from "../../../stores/RootStore";
+import getRootStore from "../../../stores/getRootStore";
 import { personAttrs } from "../PersonModel/mocking";
 
 import PersonModel from "../../PersonModel";
@@ -20,7 +20,7 @@ const mockRootStore = {
 };
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => mockRootStore,
 }));
 describe("computed: recordLinkLabel", () => {

@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, afterEach, beforeAll, vi } from 'vitest';
 import React from "react";
 import {

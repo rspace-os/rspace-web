@@ -9,7 +9,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
 
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../stores/stores/RootStore", () => ({
+vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({

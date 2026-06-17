@@ -14,7 +14,7 @@ import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateMo
 import userEvent from "@testing-library/user-event";
 import AlertContext, { type Alert } from "../../../../stores/contexts/Alert";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),

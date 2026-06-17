@@ -5,7 +5,7 @@ import { makeMockContainer } from "../ContainerModel/mocking";
 import RsSet from "../../../../util/set";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({})
 }));
 describe("Computed: fieldValues", () => {

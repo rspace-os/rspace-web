@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";
@@ -140,4 +141,3 @@ describe("computed: siblingGroups", () => {
     );
   });
 });
-

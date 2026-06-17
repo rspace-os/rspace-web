@@ -5,7 +5,7 @@ import { filenameExceptExtension } from "../../util/files";
 import { showToastWhilstPending } from "../../util/alerts";
 import RsSet from "../../util/set";
 import StateMachine from "../../util/stateMachine";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import { mkAlert } from "../contexts/Alert";
 import {

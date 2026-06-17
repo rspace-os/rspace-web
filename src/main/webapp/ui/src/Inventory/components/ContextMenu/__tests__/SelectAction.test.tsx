@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, vi } from 'vitest';
 import React from "react";
 import { render } from "@testing-library/react";
@@ -44,4 +45,3 @@ describe("SelectAction", () => {
     });
   });
 });
-

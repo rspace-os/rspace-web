@@ -7,7 +7,7 @@ import InvApiService from "../../../../../common/InvApiService";
 import "@/__tests__/assertUrlSearchParams";
 import { AxiosResponse } from "axios";
 
-vi.mock("../../../../stores/RootStore", () => ({
+vi.mock("../../../../stores/getRootStore", () => ({
   default: () => ({
   default: {
   uiStore: {

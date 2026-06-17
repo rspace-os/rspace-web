@@ -15,7 +15,7 @@ vi.mock("../../../../common/InvApiService", () => ({
     get: () => ({}),
   },
 }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       getUnit: () => ({ label: "ml" }),

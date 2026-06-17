@@ -4,7 +4,7 @@ import { formatIndex } from "../../InventoryBaseRecordCollection";
 import { take, incrementForever } from "../../../../util/iterators";
 import RsSet from "../../../../util/set";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({})
 }));
 // even a max of 1000 is probably overkill

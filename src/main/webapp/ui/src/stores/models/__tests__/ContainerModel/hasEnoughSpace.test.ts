@@ -3,7 +3,7 @@ import { makeMockContainer, containerAttrs } from "./mocking";
 import LocationModel from "../../LocationModel";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   moveStore: {
     selectedResults: [

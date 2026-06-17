@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 
 import { describe, expect, test, vi } from 'vitest';
 import InvApiService from "../../../../common/InvApiService";
@@ -71,4 +72,3 @@ describe("method: setEditing", () => {
     expect(template.name).toBe("oldName");
   });
 });
-

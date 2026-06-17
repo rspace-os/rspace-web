@@ -4,7 +4,7 @@ import Search from "../../Search";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import RsSet from "../../../../util/set";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   searchStore: {
     activeResult: {

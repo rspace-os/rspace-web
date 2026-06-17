@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { makeMockSample, makeMockSampleWithASubsample } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),

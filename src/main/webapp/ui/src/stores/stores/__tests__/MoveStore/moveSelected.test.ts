@@ -1,6 +1,7 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from 'vitest';
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 import Search from "../../../models/Search";
 import InvApiService from "../../../../common/InvApiService";
 import ContainerModel from "../../../models/ContainerModel";
@@ -130,4 +131,3 @@ describe("action: moveSelected", () => {
     });
   });
 });
-

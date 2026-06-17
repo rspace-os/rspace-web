@@ -13,7 +13,7 @@ import InventoryBaseRecord, {
   InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
 import { AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { Optional } from "../../util/optional";
 import { computed, makeObservable, observable, override } from "mobx";
 

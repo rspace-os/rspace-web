@@ -7,7 +7,7 @@ import { personAttrs } from "../../__tests__/PersonModel/mocking";
 import AlwaysNewFactory from "../AlwaysNewFactory";
 import { type GlobalId } from "../../../definitions/BaseRecord";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   peopleStore: {},
   unitStore: { getUnit: () => ({ label: "ml" }) },

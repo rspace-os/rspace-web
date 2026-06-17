@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, vi } from 'vitest';
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
@@ -63,4 +64,3 @@ describe("method: validate", () => {
     expect(field.validate().isError).toBe(false);
   });
 });
-

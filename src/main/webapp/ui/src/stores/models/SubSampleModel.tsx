@@ -19,7 +19,7 @@ import {
   type CreateOption,
 } from "../definitions/InventoryRecord";
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { type AttachmentJson } from "./AttachmentModel";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";

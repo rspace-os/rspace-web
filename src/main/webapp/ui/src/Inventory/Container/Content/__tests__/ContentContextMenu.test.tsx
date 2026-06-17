@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, vi } from 'vitest';
 import * as React from "react";
 import {
@@ -137,4 +138,3 @@ describe("ContentContextMenu", () => {
     );
   });
 });
-

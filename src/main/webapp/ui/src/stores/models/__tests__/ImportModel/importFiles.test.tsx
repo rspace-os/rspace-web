@@ -1,6 +1,7 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, beforeEach, vi } from 'vitest';
 import InvApiService from "../../../../common/InvApiService";
-import getRootStore from "../../../stores/RootStore";
+import getRootStore from "../../../stores/getRootStore";
 import ImportModel from "../../ImportModel";
 import { templateAttrs } from "../TemplateModel/mocking";
 import { runInAction } from "mobx";
@@ -93,4 +94,3 @@ describe("method: importFile", () => {
     });
   });
 });
-

@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, vi, expect } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
@@ -266,4 +267,3 @@ describe("Results Table", () => {
     });
   });
 });
-

@@ -6,7 +6,7 @@ import MemoisedFactory from "../MemoisedFactory";
 import ContainerModel from "../../ContainerModel";
 import { GlobalId } from "@/stores/definitions/BaseRecord";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
   peopleStore: {},
 })

@@ -1,5 +1,6 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect, vi } from 'vitest';
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";
 import { runInAction } from "mobx";

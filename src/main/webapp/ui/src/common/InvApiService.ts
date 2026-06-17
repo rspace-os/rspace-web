@@ -1,6 +1,6 @@
 import ApiServiceBase from "./ApiServiceBase";
 import { when } from "mobx";
-import getRootStore from "../stores/stores/RootStore";
+import getRootStore from "../stores/stores/getRootStore";
 import { type ApiRecordType } from "../stores/definitions/InventoryRecord";
 import { type Id } from "../stores/definitions/BaseRecord";
 import { AxiosResponse } from "@/common/axios";

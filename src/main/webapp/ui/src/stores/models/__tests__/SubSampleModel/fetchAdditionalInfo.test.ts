@@ -10,7 +10,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {
   query: vi.fn(() => ({})),
   }}));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   uiStore: {
     addAlert: () => {},

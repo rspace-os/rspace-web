@@ -1,4 +1,4 @@
-import getRootStore from "../stores/stores/RootStore";
+import getRootStore from "../stores/stores/getRootStore";
 import { mkAlert } from "../stores/contexts/Alert";
 import { toTitleCase } from "./Util";
 import * as ArrayUtils from "./ArrayUtils";

@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { test, describe, expect } from 'vitest';
 import React from "react";
 import {
@@ -32,4 +33,3 @@ describe("AdjustableHeadCell", () => {
     });
   });
 });
-

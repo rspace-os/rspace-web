@@ -16,7 +16,7 @@ import {
   type HasQuantityUneditableFields,
 } from "../definitions/HasQuantity";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { mkAlert } from "../contexts/Alert";
 import Search from "./Search";
 import InventoryBaseRecord, {

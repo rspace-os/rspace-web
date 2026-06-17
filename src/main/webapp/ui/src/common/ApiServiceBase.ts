@@ -5,7 +5,7 @@ import axios, {
   type AxiosError,
 } from "@/common/axios";
 import { when } from "mobx";
-import getRootStore from "../stores/stores/RootStore";
+import getRootStore from "../stores/stores/getRootStore";
 import JwtService from "./JwtService";
 import { sleep } from "../util/Util";
 import { mkAlert } from "../stores/contexts/Alert";

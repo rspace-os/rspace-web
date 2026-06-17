@@ -9,7 +9,7 @@ import materialTheme from "../../../../theme";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
   unitStore: {
     getUnit: () => ({ label: "ml" }),

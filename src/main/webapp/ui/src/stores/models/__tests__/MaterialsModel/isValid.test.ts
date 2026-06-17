@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test } from 'vitest';
 import { containerAttrs } from "../ContainerModel/mocking";
 import {
@@ -55,4 +56,3 @@ describe("isValid", () => {
     });
   });
 });
-

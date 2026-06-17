@@ -1,5 +1,6 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from 'vitest';
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
@@ -28,4 +29,3 @@ describe("getBaskets", () => {
     expect(searchStore.savedBaskets.length).toBe(1);
   });
 });
-
