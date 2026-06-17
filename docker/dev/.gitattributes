@@ -1,0 +1,4 @@
+# Everything in this directory runs inside Linux containers / WSL2. Force LF so
+# a Windows clone (git's core.autocrlf=true default) cannot write CRLF endings,
+# which would break the shell scripts' shebang ("bad interpreter: /bin/bash^M").
+* text=auto eol=lf

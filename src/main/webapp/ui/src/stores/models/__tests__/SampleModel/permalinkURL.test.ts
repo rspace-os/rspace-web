@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { makeMockSample } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       getUnit: () => ({ label: "ml" }),

@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
 import Quantity from "../Quantity";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       unitsOfCategory: vi.fn(() => [

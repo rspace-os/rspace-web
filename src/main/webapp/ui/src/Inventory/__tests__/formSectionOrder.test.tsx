@@ -65,7 +65,7 @@ vi.mock("../../common/InvApiService", () => ({
   },
 }));
 
-vi.mock("../../stores/stores/RootStore", () => ({
+vi.mock("../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       savedSearches: [{ name: "Dummy saved search", query: "foo" }],

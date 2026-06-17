@@ -31,7 +31,7 @@ import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Template } from "../definitions/Template";
 import { CELSIUS, type Temperature, validateTemperature } from "../definitions/Units";
 import { HasQuantityMixin } from "../models/HasQuantity";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import InventoryBaseRecord, {

@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
 import { arbRsSet } from "../../../../util/__tests__/set/helpers";

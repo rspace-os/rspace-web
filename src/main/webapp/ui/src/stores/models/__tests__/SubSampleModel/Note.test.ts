@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import type { Note } from "../../SubSampleModel";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({}),
 }));
 describe("type: Note", () => {

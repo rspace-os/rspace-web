@@ -7,7 +7,7 @@ import { storesContext } from "../../../../../stores/stores-context";
 import PreviewAction from "../PreviewAction";
 
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../../stores/stores/getRootStore", () => ({
   default: () => ({}),
 }));
 describe("PreviewAction", () => {

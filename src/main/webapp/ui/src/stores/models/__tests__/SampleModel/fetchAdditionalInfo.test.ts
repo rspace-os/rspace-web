@@ -23,7 +23,7 @@ vi.mock("../../../../common/InvApiService", () => ({
     query: () => ({}),
   },
 }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => mockRootStore,
 }));
 describe("fetchAdditionalInfo", () => {

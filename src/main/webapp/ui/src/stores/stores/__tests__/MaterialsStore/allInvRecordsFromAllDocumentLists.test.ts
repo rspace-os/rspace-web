@@ -1,9 +1,10 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test } from "vitest";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
 import { sampleAttrs } from "../../../models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";
 import { ListOfMaterials } from "../../../models/MaterialsModel";
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 describe("allInvRecordsFromAllDocumentLists", () => {
   test("The same record across multiple lists of materials of one field should list the record once.", () => {

@@ -8,7 +8,7 @@ import { mkAlert } from "../contexts/Alert";
 import type { Container } from "../definitions/Container";
 import type { Email, Person, PersonAttrs, PersonId, PersonName, Username } from "../definitions/Person";
 import type { ExportOptions } from "../definitions/Search";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 
 export default class PersonModel implements Person {
   id: PersonId;

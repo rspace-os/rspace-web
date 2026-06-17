@@ -6,7 +6,7 @@ import SubSampleModel from "../../SubSampleModel";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
 import { sampleAttrs } from "./mocking";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     peopleStore: {},
     unitStore: {

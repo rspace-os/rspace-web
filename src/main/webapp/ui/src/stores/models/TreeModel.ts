@@ -4,7 +4,7 @@ import type { GlobalId } from "../definitions/BaseRecord";
 import type { HasChildren } from "../definitions/HasChildren";
 import type { InventoryRecord, RecordType } from "../definitions/InventoryRecord";
 import type { TreeView } from "../definitions/TreeView";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import InventoryBaseRecord from "./InventoryBaseRecord";
 import type Search from "./Search";
 

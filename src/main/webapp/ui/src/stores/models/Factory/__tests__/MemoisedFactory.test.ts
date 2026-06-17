@@ -5,7 +5,7 @@ import { personAttrs } from "../../__tests__/PersonModel/mocking";
 import type ContainerModel from "../../ContainerModel";
 import MemoisedFactory from "../MemoisedFactory";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     peopleStore: {},
   }),

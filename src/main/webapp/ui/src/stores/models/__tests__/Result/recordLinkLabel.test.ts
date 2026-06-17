@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, test, vi } from "vitest";
-import getRootStore from "../../../stores/RootStore";
+import getRootStore from "../../../stores/getRootStore";
 import PersonModel from "../../PersonModel";
 import { makeMockBench, makeMockContainer } from "../ContainerModel/mocking";
 import { personAttrs } from "../PersonModel/mocking";
@@ -17,7 +17,7 @@ const mockRootStore = {
 };
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => mockRootStore,
 }));
 describe("computed: recordLinkLabel", () => {

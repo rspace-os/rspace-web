@@ -4,7 +4,7 @@ import type { Factory } from "../../../definitions/Factory";
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     peopleStore: {},
   }),

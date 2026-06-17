@@ -22,7 +22,7 @@ import type { RecordDetails } from "../definitions/Record";
 import type { Alias, Sample } from "../definitions/Sample";
 import type { SubSample } from "../definitions/SubSample";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
 import type ContainerModel from "./ContainerModel";
 import type { ContainerAttrs } from "./ContainerModel";

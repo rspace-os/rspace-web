@@ -7,7 +7,7 @@ import { AddScopedToastCommand } from "./addScopedToast";
 import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     searchStore: {},
     uiStore: {

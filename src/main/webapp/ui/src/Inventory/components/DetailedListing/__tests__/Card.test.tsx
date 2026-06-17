@@ -6,7 +6,7 @@ import { personAttrs } from "../../../../stores/models/__tests__/PersonModel/moc
 import materialTheme from "../../../../theme";
 import Card from "../Card";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       search: {

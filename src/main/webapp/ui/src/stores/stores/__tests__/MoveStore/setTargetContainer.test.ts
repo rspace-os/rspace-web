@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from "vitest";
 import { containerAttrs, makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
 import type Search from "../../../models/Search";

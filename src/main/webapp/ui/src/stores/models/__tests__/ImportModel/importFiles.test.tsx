@@ -1,8 +1,9 @@
+import "@/stores/stores/RootStore";
 import { runInAction } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
-import getRootStore from "../../../stores/RootStore";
+import getRootStore from "../../../stores/getRootStore";
 import ImportModel from "../../ImportModel";
 import { templateAttrs } from "../TemplateModel/mocking";
 

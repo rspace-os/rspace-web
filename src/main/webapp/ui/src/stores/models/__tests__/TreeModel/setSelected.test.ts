@@ -4,7 +4,7 @@ import Search from "../../Search";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     uiStore: {
       setVisiblePanel: () => {},

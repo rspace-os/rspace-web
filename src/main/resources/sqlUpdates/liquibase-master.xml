@@ -56,6 +56,8 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1111.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1136-remove-offline-work.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1135.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-416-pr2-cleanup.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1154.xml"/>
 
 
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then

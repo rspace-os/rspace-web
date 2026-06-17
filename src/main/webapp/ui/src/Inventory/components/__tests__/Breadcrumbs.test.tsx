@@ -4,7 +4,7 @@ import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleMod
 import Breadcrumbs from "../Breadcrumbs";
 
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../stores/stores/RootStore", () => ({
+vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       getUnit: () => ({ label: "ml" }),

@@ -11,7 +11,7 @@ import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { InventoryRecord } from "../definitions/InventoryRecord";
 import type { ExportOptions } from "../definitions/Search";
 import { fromCommonUnit, toCommonUnit } from "../definitions/Units";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import type { UnitCategory } from "../stores/UnitStore";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import AlwaysNewFactory from "./Factory/AlwaysNewFactory";

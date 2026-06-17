@@ -1,3 +1,5 @@
+import "@/stores/stores/RootStore";
+
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";

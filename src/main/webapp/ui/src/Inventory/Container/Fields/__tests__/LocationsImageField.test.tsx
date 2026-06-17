@@ -14,7 +14,7 @@ import LocationsImageMarkersDialog from "../LocationsImageMarkersDialog";
 
 let storeImageFunction: (arg: { dataUrl: string; file: Blob }) => void;
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: vi.fn(() => ({
     uiStore: {
       setPageNavigationConfirmation: vi.fn(),

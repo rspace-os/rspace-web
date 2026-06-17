@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test } from "vitest";
 import { ListOfMaterials, type ListOfMaterialsAttrs } from "../../MaterialsModel";
 import { containerAttrs } from "../ContainerModel/mocking";

@@ -30,7 +30,7 @@ import InventoryPicker from "../../Inventory/components/Picker/Picker";
 import type { ExportOptions } from "../../stores/definitions/Search";
 import { hasLocation } from "../../stores/models/HasLocation";
 import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
-import getRootStore from "../../stores/stores/RootStore";
+import getRootStore from "../../stores/stores/getRootStore";
 import useStores from "../../stores/use-stores";
 import { showToastWhilstPending } from "../../util/alerts";
 import { preventEventBubbling } from "../../util/Util";

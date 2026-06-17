@@ -17,7 +17,7 @@ import type { RecordDetails } from "../definitions/Record";
 import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Template } from "../definitions/Template";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,

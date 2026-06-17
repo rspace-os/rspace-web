@@ -6,7 +6,7 @@ import { makeMockSample, sampleAttrs } from "../../__tests__/SampleModel/mocking
 import { subsampleAttrs } from "../../__tests__/SubSampleModel/mocking";
 import AlwaysNewFactory from "../AlwaysNewFactory";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     peopleStore: {},
     unitStore: { getUnit: () => ({ label: "ml" }) },

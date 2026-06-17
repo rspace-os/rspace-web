@@ -6,7 +6,7 @@ import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory
 import FieldCard from "../FieldCard";
 
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../../stores/stores/getRootStore", () => ({
   default: () => ({}),
 }));
 describe("FieldCard", () => {

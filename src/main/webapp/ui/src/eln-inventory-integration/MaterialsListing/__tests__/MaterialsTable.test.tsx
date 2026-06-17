@@ -8,7 +8,7 @@ import materialTheme from "../../../theme";
 import MaterialsTable from "../MaterialsTable";
 
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../stores/stores/RootStore", () => ({
+vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       getUnit: () => ({

@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from "vitest";
 import { makeMockSubSample } from "./mocking";
 

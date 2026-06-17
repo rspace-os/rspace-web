@@ -8,7 +8,7 @@ import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
 import type { Model } from "./common";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     searchStore: {},
     uiStore: {

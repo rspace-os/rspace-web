@@ -4,7 +4,7 @@ import type { HasLocation } from "../definitions/HasLocation";
 import type { InventoryRecord } from "../definitions/InventoryRecord";
 import type { Search } from "../definitions/Search";
 import type { SubSample } from "../definitions/SubSample";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import ContainerModel from "./ContainerModel";
 import InventoryBaseRecord from "./InventoryBaseRecord";
 import SubSampleModel from "./SubSampleModel";

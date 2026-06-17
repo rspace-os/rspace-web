@@ -23,7 +23,7 @@ import {
   parseResultType,
   type ResultType,
 } from "../../definitions/Search";
-import getRootStore from "../../stores/RootStore";
+import getRootStore from "../../stores/getRootStore";
 
 export const DEFAULT_SEARCH = {
   query: "",

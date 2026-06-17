@@ -6,7 +6,7 @@ import axios, {
   type AxiosResponse,
 } from "@/common/axios";
 import { mkAlert } from "../stores/contexts/Alert";
-import getRootStore from "../stores/stores/RootStore";
+import getRootStore from "../stores/stores/getRootStore";
 import { sleep } from "../util/Util";
 import JwtService from "./JwtService";
 

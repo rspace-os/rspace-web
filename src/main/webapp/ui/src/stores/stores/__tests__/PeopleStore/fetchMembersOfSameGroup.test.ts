@@ -1,9 +1,10 @@
+import "@/stores/stores/RootStore";
 import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import * as PersonMocking from "../../../models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../models/PersonModel";
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 vi.mock("../../../../common/ElnApiService", () => ({
   default: {

@@ -4,7 +4,7 @@ import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
 import { makeMockSample } from "../SampleModel/mocking";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       activeResult: {

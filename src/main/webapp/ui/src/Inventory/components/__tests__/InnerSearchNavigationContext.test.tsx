@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
 import React from "react";

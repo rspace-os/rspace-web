@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class BioPortalOntologiesService {
+
   private BioPortalOntologiesClient bioOntologiesClient;
 
   public BioPortalOntologiesService(BioPortalOntologiesClient bioOntologiesClient) {
@@ -36,7 +37,8 @@ public class BioPortalOntologiesService {
           String[] ontologyTermParts = ontologyTerm.split("\\|\\|");
           String ontologyName = ontologyTermParts[1].split("\\|")[0];
           String ontologyVersion =
-              "https://bioportal.bioontology.org/ontologies/"
+              bioOntologiesClient.getBioportalBaseUrl()
+                  + "/ontologies/"
                   + ontologyName
                   + "  on: "
                   + dtf.format(now);

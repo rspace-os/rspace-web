@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import type { AxiosResponse } from "axios";
 import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
@@ -5,7 +6,7 @@ import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking
 import ContainerModel from "../../../models/ContainerModel";
 import MemoisedFactory from "../../../models/Factory/MemoisedFactory";
 import Search from "../../../models/Search";
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {

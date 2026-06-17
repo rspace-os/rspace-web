@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({}),
 }));
 describe("computed: availableLocations", () => {

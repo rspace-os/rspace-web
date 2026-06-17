@@ -10,7 +10,7 @@ import materialTheme from "../../../../theme";
 import NavigateToNode from "../NavigateToNode";
 import Node from "../Node";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       search: {},

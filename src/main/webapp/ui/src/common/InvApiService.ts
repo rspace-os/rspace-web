@@ -2,7 +2,7 @@ import { when } from "mobx";
 import type { AxiosResponse } from "@/common/axios";
 import type { Id } from "../stores/definitions/BaseRecord";
 import type { ApiRecordType } from "../stores/definitions/InventoryRecord";
-import getRootStore from "../stores/stores/RootStore";
+import getRootStore from "../stores/stores/getRootStore";
 import ApiServiceBase from "./ApiServiceBase";
 
 export type BulkEndpointRecordSerialisation = {

@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { render } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";

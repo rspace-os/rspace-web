@@ -10,7 +10,7 @@ import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateMo
 import materialTheme from "../../../../theme";
 import CreateDialog from "../CreateDialog";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       getUnit: () => ({ label: "ml" }),

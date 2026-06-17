@@ -34,7 +34,7 @@ import type {
 import type { SubSample } from "../definitions/SubSample";
 import type { AdjustableTableRowLabel } from "../definitions/Tables";
 import type { TreeView } from "../definitions/TreeView";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";

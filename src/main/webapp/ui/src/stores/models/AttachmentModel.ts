@@ -10,7 +10,7 @@ import type { Attachment } from "../definitions/Attachment";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { LinkableRecord } from "../definitions/LinkableRecord";
 import type { Person } from "../definitions/Person";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 
 type AttachmentId = number | null;
 type Bytes = number;

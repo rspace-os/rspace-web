@@ -4,7 +4,7 @@ import LocationModel from "../../LocationModel";
 import { containerAttrs, makeMockContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({}),
 }));
 describe("computed: paramsForBackend", () => {

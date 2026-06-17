@@ -1,10 +1,11 @@
+import "@/stores/stores/RootStore";
 import fc from "fast-check";
 import { describe, expect, test, vi } from "vitest";
 import { arbitraryGroup } from "../../../definitions/__tests__/Group/helper";
 import { makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
 import ContainerModel from "../../../models/ContainerModel";
 import PersonModel from "../../../models/PersonModel";
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 describe("method: createNewContainer", () => {
   test("Should return a new container model", async () => {

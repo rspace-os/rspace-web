@@ -21,7 +21,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
     get: vi.fn(() => {}),
   },
 }));
-vi.mock("../../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       search: null,

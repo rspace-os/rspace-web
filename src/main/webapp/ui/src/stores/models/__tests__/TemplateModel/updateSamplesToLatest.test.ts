@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
-import getRootStore from "../../../stores/RootStore";
+import getRootStore from "../../../stores/getRootStore";
 import { sampleAttrs } from "../SampleModel/mocking";
 import { makeMockTemplate } from "./mocking";
 
@@ -15,7 +15,7 @@ const mockRootStore = {
   },
 };
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => mockRootStore,
 }));
 vi.mock("../../../../common/InvApiService", () => ({

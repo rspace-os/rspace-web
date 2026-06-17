@@ -31,7 +31,7 @@ import type { AllowedTypeFilters, CoreFetcherArgs, Search as SearchInterface } f
 import type { SubSample } from "../definitions/SubSample";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Tag } from "../definitions/Tag";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
 import { HasLocationMixin } from "./HasLocation";
 import InventoryBaseRecord, {

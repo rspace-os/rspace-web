@@ -7,7 +7,7 @@ import { mkAlert } from "../contexts/Alert";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { Basket, BasketAttrs, BasketDetails } from "../definitions/Basket";
 import type { InventoryRecord } from "../definitions/InventoryRecord";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 
 /**
  * This class models any basket (collection of items)

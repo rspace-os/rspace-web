@@ -4,7 +4,7 @@ import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
 import "@/__tests__/assertUrlSearchParams";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     authStore: {
       isSynchronizing: false,

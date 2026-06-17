@@ -10,7 +10,7 @@ import {
   type Quantity,
 } from "../definitions/HasQuantity";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import type { UnitCategory } from "../stores/UnitStore";
 import type InventoryBaseRecord from "./InventoryBaseRecord";
 import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";

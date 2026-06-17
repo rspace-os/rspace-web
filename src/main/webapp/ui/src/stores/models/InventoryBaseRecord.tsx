@@ -40,7 +40,7 @@ import type { ReadAccessLevel, RecordDetails, Thumbnail } from "../definitions/R
 import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRow, AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Tag } from "../definitions/Tag";
-import getRootStore from "../stores/RootStore";
+import getRootStore from "../stores/getRootStore";
 import { type AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import type { ContainerInContainerParams } from "./ContainerModel";
@@ -1083,7 +1083,6 @@ export default class InventoryBaseRecord
    * This provides a mechanism for the child classes to attach additional data
    * this analytics event
    */
-
   // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   get dataAttachedToRecordCreatedAnaylticsEvent(): {} {
     return {

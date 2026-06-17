@@ -6,7 +6,7 @@ import CoreFetcher from "../../CoreFetcher";
 import "@/__tests__/assertUrlSearchParams";
 import type { AxiosResponse } from "axios";
 
-vi.mock("../../../../stores/RootStore", () => ({
+vi.mock("../../../../stores/getRootStore", () => ({
   default: () => ({
     default: {
       uiStore: {

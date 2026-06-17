@@ -14,7 +14,7 @@ vi.mock("../../../../common/InvApiService", () => ({
       }),
   },
 }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     uiStore: {
       addAlert: () => {},

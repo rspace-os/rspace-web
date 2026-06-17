@@ -1,3 +1,4 @@
+import "@/stores/stores/RootStore";
 import { ThemeProvider } from "@mui/material/styles";
 import { render } from "@testing-library/react";
 import fc from "fast-check";

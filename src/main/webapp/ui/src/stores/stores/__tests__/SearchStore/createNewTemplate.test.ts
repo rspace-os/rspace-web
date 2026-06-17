@@ -1,6 +1,7 @@
+import "@/stores/stores/RootStore";
 import { describe, expect, test, vi } from "vitest";
 import TemplateModel from "../../../models/TemplateModel";
-import getRootStore from "../../RootStore";
+import getRootStore from "../../getRootStore";
 
 describe("method: createNewTemplate", () => {
   test("Should return a new template model", async () => {

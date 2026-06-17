@@ -3,7 +3,7 @@ import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
 import * as PersonMocking from "../../../../stores/models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../../stores/models/PersonModel";
-import getRootStore from "../../../../stores/stores/RootStore";
+import getRootStore from "../../../../stores/stores/getRootStore";
 import Alerts from "../../Alerts";
 import PeopleField from "../PeopleField";
 

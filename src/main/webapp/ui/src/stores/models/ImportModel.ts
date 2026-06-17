@@ -14,8 +14,8 @@ import { pick } from "../../util/unsafeUtils";
 import { mkAlert } from "../contexts/Alert";
 import type { GlobalId } from "../definitions/BaseRecord";
 import type { FieldModelAttrs as TemplateField } from "../models/FieldModel";
+import getRootStore from "../stores/getRootStore";
 import type { ImportRecordType } from "../stores/ImportStore";
-import getRootStore from "../stores/RootStore";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import {
   apiStringToFieldType,
@@ -679,8 +679,7 @@ export default class Import {
               if (newFieldMap.isCompatibleWithField(fieldsByRecordType[nameToMatch(name as string)])) {
                 newFieldMap.setField(fieldsByRecordType[nameToMatch(name as string)]);
               }
-              // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-              if (data.fieldMappings?.hasOwnProperty(originalColumnName)) {
+              if (data.fieldMappings !== undefined && Object.hasOwn(data.fieldMappings, originalColumnName)) {
                 newFieldMap.field = Fields[data.fieldMappings[originalColumnName]];
                 newFieldMap.selected = true;
               }
@@ -716,8 +715,7 @@ export default class Import {
                 newFieldMap.setField(Fields.none);
                 newFieldMap.selected = false;
               }
-              // biome-ignore lint/suspicious/noPrototypeBuiltins: initial biome migration
-              if (data.fieldMappings?.hasOwnProperty(columnName)) {
+              if (data.fieldMappings !== undefined && Object.hasOwn(data.fieldMappings, columnName)) {
                 newFieldMap.field = Fields[data.fieldMappings[columnName]];
                 newFieldMap.selected = true;
               }

@@ -3,7 +3,7 @@ import InvApiService from "../../../../../common/InvApiService";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import CoreFetcher from "../../CoreFetcher";
 
-vi.mock("../../../../stores/RootStore", () => ({
+vi.mock("../../../../stores/getRootStore", () => ({
   default: () => ({
     uiStore: {
       addAlert: () => {},

@@ -5,7 +5,7 @@ import type { FieldModelAttrs } from "../../FieldModel";
 import { makeMockTemplate } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       assertValidUnitId: () => {},

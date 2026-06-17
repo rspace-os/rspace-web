@@ -10,7 +10,7 @@ import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({}),
 }));
 describe("StepperPanel", () => {
