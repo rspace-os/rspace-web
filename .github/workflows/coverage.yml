@@ -92,6 +92,6 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7.0.0
         with:
           files: target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
