@@ -15,6 +15,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -68,7 +69,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    */
   protected ResponseEntity<String> doSendMessage(String jsonMessage, URI uri) {
     RestTemplate template = getRestTemplate();
-    HttpEntity<String> requestEntity = new HttpEntity<String>(jsonMessage);
+    HttpEntity<String> requestEntity = new HttpEntity<String>(jsonMessage, createPostHeaders());
     try {
       ResponseEntity<String> resp = template.postForEntity(uri, requestEntity, String.class);
       if (!resp.getStatusCode().is2xxSuccessful()) {
@@ -86,6 +87,17 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    */
   RestTemplate getRestTemplate() {
     return new RestTemplate();
+  }
+
+  /**
+   * Headers applied to the webhook POST. The default sends no explicit headers (the body is then
+   * posted as {@code text/plain}); subclasses can override to set a content type the webhook
+   * requires.
+   *
+   * @return headers to attach to the outgoing request
+   */
+  protected HttpHeaders createPostHeaders() {
+    return new HttpHeaders();
   }
 
   /**
