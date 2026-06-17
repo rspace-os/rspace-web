@@ -76,14 +76,6 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                 the Microsoft Teams Integration article.
               </Link>
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Microsoft has retired the older connector-based webhooks; create
-              the webhook with the Workflows app in Teams instead, using the
-              &ldquo;Send webhook alerts to a channel&rdquo; template.
-              Templates restricted to specific people, or to people in your
-              organisation, require Microsoft authentication and will reject
-              messages from RSpace.
-            </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((channels) => (
                 <Stack
