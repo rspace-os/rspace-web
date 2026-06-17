@@ -34,12 +34,14 @@ import {
   type HasLocationUneditableFields,
 } from "../definitions/HasLocation";
 import { type ContainerAttrs } from "./ContainerModel";
+import { type Container } from "../definitions/Container";
 import React from "react";
 import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
 import { action, computed, makeObservable, observable, override } from "mobx";
 import { type Instrument } from "../definitions/Instrument";
 import getRootStore from "../stores/RootStore";
 import { type CoreFetcherArgs } from "../definitions/Search";
+import RsSet from "../../util/set";
 
 type InstrumentEditableFields = HasLocationEditableFields &
   InventoryBaseRecordEditableFields;
@@ -52,6 +54,7 @@ export type InstrumentAttrs = {
   type: string;
   globalId: GlobalId | null;
   name?: string;
+  templateId?: Id | null;
   description?: string;
   permittedActions: Array<Action>;
   tags: string | null;
@@ -88,11 +91,31 @@ export default class InstrumentModel
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<import("./ContainerModel").default>;
 
+  templateId: Id | null = null;
+
+  // @ts-expect-error createOptionsParametersState is initialised by populateFromJson
+  createOptionsParametersState: {
+    name: { key: "name"; value: string };
+    fields: {
+      key: "fields";
+      copyFieldContent: ReadonlyArray<{
+        id: Id;
+        name: string;
+        content: string;
+        hasContent: boolean;
+        selected: boolean;
+      }>;
+    };
+  };
+
   constructor(factory: Factory, params: InstrumentAttrs) {
     super(factory, params);
     makeObservable(this, {
       parentContainers: observable,
+      immediateParentContainer: observable,
+      createOptionsParametersState: observable,
       paramsForBackend: override,
+      populateFromJson: override,
       updateFieldsState: override,
       cardTypeLabel: override,
       recordTypeLabel: override,
@@ -104,8 +127,23 @@ export default class InstrumentModel
       showNewlyCreatedRecordSearchParams: override,
     });
 
-    if (this.recordType === "instrument")
+    if (this.recordType === "instrument") {
       this.populateFromJson(factory, params, {});
+      this.templateId = params.templateId ?? null;
+      this.createOptionsParametersState = {
+        name: observable({ key: "name" as const, value: "" }),
+        fields: observable({
+          key: "fields" as const,
+          copyFieldContent: this.extraFields.map((e) => ({
+            id: e.id,
+            name: e.name,
+            content: e.content,
+            hasContent: e.hasContent,
+            selected: false,
+          })),
+        }),
+      };
+    }
   }
 
   get recordType(): RecordType {
@@ -138,8 +176,39 @@ export default class InstrumentModel
     });
   }
 
+  populateFromJson(
+    factory: Factory,
+    passedParams: object,
+    defaultParams: object = {},
+  ): void {
+    super.populateFromJson(factory, passedParams, defaultParams);
+    const params = { ...defaultParams, ...passedParams } as InstrumentAttrs;
+    const [firstParent] = params.parentContainers ?? [];
+    this.immediateParentContainer = firstParent
+      ? (factory.newRecord(
+          firstParent as Record<string, unknown> & { globalId: GlobalId },
+        ) as Container)
+      : null;
+  }
+
   get paramsForBackend(): Record<string, unknown> {
-    return { ...super.paramsForBackend };
+    const params = { ...super.paramsForBackend };
+    if (this.templateId) {
+      params.templateId = this.templateId;
+      /*
+       * When creating a new instrument from a template the backend populates
+       * extra fields from the template automatically. Sending those same fields
+       * in extraFields as well causes a "duplicated field name" error. Only
+       * user-added fields (newFieldRequest: true) should be included; the
+       * template fields will be created by the backend via templateId.
+       */
+      if (!this.id && Array.isArray(params.extraFields)) {
+        params.extraFields = (
+          params.extraFields as Array<{ newFieldRequest: boolean }>
+        ).filter((ef) => ef.newFieldRequest === true);
+      }
+    }
+    return params;
   }
 
   updateFieldsState() {
@@ -156,6 +225,7 @@ export default class InstrumentModel
         break;
       case "create":
         this.setEditable(FIELDS, true);
+        this.setEditableExtraFields(this.extraFields, true);
         break;
     }
   }
@@ -192,6 +262,51 @@ export default class InstrumentModel
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
-    return [];
+    return [
+      {
+        label: "Instrument Template",
+        explanation:
+          "Create an instrument template from this instrument, to easily create similar instruments.",
+        parameters: [
+          {
+            label: "Name",
+            explanation: "A name for the new template. At least two characters.",
+            state: this.createOptionsParametersState.name,
+            validState: () =>
+              this.createOptionsParametersState.name.value.length >= 2,
+          },
+          {
+            label: "Field default values",
+            explanation:
+              "All of the instrument's custom fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+            state: this.createOptionsParametersState.fields,
+            validState: () => true,
+          },
+        ],
+        onReset: () => {
+          this.createOptionsParametersState.name.value = "";
+          this.createOptionsParametersState.fields.copyFieldContent = [
+            ...this.extraFields.map((e) => ({
+              id: e.id,
+              name: e.name,
+              content: e.content,
+              hasContent: e.hasContent,
+              selected: false,
+            })),
+          ];
+        },
+        onSubmit: () => {
+          return getRootStore().searchStore.search.createInstrumentTemplateFromInstrument(
+            this.createOptionsParametersState.name.value,
+            this,
+            new RsSet(
+              this.createOptionsParametersState.fields.copyFieldContent
+                .filter(({ selected }) => selected)
+                .map(({ id }) => id),
+            ),
+          );
+        },
+      },
+    ];
   }
 }

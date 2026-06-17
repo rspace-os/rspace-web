@@ -43,7 +43,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
   const showFieldmark = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("FIELDMARK")).orElse(false);
-  const handleCreate = async (recordType: "sample" | "container" | "template" | "instrumentTemplate") => {
+  const handleCreate = async (recordType: "sample" | "container" | "instrument" | "template" | "instrumentTemplate") => {
     trackingStore.trackEvent("CreateInventoryRecordClicked", {
       type: recordType,
     });
@@ -160,6 +160,27 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           }
           onClick={() => {
             void handleCreate("container");
+          }}
+        />
+        <AccentMenuItem
+          compact
+          title="New Instrument"
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "instrument",
+              }}
+              color=""
+              style={{
+                width: "18px",
+                height: "18px",
+                padding: "5px",
+              }}
+            />
+          }
+          onClick={() => {
+            void handleCreate("instrument");
           }}
         />
         <AccentMenuItem

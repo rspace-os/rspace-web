@@ -1,0 +1,134 @@
+import React from "react";
+import useStores from "../../stores/use-stores";
+import Stepper from "../components/Stepper/Stepper";
+import StepperPanel from "../components/Stepper/StepperPanel";
+import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
+import NameField from "../components/Fields/Name";
+import DescriptionField from "../components/Fields/Description";
+import TagsField from "../components/Fields/Tags";
+import ImageField from "../components/Fields/Image";
+import LocationField from "../components/Fields/Location";
+import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
+import InstrumentModel from "../../stores/models/InstrumentModel";
+import docLinks from "../../assets/DocLinks";
+import { observer } from "mobx-react-lite";
+import {
+  useFormSectionError,
+  setFormSectionError,
+} from "../components/Stepper/StepperPanelHeader";
+import SynchroniseFormSections, {
+  UnsynchroniseFormSections,
+} from "../components/Stepper/SynchroniseFormSections";
+
+const OverviewSection = observer(
+  ({ activeResult }: { activeResult: InstrumentModel }) => {
+    const formSectionError = useFormSectionError({
+      editing: activeResult.editing,
+      globalId: activeResult.globalId,
+    });
+
+    React.useEffect(() => {
+      setFormSectionError(formSectionError, "name", true);
+    }, []);
+
+    return (
+      <StepperPanel
+        title="Overview"
+        sectionName="overview"
+        formSectionError={formSectionError}
+        recordType="instrument"
+      >
+        <NameField
+          fieldOwner={activeResult}
+          record={activeResult}
+          onErrorStateChange={(e) =>
+            setFormSectionError(formSectionError, "name", e)
+          }
+        />
+        <LocationField fieldOwner={activeResult} />
+        <ImageField
+          fieldOwner={activeResult}
+          alt="What the instrument looks like"
+        />
+      </StepperPanel>
+    );
+  }
+);
+
+const DetailsSection = observer(
+  ({ activeResult }: { activeResult: InstrumentModel }) => {
+    const formSectionError = useFormSectionError({
+      editing: activeResult.editing,
+      globalId: activeResult.globalId,
+    });
+
+    return (
+      <StepperPanel
+        title="Details"
+        sectionName="details"
+        formSectionError={formSectionError}
+        recordType="instrument"
+      >
+        <DescriptionField
+          fieldOwner={activeResult}
+          onErrorStateChange={(e) =>
+            setFormSectionError(formSectionError, "description", e)
+          }
+        />
+        <TagsField fieldOwner={activeResult} />
+      </StepperPanel>
+    );
+  }
+);
+
+const CustomFieldsSection = observer(
+  ({ activeResult }: { activeResult: InstrumentModel }) => {
+    const formSectionError = useFormSectionError({
+      editing: activeResult.editing,
+      globalId: activeResult.globalId,
+    });
+
+    return (
+      <StepperPanel
+        title="Custom Fields"
+        sectionName="customFields"
+        formSectionError={formSectionError}
+        recordType="instrument"
+      >
+        <ExtraFields
+          onErrorStateChange={(field, value) =>
+            setFormSectionError(formSectionError, field, value)
+          }
+          result={activeResult}
+        />
+      </StepperPanel>
+    );
+  }
+);
+
+export default function NewRecordForm(): React.ReactNode {
+  const {
+    searchStore: { activeResult },
+  } = useStores();
+  if (!activeResult || !(activeResult instanceof InstrumentModel))
+    throw new Error("ActiveResult must be an Instrument");
+
+  return (
+    <SynchroniseFormSections>
+      <Stepper
+        helpLink={{
+          link: docLinks.createInstrument,
+          title: "Info on creating new instruments.",
+        }}
+        titleText={`New ${inventoryRecordTypeLabels.instrument}`}
+        resetScrollPosition={Symbol("always reset scroll")}
+      >
+        <UnsynchroniseFormSections>
+          <OverviewSection activeResult={activeResult} />
+        </UnsynchroniseFormSections>
+        <DetailsSection activeResult={activeResult} />
+        <CustomFieldsSection activeResult={activeResult} />
+      </Stepper>
+    </SynchroniseFormSections>
+  );
+}

@@ -28,6 +28,7 @@ import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
 import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
 import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 
@@ -241,6 +242,12 @@ describe("Form Section Order", () => {
             activeResult: makeMockInstrument({
               owner: personAttrs(),
             }),
+          }),
+        ],
+        [
+          "Instrument New Form",
+          getSectionNames(<InstrumentNewRecordForm />, {
+            activeResult: makeMockInstrument({ id: null, globalId: null }),
           }),
         ],
         [

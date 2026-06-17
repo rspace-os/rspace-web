@@ -401,6 +401,7 @@ export interface Search {
    * These methods SHOULD perform the associated contextual action.
    */
   createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void>;
+  createInstrumentTemplateFromInstrument(name: string, instrument: Instrument, includeContentForFields: Set<Id>): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;
