@@ -26,10 +26,6 @@ on:
         description: 'Java vendor Maven toolchain'
         type: string
         default: 'temurin'
-      nightly_build:
-        description: 'Optional nightly build configuration'
-        type: string
-        default: ''
 
 permissions:
   contents: read
@@ -602,7 +598,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          ./mvnw clean verify -DskipUnitTests=true -Denvironment=drop-recreate-db \
+          ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
