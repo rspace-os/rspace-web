@@ -13,7 +13,7 @@ class AdaptiveCard {
   private String schema = "http://adaptivecards.io/schemas/adaptive-card.json";
 
   private String type = "AdaptiveCard";
-  private String version = "1.4";
+  private String version = "1.5";
   private List<CardElement> body = new ArrayList<>();
   private MsTeamsProperties msteams = new MsTeamsProperties();
 
