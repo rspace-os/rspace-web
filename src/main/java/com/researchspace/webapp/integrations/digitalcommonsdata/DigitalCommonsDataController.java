@@ -10,6 +10,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -116,7 +117,8 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      addErrorAttributes(model, error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
       redirectUrl = CONNECTED_VIEW;
     }
@@ -180,7 +182,8 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      addErrorAttributes(model, error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
       return CONNECTED_VIEW;
     }
@@ -192,7 +195,8 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     userConnectionManager.save(userConnection);
     log.info("Connected DigitalCommonsData for user {}", principal.getName());
 
-    addSuccessAttributes(model);
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
     return CONNECTED_VIEW;
   }
 
@@ -244,7 +248,8 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .errorMsg("Exception during token refresh")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      addErrorAttributes(model, error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
       return CONNECTED_VIEW;
     }
@@ -256,25 +261,9 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     userConnectionManager.save(userConnection);
     log.info("Connected DigitalCommonsData for user {}", principal.getName());
 
-    addSuccessAttributes(model);
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
     return CONNECTED_VIEW;
-  }
-
-  private void addSuccessAttributes(Model model) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-  }
-
-  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
-    String connectionError = error.getErrorMsg();
-    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
-      connectionError += ": " + error.getErrorDetails();
-    }
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-    model.addAttribute("connectionError", connectionError);
   }
 
   @GetMapping("/test_connection")

@@ -9,6 +9,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.protocolsio.PIOUser;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.time.Instant;
@@ -138,10 +139,9 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
       conn.setRank(1);
       conn.setRefreshToken(accessToken.getBody().getRefreshToken());
       userConnectionManager.save(conn);
-      model.addAttribute("appName", "Protocols.io");
-      model.addAttribute("connectionChannel", "rspace.apps.protocolsio.connection");
-      model.addAttribute("connectionType", "PROTOCOLS_IO_CONNECTED");
-      return "connect/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model, "Protocols.io", "rspace.apps.protocolsio.connection", "PROTOCOLS_IO_CONNECTED");
+      return ConnectionResultPage.VIEW;
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -149,20 +149,14 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("appName", "Protocols.io");
-      model.addAttribute("connectionChannel", "rspace.apps.protocolsio.connection");
-      model.addAttribute("connectionType", "PROTOCOLS_IO_CONNECTED");
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model,
+          "Protocols.io",
+          "rspace.apps.protocolsio.connection",
+          "PROTOCOLS_IO_CONNECTED",
+          error);
+      return ConnectionResultPage.VIEW;
     }
-  }
-
-  private String buildConnectionError(OauthAuthorizationError error) {
-    String message = error.getErrorMsg();
-    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
-      message += ": " + error.getErrorDetails();
-    }
-    return message;
   }
 
   private long getExpireTime(ResponseEntity<AccessToken> accessToken) {

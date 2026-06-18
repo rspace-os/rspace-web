@@ -20,6 +20,7 @@ import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.ByteArrayInputStream;
@@ -139,13 +140,15 @@ public class DMPOnlineController extends BaseOAuth2Controller {
 
       createUserConnection(principal, accessToken);
       log.info("Connected DMPonline for user {}", principal.getName());
-      addSuccessAttributes(model);
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       redirectResult = CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMPonline", ex);
       error.errorMsg("Error during token creation");
       error.errorMsg(ex.getMessage());
-      addErrorAttributes(model, error.build());
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
       redirectResult = CONNECTED_VIEW;
     }
     return redirectResult;
@@ -213,35 +216,20 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       userConnection.setDisplayName("DMPonline refreshed access token");
       userConnectionManager.save(userConnection);
       log.info("Token refreshed for DMPonline for user {}", principal.getName());
-      addSuccessAttributes(model);
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       redirectResult = CONNECTED_VIEW;
 
     } catch (Exception e) {
       log.error("Error while refreshing token on DMPonline: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
       error.errorDetails(e.getMessage());
-      addErrorAttributes(model, error.build());
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
       redirectResult = CONNECTED_VIEW;
     }
 
     return redirectResult;
-  }
-
-  private void addSuccessAttributes(Model model) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-  }
-
-  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
-    String connectionError = error.getErrorMsg();
-    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
-      connectionError += ": " + error.getErrorDetails();
-    }
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-    model.addAttribute("connectionError", connectionError);
   }
 
   @GetMapping("/plans")

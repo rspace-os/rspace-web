@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NA
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.User;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.util.Map;
@@ -85,10 +86,12 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
     String authorizationCode = params.get("code");
     try {
       clustermarketOAuthService.generateAndSaveAuthCodeAccessToken(authorizationCode, subject);
-      model.addAttribute("appName", "Clustermarket");
-      model.addAttribute("connectionChannel", "rspace.apps.clustermarket.connection");
-      model.addAttribute("connectionType", "CLUSTERMARKET_CONNECTED");
-      return "connect/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model,
+          "Clustermarket",
+          "rspace.apps.clustermarket.connection",
+          "CLUSTERMARKET_CONNECTED");
+      return ConnectionResultPage.VIEW;
     } catch (HttpStatusCodeException e) {
       log.error(makeMessage(e), e);
       OauthAuthorizationError error =
@@ -97,20 +100,14 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("appName", "Clustermarket");
-      model.addAttribute("connectionChannel", "rspace.apps.clustermarket.connection");
-      model.addAttribute("connectionType", "CLUSTERMARKET_CONNECTED");
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model,
+          "Clustermarket",
+          "rspace.apps.clustermarket.connection",
+          "CLUSTERMARKET_CONNECTED",
+          error);
+      return ConnectionResultPage.VIEW;
     }
-  }
-
-  private String buildConnectionError(OauthAuthorizationError error) {
-    String message = error.getErrorMsg();
-    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
-      message += ": " + error.getErrorDetails();
-    }
-    return message;
   }
 
   private String makeMessage(Exception exception) {

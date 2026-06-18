@@ -8,6 +8,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.UnsupportedEncodingException;
@@ -228,9 +229,9 @@ public class GitHubController {
               .errorMsg("Github access denied")
               .errorDetails(e.getMessage())
               .build();
-      addConnectionAttributes(model);
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     } catch (Exception e) {
       log.error("Exception during GitHub token exchange", e);
       OauthAuthorizationError error =
@@ -238,9 +239,9 @@ public class GitHubController {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getMessage())
               .build();
-      addConnectionAttributes(model);
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     try {
@@ -252,30 +253,17 @@ public class GitHubController {
               .errorMsg("Getting repositories list failed")
               .errorDetails(e.getMessage())
               .build();
-      addConnectionAttributes(model);
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
-    addConnectionAttributes(model);
+    ConnectionResultPage.addConnectionAttributes(
+        model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED");
     model.addAttribute("connectionToken", accessToken);
 
-    return "connect/connected";
-  }
-
-  private void addConnectionAttributes(Model model) {
-    model.addAttribute("appName", "GitHub");
-    model.addAttribute("connectionChannel", "rspace.apps.github.connection");
-    model.addAttribute("connectionType", "GITHUB_CONNECTED");
-  }
-
-  private String buildConnectionError(OauthAuthorizationError error) {
-    String message = error.getErrorMsg();
-    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
-      message += ": " + error.getErrorDetails();
-    }
-    return message;
+    return ConnectionResultPage.VIEW;
   }
 
   private OauthAuthorizationErrorBuilder getAuthorizationBuilder() {

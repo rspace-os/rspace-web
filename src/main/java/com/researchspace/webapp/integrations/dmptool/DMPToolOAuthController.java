@@ -13,6 +13,7 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -107,7 +108,8 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      addErrorAttributes(model, error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
       return CONNECTED_VIEW;
     }
@@ -120,25 +122,9 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     userConnectionManager.save(conn);
     log.info("Connected DMPTool for user {}", principal.getName());
 
-    addSuccessAttributes(model);
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
     return CONNECTED_VIEW;
-  }
-
-  private void addSuccessAttributes(Model model) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-  }
-
-  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
-    String connectionError = error.getErrorMsg();
-    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
-      connectionError += ": " + error.getErrorDetails();
-    }
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-    model.addAttribute("connectionError", connectionError);
   }
 
   private URL getServerUrl() throws MalformedURLException {

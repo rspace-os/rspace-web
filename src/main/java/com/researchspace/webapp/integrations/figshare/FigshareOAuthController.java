@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -133,7 +133,8 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
       conn.setRefreshToken(token.getRefreshToken());
       log.info("Plain text access token is {}", accessTokenStr);
       userConnectionManager.save(conn);
-      addSuccessAttributes(model);
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       return CONNECTED_VIEW;
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
@@ -142,26 +143,10 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      addErrorAttributes(model, error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
       return CONNECTED_VIEW;
     }
-  }
-
-  private void addSuccessAttributes(Model model) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-  }
-
-  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
-    String connectionError = error.getErrorMsg();
-    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
-      connectionError += ": " + error.getErrorDetails();
-    }
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-    model.addAttribute("connectionError", connectionError);
   }
 
   long extractIdFromAccount(String accessTokenStr) {

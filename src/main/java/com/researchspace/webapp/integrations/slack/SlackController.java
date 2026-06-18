@@ -15,6 +15,7 @@ import com.researchspace.slack.SlackMessage;
 import com.researchspace.slack.SlackUser;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.BaseController;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.IOException;
@@ -109,9 +110,8 @@ public class SlackController extends BaseController {
   @GetMapping("/redirect_uri")
   public String handleSlackRedirect(
       @RequestParam Map<String, String> params, Model model, HttpSession session) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
 
     if (params.containsKey("error")) {
       OauthAuthorizationError error =
@@ -119,7 +119,7 @@ public class SlackController extends BaseController {
               .errorMsg("Error connecting to Slack")
               .errorDetails(params.get("error"))
               .build();
-      model.addAttribute("connectionError", buildConnectionError(error));
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
       return CONNECTED_VIEW;
     }
 
@@ -144,19 +144,11 @@ public class SlackController extends BaseController {
               .errorMsg("exception during token exchange")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("connectionError", buildConnectionError(error));
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
       return CONNECTED_VIEW;
     }
 
     return CONNECTED_VIEW;
-  }
-
-  private String buildConnectionError(OauthAuthorizationError error) {
-    String message = error.getErrorMsg();
-    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
-      message += ": " + error.getErrorDetails();
-    }
-    return message;
   }
 
   private OauthAuthorizationErrorBuilder getAuthErrorBuilder() {

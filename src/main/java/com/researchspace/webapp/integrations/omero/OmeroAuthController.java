@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.webapp.controller.BaseController;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import java.security.Principal;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -96,9 +97,8 @@ public class OmeroAuthController extends BaseController {
 
   @GetMapping("/redirect_uri")
   public String onAuthorization(Model model) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
     return CONNECTED_VIEW;
   }
 

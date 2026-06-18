@@ -11,6 +11,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.IOException;
@@ -135,9 +136,9 @@ public class OwnCloudController extends BaseOAuth2Controller {
               .errorDetails(params.get(ERROR))
               .build();
 
-      addConnectionAttributes(model);
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     if (userManager.getAuthenticatedUserInSession() == null) {
@@ -147,9 +148,9 @@ public class OwnCloudController extends BaseOAuth2Controller {
               .errorDetails(params.get(ERROR))
               .build();
 
-      addConnectionAttributes(model);
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     String authorizationCode = params.get("code");
@@ -196,27 +197,14 @@ public class OwnCloudController extends BaseOAuth2Controller {
               .errorDetails(e.getMessage())
               .build();
 
-      addConnectionAttributes(model);
-      model.addAttribute("connectionError", buildConnectionError(error));
-      return "connect/connected";
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
-    addConnectionAttributes(model);
-    return "connect/connected";
-  }
-
-  private void addConnectionAttributes(Model model) {
-    model.addAttribute("appName", "ownCloud");
-    model.addAttribute("connectionChannel", "rspace.apps.owncloud.connection");
-    model.addAttribute("connectionType", "OWNCLOUD_CONNECTED");
-  }
-
-  private String buildConnectionError(OauthAuthorizationError error) {
-    String message = error.getErrorMsg();
-    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
-      message += ": " + error.getErrorDetails();
-    }
-    return message;
+    ConnectionResultPage.addConnectionAttributes(
+        model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED");
+    return ConnectionResultPage.VIEW;
   }
 
   private OauthAuthorizationErrorBuilder getAuthErrorBuilder() {

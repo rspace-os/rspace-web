@@ -15,6 +15,7 @@ import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.ByteArrayInputStream;
@@ -154,13 +155,15 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       AccessToken accessToken = requestAccessToken(params.get("code"));
       createUserConnection(principal, accessToken);
       log.info("Connected DMP Assistant for user {}", principal.getName());
-      addSuccessAttributes(model);
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       return CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMP Assistant", ex);
       error.errorMsg("Error during token creation");
       error.errorDetails(ex.getMessage());
-      addErrorAttributes(model, error.build());
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
       return "connect/connected";
     }
   }
@@ -188,32 +191,17 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       conn.setDisplayName("DMP Assistant refreshed access token");
       userConnectionManager.save(conn);
       log.info("Refreshed DMP Assistant token for user {}", principal.getName());
-      addSuccessAttributes(model);
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       return CONNECTED_VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing DMP Assistant token: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
       error.errorDetails(e.getMessage());
-      addErrorAttributes(model, error.build());
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
       return "connect/connected";
     }
-  }
-
-  private void addSuccessAttributes(Model model) {
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-  }
-
-  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
-    String connectionError = error.getErrorMsg();
-    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
-      connectionError += ": " + error.getErrorDetails();
-    }
-    model.addAttribute("appName", APP_DISPLAY_NAME);
-    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
-    model.addAttribute("connectionType", CONNECTION_TYPE);
-    model.addAttribute("connectionError", connectionError);
   }
 
   @GetMapping("/me")
