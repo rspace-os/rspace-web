@@ -13,6 +13,7 @@
     connectionAlias    extra payload (raid)
     connectionToken    extra payload (github access token)
     connectionError    when set, the card treats the message as a failure
+    connectionResponse raw response payload (e.g. Slack OAuth JSON)
 
   Values are emitted as HTML-escaped data-* attributes (not interpolated into the
   script) so provider-supplied error text cannot break out of the JS context.
@@ -26,7 +27,8 @@
      data-type="<c:out value='${connectionType}'/>"
      data-alias="<c:out value='${connectionAlias}'/>"
      data-token="<c:out value='${connectionToken}'/>"
-     data-error="<c:out value='${connectionError}'/>"></div>
+     data-error="<c:out value='${connectionError}'/>"
+     data-response="<c:out value='${connectionResponse}'/>"></div>
 <p>You may now close this window.</p>
 <script>
   window.addEventListener("load", () => {
@@ -34,6 +36,7 @@
     const msg = { type: d.type };
     if (d.alias) msg.alias = d.alias;
     if (d.token) msg.authToken = d.token;
+    if (d.response) msg.response = d.response;
     if (d.error) msg.error = d.error;
     const channel = new BroadcastChannel(d.channel);
     channel.postMessage(msg);

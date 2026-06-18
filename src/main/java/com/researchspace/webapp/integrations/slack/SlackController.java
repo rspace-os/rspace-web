@@ -48,13 +48,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/slack")
 public class SlackController extends BaseController {
-  private static final String ERROR = "error";
   private static final String USER_ID = "user_id";
   private static final String TEAM_ID = "team_id";
   private static final String SAVE_CONVO_ERROR_GENERIC_MSG =
       "apps.slack.saveconversation.genericDefault";
   private static final String EXPORT_MESSAGES_DOCUMENT_NAME = "Exported Slack Messages";
   private static final long MAX_REQUESTED_DURATION_MILLIS = 90 * 24 * 3600 * 1000L; // 90 days
+
+  private static final String APP_DISPLAY_NAME = "Slack";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.slack.connection";
+  private static final String CONNECTION_TYPE = "SLACK_CONNECTED";
+  private static final String CONNECTED_VIEW = "connect/connected";
 
   // Parses "1d 2h 3min", "4 days" etc
   private static final PeriodFormatter PERIOD_FORMATTER =
@@ -105,15 +109,18 @@ public class SlackController extends BaseController {
   @GetMapping("/redirect_uri")
   public String handleSlackRedirect(
       @RequestParam Map<String, String> params, Model model, HttpSession session) {
-    // param code or error
-    if (params.containsKey(ERROR)) {
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+
+    if (params.containsKey("error")) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
               .errorMsg("Error connecting to Slack")
-              .errorDetails(params.get(ERROR))
+              .errorDetails(params.get("error"))
               .build();
-      model.addAttribute(ERROR, error);
-      return "connect/authorizationError";
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return CONNECTED_VIEW;
     }
 
     String authorizationCode = params.get("code");
@@ -127,7 +134,7 @@ public class SlackController extends BaseController {
               + "&code="
               + authorizationCode;
       String content = IOUtils.toString(new URL(slackUrl), StandardCharsets.UTF_8);
-      model.addAttribute("slackResponse", content);
+      model.addAttribute("connectionResponse", content);
       log.info("slack response retrieved fine");
 
     } catch (IOException e) {
@@ -137,11 +144,19 @@ public class SlackController extends BaseController {
               .errorMsg("exception during token exchange")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute(ERROR, error);
-      return "connect/authorizationError";
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return CONNECTED_VIEW;
     }
 
-    return "connect/slack/connected";
+    return CONNECTED_VIEW;
+  }
+
+  private String buildConnectionError(OauthAuthorizationError error) {
+    String message = error.getErrorMsg();
+    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
+      message += ": " + error.getErrorDetails();
+    }
+    return message;
   }
 
   private OauthAuthorizationErrorBuilder getAuthErrorBuilder() {
