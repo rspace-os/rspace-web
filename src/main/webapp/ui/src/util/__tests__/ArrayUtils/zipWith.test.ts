@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+import { describe, expect, test } from "vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 import { monoids } from "../helpers";
@@ -14,43 +14,31 @@ describe("zipWith", () => {
           .tuple(fc.nat(10), fc.oneof(...monoids))
           .chain(([length, [valueGenerator, booleanFunction]]) => {
             return fc.tuple(
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
-              fc.constant(booleanFunction as (a: any, b: any) => any)
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+              fc.constant(booleanFunction as (a: any, b: any) => any),
             );
           }),
-        <T>([as, bs, cs, booleanFunction]: [
-          T[],
-          T[],
-          T[],
-          (a: T, b: T) => T
-        ]) => {
-          expect(
-            ArrayUtils.zipWith(
-              as,
-              ArrayUtils.zipWith(bs, cs, booleanFunction),
-              booleanFunction
-            )
-          ).toEqual(
-            ArrayUtils.zipWith(
-              ArrayUtils.zipWith(as, bs, booleanFunction),
-              cs,
-              booleanFunction
-            )
+        <T>([as, bs, cs, booleanFunction]: [T[], T[], T[], (a: T, b: T) => T]) => {
+          expect(ArrayUtils.zipWith(as, ArrayUtils.zipWith(bs, cs, booleanFunction), booleanFunction)).toEqual(
+            ArrayUtils.zipWith(ArrayUtils.zipWith(as, bs, booleanFunction), cs, booleanFunction),
           );
-        }
-      )
+        },
+      ),
     );
   });
 });
-

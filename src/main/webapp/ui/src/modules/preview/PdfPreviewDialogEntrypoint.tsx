@@ -1,18 +1,12 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "@/theme";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import React from "react";
+import { createRoot } from "react-dom/client";
 import Alerts from "@/components/Alerts/Alerts";
-import {
-  CallablePdfPreview,
-  usePdfPreview,
-} from "@/eln/gallery/components/CallablePdfPreview";
-import {
-  CallableAsposePreview,
-  useAsposePreview,
-} from "@/eln/gallery/components/CallableAsposePreview";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { CallableAsposePreview, useAsposePreview } from "@/eln/gallery/components/CallableAsposePreview";
+import { CallablePdfPreview, usePdfPreview } from "@/eln/gallery/components/CallablePdfPreview";
+import materialTheme from "@/theme";
 
 export const OPEN_PDF_PREVIEW_DIALOG = "OPEN_PDF_PREVIEW_DIALOG";
 
@@ -28,10 +22,7 @@ function buildPdfStreamUrl({
   documentId,
   revisionId = null,
   publicView = false,
-}: Pick<
-  OpenPdfPreviewDialogEventDetail,
-  "documentId" | "revisionId" | "publicView"
->): string {
+}: Pick<OpenPdfPreviewDialogEventDetail, "documentId" | "revisionId" | "publicView">): string {
   return (
     (publicView ? "/public/publicView" : "") +
     `/Streamfile/${documentId}${revisionId != null ? `?revision=${revisionId}` : ""}`
@@ -103,4 +94,3 @@ window.addEventListener("load", () => {
     </React.StrictMode>,
   );
 });
-

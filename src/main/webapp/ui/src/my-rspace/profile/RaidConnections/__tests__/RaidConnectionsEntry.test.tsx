@@ -1,24 +1,17 @@
-import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "@/theme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/__tests__/__mocks__/matchMedia";
-import type { GroupInfo } from "@/modules/groups/schema";
 import type { UseSuspenseQueryResult } from "@tanstack/react-query";
+import type { GroupInfo } from "@/modules/groups/schema";
 
 // Mock hooks
 const mockOauthTokenData = "test-token-123";
 
-const createGroup = (
-  overrides: Partial<GroupInfo> & Pick<GroupInfo, "id" | "name" | "type">,
-): GroupInfo => ({
+const createGroup = (overrides: Partial<GroupInfo> & Pick<GroupInfo, "id" | "name" | "type">): GroupInfo => ({
   globalId: `GR${overrides.id}`,
   sharedFolderId: 1,
   sharedSnippetFolderId: 2,
@@ -58,18 +51,19 @@ vi.mock("@/modules/groups/queries", () => ({
 vi.mock("../RaidConnectionsAddForm", () => {
   return {
     default: function MockRaidConnectionsAddForm({
-    groupId,
-    handleCloseForm,
-  }: {
-    groupId: string;
-    handleCloseForm: () => void;
-  }) {
-    return (
-      <div data-testid="raid-connections-add-form">
-        Add Form for group {groupId}
-        <button onClick={handleCloseForm}>Close Form</button>
-      </div>
-    );
+      groupId,
+      handleCloseForm,
+    }: {
+      groupId: string;
+      handleCloseForm: () => void;
+    }) {
+      return (
+        <div data-testid="raid-connections-add-form">
+          Add Form for group {groupId}
+          {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
+          <button onClick={handleCloseForm}>Close Form</button>
+        </div>
+      );
     },
   };
 });
@@ -77,18 +71,19 @@ vi.mock("../RaidConnectionsAddForm", () => {
 vi.mock("../RaidConnectionsDisassociateButton", () => {
   return {
     default: function MockRaidConnectionsDisassociateButton({
-    raidIdentifier,
-    raidTitle,
-  }: {
-    groupId: string;
-    raidIdentifier: string;
-    raidTitle: string;
-  }) {
-    return (
-      <button data-testid="disassociate-button">
-        Disassociate {raidTitle} ({raidIdentifier})
-      </button>
-    );
+      raidIdentifier,
+      raidTitle,
+    }: {
+      groupId: string;
+      raidIdentifier: string;
+      raidTitle: string;
+    }) {
+      return (
+        // biome-ignore lint/a11y/useButtonType: initial biome migration
+        <button data-testid="disassociate-button">
+          Disassociate {raidTitle} ({raidIdentifier})
+        </button>
+      );
     },
   };
 });
@@ -99,18 +94,11 @@ import RaidConnectionsEntry from "@/my-rspace/profile/RaidConnections/RaidConnec
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 const mockedUseGetGroupByIdQuery = vi.mocked(useGetGroupByIdQuery);
-const asOauthTokenResult = (
-  token: string,
-): UseSuspenseQueryResult<string, Error> =>
-  ({ data: token } as UseSuspenseQueryResult<string, Error>);
-const asGroupResult = (
-  data: GroupInfo,
-): UseSuspenseQueryResult<GroupInfo, Error> =>
-  ({ data } as UseSuspenseQueryResult<GroupInfo, Error>);
-const asGroupQueryResult = (
-  data?: GroupInfo,
-  isLoading?: boolean,
-): ReturnType<typeof useGetGroupByIdQuery> =>
+const asOauthTokenResult = (token: string): UseSuspenseQueryResult<string, Error> =>
+  ({ data: token }) as UseSuspenseQueryResult<string, Error>;
+const asGroupResult = (data: GroupInfo): UseSuspenseQueryResult<GroupInfo, Error> =>
+  ({ data }) as UseSuspenseQueryResult<GroupInfo, Error>;
+const asGroupQueryResult = (data?: GroupInfo, isLoading?: boolean): ReturnType<typeof useGetGroupByIdQuery> =>
   ({
     data,
     isLoading,
@@ -129,7 +117,7 @@ const renderWithProviders = (props: { groupId: string }) => {
       <QueryClientProvider client={queryClient}>
         <RaidConnectionsEntry {...props} />
       </QueryClientProvider>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
 };
 
@@ -140,16 +128,14 @@ describe("RaidConnectionsEntry", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-     
+
     mockedUseOauthTokenQuery.mockReturnValue(asOauthTokenResult(mockOauthTokenData));
-     
   });
 
   describe("Accessibility", () => {
     it("Should have no axe violations when RAiD is connected", async () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
-       
+
       const { baseElement } = renderWithProviders(defaultProps);
 
       // Disable region rule as this is a sub-component that would be within a landmark in the real app
@@ -158,9 +144,8 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should have no axe violations when RAiD is not connected", async () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
-       
+
       const { baseElement } = renderWithProviders(defaultProps);
 
       // Disable region rule as this is a sub-component that would be within a landmark in the real app
@@ -169,9 +154,8 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should have no axe violations when in editing mode", async () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
-       
+
       const { baseElement } = renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
@@ -190,9 +174,7 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Rendering with RAiD connected", () => {
     beforeEach(() => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
-       
     });
 
     it("Should render RAiD title and identifier when connected", () => {
@@ -238,9 +220,7 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Rendering without RAiD connected", () => {
     beforeEach(() => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
-       
     });
 
     it("Should render 'Not connected' message when no RAiD", () => {
@@ -264,9 +244,7 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Editing mode", () => {
     beforeEach(() => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
-       
     });
 
     it("Should show add form when add button is clicked", async () => {
@@ -345,13 +323,9 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Data handling", () => {
     it("Should handle undefined raid data gracefully", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(
-        asGroupQueryResult(
-          ({ ...mockGroupDataNoRaid, raid: undefined } as unknown) as GroupInfo,
-        ),
+        asGroupQueryResult({ ...mockGroupDataNoRaid, raid: undefined } as unknown as GroupInfo),
       );
-       
 
       renderWithProviders(defaultProps);
 
@@ -359,14 +333,12 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should handle empty raid identifier", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(
         asGroupQueryResult({
           ...mockGroupData,
           raid: { raidServerAlias: "server1", raidIdentifier: "", raidTitle: "" },
         }),
       );
-       
 
       renderWithProviders(defaultProps);
 
@@ -375,7 +347,6 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should handle partial raid data with identifier but no title", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(
         asGroupQueryResult({
           ...mockGroupData,
@@ -386,7 +357,6 @@ describe("RaidConnectionsEntry", () => {
           },
         }),
       );
-       
 
       renderWithProviders(defaultProps);
 
@@ -398,18 +368,16 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should call useOauthTokenQuery hook", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
-       
+
       renderWithProviders(defaultProps);
 
       expect(useOauthTokenQuery).toHaveBeenCalled();
     });
 
     it("Should call useGetGroupByIdQuery with correct parameters", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
-       
+
       renderWithProviders(defaultProps);
 
       expect(useGetGroupByIdQuery).toHaveBeenCalledWith({
@@ -421,9 +389,7 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Component structure", () => {
     beforeEach(() => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
-       
     });
 
     it("Should render the component successfully", () => {
@@ -436,11 +402,7 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Loading states", () => {
     it("Should handle loading state from useGetGroupByIdQuery", () => {
-       
-      mockedUseGetGroupByIdQuery.mockReturnValue(
-        asGroupQueryResult(undefined, true),
-      );
-       
+      mockedUseGetGroupByIdQuery.mockReturnValue(asGroupQueryResult(undefined, true));
 
       renderWithProviders(defaultProps);
 
@@ -449,9 +411,7 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should handle undefined group data", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupQueryResult());
-       
 
       renderWithProviders(defaultProps);
 
@@ -462,9 +422,8 @@ describe("RaidConnectionsEntry", () => {
 
   describe("Integration with child components", () => {
     it("Should pass correct props to RaidConnectionsDisassociateButton", () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupData));
-       
+
       renderWithProviders(defaultProps);
 
       const disassociateButton = screen.getByTestId("disassociate-button");
@@ -473,9 +432,8 @@ describe("RaidConnectionsEntry", () => {
     });
 
     it("Should maintain state when switching between modes", async () => {
-       
       mockedUseGetGroupByIdQuery.mockReturnValue(asGroupResult(mockGroupDataNoRaid));
-       
+
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 

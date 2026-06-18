@@ -2,9 +2,9 @@ import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
+import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
 
 /**
  * The definition of an identifier, as returned by the API. Do note that this
@@ -24,9 +24,7 @@ function getErrorMessage(error: unknown): Result<string> {
     .flatMap(Parsers.isString)
     .orElseTry(() =>
       Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error
-          ? Result.Ok(e.message)
-          : Result.Error([new Error("Unknown error")]),
+        e instanceof Error ? Result.Ok(e.message) : Result.Error([new Error("Unknown error")]),
       ),
     );
 }
@@ -60,10 +58,7 @@ export function useIdentifiers(): {
    * Make a POST request to /identifiers/{id}/assign to assign an unassigned
    * identifier to an existing Inventory record.
    */
-  assignIdentifier: (
-    identifier: Identifier,
-    record: InventoryRecord,
-  ) => Promise<void>;
+  assignIdentifier: (identifier: Identifier, record: InventoryRecord) => Promise<void>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -89,15 +84,12 @@ export function useIdentifiers(): {
       if (searchTerm) {
         searchParams.append("identifier", searchTerm);
       }
-      const response = await axios.get<unknown>(
-        "/api/inventory/v1/identifiers",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: searchParams,
+      const response = await axios.get<unknown>("/api/inventory/v1/identifiers", {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+        params: searchParams,
+      });
       return Parsers.isArray(response.data)
         .flatMap((array) =>
           Result.all(
@@ -106,37 +98,21 @@ export function useIdentifiers(): {
                 .flatMap(Parsers.isNotNull)
                 .flatMap((data) => {
                   try {
-                    const id = Parsers.getValueWithKey("id")(data)
-                      .flatMap(Parsers.isNumber)
+                    const id = Parsers.getValueWithKey("id")(data).flatMap(Parsers.isNumber).elseThrow();
+
+                    const doiType = Parsers.getValueWithKey("doiType")(data).flatMap(Parsers.isString).elseThrow();
+
+                    const doi = Parsers.getValueWithKey("doi")(data).flatMap(Parsers.isString).elseThrow();
+
+                    const associatedGlobalId = Parsers.getValueWithKey("associatedGlobalId")(data)
+                      .flatMap<string | null>((gId) => Parsers.isString(gId).orElseTry(() => Parsers.isNull(gId)))
                       .elseThrow();
 
-                    const doiType = Parsers.getValueWithKey("doiType")(data)
+                    const creatorName = Parsers.getValueWithKey("creatorName")(data)
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
-                    const doi = Parsers.getValueWithKey("doi")(data)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
-
-                    const associatedGlobalId = Parsers.getValueWithKey(
-                      "associatedGlobalId",
-                    )(data)
-                      .flatMap<string | null>((gId) =>
-                        Parsers.isString(gId).orElseTry(() =>
-                          Parsers.isNull(gId),
-                        ),
-                      )
-                      .elseThrow();
-
-                    const creatorName = Parsers.getValueWithKey("creatorName")(
-                      data,
-                    )
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
-
-                    const state = Parsers.getValueWithKey("state")(data)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
+                    const state = Parsers.getValueWithKey("state")(data).flatMap(Parsers.isString).elseThrow();
 
                     return Result.Ok({
                       id,
@@ -149,9 +125,7 @@ export function useIdentifiers(): {
                   } catch (e) {
                     console.error(e);
                     if (!(e instanceof Error)) {
-                      return Result.Error<Identifier>([
-                        new Error("Unknown error"),
-                      ]);
+                      return Result.Error<Identifier>([new Error("Unknown error")]);
                     }
                     return Result.Error<Identifier>([e]);
                   }
@@ -214,14 +188,11 @@ export function useIdentifiers(): {
       const success: Array<Identifier["doi"]> = [];
       for (const identifier of identifiers) {
         try {
-          await axios.delete<unknown>(
-            `/api/inventory/v1/identifiers/${identifier.id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+          await axios.delete<unknown>(`/api/inventory/v1/identifiers/${identifier.id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
-          );
+          });
           success.push(identifier.doi);
         } catch {
           failed.push(identifier.doi);
@@ -266,10 +237,7 @@ export function useIdentifiers(): {
     }
   }
 
-  async function assignIdentifier(
-    identifier: Identifier,
-    record: InventoryRecord,
-  ) {
+  async function assignIdentifier(identifier: Identifier, record: InventoryRecord) {
     try {
       const token = await getToken();
       await axios.post<unknown>(
@@ -333,9 +301,7 @@ export function useIdentifiersListing({
   error: Error | null;
 } {
   const { getIdentifiers } = useIdentifiers();
-  const [identifiers, setIdentifiers] = React.useState<
-    ReadonlyArray<Identifier>
-  >([]);
+  const [identifiers, setIdentifiers] = React.useState<ReadonlyArray<Identifier>>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
 
@@ -350,12 +316,10 @@ export function useIdentifiersListing({
     } finally {
       setLoading(false);
     }
-
   }, [state, isAssociated, searchTerm]);
 
   React.useEffect(() => {
     void fetchIdentifiers();
-
   }, [state, isAssociated, searchTerm]);
 
   return { identifiers, loading, error, refreshListing: fetchIdentifiers };
@@ -372,14 +336,8 @@ const IdentifiersRefreshContext = React.createContext<{
 /**
  * Provider component for the refreshListing function
  */
-export function IdentifiersRefreshProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [refreshListing, setRefreshListing] = React.useState<
-    (() => Promise<void>) | null
-  >(null);
+export function IdentifiersRefreshProvider({ children }: { children: React.ReactNode }) {
+  const [refreshListing, setRefreshListing] = React.useState<(() => Promise<void>) | null>(null);
 
   return (
     <IdentifiersRefreshContext.Provider

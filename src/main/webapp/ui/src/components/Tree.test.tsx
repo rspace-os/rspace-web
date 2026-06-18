@@ -1,13 +1,7 @@
-import { describe, test, expect } from "vitest";
-import React from "react";
-import { render, screen, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
-import {
-  SimpleTreeExample,
-  MultiSelectTreeExample,
-  ExpandableTreeExample,
-  ControlledTreeExample,
-} from "./Tree.story";
+import { describe, expect, test } from "vitest";
+import { expectAccessible, render, screen } from "@/__tests__/customQueries";
+import { ControlledTreeExample, ExpandableTreeExample, MultiSelectTreeExample, SimpleTreeExample } from "./Tree.story";
 
 /*
  * Converted from Tree.spec.tsx (Playwright CT). Every case runs in jsdom:
@@ -40,8 +34,7 @@ const createSelectionSpy = () => {
   };
 };
 
-const getTreeItem = (name: string): HTMLElement =>
-  screen.getByRole("treeitem", { name });
+const getTreeItem = (name: string): HTMLElement => screen.getByRole("treeitem", { name });
 
 /*
  * MUI's TreeItem registers its click handler on the inner `.MuiTreeItem-content`
@@ -106,11 +99,7 @@ describe("Tree Component", () => {
       await user.keyboard("{/Control}");
       await user.click(screen.getByRole("button", { name: "Clear Selection" }));
 
-      expect(
-        document.querySelectorAll(
-          '[role="treeitem"][aria-checked="true"]',
-        ),
-      ).toHaveLength(0);
+      expect(document.querySelectorAll('[role="treeitem"][aria-checked="true"]')).toHaveLength(0);
     });
   });
 
@@ -135,9 +124,7 @@ describe("Tree Component", () => {
 
       await user.click(screen.getByRole("button", { name: "Expand All" }));
 
-      const expandableItems = document.querySelectorAll(
-        '[role="treeitem"][aria-expanded]',
-      );
+      const expandableItems = document.querySelectorAll('[role="treeitem"][aria-expanded]');
       expect(expandableItems.length).toBeGreaterThan(0);
       expandableItems.forEach((item) => {
         expect(item).toHaveAttribute("aria-expanded", "true");
@@ -151,9 +138,7 @@ describe("Tree Component", () => {
       await user.click(screen.getByRole("button", { name: "Expand All" }));
       await user.click(screen.getByRole("button", { name: "Collapse All" }));
 
-      const expandableItems = document.querySelectorAll(
-        '[role="treeitem"][aria-expanded]',
-      );
+      const expandableItems = document.querySelectorAll('[role="treeitem"][aria-expanded]');
       expect(expandableItems.length).toBeGreaterThan(0);
       expandableItems.forEach((item) => {
         expect(item).toHaveAttribute("aria-expanded", "false");
@@ -173,10 +158,7 @@ describe("Tree Component", () => {
       await user.click(getTreeItemContent("Child Item 1"));
 
       expect(parent).toHaveAttribute("aria-expanded", "true");
-      expect(getTreeItem("Child Item 1")).toHaveAttribute(
-        "aria-checked",
-        "true",
-      );
+      expect(getTreeItem("Child Item 1")).toHaveAttribute("aria-checked", "true");
     });
   });
 

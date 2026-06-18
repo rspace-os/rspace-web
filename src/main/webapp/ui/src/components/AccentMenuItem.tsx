@@ -1,10 +1,10 @@
-import React from "react";
-import MenuItem, { menuItemClasses } from "@mui/material/MenuItem";
 import CardHeader, { cardHeaderClasses } from "@mui/material/CardHeader";
 import { cardMediaClasses } from "@mui/material/CardMedia";
+import MenuItem, { menuItemClasses } from "@mui/material/MenuItem";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { typographyClasses } from "@mui/material/Typography";
-import { alpha, SxProps, Theme } from "@mui/system";
+import { alpha, type SxProps, type Theme } from "@mui/system";
+import React from "react";
 
 type AccentMenuItemSlotProps = {
   title?: Record<string, unknown> & { sx?: SxProps<Theme> };
@@ -42,6 +42,8 @@ type AccentMenuItemArgs = {
   /*
    * Use these properties to make the menu item a link.
    */
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   component?: React.ElementType<any>;
   href?: string;
 
@@ -69,10 +71,7 @@ type AccentMenuItemArgs = {
  * according to the branding of a third-party integration, or to match the
  * accent colour of the current page.
  */
-const AccentMenuItem = React.forwardRef<
-  typeof MenuItem,
-  AccentMenuItemArgs
->(
+const AccentMenuItem = React.forwardRef<typeof MenuItem, AccentMenuItemArgs>(
   (
     {
       foregroundColor,
@@ -116,9 +115,7 @@ const AccentMenuItem = React.forwardRef<
       }
       aria-current={current}
       sx={(theme) => {
-        const prefersMoreContrast = window.matchMedia(
-          "(prefers-contrast: more)",
-        ).matches;
+        const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
         const fg =
           typeof foregroundColor === "string"
             ? foregroundColor

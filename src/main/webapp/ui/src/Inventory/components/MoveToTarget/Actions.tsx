@@ -1,34 +1,26 @@
-import SubmitSpinner from "../../../components/SubmitSpinnerButton";
-import useStores from "../../../stores/use-stores";
-import Stepper from "./Stepper";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import React from "react";
-import TopLevelButton from "./TopLevelButton";
-import { type Panel } from "../../../util/types";
+import type React from "react";
+import SubmitSpinner from "../../../components/SubmitSpinnerButton";
+import useStores from "../../../stores/use-stores";
+import type { Panel } from "../../../util/types";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import Stepper from "./Stepper";
+import TopLevelButton from "./TopLevelButton";
 
-const MoveSubmitButton = observer(
-  ({
-    handleSubmit,
-    isInvalid,
-  }: {
-    handleSubmit: () => void;
-    isInvalid: boolean;
-  }) => {
-    const { moveStore } = useStores();
-    return (
-      <SubmitSpinner
-        onClick={handleSubmit}
-        disabled={isInvalid || moveStore.submitting === "TO-OTHER"}
-        loading={moveStore.submitting === "TO-OTHER"}
-        label="Move"
-      />
-    );
-  },
-);
+const MoveSubmitButton = observer(({ handleSubmit, isInvalid }: { handleSubmit: () => void; isInvalid: boolean }) => {
+  const { moveStore } = useStores();
+  return (
+    <SubmitSpinner
+      onClick={handleSubmit}
+      disabled={isInvalid || moveStore.submitting === "TO-OTHER"}
+      loading={moveStore.submitting === "TO-OTHER"}
+      label="Move"
+    />
+  );
+});
 
 const CancelButton = observer(({ onClick }: { onClick: () => void }) => {
   const { moveStore } = useStores();
@@ -46,32 +38,18 @@ type ActionsArgs = {
   activeStep: Panel;
 };
 
-function Actions({
-  handleClose,
-  handleMove,
-  handleBack,
-  handleNext,
-  activeStep,
-}: ActionsArgs): React.ReactNode {
+function Actions({ handleClose, handleMove, handleBack, handleNext, activeStep }: ActionsArgs): React.ReactNode {
   const { moveStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const isSelectionValid = () => {
     const ar = moveStore.activeResult;
     if (!ar) return false;
-    if (!ar.selectedLocations)
-      throw new Error("Locations of container must be known.");
+    if (!ar.selectedLocations) throw new Error("Locations of container must be known.");
     const selectedLocations = ar.selectedLocations;
     const infiniteSpace = ar.cType === "LIST" || ar.cType === "WORKBENCH";
-    const allLocsSelected =
-      ar && moveStore.selectedResults.length === selectedLocations.length;
+    const allLocsSelected = ar && moveStore.selectedResults.length === selectedLocations.length;
 
-    return (
-      !moveStore.loading &&
-      Boolean(ar) &&
-      ar.canStoreRecords &&
-      ar.canEdit &&
-      (infiniteSpace || allLocsSelected)
-    );
+    return !moveStore.loading && Boolean(ar) && ar.canStoreRecords && ar.canEdit && (infiniteSpace || allLocsSelected);
   };
 
   return !isSingleColumnLayout ? (
@@ -79,10 +57,7 @@ function Actions({
       <TopLevelButton onClose={handleClose} />
       <Box sx={{ flexGrow: 1 }} />
       <CancelButton onClick={handleClose} />
-      <MoveSubmitButton
-        handleSubmit={handleMove}
-        isInvalid={!isSelectionValid()}
-      />
+      <MoveSubmitButton handleSubmit={handleMove} isInvalid={!isSelectionValid()} />
     </>
   ) : (
     <Stack spacing={1}>

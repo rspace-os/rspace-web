@@ -1,11 +1,11 @@
-import Grid from "@mui/material/Grid";
-import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import ApiIcon from "../../../assets/branding/rspace/api/logo.svg";
-import { observer } from "mobx-react-lite";
-import { LOGO_COLOR } from "../../../assets/branding/rspace/api";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { LOGO_COLOR } from "../../../assets/branding/rspace/api";
+import ApiIcon from "../../../assets/branding/rspace/api/logo.svg";
+import IntegrationCard from "../IntegrationCard";
 
 function ApiDirect(): React.ReactNode {
   return (
@@ -13,8 +13,9 @@ function ApiDirect(): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="API Direct Access"
         explanatoryText="Directly interact with the RSpace API using scripts and custom applications."
@@ -28,10 +29,7 @@ function ApiDirect(): React.ReactNode {
           <>
             <ol>
               <li>In My RSpace → My Profile, generate an API key.</li>
-              <li>
-                Use the API key in your scripts with the following example
-                patterns:
-              </li>
+              <li>Use the API key in your scripts with the following example patterns:</li>
             </ol>
             <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
               <strong>cURL example:</strong>

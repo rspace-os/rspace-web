@@ -1,10 +1,10 @@
-import React, { forwardRef, Fragment } from "react";
-import { type PrintOptions } from "./PrintDialog";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { Optional } from "../../../util/optional";
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
+import { Fragment, forwardRef } from "react";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
+import type { Optional } from "../../../util/optional";
+import type { PrintOptions } from "./PrintDialog";
 
 export type PrintLabelContents = {
   itemLabel: string;
@@ -116,11 +116,7 @@ export const PreviewPrintItem = ({
     return printOptions.printIdentifierType === "GLOBAL ID"
       ? printLabelContents.globalId.map((globalId) => (
           <Fragment key={globalId}>
-            <Typography
-              variant="inherit"
-              component="strong"
-              sx={{ fontSize: "0.8em" }}
-            >
+            <Typography variant="inherit" component="strong" sx={{ fontSize: "0.8em" }}>
               RSPACE GLOBAL ID
             </Typography>
             <br />
@@ -129,11 +125,7 @@ export const PreviewPrintItem = ({
         ))
       : printLabelContents.identifier.map(({ doi }) => (
           <Fragment key={doi}>
-            <Typography
-              variant="inherit"
-              component="strong"
-              sx={{ fontSize: "0.8em" }}
-            >
+            <Typography variant="inherit" component="strong" sx={{ fontSize: "0.8em" }}>
               IGSN ID
             </Typography>
             <br />
@@ -171,8 +163,7 @@ export const PreviewPrintItem = ({
             { wordBreak: "break-word" },
             {
               flexWrap: "nowrap",
-              flexDirection:
-                printOptions.printCopies === "2" ? "row" : "column",
+              flexDirection: printOptions.printCopies === "2" ? "row" : "column",
             },
           ]}
         >
@@ -182,9 +173,7 @@ export const PreviewPrintItem = ({
                 src={imageLinks[index]}
                 title="Barcode Image"
                 alt="Barcode"
-                {...(printOptions.printCopies === "1"
-                  ? { width: "75%" }
-                  : { height: "80%" })}
+                {...(printOptions.printCopies === "1" ? { width: "75%" } : { height: "80%" })}
               />
             </Grid>
           )}
@@ -192,10 +181,7 @@ export const PreviewPrintItem = ({
             <Grid
               container
               spacing={0.5}
-              sx={[
-                { fontSize: "11px" },
-                { flexDirection: "column", lineHeight: "1.2", p: 1 },
-              ]}
+              sx={[{ fontSize: "11px" }, { flexDirection: "column", lineHeight: "1.2", p: 1 }]}
             >
               <Grid sx={{ mb: 0 }}>
                 {target === "singlePrint" ? (
@@ -215,23 +201,18 @@ export const PreviewPrintItem = ({
                 <>
                   {printLabelContents.globalId
                     .map((globalId) => (
-                      <Grid
-                        key={`global-id-${globalId}`}
-                      >{`${window.location.origin}/globalId/${globalId}`}</Grid>
+                      <Grid key={`global-id-${globalId}`}>{`${window.location.origin}/globalId/${globalId}`}</Grid>
                     ))
                     .orElse(null)}
                   <Grid>
-                    <strong>Item:</strong>{" "}
-                    {printOptions.printCopies === "1" && <br />}
+                    <strong>Item:</strong> {printOptions.printCopies === "1" && <br />}
                     {printLabelContents.itemLabel}
                   </Grid>
                   <Grid>
-                    <strong>Location:</strong>{" "}
-                    {printLabelContents.locationLabel}
+                    <strong>Location:</strong> {printLabelContents.locationLabel}
                   </Grid>
                   <Grid>
-                    <strong>Printed:</strong>{" "}
-                    {printOptions.printCopies === "1" && <br />}
+                    <strong>Printed:</strong> {printOptions.printCopies === "1" && <br />}
                     {now.toLocaleString()}
                   </Grid>
                 </>
@@ -260,21 +241,13 @@ const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
         ref={ref}
         container
         spacing={1}
-        sx={
-          printOptions.printerType === "LABEL"
-            ? [contentsWrapperSx, { display: "block" }]
-            : contentsWrapperSx
-        }
+        sx={printOptions.printerType === "LABEL" ? [contentsWrapperSx, { display: "block" }] : contentsWrapperSx}
       >
         {itemsToPrint.map((itemToPrint, i) => (
           <Fragment key={`item-${i}`}>
             <Grid
               key={`${i}.1`}
-              sx={
-                printOptions.printCopies === "2" && target === "multiplePrint"
-                  ? { width: "50vw" }
-                  : {}
-              }
+              sx={printOptions.printCopies === "2" && target === "multiplePrint" ? { width: "50vw" } : {}}
             >
               <PreviewPrintItem
                 index={i}

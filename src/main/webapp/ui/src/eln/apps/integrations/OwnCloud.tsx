@@ -1,12 +1,12 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
-import { useOwncloudEndpoint } from "../useOwncloud";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/owncloud";
+import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useOwncloudEndpoint } from "../useOwncloud";
 
 type OwnCloudArgs = {
   integrationState: IntegrationStates["OWNCLOUD"];
@@ -40,9 +40,7 @@ type OwnCloudArgs = {
 function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useOwncloudEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
   useEffect(() => {
     const f = () => {
@@ -51,7 +49,7 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
         mkAlert({
           variant: "success",
           message: "Successfully connected to OwnCloud.",
-        })
+        }),
       );
     };
     window.addEventListener("OWNCLOUD_CONNECTED", f);
@@ -65,17 +63,16 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="ownCloud"
         integrationState={integrationState}
         explanatoryText="Create, manage, and share your files through an open-source file hosting system."
         image={OwnCloudIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText="OwnCloud integration docs"
         website="owncloud.com"
         docLink="owncloud"
@@ -83,15 +80,9 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
         setupSection={
           <>
             <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your ownCloud
-                account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your ownCloud account.</li>
               <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the ownCloud icon in the text
-                editor toolbar.
-              </li>
+              <li>When editing a document, click on the ownCloud icon in the text editor toolbar.</li>
             </ol>
             {connected ? (
               <form
@@ -108,12 +99,7 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/owncloud/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/owncloud/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

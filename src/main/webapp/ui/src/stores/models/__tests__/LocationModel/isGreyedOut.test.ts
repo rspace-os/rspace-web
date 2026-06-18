@@ -1,7 +1,8 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 import LocationModel from "../../LocationModel";
 
 import { makeMockContainer } from "../ContainerModel/mocking";
+
 describe("method: isGreyedOut", () => {
   /*
    * This test asserts every permutation of state that could affect what the
@@ -58,8 +59,7 @@ describe("method: isGreyedOut", () => {
       const parentContainer = makeMockContainer();
       if (performingSearch) {
         parentContainer.contentSearch.fetcher.query = "foo";
-        parentContainer.contentSearch.fetcher.results =
-          content && inSearchResults ? [content] : [];
+        parentContainer.contentSearch.fetcher.results = content && inSearchResults ? [content] : [];
       }
       parentContainer.contentSearch.alwaysFilterOut = () => alwaysFilterOut;
       const location = new LocationModel({
@@ -68,12 +68,8 @@ describe("method: isGreyedOut", () => {
         coordY: 1,
         content,
         parentContainer,
-
       });
-      expect(location.isGreyedOut(parentContainer.contentSearch)).toBe(
-        isGreyedOut
-      );
-    }
+      expect(location.isGreyedOut(parentContainer.contentSearch)).toBe(isGreyedOut);
+    },
   );
 });
-

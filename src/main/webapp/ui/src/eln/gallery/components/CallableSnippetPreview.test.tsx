@@ -1,16 +1,15 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { screen, waitFor, cleanup } from "@testing-library/react";
-import { render, within, expectAccessible} from "@/__tests__/customQueries";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import {
   CallableSnippetPreviewStory,
-  CallableSnippetPreviewWithTableContent,
   CallableSnippetPreviewWithError,
+  CallableSnippetPreviewWithTableContent,
 } from "./CallableSnippetPreview.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -41,9 +40,7 @@ const tableHtml = `
 
 beforeEach(() => {
   mockAxios.reset();
-  mockAxios
-    .onGet("/api/v1/snippets/123/content")
-    .reply(200, "<p>Test snippet content</p>");
+  mockAxios.onGet("/api/v1/snippets/123/content").reply(200, "<p>Test snippet content</p>");
   mockAxios.onGet("/api/v1/snippets/124/content").reply(200, tableHtml);
   mockAxios.onGet("/api/v1/snippets/999/content").reply(500, {
     message: "Failed to load snippet content",
@@ -61,9 +58,7 @@ describe("CallableSnippetPreview", () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(screen.getByText(/snippet preview:/i)).toBeVisible();
@@ -73,9 +68,7 @@ describe("CallableSnippetPreview", () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(screen.getByText(/snippet preview:/i)).toBeVisible();
 
@@ -90,9 +83,7 @@ describe("CallableSnippetPreview", () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(screen.getByText(/snippet preview:/i)).toBeVisible();
 
@@ -111,43 +102,30 @@ describe("CallableSnippetPreview", () => {
       mockAxios.onGet("/api/v1/snippets/123/content").reply(
         () =>
           new Promise((resolve) => {
-            setTimeout(
-              () => resolve([200, "<p>Test snippet content</p>"]),
-              1000,
-            );
+            setTimeout(() => resolve([200, "<p>Test snippet content</p>"]), 1000);
           }),
       );
       render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(
-        await screen.findByText(/loading snippet content/i),
-      ).toBeVisible();
+      expect(await screen.findByText(/loading snippet content/i)).toBeVisible();
     });
 
     test("Should display snippet content after loading", async () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(
-        await screen.findByText(/test snippet content/i),
-      ).toBeVisible();
+      expect(await screen.findByText(/test snippet content/i)).toBeVisible();
     });
 
     test("Should render HTML tables correctly", async () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewWithTableContent />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       const dialog = await screen.findByRole("dialog");
       await within(dialog).findByText("Header 1");
@@ -163,13 +141,9 @@ describe("CallableSnippetPreview", () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewWithError />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(
-        await screen.findByText(/error.*failed to load snippet content/i),
-      ).toBeVisible();
+      expect(await screen.findByText(/error.*failed to load snippet content/i)).toBeVisible();
     });
   });
 
@@ -178,9 +152,7 @@ describe("CallableSnippetPreview", () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
@@ -192,9 +164,7 @@ describe("CallableSnippetPreview", () => {
       const user = userEvent.setup();
       const { baseElement } = render(<CallableSnippetPreviewStory />);
 
-      await user.click(
-        screen.getByRole("button", { name: /open.*snippet.*preview/i }),
-      );
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       await screen.findByRole("dialog");
       // Wait for content to load so the rendered tree is stable.

@@ -1,17 +1,17 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { type Temperature, CELSIUS } from "../../../stores/definitions/Units";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
 import Button from "@mui/material/Button";
-import SpecifiedStorageTemperature from "./SpecifiedStorageTemperature";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import { CELSIUS, type Temperature } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
+import SpecifiedStorageTemperature from "./SpecifiedStorageTemperature";
 
 function StorageTemperature<
   Fields extends {
     storageTempMin: Temperature | null;
     storageTempMax: Temperature | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   onErrorStateChange,
@@ -19,15 +19,11 @@ function StorageTemperature<
   fieldOwner: FieldOwner;
   onErrorStateChange: (value: boolean) => void;
 }): React.ReactNode {
-  const disabled =
-    !fieldOwner.isFieldEditable("storageTempMin") &&
-    !fieldOwner.isFieldEditable("storageTempMax");
+  const disabled = !fieldOwner.isFieldEditable("storageTempMin") && !fieldOwner.isFieldEditable("storageTempMax");
 
-  const storageTempMin: Temperature | null =
-    fieldOwner.fieldValues.storageTempMin;
+  const storageTempMin: Temperature | null = fieldOwner.fieldValues.storageTempMin;
 
-  const storageTempMax: Temperature | null =
-    fieldOwner.fieldValues.storageTempMax;
+  const storageTempMax: Temperature | null = fieldOwner.fieldValues.storageTempMax;
 
   return (
     <>
@@ -43,11 +39,7 @@ function StorageTemperature<
           }}
           canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
           noValueLabel={fieldOwner.noValueLabel.storageTempMin ?? "None"}
-          explanation={
-            disabled
-              ? ""
-              : "The storage temperature for this item is currently not specified."
-          }
+          explanation={disabled ? "" : "The storage temperature for this item is currently not specified."}
           renderInput={() => (
             <Button
               color="primary"

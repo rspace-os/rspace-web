@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../auth/useOauthToken";
 
 export type FolderTreeNode = {
@@ -85,11 +85,7 @@ export default function useFolders(): {
     pageSize?: number;
   }) => Promise<FolderTreeResponse>;
   getFolder: (id: number) => Promise<FolderDetails>;
-  createFolder: (options: {
-    name: string;
-    parentFolderId: number;
-    notebook?: boolean;
-  }) => Promise<FolderDetails>;
+  createFolder: (options: { name: string; parentFolderId: number; notebook?: boolean }) => Promise<FolderDetails>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -107,9 +103,7 @@ export default function useFolders(): {
       pageSize?: number;
     }): Promise<FolderTreeResponse> => {
       try {
-        const endpoint = id
-          ? `/api/v1/folders/tree/${id}`
-          : `/api/v1/folders/tree`;
+        const endpoint = id ? `/api/v1/folders/tree/${id}` : `/api/v1/folders/tree`;
 
         const params = new URLSearchParams();
         if (typesToInclude) {
@@ -156,17 +150,14 @@ export default function useFolders(): {
   const getFolder = React.useCallback(
     async (id: number): Promise<FolderDetails> => {
       try {
-        const { data } = await axios.get<FolderDetails>(
-          `/api/v1/folders/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${await getToken()}`,
-            },
-            params: {
-              includePathToRootFolder: "true",
-            },
+        const { data } = await axios.get<FolderDetails>(`/api/v1/folders/${id}`, {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
           },
-        );
+          params: {
+            includePathToRootFolder: "true",
+          },
+        });
 
         return data;
       } catch (e) {

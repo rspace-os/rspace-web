@@ -1,16 +1,16 @@
-import React from "react";
-import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
+import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import createAccentedTheme from "../../../accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/chemistry";
-import Alerts from "../../../components/Alerts/Alerts";
+import React from "react";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import { StoichiometryTableControllerProvider } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 import { useEditableStoichiometryTable } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
+import createAccentedTheme from "../../../accentedTheme";
+import { ACCENT_COLOR } from "../../../assets/branding/chemistry";
+import Alerts from "../../../components/Alerts/Alerts";
 
 function TestProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(
@@ -23,9 +23,7 @@ function TestProviders({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 const StoichiometryTableWithQueryData = () => {
   const { hasChanges, tableController } = useEditableStoichiometryTable({
@@ -35,12 +33,7 @@ const StoichiometryTableWithQueryData = () => {
 
   return (
     <StoichiometryTableControllerProvider value={tableController}>
-      <StoichiometryTable
-        stoichiometryId={1}
-        stoichiometryRevision={1}
-        editable
-        hasChanges={hasChanges}
-      />
+      <StoichiometryTable stoichiometryId={1} stoichiometryRevision={1} editable hasChanges={hasChanges} />
     </StoichiometryTableControllerProvider>
   );
 };
@@ -48,9 +41,7 @@ const StoichiometryTableWithQueryData = () => {
 export const StoichiometryTableWithDataStory = () => {
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider
-        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
-      >
+      <ThemeProvider theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}>
         <TestProviders>
           <Alerts>
             <React.Suspense
@@ -66,10 +57,7 @@ export const StoichiometryTableWithDataStory = () => {
                     gap: 1,
                   }}
                 >
-                  <CircularProgress
-                    size={24}
-                    aria-label="Loading stoichiometry table"
-                  />
+                  <CircularProgress size={24} aria-label="Loading stoichiometry table" />
                   <Typography variant="body2" color="textSecondary">
                     Loading stoichiometry table...
                   </Typography>
@@ -88,9 +76,7 @@ export const StoichiometryTableWithDataStory = () => {
 export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider
-        theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}
-      >
+      <ThemeProvider theme={createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR))}>
         <TestProviders>
           <Alerts>
             <React.Suspense
@@ -106,20 +92,14 @@ export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
                     gap: 1,
                   }}
                 >
-                  <CircularProgress
-                    size={24}
-                    aria-label="Loading stoichiometry table"
-                  />
+                  <CircularProgress size={24} aria-label="Loading stoichiometry table" />
                   <Typography variant="body2" color="textSecondary">
                     Loading stoichiometry table...
                   </Typography>
                 </Box>
               }
             >
-              <StoichiometryTable
-                stoichiometryId={1}
-                stoichiometryRevision={1}
-              />
+              <StoichiometryTable stoichiometryId={1} stoichiometryRevision={1} />
             </React.Suspense>
           </Alerts>
         </TestProviders>

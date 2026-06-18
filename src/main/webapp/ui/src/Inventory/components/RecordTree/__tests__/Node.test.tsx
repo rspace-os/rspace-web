@@ -1,18 +1,13 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import {
-  makeMockContainer,
-  containerAttrs,
-} from "../../../../stores/models/__tests__/ContainerModel/mocking";
-import SearchContext from "../../../../stores/contexts/Search";
-import Search from "../../../../stores/models/Search";
-import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import NavigateToNode from "../NavigateToNode";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
-
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import SearchContext from "../../../../stores/contexts/Search";
+import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
+import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import Search from "../../../../stores/models/Search";
+import materialTheme from "../../../../theme";
+import NavigateToNode from "../NavigateToNode";
 import Node from "../Node";
 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
@@ -35,7 +30,6 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
       currentUser: { username: "user" },
     },
   }),
-
 }));
 // mocking this to avoid testing dependency
 
@@ -54,9 +48,7 @@ describe("Node", () => {
         parentContainers: [containerAttrs({ globalId: "IC2" })],
       });
       container.contentSearch.cacheFetcher.results = [];
-      vi
-        .spyOn(container, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       vi.spyOn(container, "loadChildren").mockImplementation(() => {});
       render(
         <ThemeProvider theme={materialTheme}>
@@ -70,12 +62,9 @@ describe("Node", () => {
               <Node node={container} />
             </SimpleTreeView>
           </SearchContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
-      expect(NavigateToNode).toHaveBeenCalledWith(
-        { node: container },
-        expect.anything()
-      );
+      expect(NavigateToNode).toHaveBeenCalledWith({ node: container }, expect.anything());
     });
   });
   test("When the record does not have a preview image, the record's type should be included in the treeitem's accessible name", () => {
@@ -95,9 +84,7 @@ describe("Node", () => {
       parentContainers: [containerAttrs({ globalId: "IC2" })],
     });
     container.contentSearch.cacheFetcher.results = [];
-    vi
-      .spyOn(container, "fetchAdditionalInfo")
-      .mockImplementation(() => Promise.resolve());
+    vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
     render(
       <ThemeProvider theme={materialTheme}>
         <SearchContext.Provider
@@ -110,7 +97,7 @@ describe("Node", () => {
             <Node node={container} />
           </SimpleTreeView>
         </SearchContext.Provider>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     expect(screen.getByRole("treeitem", { name: /Container/ })).toBeVisible();
   });

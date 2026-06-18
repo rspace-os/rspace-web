@@ -291,9 +291,8 @@ returns a response with a status code and a body.
 
 ### Eslint
 
-A static analysis tool for identifying potentially problematic patterns in
-JavaScript code. Via its plugin system, it can also be used to enforce code
-style.
+Formerly the static analysis tool for identifying potentially problematic patterns in
+JavaScript code. Replaced by Biome for linting and formatting the frontend.
 
 ### Extra field
 

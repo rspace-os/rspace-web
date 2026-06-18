@@ -1,8 +1,8 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
 import Box from "@mui/material/Box";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import useStores from "../../../stores/use-stores";
 
 type StepperActionsArgs = {
   onSubmit: () => void;

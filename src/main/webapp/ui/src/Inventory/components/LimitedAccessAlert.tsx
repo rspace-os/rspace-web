@@ -1,7 +1,7 @@
-import React from "react";
 import Alert from "@mui/material/Alert";
-import { type ReadAccessLevel } from "../../stores/definitions/Record";
-import { type Person } from "../../stores/definitions/Person";
+import type React from "react";
+import type { Person } from "../../stores/definitions/Person";
+import type { ReadAccessLevel } from "../../stores/definitions/Record";
 
 /**
  * This component shows a pinned alert that explains to the user that they do
@@ -35,8 +35,7 @@ export default function LimitedAccessAlert({
   if (readAccessLevel === "full") return null;
   return (
     <Alert severity="info">
-      You do not have permission to see{" "}
-      {readAccessLevel === "limited" ? "all" : "any"} of the details of this{" "}
+      You do not have permission to see {readAccessLevel === "limited" ? "all" : "any"} of the details of this{" "}
       {whatLabel}.
       <br />
       To gain full access, please contact the owner, {owner.fullName}.

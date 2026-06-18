@@ -20,10 +20,7 @@ export type Permissioned<T> = HasAccess<T> | NoAccess;
  * Permissioned data
  */
 
-export function mapPermissioned<T, U>(
-  permissionedData: Permissioned<T>,
-  f: (value: T) => U
-): Permissioned<U> {
+export function mapPermissioned<T, U>(permissionedData: Permissioned<T>, f: (value: T) => U): Permissioned<U> {
   if (!permissionedData.isAccessible) return permissionedData;
   return {
     isAccessible: true,
@@ -31,10 +28,7 @@ export function mapPermissioned<T, U>(
   };
 }
 
-export function orElseIfNoAccess<T>(
-  permissionedData: Permissioned<T>,
-  orElse: T
-): T {
+export function orElseIfNoAccess<T>(permissionedData: Permissioned<T>, orElse: T): T {
   if (!permissionedData.isAccessible) return orElse;
   return permissionedData.value;
 }

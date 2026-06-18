@@ -54,21 +54,15 @@ export default class Result<T> {
     return new Result({ key: "ok", value });
   };
 
-  static Error: <U>(errors: Array<Error>) => Result<U> = <U>(
-    errors: Array<Error>
-  ): Result<U> => {
+  static Error: <U>(errors: Array<Error>) => Result<U> = <U>(errors: Array<Error>): Result<U> => {
     return new Result<U>({ key: "error", errors });
   };
 
-  static fromNullable: <U>(
+  static fromNullable: <U>(value: U | null | undefined, error: Error) => Result<U> = <U>(
     value: U | null | undefined,
-    error: Error
-  ) => Result<U> = <U>(
-    value: U | null | undefined,
-    error: Error
+    error: Error,
   ): Result<U> => {
-    if (value === null || typeof value === "undefined")
-      return Result.Error([error]);
+    if (value === null || typeof value === "undefined") return Result.Error([error]);
     return Result.Ok(value);
   };
 
@@ -179,8 +173,7 @@ export default class Result<T> {
     if (this.state.key === "error") {
       const errors = this.state.errors;
       const resultOfFunc = func(errors);
-      if (resultOfFunc.state.key === "error")
-        return Result.Error([...errors, ...resultOfFunc.state.errors]);
+      if (resultOfFunc.state.key === "error") return Result.Error([...errors, ...resultOfFunc.state.errors]);
       return Result.Ok(resultOfFunc.state.value);
     }
     return Result.Ok(this.state.value);
@@ -275,7 +268,7 @@ export default class Result<T> {
                 // if `r` and `rest` are both OK, then concatenate,
                 .map((t: U) => [t, ...restOfT])
                 // else if `r` is Error and `rest` OK, then return `rest`
-                .orElseTry(() => Result.Ok(restOfT))
+                .orElseTry(() => Result.Ok(restOfT)),
             )
             // if `rest` is Error, then return `r`
             .orElseTry(() => r.map((t) => [t]))
@@ -309,12 +302,8 @@ export default class Result<T> {
       if (typeof r === "undefined") return Result.Ok([]);
       if (rest.length > 0) {
         return Result.all(rest[0], ...rest.slice(1))
-          .orElseTry<ReadonlyArray<U>>(() =>
-            r.flatMap<ReadonlyArray<U>>(() => Result.Error([]))
-          )
-          .flatMap<ReadonlyArray<U>>((restOfT) =>
-            r.map<ReadonlyArray<U>>((t: U) => [t, ...restOfT])
-          );
+          .orElseTry<ReadonlyArray<U>>(() => r.flatMap<ReadonlyArray<U>>(() => Result.Error([])))
+          .flatMap<ReadonlyArray<U>>((restOfT) => r.map<ReadonlyArray<U>>((t: U) => [t, ...restOfT]));
       }
       return r.map((t) => [t]);
     }
@@ -347,7 +336,7 @@ export default class Result<T> {
    * It is possible that all of this deep function calls and instantiation of
    * Result may have performance implications, in which case this functional
    * approach may not be most applicable and the code should instead be
-   * implemented using `null`s, exception handling, and @ts-ignore where
+   * implemented using `null`s, exception handling, and TypeScript escape hatches where
    * required. Don't preempt that though.
    */
 
@@ -355,69 +344,42 @@ export default class Result<T> {
     return (resultA) => resultA.map(func);
   }
 
-  static lift2<A, B, C>(
-    func: (a: A, b: B) => C
-  ): (resultA: Result<A>, resultB: Result<B>) => Result<C> {
-    return (resultA, resultB) =>
-      resultA.flatMap((a) => Result.lift((b: B) => func(a, b))(resultB));
+  static lift2<A, B, C>(func: (a: A, b: B) => C): (resultA: Result<A>, resultB: Result<B>) => Result<C> {
+    return (resultA, resultB) => resultA.flatMap((a) => Result.lift((b: B) => func(a, b))(resultB));
   }
 
   static lift3<A, B, C, D>(
-    func: (a: A, b: B, c: C) => D
+    func: (a: A, b: B, c: C) => D,
   ): (resultA: Result<A>, resultB: Result<B>, resultC: Result<C>) => Result<D> {
     return (resultA, resultB, resultC) =>
-      resultA.flatMap((a) =>
-        Result.lift2((b: B, c: C) => func(a, b, c))(resultB, resultC)
-      );
+      resultA.flatMap((a) => Result.lift2((b: B, c: C) => func(a, b, c))(resultB, resultC));
   }
 
   static lift4<A, B, C, D, E>(
-    func: (a: A, b: B, c: C, d: D) => E
-  ): (
-    resultA: Result<A>,
-    resultB: Result<B>,
-    resultC: Result<C>,
-    resultD: Result<D>
-  ) => Result<E> {
+    func: (a: A, b: B, c: C, d: D) => E,
+  ): (resultA: Result<A>, resultB: Result<B>, resultC: Result<C>, resultD: Result<D>) => Result<E> {
     return (resultA, resultB, resultC, resultD) =>
-      resultA.flatMap((a) =>
-        Result.lift3((b: B, c: C, d: D) => func(a, b, c, d))(
-          resultB,
-          resultC,
-          resultD
-        )
-      );
+      resultA.flatMap((a) => Result.lift3((b: B, c: C, d: D) => func(a, b, c, d))(resultB, resultC, resultD));
   }
 
   static lift5<A, B, C, D, E, F>(
-    func: (a: A, b: B, c: C, d: D, e: E) => F
-  ): (
-    resultA: Result<A>,
-    resultB: Result<B>,
-    resultC: Result<C>,
-    resultD: Result<D>,
-    resultE: Result<E>
-  ) => Result<F> {
+    func: (a: A, b: B, c: C, d: D, e: E) => F,
+  ): (resultA: Result<A>, resultB: Result<B>, resultC: Result<C>, resultD: Result<D>, resultE: Result<E>) => Result<F> {
     return (resultA, resultB, resultC, resultD, resultE) =>
       resultA.flatMap((a) =>
-        Result.lift4((b: B, c: C, d: D, e: E) => func(a, b, c, d, e))(
-          resultB,
-          resultC,
-          resultD,
-          resultE
-        )
+        Result.lift4((b: B, c: C, d: D, e: E) => func(a, b, c, d, e))(resultB, resultC, resultD, resultE),
       );
   }
 
   static lift6<A, B, C, D, E, F, G>(
-    func: (a: A, b: B, c: C, d: D, e: E, f: F) => G
+    func: (a: A, b: B, c: C, d: D, e: E, f: F) => G,
   ): (
     resultA: Result<A>,
     resultB: Result<B>,
     resultC: Result<C>,
     resultD: Result<D>,
     resultE: Result<E>,
-    resultF: Result<F>
+    resultF: Result<F>,
   ) => Result<G> {
     return (resultA, resultB, resultC, resultD, resultE, resultF) =>
       resultA.flatMap((a) =>
@@ -426,8 +388,8 @@ export default class Result<T> {
           resultC,
           resultD,
           resultE,
-          resultF
-        )
+          resultF,
+        ),
       );
   }
 }

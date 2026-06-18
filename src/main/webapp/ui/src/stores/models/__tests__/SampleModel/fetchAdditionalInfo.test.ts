@@ -1,8 +1,8 @@
-import { describe, expect, test, vi } from 'vitest';
-import { makeMockSample, sampleAttrs } from "./mocking";
-import { makeMockTemplate } from "../TemplateModel/mocking";
-
+import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
+import { makeMockTemplate } from "../TemplateModel/mocking";
+import { makeMockSample, sampleAttrs } from "./mocking";
+
 const mockRootStore = {
   unitStore: {
     assertValidUnitId: () => {},
@@ -25,15 +25,11 @@ vi.mock("../../../../common/InvApiService", () => ({
 }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => mockRootStore,
-
 }));
 describe("fetchAdditionalInfo", () => {
   test("Subsequent invocations await the completion of prior in-progress invocations.", async () => {
     const template = makeMockTemplate();
-    mockRootStore.searchStore.getTemplate.mockImplementation(() =>
-      Promise.resolve(template)
-
-    );
+    mockRootStore.searchStore.getTemplate.mockImplementation(() => Promise.resolve(template));
     const sample = makeMockSample({
       templateId: 1,
     });
@@ -46,14 +42,13 @@ describe("fetchAdditionalInfo", () => {
         status: 200,
         statusText: "OK",
         headers: {},
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         config: {} as any,
-      })
-
+      }),
     );
     let firstCallDone = false;
     void sample.fetchAdditionalInfo().then(() => {
       firstCallDone = true;
-
     });
     await sample.fetchAdditionalInfo();
     /*
@@ -75,10 +70,10 @@ describe("fetchAdditionalInfo", () => {
         status: 200,
         statusText: "OK",
         headers: {},
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         config: {} as any,
-      })
+      }),
     );
     await expect(sample.fetchAdditionalInfo()).resolves.toBeUndefined();
   });
 });
-

@@ -1,13 +1,9 @@
-import React from "react";
 import Menu from "@mui/material/Menu";
-import { useTheme, type SxProps, type Theme } from "@mui/material/styles";
+import { type SxProps, type Theme, useTheme } from "@mui/material/styles";
+import type React from "react";
 import { asSxArray } from "@/modules/common/utils/styles";
 
-export default function StyledMenu({
-  sx,
-  slotProps,
-  ...rest
-}: React.ComponentProps<typeof Menu>): React.ReactNode {
+export default function StyledMenu({ sx, slotProps, ...rest }: React.ComponentProps<typeof Menu>): React.ReactNode {
   const theme = useTheme();
   const paperSlot =
     slotProps?.paper && typeof slotProps.paper !== "function"
@@ -30,11 +26,7 @@ export default function StyledMenu({
         ...slotProps,
         paper: {
           ...paperSlot,
-          sx: [
-            { border: theme.borders.menu },
-            ...asSxArray(paperSlot?.sx),
-            ...asSxArray(sx),
-          ],
+          sx: [{ border: theme.borders.menu }, ...asSxArray(paperSlot?.sx), ...asSxArray(sx)],
         },
       }}
     />

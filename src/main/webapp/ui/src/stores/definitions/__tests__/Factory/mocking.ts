@@ -2,28 +2,22 @@
  */
 
 import { vi } from "vitest";
-import { type Factory } from "../../../definitions/Factory";
-import PersonModel from "../../../models/PersonModel";
-import { type PersonAttrs } from "../../Person";
-import { type PersistedBarcodeAttrs, type BarcodeRecord } from "../../Barcode";
-import { type DocumentAttrs, type Document } from "../../Document";
-import { type InventoryRecord } from "../../InventoryRecord";
-import { type IdentifierAttrs, type Identifier } from "../../Identifier";
-import { type GlobalId } from "../../BaseRecord";
-import InvApiService from "../../../../common/InvApiService";
+import type InvApiService from "../../../../common/InvApiService";
+import type { Factory } from "../../../definitions/Factory";
+import type PersonModel from "../../../models/PersonModel";
+import type { BarcodeRecord, PersistedBarcodeAttrs } from "../../Barcode";
+import type { GlobalId } from "../../BaseRecord";
+import type { Document, DocumentAttrs } from "../../Document";
+import type { Identifier, IdentifierAttrs } from "../../Identifier";
+import type { InventoryRecord } from "../../InventoryRecord";
+import type { PersonAttrs } from "../../Person";
 
 type FactoryOverrides = {
-  newRecord?: (
-    params: Record<string, unknown> & { globalId: GlobalId | null }
-  ) => InventoryRecord;
+  newRecord?: (params: Record<string, unknown> & { globalId: GlobalId | null }) => InventoryRecord;
   newPerson?: (attrs: PersonAttrs) => PersonModel;
   newBarcode?: (attrs: PersistedBarcodeAttrs) => BarcodeRecord;
   newDocument?: (attrs: DocumentAttrs) => Document;
-  newIdentifier?: (
-    attrs: IdentifierAttrs,
-    parentGlobalId: GlobalId,
-    ApiService: typeof InvApiService
-  ) => Identifier;
+  newIdentifier?: (attrs: IdentifierAttrs, parentGlobalId: GlobalId, ApiService: typeof InvApiService) => Identifier;
   newFactory?: () => Factory;
 };
 
@@ -39,4 +33,3 @@ export const mockFactory = (overrides?: FactoryOverrides): Factory => {
   });
   return f();
 };
-

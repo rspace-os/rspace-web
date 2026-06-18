@@ -1,11 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  GetAvailableRaidListResponseSchema,
-  IntegrationRaidInfoResponseSchema,
-  type IntegrationRaidInfo,
-  GetAvailableRaidListResponse,
-} from "@/modules/raid/schema";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import {
+  type GetAvailableRaidListResponse,
+  GetAvailableRaidListResponseSchema,
+  type IntegrationRaidInfo,
+  IntegrationRaidInfoResponseSchema,
+} from "@/modules/raid/schema";
 
 /**
  * Query key factory for RAiD-related queries
@@ -14,7 +14,8 @@ export const raidQueryKeys = {
   all: ["rspace.apps.raid"] as const,
   availableRaidIdentifiers: () => [...raidQueryKeys.all, "availableIds"] as const,
   integrationInfo: () => [...raidQueryKeys.all, "integrationInfo"] as const,
-  projectAssociation: (alias: string, groupId: string) => [...raidQueryKeys.all, "projectAssociation", alias, groupId] as const,
+  projectAssociation: (alias: string, groupId: string) =>
+    [...raidQueryKeys.all, "projectAssociation", alias, groupId] as const,
 };
 
 /**
@@ -67,9 +68,7 @@ export async function getRaidIntegrationInfoAjax(): Promise<IntegrationRaidInfo>
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch RAiD integration info: ${response.statusText}`,
-    );
+    throw new Error(`Failed to fetch RAiD integration info: ${response.statusText}`);
   }
 
   return parseOrThrow(IntegrationRaidInfoResponseSchema, data);

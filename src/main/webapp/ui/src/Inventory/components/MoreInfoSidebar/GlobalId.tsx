@@ -1,9 +1,9 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import GlobalIdLink from "../../../components/GlobalId";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
 type GlobalIdArgs = {
   record: InventoryRecord;

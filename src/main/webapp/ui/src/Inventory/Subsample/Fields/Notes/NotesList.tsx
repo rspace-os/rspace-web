@@ -1,11 +1,11 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import NoteItem from "./NoteItem";
-import List from "@mui/material/List";
-import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import type SubSampleModel from "../../../../stores/models/SubSampleModel";
+import NoteItem from "./NoteItem";
 
 type NotesListArgs = {
   record: SubSampleModel;

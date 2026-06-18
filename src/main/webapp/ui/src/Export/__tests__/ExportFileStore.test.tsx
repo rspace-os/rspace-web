@@ -1,19 +1,11 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  act,
-  waitFor,
-  within,
-} from "@testing-library/react";
-import ExportFileStore from "../ExportFileStore";
-import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
-import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
-import { mkValidator } from "../../util/Validator";
-
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import MockAdapter from "axios-mock-adapter";
+import { describe, expect, test } from "vitest";
+import axios from "@/common/axios";
+import { mkValidator } from "../../util/Validator";
+import ExportFileStore from "../ExportFileStore";
+import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
 
 const mockAxios = new MockAdapter(axios);
 describe("ExportFileStore", () => {
@@ -21,7 +13,6 @@ describe("ExportFileStore", () => {
     mockAxios.onPost("/nfsExport/ajax/createQuickExportPlan").reply(200, {
       ...CREATE_QUICK_EXPORT_PLAN,
       foundFileSystems: [],
-
     });
     await act(
       () =>
@@ -47,13 +38,10 @@ describe("ExportFileStore", () => {
             }}
             updateFilters={() => {}}
             validator={mkValidator()}
-          />
-        )
-
+          />,
+        ),
     );
-    expect(
-      screen.getByText("No filestore links found in exported content.")
-    ).toBeVisible();
+    expect(screen.getByText("No filestore links found in exported content.")).toBeVisible();
   });
   test("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();
@@ -85,32 +73,21 @@ describe("ExportFileStore", () => {
             }}
             updateFilters={() => {}}
             validator={mkValidator()}
-          />
-        )
-
+          />,
+        ),
     );
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
           name: "Show found filestore links",
-        })
+        }),
       ).toBeVisible();
-
     }));
-    await user.click(
-      screen.getByRole("button", { name: "Show found filestore links" })
-
-    );
+    await user.click(screen.getByRole("button", { name: "Show found filestore links" }));
     expect(
-      within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
-        "rowheader",
-        { name: "/test.txt" }
-      )
-
+      within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "/test.txt" }),
     ).toBeVisible();
-    await user.click(
-      within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
-    );
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i }));
   });
   test("Filesystem login details dialog should show such info.", async () => {
     const user = userEvent.setup();
@@ -122,7 +99,6 @@ describe("ExportFileStore", () => {
           loggedAs: "sambatest",
         },
       ],
-
     });
     await act(
       () =>
@@ -148,38 +124,23 @@ describe("ExportFileStore", () => {
             }}
             updateFilters={() => {}}
             validator={mkValidator()}
-          />
-        )
-
+          />,
+        ),
     );
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
           name: /Check file systems login details/i,
-        })
+        }),
       ).toBeVisible();
-
     }));
-    await user.click(
-      screen.getByRole("button", { name: /Check file systems login details/i })
-
-    );
+    await user.click(screen.getByRole("button", { name: /Check file systems login details/i }));
     expect(
-      within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
-        "rowheader",
-        { name: "samba-folder" }
-      )
+      within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "samba-folder" }),
     ).toBeVisible();
     expect(
-      within(within(screen.getByRole("dialog")).getByRole("table")).getByRole(
-        "cell",
-        { name: "sambatest" }
-      )
-
+      within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("cell", { name: "sambatest" }),
     ).toBeVisible();
-    await user.click(
-      within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i })
-    );
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i }));
   });
 });
-

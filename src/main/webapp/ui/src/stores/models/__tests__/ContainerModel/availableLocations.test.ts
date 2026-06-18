@@ -1,9 +1,9 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/getRootStore", () => ({
-  default: () => ({})
+  default: () => ({}),
 }));
 describe("computed: availableLocations", () => {
   test("List containers have infinite capacity.", () => {
@@ -12,7 +12,6 @@ describe("computed: availableLocations", () => {
       isAccessible: true,
       value: Infinity,
     });
-
   });
   /*
    * Empty grid and visual containers should report the locationsCount, as
@@ -34,7 +33,6 @@ describe("computed: availableLocations", () => {
         isAccessible: true,
         value: 7,
       });
-
     });
     test("Empty visual containers return locationsCount, ignoring existance of locationsImage.", () => {
       const container = makeMockContainer({
@@ -47,7 +45,6 @@ describe("computed: availableLocations", () => {
         value: 7,
       });
     });
-
   });
   /*
    * Containers which have some contents should correctly subtract that from
@@ -72,4 +69,3 @@ describe("computed: availableLocations", () => {
     });
   });
 });
-

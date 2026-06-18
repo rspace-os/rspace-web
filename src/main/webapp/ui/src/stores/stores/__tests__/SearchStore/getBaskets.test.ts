@@ -1,27 +1,27 @@
 import "@/stores/stores/RootStore";
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import getRootStore from "../../getRootStore";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  get: (endpoint: string) => {
-    if (endpoint === "baskets") {
-      return Promise.resolve({
-        data: [
-          {
-            id: 1,
-            globalId: "BA1",
-            name: "Basket #1",
-            itemCount: 2,
-            _links: [],
-          },
-        ],
-      });
-    }
-    throw new Error(`Should not be calling endpoint: "${endpoint}".`);
+    get: (endpoint: string) => {
+      if (endpoint === "baskets") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              globalId: "BA1",
+              name: "Basket #1",
+              itemCount: 2,
+              _links: [],
+            },
+          ],
+        });
+      }
+      throw new Error(`Should not be calling endpoint: "${endpoint}".`);
+    },
   },
-
-  }}));
+}));
 describe("getBaskets", () => {
   test("Initialises basket objects correctly.", async () => {
     const { searchStore } = getRootStore();

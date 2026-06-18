@@ -12,23 +12,20 @@
  *
  * ============================================================================
  */
-import { observable, computed, action, makeObservable } from "mobx";
-import {
-  type GeoLocationAttrs,
-  type GeoLocation,
-  type GeoLocationBox,
-  type GeoLocationPolygon,
-  type PolygonPoint,
+import { action, computed, makeObservable, observable } from "mobx";
+import type {
+  GeoLocation,
+  GeoLocationAttrs,
+  GeoLocationBox,
+  GeoLocationPolygon,
+  PolygonPoint,
 } from "../definitions/GeoLocation";
 
 export const pointComplete = (point: PolygonPoint): boolean => {
   return Object.values(point).every((v) => v !== "");
 };
 const pointIncomplete = (point: PolygonPoint): boolean => {
-  return (
-    Object.values(point).some((v) => v !== "") &&
-    !Object.values(point).every((v) => v !== "")
-  );
+  return Object.values(point).some((v) => v !== "") && !Object.values(point).every((v) => v !== "");
 };
 
 export const boxComplete = (box: GeoLocationBox): boolean => {
@@ -81,9 +78,9 @@ export class GeoLocationPolygonModel implements GeoLocationPolygon {
   get isValid(): boolean {
     return this.points.every(({ polygonPoint }) => {
       if (polygonPoint.pointLatitude === "") return false;
-      if (isNaN(parseFloat(polygonPoint.pointLatitude))) return false;
+      if (Number.isNaN(parseFloat(polygonPoint.pointLatitude))) return false;
       if (polygonPoint.pointLongitude === "") return false;
-      if (isNaN(parseFloat(polygonPoint.pointLongitude))) return false;
+      if (Number.isNaN(parseFloat(polygonPoint.pointLongitude))) return false;
       return true;
     });
   }
@@ -143,12 +140,10 @@ export default class GeoLocationModel implements GeoLocation {
       this.geoLocationPolygon = new GeoLocationPolygonModel(
         attrs.geoLocationPolygon.map(({ polygonPoint }) => ({
           polygonPoint: observable(polygonPoint),
-        }))
+        })),
       );
     } else {
-      throw new Error(
-        "Polygon data is invalid: the first and last points are not the same."
-      );
+      throw new Error("Polygon data is invalid: the first and last points are not the same.");
     }
 
     this.geoLocationInPolygonPoint = attrs.geoLocationInPolygonPoint;

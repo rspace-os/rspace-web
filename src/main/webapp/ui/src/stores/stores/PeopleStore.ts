@@ -1,14 +1,14 @@
+import { action, makeObservable, observable, runInAction } from "mobx";
+import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import RsSet from "../../util/set";
-import { type Username, type PersonAttrs } from "../definitions/Person";
+import type { Group } from "../definitions/Group";
+import type { PersonAttrs, Username } from "../definitions/Person";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
-import PersonModel from "../models/PersonModel";
-import { type RootStore } from "./RootStore";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
-import { observable, makeObservable, runInAction, action } from "mobx";
-import { type Group } from "../definitions/Group";
-import { WorkbenchId } from "@/stores/definitions/container/types";
+import type PersonModel from "../models/PersonModel";
+import type { RootStore } from "./RootStore";
 
 export default class PeopleStore {
   rootStore: RootStore;
@@ -52,11 +52,10 @@ export default class PeopleStore {
   async fetchMembersOfSameGroup(): Promise<RsSet<PersonModel>> {
     if (this.groupMembers) return this.groupMembers;
     try {
-      const { data } = await ElnApiService.get<
-        Array<PersonAttrs> | { data: null; message: string }
-      >("userDetails/groupMembers");
-      if (this.currentUser === null)
-        throw new Error("Current user is not known");
+      const { data } = await ElnApiService.get<Array<PersonAttrs> | { data: null; message: string }>(
+        "userDetails/groupMembers",
+      );
+      if (this.currentUser === null) throw new Error("Current user is not known");
       if (Array.isArray(data)) {
         const factory = new MemoisedFactory();
         const members = new RsSet(data.map((d) => factory.newPerson(d)));
@@ -67,10 +66,7 @@ export default class PeopleStore {
       }
       throw new Error(data.message);
     } catch (e) {
-      console.error(
-        "Could not fetch set of users in the same group as current user",
-        e
-      );
+      console.error("Could not fetch set of users in the same group as current user", e);
       throw e;
     }
   }
@@ -80,13 +76,9 @@ export default class PeopleStore {
    *  Search term length check mimics limits of API.
    */
   async searchPeople(searchTerm: string): Promise<RsSet<PersonModel>> {
-    if (searchTerm.length < 3)
-      throw new Error("Search string must be at least 3 characters long.");
+    if (searchTerm.length < 3) throw new Error("Search string must be at least 3 characters long.");
     try {
-      const { data } = await ElnApiService.get<Array<PersonAttrs>>(
-        "",
-        `userDetails/search?query=${searchTerm}`
-      );
+      const { data } = await ElnApiService.get<Array<PersonAttrs>>("", `userDetails/search?query=${searchTerm}`);
       const factory = new MemoisedFactory();
       return new RsSet(data.map((d) => factory.newPerson(d)));
     } catch (e) {
@@ -100,13 +92,9 @@ export default class PeopleStore {
    *  Search term length check mimics limits of API.
    */
   async searchGroups(searchTerm: string): Promise<RsSet<Group>> {
-    if (searchTerm.length < 3)
-      throw new Error("Search string must be at least 3 characters long.");
+    if (searchTerm.length < 3) throw new Error("Search string must be at least 3 characters long.");
     try {
-      const { data } = await ElnApiService.get<Array<Group>>(
-        "",
-        `groups/search?query=${searchTerm}`
-      );
+      const { data } = await ElnApiService.get<Array<Group>>("", `groups/search?query=${searchTerm}`);
       return new RsSet(data);
     } catch (e) {
       console.error("Could not search for users", e);
@@ -115,9 +103,7 @@ export default class PeopleStore {
   }
 
   async getUser(username: Username): Promise<PersonModel | undefined> {
-    return [...(await this.searchPeople(username))].find(
-      (u) => u.username === username
-    );
+    return [...(await this.searchPeople(username))].find((u) => u.username === username);
   }
 
   async getPersonFromBenchId(id: WorkbenchId): Promise<PersonModel> {
@@ -134,9 +120,7 @@ export default class PeopleStore {
 
   fetchCurrentUsersGroups(): Promise<Array<Group>> {
     if (!this.currentUsersGroups) {
-      this.currentUsersGroups = ElnApiService.get<Array<Group>>("groups").then(
-        ({ data }) => data
-      );
+      this.currentUsersGroups = ElnApiService.get<Array<Group>>("groups").then(({ data }) => data);
     }
     return this.currentUsersGroups;
   }

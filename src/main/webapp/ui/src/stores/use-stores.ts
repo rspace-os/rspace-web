@@ -7,13 +7,12 @@ import getRootStore from "./stores/getRootStore";
 // application bootstrap point: every store-using component imports useStores,
 // guaranteeing RootStore is registered before getRootStore() is first called.
 import "./stores/RootStore";
+import type { StoreContainer } from "./stores/RootStore";
 import { storesContext } from "./stores-context";
-import { type StoreContainer } from "./stores/RootStore";
 
 // Falls back to the real singleton when no storesContext Provider is present
 // (the application renders without one). Resolving here at render time avoids a
 // module-load-time getRootStore() call in stores-context.
-const useStores: () => StoreContainer = () =>
-  useContext(storesContext) ?? getRootStore();
+const useStores: () => StoreContainer = () => useContext(storesContext) ?? getRootStore();
 
 export default useStores;

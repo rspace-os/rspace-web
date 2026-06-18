@@ -1,10 +1,8 @@
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 import SampleModel, { type SampleAttrs } from "../../SampleModel";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
-import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 
-export const sampleAttrs = (
-  attrs?: Readonly<Partial<SampleAttrs>>
-): SampleAttrs => ({
+export const sampleAttrs = (attrs?: Readonly<Partial<SampleAttrs>>): SampleAttrs => ({
   id: 1,
   type: "SAMPLE",
   globalId: "SA1",
@@ -39,9 +37,8 @@ export const sampleAttrs = (
   ...attrs,
 });
 
-export const makeMockSample = (
-  attrs?: Readonly<Partial<SampleAttrs>>
-): SampleModel => new SampleModel(new AlwaysNewFactory(), sampleAttrs(attrs));
+export const makeMockSample = (attrs?: Readonly<Partial<SampleAttrs>>): SampleModel =>
+  new SampleModel(new AlwaysNewFactory(), sampleAttrs(attrs));
 
 export const makeMockSampleWithASubsample = (): SampleModel => {
   return makeMockSubSample().sample;

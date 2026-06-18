@@ -1,37 +1,32 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import CreateDialog from "../CreateDialog";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
-import {
-  makeMockSubSample,
-  subsampleAttrs,
-} from "../../../../stores/models/__tests__/SubSampleModel/mocking";
-import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
-import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import AlertContext, { type Alert } from "../../../../stores/contexts/Alert";
+import { describe, expect, test, vi } from "vitest";
+import AlertContext from "../../../../stores/contexts/Alert";
+import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
+import { makeMockSubSample, subsampleAttrs } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
+import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
+import materialTheme from "../../../../theme";
+import CreateDialog from "../CreateDialog";
 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-  searchStore: {
-    search: null,
-    createNewContainer: () => {},
-    createNewSample: () => {},
-  },
-  uiStore: {
-    addAlert: () => {},
-  },
-  authStore: {
-    isSynchronizing: false,
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+    searchStore: {
+      search: null,
+      createNewContainer: () => {},
+      createNewSample: () => {},
+    },
+    uiStore: {
+      addAlert: () => {},
+    },
+    authStore: {
+      isSynchronizing: false,
+    },
+  }),
 }));
 // Mock AlertContext
 
@@ -41,150 +36,88 @@ describe("CreateDialog", () => {
     test("Subsamples", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
-      vi
-        .spyOn(subsample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(subsample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={subsample}
-            open={true}
-            onClose={() => {}}
-          />
-        </ThemeProvider>
-
+          <CreateDialog existingRecord={subsample} open={true} onClose={() => {}} />
+        </ThemeProvider>,
       );
-      await user.click(
-        await screen.findByRole("radio", { name: /Subsample, by splitting/ })
-
-      );
-      expect(
-        screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
-      ).toBeVisible();
+      await user.click(await screen.findByRole("radio", { name: /Subsample, by splitting/ }));
+      expect(screen.getByRole("spinbutton", { name: /Number of new subsamples/i })).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
     test("Subsamples, with too many copies", async () => {
       const user = userEvent.setup();
       const subsample = makeMockSubSample({});
-      vi
-        .spyOn(subsample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(subsample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={subsample}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={subsample} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
-      await user.click(
-        await screen.findByRole("radio", { name: /Subsample, by splitting/ })
-
-      );
-      await user.type(
-        screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
-        "200"
-
-      );
+      await user.click(await screen.findByRole("radio", { name: /Subsample, by splitting/ }));
+      await user.type(screen.getByRole("spinbutton", { name: /Number of new subsamples/i }), "200");
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
     test("Samples, when there is one subsample", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
-        </ThemeProvider>
-
+          <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
-        })
-
+        }),
       );
-      expect(
-        screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
-      ).toBeVisible();
+      expect(screen.getByRole("spinbutton", { name: /Number of new subsamples/i })).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
     });
     test("Samples, with too many copies", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={sample}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(
         await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
-        })
-
+        }),
       );
-      await user.type(
-        screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
-        "200"
-
-      );
+      await user.type(screen.getByRole("spinbutton", { name: /Number of new subsamples/i }), "200");
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
     test("Samples, when there are multiple subsamples", async () => {
       const sample = makeMockSample({
         subSamples: [subsampleAttrs(), subsampleAttrs()],
       });
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={sample}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by splitting the existing subsample/,
-        })
+        }),
       ).toBeDisabled();
     });
   });
@@ -195,38 +128,25 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
-      vi
-        .spyOn(container, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={container}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={container} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Container/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Container/,
-        })
-
+        }),
       );
-      expect(
-        screen.getByText("No location selection required for list containers.")
-      ).toBeVisible();
+      expect(screen.getByText("No location selection required for list containers.")).toBeVisible();
 
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
       await user.click(screen.getByRole("button", { name: /create/i }));
@@ -241,27 +161,18 @@ describe("CreateDialog", () => {
         canStoreContainers: false,
         canStoreSamples: true,
       });
-      vi
-        .spyOn(container, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={container}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={container} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Container/,
-        })
+        }),
       ).toBeDisabled();
     });
   });
@@ -272,38 +183,25 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: true,
       });
-      vi
-        .spyOn(container, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: vi.fn(), removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={container}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: vi.fn(), removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={container} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Sample/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Sample/,
-        })
-
+        }),
       );
-      expect(
-        screen.getByText("No location selection required for list containers.")
-      ).toBeVisible();
+      expect(screen.getByText("No location selection required for list containers.")).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
       await user.click(screen.getByRole("button", { name: /create/i }));
     });
@@ -317,27 +215,18 @@ describe("CreateDialog", () => {
         canStoreContainers: true,
         canStoreSamples: false,
       });
-      vi
-        .spyOn(container, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={container}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={container} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Sample/,
-        })
+        }),
       ).toBeDisabled();
     });
   });
@@ -345,33 +234,23 @@ describe("CreateDialog", () => {
     test("Success case", async () => {
       const user = userEvent.setup();
       const template = makeMockTemplate({});
-      vi
-        .spyOn(template, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(template, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={template}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={template} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Sample/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Sample/,
-        })
+        }),
       );
     });
   });
@@ -379,39 +258,25 @@ describe("CreateDialog", () => {
     test("No fields", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={sample}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Template/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Template/,
-        })
-
+        }),
       );
-      await user.type(
-        screen.getByRole("textbox", { name: /name/i }),
-        "New template"
-      );
+      await user.type(screen.getByRole("textbox", { name: /name/i }), "New template");
 
       await user.click(screen.getByRole("button", { name: /next/i }));
       expect(screen.getByText("No fields.")).toBeVisible();
@@ -420,34 +285,23 @@ describe("CreateDialog", () => {
     test("Name that's too short", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={sample}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Template/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Template/,
-        })
-
+        }),
       );
 
       await user.type(screen.getByRole("textbox", { name: /name/i }), "x");
@@ -458,95 +312,60 @@ describe("CreateDialog", () => {
     test("Success case", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <AlertContext.Provider
-            value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}
-          >
-            <CreateDialog
-              existingRecord={sample}
-              open={true}
-              onClose={() => {}}
-            />
+          <AlertContext.Provider value={{ addAlert: mockAddAlert, removeAlert: vi.fn() }}>
+            <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
           </AlertContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by creating new ones/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Subsamples, by creating new ones/,
-        })
-
+        }),
       );
-      expect(
-        screen.getByRole("spinbutton", { name: /Number of new subsamples/i })
-      ).toBeVisible();
-      await user.type(
-        screen.getByRole("spinbutton", { name: /Number of new subsamples/i }),
-        "4"
-
-      );
+      expect(screen.getByRole("spinbutton", { name: /Number of new subsamples/i })).toBeVisible();
+      await user.type(screen.getByRole("spinbutton", { name: /Number of new subsamples/i }), "4");
       expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
 
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
       expect(screen.getByRole("button", { name: /next/i })).toBeVisible();
 
       await user.click(screen.getByRole("button", { name: /next/i }));
-      expect(
-        screen.getByRole("spinbutton", { name: /Quantity per subsample/i })
-
-      ).toBeVisible();
+      expect(screen.getByRole("spinbutton", { name: /Quantity per subsample/i })).toBeVisible();
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
-      await user.type(
-        screen.getByRole("spinbutton", { name: /Quantity per subsample/i }),
-        "4"
-      );
+      await user.type(screen.getByRole("spinbutton", { name: /Quantity per subsample/i }), "4");
     });
     test("Clearing the quantity field disables the submit button", async () => {
       const user = userEvent.setup();
       const sample = makeMockSample({});
-      vi
-        .spyOn(sample, "fetchAdditionalInfo")
-        .mockImplementation(() => Promise.resolve());
+      vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
       render(
         <ThemeProvider theme={materialTheme}>
-          <CreateDialog
-            existingRecord={sample}
-            open={true}
-            onClose={() => {}}
-          />
-        </ThemeProvider>
-
+          <CreateDialog existingRecord={sample} open={true} onClose={() => {}} />
+        </ThemeProvider>,
       );
       expect(
         await screen.findByRole("radio", {
           name: /Subsamples, by creating new ones/,
-        })
-
+        }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
           name: /Subsamples, by creating new ones/,
-        })
-
+        }),
       );
 
       await user.click(screen.getByRole("button", { name: /next/i }));
       expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
-      await user.clear(
-        screen.getByRole("spinbutton", { name: /Quantity per subsample/i })
-      );
+      await user.clear(screen.getByRole("spinbutton", { name: /Quantity per subsample/i }));
       expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
     });
   });
 });
-

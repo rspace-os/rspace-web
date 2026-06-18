@@ -60,6 +60,4 @@ export const ShareSearchResponseSchema = v.object({
   _links: LinkItemListSchema,
 });
 
-export type ShareSearchResponse = v.InferOutput<
-  typeof ShareSearchResponseSchema
->;
+export type ShareSearchResponse = v.InferOutput<typeof ShareSearchResponseSchema>;

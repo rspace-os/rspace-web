@@ -1,15 +1,15 @@
-import React from "react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import type { ContainerType } from "@/stores/definitions/container/types";
+import RadioField, {
+  OptionExplanation,
+  OptionHeading,
+  type RadioOption,
+} from "../../../../components/Inputs/RadioField";
+import type ContainerModel from "../../../../stores/models/ContainerModel";
+import FormField from "../../../components/Inputs/FormField";
 import LocationsImageField from "../LocationsImageField";
 import GridDimensionsAndLayout from "./GridDimensionsAndLayout";
-import ContainerModel from "../../../../stores/models/ContainerModel";
-import RadioField, {
-  type RadioOption,
-  OptionHeading,
-  OptionExplanation,
-} from "../../../../components/Inputs/RadioField";
-import FormField from "../../../components/Inputs/FormField";
-import { ContainerType } from "@/stores/definitions/container/types";
 
 const OPTIONS: Array<RadioOption<ContainerType>> = [
   {
@@ -17,9 +17,7 @@ const OPTIONS: Array<RadioOption<ContainerType>> = [
     label: (
       <>
         <OptionHeading>List</OptionHeading>
-        <OptionExplanation>
-          Generic container for storing unordered content.
-        </OptionExplanation>
+        <OptionExplanation>Generic container for storing unordered content.</OptionExplanation>
       </>
     ),
   },
@@ -28,9 +26,7 @@ const OPTIONS: Array<RadioOption<ContainerType>> = [
     label: (
       <>
         <OptionHeading>Grid</OptionHeading>
-        <OptionExplanation>
-          Two-dimensional container with rows and columns e.g. a well plate.
-        </OptionExplanation>
+        <OptionExplanation>Two-dimensional container with rows and columns e.g. a well plate.</OptionExplanation>
       </>
     ),
   },
@@ -39,9 +35,7 @@ const OPTIONS: Array<RadioOption<ContainerType>> = [
     label: (
       <>
         <OptionHeading>Visual</OptionHeading>
-        <OptionExplanation>
-          Container showing exact locations on an image background.
-        </OptionExplanation>
+        <OptionExplanation>Container showing exact locations on an image background.</OptionExplanation>
       </>
     ),
   },
@@ -52,11 +46,7 @@ type OrganizationArgs = {
 };
 
 function Organization({ container }: OrganizationArgs): React.ReactNode {
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { name: string; value: ContainerType | null };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { name: string; value: ContainerType | null } }) => {
     if (container && value) {
       container.setOrganization(value);
     }
@@ -71,19 +61,11 @@ function Organization({ container }: OrganizationArgs): React.ReactNode {
         doNotAttachIdToLabel
         asFieldset
         renderInput={({ id: _id, error: _error, ...props }) => (
-          <RadioField
-            name="organization"
-            onChange={handleChange}
-            options={OPTIONS}
-            {...props}
-          />
+          <RadioField name="organization" onChange={handleChange} options={OPTIONS} {...props} />
         )}
       />
-      {container.cType === "GRID" && container.state !== "preview" && (
-        <GridDimensionsAndLayout container={container} />
-      )}
-      {container.cType === "IMAGE" &&
-        container.isFieldEditable("locationsImage") && <LocationsImageField />}
+      {container.cType === "GRID" && container.state !== "preview" && <GridDimensionsAndLayout container={container} />}
+      {container.cType === "IMAGE" && container.isFieldEditable("locationsImage") && <LocationsImageField />}
     </>
   );
 }

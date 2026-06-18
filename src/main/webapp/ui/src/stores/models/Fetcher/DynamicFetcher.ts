@@ -1,11 +1,8 @@
-import { action, computed, override, makeObservable } from "mobx";
+import { action, computed, makeObservable, override } from "mobx";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { CoreFetcherArgs, DynamicFetcher as DynamicFetcherInterface } from "../../definitions/Search";
 import CoreFetcher from "./CoreFetcher";
-import {
-  type CoreFetcherArgs,
-  type DynamicFetcher as DynamicFetcherInterface,
-} from "../../definitions/Search";
-import { type Factory } from "../../definitions/Factory";
-import { type InventoryRecord } from "../../definitions/InventoryRecord";
 
 /**
  * This is so that the number of search results is highly divisible, for
@@ -13,10 +10,7 @@ import { type InventoryRecord } from "../../definitions/InventoryRecord";
  */
 export const DYNAMIC_PAGE_SIZE = 12;
 
-export default class DynamicFetcher
-  extends CoreFetcher
-  implements DynamicFetcherInterface
-{
+export default class DynamicFetcher extends CoreFetcher implements DynamicFetcherInterface {
   constructor(factory: Factory, params: CoreFetcherArgs | null) {
     super(factory, params);
     makeObservable(this, {
@@ -32,7 +26,7 @@ export default class DynamicFetcher
   async setPage(pageNumber: number): Promise<void> {
     this.pageNumber = pageNumber;
     await this.search(null, (results: Array<InventoryRecord>) =>
-      pageNumber === 0 ? this.setResults(results) : this.addResults([], results)
+      pageNumber === 0 ? this.setResults(results) : this.addResults([], results),
     );
   }
 

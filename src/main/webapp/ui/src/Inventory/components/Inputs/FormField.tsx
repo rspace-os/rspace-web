@@ -1,12 +1,10 @@
-import React from "react";
-import { inputBaseClasses } from "@mui/material/InputBase";
 import { formControlLabelClasses } from "@mui/material/FormControlLabel";
-import { svgIconClasses } from "@mui/material/SvgIcon";
-import { selectClasses } from "@mui/material/Select";
 import { formLabelClasses } from "@mui/material/FormLabel";
-import BaseFormField, {
-  type FormFieldArgs as BaseFormFieldArgs,
-} from "../../../components/Inputs/FormField";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import { selectClasses } from "@mui/material/Select";
+import { svgIconClasses } from "@mui/material/SvgIcon";
+import type React from "react";
+import BaseFormField, { type FormFieldArgs as BaseFormFieldArgs } from "../../../components/Inputs/FormField";
 
 /**
  * When not disabled and not batch editing, all of the behaviour of the more
@@ -30,10 +28,9 @@ export const INVENTORY_FORM_FIELD_SX = {
         display: "none",
       },
     },
-  [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]:
-    {
-      padding: "11px 10px 10px 10px",
-    },
+  [`& .${selectClasses.root}.${selectClasses.select}.${selectClasses.outlined}`]: {
+    padding: "11px 10px 10px 10px",
+  },
   [`& .${inputBaseClasses.disabled}::before`]: {
     borderBottom: "0px !important",
   },

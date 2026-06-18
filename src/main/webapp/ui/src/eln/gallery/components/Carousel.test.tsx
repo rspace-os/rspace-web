@@ -1,12 +1,11 @@
-import { test, describe, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import axios from "@/common/axios";
 import { SimpleCarousel } from "./Carousel.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -19,10 +18,7 @@ const mockAxios = new MockAdapter(axios);
  */
 let restoreConsole: () => void;
 beforeEach(() => {
-  restoreConsole = silenceConsole(
-    ["error"],
-    [/not wrapped in act/]
-  );
+  restoreConsole = silenceConsole(["error"], [/not wrapped in act/]);
 });
 afterEach(() => {
   restoreConsole();
@@ -60,15 +56,11 @@ describe("Carousel", () => {
     const user = userEvent.setup();
     render(<SimpleCarousel />);
 
-    expect(
-      screen.getByRole("status", { name: "Current file index" })
-    ).toHaveTextContent("1 / 8");
+    expect(screen.getByRole("status", { name: "Current file index" })).toHaveTextContent("1 / 8");
 
     await user.click(screen.getByRole("button", { name: /next/i }));
 
-    expect(
-      screen.getByRole("status", { name: "Current file index" })
-    ).toHaveTextContent("2 / 8");
+    expect(screen.getByRole("status", { name: "Current file index" })).toHaveTextContent("2 / 8");
   });
 
   test("Moving to a different file resets the zoom level", async () => {

@@ -1,27 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
-import UnitSelect from "../../../components/Inputs/UnitSelect";
-import StringField from "../../../components/Inputs/StringField";
-import NumberField from "../../../components/Inputs/NumberField";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-import { type Quantity } from "../../../stores/definitions/HasQuantity";
-import {
-  getValue,
-  getUnitId,
-  getLabel,
-} from "../../../stores/models/HasQuantity";
-import BatchFormField from "../../components/Inputs/BatchFormField";
-import Typography from "@mui/material/Typography";
-import { type Sample } from "../../../stores/definitions/Sample";
-import Link from "@mui/material/Link";
-import NavigateContext from "../../../stores/contexts/Navigate";
 import Box from "@mui/material/Box";
-import { textFieldClasses } from "@mui/material/TextField";
 import { inputBaseClasses } from "@mui/material/InputBase";
+import Link from "@mui/material/Link";
+import { textFieldClasses } from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React, { useEffect, useState } from "react";
+import NumberField from "../../../components/Inputs/NumberField";
+import StringField from "../../../components/Inputs/StringField";
+import UnitSelect from "../../../components/Inputs/UnitSelect";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { Quantity } from "../../../stores/definitions/HasQuantity";
+import type { Sample } from "../../../stores/definitions/Sample";
+import { getLabel, getUnitId, getValue } from "../../../stores/models/HasQuantity";
+import BatchFormField from "../../components/Inputs/BatchFormField";
 
-function CustomBatchFormField<T>(
-  props: React.ComponentProps<typeof BatchFormField<T>>,
-): React.ReactNode {
+function CustomBatchFormField<T>(props: React.ComponentProps<typeof BatchFormField<T>>): React.ReactNode {
   return (
     <Box
       sx={{
@@ -110,8 +104,7 @@ function QuantityField<
     });
   };
 
-  const errorMessage = () =>
-    valid ? null : "Should be a positive number or zero.";
+  const errorMessage = () => (valid ? null : "Should be a positive number or zero.");
 
   return (
     <>
@@ -153,51 +146,45 @@ function QuantityField<
           )}
         />
       ) : (
-        <>
-          <CustomBatchFormField
-            label="Quantity"
-            value={quantityLabel}
-            disabled
-            setDisabled={(checked) => {
-              fieldOwner.setFieldEditable("quantity", checked);
-            }}
-            canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
-            noValueLabel={fieldOwner.noValueLabel.quantity}
-            renderInput={({ value, disabled }) => (
-              <>
-                <StringField disabled={disabled} value={value} />
-                {parentSample?.globalId && (
-                  <Typography variant="caption">
-                    <Link
-                      href={`/inventory/search?parentGlobalId=${parentSample.globalId}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (parentSample.globalId)
-                          navigate(
-                            `/inventory/search?parentGlobalId=${parentSample.globalId}`,
-                          );
-                      }}
-                    >
-                      {parentSample.subSamplesCount === 1 ? (
-                        `The parent sample only has one ${parentSample.subSampleAlias.alias}.`
-                      ) : (
-                        <>
-                          There{" "}
-                          {parentSample.subSamplesCount === 2 ? "is" : "are"}{" "}
-                          {parentSample.subSamplesCount - 1} other{" "}
-                          {parentSample.subSamplesCount === 2
-                            ? parentSample.subSampleAlias.alias
-                            : parentSample.subSampleAlias.plural}
-                          .
-                        </>
-                      )}
-                    </Link>
-                  </Typography>
-                )}
-              </>
-            )}
-          />
-        </>
+        <CustomBatchFormField
+          label="Quantity"
+          value={quantityLabel}
+          disabled
+          setDisabled={(checked) => {
+            fieldOwner.setFieldEditable("quantity", checked);
+          }}
+          canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
+          noValueLabel={fieldOwner.noValueLabel.quantity}
+          renderInput={({ value, disabled }) => (
+            <>
+              <StringField disabled={disabled} value={value} />
+              {parentSample?.globalId && (
+                <Typography variant="caption">
+                  <Link
+                    href={`/inventory/search?parentGlobalId=${parentSample.globalId}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (parentSample.globalId) navigate(`/inventory/search?parentGlobalId=${parentSample.globalId}`);
+                    }}
+                  >
+                    {parentSample.subSamplesCount === 1 ? (
+                      `The parent sample only has one ${parentSample.subSampleAlias.alias}.`
+                    ) : (
+                      <>
+                        There {parentSample.subSamplesCount === 2 ? "is" : "are"} {parentSample.subSamplesCount - 1}{" "}
+                        other{" "}
+                        {parentSample.subSamplesCount === 2
+                          ? parentSample.subSampleAlias.alias
+                          : parentSample.subSampleAlias.plural}
+                        .
+                      </>
+                    )}
+                  </Link>
+                </Typography>
+              )}
+            </>
+          )}
+        />
       )}
     </>
   );

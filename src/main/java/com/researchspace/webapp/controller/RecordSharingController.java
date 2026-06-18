@@ -45,6 +45,7 @@ public class RecordSharingController extends BaseController {
   public static final String SHAREE = "sharee";
 
   private @Autowired RecordSharingManager recShareMgr;
+
   private @Autowired SharingHandler sharingHandler;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 

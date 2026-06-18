@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
+import { Optional } from "../../../util/optional";
 import { encodeTags } from "../ParseEncodedTagStrings";
 
-import { Optional } from "../../../util/optional";
 describe("ParseEncodedTagStrings", () => {
   describe("encodeTags", () => {
     test("Empty array should return empty string.", () => {
@@ -16,7 +16,7 @@ describe("ParseEncodedTagStrings", () => {
             vocabulary: Optional.empty(),
             version: Optional.empty(),
           },
-        ]).isEqual(Optional.present("foo"))
+        ]).isEqual(Optional.present("foo")),
       ).toBe(true);
     });
     test("Single controlled vocabulary tag should be encoded correctly.", () => {
@@ -30,9 +30,9 @@ describe("ParseEncodedTagStrings", () => {
           },
         ]).isEqual(
           Optional.present(
-            `value__RSP_EXTONT_URL_DELIM__uri__RSP_EXTONT_NAME_DELIM__voc__RSP_EXTONT_VERSION_DELIM__ver`
-          )
-        )
+            `value__RSP_EXTONT_URL_DELIM__uri__RSP_EXTONT_NAME_DELIM__voc__RSP_EXTONT_VERSION_DELIM__ver`,
+          ),
+        ),
       ).toBe(true);
     });
     test("Multiple tags should be delimited by commas.", () => {
@@ -50,7 +50,7 @@ describe("ParseEncodedTagStrings", () => {
             vocabulary: Optional.empty(),
             version: Optional.empty(),
           },
-        ]).isEqual(Optional.present("foo,bar"))
+        ]).isEqual(Optional.present("foo,bar")),
       ).toBe(true);
     });
     test("Invalid tag will result in Optional.empty.", () => {
@@ -62,9 +62,8 @@ describe("ParseEncodedTagStrings", () => {
             vocabulary: Optional.empty(),
             version: Optional.empty(),
           },
-        ]).isEqual(Optional.empty())
+        ]).isEqual(Optional.empty()),
       ).toBe(true);
     });
   });
 });
-

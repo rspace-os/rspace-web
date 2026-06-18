@@ -1,12 +1,12 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
 import { render, screen } from "@testing-library/react";
+import type React from "react";
+import { describe, expect, test } from "vitest";
 
 import useViewportDimensions from "../useViewportDimensions";
+
 function Wrapper(): React.ReactNode {
   const { width } = useViewportDimensions();
   return <>{width}</>;
-
 }
 describe("useViewportDimensions", () => {
   test("Inside of a test environment, width defaults to 1024px.", () => {
@@ -14,4 +14,3 @@ describe("useViewportDimensions", () => {
     expect(screen.getByText("1024")).toBeVisible();
   });
 });
-

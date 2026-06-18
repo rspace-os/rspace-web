@@ -135,11 +135,7 @@ export function TreeItem<Item, Id extends string>({
  * </Tree>
  * ```
  */
-export function Tree<
-  Item,
-  Id extends string,
-  MultiSelect extends boolean = false,
->({
+export function Tree<Item, Id extends string, MultiSelect extends boolean = false>({
   multiSelect,
   expandedItems,
   onExpandedItemsChange,
@@ -159,10 +155,7 @@ export function Tree<
   getId: (item: Item) => Id;
   multiSelect?: MultiSelect;
   expandedItems?: Array<Item>;
-  onExpandedItemsChange?: (
-    event: React.SyntheticEvent | null,
-    items: Array<Item>,
-  ) => void;
+  onExpandedItemsChange?: (event: React.SyntheticEvent | null, items: Array<Item>) => void;
   selectedItems?: MultiSelect extends true ? Array<Item> : Item | null;
   onSelectedItemsChange?: (
     event: React.SyntheticEvent | null,
@@ -195,9 +188,7 @@ export function Tree<
                   itemIds.map((id) => {
                     const item = idMap.get(id as Id);
                     if (!item) {
-                      throw new Error(
-                        `Item with id ${id} has not previously been rendered as TreeNode`,
-                      );
+                      throw new Error(`Item with id ${id} has not previously been rendered as TreeNode`);
                     }
                     return item;
                   }),
@@ -211,27 +202,18 @@ export function Tree<
                 ? (selectedItems as Array<Item>).map((item) => getId(item))
                 : (selectedItems as Item | null) === null
                   ? ""
-                  : getId(selectedItems as Item)) as MultiSelect extends true
-                ? Array<string>
-                : string,
+                  : getId(selectedItems as Item)) as MultiSelect extends true ? Array<string> : string,
             }
           : {})}
         {...(onSelectedItemsChange !== undefined
           ? {
-              onSelectedItemsChange: (
-                event,
-                itemIds: string[] | string | null,
-              ) => {
+              onSelectedItemsChange: (event, itemIds: string[] | string | null) => {
                 onSelectedItemsChange(
                   event,
                   (multiSelect
-                    ? (Array.isArray(itemIds) ? itemIds : itemIds ? [itemIds] : []).map(
-                        getItemForId,
-                      )
+                    ? (Array.isArray(itemIds) ? itemIds : itemIds ? [itemIds] : []).map(getItemForId)
                     : (() => {
-                        const itemId = Array.isArray(itemIds)
-                          ? itemIds[itemIds.length - 1]
-                          : itemIds;
+                        const itemId = Array.isArray(itemIds) ? itemIds[itemIds.length - 1] : itemIds;
                         if (!itemId) return null;
                         return getItemForId(itemId);
                       })()) as MultiSelect extends true ? Array<Item> : Item | null,

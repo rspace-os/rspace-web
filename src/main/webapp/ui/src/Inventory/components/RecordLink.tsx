@@ -1,13 +1,12 @@
-import Chip from "@mui/material/Chip";
-import { chipClasses } from "@mui/material/Chip";
-import { type MouseEvent, useContext } from "react";
-import RecordTypeIcon from "../../components/RecordTypeIcon";
-import useStores from "../../stores/use-stores";
+import Chip, { chipClasses } from "@mui/material/Chip";
 import { emphasize, type Theme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
-import NavigateContext from "../../stores/contexts/Navigate";
-import { type InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import { type MouseEvent, useContext } from "react";
+import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import RecordTypeIcon from "../../components/RecordTypeIcon";
+import NavigateContext from "../../stores/contexts/Navigate";
+import useStores from "../../stores/use-stores";
 
 type OverflowProps = {
   overflow?: boolean;
@@ -23,11 +22,7 @@ type RecordChipProps = OverflowProps & {
 };
 
 const interactiveChipSx =
-  ({
-    overflow = false,
-    withoutIcon = false,
-    clickable = false,
-  }: ChipSxOptions = {}) =>
+  ({ overflow = false, withoutIcon = false, clickable = false }: ChipSxOptions = {}) =>
   (theme: Theme) => ({
     ...(overflow
       ? {
@@ -169,74 +164,59 @@ export const RecordLink = observer(
         href={record.permalinkURL || undefined}
         label={record.recordLinkLabel}
         target={newTab ? "_blank" : undefined}
-        icon={
-          <RecordTypeIcon
-            record={record}
-            disableTooltip={hideRecordTypeTooltip}
-          />
-        }
+        icon={<RecordTypeIcon record={record} disableTooltip={hideRecordTypeTooltip} />}
         onClick={onClick}
       />
     );
-  }
+  },
 );
 
-export const TopLink = observer(
-  ({ overflow = false }: OverflowProps) => {
-    const { searchStore, trackingStore } = useStores();
-    const { useNavigate } = useContext(NavigateContext);
-    const navigate = useNavigate();
+export const TopLink = observer(({ overflow = false }: OverflowProps) => {
+  const { searchStore, trackingStore } = useStores();
+  const { useNavigate } = useContext(NavigateContext);
+  const navigate = useNavigate();
 
-    const containersRoot = `/inventory/search?${searchStore.fetcher
-      .generateNewQuery({ resultType: "CONTAINER" })
-      .toString()}`;
+  const containersRoot = `/inventory/search?${searchStore.fetcher
+    .generateNewQuery({ resultType: "CONTAINER" })
+    .toString()}`;
 
-    const toTopContainers = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      navigate(containersRoot);
-      trackingStore.trackEvent("BreadcrumbClicked");
-    };
+  const toTopContainers = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(containersRoot);
+    trackingStore.trackEvent("BreadcrumbClicked");
+  };
 
-    return (
-      <Typography variant="body1">
-        <Chip
-          size="small"
-          sx={interactiveChipSx({ overflow, withoutIcon: true })}
-          component="span"
-          label="Containers"
-          onClick={toTopContainers}
-        />
-      </Typography>
-    );
-  }
-);
+  return (
+    <Typography variant="body1">
+      <Chip
+        size="small"
+        sx={interactiveChipSx({ overflow, withoutIcon: true })}
+        component="span"
+        label="Containers"
+        onClick={toTopContainers}
+      />
+    </Typography>
+  );
+});
 
-export const CurrentRecord = observer(
-  ({ record, overflow = false }: RecordChipProps) => {
-    return (
-      <Typography variant="body1">
-        <Chip
-          size="small"
-          sx={staticChipSx({ overflow })}
-          clickable={false}
-          component="span"
-          label={record.recordLinkLabel}
-          icon={<RecordTypeIcon record={record} />}
-        />
-      </Typography>
-    );
-  }
-);
+export const CurrentRecord = observer(({ record, overflow = false }: RecordChipProps) => {
+  return (
+    <Typography variant="body1">
+      <Chip
+        size="small"
+        sx={staticChipSx({ overflow })}
+        clickable={false}
+        component="span"
+        label={record.recordLinkLabel}
+        icon={<RecordTypeIcon record={record} />}
+      />
+    </Typography>
+  );
+});
 
 export const InTrash = () => (
   <Typography variant="body1">
-    <Chip
-      size="small"
-      sx={staticChipSx({ withoutIcon: true })}
-      clickable={false}
-      component="span"
-      label="In Trash"
-    />
+    <Chip size="small" sx={staticChipSx({ withoutIcon: true })} clickable={false} component="span" label="In Trash" />
   </Typography>
 );

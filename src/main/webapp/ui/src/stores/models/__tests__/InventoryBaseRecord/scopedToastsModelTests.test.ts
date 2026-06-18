@@ -1,30 +1,24 @@
-import { describe, test, vi } from 'vitest';
-import InventoryBaseRecord from "../../InventoryBaseRecord";
-import fc, { type Command } from "fast-check";
+import fc from "fast-check";
+import { describe, test, vi } from "vitest";
 import { mkAlert } from "../../../contexts/Alert";
+import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+import InventoryBaseRecord from "../../InventoryBaseRecord";
 import { AddScopedToastCommand } from "./addScopedToast";
 import { ClearAllScopedToastsCommand } from "./clearAllScopedToasts";
-import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
-import { type Model } from "./common";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
-  searchStore: {},
-  uiStore: {
-    removeAlert: vi.fn(() => {}),
-  },
-})
-
+    searchStore: {},
+    uiStore: {
+      removeAlert: vi.fn(() => {}),
+    },
+  }),
 }));
 describe("Scoped Toasts Model Tests", () => {
   test("add and clear", async () => {
     const allCommands = [
-      fc
-        .string()
-        .map(
-          (message: string) => new AddScopedToastCommand(mkAlert({ message }))
-        ),
+      fc.string().map((message: string) => new AddScopedToastCommand(mkAlert({ message }))),
       fc.constant(new ClearAllScopedToastsCommand()),
     ];
     await fc.assert(
@@ -34,8 +28,7 @@ describe("Scoped Toasts Model Tests", () => {
           real: new InventoryBaseRecord(mockFactory(), {}),
         });
         await fc.modelRun(s, cmds);
-      })
+      }),
     );
   });
 });
-

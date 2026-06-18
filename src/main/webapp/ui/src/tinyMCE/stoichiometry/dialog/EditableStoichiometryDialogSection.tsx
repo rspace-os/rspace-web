@@ -1,4 +1,3 @@
-import React from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -6,17 +5,13 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import React from "react";
 import { useConfirm } from "@/components/ConfirmProvider";
 import AnalyticsContext from "@/stores/contexts/Analytics";
-import ValidatingSubmitButton, {
-  IsValid,
-} from "../../../components/ValidatingSubmitButton";
+import ValidatingSubmitButton, { IsValid } from "../../../components/ValidatingSubmitButton";
 import StoichiometryTable from "../StoichiometryTable";
 import { StoichiometryTableControllerProvider } from "../StoichiometryTableControllerContext";
-import {
-  type RefreshedStoichiometry,
-  useEditableStoichiometryTable,
-} from "../useEditableStoichiometryTable";
+import { type RefreshedStoichiometry, useEditableStoichiometryTable } from "../useEditableStoichiometryTable";
 import {
   type CurrentStoichiometry,
   type RegisterCloseHandler,
@@ -24,10 +19,7 @@ import {
   STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX,
 } from "./shared";
 
-function getMutationErrorMessage(
-  error: unknown,
-  fallbackMessage: string,
-): string {
+function getMutationErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
@@ -51,18 +43,15 @@ export default function EditableStoichiometryDialogSection({
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const [mutationError, setMutationError] = React.useState<string | null>(null);
-  const { hasChanges, isBusy, isSaving, save, deleteTable, tableController } =
-    useEditableStoichiometryTable({
-      stoichiometryId: currentStoichiometry.id,
-      stoichiometryRevision: currentStoichiometry.revision,
-      activeChemId: chemId,
-      onStoichiometryRefreshed: (
-        refreshedStoichiometry: RefreshedStoichiometry,
-      ) => {
-        setCurrentStoichiometry(refreshedStoichiometry);
-        onSave?.(refreshedStoichiometry.id, refreshedStoichiometry.revision);
-      },
-    });
+  const { hasChanges, isBusy, isSaving, save, deleteTable, tableController } = useEditableStoichiometryTable({
+    stoichiometryId: currentStoichiometry.id,
+    stoichiometryRevision: currentStoichiometry.revision,
+    activeChemId: chemId,
+    onStoichiometryRefreshed: (refreshedStoichiometry: RefreshedStoichiometry) => {
+      setCurrentStoichiometry(refreshedStoichiometry);
+      onSave?.(refreshedStoichiometry.id, refreshedStoichiometry.revision);
+    },
+  });
 
   const handleClose = React.useCallback(async () => {
     if (isBusy) {
@@ -70,12 +59,7 @@ export default function EditableStoichiometryDialogSection({
     }
     if (
       hasChanges &&
-      !(await confirm(
-        "Discard changes?",
-        "Closing the dialog will discard the unsaved changes.",
-        "Discard",
-        "Cancel",
-      ))
+      !(await confirm("Discard changes?", "Closing the dialog will discard the unsaved changes.", "Discard", "Cancel"))
     ) {
       return;
     }
@@ -106,12 +90,7 @@ export default function EditableStoichiometryDialogSection({
         onSave?.(updatedStoichiometry.id, updatedStoichiometry.revision);
         console.log("Stoichiometry data saved successfully");
       } catch (error) {
-        setMutationError(
-          getMutationErrorMessage(
-            error,
-            "Failed to save stoichiometry changes. Please try again.",
-          ),
-        );
+        setMutationError(getMutationErrorMessage(error, "Failed to save stoichiometry changes. Please try again."));
         console.error("Save failed", error);
       }
     })();
@@ -140,12 +119,7 @@ export default function EditableStoichiometryDialogSection({
       onDelete?.();
       setCurrentStoichiometry(null);
     } catch (error) {
-      setMutationError(
-        getMutationErrorMessage(
-          error,
-          "Failed to delete this stoichiometry table. Please try again.",
-        ),
-      );
+      setMutationError(getMutationErrorMessage(error, "Failed to delete this stoichiometry table. Please try again."));
       console.error("Delete failed", error);
     }
   };
@@ -156,9 +130,8 @@ export default function EditableStoichiometryDialogSection({
         <Stack spacing={2} sx={{ flexWrap: "nowrap" }}>
           <Box>
             <Typography variant="body2">
-              Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual
-              Moles, or Notes. Yield/Excess values are calculated automatically,
-              as are each pairing of moles and mass.
+              Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are
+              calculated automatically, as are each pairing of moles and mass.
             </Typography>
             <StoichiometryTable
               editable

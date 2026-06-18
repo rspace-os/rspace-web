@@ -1,10 +1,10 @@
-import React from "react";
-import DMPDialog from "./DMPDialog";
-import AccentMenuItem from "../../components/AccentMenuItem";
-import DMPToolIcon from "../../assets/branding/dmptool/logo.svg";
-import { LOGO_COLOR } from "../../assets/branding/dmptool";
 import CardMedia from "@mui/material/CardMedia";
+import React from "react";
+import { LOGO_COLOR } from "../../assets/branding/dmptool";
+import DMPToolIcon from "../../assets/branding/dmptool/logo.svg";
+import AccentMenuItem from "../../components/AccentMenuItem";
 import EventBoundary from "../../components/EventBoundary";
+import DMPDialog from "./DMPDialog";
 
 type DMPToolAccentMenuItemArgs = {
   onDialogClose: () => void;
@@ -13,9 +13,7 @@ type DMPToolAccentMenuItemArgs = {
 /**
  * The menu item for the create menu for importing DMPs from DMPTool.
  */
-export default function DMPToolAccentMenuItem({
-  onDialogClose,
-}: DMPToolAccentMenuItemArgs): React.ReactNode {
+export default function DMPToolAccentMenuItem({ onDialogClose }: DMPToolAccentMenuItemArgs): React.ReactNode {
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (

@@ -1,12 +1,12 @@
+import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import Button from "@mui/material/Button";
-import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
-import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { LOGO_COLOR } from "../../../assets/branding/dmptool";
+import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useDmptoolEndpoint } from "../useDmptoolEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DMPToolArgs = {
   integrationState: IntegrationStates["DMPTOOL"];
@@ -19,9 +19,7 @@ type DMPToolArgs = {
 function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmptoolEndpoint();
-  const [connected, setConnected] = React.useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
   React.useEffect(() => {
     const f = () => {
@@ -30,7 +28,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
         mkAlert({
           variant: "success",
           message: "Successfully connected to DMPTool.",
-        })
+        }),
       );
     };
     window.addEventListener("DMPTOOL_CONNECTED", f);
@@ -44,17 +42,16 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="DMPTool"
         integrationState={integrationState}
         explanatoryText="Create Data Management Plans for your research through a guided web-based tool with templates."
         image={DMPToolIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText="DMPTool integration docs"
         website="dmptool.org"
         docLink="dmptool"
@@ -62,14 +59,10 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
         setupSection={
           <>
             <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your DMPTool
-                account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your DMPTool account.</li>
               <li>Enable the integration.</li>
               <li>
-                You can now import a DMP when in the Gallery, and associate a
-                DMP with data when in the export dialog.
+                You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.
               </li>
             </ol>
             {connected ? (
@@ -87,12 +80,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/dmptool/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/dmptool/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

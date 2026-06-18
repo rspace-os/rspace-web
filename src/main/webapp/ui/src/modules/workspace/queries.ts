@@ -1,13 +1,10 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import {
-  type WorkspaceRecordInformation,
   WorkspaceGetRecordInformationResponseSchema,
+  type WorkspaceRecordInformation,
 } from "@/modules/workspace/schema";
-import {
-  WORKSPACE_API_BASE_URL,
-  toWorkspaceError,
-} from "@/modules/workspace/utils";
+import { toWorkspaceError, WORKSPACE_API_BASE_URL } from "@/modules/workspace/utils";
 
 export type GetWorkspaceRecordInformationParams = {
   recordId: number;
@@ -35,29 +32,20 @@ export async function getWorkspaceRecordInformationAjax({
     searchParams.set("version", String(version));
   }
 
-  const response = await fetch(
-    `${WORKSPACE_API_BASE_URL}/getRecordInformation?${searchParams.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
+  const response = await fetch(`${WORKSPACE_API_BASE_URL}/getRecordInformation?${searchParams.toString()}`, {
+    method: "GET",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
     },
-  );
+  });
 
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw toWorkspaceError(
-      data,
-      `Failed to fetch record information: ${response.statusText}`,
-    );
+    throw toWorkspaceError(data, `Failed to fetch record information: ${response.statusText}`);
   }
 
-  const parsedResponse = parseOrThrow(
-    WorkspaceGetRecordInformationResponseSchema,
-    data,
-  );
+  const parsedResponse = parseOrThrow(WorkspaceGetRecordInformationResponseSchema, data);
 
   if (parsedResponse.data === null) {
     throw toWorkspaceError(parsedResponse, "No record information was returned.");
@@ -66,13 +54,13 @@ export async function getWorkspaceRecordInformationAjax({
   return parsedResponse.data;
 }
 
-export function useGetWorkspaceRecordInformationAjaxQuery(
-  params: GetWorkspaceRecordInformationParams,
-) {
-  return useSuspenseQuery({
+export function useGetWorkspaceRecordInformationAjaxQuery(params: GetWorkspaceRecordInformationParams) {
+  // A plain (non-suspense) query so callers can handle a failed load explicitly
+  // from the returned error state, rather than the query throwing into a React
+  // error boundary. A 404 / not-readable record is an expected outcome here.
+  return useQuery({
     queryKey: workspaceQueryKeys.recordInformation(params),
     queryFn: () => getWorkspaceRecordInformationAjax(params),
     retry: false,
   });
 }
-

@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 const useResizeObserver = ({
   callback,
@@ -7,12 +7,12 @@ const useResizeObserver = ({
   callback: () => void;
   element: { current: HTMLElement | null };
 }) => {
-  const current = element && element.current;
+  const current = element?.current;
 
   const observer = useRef<ResizeObserver | null>(null);
 
   const observe = () => {
-    if (element && element.current && observer.current) {
+    if (element?.current && observer.current) {
       observer.current.observe(element.current);
     }
   };

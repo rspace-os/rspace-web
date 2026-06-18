@@ -1,17 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import {
-  render,
-  screen,
-  within,
-  waitFor,
-} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
+import { render, screen, waitFor, within } from "@/__tests__/customQueries";
 import { stubAppChrome } from "@/__tests__/helpers/appChrome";
+import axios from "@/common/axios";
 import { ImportDialogStory } from "./ImportDialog.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -139,9 +133,7 @@ describe("ImportDialog", () => {
 
   test("Should have a search type selector", () => {
     render(<ImportDialogStory />);
-    expect(
-      screen.getByRole("combobox", { name: "Search type" }),
-    ).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Search type" })).toBeVisible();
   });
 
   test("The API endpoint is called when a search is performed", async () => {
@@ -166,10 +158,7 @@ describe("ImportDialog", () => {
     await waitFor(() => {
       const searchRequest = mockAxios.history.post.find(
         ({ url, data }) =>
-          url === "/api/v1/pubchem/search" &&
-          ((data as string | undefined) ?? "").includes(
-            '"searchType":"SMILES"',
-          ),
+          url === "/api/v1/pubchem/search" && ((data as string | undefined) ?? "").includes('"searchType":"SMILES"'),
       );
       expect(searchRequest).toBeDefined();
     });
@@ -196,9 +185,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
     await waitFor(() => {
-      expect(
-        screen.getAllByRole("checkbox", { name: /select compound/i }).length,
-      ).toBe(2);
+      expect(screen.getAllByRole("checkbox", { name: /select compound/i }).length).toBe(2);
     });
     const checkboxes = screen.getAllByRole("checkbox", {
       name: /select compound/i,
@@ -212,9 +199,7 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    const firstCheckbox = (
-      await screen.findAllByRole("checkbox", { name: /select/i })
-    )[0];
+    const firstCheckbox = (await screen.findAllByRole("checkbox", { name: /select/i }))[0];
     await user.click(firstCheckbox);
     await waitFor(() => {
       expect(firstCheckbox).toBeChecked();
@@ -241,9 +226,7 @@ describe("ImportDialog", () => {
     await user.keyboard("{Escape}");
 
     // selecting a compound clears the warning
-    await user.click(
-      (await screen.findAllByRole("checkbox", { name: /select/i }))[0],
-    );
+    await user.click((await screen.findAllByRole("checkbox", { name: /select/i }))[0]);
     await waitFor(() => {
       expect(screen.queryByRole("alert")).toBe(null);
     });
@@ -262,9 +245,7 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    await user.click(
-      (await screen.findAllByRole("checkbox", { name: /select/i }))[0],
-    );
+    await user.click((await screen.findAllByRole("checkbox", { name: /select/i }))[0]);
 
     // close the dialog
     const dialog = screen.getByRole("dialog");
@@ -286,9 +267,7 @@ describe("ImportDialog", () => {
       name: /Search Results/i,
     });
     expect(resultsSection).toBeVisible();
-    expect(screen.queryAllByRole("checkbox", { name: /select/i })).toHaveLength(
-      0,
-    );
+    expect(screen.queryAllByRole("checkbox", { name: /select/i })).toHaveLength(0);
   });
 
   test("Should not display CAS Number when it is empty", async () => {
@@ -302,9 +281,7 @@ describe("ImportDialog", () => {
     expect(compoundCard).toBeVisible();
 
     const terms = within(compoundCard).getAllByRole("term");
-    expect(
-      terms.some((t) => /PubChem ID/i.test(t.textContent ?? "")),
-    ).toBe(true);
+    expect(terms.some((t) => /PubChem ID/i.test(t.textContent ?? ""))).toBe(true);
     expect(terms.some((t) => /Formula/i.test(t.textContent ?? ""))).toBe(true);
     expect(terms.some((t) => /CAS/i.test(t.textContent ?? ""))).toBe(false);
   });
@@ -313,9 +290,7 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "noresults");
-    expect(
-      await screen.findByText(/No compounds found for "noresults"/i),
-    ).toBeVisible();
+    expect(await screen.findByText(/No compounds found for "noresults"/i)).toBeVisible();
 
     // modifying the search term hides the no-results message
     await user.type(screen.getByRole("textbox"), "modified");

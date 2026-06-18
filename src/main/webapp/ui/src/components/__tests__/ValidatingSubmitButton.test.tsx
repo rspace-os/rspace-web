@@ -1,29 +1,21 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-import ValidatingSubmitButton from "../ValidatingSubmitButton";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import Result from "../../util/result";
+import ValidatingSubmitButton from "../ValidatingSubmitButton";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 
 import materialTheme from "../../theme";
+
 describe("ValidatingSubmitButton", () => {
   test("When validationResult is OK and the button is tapped, onClick should be called.", () => {
     const onClick = vi.fn();
     render(
       <ThemeProvider theme={materialTheme}>
-        <ValidatingSubmitButton
-          loading={false}
-          validationResult={Result.Ok(null)}
-          onClick={onClick}
-        >
+        <ValidatingSubmitButton loading={false} validationResult={Result.Ok(null)} onClick={onClick}>
           Click me
         </ValidatingSubmitButton>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
     expect(onClick).toHaveBeenCalled();
@@ -39,7 +31,7 @@ describe("ValidatingSubmitButton", () => {
         >
           Click me
         </ValidatingSubmitButton>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
     expect(onClick).not.toHaveBeenCalled();
@@ -54,28 +46,23 @@ describe("ValidatingSubmitButton", () => {
         >
           Click me
         </ValidatingSubmitButton>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
     const alert = screen.getByRole("alert", { name: "Warning" });
     expect(alert).toBeVisible();
     expect(alert).toHaveTextContent("test");
   });
-  test.each([Result.Ok(null), Result.Error<null>([new Error("test")])])(
-    "When loading is true and validationResult is %s, the button should be disabled.",
-    (validationResult: Result<null>) => {
-      render(
-        <ThemeProvider theme={materialTheme}>
-          <ValidatingSubmitButton
-            loading={true}
-            validationResult={validationResult}
-            onClick={() => {}}
-          >
-            Click me
-          </ValidatingSubmitButton>
-        </ThemeProvider>
-      );
-    }
-  );
+  test.each([
+    Result.Ok(null),
+    Result.Error<null>([new Error("test")]),
+  ])("When loading is true and validationResult is %s, the button should be disabled.", (validationResult: Result<null>) => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <ValidatingSubmitButton loading={true} validationResult={validationResult} onClick={() => {}}>
+          Click me
+        </ValidatingSubmitButton>
+      </ThemeProvider>,
+    );
+  });
 });
-

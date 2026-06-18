@@ -1,7 +1,7 @@
 import React from "react";
+import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
-import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 
 /**
  * On some servers, we allow users to authenticate via Google Login; a single
@@ -31,18 +31,14 @@ export default function GoogleLoginProvider(): React.ReactNode {
               script.id = scriptId;
               script.async = true;
               script.onload = () => resolve();
-              script.onerror = () =>
-                reject(new Error("Failed to load google login script"));
+              script.onerror = () => reject(new Error("Failed to load google login script"));
               document.body?.appendChild(script);
             });
           };
 
           loadScript()
             .then(() => {
-
-              console.log(
-                "Script loaded successfully, logout will now log the user out of google provided login",
-              );
+              console.log("Script loaded successfully, logout will now log the user out of google provided login");
             })
             .catch((error) => {
               console.error(

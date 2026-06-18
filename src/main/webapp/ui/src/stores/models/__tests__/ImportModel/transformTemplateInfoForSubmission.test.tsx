@@ -1,14 +1,13 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockImportDataUsingExistingTemplate } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
-  authStore: {
-    isSynchronizing: true,
-  },
-})
-
+    authStore: {
+      isSynchronizing: true,
+    },
+  }),
 }));
 describe("method: transformTemplateInfoForSubmission", () => {
   /*
@@ -28,20 +27,14 @@ describe("method: transformTemplateInfoForSubmission", () => {
      */
     test("transformTemplateInfoForSubmission should be JSON serialisable", () => {
       const uploadModel = makeMockImportDataUsingExistingTemplate();
-      expect(
-        JSON.stringify(uploadModel.transformTemplateInfoForSubmission())
-      ).toEqual(expect.any(String));
-
+      expect(JSON.stringify(uploadModel.transformTemplateInfoForSubmission())).toEqual(expect.any(String));
     });
     /*
      * Attaching other data MAY be permitted but the id of the selected tempalte is REQUIRED.
      */
     test("transformTemplateInfoForSubmission should return the id of the selected template.", () => {
       const uploadModel = makeMockImportDataUsingExistingTemplate();
-      expect(uploadModel.transformTemplateInfoForSubmission()).toEqual(
-        expect.objectContaining({ id: 1 })
-      );
+      expect(uploadModel.transformTemplateInfoForSubmission()).toEqual(expect.objectContaining({ id: 1 }));
     });
   });
 });
-

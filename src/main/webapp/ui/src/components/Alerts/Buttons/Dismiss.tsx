@@ -1,7 +1,7 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 import CloseIcon from "@mui/icons-material/Close";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 
 type DismissArgs = {
   onClose: () => void;

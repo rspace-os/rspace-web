@@ -1,5 +1,5 @@
-import { type Context, createContext } from "react";
 import { makeAutoObservable } from "mobx";
+import { type Context, createContext } from "react";
 
 type AnalyticsContextType = {
   /**
@@ -33,9 +33,7 @@ const DEFAULT_ANALYTICS_CONTEXT: AnalyticsContextType = makeAutoObservable({
   trackEvent: () => {},
 });
 
-const AnalyticsContext: Context<AnalyticsContextType> = createContext(
-  DEFAULT_ANALYTICS_CONTEXT
-);
+const AnalyticsContext: Context<AnalyticsContextType> = createContext(DEFAULT_ANALYTICS_CONTEXT);
 
 /**
  * The context that provides the ability to track events with the analytics

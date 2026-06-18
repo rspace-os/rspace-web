@@ -1,23 +1,17 @@
-import { describe, expect, test, vi } from "vitest";
-import React from "react";
-import { render } from "@testing-library/react";
-import StringField from "../StringField";
-import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import { render } from "@testing-library/react";
+import type React from "react";
+import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
+import StringField from "../StringField";
 
 vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
 }));
-const expectLabel = (text: string) => (container: Node) =>
-
-  expect(container).toHaveTextContent(text);
+const expectLabel = (text: string) => (container: Node) => expect(container).toHaveTextContent(text);
 const expectTextField = (value: string) => () =>
-  expect(TextField).toHaveBeenCalledWith(
-    expect.objectContaining({ value }),
-    expect.anything()
-
-  );
+  expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), expect.anything());
 describe("StringField", () => {
   describe("Renders correctly", () => {
     test.each`
@@ -49,15 +43,11 @@ describe("StringField", () => {
       }) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
-            <StringField
-              disabled={disabled}
-              value={value}
-              noValueLabel={noValueLabel}
-            />
-          </ThemeProvider>
+            <StringField disabled={disabled} value={value} noValueLabel={noValueLabel} />
+          </ThemeProvider>,
         );
         expectFn(container);
-      }
+      },
     );
   });
 
@@ -86,4 +76,3 @@ describe("StringField", () => {
     expect(textFieldProps.slotProps?.input?.endAdornment).toBeTruthy();
   });
 });
-

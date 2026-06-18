@@ -1,10 +1,10 @@
-import React from "react";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
-import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import type React from "react";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import FormControl from "../../../../components/Inputs/FormControl";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 
 type NewFieldArgs = {
   record: InventoryRecord;
@@ -26,11 +26,7 @@ function NewField({ record }: NewFieldArgs): React.ReactNode {
   return (
     <FormControl inline>
       <CustomTooltip
-        title={
-          record.hasUnsavedExtraField
-            ? "You can only create one field at a time."
-            : "Add custom field."
-        }
+        title={record.hasUnsavedExtraField ? "You can only create one field at a time." : "Add custom field."}
       >
         <Button
           color="primary"

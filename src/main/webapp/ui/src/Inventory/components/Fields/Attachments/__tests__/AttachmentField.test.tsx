@@ -1,19 +1,18 @@
-
-import { test, describe, expect, afterEach, vi } from "vitest";
-import React from "react";
-import { render } from "@testing-library/react";
-import AttachmentField from "../AttachmentField";
-import TextField from "@mui/material/TextField";
-import FileField from "../../../../../components/Inputs/FileField";
-import { ExistingAttachment } from "../../../../../stores/models/AttachmentModel";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../../theme";
+import TextField from "@mui/material/TextField";
+import { render } from "@testing-library/react";
+import type React from "react";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import FileField from "../../../../../components/Inputs/FileField";
+import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
+import type { Attachment } from "../../../../../stores/definitions/Attachment";
 import { containerAttrs } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
+import { ExistingAttachment } from "../../../../../stores/models/AttachmentModel";
 import ContainerModel from "../../../../../stores/models/ContainerModel";
 import MemoisedFactory from "../../../../../stores/models/Factory/MemoisedFactory";
-import type { Attachment } from "../../../../../stores/definitions/Attachment";
+import materialTheme from "../../../../../theme";
+import AttachmentField from "../AttachmentField";
 
-import { DeploymentPropertyContext } from "../../../../../hooks/api/useDeploymentProperty";
 vi.mock("@mui/material/TextField", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -25,25 +24,16 @@ vi.mock("../../../../../components/Ketcher/KetcherDialog", () => ({
 }));
 const renderWithDeploymentProperties = (ui: React.ReactElement) =>
   render(
-    <DeploymentPropertyContext.Provider
-      value={new Map([["chemistry.provider", ""]])}
-    >
+    <DeploymentPropertyContext.Provider value={new Map([["chemistry.provider", ""]])}>
       {ui}
     </DeploymentPropertyContext.Provider>,
   );
-const expectLabel = (text: string) => (container: HTMLElement) =>
-
-  expect(container).toHaveTextContent(text);
+const expectLabel = (text: string) => (container: HTMLElement) => expect(container).toHaveTextContent(text);
 const expectTextField = (value: string) => () =>
-  expect(TextField).toHaveBeenCalledWith(
-    expect.objectContaining({ value }),
-    expect.anything(),
-
-  );
+  expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), expect.anything());
 const activeResult = new ContainerModel(new MemoisedFactory(), {
   ...containerAttrs(),
   cType: "LIST",
-
 });
 const makeAttachment = (attrs?: { name: string }) =>
   new ExistingAttachment(
@@ -58,7 +48,6 @@ const makeAttachment = (attrs?: { name: string }) =>
     },
     "",
     () => {},
-
   );
 describe("AttachmentField", () => {
   afterEach(() => {
@@ -196,13 +185,9 @@ describe("AttachmentField", () => {
         test('Whether to show "No File Attached" label.', () => {
           renderAttachmentField();
           if (showNoAttachmentLabel) {
-            expect(textContent).toEqual(
-              expect.stringContaining("No File Attached"),
-            );
+            expect(textContent).toEqual(expect.stringContaining("No File Attached"));
           } else {
-            expect(textContent).not.toEqual(
-              expect.stringContaining("No File Attached"),
-            );
+            expect(textContent).not.toEqual(expect.stringContaining("No File Attached"));
           }
         });
       },

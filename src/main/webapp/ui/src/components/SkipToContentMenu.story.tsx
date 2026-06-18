@@ -1,7 +1,8 @@
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Box, Typography } from "@mui/material";
 import React from "react";
 import { LandmarksProvider, useLandmark } from "./LandmarksContext";
 import SkipToContentButton from "./SkipToContentMenu";
-import { Box, Typography } from "@mui/material";
 
 const TestLandmark = ({ name }: { name: string }) => {
   const ref = useLandmark(name);
@@ -48,6 +49,7 @@ export function DynamicLandmarksExample() {
     <LandmarksProvider>
       <SkipToContentButton />
       <Box sx={{ mt: 5 }}>
+        {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
         <button onClick={() => setShowExtraLandmarks(!showExtraLandmarks)}>
           {showExtraLandmarks ? "Hide" : "Show"} Extra Landmarks
         </button>

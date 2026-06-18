@@ -14,10 +14,7 @@ vi.mock("@/hooks/api/useWhoAmI", () => ({
       email: "test@example.com",
       bench: null,
       workbenchId: null,
-      getBench: () =>
-        Promise.reject(
-          new Error("Not implemented by this Person implementation"),
-        ),
+      getBench: () => Promise.reject(new Error("Not implemented by this Person implementation")),
       isCurrentUser: true,
       fullName: "Test User",
       label: "Test User (test)",

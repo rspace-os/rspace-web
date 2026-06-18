@@ -1,16 +1,14 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../auth/useOauthToken";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
-import { Group } from "./useGroups";
-import { GroupMember } from "./useUserDetails";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { Optional } from "../../util/optional";
+import useOauthToken from "../auth/useOauthToken";
+import type { Group } from "./useGroups";
+import type { GroupMember } from "./useUserDetails";
 
-export type ShareOption =
-  | (Group & { optionType: "GROUP" })
-  | (GroupMember & { optionType: "USER" });
+export type ShareOption = (Group & { optionType: "GROUP" }) | (GroupMember & { optionType: "USER" });
 
 export type NewShare = {
   id: string; // temporary ID for React keys
@@ -108,14 +106,11 @@ export default function useShare(): {
 
   async function getShareInfo(globalId: string): Promise<ShareInfoResponse> {
     try {
-      const { data } = await axios.get<ShareInfoResponse>(
-        `/api/v1/share/document/${globalId.slice(2)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${await getToken()}`,
-          },
+      const { data } = await axios.get<ShareInfoResponse>(`/api/v1/share/document/${globalId.slice(2)}`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
         },
-      );
+      });
       return data;
     } catch (e) {
       addAlert(
@@ -131,9 +126,7 @@ export default function useShare(): {
     }
   }
 
-  async function getShareInfoForMultiple(
-    globalIds: ReadonlyArray<string>,
-  ): Promise<
+  async function getShareInfoForMultiple(globalIds: ReadonlyArray<string>): Promise<
     Map<
       string,
       {
@@ -145,8 +138,7 @@ export default function useShare(): {
     try {
       // Make parallel requests for all global IDs
       const promises = globalIds.map(async (globalId) => {
-        const { directShares, notebookShares, sharedDocId } =
-          await getShareInfo(globalId);
+        const { directShares, notebookShares, sharedDocId } = await getShareInfo(globalId);
         return { globalId, directShares, notebookShares, sharedDocId };
       });
 
@@ -160,20 +152,18 @@ export default function useShare(): {
           notebookShares: ReadonlyArray<ShareInfo>;
         }
       >();
-      results.forEach(
-        ({ globalId, directShares, notebookShares, sharedDocId }) => {
-          shareMap.set(globalId, {
-            directShares: directShares.map((s) => ({
-              ...s,
-              sharedDocId,
-            })),
-            notebookShares: notebookShares.map((s) => ({
-              ...s,
-              sharedDocId,
-            })),
-          });
-        },
-      );
+      results.forEach(({ globalId, directShares, notebookShares, sharedDocId }) => {
+        shareMap.set(globalId, {
+          directShares: directShares.map((s) => ({
+            ...s,
+            sharedDocId,
+          })),
+          notebookShares: notebookShares.map((s) => ({
+            ...s,
+            sharedDocId,
+          })),
+        });
+      });
 
       return shareMap;
     } catch (e) {
@@ -184,19 +174,13 @@ export default function useShare(): {
           message: getErrorMessage(e, "An unknown error occurred."),
         }),
       );
-      throw new Error(
-        "Could not fetch sharing information for multiple items",
-        {
-          cause: e,
-        },
-      );
+      throw new Error("Could not fetch sharing information for multiple items", {
+        cause: e,
+      });
     }
   }
 
-  async function createShare(
-    itemId: number,
-    newShares: NewShare[],
-  ): Promise<void> {
+  async function createShare(itemId: number, newShares: NewShare[]): Promise<void> {
     try {
       const requestData: CreateShareRequest = {
         itemsToShare: [itemId],

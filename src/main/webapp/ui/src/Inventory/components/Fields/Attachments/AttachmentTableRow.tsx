@@ -1,105 +1,91 @@
-import React, { type ReactNode, useId, useState } from "react";
-import { observer } from "mobx-react-lite";
-import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import DownloadIcon from "@mui/icons-material/GetApp";
-import Grid from "@mui/material/Grid";
-import NameWithBadge from "../../NameWithBadge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
-import ChemistryIcon from "../../../../assets/graphics/ChemistryIcon";
-import { type Attachment } from "../../../../stores/definitions/Attachment";
-import DeleteButton from "../../DeleteButton";
-import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
-import Preview from "./PreviewAction";
-import { capImageAt1MB } from "../../../../util/images";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import DownloadIcon from "@mui/icons-material/GetApp";
 import InsertPhotoIcon from "@mui/icons-material/InsertPhoto";
-import useStores from "../../../../stores/use-stores";
-import { mkAlert } from "../../../../stores/contexts/Alert";
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-import { type BlobUrl } from "../../../../util/types";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
-const KetcherDialog = React.lazy(
-  () => import("../../../../components/Ketcher/KetcherDialog"),
-);
+import Grid from "@mui/material/Grid";
+import TableCell from "@mui/material/TableCell";
+import TableRow from "@mui/material/TableRow";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode, useId, useState } from "react";
+import ChemistryIcon from "../../../../assets/graphics/ChemistryIcon";
+import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
+import { mkAlert } from "../../../../stores/contexts/Alert";
+import type { Attachment } from "../../../../stores/definitions/Attachment";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import useStores from "../../../../stores/use-stores";
+import { capImageAt1MB } from "../../../../util/images";
+import type { BlobUrl } from "../../../../util/types";
+import DeleteButton from "../../DeleteButton";
+import NameWithBadge from "../../NameWithBadge";
+import Preview from "./PreviewAction";
 
-const ChemicalPreview = observer(
-  ({ attachment }: { attachment: Attachment }) => {
-    const {
-      loadingString,
-      chemicalString,
-      isChemicalFile,
-      chemistrySupported,
-    } = attachment;
+const KetcherDialog = React.lazy(() => import("../../../../components/Ketcher/KetcherDialog"));
 
-    const [showPreview, setShowPreview] = useState(true);
+const ChemicalPreview = observer(({ attachment }: { attachment: Attachment }) => {
+  const { loadingString, chemicalString, isChemicalFile, chemistrySupported } = attachment;
 
-    const handleClick = () => {
-      attachment
-        .createChemicalPreview()
-        .then(() => {
-          setShowPreview(true);
-        })
-        .catch(() => {});
-    };
+  const [showPreview, setShowPreview] = useState(true);
 
-    return (
-      <>
-        <IconButtonWithTooltip
-          title={
-            chemicalString
-              ? ""
-              : loadingString
-                ? "Loading file"
-                : chemistrySupported
-                  ? "Preview file as 3D structure"
-                  : isChemicalFile && !attachment.id
-                    ? "Save first to enable 3D preview"
-                    : "3D Preview is not supported for this file type"
-          }
-          size="small"
-          color="primary"
-          onClick={handleClick}
-          disabled={loadingString || !chemistrySupported}
-          icon={
-            loadingString ? (
-              <FontAwesomeIcon icon={faSpinner} spin size="lg" />
-            ) : (
-              <ChemistryIcon />
-            )
-          }
-        />
-        {!loadingString && Boolean(chemicalString) && showPreview && (
-          <React.Suspense
-            fallback={
-              <Backdrop
-                open
-                sx={{
-                  color: "#fff",
-                  zIndex: (theme) => theme.zIndex.drawer + 1,
-                }}
-              >
-                <CircularProgress color="inherit" />
-              </Backdrop>
-            }
-          >
-            <KetcherDialog
-              isOpen
-              handleInsert={() => {}}
-              title={"View Chemical (Read-only)"}
-              existingChem={attachment.chemicalString}
-              handleClose={() => {
-                setShowPreview(false);
+  const handleClick = () => {
+    attachment
+      .createChemicalPreview()
+      .then(() => {
+        setShowPreview(true);
+      })
+      .catch(() => {});
+  };
+
+  return (
+    <>
+      <IconButtonWithTooltip
+        title={
+          chemicalString
+            ? ""
+            : loadingString
+              ? "Loading file"
+              : chemistrySupported
+                ? "Preview file as 3D structure"
+                : isChemicalFile && !attachment.id
+                  ? "Save first to enable 3D preview"
+                  : "3D Preview is not supported for this file type"
+        }
+        size="small"
+        color="primary"
+        onClick={handleClick}
+        disabled={loadingString || !chemistrySupported}
+        icon={loadingString ? <FontAwesomeIcon icon={faSpinner} spin size="lg" /> : <ChemistryIcon />}
+      />
+      {!loadingString && Boolean(chemicalString) && showPreview && (
+        <React.Suspense
+          fallback={
+            <Backdrop
+              open
+              sx={{
+                color: "#fff",
+                zIndex: (theme) => theme.zIndex.drawer + 1,
               }}
-              readOnly={true}
-            />
-          </React.Suspense>
-        )}
-      </>
-    );
-  },
-);
+            >
+              <CircularProgress color="inherit" />
+            </Backdrop>
+          }
+        >
+          <KetcherDialog
+            isOpen
+            handleInsert={() => {}}
+            title={"View Chemical (Read-only)"}
+            existingChem={attachment.chemicalString}
+            handleClose={() => {
+              setShowPreview(false);
+            }}
+            readOnly={true}
+          />
+        </React.Suspense>
+      )}
+    </>
+  );
+});
 
 const Download = ({ attachment }: { attachment: Attachment }) => (
   <IconButtonWithTooltip
@@ -132,12 +118,8 @@ const SetAsPreviewImage = <
   const canvasId = useId();
 
   const storeImage = async (dataURL: string | null, file: Blob | null) => {
-    if (!fieldOwner)
-      throw new Error(
-        "The preview image cannot be set as the item is not available.",
-      );
-    if (!dataURL || !file)
-      throw new Error("Unable to set attachment as preview image.");
+    if (!fieldOwner) throw new Error("The preview image cannot be set as the item is not available.");
+    if (!dataURL || !file) throw new Error("Unable to set attachment as preview image.");
     const scaledImage = await capImageAt1MB(file, dataURL, canvasId);
     fieldOwner.setFieldsDirty({
       image: scaledImage,

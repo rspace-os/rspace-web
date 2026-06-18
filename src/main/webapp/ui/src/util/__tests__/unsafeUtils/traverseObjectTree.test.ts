@@ -1,7 +1,7 @@
-
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 
 import { traverseObjectTree } from "../../unsafeUtils";
+
 describe("traverseObjectTree", () => {
   test("basic example", () => {
     expect(
@@ -14,9 +14,8 @@ describe("traverseObjectTree", () => {
           },
         },
         "foo.bar.baz",
-        null
-      )
+        null,
+      ),
     ).toBe("test");
   });
 });
-

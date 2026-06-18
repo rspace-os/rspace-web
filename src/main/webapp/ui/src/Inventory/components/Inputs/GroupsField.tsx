@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import Autocomplete, { autocompleteClasses } from "@mui/material/Autocomplete";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useState } from "react";
+import type { Group } from "../../../stores/definitions/Group";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
-import Autocomplete from "@mui/material/Autocomplete";
-import { autocompleteClasses } from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import { type Group } from "../../../stores/definitions/Group";
 
 type GroupsFieldArgs = {
   onSelection: (selectedGroup: Group) => Promise<void> | void;
@@ -17,11 +17,7 @@ type GroupsFieldArgs = {
 /*
  * Autocomplete input field for searching for and selecting a group.
  */
-function GroupsField({
-  onSelection,
-  label,
-  getOptionDisabled,
-}: GroupsFieldArgs): React.ReactNode {
+function GroupsField({ onSelection, label, getOptionDisabled }: GroupsFieldArgs): React.ReactNode {
   const { peopleStore } = useStores();
 
   const [searchResults, setSearchResults] = useState<Set<Group>>(new RsSet());
@@ -60,9 +56,7 @@ function GroupsField({
             ...inputSlotProps,
             input: {
               ...inputSlotProps?.input,
-              startAdornment: (
-                <InputAdornment position="start">&nbsp;{label}</InputAdornment>
-              ),
+              startAdornment: <InputAdornment position="start">&nbsp;{label}</InputAdornment>,
               endAdornment: inputSlotProps?.input.endAdornment ?? null,
             },
           }}

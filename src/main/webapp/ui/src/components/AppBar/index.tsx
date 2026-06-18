@@ -1,70 +1,66 @@
-import React from "react";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Box from "@mui/material/Box";
-import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-import IconButtonWithTooltip from "../IconButtonWithTooltip";
-import {
-  AccessibilityTipsMenuItem,
-  AccessibilityTipsIconButton,
-} from "../AccessibilityTips";
-import HelpDocs from "../Help/HelpDocs";
-import { observer } from "mobx-react-lite";
-import Stack from "@mui/material/Stack";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { Menu } from "../DialogBoundary";
-import { menuClasses } from "@mui/material/Menu";
-import AccentMenuItem from "../AccentMenuItem";
-import ListItem from "@mui/material/ListItem";
-import NotebookIcon from "@mui/icons-material/AutoStories";
-import FileIcon from "@mui/icons-material/InsertDriveFile";
-import FlaskIcon from "@mui/icons-material/Science";
 import AppsIcon from "@mui/icons-material/AppRegistration";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import NotebookIcon from "@mui/icons-material/AutoStories";
+import MaintenanceIcon from "@mui/icons-material/Construction";
+import InfoIcon from "@mui/icons-material/Info";
+import FileIcon from "@mui/icons-material/InsertDriveFile";
+import LogoutIcon from "@mui/icons-material/Logout";
+import ProfileIcon from "@mui/icons-material/ManageAccounts";
+import MessageIcon from "@mui/icons-material/Message";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import PublicIcon from "@mui/icons-material/Public";
+import FlaskIcon from "@mui/icons-material/Science";
+import SystemIcon from "@mui/icons-material/SettingsInputComposite";
+import OperateAsIcon from "@mui/icons-material/SupervisedUserCircleOutlined";
+import AppBar from "@mui/material/AppBar";
+import Avatar from "@mui/material/Avatar";
+import Badge, { badgeClasses } from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import { menuClasses } from "@mui/material/Menu";
+import Popover from "@mui/material/Popover";
+import Stack from "@mui/material/Stack";
+import SvgIcon from "@mui/material/SvgIcon";
+import { darken, lighten, useTheme } from "@mui/material/styles";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import type { Person } from "@/stores/definitions/Person";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
-import { ACCENT_COLOR as WORKSPACE_COLOR } from "../../assets/branding/rspace/workspace";
-import { ACCENT_COLOR as SYSADMIN_COLOR } from "../../assets/branding/rspace/sysadmin";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
-import MessageIcon from "@mui/icons-material/Message";
-import ProfileIcon from "@mui/icons-material/ManageAccounts";
-import PublicIcon from "@mui/icons-material/Public";
-import LogoutIcon from "@mui/icons-material/Logout";
-import SystemIcon from "@mui/icons-material/SettingsInputComposite";
+import { ACCENT_COLOR as SYSADMIN_COLOR } from "../../assets/branding/rspace/sysadmin";
+import { ACCENT_COLOR as WORKSPACE_COLOR } from "../../assets/branding/rspace/workspace";
+import type docLinks from "../../assets/DocLinks";
 import JwtService from "../../common/JwtService";
-import SidebarToggle from "./SidebarToggle";
-import Link from "@mui/material/Link";
-import Avatar from "@mui/material/Avatar";
-import SvgIcon from "@mui/material/SvgIcon";
-import { useTheme, darken, lighten } from "@mui/material/styles";
-import Typography from "@mui/material/Typography";
-import HelpLinkIcon from "../HelpLinkIcon";
-import docLinks from "../../assets/DocLinks";
-import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
-import useUiNavigationData, {
-  type UiNavigationData,
-} from "./useUiNavigationData";
+import useWhoAmI from "../../hooks/api/useWhoAmI";
+import useSessionStorage from "../../hooks/browser/useSessionStorage";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import useWebSocketNotifications from "../../hooks/websockets/useWebSocketNotifications";
+import { getRelativeTime } from "../../stores/definitions/Units";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
-import OperateAsIcon from "@mui/icons-material/SupervisedUserCircleOutlined";
-import CircularProgress from "@mui/material/CircularProgress";
-import MaintenanceIcon from "@mui/icons-material/Construction";
-import Popover from "@mui/material/Popover";
-import IconButton from "@mui/material/IconButton";
-import { getRelativeTime } from "../../stores/definitions/Units";
 import Result from "../../util/result";
-import useSessionStorage from "../../hooks/browser/useSessionStorage";
-import useWebSocketNotifications from "../../hooks/websockets/useWebSocketNotifications";
-import Badge, { badgeClasses } from "@mui/material/Badge";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import useWhoAmI from "../../hooks/api/useWhoAmI";
-import { Person } from "@/stores/definitions/Person";
+import AccentMenuItem from "../AccentMenuItem";
+import { AccessibilityTipsIconButton, AccessibilityTipsMenuItem } from "../AccessibilityTips";
+import { Menu } from "../DialogBoundary";
+import HelpDocs from "../Help/HelpDocs";
+import HelpLinkIcon from "../HelpLinkIcon";
+import IconButtonWithTooltip from "../IconButtonWithTooltip";
+import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import AboutRSpaceDialog from "./AboutRSpaceDialog";
-import InfoIcon from "@mui/icons-material/Info";
+import type SidebarToggle from "./SidebarToggle";
+import useUiNavigationData, { type UiNavigationData } from "./useUiNavigationData";
+
 declare global {
   interface Window {
     gapi?: {
@@ -77,8 +73,7 @@ declare global {
   }
 }
 const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
-  const { notificationCount, messageCount, specialMessageCount } =
-    useWebSocketNotifications(`${currentUser.id}`);
+  const { notificationCount, messageCount, specialMessageCount } = useWebSocketNotifications(`${currentUser.id}`);
   return (
     <Box
       sx={{
@@ -169,8 +164,7 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
           {/*
            * We show a relative time here rather than an absolute time to avoid
            * the need to take into account the user's timezone.
-           */}
-          A scheduled maintenance window begins {getRelativeTime(startDate)}.
+           */}A scheduled maintenance window begins {getRelativeTime(startDate)}.
         </Typography>
       </Popover>
     </div>
@@ -263,24 +257,19 @@ const DynamicAvatar = ({
   });
 };
 const OrcidIcon = () => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
   <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 50 50">
     <g>
       <g id="Layer_1">
         <g>
-          <path
-            fill="#a6ce39"
-            d="M49.3,25c0,13.4-10.9,24.3-24.3,24.3S.7,38.4.7,25,11.6.7,25,.7s24.3,10.9,24.3,24.3Z"
-          />
+          <path fill="#a6ce39" d="M49.3,25c0,13.4-10.9,24.3-24.3,24.3S.7,38.4.7,25,11.6.7,25,.7s24.3,10.9,24.3,24.3Z" />
           <g>
             <path fill="#fff" d="M17.1,36.1h-2.9V15.7h2.9v20.3Z" />
             <path
               fill="#fff"
               d="M21.4,15.7h7.9c7.5,0,10.8,5.4,10.8,10.2s-4.1,10.2-10.8,10.2h-7.9s0-20.4,0-20.4ZM24.3,33.4h4.7c6.6,0,8.1-5,8.1-7.5,0-4.1-2.6-7.5-8.3-7.5h-4.5v15.1h0Z"
             />
-            <path
-              fill="#fff"
-              d="M17.5,11.5c0,1-.9,1.9-1.9,1.9s-1.9-.9-1.9-1.9.9-1.9,1.9-1.9c1.1,0,1.9.9,1.9,1.9Z"
-            />
+            <path fill="#fff" d="M17.5,11.5c0,1-.9,1.9-1.9,1.9s-1.9-.9-1.9-1.9.9-1.9,1.9-1.9c1.1,0,1.9.9,1.9,1.9Z" />
           </g>
         </g>
       </g>
@@ -310,9 +299,7 @@ type GalleryAppBarArgs = {
    * Some pages have a sidebar that needs a toggle for opening and closing.
    * Those pages should pass an instance of SidebarToggle here.
    */
-  sidebarToggle?: React.ReactElement<
-    React.ComponentProps<typeof SidebarToggle>
-  >;
+  sidebarToggle?: React.ReactElement<React.ComponentProps<typeof SidebarToggle>>;
 
   /**
    * Which accessibility tips to show based on the conformance the current
@@ -346,54 +333,39 @@ function GalleryAppBar({
   const theme = useTheme();
   const { isViewportSmall } = useViewportDimensions();
   const uiNavigationData = useUiNavigationData();
-  const [appMenuAnchorEl, setAppMenuAnchorEl] =
-    React.useState<null | HTMLElement>(null);
+  const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   function handleAppMenuClose() {
     setAppMenuAnchorEl(null);
   }
-  const [accountMenuAnchorEl, setAccountMenuAnchorEl] =
-    React.useState<null | HTMLElement>(null);
+  const [accountMenuAnchorEl, setAccountMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const [aboutDialogOpen, setAboutDialogOpen] = React.useState(false);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
   const fetchedCurrentUser = useWhoAmI();
-  const [brandingHref, setBrandingHref] = useSessionStorage<string | null>(
-    "brandingHref",
-    null,
-  );
+  const [brandingHref, setBrandingHref] = useSessionStorage<string | null>("brandingHref", null);
   React.useEffect(() => {
     FetchingData.getSuccessValue(uiNavigationData).do(({ bannerImgSrc }) => {
       setBrandingHref(bannerImgSrc);
     });
   }, [uiNavigationData]);
-  const { showInventory, showSystem, showMyLabGroups } =
-    FetchingData.getSuccessValue(uiNavigationData)
-      .map(({ visibleTabs: { inventory, system, myLabGroups } }) => ({
-        showInventory: Boolean(inventory),
-        showSystem: Boolean(system),
-        showMyLabGroups: Boolean(myLabGroups),
-      }))
-      .orElse({
-        showInventory: false,
-        showSystem: false,
-        showMyLabGroups: false,
-      });
+  const { showInventory, showSystem, showMyLabGroups } = FetchingData.getSuccessValue(uiNavigationData)
+    .map(({ visibleTabs: { inventory, system, myLabGroups } }) => ({
+      showInventory: Boolean(inventory),
+      showSystem: Boolean(system),
+      showMyLabGroups: Boolean(myLabGroups),
+    }))
+    .orElse({
+      showInventory: false,
+      showSystem: false,
+      showMyLabGroups: false,
+    });
 
   /*
    * The parts of the product that are important enough to get a tab in the app bar
    */
-  const isTabbedPage = [
-    "Workspace",
-    "Gallery",
-    "Inventory",
-    "System",
-    "My RSpace",
-  ].includes(currentPage);
+  const isTabbedPage = ["Workspace", "Gallery", "Inventory", "System", "My RSpace"].includes(currentPage);
   return (
-    <AppBar
-      position="relative"
-      aria-label={variant === "page" ? "page header" : "dialog header"}
-    >
+    <AppBar position="relative" aria-label={variant === "page" ? "page header" : "dialog header"}>
       <Toolbar variant="dense">
         {variant === "page" && !isViewportSmall && (
           <>
@@ -407,13 +379,11 @@ function GalleryAppBar({
                 marginRight: "-1px",
               }}
             ></Box>
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
             <svg width="0" height="0" viewBox="0 0 3.9 40">
               <defs>
                 <clipPath id={leftClipId}>
-                  <path
-                    d="M3.9,40C1.7,40,0,38.3,0,36.1V3.9C0,1.7,1.7,0,3.9,0v40Z"
-                    fill="#000000"
-                  />
+                  <path d="M3.9,40C1.7,40,0,38.3,0,36.1V3.9C0,1.7,1.7,0,3.9,0v40Z" fill="#000000" />
                 </clipPath>
               </defs>
             </svg>
@@ -423,8 +393,7 @@ function GalleryAppBar({
           sx={{
             display: "flex",
             alignItems: "center",
-            backgroundColor:
-              variant === "page" && !isViewportSmall ? "white" : "unset",
+            backgroundColor: variant === "page" && !isViewportSmall ? "white" : "unset",
             height: "40px",
             px: 0.5,
             gap: 0.5,
@@ -440,15 +409,8 @@ function GalleryAppBar({
                 position: "relative",
               }}
             >
-              {Result.fromNullable(
-                brandingHref,
-                new Error("branding not cached"),
-              )
-                .orElseTry(() =>
-                  FetchingData.getSuccessValue(uiNavigationData).map(
-                    ({ bannerImgSrc }) => bannerImgSrc,
-                  ),
-                )
+              {Result.fromNullable(brandingHref, new Error("branding not cached"))
+                .orElseTry(() => FetchingData.getSuccessValue(uiNavigationData).map(({ bannerImgSrc }) => bannerImgSrc))
                 .map((href) => (
                   <img
                     key="branding small"
@@ -474,22 +436,18 @@ function GalleryAppBar({
                 marginLeft: "-1px",
               }}
             ></Box>
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
             <svg width="0" height="0">
               <defs>
                 <clipPath id={rightClipId}>
-                  <path
-                    d="M0,0c2.1,0,4.2,1.7,4.6,3.9l5.7,32.2c.4,2.1-1.1,3.9-3.2,3.9H0V0Z"
-                    fill="#000000"
-                  />
+                  <path d="M0,0c2.1,0,4.2,1.7,4.6,3.9l5.7,32.2c.4,2.1-1.1,3.9-3.2,3.9H0V0Z" fill="#000000" />
                 </clipPath>
               </defs>
             </svg>
           </>
         )}
         {variant === "page" && isTabbedPage && (
-          <VisuallyHiddenHeading variant="h1">
-            {currentPage}
-          </VisuallyHiddenHeading>
+          <VisuallyHiddenHeading variant="h1">{currentPage}</VisuallyHiddenHeading>
         )}
         {variant === "dialog" && (
           <Box
@@ -512,26 +470,14 @@ function GalleryAppBar({
             component="nav"
             aria-label="main links"
           >
-            <Link
-              target="_self"
-              aria-current={currentPage === "Workspace" ? "page" : false}
-              href="/workspace"
-            >
+            <Link target="_self" aria-current={currentPage === "Workspace" ? "page" : false} href="/workspace">
               Workspace
             </Link>
-            <Link
-              target="_self"
-              aria-current={currentPage === "Gallery" ? "page" : false}
-              href="/gallery"
-            >
+            <Link target="_self" aria-current={currentPage === "Gallery" ? "page" : false} href="/gallery">
               Gallery
             </Link>
             {showInventory && (
-              <Link
-                target="_self"
-                aria-current={currentPage === "Inventory" ? "page" : false}
-                href="/inventory"
-              >
+              <Link target="_self" aria-current={currentPage === "Inventory" ? "page" : false} href="/inventory">
                 Inventory
               </Link>
             )}
@@ -543,11 +489,7 @@ function GalleryAppBar({
               My RSpace
             </Link>
             {showSystem && (
-              <Link
-                target="_self"
-                aria-current={currentPage === "System" ? "page" : false}
-                href="/system"
-              >
+              <Link target="_self" aria-current={currentPage === "System" ? "page" : false} href="/system">
                 System
               </Link>
             )}
@@ -570,16 +512,14 @@ function GalleryAppBar({
                 aria-controls="app-menu"
                 {...(appMenuAnchorEl
                   ? {
-                      ["aria-expanded"]: "true",
+                      "aria-expanded": "true",
                     }
                   : {})}
                 onClick={(event) => {
                   setAppMenuAnchorEl(event.currentTarget);
                 }}
               >
-                <ListItemText
-                  primary={isTabbedPage ? currentPage : "Go to..."}
-                />
+                <ListItemText primary={isTabbedPage ? currentPage : "Go to..."} />
                 <ListItemIcon>
                   <ArrowDropDownIcon />
                 </ListItemIcon>
@@ -661,9 +601,7 @@ function GalleryAppBar({
                 foregroundColor={OTHER_COLOR.contrastText}
                 backgroundColor={OTHER_COLOR.main}
                 onClick={() => {
-                  window.location.href = showMyLabGroups
-                    ? "/groups/viewPIGroup"
-                    : "/userform";
+                  window.location.href = showMyLabGroups ? "/groups/viewPIGroup" : "/userform";
                   setAccountMenuAnchorEl(null);
                 }}
                 current={currentPage === "My RSpace" ? "page" : false}
@@ -693,19 +631,12 @@ function GalleryAppBar({
         {FetchingData.getSuccessValue(uiNavigationData)
           .map(({ nextMaintenance }) => nextMaintenance)
           .flatMap(Parsers.isNotNull)
-          .map(({ startDate }) => (
-            <IncomingMaintenancePopup key="maintenance" startDate={startDate} />
-          ))
+          .map(({ startDate }) => <IncomingMaintenancePopup key="maintenance" startDate={startDate} />)
           .orElse(null)}
         {variant === "page" && (
           <>
             {FetchingData.getSuccessValue(fetchedCurrentUser)
-              .map((currentUser) => (
-                <NotificationCounter
-                  key="notification counter"
-                  currentUser={currentUser}
-                />
-              ))
+              .map((currentUser) => <NotificationCounter key="notification counter" currentUser={currentUser} />)
               .orElse(null)}
             <Box
               sx={{
@@ -718,19 +649,14 @@ function GalleryAppBar({
                 onClick={(event) => {
                   setAccountMenuAnchorEl(event.currentTarget);
                 }}
-                icon={
-                  <DynamicAvatar
-                    uiNavigationData={uiNavigationData}
-                    size="small"
-                  />
-                }
+                icon={<DynamicAvatar uiNavigationData={uiNavigationData} size="small" />}
                 title="Account Menu"
                 id="account-menu-button"
                 aria-haspopup="menu"
                 aria-controls="account-menu"
                 {...(accountMenuAnchorEl
                   ? {
-                      ["aria-expanded"]: "true",
+                      "aria-expanded": "true",
                     }
                   : {})}
               />
@@ -774,10 +700,7 @@ function GalleryAppBar({
                   loading: () => null,
                   error: (errorMsg) => (
                     <ListItem>
-                      <ListItemText
-                        primary="Error loading your details"
-                        secondary={errorMsg}
-                      />
+                      <ListItemText primary="Error loading your details" secondary={errorMsg} />
                     </ListItem>
                   ),
                   success: ({ userDetails }) => (
@@ -830,8 +753,7 @@ function GalleryAppBar({
                             primary={
                               userDetails.orcidId === null ? (
                                 <>
-                                  Add an ORCID iD to your{" "}
-                                  <Link href="/userform">profile</Link>.
+                                  Add an ORCID iD to your <Link href="/userform">profile</Link>.
                                 </>
                               ) : (
                                 <Stack
@@ -851,20 +773,11 @@ function GalleryAppBar({
                             slotProps={{
                               primary: {
                                 sx: {
-                                  fontFamily:
-                                    userDetails.orcidId === null
-                                      ? "inherit"
-                                      : "monospace",
-                                  lineHeight:
-                                    userDetails.orcidId === null
-                                      ? "unset"
-                                      : "1em",
+                                  fontFamily: userDetails.orcidId === null ? "inherit" : "monospace",
+                                  lineHeight: userDetails.orcidId === null ? "unset" : "1em",
                                   fontSize: "0.8em",
                                   alignItems: "center",
-                                  textDecoration:
-                                    userDetails.orcidId === null
-                                      ? "none"
-                                      : "underline",
+                                  textDecoration: userDetails.orcidId === null ? "none" : "underline",
                                 },
                               },
                             }}
@@ -906,10 +819,7 @@ function GalleryAppBar({
                       onClick={(e) => {
                         e.preventDefault();
                         setAccountMenuAnchorEl(null);
-                        window.open(
-                          "/public/publishedView/publishedDocuments",
-                          "_target",
-                        );
+                        window.open("/public/publishedView/publishedDocuments", "_target");
                       }}
                       component="a"
                       href="/public/publishedView/publishedDocuments"
@@ -964,10 +874,7 @@ function GalleryAppBar({
                          * Login workflow. On those servers, `gapi` will be
                          * defined globally by header.jsp
                          */
-                        if (
-                          typeof window.gapi !== "undefined" &&
-                          window.gapi.auth2
-                        ) {
+                        if (typeof window.gapi !== "undefined" && window.gapi.auth2) {
                           const auth2 = window.gapi.auth2.getAuthInstance();
                           if (auth2) {
                             void auth2.signOut().then(() => {
@@ -1006,10 +913,7 @@ function GalleryAppBar({
                   ))
                   .orElse(null)}
               </Menu>
-              <AboutRSpaceDialog
-                open={aboutDialogOpen}
-                onClose={() => setAboutDialogOpen(false)}
-              />
+              <AboutRSpaceDialog open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
             </Box>
           </>
         )}

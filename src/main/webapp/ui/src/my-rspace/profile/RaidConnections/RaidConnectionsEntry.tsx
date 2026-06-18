@@ -1,12 +1,13 @@
-import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import React, { Suspense, useState } from "react";
-import { Button, Stack } from "@mui/material";
-import Typography from "@mui/material/Typography";
-import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import RaidConnectionsDisassociateButton from "@/my-rspace/profile/RaidConnections/RaidConnectionsDisassociateButton";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Button, Stack } from "@mui/material";
+import Typography from "@mui/material/Typography";
+import { Suspense, useState } from "react";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import RaidConnectionsAddForm from "@/my-rspace/profile/RaidConnections/RaidConnectionsAddForm";
+import RaidConnectionsDisassociateButton from "@/my-rspace/profile/RaidConnections/RaidConnectionsDisassociateButton";
 
 const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -17,19 +18,10 @@ const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
   const raidTitle = groupData?.raid?.raidTitle ?? "";
 
   return (
-    <Stack
-      spacing={2}
-      direction="row"
-      sx={{ alignItems: "center", marginTop: 0 }}
-    >
+    <Stack spacing={2} direction="row" sx={{ alignItems: "center", marginTop: 0 }}>
       {isEditing ? (
-        <Suspense
-          fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}
-        >
-          <RaidConnectionsAddForm
-            groupId={groupId}
-            handleCloseForm={() => setIsEditing(false)}
-          />
+        <Suspense fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}>
+          <RaidConnectionsAddForm groupId={groupId} handleCloseForm={() => setIsEditing(false)} />
         </Suspense>
       ) : (
         <>
@@ -49,11 +41,7 @@ const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
               raidTitle={raidTitle}
             />
           ) : (
-            <Button
-              type="button"
-              variant="outlined"
-              onClick={() => setIsEditing(true)}
-            >
+            <Button type="button" variant="outlined" onClick={() => setIsEditing(true)}>
               Add
             </Button>
           )}

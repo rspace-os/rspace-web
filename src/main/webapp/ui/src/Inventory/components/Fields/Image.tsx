@@ -1,11 +1,13 @@
-import ImageField from "../../../components/Inputs/ImageField";
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-import { type BlobUrl } from "../../../util/types";
-import { capImageAt1MB } from "../../../util/images";
-import SearchContext from "../../../stores/contexts/Search";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { Alert } from "@mui/material";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
+import ImageField from "../../../components/Inputs/ImageField";
+import SearchContext from "../../../stores/contexts/Search";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import { capImageAt1MB } from "../../../util/images";
+import type { BlobUrl } from "../../../util/types";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const CANVAS_ID = "previewCanvas";
@@ -17,17 +19,11 @@ function Image<
     newBase64Image: string | null;
   },
   FieldOwner extends HasEditableFields<Fields>,
->({
-  fieldOwner,
-  alt,
-}: {
-  fieldOwner: FieldOwner;
-  alt: string;
-}): React.ReactNode {
+>({ fieldOwner, alt }: { fieldOwner: FieldOwner; alt: string }): React.ReactNode {
   const { search } = useContext(SearchContext);
   const isFieldEditable = fieldOwner.isFieldEditable("image");
   let tooManytoBatchThis = false;
-  if (search && search.batchEditingRecords) {
+  if (search?.batchEditingRecords) {
     tooManytoBatchThis = search.batchEditingRecords.size > MAX;
   }
   const disabled = !isFieldEditable;
@@ -37,16 +33,8 @@ function Image<
       value={itemImage}
       label="Preview Image"
       disabled={!fieldOwner.isFieldEditable("image")}
-      explanation={
-        itemImage ? (
-          <>
-            Tap to view at full resolution, scroll to exit (or pinch on mobile)
-          </>
-        ) : null
-      }
-      canChooseWhichToEdit={
-        fieldOwner.canChooseWhichToEdit && !tooManytoBatchThis
-      }
+      explanation={itemImage ? <>Tap to view at full resolution, scroll to exit (or pinch on mobile)</> : null}
+      canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit && !tooManytoBatchThis}
       setDisabled={(checked) => {
         fieldOwner.setFieldEditable("image", checked);
       }}
@@ -55,11 +43,7 @@ function Image<
           <ImageField
             storeImage={({ dataURL, file }) => {
               void (async () => {
-                const scaledImage = await capImageAt1MB(
-                  file,
-                  dataURL,
-                  CANVAS_ID,
-                );
+                const scaledImage = await capImageAt1MB(file, dataURL, CANVAS_ID);
                 fieldOwner.setFieldsDirty({
                   image: scaledImage,
                   newBase64Image: scaledImage,
@@ -76,10 +60,7 @@ function Image<
           />
           <canvas id={CANVAS_ID} style={{ display: "none" }} />
           {tooManytoBatchThis && (
-            <Alert severity="info">
-              The image can only be edited when no more than 25 items are
-              selected.
-            </Alert>
+            <Alert severity="info">The image can only be edited when no more than 25 items are selected.</Alert>
           )}
         </>
       )}

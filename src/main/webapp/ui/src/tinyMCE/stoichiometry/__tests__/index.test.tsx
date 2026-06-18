@@ -1,6 +1,7 @@
 /* eslint-disable testing-library/no-node-access */
-import React from "react";
+
 import { waitFor } from "@testing-library/react";
+import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
@@ -82,10 +83,7 @@ type DialogProps = {
   onTableCreated?: (id: number, revision: number) => void;
 };
 
-function findRenderedComponentProps<Props>(
-  node: React.ReactNode,
-  component: React.ComponentType<Props>,
-): Props | null {
+function findRenderedComponentProps<Props>(node: React.ReactNode, component: React.ComponentType<Props>): Props | null {
   if (!React.isValidElement(node)) {
     return null;
   }
@@ -94,9 +92,7 @@ function findRenderedComponentProps<Props>(
     return node.props as Props;
   }
 
-  const children = React.Children.toArray(
-    (node.props as { children?: React.ReactNode }).children,
-  );
+  const children = React.Children.toArray((node.props as { children?: React.ReactNode }).children);
 
   for (const child of children) {
     const view = findRenderedComponentProps(child, component);
@@ -147,9 +143,7 @@ function createTableOnlyNode(
   if (options.stoichiometry !== undefined) {
     tableOnlyNode.setAttribute(
       "data-stoichiometry-table",
-      typeof options.stoichiometry === "string"
-        ? options.stoichiometry
-        : JSON.stringify(options.stoichiometry),
+      typeof options.stoichiometry === "string" ? options.stoichiometry : JSON.stringify(options.stoichiometry),
     );
   }
 
@@ -269,11 +263,10 @@ async function instantiateStoichiometryPlugin() {
   await import("@/tinyMCE/stoichiometry/index");
 }
 
-function getRegisteredStoichiometryPlugin(
-  registeredPlugins: Map<string, StoichiometryPluginConstructor>,
-) {
+function getRegisteredStoichiometryPlugin(registeredPlugins: Map<string, StoichiometryPluginConstructor>) {
   const stoichiometryPlugin = registeredPlugins.get("stoichiometry");
   expect(stoichiometryPlugin).toBeDefined();
+  // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   return stoichiometryPlugin!;
 }
 
@@ -285,10 +278,7 @@ function getLastRenderedDialogProps(): DialogProps | null {
       continue;
     }
 
-    const view = findRenderedComponentProps(
-      renderCall.node,
-      mockDialogEntrypoint,
-    );
+    const view = findRenderedComponentProps(renderCall.node, mockDialogEntrypoint);
 
     if (view) {
       return view;
@@ -359,23 +349,17 @@ describe("TinyMCE stoichiometry plugin", () => {
         recordId: 77,
       }),
     );
-    const insertedTableOnly = editorDocument.querySelector(
-      '[data-stoichiometry-table-only="true"]',
-    );
+    const insertedTableOnly = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
     expect(insertedTableOnly).not.toBeNull();
     expectToHaveTextContent(insertedTableOnly, "Empty Stoichiometry Table");
-    expect(insertedTableOnly?.getAttribute("data-mce-contenteditable")).toBe(
-      "false",
-    );
+    expect(insertedTableOnly?.getAttribute("data-mce-contenteditable")).toBe("false");
     expect(insertedTableOnly?.getAttribute("contenteditable")).toBe("false");
     expect(insertedTableOnly?.classList.contains("mceNonEditable")).toBe(true);
 
     expect(view).not.toBeNull();
     view?.onClose?.();
 
-    expect(
-      editorDocument.querySelector('[data-stoichiometry-table-only="true"]'),
-    ).toBeNull();
+    expect(editorDocument.querySelector('[data-stoichiometry-table-only="true"]')).toBeNull();
   });
 
   it("keeps the tableOnly div after a table has been created", async () => {
@@ -406,24 +390,15 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(view).not.toBeNull();
     view?.onTableCreated?.(9, 2);
 
-    const insertedTableOnly = editorDocument.querySelector(
-      '[data-stoichiometry-table-only="true"]',
-    );
-    expect(insertedTableOnly?.getAttribute("data-stoichiometry-table")).toBe(
-      JSON.stringify({ id: 9, revision: 2 }),
-    );
-    expectToHaveTextContent(
-      insertedTableOnly,
-      "Stoichiometry Table (no preview)",
-    );
+    const insertedTableOnly = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
+    expect(insertedTableOnly?.getAttribute("data-stoichiometry-table")).toBe(JSON.stringify({ id: 9, revision: 2 }));
+    expectToHaveTextContent(insertedTableOnly, "Stoichiometry Table (no preview)");
 
     view = getLastRenderedDialogProps();
     expect(view).not.toBeNull();
     view?.onClose?.();
 
-    expect(
-      editorDocument.querySelector('[data-stoichiometry-table-only="true"]'),
-    ).not.toBeNull();
+    expect(editorDocument.querySelector('[data-stoichiometry-table-only="true"]')).not.toBeNull();
   });
 
   it("reopens the selected stoichiometry table from the toolbar button instead of inserting a new one", async () => {
@@ -460,9 +435,7 @@ describe("TinyMCE stoichiometry plugin", () => {
       );
     });
 
-    expect(
-      editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]'),
-    ).toHaveLength(1);
+    expect(editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]')).toHaveLength(1);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -498,9 +471,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(view).not.toBeNull();
     view?.onDelete?.();
 
-    expect(
-      editorDocument.querySelector('[data-stoichiometry-table-only="true"]'),
-    ).toBeNull();
+    expect(editorDocument.querySelector('[data-stoichiometry-table-only="true"]')).toBeNull();
   });
 
   it("reopens stoichiometry from a selected tableOnly div child and shows its toolbar", async () => {
@@ -620,9 +591,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
     new StoichiometryPlugin(editor);
 
-    expect(document.importNode(tableOnlyNode, true)).toHaveTextContent(
-      "Empty Stoichiometry Table",
-    );
+    expect(document.importNode(tableOnlyNode, true)).toHaveTextContent("Empty Stoichiometry Table");
     expectToHaveTextContent(tableOnlyNode, "Empty Stoichiometry Table");
   });
 
@@ -654,13 +623,8 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(view).not.toBeNull();
     view?.onTableCreated?.(15, 6);
 
-    const tableOnlyNode = editorDocument.querySelector(
-      '[data-stoichiometry-table-only="true"]',
-    );
-    expectToHaveTextContent(
-      tableOnlyNode,
-      "Stoichiometry Table (no preview)",
-    );
+    const tableOnlyNode = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
+    expectToHaveTextContent(tableOnlyNode, "Stoichiometry Table (no preview)");
     expect(tableOnlyNode?.children.length).toBe(0);
   });
 
@@ -696,16 +660,9 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(view).not.toBeNull();
     view?.onSave?.(15, 7);
 
-    const tableOnlyNode = editorDocument.querySelector(
-      '[data-stoichiometry-table-only="true"]',
-    );
-    expect(tableOnlyNode?.getAttribute("data-stoichiometry-table")).toBe(
-      JSON.stringify({ id: 15, revision: 7 }),
-    );
-    expectToHaveTextContent(
-      tableOnlyNode,
-      "Stoichiometry Table (no preview)",
-    );
+    const tableOnlyNode = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
+    expect(tableOnlyNode?.getAttribute("data-stoichiometry-table")).toBe(JSON.stringify({ id: 15, revision: 7 }));
+    expectToHaveTextContent(tableOnlyNode, "Stoichiometry Table (no preview)");
   });
 
   it("does not crash when the editor document is unavailable", async () => {
@@ -735,7 +692,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     expect(editor.execCommand).toHaveBeenCalledWith(
       "mceInsertContent",
       false,
-      expect.stringContaining("data-stoichiometry-table-only=\"true\""),
+      expect.stringContaining('data-stoichiometry-table-only="true"'),
     );
     expect(editor.selection.select).not.toHaveBeenCalled();
     expect(editor.focus).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
-import React from "react";
 import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
 import { iconButtonClasses } from "@mui/material/IconButton";
+import Toolbar from "@mui/material/Toolbar";
+import type React from "react";
 
 export default function BaseToolbar(props: { content: React.ReactNode }) {
   return (

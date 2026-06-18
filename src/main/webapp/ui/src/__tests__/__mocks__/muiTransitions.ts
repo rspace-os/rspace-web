@@ -1,9 +1,7 @@
 import React from "react";
 import { vi } from "vitest";
 
-type TransitionChild =
-  | React.ReactNode
-  | ((state: string, childProps: Record<string, unknown>) => React.ReactNode);
+type TransitionChild = React.ReactNode | ((state: string, childProps: Record<string, unknown>) => React.ReactNode);
 
 type TransitionProps = {
   in?: boolean;
@@ -14,20 +12,18 @@ type TransitionGroupProps = {
   children?: React.ReactNode;
 };
 
-const TransitionMock = React.forwardRef<unknown, TransitionProps>(
-  ({ in: inProp, children }, ref) => {
-    if (inProp === false) {
-      return null;
-    }
-    if (typeof children === "function") {
-      return children("entered", {}) as React.ReactElement | null;
-    }
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children, { ref });
-    }
-    return children ?? null;
-  },
-);
+const TransitionMock = React.forwardRef<unknown, TransitionProps>(({ in: inProp, children }, ref) => {
+  if (inProp === false) {
+    return null;
+  }
+  if (typeof children === "function") {
+    return children("entered", {}) as React.ReactElement | null;
+  }
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children, { ref });
+  }
+  return children ?? null;
+});
 TransitionMock.displayName = "TransitionMock";
 
 vi.mock("@mui/material/Grow", () => ({
@@ -42,9 +38,7 @@ vi.mock("@mui/material/Fade", () => ({
 
 vi.mock("react-transition-group", () => ({
   Transition: ({ children, in: inProp }: TransitionProps) =>
-    typeof children === "function"
-      ? children(inProp ? "entered" : "exited", {})
-      : children ?? null,
+    typeof children === "function" ? children(inProp ? "entered" : "exited", {}) : (children ?? null),
   CSSTransition: ({ children }: TransitionGroupProps) => children ?? null,
   TransitionGroup: ({ children }: TransitionGroupProps) => children ?? null,
 }));

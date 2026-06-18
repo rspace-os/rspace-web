@@ -1,6 +1,6 @@
-import React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
 // eslint-disable-next-line vitest/no-mocks-import
@@ -11,16 +11,16 @@ import "@/__tests__/__mocks__/resizeObserver";
 // useOauthToken: needed by the static read-only table and the editable hook.
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/useOauthToken";
+import MockAdapter from "axios-mock-adapter";
 import * as Jwt from "jsonwebtoken";
+import axios from "@/common/axios";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import {
-  StoichiometryTableControllerProvider,
   type StoichiometryTableController,
+  StoichiometryTableControllerProvider,
 } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import { StoichiometryTableWithDataStory } from "./StoichiometryTable.story";
-import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
 
 /*
  * The data story renders the full app chrome (AppBar -> HelpDocs), which makes
@@ -43,13 +43,14 @@ const staticStoichiometryTableSpy = vi.fn();
 const useWrapperStubs = { current: false };
 
 vi.mock("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid")
-  >("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid");
+  const actual = await vi.importActual<typeof import("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid")>(
+    "@/tinyMCE/stoichiometry/table/StoichiometryTableGrid",
+  );
   return {
     default: (props: React.ComponentProps<typeof actual.default>) => {
       stoichiometryTableGridSpy(props);
       if (useWrapperStubs.current) {
+        // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
         return <div role="grid" aria-label="Stoichiometry table grid" />;
       }
       return <actual.default {...props} />;
@@ -58,9 +59,9 @@ vi.mock("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid", async () => {
 });
 
 vi.mock("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable")
-  >("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable");
+  const actual = await vi.importActual<typeof import("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable")>(
+    "@/tinyMCE/stoichiometry/table/StaticStoichiometryTable",
+  );
   return {
     default: (props: React.ComponentProps<typeof actual.default>) => {
       staticStoichiometryTableSpy(props);
@@ -73,9 +74,9 @@ vi.mock("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable", async () => {
 });
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog")
-  >("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog");
+  const actual = await vi.importActual<typeof import("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog")>(
+    "@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog",
+  );
   return {
     default: () =>
       useWrapperStubs.current ? (
@@ -231,12 +232,9 @@ function routeFetch() {
         iss: "http://localhost:8080",
         iat: Date.now(),
         exp: Math.floor(Date.now() / 1000) + 300,
-        refreshTokenHash:
-          "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+        refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
       };
-      return Promise.resolve(
-        JSON.stringify({ data: Jwt.sign(payload, "dummySecretKey") }),
-      );
+      return Promise.resolve(JSON.stringify({ data: Jwt.sign(payload, "dummySecretKey") }));
     }
 
     if (url.includes("/api/v1/stoichiometry")) {
@@ -269,23 +267,17 @@ async function renderLoadedTable() {
   const view = render(<StoichiometryTableWithDataStory />);
   const grid = await screen.findByRole("grid", undefined, { timeout: 10000 });
   await waitFor(() => {
-    expect(
-      screen.queryByText("Loading molecule information..."),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading molecule information...")).not.toBeInTheDocument();
   });
   return { ...view, grid, user };
 }
 
 function getColumnHeaders(): string[] {
-  return screen
-    .getAllByRole("columnheader")
-    .map((header) => header.textContent?.trim() ?? "");
+  return screen.getAllByRole("columnheader").map((header) => header.textContent?.trim() ?? "");
 }
 
 function getDataRow(name: string): HTMLElement {
-  const row = screen
-    .getAllByRole("row")
-    .find((candidate) => within(candidate).queryByText(name) !== null);
+  const row = screen.getAllByRole("row").find((candidate) => within(candidate).queryByText(name) !== null);
   if (!(row instanceof HTMLElement)) {
     throw new Error(`Data row not found: ${name}`);
   }
@@ -323,25 +315,16 @@ describe("StoichiometryTable", () => {
 
       render(
         <StoichiometryTableControllerProvider value={controller}>
-          <StoichiometryTable
-            editable
-            stoichiometryId={3}
-            stoichiometryRevision={1}
-            activeChemId={123}
-          />
+          <StoichiometryTable editable stoichiometryId={3} stoichiometryRevision={1} activeChemId={123} />
         </StoichiometryTableControllerProvider>,
       );
 
-      expect(
-        screen.getByRole("dialog", { name: "Loading molecule information" }),
-      ).toBeVisible();
+      expect(screen.getByRole("dialog", { name: "Loading molecule information" })).toBeVisible();
       expect(stoichiometryTableGridSpy).not.toHaveBeenCalled();
     });
 
     it("delegates read-only rendering to StaticStoichiometryTable", () => {
-      render(
-        <StoichiometryTable stoichiometryId={3} stoichiometryRevision={1} />,
-      );
+      render(<StoichiometryTable stoichiometryId={3} stoichiometryRevision={1} />);
 
       expect(screen.getByText("Static stoichiometry table")).toBeVisible();
       expect(staticStoichiometryTableSpy).toHaveBeenCalledWith(
@@ -397,20 +380,14 @@ describe("StoichiometryTable", () => {
     it("shows inventory link controls for both linked and unlinked molecules", async () => {
       await renderLoadedTable();
 
-      expect(
-        screen.getByLabelText("Remove inventory link for Cyclopentadiene"),
-      ).toBeVisible();
-      expect(
-        screen.getByLabelText("Add inventory link for Benzene"),
-      ).toBeVisible();
+      expect(screen.getByLabelText("Remove inventory link for Cyclopentadiene")).toBeVisible();
+      expect(screen.getByLabelText("Add inventory link for Benzene")).toBeVisible();
     });
 
     it("opens and closes the inventory picker from an unlinked molecule", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(
-        screen.getByLabelText("Add inventory link for Benzene"),
-      );
+      await user.click(screen.getByLabelText("Add inventory link for Benzene"));
       expect(
         await screen.findByRole("dialog", {
           name: "Pick inventory item for Benzene",
@@ -443,9 +420,7 @@ describe("StoichiometryTable", () => {
 
       await user.click(screen.getByRole("button", { name: "Export" }));
       expect(await screen.findByRole("tooltip")).toBeVisible();
-      expect(
-        screen.getByRole("menuitem", { name: "Export to CSV" }),
-      ).toBeVisible();
+      expect(screen.getByRole("menuitem", { name: "Export to CSV" })).toBeVisible();
     });
 
     it("opens the Add Chemical menu with PubChem, Gallery and manual options", async () => {
@@ -480,9 +455,7 @@ describe("StoichiometryTable", () => {
         }),
       );
 
-      expect(
-        await screen.findByRole("dialog", { name: /Insert from PubChem/i }),
-      ).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: /Insert from PubChem/i })).toBeVisible();
     });
 
     it("opens the manual SMILES dialog from the Add Chemical menu", async () => {
@@ -495,9 +468,7 @@ describe("StoichiometryTable", () => {
         }),
       );
 
-      expect(
-        await screen.findByRole("dialog", { name: /Add New Chemical/i }),
-      ).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: /Add New Chemical/i })).toBeVisible();
     });
 
     it("opens the Gallery dialog from the Add Chemical menu", async () => {
@@ -513,21 +484,13 @@ describe("StoichiometryTable", () => {
       // The Gallery picker is a React.lazy import with a large dependency
       // graph; allow extra time for the chunk to load and render before the
       // dialog appears (the sibling PubChem/SMILES dialogs are not lazy).
-      expect(
-        await screen.findByRole(
-          "dialog",
-          { name: /Gallery Picker/i },
-          { timeout: 10000 },
-        ),
-      ).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: /Gallery Picker/i }, { timeout: 10000 })).toBeVisible();
     });
 
     it("opens the inventory stock update dialog listing the current molecules", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(
-        screen.getByRole("button", { name: "Update Inventory Stock" }),
-      );
+      await user.click(screen.getByRole("button", { name: "Update Inventory Stock" }));
 
       const dialog = await screen.findByRole("dialog", {
         name: /Update Inventory Stock/i,

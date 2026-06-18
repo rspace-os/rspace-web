@@ -1,18 +1,18 @@
-import React from "react";
-import { type HasUneditableFields } from "../../../stores/definitions/Editable";
-import { type Sample } from "../../../stores/definitions/Sample";
-import { RecordLink } from "../RecordLink";
-import FormField from "../../../components/Inputs/FormField";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
+import React from "react";
+import FormField from "../../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import type { HasUneditableFields } from "../../../stores/definitions/Editable";
+import type { Sample } from "../../../stores/definitions/Sample";
+import { RecordLink } from "../RecordLink";
 
 export default function SampleField<
   Fields extends {
     sample: Sample;
   },
-  FieldOwner extends HasUneditableFields<Fields>
+  FieldOwner extends HasUneditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
   const sample = fieldOwner.fieldValues.sample;
   const { useNavigate } = React.useContext(NavigateContext);
@@ -34,22 +34,15 @@ export default function SampleField<
                 href={`/inventory/search?parentGlobalId=${sample.globalId}`}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (sample.globalId)
-                    navigate(
-                      `/inventory/search?parentGlobalId=${sample.globalId}`
-                    );
+                  if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
                 }}
               >
                 {sample.subSamplesCount === 1 ? (
                   `The parent sample only has one ${sample.subSampleAlias.alias}.`
                 ) : (
                   <>
-                    There {sample.subSamplesCount === 2 ? "is" : "are"}{" "}
-                    {sample.subSamplesCount - 1} other{" "}
-                    {sample.subSamplesCount === 2
-                      ? sample.subSampleAlias.alias
-                      : sample.subSampleAlias.plural}
-                    .
+                    There {sample.subSamplesCount === 2 ? "is" : "are"} {sample.subSamplesCount - 1} other{" "}
+                    {sample.subSamplesCount === 2 ? sample.subSampleAlias.alias : sample.subSampleAlias.plural}.
                   </>
                 )}
               </Link>

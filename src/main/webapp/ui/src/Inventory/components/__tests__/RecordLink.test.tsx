@@ -1,19 +1,14 @@
-import { test, describe, expect, vi, beforeEach } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { RecordLink } from "../RecordLink";
-import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
-import {
-  makeMockBench,
-  makeMockContainer,
-} from "@/stores/models/__tests__/ContainerModel/mocking";
-import { storesContext } from "@/stores/stores-context";
-import { ThemeProvider } from "@mui/material/styles";
 import { chipClasses } from "@mui/material/Chip";
-import materialTheme from "../../../theme";
-import NavigateContext from "../../../stores/contexts/Navigate";
-
+import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "@/stores/stores-context";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import materialTheme from "../../../theme";
+import { RecordLink } from "../RecordLink";
 
 describe("RecordLink", () => {
   const navigate = vi.fn();
@@ -47,7 +42,7 @@ describe("RecordLink", () => {
             <RecordLink record={record} {...props} />
           </storesContext.Provider>
         </NavigateContext.Provider>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     return {
@@ -81,10 +76,7 @@ describe("RecordLink", () => {
     const container = makeMockContainer();
     renderRecordLink(container, { newTab: true });
 
-    expect(screen.getByRole("link", { name: /A list container/ })).toHaveAttribute(
-      "target",
-      "_blank",
-    );
+    expect(screen.getByRole("link", { name: /A list container/ })).toHaveAttribute("target", "_blank");
   });
 
   test("shows a pointer cursor when `permalinkURL` is defined.", () => {
@@ -108,9 +100,7 @@ describe("RecordLink", () => {
     } as typeof container;
     renderRecordLink(recordWithoutPermalink);
 
-    const chipRoot = screen
-      .getByText("A list container")
-      .closest(`.${chipClasses.root}`);
+    const chipRoot = screen.getByText("A list container").closest(`.${chipClasses.root}`);
     expect(chipRoot).not.toHaveStyle({ cursor: "pointer" });
   });
 
@@ -150,4 +140,3 @@ describe("RecordLink", () => {
     expect(label).toHaveStyle({ whiteSpace: "break-spaces" });
   });
 });
-

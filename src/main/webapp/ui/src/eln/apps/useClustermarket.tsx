@@ -20,7 +20,7 @@ export function useClustermarketEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from Calira.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useClustermarketEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from Calira.",
-        })
+        }),
       );
     }
   };

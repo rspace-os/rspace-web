@@ -1,11 +1,8 @@
 import "@/stores/stores/RootStore";
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
+import { ListOfMaterials, type ListOfMaterialsAttrs } from "../../MaterialsModel";
 import { containerAttrs } from "../ContainerModel/mocking";
-import {
-  ListOfMaterials,
-  type ListOfMaterialsAttrs,
 
-} from "../../MaterialsModel";
 function generateListOfMaterials(attrs: Partial<ListOfMaterialsAttrs>) {
   return new ListOfMaterials({
     id: null,
@@ -20,21 +17,18 @@ function generateListOfMaterials(attrs: Partial<ListOfMaterialsAttrs>) {
     ],
     ...attrs,
   });
-
 }
 describe("isValid", () => {
   describe("Name is checked", () => {
     test("Name of length 255 is valid", () => {
       const mat = generateListOfMaterials({
         name: new Array<string>(255).fill(" ").join(""),
-
       });
       expect(mat.isValid).toBe(true);
     });
     test("Name of length 256 is invalid", () => {
       const mat = generateListOfMaterials({
         name: new Array<string>(256).fill(" ").join(""),
-
       });
       expect(mat.isValid).toBe(false);
     });
@@ -43,14 +37,12 @@ describe("isValid", () => {
     test("Description of length 255 is valid", () => {
       const mat = generateListOfMaterials({
         description: new Array<string>(255).fill(" ").join(""),
-
       });
       expect(mat.isValid).toBe(true);
     });
     test("Description of length 256 is invalid", () => {
       const mat = generateListOfMaterials({
         description: new Array<string>(256).fill(" ").join(""),
-
       });
       expect(mat.isValid).toBe(false);
     });

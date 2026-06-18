@@ -1,11 +1,10 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { screen, cleanup } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, expectAccessible} from "@/__tests__/customQueries";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import { AddFilestoreDialogStory } from "./AddFilestoreDialog.story";
 
@@ -76,12 +75,8 @@ describe("AddFilestoreDialog", () => {
   beforeEach(() => {
     mockAxios.reset();
     mockAxios.onGet("/api/v1/gallery/filesystems").reply(200, [filesystem]);
-    mockAxios
-      .onGet("/api/v1/gallery/filesystems/1/browse?remotePath=%2F")
-      .reply(200, rootListing);
-    mockAxios
-      .onGet("/api/v1/gallery/filesystems/1/browse?remotePath=%2Ftest%2F")
-      .reply(200, emptyListing);
+    mockAxios.onGet("/api/v1/gallery/filesystems/1/browse?remotePath=%2F").reply(200, rootListing);
+    mockAxios.onGet("/api/v1/gallery/filesystems/1/browse?remotePath=%2Ftest%2F").reply(200, emptyListing);
   });
 
   afterEach(() => {
@@ -100,9 +95,7 @@ describe("AddFilestoreDialog", () => {
 
     // the user selects a filesystem
     await user.click(screen.getByRole("radio", { name: "irods test" }));
-    await user.click(
-      screen.getByRole("button", { name: /Choose filesystem/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /Choose filesystem/i }));
 
     // the folder tree is rendered once the browse request resolves
     await screen.findByRole("treeitem", { name: /^test$/ });
@@ -113,8 +106,7 @@ describe("AddFilestoreDialog", () => {
     // the user selects a folder. The clickable surface is the treeitem's
     // content div, mirroring the spec's `.locator("> div")`.
     const testTreeItem = screen.getByRole("treeitem", { name: /^test$/ });
-    const content =
-      testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
+    const content = testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
     await user.click(content);
     await user.click(screen.getByRole("button", { name: /Choose folder/i }));
 
@@ -130,16 +122,10 @@ describe("AddFilestoreDialog", () => {
     render(<AddFilestoreDialogStory />);
 
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
-    await user.click(
-      screen.getByRole("button", { name: /Choose filesystem/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /Choose filesystem/i }));
 
-    expect(
-      await screen.findByRole("treeitem", { name: /^test$/ }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: /Choose folder/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("treeitem", { name: /^test$/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Choose folder/i })).toBeInTheDocument();
   });
 
   test("Selecting a folder advances to the name step", async () => {
@@ -147,20 +133,15 @@ describe("AddFilestoreDialog", () => {
     render(<AddFilestoreDialogStory />);
 
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
-    await user.click(
-      screen.getByRole("button", { name: /Choose filesystem/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /Choose filesystem/i }));
 
     const testTreeItem = await screen.findByRole("treeitem", {
       name: /^test$/,
     });
-    const content =
-      testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
+    const content = testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
     await user.click(content);
     await user.click(screen.getByRole("button", { name: /Choose folder/i }));
 
-    expect(
-      await screen.findByRole("textbox", { name: "Filestore name" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("textbox", { name: "Filestore name" })).toBeVisible();
   });
 });

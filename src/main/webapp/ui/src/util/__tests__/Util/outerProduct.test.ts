@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+import { describe, expect, test } from "vitest";
 import * as ArrayUtils from "../../ArrayUtils";
 
 import { monoids } from "../helpers";
@@ -14,43 +14,41 @@ describe("outerProduct", () => {
           .tuple(fc.nat(10), fc.oneof(...monoids))
           .chain(([length, [valueGenerator, booleanFunction]]) =>
             fc.tuple(
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               fc.array(valueGenerator() as fc.Arbitrary<any>, {
                 minLength: length,
                 maxLength: length,
               }),
-              fc.constant(booleanFunction as (a: any, b: any) => any)
-            )
+              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+              fc.constant(booleanFunction as (a: any, b: any) => any),
+            ),
           ),
-        <T>([as, bs, cs, booleanFunction]: [
-          T[],
-          T[],
-          T[],
-          (a: T, b: T) => T
-        ]) => {
+        <T>([as, bs, cs, booleanFunction]: [T[], T[], T[], (a: T, b: T) => T]) => {
           expect(
             ArrayUtils.outerProduct(
               as,
               ArrayUtils.outerProduct(bs, cs, booleanFunction).flat(),
-              booleanFunction
-            ).flat()
+              booleanFunction,
+            ).flat(),
           ).toEqual(
             ArrayUtils.outerProduct(
               ArrayUtils.outerProduct(as, bs, booleanFunction).flat(),
               cs,
-              booleanFunction
-            ).flat()
+              booleanFunction,
+            ).flat(),
           );
-        }
-      )
+        },
+      ),
     );
   });
 });
-

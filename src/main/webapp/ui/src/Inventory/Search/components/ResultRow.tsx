@@ -1,44 +1,33 @@
-import React, { useContext } from "react";
-import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import SearchContext from "../../../stores/contexts/Search";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import TableCell from "./TableCell";
+import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
+import Radio, { radioClasses } from "@mui/material/Radio";
+import { alpha } from "@mui/material/styles";
 import { tableCellClasses } from "@mui/material/TableCell";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
-import Checkbox, { checkboxClasses } from "@mui/material/Checkbox";
+import Tooltip from "@mui/material/Tooltip";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import SearchContext from "../../../stores/contexts/Search";
+import { hasRequiredPermissions, type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import useStores from "../../../stores/use-stores";
+import { UserCancelledAction } from "../../../util/error";
+import { match } from "../../../util/Util";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import NameWithBadge from "../../components/NameWithBadge";
 import AdjustableCell from "../../components/Tables/AdjustableCell";
-import { match } from "../../../util/Util";
-import {
-  hasRequiredPermissions,
-  type InventoryRecord,
-} from "../../../stores/definitions/InventoryRecord";
-import { UserCancelledAction } from "../../../util/error";
-import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-import { alpha } from "@mui/material/styles";
-import Radio, { radioClasses } from "@mui/material/Radio";
-import Tooltip from "@mui/material/Tooltip";
+import TableCell from "./TableCell";
 
 type ResultRowArgs = {
   result: InventoryRecord;
   adjustableColumns: Array<AdjustableTableRowLabel>;
 };
 
-const REQUIRED_PERMISSIONS_TOOLTIP =
-  "You do not have permission to select this item.";
+const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
 
-function ResultRow({
-  result,
-  adjustableColumns,
-}: ResultRowArgs): React.ReactNode {
-  const {
-    isChild,
-    differentSearchForSettingActiveResult,
-    search,
-    scopedResult,
-  } = useContext(SearchContext);
+function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNode {
+  const { isChild, differentSearchForSettingActiveResult, search, scopedResult } = useContext(SearchContext);
   const multiSelect = search.uiConfig.selectionMode === "MULTIPLE";
   const singleSelect = search.uiConfig.selectionMode === "SINGLE";
   const noSelection = search.uiConfig.selectionMode === "NONE";
@@ -47,21 +36,12 @@ function ResultRow({
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const isFilteredOut = search.alwaysFilterOut(result);
-  const hasPermission = hasRequiredPermissions(
-    result.permittedActions,
-    search.uiConfig?.requiredPermissions,
-  );
+  const hasPermission = hasRequiredPermissions(result.permittedActions, search.uiConfig?.requiredPermissions);
   const rowIsFilteredOut = isFilteredOut || !hasPermission;
-  const filteredOutReason = isFilteredOut
-    ? search.uiConfig?.alwaysFilteredOutReason
-    : undefined;
-  const tooltipText =
-    filteredOutReason ??
-    (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
+  const filteredOutReason = isFilteredOut ? search.uiConfig?.alwaysFilteredOutReason : undefined;
+  const tooltipText = filteredOutReason ?? (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
   const rowIsSelected = Boolean(
-    search.activeResult &&
-      result.globalId === search.activeResult.globalId &&
-      search.uiConfig.highlightActiveResult,
+    search.activeResult && result.globalId === search.activeResult.globalId && search.uiConfig.highlightActiveResult,
   );
 
   /*
@@ -92,12 +72,10 @@ function ResultRow({
   };
 
   const navigateToResult = () => {
-    if (!scopedResult)
-      throw new Error("A scoped record has not been assigned to this search");
-    const params =
-      differentSearchForSettingActiveResult.fetcher.generateNewQuery({
-        parentGlobalId: scopedResult.globalId,
-      });
+    if (!scopedResult) throw new Error("A scoped record has not been assigned to this search");
+    const params = differentSearchForSettingActiveResult.fetcher.generateNewQuery({
+      parentGlobalId: scopedResult.globalId,
+    });
     navigate(`/inventory/search?${params.toString()}`, {
       skipToParentContext: true,
     });
@@ -176,10 +154,7 @@ function ResultRow({
           })}
         >
           <Radio
-            checked={Boolean(
-              search.activeResult &&
-                result.globalId === search.activeResult.globalId,
-            )}
+            checked={Boolean(search.activeResult && result.globalId === search.activeResult.globalId)}
             disabled={rowIsFilteredOut}
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
@@ -192,21 +167,12 @@ function ResultRow({
       <TableCell align="left" sx={{ cursor: "default" }}>
         <NameWithBadge record={result} />
       </TableCell>
-      <AdjustableCell
-        dataSource={result}
-        selectedOption={adjustableColumns[0]}
-      />
+      <AdjustableCell dataSource={result} selectedOption={adjustableColumns[0]} />
       {!uiStore.isSmall && !uiStore.isVerySmall && isSingleColumnLayout && (
-        <AdjustableCell
-          dataSource={result}
-          selectedOption={adjustableColumns[1]}
-        />
+        <AdjustableCell dataSource={result} selectedOption={adjustableColumns[1]} />
       )}
       {uiStore.isLarge && isSingleColumnLayout && (
-        <AdjustableCell
-          dataSource={result}
-          selectedOption={adjustableColumns[2]}
-        />
+        <AdjustableCell dataSource={result} selectedOption={adjustableColumns[2]} />
       )}
     </TableRow>
   );

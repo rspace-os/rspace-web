@@ -1,8 +1,8 @@
-import React from "react";
 import { screen, waitFor } from "@testing-library/react";
-import { render } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
+import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@/__tests__/customQueries";
 
 const INITIAL_KET = "initial-ket";
 const mockSetMolecule = vi.fn().mockResolvedValue(undefined);
@@ -11,11 +11,7 @@ const mockSubscribe = vi.fn();
 const mockSetOptions = vi.fn();
 
 vi.mock("ketcher-react", () => ({
-  Editor: ({
-    onInit,
-  }: {
-    onInit: (ketcher: unknown) => void;
-  }) => {
+  Editor: ({ onInit }: { onInit: (ketcher: unknown) => void }) => {
     React.useEffect(() => {
       onInit({
         editor: {
@@ -62,20 +58,12 @@ describe("KetcherDialog cancel confirmation", () => {
   it("closes immediately when Cancel is clicked and editor is not dirty", async () => {
     const user = userEvent.setup();
 
-    render(
-      <KetcherDialog
-        title="Test Ketcher"
-        handleClose={handleClose}
-        handleInsert={handleInsert}
-      />,
-    );
+    render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
-    expect(
-      screen.queryByText("You have unsaved changes."),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("You have unsaved changes.")).not.toBeInTheDocument();
   });
 
   it("shows confirmation dialog when Cancel is clicked and editor is dirty", async () => {
@@ -83,20 +71,12 @@ describe("KetcherDialog cancel confirmation", () => {
     mockGetKet.mockResolvedValue("changed-ket");
     const user = userEvent.setup();
 
-    render(
-      <KetcherDialog
-        title="Test Ketcher"
-        handleClose={handleClose}
-        handleInsert={handleInsert}
-      />,
-    );
+    render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    expect(
-      screen.getByText(/You have unsaved changes/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/You have unsaved changes/)).toBeInTheDocument();
   });
 
   it("dismisses confirmation and keeps editor open when Keep Editing is clicked", async () => {
@@ -104,23 +84,13 @@ describe("KetcherDialog cancel confirmation", () => {
     mockGetKet.mockResolvedValue("changed-ket");
     const user = userEvent.setup();
 
-    render(
-      <KetcherDialog
-        title="Test Ketcher"
-        handleClose={handleClose}
-        handleInsert={handleInsert}
-      />,
-    );
+    render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await user.click(screen.getByRole("button", { name: "Keep Editing" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    await waitFor(() =>
-      expect(
-        screen.queryByText(/You have unsaved changes/),
-      ).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByText(/You have unsaved changes/)).not.toBeInTheDocument());
   });
 
   it("skips dirty check and closes immediately in read-only mode", async () => {
@@ -128,21 +98,12 @@ describe("KetcherDialog cancel confirmation", () => {
     mockGetKet.mockResolvedValue("changed-ket");
     const user = userEvent.setup();
 
-    render(
-      <KetcherDialog
-        title="Test Ketcher"
-        handleClose={handleClose}
-        handleInsert={handleInsert}
-        readOnly
-      />,
-    );
+    render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} readOnly />);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
-    expect(
-      screen.queryByText("You have unsaved changes."),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("You have unsaved changes.")).not.toBeInTheDocument();
   });
 
   it("closes the editor when Discard is clicked", async () => {
@@ -150,13 +111,7 @@ describe("KetcherDialog cancel confirmation", () => {
     mockGetKet.mockResolvedValue("changed-ket");
     const user = userEvent.setup();
 
-    render(
-      <KetcherDialog
-        title="Test Ketcher"
-        handleClose={handleClose}
-        handleInsert={handleInsert}
-      />,
-    );
+    render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await user.click(screen.getByRole("button", { name: "Discard" }));

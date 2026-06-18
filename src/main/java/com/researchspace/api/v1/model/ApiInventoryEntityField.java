@@ -2,6 +2,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -10,15 +11,19 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 /** A field in a Document, with a list of attached Files */
 @Data
@@ -50,6 +55,16 @@ public class ApiInventoryEntityField extends ApiField {
 
   @JsonProperty("selectedOptions")
   private List<String> selectedOptions;
+
+  /** Link field: the whitelist of permitted DataCite relation types. Empty/null means all. */
+  @JsonProperty("allowedRelationTypes")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<String> allowedRelationTypes;
+
+  /** Link field: the (optional) single link value (target + relation + version pin). */
+  @JsonProperty("link")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private ApiInventoryLink link;
 
   @JsonProperty("mandatory")
   private Boolean mandatory;
@@ -123,6 +138,12 @@ public class ApiInventoryEntityField extends ApiField {
       if (field.getAttachedFile() != null) {
         setAttachment(new ApiInventoryFile(field.getAttachedFile()));
       }
+    } else if (field instanceof InventoryLinkField) {
+      InventoryLinkField linkField = (InventoryLinkField) field;
+      setAllowedRelationTypes(splitRelationTypes(linkField.getAllowedRelationTypes()));
+      if (linkField.getLink() != null) {
+        setLink(new ApiInventoryLink(linkField.getLink()));
+      }
     }
 
     if (field.isOptionsStoringField()) {
@@ -130,6 +151,32 @@ public class ApiInventoryEntityField extends ApiField {
     } else {
       setContent(field.getFieldData());
     }
+  }
+
+  /** Splits the model's pipe-delimited relation-type whitelist into a list; empty/null -&gt; []. */
+  static List<String> splitRelationTypes(String pipeDelimited) {
+    if (StringUtils.isBlank(pipeDelimited)) {
+      return new ArrayList<>();
+    }
+    return Arrays.stream(pipeDelimited.split("\\|"))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Joins an allowed-relation-types list into the model's pipe-delimited form; empty -&gt; null.
+   */
+  static String joinRelationTypes(List<String> relationTypes) {
+    if (relationTypes == null || relationTypes.isEmpty()) {
+      return null;
+    }
+    String joined =
+        relationTypes.stream()
+            .map(s -> s == null ? "" : s.trim())
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.joining("|"));
+    return joined.isEmpty() ? null : joined;
   }
 
   @JsonIgnore
@@ -221,6 +268,14 @@ public class ApiInventoryEntityField extends ApiField {
 
   private boolean applyContentChangesToDbField(InventoryEntityField dbField) {
     boolean contentChanged = false;
+
+    // a link field's value lives in its InventoryLink (applied through the
+    // service-layer InventoryLinkManager), not in the data column; pushing the
+    // client's (empty) content into setFieldData would trip the mandatory-field
+    // check for link fields populated by a template's "update all samples"
+    if (dbField instanceof InventoryLinkField) {
+      return false;
+    }
 
     // for choice/radio the content comes/goes through selectedOptions
     boolean isOptionsField = dbField.isOptionsStoringField();

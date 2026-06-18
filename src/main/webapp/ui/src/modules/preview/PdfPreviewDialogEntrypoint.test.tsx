@@ -1,10 +1,7 @@
 import { act, screen, waitFor } from "@testing-library/react";
-import { describe, expect, test, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "@/__tests__/customQueries";
-import {
-  OPEN_PDF_PREVIEW_DIALOG,
-  PdfPreviewDialogWrapper,
-} from "./PdfPreviewDialogEntrypoint";
+import { OPEN_PDF_PREVIEW_DIALOG, PdfPreviewDialogWrapper } from "./PdfPreviewDialogEntrypoint";
 
 const { axiosGetMock } = vi.hoisted(() => ({
   axiosGetMock: vi.fn(),
@@ -100,9 +97,7 @@ describe("pdf preview dialog island", () => {
     });
 
     await waitFor(() => {
-      expect(axiosGetMock).toHaveBeenCalledWith(
-        "/Streamfile/ajax/convert/42?outputFormat=pdf&revision=7",
-      );
+      expect(axiosGetMock).toHaveBeenCalledWith("/Streamfile/ajax/convert/42?outputFormat=pdf&revision=7");
     });
     expect(await screen.findByLabelText(/pdf preview/i)).toBeVisible();
     expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(

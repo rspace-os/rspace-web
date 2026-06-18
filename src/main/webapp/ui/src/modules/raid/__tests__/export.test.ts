@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { getRaidExportEligibility } from "../services/export";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { RaidReferenceDTO } from "@/modules/raid/schema";
+import { getRaidExportEligibility } from "../services/export";
 
 const baseRaid: RaidReferenceDTO = {
   raidServerAlias: "server-1",
@@ -9,9 +9,7 @@ const baseRaid: RaidReferenceDTO = {
   raidTitle: "Test RAiD",
 };
 
-const makeGroup = (
-  overrides: Partial<GroupInfo> & Pick<GroupInfo, "id" | "type">,
-): GroupInfo => ({
+const makeGroup = (overrides: Partial<GroupInfo> & Pick<GroupInfo, "id" | "type">): GroupInfo => ({
   id: overrides.id,
   globalId: `GR${overrides.id}`,
   name: `Group ${overrides.id}`,
@@ -93,10 +91,7 @@ describe("getRaidExportEligibility", () => {
       type: "PROJECT_GROUP",
       raid: baseRaid,
     });
-    const groups: GroupInfo[] = [
-      makeGroup({ id: 8, type: "LAB_GROUP" }),
-      projectGroup,
-    ];
+    const groups: GroupInfo[] = [makeGroup({ id: 8, type: "LAB_GROUP" }), projectGroup];
     const groupsMap = makeGroupsMap(groups);
 
     const result = getRaidExportEligibility(groupsMap);
@@ -119,10 +114,7 @@ describe("getRaidExportEligibility", () => {
       type: "PROJECT_GROUP",
       raid: null,
     });
-    const groupsMap = makeGroupsMap([
-      projectGroupWithRaid,
-      projectGroupWithoutRaid,
-    ]);
+    const groupsMap = makeGroupsMap([projectGroupWithRaid, projectGroupWithoutRaid]);
 
     const result = getRaidExportEligibility(groupsMap);
 

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 type OmeroItemBase = {
   path: Array<React.ReactElement<"dt">>;
@@ -41,15 +41,7 @@ type OmeroItemBase = {
   fake: boolean;
 };
 
-export type OmeroItem =
-  | PlateAcquisition
-  | Project
-  | Screen
-  | Dataset
-  | Plate
-  | Image
-  | WellSample
-  | Well;
+export type OmeroItem = PlateAcquisition | Project | Screen | Dataset | Plate | Image | WellSample | Well;
 
 export type PlateAcquisition = OmeroItemBase & {
   rows: number;
@@ -103,6 +95,4 @@ export type OmeroArgs = {
   omero_web_url: string;
 };
 
-export const $PropertyExists = <T extends NonNullable<unknown>>(
-  val: T
-): NonNullable<T> => val;
+export const $PropertyExists = <T extends NonNullable<unknown>>(val: T): NonNullable<T> => val;

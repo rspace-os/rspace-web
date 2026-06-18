@@ -1,36 +1,31 @@
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import ApiService from "../../common/InvApiService";
-import { match, toTitleCase, filterObject } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import { filenameExceptExtension } from "../../util/files";
 import { showToastWhilstPending } from "../../util/alerts";
+import { getErrorMessage } from "../../util/error";
+import { filenameExceptExtension } from "../../util/files";
+import * as Parsers from "../../util/parsers";
+import { parseString } from "../../util/parsers";
+import Result from "../../util/result";
 import RsSet from "../../util/set";
 import StateMachine from "../../util/stateMachine";
-import getRootStore from "../stores/getRootStore";
-import MemoisedFactory from "./Factory/MemoisedFactory";
+import { filterObject, match, toTitleCase } from "../../util/Util";
+import { pick } from "../../util/unsafeUtils";
 import { mkAlert } from "../contexts/Alert";
+import type { GlobalId } from "../definitions/BaseRecord";
+import type { FieldModelAttrs as TemplateField } from "../models/FieldModel";
+import getRootStore from "../stores/getRootStore";
+import type { ImportRecordType } from "../stores/ImportStore";
+import MemoisedFactory from "./Factory/MemoisedFactory";
 import {
-  FieldTypes,
-  fieldTypeToApiString,
   apiStringToFieldType,
   compatibleFieldTypes,
   type FieldType,
+  FieldTypes,
+  fieldTypeToApiString,
 } from "./FieldTypes";
-import { type ImportRecordType } from "../stores/ImportStore";
-import TemplateModel, { TemplateAttrs } from "./TemplateModel";
-import {
-  computed,
-  action,
-  observable,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import { parseString } from "../../util/parsers";
-import { type FieldModelAttrs as TemplateField } from "../models/FieldModel";
-import { pick } from "../../util/unsafeUtils";
-import Result from "../../util/result";
-import { getErrorMessage } from "../../util/error";
-import * as Parsers from "../../util/parsers";
-import { GlobalId } from "../definitions/BaseRecord";
+import type TemplateModel from "./TemplateModel";
+import type { TemplateAttrs } from "./TemplateModel";
 
 export const Fields: { [fieldName: string]: symbol } = {
   name: Symbol.for("NAME"),
@@ -79,24 +74,13 @@ const transitionMapping = {
   //   file parsed successfully, user must select name field, or can choose a different file
   nameRequired: new Set(["initial", "nameRequiredAndSelected", "parsing"]),
   //   if the user tries to submit without a name mapping then, and only then, do we show an error
-  nameRequiredAndSelected: new Set([
-    "initial",
-    "nameRequired",
-    "submitting",
-    "parsing",
-  ]),
+  nameRequiredAndSelected: new Set(["initial", "nameRequired", "submitting", "parsing"]),
   /*
    *   all good to submit, unselecting goes back to "required" error state
    * transition to "initial" may occur when already parsed csv file is cleared
    * transition to "nameSelected" may occur when import of multiple groups fails
    */
-  nameSelected: new Set([
-    "initial",
-    "submitting",
-    "parsed",
-    "parsing",
-    "nameSelected",
-  ]),
+  nameSelected: new Set(["initial", "submitting", "parsed", "parsing", "nameSelected"]),
   //   all good to submit, unselecting name goes back to parsed where error is not shown
   submitting: new Set(["nameSelected", "successfullySubmitted"]),
   //   server processes the submission
@@ -225,7 +209,7 @@ export class ColumnFieldMap {
     if (type === null) return false;
     return (
       // make none selectable (for containers)
-      (this.allValidTypes.includes(type) || field === Fields.none)
+      this.allValidTypes.includes(type) || field === Fields.none
     );
   }
 
@@ -234,16 +218,11 @@ export class ColumnFieldMap {
       return (
         this.fieldType === FieldTypes.radio &&
         Boolean(this.options) &&
-        new RsSet(this.options).isSubsetOf(
-          new RsSet(["LAB_CREATED", "VENDOR_SUPPLIED", "OTHER"])
-        )
+        new RsSet(this.options).isSubsetOf(new RsSet(["LAB_CREATED", "VENDOR_SUPPLIED", "OTHER"]))
       );
     }
     if (field === Fields.name) {
-      return (
-        this.columnsWithoutBlankValue.includes(this.columnName) &&
-        this.typeIsCompatibleWithField(field)
-      );
+      return this.columnsWithoutBlankValue.includes(this.columnName) && this.typeIsCompatibleWithField(field);
     }
     return this.typeIsCompatibleWithField(field);
   }
@@ -251,7 +230,7 @@ export class ColumnFieldMap {
   get validFieldName(): boolean {
     return (
       // apply no restrictions for non-samples fields name validity
-      (this.recordType !== "SAMPLES" || (!invalidFieldNames.includes(this.fieldName.trim()) && this.isNameUnique(this)))
+      this.recordType !== "SAMPLES" || (!invalidFieldNames.includes(this.fieldName.trim()) && this.isNameUnique(this))
     );
   }
 
@@ -261,11 +240,7 @@ export class ColumnFieldMap {
 
   get fieldsByRecordType(): { [fieldName: string]: symbol } {
     const exclusions = {
-      SAMPLES: new Set([
-        "parent_sample_global_id",
-        "parent_sample_import_id",
-        "none",
-      ]),
+      SAMPLES: new Set(["parent_sample_global_id", "parent_sample_import_id", "none"]),
       CONTAINERS: new Set([
         "expiry_date",
         "quantity",
@@ -274,17 +249,9 @@ export class ColumnFieldMap {
         "parent_sample_import_id",
         "custom",
       ]),
-      SUBSAMPLES: new Set([
-        "expiry_date",
-        "source",
-        "import_identifier",
-        "custom",
-      ]),
+      SUBSAMPLES: new Set(["expiry_date", "source", "import_identifier", "custom"]),
     };
-    return filterObject(
-      (key: string) => !exclusions[this.recordType].has(key),
-      Fields
-    );
+    return filterObject((key: string) => !exclusions[this.recordType].has(key), Fields);
   }
 }
 
@@ -434,9 +401,7 @@ export default class Import {
     }
 
     if (this.isSamplesImport && this.samplesFile) {
-      this.setTemplateName(
-        `New template from ${filenameExceptExtension(this.samplesFile.name)}`
-      );
+      this.setTemplateName(`New template from ${filenameExceptExtension(this.samplesFile.name)}`);
     }
 
     getRootStore().uiStore.setDirty(() => {
@@ -497,15 +462,11 @@ export default class Import {
   }
 
   get nameFieldIsSelected(): boolean {
-    return this.mappingsByRecordType.some(
-      (m) => m.field === Fields.name && m.selected
-    );
+    return this.mappingsByRecordType.some((m) => m.field === Fields.name && m.selected);
   }
 
   get quantityFieldIsSelected(): boolean {
-    return this.samplesMappings.some(
-      (m) => m.field === Fields.quantity && m.selected
-    );
+    return this.samplesMappings.some((m) => m.field === Fields.quantity && m.selected);
   }
 
   get validTemplateName(): boolean {
@@ -514,17 +475,12 @@ export default class Import {
 
   get anyParentSamplesFieldIsSelected(): boolean {
     return this.subSamplesMappings.some(
-      (m) =>
-        (m.field === Fields.parent_sample_import_id ||
-          m.field === Fields.parent_sample_global_id) &&
-        m.selected
+      (m) => (m.field === Fields.parent_sample_import_id || m.field === Fields.parent_sample_global_id) && m.selected,
     );
   }
 
   get unconvertedFieldIsSelected(): boolean {
-    return this.mappingsByRecordType.some(
-      (m) => m.field === Fields.none && m.selected
-    );
+    return this.mappingsByRecordType.some((m) => m.field === Fields.none && m.selected);
   }
 
   /**
@@ -534,22 +490,14 @@ export default class Import {
    */
 
   get parentContainersImportIdUndefined(): boolean {
-    return this.mappingsByRecordType.some(
-      (m) => m.field === Fields.parent_container_import_id && m.selected
-    )
-      ? !this.containersMappings.some(
-          (m) => m.field === Fields.import_identifier && m.selected
-        )
+    return this.mappingsByRecordType.some((m) => m.field === Fields.parent_container_import_id && m.selected)
+      ? !this.containersMappings.some((m) => m.field === Fields.import_identifier && m.selected)
       : false;
   }
 
   get parentSamplesImportIdUndefined(): boolean {
-    return this.subSamplesMappings.some(
-      (m) => m.field === Fields.parent_sample_import_id && m.selected
-    )
-      ? !this.samplesMappings.some(
-          (m) => m.field === Fields.import_identifier && m.selected
-        )
+    return this.subSamplesMappings.some((m) => m.field === Fields.parent_sample_import_id && m.selected)
+      ? !this.samplesMappings.some((m) => m.field === Fields.import_identifier && m.selected)
       : false;
   }
 
@@ -561,31 +509,19 @@ export default class Import {
   validateMappings(mappings: Array<ColumnFieldMap>): boolean {
     const allMappingsAreValid: boolean = mappings.every((m) => m.valid);
 
-    const allFieldNamesAreUnique: boolean = ArrayUtils.allAreUnique(
-      mappings.map((m) => m.fieldName)
-    );
+    const allFieldNamesAreUnique: boolean = ArrayUtils.allAreUnique(mappings.map((m) => m.fieldName));
 
     const nameFieldIsSelected: boolean = mappings.some(
-      (m) =>
-        m.field === Fields.name &&
-        m.selected &&
-        m.columnsWithoutBlankValue.includes(m.columnName)
+      (m) => m.field === Fields.name && m.selected && m.columnsWithoutBlankValue.includes(m.columnName),
     );
 
     const parentContainersImportIdUndefined: boolean = mappings.some(
-      (m) => m.field === Fields.parent_container_import_id && m.selected
+      (m) => m.field === Fields.parent_container_import_id && m.selected,
     )
-      ? !this.containersMappings.some(
-          (m) => m.field === Fields.import_identifier && m.selected
-        )
+      ? !this.containersMappings.some((m) => m.field === Fields.import_identifier && m.selected)
       : false;
 
-    return (
-      allMappingsAreValid &&
-      allFieldNamesAreUnique &&
-      nameFieldIsSelected &&
-      !parentContainersImportIdUndefined
-    );
+    return allMappingsAreValid && allFieldNamesAreUnique && nameFieldIsSelected && !parentContainersImportIdUndefined;
   }
 
   get fileByRecordType(): File | null {
@@ -599,19 +535,15 @@ export default class Import {
   }
 
   get someFileSubmitted(): boolean {
-    return (
-      Boolean(this.containersFile) ||
-      Boolean(this.samplesFile) ||
-      Boolean(this.subSamplesFile)
-    );
+    return Boolean(this.containersFile) || Boolean(this.samplesFile) || Boolean(this.subSamplesFile);
   }
 
   get fileByRecordTypeLoaded(): boolean {
     return this.isContainersImport
       ? Boolean(this.containersFile)
       : this.isSamplesImport
-      ? Boolean(this.samplesFile)
-      : Boolean(this.subSamplesFile);
+        ? Boolean(this.samplesFile)
+        : Boolean(this.subSamplesFile);
   }
 
   get labelByRecordType(): string {
@@ -622,32 +554,23 @@ export default class Import {
     return this.isContainersImport
       ? this.containersMappings
       : this.isSamplesImport
-      ? this.samplesMappings
-      : this.subSamplesMappings;
+        ? this.samplesMappings
+        : this.subSamplesMappings;
   }
 
   get containersSubmittable(): boolean {
-    return this.containersFile
-      ? this.validateMappings(this.containersMappings)
-      : false;
+    return this.containersFile ? this.validateMappings(this.containersMappings) : false;
   }
 
   get samplesSubmittable(): boolean {
-    const validNewTemplate: boolean =
-      Boolean(this.templateInfo) && this.validTemplateName;
+    const validNewTemplate: boolean = Boolean(this.templateInfo) && this.validTemplateName;
 
     const validExistingTemplate: boolean =
-      Boolean(this.template) &&
-      this.validTemplateName &&
-      Boolean(this.importMatchesExistingTemplate?.matches);
+      Boolean(this.template) && this.validTemplateName && Boolean(this.importMatchesExistingTemplate?.matches);
 
-    const templateIsValid: boolean = this.createNewTemplate
-      ? validNewTemplate
-      : validExistingTemplate;
+    const templateIsValid: boolean = this.createNewTemplate ? validNewTemplate : validExistingTemplate;
 
-    return this.samplesFile
-      ? this.validateMappings(this.samplesMappings) && templateIsValid
-      : false;
+    return this.samplesFile ? this.validateMappings(this.samplesMappings) && templateIsValid : false;
   }
 
   get subSamplesSubmittable(): boolean {
@@ -659,17 +582,11 @@ export default class Import {
   }
 
   get importSubmittable(): boolean {
-    return (
-      this.containersSubmittable ||
-      this.samplesSubmittable ||
-      this.subSamplesSubmittable
-    );
+    return this.containersSubmittable || this.samplesSubmittable || this.subSamplesSubmittable;
   }
 
   toggleSelection() {
-    const allAlreadySelected = this.mappingsByRecordType.every(
-      (m) => m.selected
-    );
+    const allAlreadySelected = this.mappingsByRecordType.every((m) => m.selected);
     this.mappingsByRecordType.map((m) => m.toggleSelected(!allAlreadySelected));
   }
 
@@ -679,9 +596,7 @@ export default class Import {
 
     const fieldChangeHandler = (oldField: Field, newField: Field) => {
       if (oldField === Fields.name && newField !== Fields.name) {
-        state.assertCurrentState(
-          new RsSet(["nameSelected", "nameRequiredAndSelected"])
-        );
+        state.assertCurrentState(new RsSet(["nameSelected", "nameRequiredAndSelected"]));
         if (state.isCurrentState("nameSelected")) {
           state.transitionTo("parsed");
         } else {
@@ -727,29 +642,17 @@ export default class Import {
         }>("/import/parseFile", params);
 
         if (this.isSamplesImport) {
-          if (
-            !(
-              Boolean(data?.fieldNameForColumnName) &&
-              typeof data.fieldNameForColumnName === "object"
-            )
-          )
+          if (!(Boolean(data?.fieldNameForColumnName) && typeof data.fieldNameForColumnName === "object"))
             throw new Error("Field name for column name mapping data missing.");
 
           runInAction(() => {
             this.templateInfo = data.templateInfo as TemplateAttrs;
 
-            this.fieldNameForColumnName = data.fieldNameForColumnName as Record<
-              string,
-              string
-            >;
+            this.fieldNameForColumnName = data.fieldNameForColumnName as Record<string, string>;
 
-            this.samplesMappings = (
-              data.templateInfo as TemplateAttrs
-            ).fields.map(({ name, type }): ColumnFieldMap => {
-              const originalColumnName = Object.keys(
-                data.fieldNameForColumnName as Record<string, string>
-              ).find(
-                (key) => this.fieldNameForColumnName[key] === name
+            this.samplesMappings = (data.templateInfo as TemplateAttrs).fields.map(({ name, type }): ColumnFieldMap => {
+              const originalColumnName = Object.keys(data.fieldNameForColumnName as Record<string, string>).find(
+                (key) => this.fieldNameForColumnName[key] === name,
               ) as string;
 
               const newFieldMap = new ColumnFieldMap({
@@ -760,18 +663,12 @@ export default class Import {
                 fieldName: name as string,
                 fieldType: apiStringToFieldType(type),
                 quantityUnitId:
-                  (
-                    data.quantityUnitForColumn as Exclude<
-                      undefined,
-                      typeof data.quantityUnitForColumn
-                    >
-                  )[originalColumnName] ?? null,
-                options: (
-                  data.radioOptionsForColumn as Exclude<
-                    undefined,
-                    typeof data.radioOptionsForColumn
-                  >
-                )[originalColumnName],
+                  (data.quantityUnitForColumn as Exclude<undefined, typeof data.quantityUnitForColumn>)[
+                    originalColumnName
+                  ] ?? null,
+                options: (data.radioOptionsForColumn as Exclude<undefined, typeof data.radioOptionsForColumn>)[
+                  originalColumnName
+                ],
                 fieldChangeCallback: fieldChangeHandler,
                 isNameUnique: (c) => this.isNameUnique(c),
                 columnsWithoutBlankValue: data.columnsWithoutBlankValue,
@@ -779,21 +676,11 @@ export default class Import {
 
               // after creation: auto-select conversion in suitable cases
               const fieldsByRecordType = newFieldMap.fieldsByRecordType;
-              if (
-                newFieldMap.isCompatibleWithField(
-                  fieldsByRecordType[nameToMatch(name as string)]
-                )
-              ) {
-                newFieldMap.setField(
-                  fieldsByRecordType[nameToMatch(name as string)]
-                );
+              if (newFieldMap.isCompatibleWithField(fieldsByRecordType[nameToMatch(name as string)])) {
+                newFieldMap.setField(fieldsByRecordType[nameToMatch(name as string)]);
               }
-              if (
-                data.fieldMappings !== undefined &&
-                data.fieldMappings.hasOwnProperty(originalColumnName)
-              ) {
-                newFieldMap.field =
-                  Fields[data.fieldMappings[originalColumnName]];
+              if (data.fieldMappings !== undefined && Object.hasOwn(data.fieldMappings, originalColumnName)) {
+                newFieldMap.field = Fields[data.fieldMappings[originalColumnName]];
                 newFieldMap.selected = true;
               }
               return newFieldMap;
@@ -822,22 +709,13 @@ export default class Import {
                * or unselect / don't assign if there is no match (as movables have no custom fields)
                */
               const fieldsByRecordType = newFieldMap.fieldsByRecordType;
-              if (
-                newFieldMap.isCompatibleWithField(
-                  fieldsByRecordType[nameToMatch(columnName)]
-                )
-              ) {
-                newFieldMap.setField(
-                  fieldsByRecordType[nameToMatch(columnName)]
-                );
+              if (newFieldMap.isCompatibleWithField(fieldsByRecordType[nameToMatch(columnName)])) {
+                newFieldMap.setField(fieldsByRecordType[nameToMatch(columnName)]);
               } else {
                 newFieldMap.setField(Fields.none);
                 newFieldMap.selected = false;
               }
-              if (
-                data.fieldMappings !== undefined &&
-                data.fieldMappings.hasOwnProperty(columnName)
-              ) {
+              if (data.fieldMappings !== undefined && Object.hasOwn(data.fieldMappings, columnName)) {
                 newFieldMap.field = Fields[data.fieldMappings[columnName]];
                 newFieldMap.selected = true;
               }
@@ -857,10 +735,7 @@ export default class Import {
     } catch (error) {
       console.error("parsing failed", error);
       this.state.transitionTo("parsingFailed", () => ({
-        fileErrorMessage: Parsers.objectPath(
-          ["response", "data", "message"],
-          error
-        )
+        fileErrorMessage: Parsers.objectPath(["response", "data", "message"], error)
           .flatMap(Parsers.isString)
           .orElse("Unknown reason."),
       }));
@@ -883,25 +758,17 @@ export default class Import {
         name: string;
       }
     | { id: number } {
-    if (!this.createNewTemplate)
-      return pick("id")(this.template) as { id: number };
+    if (!this.createNewTemplate) return pick("id")(this.template) as { id: number };
     if (!this.templateInfo) throw new Error("TemplateInfo is null");
     const templateFieldWithMappings: Array<{
       field: TemplateField;
       mapping: ColumnFieldMap;
-    }> = ArrayUtils.zipWith<
-      TemplateField,
-      ColumnFieldMap,
-      { field: TemplateField; mapping: ColumnFieldMap }
-    >(
+    }> = ArrayUtils.zipWith<TemplateField, ColumnFieldMap, { field: TemplateField; mapping: ColumnFieldMap }>(
       this.templateInfo.fields,
       ArrayUtils.filterNull(
-        this.templateInfo.fields.map(
-          ({ name }) =>
-            this.samplesMappings.find((f) => f.fieldName === name) ?? null
-        )
+        this.templateInfo.fields.map(({ name }) => this.samplesMappings.find((f) => f.fieldName === name) ?? null),
       ),
-      (f, m) => ({ field: f, mapping: m })
+      (f, m) => ({ field: f, mapping: m }),
     );
     const processedFields = templateFieldWithMappings
       .filter(({ mapping: { selected } }) => selected)
@@ -911,8 +778,7 @@ export default class Import {
         name: fieldName,
         type: fieldTypeToApiString(chosenFieldType),
         definition:
-          chosenFieldType === FieldTypes.radio ||
-          chosenFieldType === FieldTypes.choice
+          chosenFieldType === FieldTypes.radio || chosenFieldType === FieldTypes.choice
             ? {
                 options,
                 multiple: false,
@@ -920,7 +786,7 @@ export default class Import {
             : null,
       }));
     const newUnitId = this.samplesMappings.find(
-      ({ selected, field }) => field === Fields.quantity && selected
+      ({ selected, field }) => field === Fields.quantity && selected,
     )?.quantityUnitId;
     if (this.quantityFieldIsSelected && newUnitId) {
       this.setDefaultUnitId(newUnitId);
@@ -933,17 +799,11 @@ export default class Import {
     };
   }
 
-  findField(
-    mappings: Array<ColumnFieldMap>,
-    field: Field
-  ): ColumnFieldMap | undefined {
+  findField(mappings: Array<ColumnFieldMap>, field: Field): ColumnFieldMap | undefined {
     return mappings.find((f) => f.field === field);
   }
 
-  findParsedColumnName(
-    mappings: Array<ColumnFieldMap>,
-    field: Field
-  ): string | undefined | null {
+  findParsedColumnName(mappings: Array<ColumnFieldMap>, field: Field): string | undefined | null {
     const columnName = this.findField(mappings, field)?.columnName;
     return columnName ?? null;
   }
@@ -958,30 +818,12 @@ export default class Import {
     const tags = this.findParsedColumnName(mappings, Fields.tags);
     const source = this.findParsedColumnName(mappings, Fields.source);
     const quantity = this.findParsedColumnName(mappings, Fields.quantity);
-    const importId = this.findParsedColumnName(
-      mappings,
-      Fields.import_identifier
-    );
-    const pContainerGlobalId = this.findParsedColumnName(
-      mappings,
-      Fields.parent_container_global_id
-    );
-    const pContainerImportId = this.findParsedColumnName(
-      mappings,
-      Fields.parent_container_import_id
-    );
-    const pSampleGlobalId = this.findParsedColumnName(
-      mappings,
-      Fields.parent_sample_global_id
-    );
-    const pSampleImportId = this.findParsedColumnName(
-      mappings,
-      Fields.parent_sample_import_id
-    );
-    const identifierMapping = this.findParsedColumnName(
-      mappings,
-      Fields.identifier
-    );
+    const importId = this.findParsedColumnName(mappings, Fields.import_identifier);
+    const pContainerGlobalId = this.findParsedColumnName(mappings, Fields.parent_container_global_id);
+    const pContainerImportId = this.findParsedColumnName(mappings, Fields.parent_container_import_id);
+    const pSampleGlobalId = this.findParsedColumnName(mappings, Fields.parent_sample_global_id);
+    const pSampleImportId = this.findParsedColumnName(mappings, Fields.parent_sample_import_id);
+    const identifierMapping = this.findParsedColumnName(mappings, Fields.identifier);
 
     const result = {
       [name]: "name",
@@ -991,25 +833,13 @@ export default class Import {
       ...(source ? { [source]: "source" } : {}),
       ...(quantity ? { [quantity]: "quantity" } : {}),
       ...(importId ? { [importId]: "import identifier" } : {}),
-      ...(pContainerGlobalId
-        ? { [pContainerGlobalId]: "parent container global id" }
-        : {}),
-      ...(pContainerImportId
-        ? { [pContainerImportId]: "parent container import id" }
-        : {}),
-      ...(pSampleGlobalId
-        ? { [pSampleGlobalId]: "parent sample global id" }
-        : {}),
-      ...(pSampleImportId
-        ? { [pSampleImportId]: "parent sample import id" }
-        : {}),
+      ...(pContainerGlobalId ? { [pContainerGlobalId]: "parent container global id" } : {}),
+      ...(pContainerImportId ? { [pContainerImportId]: "parent container import id" } : {}),
+      ...(pSampleGlobalId ? { [pSampleGlobalId]: "parent sample global id" } : {}),
+      ...(pSampleImportId ? { [pSampleImportId]: "parent sample import id" } : {}),
       ...(identifierMapping ? { [identifierMapping]: "identifier" } : {}),
 
-      ...Object.fromEntries(
-        mappings
-          .filter(({ selected }) => !selected)
-          .map(({ columnName }) => [columnName, null])
-      ),
+      ...Object.fromEntries(mappings.filter(({ selected }) => !selected).map(({ columnName }) => [columnName, null])),
     };
     return result;
   }
@@ -1021,12 +851,9 @@ export default class Import {
     try {
       const params = new FormData();
 
-      if (this.containersFile && this.containersSubmittable)
-        params.append("containersFile", this.containersFile);
-      if (this.samplesFile && this.samplesSubmittable)
-        params.append("samplesFile", this.samplesFile);
-      if (this.subSamplesFile && this.subSamplesSubmittable)
-        params.append("subSamplesFile", this.subSamplesFile);
+      if (this.containersFile && this.containersSubmittable) params.append("containersFile", this.containersFile);
+      if (this.samplesFile && this.samplesSubmittable) params.append("samplesFile", this.samplesFile);
+      if (this.subSamplesFile && this.subSamplesSubmittable) params.append("subSamplesFile", this.subSamplesFile);
 
       params.append(
         "importSettings",
@@ -1048,7 +875,7 @@ export default class Import {
                 fieldMappings: this.makeMappingsObject(this.subSamplesMappings),
               }
             : null,
-        })
+        }),
       );
 
       type ImportResults = {
@@ -1066,12 +893,7 @@ export default class Import {
 
       const {
         // renaming status property to prevent duplication.
-        data: {
-          status: importStatus,
-          sampleResults,
-          containerResults,
-          subSampleResults,
-        },
+        data: { status: importStatus, sampleResults, containerResults, subSampleResults },
       } = await showToastWhilstPending(
         `Importing Records...`,
         ApiService.post<{
@@ -1079,15 +901,11 @@ export default class Import {
           sampleResults: ImportResults;
           containerResults: ImportResults;
           subSampleResults: ImportResults;
-        }>("/import/importFiles", params)
+        }>("/import/importFiles", params),
       );
 
       // multiple results can be returned and should be handled per type
-      const resultsGroups = [
-        containerResults,
-        sampleResults,
-        subSampleResults,
-      ].filter((rg) => rg);
+      const resultsGroups = [containerResults, sampleResults, subSampleResults].filter((rg) => rg);
 
       resultsGroups.forEach((group) => {
         const { results, type, status, templateResult } = group;
@@ -1101,20 +919,17 @@ export default class Import {
               message: `Could not import invalid ${labelByResultsType} data.`,
               variant: "error",
               details: results
-                .map(
-                  ({ error }, i) =>
-                    [error, i] as [{ errors: ReadonlyArray<string> }, number]
-                )
+                .map(({ error }, i) => [error, i] as [{ errors: ReadonlyArray<string> }, number])
                 .filter(([error]) => error)
                 .flatMap(([error, i]) =>
                   error.errors.map((e) => ({
                     title: `Row ${i + 1}`,
                     help: e,
                     variant: "error" as const,
-                  }))
+                  })),
                 ),
               retryFunction: () => this.importFiles(),
-            })
+            }),
           );
         } else {
           uiStore.unsetDirty();
@@ -1136,7 +951,7 @@ export default class Import {
                   variant: "success",
                   record,
                 })),
-            })
+            }),
           );
         }
       });
@@ -1149,9 +964,7 @@ export default class Import {
       }
     } catch (error) {
       const gatewayTimeout =
-        Parsers.objectPath(["response", "status"], error)
-          .flatMap(Parsers.isNumber)
-          .orElse(-1) === 504;
+        Parsers.objectPath(["response", "status"], error).flatMap(Parsers.isNumber).orElse(-1) === 504;
       this.state.transitionTo("nameSelected");
       uiStore.addAlert(
         mkAlert({
@@ -1160,7 +973,7 @@ export default class Import {
             : "Something went wrong and some records were not imported.",
           message: getErrorMessage(error, "Unknown reason."),
           variant: gatewayTimeout ? "warning" : "error",
-        })
+        }),
       );
       console.error("Problem on import.", error);
     }
@@ -1169,9 +982,7 @@ export default class Import {
   isNameUnique(columnFieldMap: ColumnFieldMap): boolean {
     const mappings = new RsSet(this.mappingsByRecordType);
     mappings.delete(columnFieldMap);
-    return !mappings
-      .map((m) => m.fieldName.trim())
-      .has(columnFieldMap.fieldName.trim());
+    return !mappings.map((m) => m.fieldName.trim()).has(columnFieldMap.fieldName.trim());
   }
 
   /*
@@ -1184,29 +995,22 @@ export default class Import {
    * this computed returns false. It returns null if the user is creating a new
    * template.
    */
-  get importMatchesExistingTemplate():
-    | { matches: false; reason: string }
-    | { matches: true }
-    | null {
+  get importMatchesExistingTemplate(): { matches: false; reason: string } | { matches: true } | null {
     if (this.createNewTemplate) return null;
-    if (!this.template)
-      return { matches: false, reason: "Template has not been selected" };
+    if (!this.template) return { matches: false, reason: "Template has not been selected" };
     const template = this.template;
 
-    const customFields = this.samplesMappings.filter(
-      ({ field, selected }) => field === Fields.custom && selected
-    );
+    const customFields = this.samplesMappings.filter(({ field, selected }) => field === Fields.custom && selected);
     if (customFields.length !== template.fields.length)
       return {
         matches: false,
         reason: `Number of custom columns (${customFields.length}) does not equal the number of template fields (${template.fields.length}).`,
       };
 
-    const namePairs = ArrayUtils.zipWith(
-      customFields,
-      template.fields,
-      ({ columnName }, { name: fieldName }) => [columnName, fieldName]
-    );
+    const namePairs = ArrayUtils.zipWith(customFields, template.fields, ({ columnName }, { name: fieldName }) => [
+      columnName,
+      fieldName,
+    ]);
     if (namePairs.some(([c, f]) => c !== f)) {
       const help = namePairs
         .filter(([c, f]) => c !== f)
@@ -1216,14 +1020,9 @@ export default class Import {
     }
 
     const notMatchingByType = new Set(
-      ArrayUtils.zipWith(
-        customFields,
-        template.fields,
-        ({ allValidTypes, columnName }, { type: fieldType }) =>
-          allValidTypes.includes(apiStringToFieldType(fieldType.toLowerCase()))
-            ? null
-            : columnName
-      )
+      ArrayUtils.zipWith(customFields, template.fields, ({ allValidTypes, columnName }, { type: fieldType }) =>
+        allValidTypes.includes(apiStringToFieldType(fieldType.toLowerCase())) ? null : columnName,
+      ),
     );
     notMatchingByType.delete(null);
     if (notMatchingByType.size > 0) {
@@ -1238,15 +1037,13 @@ export default class Import {
       customFields,
       template.fields,
       ({ columnsWithoutBlankValue, columnName }, { mandatory }) =>
-        mandatory && !columnsWithoutBlankValue.includes(columnName)
-          ? columnName
-          : null
+        mandatory && !columnsWithoutBlankValue.includes(columnName) ? columnName : null,
     ).filter(Boolean);
     if (columnsWithMissingData.length) {
       return {
         matches: false,
         reason: `Some columns have missing required data where the template's field mandates a value. In the CSV file, please provide a value for every cell in these columns or modify the template fields to no longer require a value. These columns are: ${columnsWithMissingData.join(
-          ", "
+          ", ",
         )}.`,
       };
     }
@@ -1255,9 +1052,7 @@ export default class Import {
   }
 
   // group all byType computeds
-  byRecordType(
-    prop: "label" | "fileLoaded" | "file" | "mappings" | "resetMappings"
-  ): unknown {
+  byRecordType(prop: "label" | "fileLoaded" | "file" | "mappings" | "resetMappings"): unknown {
     const byType = {
       label: this.labelByRecordType,
       fileLoaded: this.fileByRecordTypeLoaded,
@@ -1278,17 +1073,14 @@ export default class Import {
    */
   updateRecordType(urlSearchParams: URLSearchParams): void {
     const recordTypeParam = urlSearchParams.get("recordType");
-    if (!recordTypeParam)
-      throw new Error("recordType URL arg is missing but required");
+    if (!recordTypeParam) throw new Error("recordType URL arg is missing but required");
 
     const recordType: ImportRecordType = Result.first(
       parseString("SAMPLES", recordTypeParam),
       parseString("CONTAINERS", recordTypeParam),
-      parseString("SUBSAMPLES", recordTypeParam)
+      parseString("SUBSAMPLES", recordTypeParam),
     ).orElseGet(() => {
-      throw new Error(
-        `Could not parse URL arg, invaid value: "${recordTypeParam}".`
-      );
+      throw new Error(`Could not parse URL arg, invaid value: "${recordTypeParam}".`);
     });
 
     this.setCurrentRecordType(recordType);

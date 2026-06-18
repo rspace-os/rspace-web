@@ -1,16 +1,17 @@
-import React, { useContext, useState } from "react";
-import { observer } from "mobx-react-lite";
-import SearchContext from "../../../stores/contexts/Search";
-import TableCell from "@mui/material/TableCell";
-import RsSet from "../../../util/set";
-import StyledMenu from "@/components/StyledMenu";
-import MenuItem from "@mui/material/MenuItem";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Grid from "@mui/material/Grid";
-import SortableProperty, { type SortProperty } from "./SortableProperty";
-import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import TableCell from "@mui/material/TableCell";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useState } from "react";
+import StyledMenu from "@/components/StyledMenu";
+import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import SearchContext from "../../../stores/contexts/Search";
+import type RsSet from "../../../util/set";
+import SortableProperty, { type SortProperty } from "./SortableProperty";
 
 type AdjustableHeadCellArgs<T extends AdjustableTableRowLabel> = {
   options: RsSet<T>;
@@ -28,11 +29,9 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
   const { search } = useContext(SearchContext);
   const { order } = search.fetcher;
 
-  const [adjustableColumnMenu, setAdjustableColumnMenu] =
-    useState<Element | null>(null);
+  const [adjustableColumnMenu, setAdjustableColumnMenu] = useState<Element | null>(null);
 
-  const currentAdjustableProperty: SortProperty | null =
-    sortableProperties?.find((p) => p.label === current) ?? null;
+  const currentAdjustableProperty: SortProperty | null = sortableProperties?.find((p) => p.label === current) ?? null;
 
   const content = () => {
     if (!currentAdjustableProperty) return <span>{current}</span>;
@@ -54,9 +53,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
             <IconButtonWithTooltip
               title="Column options"
               sx={{ p: 0.5 }}
-              onClick={({ currentTarget }) =>
-                setAdjustableColumnMenu(currentTarget)
-              }
+              onClick={({ currentTarget }) => setAdjustableColumnMenu(currentTarget)}
               icon={<SettingsOutlinedIcon sx={{ fontSize: "1.1em" }} />}
               color="standardIcon"
               aria-haspopup="menu"

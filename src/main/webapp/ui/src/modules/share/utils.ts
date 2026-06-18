@@ -1,8 +1,4 @@
-import type {
-  ShareLike,
-  SharePermission,
-  ShareTargetInfo,
-} from "@/modules/share/schema";
+import type { ShareLike, SharePermission, ShareTargetInfo } from "@/modules/share/schema";
 
 export const findCommonGroups = ({
   shares,
@@ -36,14 +32,14 @@ export const findCommonGroups = ({
     } else {
       existingShareItems.push(share.sharedItemId);
     }
-  })
+  });
 
   shareTargets.forEach((itemIds, shareTarget) => {
     const hasAllItems = uniqueShareItemIds.every((id) => itemIds.includes(id));
     if (!hasAllItems) {
       shareTargets.delete(shareTarget);
     }
-  })
+  });
 
   return Array.from(shareTargets.keys()).map((key) => {
     const [sharedTargetTypeValue, sharedTargetIdValue] = key.split(":");
@@ -51,7 +47,7 @@ export const findCommonGroups = ({
     return {
       sharedTargetType: sharedTargetTypeValue as ShareTargetInfo["sharedTargetType"],
       sharedTargetId: Number(sharedTargetIdValue),
-      ...(permission ? { permission } : {})
-    }
+      ...(permission ? { permission } : {}),
+    };
   });
 };

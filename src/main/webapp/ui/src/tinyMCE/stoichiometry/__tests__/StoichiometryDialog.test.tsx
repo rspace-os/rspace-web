@@ -1,19 +1,18 @@
-import React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
-import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/useOauthToken";
+import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
 import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
 } from "./StoichiometryDialog.story";
-import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
 
 /*
  * The chemistry integration check uses `@/common/axios`; every other network
@@ -145,13 +144,9 @@ type RecordedRequest = { url: URL; method: string; body: string | null };
 
 let recordedRequests: Array<RecordedRequest> = [];
 
-const hasStoichiometryRequest = (
-  method: "POST" | "PUT" | "DELETE",
-): boolean =>
+const hasStoichiometryRequest = (method: "POST" | "PUT" | "DELETE"): boolean =>
   recordedRequests.some(
-    (request) =>
-      request.url.pathname.includes("/api/v1/stoichiometry") &&
-      request.method === method,
+    (request) => request.url.pathname.includes("/api/v1/stoichiometry") && request.method === method,
   );
 
 /**
@@ -187,12 +182,7 @@ beforeEach(() => {
   // Record every fetch the dialog makes so we can assert on POST/PUT/DELETE.
   const originalFetch = fetchMock.bind(fetchMock);
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-    const rawUrl =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : input.url;
+    const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     recordedRequests.push({
       url: new URL(rawUrl, "http://localhost"),
       method: (init?.method ?? "GET").toUpperCase(),
@@ -214,15 +204,11 @@ describe("StoichiometryDialog", () => {
   it("shows calculate button when no table is present", async () => {
     render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    expect(
-      await screen.findByRole("button", { name: "Calculate Stoichiometry" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Calculate Stoichiometry" })).toBeVisible();
   });
 
   it("calculate dialog has no accessibility violations", async () => {
-    const { baseElement } = render(
-      <StoichiometryDialogWithCalculateButtonStory />,
-    );
+    const { baseElement } = render(<StoichiometryDialogWithCalculateButtonStory />);
 
     await screen.findByRole("button", { name: "Calculate Stoichiometry" });
 
@@ -247,15 +233,9 @@ describe("StoichiometryDialog", () => {
     const user = userEvent.setup();
     const onTableCreated = vi.fn();
 
-    render(
-      <StoichiometryDialogWithCalculateButtonStory
-        onTableCreated={onTableCreated}
-      />,
-    );
+    render(<StoichiometryDialogWithCalculateButtonStory onTableCreated={onTableCreated} />);
 
-    await user.click(
-      await screen.findByRole("button", { name: "Calculate Stoichiometry" }),
-    );
+    await user.click(await screen.findByRole("button", { name: "Calculate Stoichiometry" }));
 
     expect(await screen.findByRole("grid")).toBeVisible();
     expect(onTableCreated).toHaveBeenCalled();
@@ -266,9 +246,7 @@ describe("StoichiometryDialog", () => {
 
     render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    await user.click(
-      await screen.findByRole("button", { name: "Calculate Stoichiometry" }),
-    );
+    await user.click(await screen.findByRole("button", { name: "Calculate Stoichiometry" }));
 
     expect(await screen.findByRole("grid")).toBeVisible();
     expect(hasStoichiometryRequest("POST")).toBe(true);
@@ -324,14 +302,10 @@ describe("StoichiometryDialog", () => {
 
     render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    await user.click(
-      await screen.findByRole("button", { name: "Calculate Stoichiometry" }),
-    );
+    await user.click(await screen.findByRole("button", { name: "Calculate Stoichiometry" }));
 
     // The calculate button stays visible because the table was never created.
-    expect(
-      await screen.findByRole("button", { name: "Calculate Stoichiometry" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Calculate Stoichiometry" })).toBeVisible();
     const errorAlert = await screen.findByRole("alert");
     expect(errorAlert).toHaveTextContent(createErrorMessage);
   });
@@ -341,9 +315,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    expect(
-      screen.queryByRole("button", { name: "Save Changes" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save Changes" })).not.toBeInTheDocument();
   });
 
   it("shows save button when limiting reagent is changed", async () => {
@@ -359,9 +331,7 @@ describe("StoichiometryDialog", () => {
       }),
     );
 
-    expect(
-      await screen.findByRole("button", { name: "Save Changes" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Save Changes" })).toBeVisible();
   });
 
   it("hides save button after saving changes", async () => {
@@ -377,14 +347,10 @@ describe("StoichiometryDialog", () => {
       }),
     );
 
-    await user.click(
-      await screen.findByRole("button", { name: "Save Changes" }),
-    );
+    await user.click(await screen.findByRole("button", { name: "Save Changes" }));
 
     await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: "Save Changes" }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Save Changes" })).not.toBeInTheDocument();
     });
   });
 
@@ -401,9 +367,7 @@ describe("StoichiometryDialog", () => {
       }),
     );
 
-    await user.click(
-      await screen.findByRole("button", { name: "Save Changes" }),
-    );
+    await user.click(await screen.findByRole("button", { name: "Save Changes" }));
 
     await waitFor(() => {
       expect(hasStoichiometryRequest("PUT")).toBe(true);
@@ -415,9 +379,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    expect(
-      screen.getByRole("button", { name: "Delete" }),
-    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeVisible();
   });
 
   it("shows confirmation dialog when delete button is clicked", async () => {
@@ -427,9 +389,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(
-      screen.getByRole("button", { name: "Delete" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Delete" }));
 
     expect(
       await screen.findByRole("dialog", {
@@ -445,9 +405,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(
-      screen.getByRole("button", { name: "Delete" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Delete" }));
 
     const confirmDialog = await screen.findByRole("dialog", {
       name: /Delete Stoichiometry Table/,

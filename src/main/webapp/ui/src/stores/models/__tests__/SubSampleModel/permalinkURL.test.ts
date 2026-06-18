@@ -1,16 +1,15 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockSubSample } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
-  default: {
-  }}));
+  default: {},
+}));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("permalinkURL", () => {
   test("When the subsample has not yet been saved, the permalinkURL should be null.", () => {
@@ -18,4 +17,3 @@ describe("permalinkURL", () => {
     expect(subsample.permalinkURL).toBe(null);
   });
 });
-

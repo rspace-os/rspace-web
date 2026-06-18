@@ -1,8 +1,8 @@
-import { type CoreFetcherArgs } from "../stores/definitions/Search";
-import { type InventoryRecord } from "../stores/definitions/InventoryRecord";
-import useStores from "../stores/use-stores";
 import React from "react";
 import NavigateContext from "../stores/contexts/Navigate";
+import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
+import type { CoreFetcherArgs } from "../stores/definitions/Search";
+import useStores from "../stores/use-stores";
 import { UserCancelledAction } from "../util/error";
 
 export default function useNavigateHelpers(): {

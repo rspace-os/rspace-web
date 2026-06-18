@@ -1,6 +1,6 @@
-import React from "react";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
+import type React from "react";
 
 type BenchIconArgs = {
   color?: string;
@@ -9,10 +9,8 @@ type BenchIconArgs = {
 function BenchIcon({ color }: BenchIconArgs): React.ReactNode {
   const theme = useTheme();
   return (
-    <Box
-      component="span"
-      sx={{ width: 16, position: "relative", display: "block" }}
-    >
+    <Box component="span" sx={{ width: 16, position: "relative", display: "block" }}>
+      {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
       <svg
         version="1.1"
         id="Layer_1"

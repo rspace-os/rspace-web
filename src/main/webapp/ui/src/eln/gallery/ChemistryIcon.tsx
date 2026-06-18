@@ -1,15 +1,12 @@
-import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
+import type React from "react";
 
 /**
  * A simple chemical bond for use as a generic icon for chemistry files.
  */
 export default function ChemistryIcon(): React.ReactNode {
   return (
-    <SvgIcon
-      viewBox="0 0 40 40"
-      sx={{ fontSize: "--var(--fa-width, 1.25em)", ml: "2px" }}
-    >
+    <SvgIcon viewBox="0 0 40 40" sx={{ fontSize: "--var(--fa-width, 1.25em)", ml: "2px" }}>
       <g>
         <polygon
           fill="none"

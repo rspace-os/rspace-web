@@ -1,21 +1,15 @@
-import { test, describe, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useUiPreference";
-import React from "react";
-import {
-  render,
-  screen,
-  within,
-  waitFor,
-} from "@testing-library/react";
-import { UsersPage } from "..";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
-import USER_LISTING from "./userListing.json";
+import materialTheme from "../../../../theme";
+import { UsersPage } from "..";
 import PDF_CONFIG from "./pdfConfig.json";
+import USER_LISTING from "./userListing.json";
 
-import userEvent from "@testing-library/user-event";
 const mockAxios = new MockAdapter(axios);
 
 vi.mock("@/modules/common/hooks/auth", () => ({
@@ -39,7 +33,6 @@ beforeEach(() => {
   mockAxios.onGet("/analyticsProperties").reply(200, {
     analyticsEnabled: false,
   });
-
 });
 describe("Grant User PI Role", () => {
   test(
@@ -64,31 +57,21 @@ describe("Grant User PI Role", () => {
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>,
-
       );
       await waitFor(() => {
         expect(screen.getByRole("grid")).toBeVisible();
-
       });
       await waitFor(() => {
-        expect(
-          within(screen.getByRole("grid")).getAllByRole("row").length,
-        ).toBeGreaterThan(1);
-
+        expect(within(screen.getByRole("grid")).getAllByRole("row").length).toBeGreaterThan(1);
       });
       await waitFor(() => {
         expect(screen.getByRole("row", { name: /user8h/ })).toBeVisible();
-
       });
-      const checkbox = within(
-        await screen.findByRole("row", { name: /user8h/ }),
-      ).getByRole("checkbox");
+      const checkbox = within(await screen.findByRole("row", { name: /user8h/ })).getByRole("checkbox");
 
       await user.click(checkbox);
       await user.click(screen.getByRole("button", { name: /Actions/ }));
-      await user.click(
-        await screen.findByRole("menuitem", { name: /Grant PI role/ }),
-      );
+      await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(
@@ -121,36 +104,24 @@ describe("Grant User PI Role", () => {
         <ThemeProvider theme={materialTheme}>
           <UsersPage />
         </ThemeProvider>,
-
       );
       await waitFor(() => {
         expect(screen.getByRole("grid")).toBeVisible();
-
       });
       await waitFor(() => {
-        expect(
-          within(screen.getByRole("grid")).getAllByRole("row").length,
-        ).toBeGreaterThan(1);
-
+        expect(within(screen.getByRole("grid")).getAllByRole("row").length).toBeGreaterThan(1);
       });
-      const checkbox = within(
-        await screen.findByRole("row", { name: /user8h/ }),
-      ).getByRole("checkbox");
+      const checkbox = within(await screen.findByRole("row", { name: /user8h/ })).getByRole("checkbox");
 
       await user.click(checkbox);
       await user.click(screen.getByRole("button", { name: /Actions/ }));
-      await user.click(
-        await screen.findByRole("menuitem", { name: /Grant PI role/ }),
-      );
+      await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       await waitFor(() => {
         expect(
           screen.getByText((content) => {
-            return (
-              content ===
-              "To grant the PI role to please re-enter your password."
-            );
+            return content === "To grant the PI role to please re-enter your password.";
           }),
         ).toBeVisible();
       });
