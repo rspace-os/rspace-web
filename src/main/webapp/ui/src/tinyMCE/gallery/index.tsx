@@ -18,7 +18,8 @@ declare global {
   }
 }
 
-parent.tinymce.PluginManager.add("gallery", (editor) => {
+// biome-ignore lint/complexity/useArrowFunction: TinyMCE instantiates plugins with `new`, so this factory must be constructable (an arrow function throws "is not a constructor")
+parent.tinymce.PluginManager.add("gallery", function (editor) {
   function* renderGallery(domContainer: HTMLElement): Generator<
     {
       open: boolean;
