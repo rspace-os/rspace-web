@@ -74,6 +74,7 @@ function linkField(overrides: Partial<Field> = {}): Field {
     link: null,
     setAttributesDirty: vi.fn(),
     setError: vi.fn(),
+    setLinkEditInProgress: vi.fn(),
     ...overrides,
   } as unknown as Field;
 }
@@ -214,14 +215,14 @@ describe("LinkFieldValue", () => {
 
   it("flags the field model while link edits are unapplied so record save is blocked", async () => {
     const user = userEvent.setup();
-    const setError = vi.fn();
+    const setLinkEditInProgress = vi.fn();
     const field = linkField({
       link: {
         relationType: "References",
         targetGlobalId: "SA20",
         versionPin: null,
       },
-      setError,
+      setLinkEditInProgress,
     });
     renderField({
       field,
@@ -234,11 +235,95 @@ describe("LinkFieldValue", () => {
     // remove the target: the staged state now diverges from the committed link
     await user.click(screen.getByTestId("CancelIcon"));
 
-    expect(setError).toHaveBeenLastCalledWith(true);
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(true);
 
     // discarding restores the committed link and clears the flag
     await user.click(screen.getByRole("button", { name: /discard link/i }));
-    expect(setError).toHaveBeenLastCalledWith(false);
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(false);
+  });
+
+  it("blocks record save when the editor is merely opened on a committed link, without flagging an error", async () => {
+    // RSDEV-1201: opening the editor on a committed link (the cog path) puts the field into an
+    // editing state. The record save must be blocked until the user applies or discards, even
+    // before any value is changed - otherwise saving in this state silently dropped the committed
+    // link and displayed it as "None". The block must NOT go through field.error, which would
+    // immediately surface an inline "Invalid value" message and a section-header error just from
+    // opening the editor; it uses the dedicated linkEditInProgress flag instead.
+    const user = userEvent.setup();
+    const setError = vi.fn();
+    const setLinkEditInProgress = vi.fn();
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA20",
+        versionPin: null,
+      },
+      setError,
+      setLinkEditInProgress,
+    });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    // open the editor without making any change
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(true);
+    // opening the editor is an in-progress state, not an error
+    expect(setError).not.toHaveBeenCalledWith(true);
+  });
+
+  it("does not block save for an empty optional field whose editor is open by default", () => {
+    // RSDEV-1201: an empty link field drops straight into the editor, but with nothing committed
+    // and nothing typed there is nothing to lose by saving, so it must stay saveable.
+    const setLinkEditInProgress = vi.fn();
+    const field = linkField({ link: null, setLinkEditInProgress });
+    renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    // the editor is shown without any user interaction
+    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(setLinkEditInProgress).not.toHaveBeenCalledWith(true);
+  });
+
+  it("keeps showing a committed link in view mode even if the editor was left open", async () => {
+    // RSDEV-1201: after opening the editor (editing=true) the record can flip to view mode
+    // (disabled=true), e.g. when the surrounding edit is cancelled. The committed link must still
+    // render, not collapse to the "None" placeholder.
+    const user = userEvent.setup();
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA20",
+        versionPin: null,
+      },
+    });
+    const { rerender } = renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+
+    // record switches to view mode while the editor is still open
+    rerender(
+      <ThemeProvider theme={materialTheme}>
+        <LinkFieldValue field={field} sourceGlobalId="SA1" disabled={true} onChange={() => {}} />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
+    expect(screen.queryByText("None")).not.toBeInTheDocument();
   });
 
   it("shows the field name while editing", () => {

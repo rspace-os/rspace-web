@@ -72,13 +72,14 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
     }
   }, [extraField]);
 
-  // Mid-edit values live only in this editor and are committed on Apply.
-  // The record-level Save is greyed out while the editor is open
-  // (ExtraFieldModel.isValid rejects an editing field), so nothing typed here
-  // can be lost to a premature Save, and the model's pre-edit state stays
-  // intact for Cancel. Syncing staged values into the model as they were
-  // typed (the previous approach) made canSubmit's "something changed" check
-  // compare equal values, greying out Apply on a fully-filled new field.
+  // Mid-edit values live only in this editor and are committed on Apply, keeping the
+  // model's pre-edit state intact for Cancel. For Link fields the record-level Save is
+  // greyed while the editor is open (ExtraFieldModel.isValid rejects an editing Link
+  // field), so staged link changes cannot be lost to a premature Save. Text/Number fields
+  // do NOT block Save while their name/type editor is open (pre-RSDEV-1131 behaviour,
+  // RSDEV-1201): a mid-edit Save just keeps the committed name/type. Syncing staged values
+  // into the model as they were typed (a previous approach) made canSubmit's "something
+  // changed" check compare equal values, greying out Apply on a fully-filled new field.
 
   const sourceGlobalId = record.globalId ?? "";
   const isLink = fieldState.type === "Link";

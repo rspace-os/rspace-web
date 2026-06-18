@@ -83,6 +83,49 @@ describe("ExtraFieldModel link validation", () => {
   });
 });
 
+function makeTextField(attrs: { name?: string; content?: string; editing?: boolean } = {}): ExtraFieldModel {
+  return new ExtraFieldModel(
+    {
+      id: 8,
+      globalId: "EF8",
+      name: attrs.name ?? "Notes",
+      lastModified: null,
+      type: "text",
+      content: attrs.content ?? "some text",
+      parentGlobalId: "SA1",
+      editing: attrs.editing ?? false,
+    } as unknown as ConstructorParameters<typeof ExtraFieldModel>[0],
+    makeMockSample(),
+  );
+}
+
+describe("ExtraFieldModel editing blocks record save for Link fields only (RSDEV-1201)", () => {
+  it("does not block Save while a valid Text field's name/type editor is open", () => {
+    // pre-RSDEV-1131 behaviour: editing a non-Link extra field's name/type does not grey out
+    // record Save. The editor stages name/type locally and commits on Update; saving mid-edit
+    // simply keeps the committed values, as it always did - it is not an error.
+    const field = makeTextField({ name: "Notes", content: "hello", editing: true });
+    expect(field.isValid.isOk).toBe(true);
+  });
+
+  it("does not block Save while a valid Number field's editor is open", () => {
+    const field = new ExtraFieldModel(
+      {
+        id: 9,
+        globalId: "EF9",
+        name: "Count",
+        lastModified: null,
+        type: "number",
+        content: "42",
+        parentGlobalId: "SA1",
+        editing: true,
+      } as unknown as ConstructorParameters<typeof ExtraFieldModel>[0],
+      makeMockSample(),
+    );
+    expect(field.isValid.isOk).toBe(true);
+  });
+});
+
 describe("ExtraFieldModel editing blocks record save", () => {
   it("is invalid while the field editor is open, so Save is greyed out", () => {
     // mid-edit values live in the editor, not the model: saving now would
@@ -104,7 +147,10 @@ describe("ExtraFieldModel editing blocks record save", () => {
     expect(field.isValid.isOk).toBe(true);
   });
 
-  it("is invalid while a brand-new field is unapplied, so Save is greyed out", () => {
+  it("blocks Save for a brand-new unapplied field via its empty name, not the edit-mode rule", () => {
+    // A new field starts as type "text" with an empty name (NewField); its name/type stay
+    // staged in the editor until Apply. Save is still blocked, but by the genuine empty-name
+    // validation - exactly as before RSDEV-1131 - not by a Link-only edit-mode block.
     const field = new ExtraFieldModel(
       {
         id: null,
@@ -122,7 +168,7 @@ describe("ExtraFieldModel editing blocks record save", () => {
 
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/apply or discard/i);
+    expect(message).toMatch(/names of extra fields cannot be empty/i);
   });
 });
 
