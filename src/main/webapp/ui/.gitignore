@@ -10,3 +10,6 @@ node_modules/
 # Bundle analysis output (pnpm run build:stats)
 /stats.html
 /stats.json
+
+# Vitest browser-mode JUnit output (CI)
+/browser-junit-*.xml

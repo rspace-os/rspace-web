@@ -1,106 +1,73 @@
-import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/experimental-ct-react";
+import { cleanup, render } from "@testing-library/react";
+import axe from "axe-core";
+import { afterEach, describe, expect, test } from "vitest";
+import { emulateForcedColors } from "@/__tests__/pageObjects/accessibility";
 import { HighContrastExample } from "./ValidatingSubmitButton.story";
 
-/*
- * Only the WCAG AAA contrast case remains in Playwright. It relies on
- * emulateMedia({ forcedColors }) and the color-contrast / color-contrast-enhanced
- * axe rules, which require a real browser to compute rendered colours. The
- * render / click / disabled / progress / structural-axe cases have been ported
- * to the jsdom unit test in ValidatingSubmitButton.test.tsx.
- */
-const createOnClickSpy = () => {
-  let clicked = false;
-  const handler = () => {
-    clicked = true;
-  };
+let originalMatchMedia: typeof window.matchMedia;
 
-  const hasBeenClicked = () => clicked;
-  return {
-    handler,
-    hasBeenClicked,
-  };
-};
-const feature = test.extend<{
-  Given: {
-    "the ValidatingSubmitButton with high contrast is rendered": () => Promise<{
-      onClickSpy: ReturnType<typeof createOnClickSpy>;
-    }>;
-  };
-  Then: {
-    "there shouldn't be any contrast violations at AAA level": () => Promise<void>;
-  };
-}>({
-  Given: async ({ mount }, use) => {
-    await use({
-      "the ValidatingSubmitButton with high contrast is rendered": async () => {
-        const onClickSpy = createOnClickSpy();
-        await mount(<HighContrastExample onClick={onClickSpy.handler} />);
-        return { onClickSpy };
-      },
-    });
-  },
-  Then: async ({ page }, use) => {
-    await use({
-      "there shouldn't be any contrast violations at AAA level": async () => {
-        /*
-         * The MUI Button ripple disrupts Axe from being able to properly
-         * determine the contrast of the button text. We remove it here
-         * before performing the analysis.
-         */
-        await page.evaluate(() => {
-          const button = Array.from(document.querySelectorAll("button")).find((btn) => btn.textContent === "Submit");
-          if (!button) return;
-          const ripple = button.querySelector(".MuiTouchRipple-root");
-          if (ripple) {
-            ripple.remove();
-          }
-        });
-        const { violations } = await new AxeBuilder({
-          page,
-        })
-          /*
-           * We need to assert both because color-contrast-enhanced only
-           * checks for elements that already meet AA, whereas color-contrast
-           * checks all elements. We want to ensure that all elements meet AAA.
-           */
-          .withRules(["color-contrast", "color-contrast-enhanced"])
-          .analyze();
-        expect(violations).toEqual([]);
-      },
-    });
-  },
+afterEach(() => {
+  if (originalMatchMedia) {
+    window.matchMedia = originalMatchMedia;
+  }
+  cleanup();
 });
-test.describe("ValidatingSubmitButton", () => {
-  test.describe("Accessibility", () => {
-    feature(
-      "When user prefers more contrast, button should meet WCAG AAA contrast requirements",
-      async ({ Given, Then, page }) => {
-        await page.emulateMedia({ forcedColors: "active" });
-        // Stub prefers-contrast
-        await page.addInitScript(() => {
-          const originalMatchMedia = window.matchMedia;
-          window.matchMedia = (query: string) => {
-            if (query === "(prefers-contrast: more)") {
-              return {
-                matches: true,
-                media: query,
-                onchange: null,
-                addListener() {}, // deprecated
-                removeListener() {},
-                addEventListener() {},
-                removeEventListener() {},
-                dispatchEvent() {
-                  return false;
-                },
-              } as MediaQueryList;
-            }
-            return originalMatchMedia(query);
-          };
-        });
-        await Given["the ValidatingSubmitButton with high contrast is rendered"]();
-        await Then["there shouldn't be any contrast violations at AAA level"]();
-      },
-    );
+
+describe("ValidatingSubmitButton", () => {
+  describe("Accessibility", () => {
+    test("When user prefers more contrast, button should meet WCAG AAA contrast requirements", async () => {
+      /*
+       * Patch window.matchMedia before render so the component sees
+       * `(prefers-contrast: more)` as matching. Mirrors the original
+       * page.addInitScript stub from the Playwright-CT test.
+       */
+      originalMatchMedia = window.matchMedia;
+      window.matchMedia = (query: string) => {
+        if (query === "(prefers-contrast: more)") {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener() {}, // deprecated
+            removeListener() {}, // deprecated
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() {
+              return false;
+            },
+          } as MediaQueryList;
+        }
+        return originalMatchMedia(query);
+      };
+
+      // Emulate forced-colors + prefers-contrast via CDP (chromium-only; no-op elsewhere)
+      await emulateForcedColors();
+
+      render(<HighContrastExample onClick={() => {}} />);
+
+      /*
+       * The MUI Button ripple disrupts Axe from being able to properly
+       * determine the contrast of the button text. Remove it before the scan,
+       * mirroring the page.evaluate() call in the original Playwright-CT test.
+       */
+      const button = Array.from(document.querySelectorAll("button")).find((btn) => btn.textContent === "Submit");
+      if (button) {
+        const ripple = button.querySelector(".MuiTouchRipple-root");
+        if (ripple) {
+          ripple.remove();
+        }
+      }
+
+      /*
+       * We need to assert both rules because color-contrast-enhanced only
+       * checks elements that already meet AA, whereas color-contrast checks all
+       * elements. Together they ensure all elements meet WCAG AAA.
+       */
+      const results = await axe.run(document, {
+        runOnly: { type: "rule", values: ["color-contrast", "color-contrast-enhanced"] },
+      });
+
+      expect(results.violations).toEqual([]);
+    });
   });
 });

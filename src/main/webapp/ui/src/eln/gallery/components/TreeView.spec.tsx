@@ -1,132 +1,103 @@
-import { expect, test } from "@playwright/experimental-ct-react";
-import * as Jwt from "jsonwebtoken";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { suppressFireAndForget404, worker } from "@/__tests__/browserSetup";
+import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
+import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
+import { TreeViewPage } from "./pageObjects/TreeViewPage";
 import { TreeViewWithFiles } from "./TreeView.story";
 
 /*
- * This spec is the reduced remainder after the bulk of TreeView's cases were
- * converted to a Vitest jsdom test (see TreeView.test.tsx).
+ * Vitest Browser Mode port of TreeView.spec.tsx (Playwright CT).
  *
- * Only the Shift+click case remains here. It asserts that shift-clicking a tree
- * item surfaces the "Shift selection is not supported" warning alert. That
- * alert only appears when MUI's SimpleTreeView performs a shift range selection
- * and invokes `onItemSelectionToggle` with `selected` true. MUI's shift-range
- * selection relies on the browser focus/selection model and item-ordering
- * computation, which does not run under jsdom, so this case must stay as a real
- * browser component test.
+ * The Shift+click case must run in a real browser because MUI's SimpleTreeView
+ * shift-range selection relies on the browser focus/selection model and
+ * item-ordering computation, which does not run under jsdom.
  */
 
-const feature = test.extend<{
-  Given: {
-    "the tree view with files is mounted": () => Promise<void>;
-  };
-  When: {
-    "the user single-clicks on a {fileType}": ({ fileType }: { fileType: string }) => Promise<void>;
-    "the user holds Shift and clicks on {fileName}": ({ fileName }: { fileName: string }) => Promise<void>;
-  };
-  Then: {
-    "there is an error alert": () => Promise<void>;
-  };
-}>({
-  Given: async ({ mount }, use) => {
-    await use({
-      "the tree view with files is mounted": async () => {
-        await mount(<TreeViewWithFiles />);
-      },
-    });
-  },
-  When: async ({ page }, use) => {
-    await use({
-      "the user single-clicks on a {fileType}": async ({ fileType }) => {
-        const fileName = getFileNameByType(fileType);
-        await page.getByRole("treeitem", { name: new RegExp(fileName) }).click();
-      },
-      "the user holds Shift and clicks on {fileName}": async ({ fileName }) => {
-        await page.getByRole("treeitem", { name: new RegExp(fileName) }).click({ modifiers: ["Shift"] });
-      },
-    });
-  },
-  Then: async ({ page }, use) => {
-    await use({
-      "there is an error alert": async () => {
-        await expect(page.getByRole("alert", { name: /Error/i })).toBeVisible();
-      },
-    });
-  },
+const treeView = new TreeViewPage();
+
+// Restores the fire-and-forget 404 suppressor installed in beforeEach.
+let restoreFireAndForget404: (() => void) | undefined;
+
+beforeEach(() => {
+  /*
+   * The tree fires folder-listing and thumbnail requests on expansion that the
+   * component does not await. One can still be in flight when the test ends; the
+   * `resetHandlers()` in browserSetup then drops its mock, so it 404s after
+   * teardown and surfaces as an unhandled rejection that fails the run (seen on
+   * Firefox). Opt into swallowing exactly those benign gallery 404s.
+   */
+  restoreFireAndForget404 = suppressFireAndForget404([
+    "/gallery/getUploadedFiles",
+    "/gallery/getThumbnail",
+    "/gallery/ajax/getLinkedDocuments",
+  ]);
+  worker.use(oauthTokenHandler(), ...galleryAppShellHandlers());
 });
 
-function getFileNameByType(fileType: string): string {
-  switch (fileType.toLowerCase()) {
-    case "folder":
-      return "Test Folder";
-    case "image":
-      return "test-image.jpg";
-    case "pdf":
-    case "document":
-      return "test-document.pdf";
-    default:
-      throw new Error(`Unknown file type: ${fileType}`);
-  }
-}
-
-feature.beforeEach(async ({ router }) => {
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
-    const payload = {
-      iss: "http://localhost:8080",
-      iat: Date.now(),
-      exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
-    };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: Jwt.sign(payload, "dummySecretKey"),
-      }),
-    });
-  });
-  await router.route("/session/ajax/analyticsProperties", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        analyticsEnabled: false,
-      }),
-    });
-  });
-  await router.route("/userform/ajax/preference*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({}),
-    });
-  });
-  await router.route("/deploymentproperties/ajax/property*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(false),
-    });
-  });
-  await router.route("**/*.svg", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "image/svg+xml",
-      body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
-    });
-  });
+afterEach(() => {
+  restoreFireAndForget404?.();
+  cleanup();
 });
 
-test.describe("TreeView", () => {
-  test.describe("Multi-Selection", () => {
-    feature("Should handle Shift+click without crashing", async ({ Given, When, Then }) => {
-      await Given["the tree view with files is mounted"]();
-      await When["the user single-clicks on a {fileType}"]({
-        fileType: "folder",
-      });
-      await When["the user holds Shift and clicks on {fileName}"]({
-        fileName: "test-document.pdf",
-      });
-      await Then["there is an error alert"]();
+describe("TreeView", () => {
+  describe("Multi-Selection", () => {
+    test("Should handle Shift+click without crashing", async () => {
+      render(<TreeViewWithFiles />);
+
+      /*
+       * Wait for all three tree items to be present in the DOM before
+       * interacting. MUI's SimpleTreeView registers item ordering in a
+       * React.useEffect that runs after each render; asserting all items are
+       * visible ensures those effects have settled before we attempt selection.
+       */
+      await expect.element(treeView.treeItem("Test Folder")).toBeVisible();
+      await expect.element(treeView.treeItem("test-image.jpg")).toBeVisible();
+      await expect.element(treeView.treeItem("test-document.pdf")).toBeVisible();
+
+      /*
+       * Wait until MUI's `TreeViewChildrenItemProvider` passive effect has run
+       * and populated `itemOrderedChildrenIdsLookup`. The reliable DOM signal is
+       * `tabindex="0"` on the first treeitem: MUI's focus plugin derives the
+       * "default focusable item" from `orderedRootItemIds`; when that list is
+       * empty (before the effect runs) every item gets `tabindex="-1"`. Once the
+       * passive effect fires and the store re-renders, LOCAL_1 gets
+       * `tabindex="0"`. Shift-range selection (`expandSelectionRange` →
+       * `getNonDisabledItemsInRange`) traverses `itemOrderedChildrenIdsLookup`
+       * and throws "Invalid range" if it is still empty, so we must not proceed
+       * until this attribute is present.
+       */
+      await vi.waitFor(
+        () => {
+          const tree = document.querySelector('[role="tree"]');
+          if (!tree) throw new Error("Tree not found");
+          const items = tree.querySelectorAll('[role="treeitem"]');
+          if (items.length < 3) throw new Error("Not all items rendered yet");
+          const hasTabbableItem = Array.from(items).some((item) => item.getAttribute("tabindex") === "0");
+          if (!hasTabbableItem) throw new Error("Item ordering not yet populated (no tabindex=0 treeitem)");
+        },
+        { timeout: 5000, interval: 50 },
+      );
+
+      /*
+       * Click a non-folder item first to establish a selection anchor without
+       * expanding any folder node. Clicking "Test Folder" (LOCAL_1) would
+       * trigger MUI's default `expansionTrigger='content'` behaviour, causing
+       * the folder to expand. An empty expanded folder has no ordered children
+       * in `itemOrderedChildrenIdsLookup`, so `getNextItem` inside
+       * `getNonDisabledItemsInRange` would return `undefined` and throw
+       * "Invalid range" when the shift-range traversal tries to step through it.
+       * Clicking a plain file (LOCAL_2) selects it without expanding anything.
+       */
+      await treeView.clickTreeItem("test-image.jpg");
+
+      // Shift-click on "test-document.pdf" to trigger MUI's shift-range
+      // selection; this invokes `onItemSelectionToggle` with `selected: true`
+      // for the range (LOCAL_2 → LOCAL_3), which the component catches and
+      // surfaces as a warning alert.
+      await treeView.shiftClickTreeItem("test-document.pdf");
+
+      await expect.element(treeView.shiftSelectionWarningAlert).toBeVisible();
     });
   });
 });

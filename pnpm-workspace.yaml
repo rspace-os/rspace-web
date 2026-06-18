@@ -19,6 +19,9 @@ allowBuilds:
   canvas: true
   core-js: true
   esbuild: true
+  # msw's postinstall only prints a funding notice; allow it so frozen
+  # installs don't fail with ERR_PNPM_IGNORED_BUILDS.
+  msw: true
   protobufjs: true
   vue-demi: true
 
