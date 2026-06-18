@@ -1,4 +1,4 @@
-import { type _LINK } from "../../util/types";
+import { type _LINK } from "@/util/types";
 import {
   type Id,
   type GlobalId,
@@ -13,6 +13,8 @@ import {
 import { type AdjustableTableRowOptions } from "../definitions/Tables";
 import { type ExtraFieldAttrs } from "../definitions/ExtraField";
 import { type PersonAttrs } from "../definitions/Person";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { type Field } from "../definitions/Field";
 import { type Factory } from "../definitions/Factory";
 import { type AttachmentJson } from "./AttachmentModel";
 import { type BarcodeAttrs } from "../definitions/Barcode";
@@ -20,7 +22,6 @@ import type { IdentifierAttrs } from "../definitions/Identifier";
 import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
-  defaultEditableResultFields,
   type InventoryBaseRecordEditableFields,
   type InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
@@ -42,6 +43,7 @@ import { type Instrument } from "../definitions/Instrument";
 import getRootStore from "../stores/RootStore";
 import { type CoreFetcherArgs } from "../definitions/Search";
 import RsSet from "../../util/set";
+import InstrumentTemplateModel from "./InstrumentTemplateModel";
 
 type InstrumentEditableFields = HasLocationEditableFields &
   InventoryBaseRecordEditableFields;
@@ -74,12 +76,16 @@ export type InstrumentAttrs = {
   barcodes: Array<BarcodeAttrs>;
   identifiers: Array<IdentifierAttrs>;
   extraFields?: Array<ExtraFieldAttrs>;
+  fields?: Array<FieldModelAttrs>;
+  templateVersion?: number | null;
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
-const FIELDS = new Set([...RESULT_FIELDS]);
+const FIELDS = new Set(
+  [...RESULT_FIELDS].concat(["fields", "template"])
+);
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
-const defaultEditableFields = new Set([...defaultEditableResultFields]);
+const defaultEditableFields = new Set<string>();
 
 export default class InstrumentModel
   extends HasLocationMixin(InventoryBaseRecord)
@@ -91,7 +97,13 @@ export default class InstrumentModel
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<import("./ContainerModel").default>;
 
+  fields: Array<Field> = [];
+
+  template: InstrumentTemplateModel | null = null;
+
   templateId: Id | null = null;
+
+  templateVersion: number | null = null;
 
   // @ts-expect-error createOptionsParametersState is initialised by populateFromJson
   createOptionsParametersState: {
@@ -114,6 +126,12 @@ export default class InstrumentModel
       parentContainers: observable,
       immediateParentContainer: observable,
       createOptionsParametersState: observable,
+      fields: observable,
+      template: observable,
+      templateId: observable,
+      templateVersion: observable,
+      setTemplate: action,
+      overrideFields: action,
       paramsForBackend: override,
       populateFromJson: override,
       updateFieldsState: override,
@@ -125,22 +143,33 @@ export default class InstrumentModel
       recordDetails: override,
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
+      fieldNamesInUse: override,
     });
 
     if (this.recordType === "instrument") {
       this.populateFromJson(factory, params, {});
       this.templateId = params.templateId ?? null;
+      this.templateVersion = params.templateVersion ?? null;
       this.createOptionsParametersState = {
         name: observable({ key: "name" as const, value: "" }),
         fields: observable({
           key: "fields" as const,
-          copyFieldContent: this.extraFields.map((e) => ({
-            id: e.id,
-            name: e.name,
-            content: e.content,
-            hasContent: e.hasContent,
-            selected: false,
-          })),
+          copyFieldContent: [
+            ...this.fields.map((f) => ({
+              id: (f as FieldModel).id,
+              name: f.name,
+              content: f.renderContentAsString,
+              hasContent: f.hasContent,
+              selected: false,
+            })),
+            ...this.extraFields.map((ef) => ({
+              id: ef.id,
+              name: ef.name,
+              content: ef.content,
+              hasContent: ef.hasContent,
+              selected: false,
+            })),
+          ],
         }),
       };
     }
@@ -189,24 +218,17 @@ export default class InstrumentModel
           firstParent as Record<string, unknown> & { globalId: GlobalId },
         ) as Container)
       : null;
+    const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
+    this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
   }
 
   get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
     if (this.templateId) {
       params.templateId = this.templateId;
-      /*
-       * When creating a new instrument from a template the backend populates
-       * extra fields from the template automatically. Sending those same fields
-       * in extraFields as well causes a "duplicated field name" error. Only
-       * user-added fields (newFieldRequest: true) should be included; the
-       * template fields will be created by the backend via templateId.
-       */
-      if (!this.id && Array.isArray(params.extraFields)) {
-        params.extraFields = (
-          params.extraFields as Array<{ newFieldRequest: boolean }>
-        ).filter((ef) => ef.newFieldRequest === true);
-      }
+    }
+    if (this.currentlyEditableFields.has("fields")) {
+      params.fields = this.fields.map((f) => (f as FieldModel).paramsForBackend);
     }
     return params;
   }
@@ -239,6 +261,72 @@ export default class InstrumentModel
 
   get supportsBatchEditing(): boolean {
     return false;
+  }
+
+  get fieldNamesInUse(): Array<string> {
+    return [
+      ...super.fieldNamesInUse,
+      ...this.fields.filter((f) => f.name).map((f) => f.name),
+    ];
+  }
+
+  overrideFields(fields: Array<Field>): void {
+    this.setAttributes({
+      fields: fields.map((f) => {
+        const fm = f as FieldModel;
+        return new FieldModel(
+          {
+            name: fm.name,
+            type: fm.type,
+            content:
+              fm.content instanceof Date
+                ? fm.content.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })
+                : fm.content != null
+                  ? String(fm.content)
+                  : null,
+            selectedOptions: [...(fm.selectedOptions ?? [])],
+            definition:
+              fm.options.length > 0
+                ? { options: fm.options.map((o) => o.value) }
+                : null,
+            columnIndex: fm.columnIndex,
+            attachment: null,
+            mandatory: fm.mandatory,
+          },
+          this,
+        );
+      }),
+    });
+  }
+
+  async setTemplate(template: InstrumentTemplateModel | null): Promise<void> {
+    if (template) await template.fetchAdditionalInfo();
+
+    this.setAttributes({
+      template,
+      templateId: template?.id ?? null,
+      templateVersion: template?.version ?? null,
+    });
+
+    if (!template) {
+      this.setAttributes({ fields: [] });
+      return;
+    }
+
+    if (!this.id) {
+      this.overrideFields(template.fields);
+      if (!this.name) this.setAttributes({ name: template.name });
+      if (!this.description) this.setAttributes({ description: template.description });
+      this.setAttributes({
+        tags: [...template.tags],
+        image: template.image,
+        newBase64Image: template.newBase64Image,
+      });
+    }
   }
 
   get fieldValues(): InstrumentEditableFields & InstrumentUneditableFields {
@@ -286,11 +374,18 @@ export default class InstrumentModel
         onReset: () => {
           this.createOptionsParametersState.name.value = "";
           this.createOptionsParametersState.fields.copyFieldContent = [
-            ...this.extraFields.map((e) => ({
-              id: e.id,
-              name: e.name,
-              content: e.content,
-              hasContent: e.hasContent,
+            ...this.fields.map((f) => ({
+              id: (f as FieldModel).id,
+              name: f.name,
+              content: f.renderContentAsString,
+              hasContent: f.hasContent,
+              selected: false,
+            })),
+            ...this.extraFields.map((ef) => ({
+              id: ef.id,
+              name: ef.name,
+              content: ef.content,
+              hasContent: ef.hasContent,
               selected: false,
             })),
           ];

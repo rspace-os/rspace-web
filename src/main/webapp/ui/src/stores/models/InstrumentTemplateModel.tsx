@@ -1,4 +1,4 @@
-import { type _LINK } from "../../util/types";
+import { type _LINK } from "@/util/types";
 import {
   type Id,
   type GlobalId,
@@ -19,7 +19,6 @@ import type { IdentifierAttrs } from "../definitions/Identifier";
 import InventoryBaseRecord, {
   RESULT_FIELDS,
   defaultVisibleResultFields,
-  defaultEditableResultFields,
   type InventoryBaseRecordEditableFields,
   type InventoryBaseRecordUneditableFields,
 } from "./InventoryBaseRecord";
@@ -30,9 +29,11 @@ import {
 import { type InstrumentTemplate } from "../definitions/InstrumentTemplate";
 import React from "react";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
-import { action, computed, makeObservable, observable, override } from "mobx";
+import { action, makeObservable, observable, override } from "mobx";
 import getRootStore from "../stores/RootStore";
 import { type CoreFetcherArgs } from "../definitions/Search";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { type Field } from "../definitions/Field";
 
 type InstrumentTemplateEditableFields = InventoryBaseRecordEditableFields;
 
@@ -46,6 +47,7 @@ export type InstrumentTemplateAttrs = {
   description?: string;
   permittedActions: Array<Action>;
   tags: string | null;
+  version?: number;
   iconId?: string;
   newBase64Image?: string;
   image?: string;
@@ -58,12 +60,15 @@ export type InstrumentTemplateAttrs = {
   barcodes: Array<BarcodeAttrs>;
   identifiers: Array<IdentifierAttrs>;
   extraFields?: Array<ExtraFieldAttrs>;
+  fields?: Array<FieldModelAttrs>;
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
-const FIELDS = new Set([...RESULT_FIELDS]);
+const FIELDS = new Set(
+  [...RESULT_FIELDS].filter((f) => f !== "extraFields").concat(["fields"])
+);
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
-const defaultEditableFields = new Set([...defaultEditableResultFields]);
+const defaultEditableFields = new Set<string>();
 
 export default class InstrumentTemplateModel
   extends InventoryBaseRecord
@@ -72,10 +77,20 @@ export default class InstrumentTemplateModel
     HasEditableFields<InstrumentTemplateEditableFields>,
     HasUneditableFields<InstrumentTemplateUneditableFields>
 {
+  fields: Array<Field> = [];
+
+  version: number = 1;
+
   constructor(factory: Factory, params: InstrumentTemplateAttrs) {
     super(factory, params);
     makeObservable(this, {
+      fields: observable,
+      version: observable,
+      addField: action,
+      removeCustomField: action,
+      moveField: action,
       paramsForBackend: override,
+      populateFromJson: override,
       updateFieldsState: override,
       cardTypeLabel: override,
       recordTypeLabel: override,
@@ -85,6 +100,7 @@ export default class InstrumentTemplateModel
       recordDetails: override,
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
+      fieldNamesInUse: override,
     });
 
     if (this.recordType === "instrumentTemplate")
@@ -115,8 +131,61 @@ export default class InstrumentTemplateModel
     return { resultType: "INSTRUMENT_TEMPLATE" };
   }
 
+  populateFromJson(
+    factory: Factory,
+    passedParams: object,
+    defaultParams: object = {},
+  ): void {
+    super.populateFromJson(factory, passedParams, defaultParams);
+    const params = { ...defaultParams, ...passedParams } as InstrumentTemplateAttrs;
+    const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
+    this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
+    this.version = params.version ?? 1;
+  }
+
+  addField(fieldParams: FieldModelAttrs): void {
+    this.setAttributesDirty({
+      fields: [...this.fields, new FieldModel(fieldParams, this)],
+    });
+  }
+
+  removeCustomField(id: Id, index: number): void {
+    if (!this.id || !id) {
+      this.fields.splice(index, 1);
+    } else {
+      const field = this.fields.find((f) => f.id === id);
+      field?.setAttributesDirty({ deleteFieldRequest: true });
+    }
+  }
+
+  moveField(field: Field, newIndex: number): void {
+    if (newIndex < -1 || newIndex >= this.fields.length)
+      throw new Error(`Invalid new index: ${newIndex}`);
+    if (newIndex === -1) newIndex = this.fields.length - 1;
+    const oldIndex = this.fields.indexOf(field);
+    if (oldIndex === -1)
+      throw new Error("Could not find field in this instrument template.");
+    const without = [
+      ...this.fields.slice(0, oldIndex),
+      ...this.fields.slice(oldIndex + 1),
+    ];
+    const withAgain = [
+      ...without.slice(0, newIndex),
+      field,
+      ...without.slice(newIndex),
+    ];
+    withAgain.forEach((f, i) => {
+      (f as FieldModel).columnIndex = i + 1;
+    });
+    this.setAttributesDirty({ fields: withAgain });
+  }
+
   get paramsForBackend(): Record<string, unknown> {
-    return { ...super.paramsForBackend };
+    const params = { ...super.paramsForBackend };
+    if (this.currentlyEditableFields.has("fields")) {
+      params.fields = this.fields.map((f) => (f as FieldModel).paramsForBackend);
+    }
+    return params;
   }
 
   updateFieldsState() {
@@ -126,7 +195,6 @@ export default class InstrumentTemplateModel
     switch (this.state) {
       case "edit":
         this.setEditable(FIELDS, true);
-        this.setEditableExtraFields(this.extraFields, true);
         break;
       case "preview":
         this.setEditable(FIELDS, false);
@@ -135,6 +203,13 @@ export default class InstrumentTemplateModel
         this.setEditable(FIELDS, true);
         break;
     }
+  }
+
+  get fieldNamesInUse(): Array<string> {
+    return [
+      ...super.fieldNamesInUse,
+      ...this.fields.filter((f) => f.name).map((f) => f.name),
+    ];
   }
 
   async fetchAdditionalInfo(silent: boolean = false): Promise<void> {

@@ -8,7 +8,9 @@ import DescriptionField from "../components/Fields/Description";
 import TagsField from "../components/Fields/Tags";
 import ImageField from "../components/Fields/Image";
 import LocationField from "../components/Fields/Location";
+import TemplateFields from "./Fields/TemplateFields";
 import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
+import InstrumentTemplateField from "./Fields/InstrumentTemplateField";
 import InstrumentModel from "../../stores/models/InstrumentModel";
 import docLinks from "../../assets/DocLinks";
 import { observer } from "mobx-react-lite";
@@ -45,6 +47,7 @@ const OverviewSection = observer(
             setFormSectionError(formSectionError, "name", e)
           }
         />
+        <InstrumentTemplateField />
         <LocationField fieldOwner={activeResult} />
         <ImageField
           fieldOwner={activeResult}
@@ -95,6 +98,12 @@ const CustomFieldsSection = observer(
         formSectionError={formSectionError}
         recordType="instrument"
       >
+        <TemplateFields
+          onErrorStateChange={(field, value) =>
+            setFormSectionError(formSectionError, field, value)
+          }
+          instrument={activeResult}
+        />
         <ExtraFields
           onErrorStateChange={(field, value) =>
             setFormSectionError(formSectionError, field, value)
