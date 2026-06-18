@@ -550,7 +550,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         }
       }
     } else if (apiSample instanceof ApiSampleTemplate) {
-      setSamplesToUpdateCount((ApiSampleTemplate) apiSample, sample, user);
+      setSamplesToUpdateCount((ApiSampleTemplate) apiSample, (SampleTemplate) sample, user);
     }
   }
 
@@ -561,7 +561,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * nothing to update - notably for a template that is merely the target of a link from some sample
    * (that sample is not created from the template, so it is not counted).
    */
-  void setSamplesToUpdateCount(ApiSampleTemplate apiTemplate, Sample template, User user) {
+  void setSamplesToUpdateCount(ApiSampleTemplate apiTemplate, SampleTemplate template, User user) {
     apiTemplate.setSamplesToUpdateCount(
         sampleDao
             .getSamplesLinkingOlderTemplateVersionForUser(
@@ -760,7 +760,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
             apiSample.getIdentifiers(), dbSample, user);
     contentChanged |= apiSample.applyChangesToDatabaseSample(dbSample, user);
     if (!dbSample.isTemplate()) {
-      contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, dbSample, user);
+      contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, (Sample) dbSample, user);
     }
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);

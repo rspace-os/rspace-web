@@ -1484,9 +1484,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <!-- TODO(RSDEV-1065): replace with the released core-model version that contains the
-           SampleEntity/SampleTemplate hierarchy (the published 2.28.0 predates it) -->
-      <version>RSDEV-1065-model-SNAPSHOT</version>
+      <!-- TODO(RSDEV-1065): replace with the released core-model version once RSDEV-1065 +
+           RSDEV-1131 ship (the published 2.28.0 lacks the SampleEntity/SampleTemplate hierarchy).
+           Pinned to the jitpack commit build of the RSDEV-1065-model tip, which integrates the
+           RSDEV-1131 link fields. A branch -SNAPSHOT alias here served a stale pre-1131 build
+           (jitpack caches the branch HEAD), so use the immutable commit hash. -->
+      <version>e25bb4393e</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
