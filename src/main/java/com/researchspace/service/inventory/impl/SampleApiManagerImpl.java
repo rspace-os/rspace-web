@@ -1049,6 +1049,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<Sample>
                 .map(InventoryLinkField.class::cast)
                 .collect(Collectors.toList());
         dbSample.updateToLatestTemplateVersion();
+        syncLinkFieldWhitelistsFromTemplate(dbSample.getActiveFields());
         linkFieldsBeforeUpdate.forEach(field -> softDeleteLinkOfDeletedLinkField(field, user));
         saveDbSampleUpdate(dbSample, user);
       }

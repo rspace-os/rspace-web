@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiField;
-import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.inventory.Sample;
@@ -69,9 +68,12 @@ abstract class SampleTemplateFieldValidator implements Validator {
     }
 
     // Link fields: every entry in the allowed-relation-types whitelist must be a valid DataCite
-    // relation type. A null/empty whitelist is permitted and means "all relation types allowed".
-    if (apiTemplateField.getType() == ApiFieldType.LINK
-        && apiTemplateField.getAllowedRelationTypes() != null) {
+    // relation type (a null/empty whitelist means "all relation types allowed"). Validate whenever
+    // the whitelist is present, not only when the DTO declares type==LINK: an existing-field PUT
+    // may
+    // omit `type` while still updating a link field's whitelist (persisted by DB field type), so
+    // gating on the incoming type would let an invalid whitelist bypass validation (RSDEV-1200).
+    if (apiTemplateField.getAllowedRelationTypes() != null) {
       for (String relationType : apiTemplateField.getAllowedRelationTypes()) {
         if (!DataCiteRelationType.isValid(relationType)) {
           errors.rejectValue(
