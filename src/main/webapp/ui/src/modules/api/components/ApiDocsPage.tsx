@@ -1,5 +1,8 @@
-import { type ApiReferenceConfigurationWithMultipleSources, ApiReferenceReact } from "@scalar/api-reference-react";
 import React from "react";
+import {
+  ApiReferenceReact,
+  type ApiReferenceConfigurationWithMultipleSources,
+} from "@scalar/api-reference-react";
 import "@scalar/api-reference-react/style.css";
 
 /**
@@ -61,7 +64,7 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
       {
         title: "RSpace Inventory",
         slug: "rspace-inventory",
-        url: `${baseUrl}/resources/rspace_api_inventory_specs_beta_instruments_3_0.yaml`,
+        url: `${baseUrl}/resources/rspace_api_inventory_specs_2_13_0.yaml`,
         agent: DISABLED_AGENT,
       },
     ],
