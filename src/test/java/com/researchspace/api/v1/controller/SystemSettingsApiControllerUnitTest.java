@@ -51,17 +51,16 @@ class SystemSettingsApiControllerUnitTest {
 
   private Map<String, SystemPropertyValue> defaultPropertiesMap() {
     Map<String, SystemPropertyValue> propertiesMap = new HashMap<>();
-    propertiesMap.put("datacite.enabled", propertyValue("false"));
-    propertiesMap.put("datacite.server.url", propertyValue("https://api.datacite.org"));
-    propertiesMap.put("datacite.username", propertyValue(""));
-    propertiesMap.put("datacite.password", propertyValue(""));
-    propertiesMap.put("datacite.repositoryPrefix", propertyValue(""));
-    propertiesMap.put("pdinst.datacite.provider", propertyValue("PDINST_DATACITE"));
-    propertiesMap.put("pdinst.datacite.enabled", propertyValue("false"));
-    propertiesMap.put("pdinst.datacite.server.url", propertyValue("https://api.datacite.org"));
-    propertiesMap.put("pdinst.datacite.username", propertyValue(""));
-    propertiesMap.put("pdinst.datacite.password", propertyValue(""));
-    propertiesMap.put("pdinst.datacite.repositoryPrefix", propertyValue(""));
+    propertiesMap.put("igsn.datacite.enabled", propertyValue("false"));
+    propertiesMap.put("igsn.datacite.server.url", propertyValue("https://api.datacite.org"));
+    propertiesMap.put("igsn.datacite.username", propertyValue(""));
+    propertiesMap.put("igsn.datacite.password", propertyValue(""));
+    propertiesMap.put("igsn.datacite.repositoryPrefix", propertyValue(""));
+    propertiesMap.put("pidinst.datacite.enabled", propertyValue("false"));
+    propertiesMap.put("pidinst.datacite.server.url", propertyValue("https://api.datacite.org"));
+    propertiesMap.put("pidinst.datacite.username", propertyValue(""));
+    propertiesMap.put("pidinst.datacite.password", propertyValue(""));
+    propertiesMap.put("pidinst.datacite.repositoryPrefix", propertyValue(""));
     return propertiesMap;
   }
 
@@ -70,10 +69,10 @@ class SystemSettingsApiControllerUnitTest {
   }
 
   @Test
-  void reloadCalledOnceWhenPdinstSettingChanged() throws Exception {
+  void reloadCalledOnceWhenPidinstSettingChanged() throws Exception {
     IdentifierSettings update = new IdentifierSettings();
-    update.setProvider(IdentifierType.PDINST_DATACITE);
-    update.setUsername("newPdinstUser");
+    update.setProvider(IdentifierType.PIDINST_DATACITE);
+    update.setUsername("newPidinstUser");
 
     controller.updateInventorySettings(
         request, update, new BeanPropertyBindingResult(update, "identifierSettings"), sysadmin);
@@ -83,9 +82,9 @@ class SystemSettingsApiControllerUnitTest {
 
   @Test
   void reloadNotCalledWhenNothingChanged() throws Exception {
-    // values matching the current PDINST defaults, so nothing changes
+    // values matching the current PIDINST defaults, so nothing changes
     IdentifierSettings update = new IdentifierSettings();
-    update.setProvider(IdentifierType.PDINST_DATACITE);
+    update.setProvider(IdentifierType.PIDINST_DATACITE);
     update.setEnabled("false");
     update.setServerUrl("https://api.datacite.org");
     update.setUsername("");

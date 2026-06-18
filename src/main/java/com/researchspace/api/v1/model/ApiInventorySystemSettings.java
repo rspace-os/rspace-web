@@ -8,14 +8,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Inventory system-wide settings for identifier (IGSN/PDINST) registration. */
+/** Inventory system-wide settings for identifier (IGSN/PIDINST) registration. */
 @Data
 public class ApiInventorySystemSettings {
 
   /** The category of identifier a settings entry configures. */
   public enum InventorySettingType {
     IGSN,
-    PDINST
+    PIDINST
   }
 
   @Data

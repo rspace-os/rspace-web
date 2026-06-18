@@ -10,14 +10,13 @@ class SystemPropertyNameTest {
 
   @ParameterizedTest
   @CsvSource({
-    "pdinst.datacite.provider, PDINST_DATACITE_PROVIDER",
-    "pdinst.datacite.enabled, PDINST_DATACITE_ENABLED",
-    "pdinst.datacite.server.url, PDINST_DATACITE_SERVER_URL",
-    "pdinst.datacite.username, PDINST_DATACITE_USERNAME",
-    "pdinst.datacite.password, PDINST_DATACITE_PASSWORD",
-    "pdinst.datacite.repositoryPrefix, PDINST_DATACITE_REPOSITORY_PREFIX"
+    "pidinst.datacite.enabled, PIDINST_DATACITE_ENABLED",
+    "pidinst.datacite.server.url, PIDINST_DATACITE_SERVER_URL",
+    "pidinst.datacite.username, PIDINST_DATACITE_USERNAME",
+    "pidinst.datacite.password, PIDINST_DATACITE_PASSWORD",
+    "pidinst.datacite.repositoryPrefix, PIDINST_DATACITE_REPOSITORY_PREFIX"
   })
-  void valueOfPropertyNameResolvesPdinstProperties(String propertyName, String expectedEnumName) {
+  void valueOfPropertyNameResolvesPidinstProperties(String propertyName, String expectedEnumName) {
     SystemPropertyName resolved = SystemPropertyName.valueOfPropertyName(propertyName);
     assertNotNull(resolved, "no SystemPropertyName for " + propertyName);
     assertEquals(expectedEnumName, resolved.name());

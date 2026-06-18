@@ -93,7 +93,7 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   private void assertIdentifierConnectorEnabled(InventorySettingType settingType) {
     if (!isIdentifierConnectorEnabled(settingType)) {
-      String integrationName = InventorySettingType.IGSN.equals(settingType) ? "IGSN" : "PDINST";
+      String integrationName = InventorySettingType.IGSN.equals(settingType) ? "IGSN" : "PIDINST";
       throw new UnsupportedOperationException(
           messages.getMessage(
               "errors.inventory.identifier.integration.not.enabled",

@@ -22,8 +22,8 @@ public interface SystemSettingsApi {
   /**
    * Updates the settings for a single identifier type. The {@code provider} of the supplied
    * settings selects which configuration is updated: a {@code IGSN_DATACITE} provider updates the
-   * IGSN configuration, a {@code PDINST_DATACITE} or {@code PDINST_B2INST} provider updates the
-   * PDINST configuration.
+   * IGSN configuration, a {@code PIDINST_DATACITE} or {@code PIDINST_B2INST} provider updates the
+   * PIDINST configuration.
    */
   @PutMapping(value = "/inventory/v1/system/settings")
   ApiInventorySystemSettings updateInventorySettings(

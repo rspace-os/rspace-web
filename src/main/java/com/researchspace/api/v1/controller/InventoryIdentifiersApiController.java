@@ -158,8 +158,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
   }
 
   @Override
-  public boolean testPdinstConnection(User user) {
-    return dataCiteConnector.testDataCiteConnection(InventorySettingType.PDINST);
+  public boolean testPidinstConnection(User user) {
+    return dataCiteConnector.testDataCiteConnection(InventorySettingType.PIDINST);
   }
 
   private InventoryRecord retrieveInvRecByIdentifierId(Long identifierId, User user) {
@@ -193,14 +193,14 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
   private InventorySettingType settingTypeForOid(GlobalIdentifier oid) {
     return GlobalIdPrefix.IN.equals(oid.getPrefix())
-        ? InventorySettingType.PDINST
+        ? InventorySettingType.PIDINST
         : InventorySettingType.IGSN;
   }
 
   private InventorySettingType settingTypeForDoiType(String doiType) {
-    boolean pdinst =
-        IdentifierType.PDINST_DATACITE.name().equals(doiType)
-            || IdentifierType.PDINST_B2INST.name().equals(doiType);
-    return pdinst ? InventorySettingType.PDINST : InventorySettingType.IGSN;
+    boolean pidinst =
+        IdentifierType.PIDINST_DATACITE.name().equals(doiType)
+            || IdentifierType.PIDINST_B2INST.name().equals(doiType);
+    return pidinst ? InventorySettingType.PIDINST : InventorySettingType.IGSN;
   }
 }

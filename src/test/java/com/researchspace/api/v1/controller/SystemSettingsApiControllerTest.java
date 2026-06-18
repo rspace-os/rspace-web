@@ -47,11 +47,11 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
         initialSettings.getIdentifiersSettings().get(InventorySettingType.IGSN);
     assertNotNull(initialIgsn);
     assertEquals(IdentifierType.IGSN_DATACITE, initialIgsn.getProvider());
-    assertNotNull(initialSettings.getIdentifiersSettings().get(InventorySettingType.PDINST));
+    assertNotNull(initialSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST));
 
-    // capture the current PDINST username, so we can prove the IGSN update leaves it untouched
-    String initialPdinstUsername =
-        initialSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername();
+    // capture the current PIDINST username, so we can prove the IGSN update leaves it untouched
+    String initialPidinstUsername =
+        initialSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername();
 
     // a single IGSN-provider object updates only the IGSN config
     IdentifierSettings igsnUpdate = new IdentifierSettings();
@@ -65,20 +65,20 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
         "igsnUserUpdated",
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
     assertEquals(
-        initialPdinstUsername,
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername());
+        initialPidinstUsername,
+        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
 
-    // a single PDINST-provider object updates only the PDINST config
-    IdentifierSettings pdinstUpdate = new IdentifierSettings();
-    pdinstUpdate.setProvider(IdentifierType.PDINST_DATACITE);
-    pdinstUpdate.setUsername("pdinstUserUpdated");
+    // a single PIDINST-provider object updates only the PIDINST config
+    IdentifierSettings pidinstUpdate = new IdentifierSettings();
+    pidinstUpdate.setProvider(IdentifierType.PIDINST_DATACITE);
+    pidinstUpdate.setUsername("pidinstUserUpdated");
     updatedSettings =
         settingsController.updateInventorySettings(
-            request, pdinstUpdate, mockBindingResult, sysadmin);
+            request, pidinstUpdate, mockBindingResult, sysadmin);
     assertNotNull(updatedSettings);
     assertEquals(
-        "pdinstUserUpdated",
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername());
+        "pidinstUserUpdated",
+        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
     assertEquals(
         "igsnUserUpdated",
         updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
@@ -90,28 +90,8 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
         "igsnUserUpdated",
         reloadedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
     assertEquals(
-        "pdinstUserUpdated",
-        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getUsername());
-  }
-
-  @Test
-  public void pdinstProviderPersistedFromSingleObject() throws BindException {
-    User sysadmin = logoutAndLoginAsSysAdmin();
-
-    // a PDINST_B2INST provider routes to the PDINST config and persists the provider
-    IdentifierSettings update = new IdentifierSettings();
-    update.setProvider(IdentifierType.PDINST_B2INST);
-    ApiInventorySystemSettings updatedSettings =
-        settingsController.updateInventorySettings(request, update, mockBindingResult, sysadmin);
-    assertEquals(
-        IdentifierType.PDINST_B2INST,
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getProvider());
-
-    ApiInventorySystemSettings reloadedSettings =
-        settingsController.getInventorySettings(request, sysadmin);
-    assertEquals(
-        IdentifierType.PDINST_B2INST,
-        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PDINST).getProvider());
+        "pidinstUserUpdated",
+        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
   }
 
   @Test
@@ -131,17 +111,16 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void pdinstSystemPropertiesAreSeeded() {
-    // asserts the RSDEV-1175 changeset seeded the six pdinst.datacite.* properties; values are
+  public void pidinstSystemPropertiesAreSeeded() {
+    // asserts the RSDEV-1175 changeset seeded the five pidinst.datacite.* properties; values are
     // mutable sysadmin config (so not asserted here)
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
 
-    assertPropertyPresent(propertiesMap, "pdinst.datacite.provider");
-    assertPropertyPresent(propertiesMap, "pdinst.datacite.enabled");
-    assertPropertyPresent(propertiesMap, "pdinst.datacite.server.url");
-    assertPropertyPresent(propertiesMap, "pdinst.datacite.username");
-    assertPropertyPresent(propertiesMap, "pdinst.datacite.password");
-    assertPropertyPresent(propertiesMap, "pdinst.datacite.repositoryPrefix");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.enabled");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.server.url");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.username");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.password");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.repositoryPrefix");
   }
 
   private void assertPropertyPresent(

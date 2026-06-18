@@ -64,7 +64,7 @@ public interface InventoryIdentifiersApi {
   @GetMapping(value = "/testIgsnConnection")
   boolean testIgsnConnection(User user);
 
-  /** Test the connection to the DataCite PDINST identifier service. */
-  @GetMapping(value = "/testPdinstConnection")
-  boolean testPdinstConnection(User user);
+  /** Test the connection to the DataCite PIDINST identifier service. */
+  @GetMapping(value = "/testPidinstConnection")
+  boolean testPidinstConnection(User user);
 }

@@ -3,9 +3,9 @@
  * "Configure Inventory (for System Administrators)" dialog uses.
  *
  * The GET /system/settings endpoint now returns an `identifiersSettings` map keyed by identifier
- * type (IGSN, PDINST), each entry carrying a `provider`. The dialog still only configures the
+ * type (IGSN, PIDINST), each entry carrying a `provider`. The dialog still only configures the
  * IGSN/DataCite credentials, so we adapt the IGSN entry to/from the existing `datacite` model and
- * leave the rest of the UI untouched. PDINST configuration is out of scope for this dialog.
+ * leave the rest of the UI untouched. PIDINST configuration is out of scope for this dialog.
  */
 
 export type IntegrationState = "true" | "false";
@@ -16,8 +16,8 @@ export type DataCiteServerUrl =
 
 export type IdentifierProvider =
   | "IGSN_DATACITE"
-  | "PDINST_DATACITE"
-  | "PDINST_B2INST";
+  | "PIDINST_DATACITE"
+  | "PIDINST_B2INST";
 
 /** The datacite-shaped settings the dialog reads and edits. */
 export type DataciteSettings = {
@@ -41,7 +41,7 @@ export type IdentifierSettings = DataciteSettings & {
 export type ApiInventorySystemSettings = {
   identifiersSettings: {
     IGSN?: IdentifierSettings;
-    PDINST?: IdentifierSettings;
+    PIDINST?: IdentifierSettings;
   };
 };
 

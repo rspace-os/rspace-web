@@ -40,13 +40,13 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
         SystemPropertyName.IGSN_DATACITE_PASSWORD,
         SystemPropertyName.IGSN_DATACITE_REPOSITORY_PREFIX);
     reloadClientForType(
-        InventorySettingType.PDINST,
+        InventorySettingType.PIDINST,
         propertiesMap,
-        SystemPropertyName.PDINST_DATACITE_ENABLED,
-        SystemPropertyName.PDINST_DATACITE_SERVER_URL,
-        SystemPropertyName.PDINST_DATACITE_USERNAME,
-        SystemPropertyName.PDINST_DATACITE_PASSWORD,
-        SystemPropertyName.PDINST_DATACITE_REPOSITORY_PREFIX);
+        SystemPropertyName.PIDINST_DATACITE_ENABLED,
+        SystemPropertyName.PIDINST_DATACITE_SERVER_URL,
+        SystemPropertyName.PIDINST_DATACITE_USERNAME,
+        SystemPropertyName.PIDINST_DATACITE_PASSWORD,
+        SystemPropertyName.PIDINST_DATACITE_REPOSITORY_PREFIX);
   }
 
   private void reloadClientForType(

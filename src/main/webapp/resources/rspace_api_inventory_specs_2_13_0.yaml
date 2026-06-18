@@ -2317,14 +2317,14 @@ paths:
         "200":
           description: The list is successfully returned
     post:
-      summary: Register a new External Identifier (IGSN/PDINST) for an inventory item
+      summary: Register a new External Identifier (IGSN/PIDINST) for an inventory item
       description: >
         Creates an identifier for the requested inventory item. Requires object
         with one "parentGlobalId" property as a request body.
 
         The type of identifier created depends on the kind of inventory item referenced by `parentGlobalId`:
          * an `IGSN` identifier is created when the `parentGlobalId` references a Sample, SubSample or Container
-         * a `PDINST` identifier is created when the `parentGlobalId` references an Instrument
+         * a `PIDINST` identifier is created when the `parentGlobalId` references an Instrument
 
         You must have UPDATE permission for the item to create an identifier for it.
 
@@ -2409,9 +2409,9 @@ paths:
           description: Identifier is assigned to the inventory item
   "/identifiers/{doiId}":
     delete:
-      summary: Delete a draft External Identifier (IGSN/PDINST) that was not associated or that was registered for the inventory item
+      summary: Delete a draft External Identifier (IGSN/PIDINST) that was not associated or that was registered for the inventory item
       description: >
-        Attempts to delete a connected External Identifier (IGSN/PDINST).
+        Attempts to delete a connected External Identifier (IGSN/PIDINST).
 
         You must have UPDATE permission for the item to delete its identifier.
       tags:
@@ -2425,7 +2425,7 @@ paths:
     post:
       summary: Publish an identifier, and the connected inventory item
       description: >
-        Publishes External Identifier (IGSN/PDINST) and connected record.
+        Publishes External Identifier (IGSN/PIDINST) and connected record.
 
       produces:
         - application/json
@@ -2440,7 +2440,7 @@ paths:
     post:
       summary: Retract an identifier, and unpublish connected inventory item
       description: >
-        Retracts External Identifier (IGSN/PDINST) and hides previously published connected record.
+        Retracts External Identifier (IGSN/PIDINST) and hides previously published connected record.
 
       produces:
         - application/json
@@ -2465,11 +2465,11 @@ paths:
         '200':
           description: boolean saying whether connection was successful
 
-  '/identifiers/testPdinstConnection':
+  '/identifiers/testPidinstConnection':
     get:
-      summary: Test connection settings saved for the DataCite PDINST integration
+      summary: Test connection settings saved for the DataCite PIDINST integration
       description: >
-        Test connection settings saved for the DataCite PDINST integration
+        Test connection settings saved for the DataCite PIDINST integration
       produces:
         - application/json
       tags:
@@ -2758,16 +2758,16 @@ paths:
           application/json:
             schema:
               example:
-                provider: PDINST_DATACITE
+                provider: PIDINST_DATACITE
                 serverUrl: https://api.test.datacite.org/
-                username: AJFO.PDINST
-                password: <AJFO.PDINST password>
+                username: AJFO.PIDINST
+                password: <AJFO.PIDINST password>
                 repositoryPrefix: "10.82317"
                 enabled: "true"
         description: >
           Settings for a single identifier type to update. The `provider` selects which
           configuration is updated: `IGSN_DATACITE` updates the IGSN configuration, while
-          `PDINST_DATACITE` or `PDINST_B2INST` updates the PDINST configuration.
+          `PIDINST_DATACITE` or `PIDINST_B2INST` updates the PIDINST configuration.
         required: true
       responses:
         "200":

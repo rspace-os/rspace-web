@@ -4,171 +4,159 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <changeSet id="2026-06-12a" context="run,dev-test" author="nico">
-        <comment>Add six system settings for configuring PDINST (instrument PID) registration (RSDEV-1175)</comment>
+    <changeSet id="2026-06-12a" context="run" author="nico">
+        <comment>Add five system settings for configuring PIDINST (instrument PID) registration (RSDEV-1175)</comment>
 
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value=""/>
-            <column name="name" type="STRING" value="pdinst.provider"/>
-            <column name="type" type="NUMERIC" value="2"/>
-        </insert>
-        <insert tableName="SystemProperty">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pdinst.provider')"/>
-        </insert>
-        <insert tableName="SystemPropertyValue">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="value" type="String" value="DATACITE_PDINST"/>
-            <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.provider')"/>
-        </insert>
-
-        <insert tableName="PropertyDescriptor">
-            <column name="id" type="NUMERIC" value="NULL"/>
-            <column name="defaultValue" type="STRING" value=""/>
-            <column name="name" type="STRING" value="pdinst.enabled"/>
+            <column name="name" type="STRING" value="pidinst.enabled"/>
             <column name="type" type="NUMERIC" value="0"/>
         </insert>
         <insert tableName="SystemProperty">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pdinst.enabled')"/>
+            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pidinst.enabled')"/>
         </insert>
         <insert tableName="SystemPropertyValue">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="value" type="String" value="false"/>
             <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.enabled')"/>
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pidinst.enabled')"/>
         </insert>
 
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value=""/>
-            <column name="name" type="STRING" value="pdinst.server.url"/>
+            <column name="name" type="STRING" value="pidinst.server.url"/>
             <column name="type" type="NUMERIC" value="2"/>
         </insert>
         <insert tableName="SystemProperty">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pdinst.server.url')"/>
+            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pidinst.server.url')"/>
         </insert>
         <insert tableName="SystemPropertyValue">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="value" type="String" value="https://api.datacite.org"/>
             <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.server.url')"/>
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pidinst.server.url')"/>
         </insert>
 
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value=""/>
-            <column name="name" type="STRING" value="pdinst.username"/>
+            <column name="name" type="STRING" value="pidinst.username"/>
             <column name="type" type="NUMERIC" value="2"/>
         </insert>
         <insert tableName="SystemProperty">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pdinst.username')"/>
+            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pidinst.username')"/>
         </insert>
         <insert tableName="SystemPropertyValue">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="value" type="String" value=""/>
             <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.username')"/>
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pidinst.username')"/>
         </insert>
 
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value=""/>
-            <column name="name" type="STRING" value="pdinst.password"/>
+            <column name="name" type="STRING" value="pidinst.password"/>
             <column name="type" type="NUMERIC" value="2"/>
         </insert>
         <insert tableName="SystemProperty">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pdinst.password')"/>
+            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pidinst.password')"/>
         </insert>
         <insert tableName="SystemPropertyValue">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="value" type="String" value=""/>
             <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.password')"/>
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pidinst.password')"/>
         </insert>
 
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value=""/>
-            <column name="name" type="STRING" value="pdinst.repositoryPrefix"/>
+            <column name="name" type="STRING" value="pidinst.repositoryPrefix"/>
             <column name="type" type="NUMERIC" value="2"/>
         </insert>
         <insert tableName="SystemProperty">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="dependent_id" type="NUMERIC" value="NULL"/>
-            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pdinst.repositoryPrefix')"/>
+            <column name="descriptor_id" type="NUMERIC" valueComputed="(select id from PropertyDescriptor where name ='pidinst.repositoryPrefix')"/>
         </insert>
         <insert tableName="SystemPropertyValue">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="value" type="String" value=""/>
             <column name="property_id" type="NUMERIC"
-                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.repositoryPrefix')"/>
+                    valueComputed="(select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pidinst.repositoryPrefix')"/>
         </insert>
     </changeSet>
 
     <!--
-      Namespace the PDINST DataCite settings under pdinst.datacite.* (renamed from pdinst.*),
-      leaving room for a future pdinst.b2inst.* provider. Done as a rename of the existing
-      PropertyDescriptor names rather than editing the seeding changeset above, so the already
-      executed changeset keeps its checksum and any database that ran it is migrated in place.
-      SystemProperty/SystemPropertyValue rows reference the descriptor by id, so only the names
-      change here.
+      Namespace the PIDINST DataCite settings under pidinst.datacite.* (renamed from pidinst.*).
+      Done as a rename of the existing PropertyDescriptor names rather than editing the seeding
+      changeset above, so the already executed changeset keeps its checksum and any database that
+      ran it is migrated in place. SystemProperty/SystemPropertyValue rows reference the descriptor
+      by id, so only the names change here.
     -->
-    <changeSet id="2026-06-15a" context="run,dev-test" author="nico">
-        <comment>RSDEV-1175 rename pdinst.* system settings to pdinst.datacite.*</comment>
+    <changeSet id="2026-06-15a" context="run" author="nico">
+        <comment>RSDEV-1175 rename pidinst.* system settings to pidinst.datacite.*</comment>
         <update tableName="PropertyDescriptor">
-            <column name="name" value="pdinst.datacite.provider"/>
-            <where>name = 'pdinst.provider'</where>
+            <column name="name" value="pidinst.datacite.enabled"/>
+            <where>name = 'pidinst.enabled'</where>
         </update>
         <update tableName="PropertyDescriptor">
-            <column name="name" value="pdinst.datacite.enabled"/>
-            <where>name = 'pdinst.enabled'</where>
+            <column name="name" value="pidinst.datacite.server.url"/>
+            <where>name = 'pidinst.server.url'</where>
         </update>
         <update tableName="PropertyDescriptor">
-            <column name="name" value="pdinst.datacite.server.url"/>
-            <where>name = 'pdinst.server.url'</where>
+            <column name="name" value="pidinst.datacite.username"/>
+            <where>name = 'pidinst.username'</where>
         </update>
         <update tableName="PropertyDescriptor">
-            <column name="name" value="pdinst.datacite.username"/>
-            <where>name = 'pdinst.username'</where>
+            <column name="name" value="pidinst.datacite.password"/>
+            <where>name = 'pidinst.password'</where>
         </update>
         <update tableName="PropertyDescriptor">
-            <column name="name" value="pdinst.datacite.password"/>
-            <where>name = 'pdinst.password'</where>
-        </update>
-        <update tableName="PropertyDescriptor">
-            <column name="name" value="pdinst.datacite.repositoryPrefix"/>
-            <where>name = 'pdinst.repositoryPrefix'</where>
+            <column name="name" value="pidinst.datacite.repositoryPrefix"/>
+            <where>name = 'pidinst.repositoryPrefix'</where>
         </update>
     </changeSet>
 
     <!--
-      The IdentifierType enum constants were renamed (DATACITE_IGSN -> IGSN_DATACITE,
-      DATACITE_PDINST -> PDINST_DATACITE, B2INST_PDINST -> PDINST_B2INST). The configured PDINST
-      provider is persisted by name in the pdinst.datacite.provider value, so migrate any stored
-      value to the new name. The seeding changeset above still writes the old default name and is
-      left untouched (checksum), so fresh installs are migrated here in the same way as existing
-      databases. The DigitalObjectIdentifier.type column is ordinal-mapped and unaffected.
+      Namespace the IGSN DataCite settings under igsn.datacite.* (renamed from the original
+      datacite.* names seeded in initial-seed-run.sql), mirroring the pidinst.datacite.* namespace.
+      Done as a rename of the existing PropertyDescriptor names so existing databases are migrated in
+      place and the baseline seed keeps its checksum; SystemProperty/SystemPropertyValue rows
+      reference the descriptor by id, so only the names change here.
     -->
-    <changeSet id="2026-06-15b" context="run,dev-test" author="nico">
-        <comment>RSDEV-1175 migrate persisted pdinst.datacite.provider value to renamed IdentifierType names</comment>
-        <update tableName="SystemPropertyValue">
-            <column name="value" value="PDINST_DATACITE"/>
-            <where>value = 'DATACITE_PDINST' AND property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.datacite.provider')</where>
+    <changeSet id="2026-06-18a" context="run" author="nico">
+        <comment>RSDEV-1175 rename datacite.* system settings to igsn.datacite.*</comment>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="igsn.datacite.enabled"/>
+            <where>name = 'datacite.enabled'</where>
         </update>
-        <update tableName="SystemPropertyValue">
-            <column name="value" value="PDINST_B2INST"/>
-            <where>value = 'B2INST_PDINST' AND property_id = (select sp.id from SystemProperty sp inner join PropertyDescriptor pd on sp.descriptor_id=pd.id where pd.name='pdinst.datacite.provider')</where>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="igsn.datacite.server.url"/>
+            <where>name = 'datacite.server.url'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="igsn.datacite.username"/>
+            <where>name = 'datacite.username'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="igsn.datacite.password"/>
+            <where>name = 'datacite.password'</where>
+        </update>
+        <update tableName="PropertyDescriptor">
+            <column name="name" value="igsn.datacite.repositoryPrefix"/>
+            <where>name = 'datacite.repositoryPrefix'</where>
         </update>
     </changeSet>
 

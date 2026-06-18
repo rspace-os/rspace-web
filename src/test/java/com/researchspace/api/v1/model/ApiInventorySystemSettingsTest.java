@@ -67,25 +67,25 @@ class ApiInventorySystemSettingsTest {
             + "\"IGSN\": {\"provider\": \"IGSN_DATACITE\", \"serverUrl\":"
             + " \"https://api.test.datacite.org\", \"username\": \"testuser\", \"password\":"
             + " \"testpassword\", \"repositoryPrefix\": \"TESTPREFIX\", \"enabled\": \"true\"},"
-            + "\"PDINST\": {\"provider\": \"PDINST_DATACITE\", \"serverUrl\":"
+            + "\"PIDINST\": {\"provider\": \"PIDINST_DATACITE\", \"serverUrl\":"
             + " \"https://api.test.datacite.org\", \"username\": \"testuser2\", \"password\":"
             + " \"testpassword2\", \"repositoryPrefix\": \"TESTPREFIX2\", \"enabled\": \"true\"}}}";
 
     ApiInventorySystemSettings settings = mapper.readValue(json, ApiInventorySystemSettings.class);
 
-    IdentifierSettings pdinstSettings =
-        settings.getIdentifiersSettings().get(InventorySettingType.PDINST);
-    assertNotNull(pdinstSettings);
-    assertEquals(IdentifierType.PDINST_DATACITE, pdinstSettings.getProvider());
-    assertEquals("testuser2", pdinstSettings.getUsername());
-    assertEquals("testpassword2", pdinstSettings.getPassword());
-    assertEquals("TESTPREFIX2", pdinstSettings.getRepositoryPrefix());
-    assertEquals("true", pdinstSettings.getEnabled());
+    IdentifierSettings pidinstSettings =
+        settings.getIdentifiersSettings().get(InventorySettingType.PIDINST);
+    assertNotNull(pidinstSettings);
+    assertEquals(IdentifierType.PIDINST_DATACITE, pidinstSettings.getProvider());
+    assertEquals("testuser2", pidinstSettings.getUsername());
+    assertEquals("testpassword2", pidinstSettings.getPassword());
+    assertEquals("TESTPREFIX2", pidinstSettings.getRepositoryPrefix());
+    assertEquals("true", pidinstSettings.getEnabled());
 
-    // round-trips, including the PDINST_B2INST provider value
-    pdinstSettings.setProvider(IdentifierType.PDINST_B2INST);
+    // round-trips, including the PIDINST_B2INST provider value
+    pidinstSettings.setProvider(IdentifierType.PIDINST_B2INST);
     String reserialized = mapper.writeValueAsString(settings);
-    assertTrue(reserialized.contains("\"provider\":\"PDINST_B2INST\""), reserialized);
+    assertTrue(reserialized.contains("\"provider\":\"PIDINST_B2INST\""), reserialized);
   }
 
   @Test
@@ -98,9 +98,9 @@ class ApiInventorySystemSettingsTest {
   @Test
   void getOrCreateInitializesMissingEntry() {
     ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
-    IdentifierSettings pdinstSettings = settings.getOrCreate(InventorySettingType.PDINST);
-    assertNotNull(pdinstSettings);
+    IdentifierSettings pidinstSettings = settings.getOrCreate(InventorySettingType.PIDINST);
+    assertNotNull(pidinstSettings);
     assertEquals(
-        pdinstSettings, settings.getIdentifiersSettings().get(InventorySettingType.PDINST));
+        pidinstSettings, settings.getIdentifiersSettings().get(InventorySettingType.PIDINST));
   }
 }

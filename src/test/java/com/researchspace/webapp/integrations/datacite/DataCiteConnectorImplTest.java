@@ -29,16 +29,16 @@ class DataCiteConnectorImplTest {
   @BeforeEach
   void setUp() {
     propertiesMap = new HashMap<>();
-    addProperty("datacite.enabled", "true");
-    addProperty("datacite.server.url", "https://api.test.datacite.org");
-    addProperty("datacite.username", "igsnUser");
-    addProperty("datacite.password", "igsnPassword");
-    addProperty("datacite.repositoryPrefix", "IGSNPREFIX");
-    addProperty("pdinst.datacite.enabled", "true");
-    addProperty("pdinst.datacite.server.url", "https://api.test.datacite.org");
-    addProperty("pdinst.datacite.username", "pdinstUser");
-    addProperty("pdinst.datacite.password", "pdinstPassword");
-    addProperty("pdinst.datacite.repositoryPrefix", "PDINSTPREFIX");
+    addProperty("igsn.datacite.enabled", "true");
+    addProperty("igsn.datacite.server.url", "https://api.test.datacite.org");
+    addProperty("igsn.datacite.username", "igsnUser");
+    addProperty("igsn.datacite.password", "igsnPassword");
+    addProperty("igsn.datacite.repositoryPrefix", "IGSNPREFIX");
+    addProperty("pidinst.datacite.enabled", "true");
+    addProperty("pidinst.datacite.server.url", "https://api.test.datacite.org");
+    addProperty("pidinst.datacite.username", "pidinstUser");
+    addProperty("pidinst.datacite.password", "pidinstPassword");
+    addProperty("pidinst.datacite.repositoryPrefix", "PIDINSTPREFIX");
     when(mockSysPropMgr.getAllSysadminPropertiesAsMap()).thenReturn(propertiesMap);
   }
 
@@ -51,48 +51,48 @@ class DataCiteConnectorImplTest {
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
-    assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PDINST));
+    assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST));
   }
 
   @Test
-  void incompletePdinstConfigSkipsPdinstClientOnly() {
-    addProperty("pdinst.datacite.username", "");
+  void incompletePidinstConfigSkipsPidinstClientOnly() {
+    addProperty("pidinst.datacite.username", "");
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
-    assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PDINST));
+    assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST));
   }
 
   @Test
   void incompleteIgsnConfigSkipsIgsnClientOnly() {
-    addProperty("datacite.password", "");
+    addProperty("igsn.datacite.password", "");
     connector.reloadDataCiteClient();
 
     assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
-    assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PDINST));
+    assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST));
   }
 
   @Test
   void disabledTypeIsNotEnabledEvenIfConfigured() {
-    addProperty("pdinst.datacite.enabled", "false");
+    addProperty("pidinst.datacite.enabled", "false");
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
-    assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PDINST));
+    assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST));
   }
 
   @Test
-  void missingPdinstPropertiesAreToleratedAtReload() {
-    propertiesMap.keySet().removeIf(name -> name.startsWith("pdinst.datacite."));
+  void missingPidinstPropertiesAreToleratedAtReload() {
+    propertiesMap.keySet().removeIf(name -> name.startsWith("pidinst.datacite."));
     connector.reloadDataCiteClient();
 
     assertTrue(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.IGSN));
-    assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PDINST));
+    assertFalse(connector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST));
   }
 
   @Test
   void noArgMethodsDelegateToIgsn() {
-    addProperty("pdinst.datacite.enabled", "false");
+    addProperty("pidinst.datacite.enabled", "false");
     connector.reloadDataCiteClient();
 
     assertEquals(

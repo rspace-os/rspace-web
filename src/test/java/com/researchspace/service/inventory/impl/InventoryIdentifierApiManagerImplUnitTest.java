@@ -12,7 +12,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
   /**
    * A {@link com.researchspace.model.inventory.DigitalObjectIdentifier} persisted before the type
    * column was populated loads with a null type. settingTypeFor must not NPE on the {@code switch}:
-   * such legacy identifiers predate PDINST and default to IGSN.
+   * such legacy identifiers predate PIDINST and default to IGSN.
    */
   @Test
   void settingTypeForNullTypeDefaultsToIgsn() throws Exception {

@@ -17,8 +17,8 @@ describe("systemSettingsFromApiResponse", () => {
           repositoryPrefix: "10.82316",
           enabled: "true",
         },
-        PDINST: {
-          provider: "PDINST_DATACITE",
+        PIDINST: {
+          provider: "PIDINST_DATACITE",
           serverUrl: "https://api.test.datacite.org",
           username: "ignored",
           password: "ignored",

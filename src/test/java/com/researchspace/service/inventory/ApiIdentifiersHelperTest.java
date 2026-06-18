@@ -53,12 +53,12 @@ public class ApiIdentifiersHelperTest {
   }
 
   @Test
-  public void createDoiToSavePersistsPdinstType() {
+  public void createDoiToSavePersistsPidinstType() {
     ApiInventoryDOI apiDoi = new ApiInventoryDOI();
-    apiDoi.setDoiType(IdentifierType.PDINST_DATACITE.name());
+    apiDoi.setDoiType(IdentifierType.PIDINST_DATACITE.name());
 
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
-    assertEquals(IdentifierType.PDINST_DATACITE, result.getType());
+    assertEquals(IdentifierType.PIDINST_DATACITE, result.getType());
   }
 
   @Test

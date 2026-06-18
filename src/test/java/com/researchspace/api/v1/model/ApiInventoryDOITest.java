@@ -17,7 +17,7 @@ class ApiInventoryDOITest {
     existing.setType(IdentifierType.IGSN_DATACITE);
 
     ApiInventoryDOI apiDoi = new ApiInventoryDOI();
-    apiDoi.setDoiType(IdentifierType.PDINST_DATACITE.name());
+    apiDoi.setDoiType(IdentifierType.PIDINST_DATACITE.name());
 
     boolean changed = apiDoi.applyChangesToDatabaseDOI(existing);
 
@@ -34,12 +34,12 @@ class ApiInventoryDOITest {
         new DigitalObjectIdentifier(null, null); // transient, id == null
 
     ApiInventoryDOI apiDoi = new ApiInventoryDOI();
-    apiDoi.setDoiType(IdentifierType.PDINST_DATACITE.name());
+    apiDoi.setDoiType(IdentifierType.PIDINST_DATACITE.name());
 
     boolean changed = apiDoi.applyChangesToDatabaseDOI(newDoi);
 
     assertEquals(
-        IdentifierType.PDINST_DATACITE,
+        IdentifierType.PIDINST_DATACITE,
         newDoi.getType(),
         "a new identifier must adopt the incoming type");
     assertTrue(changed);

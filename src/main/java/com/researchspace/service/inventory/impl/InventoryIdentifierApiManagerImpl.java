@@ -20,12 +20,9 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoRService;
-import com.researchspace.service.SystemPropertyManager;
-import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -42,7 +39,6 @@ import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +54,6 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private @Autowired InstrumentEntityApiManager instrumentApiMgr;
   private @Autowired DigitalObjectIdentifierDao doiDao;
   private @Autowired ApiIdentifiersHelper apiIdentifiersHelper;
-  private @Autowired SystemPropertyManager sysPropertyMgr;
   private @Autowired MessageSourceUtils messages;
 
   @Autowired private RoRService rorService;
@@ -139,8 +134,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     // resolve the setting type and run all checks before registering anything with DataCite,
     // so no draft DOI is leaked for unsupported or disabled configurations
     InventorySettingType settingType = settingTypeFor(invRec);
-    if (InventorySettingType.PDINST.equals(settingType)) {
-      assertPdinstRegistrationSupported();
+    if (InventorySettingType.PIDINST.equals(settingType)) {
+      assertPidinstRegistrationSupported();
     }
     return updateInventoryRecordWithDoiUpdate(
         user, invRec, createUpdateWithNewDoi(invRec, user, settingType));
@@ -176,7 +171,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       return InventorySettingType.IGSN;
     }
     if (invRec.isInstrument()) {
-      return InventorySettingType.PDINST;
+      return InventorySettingType.PIDINST;
     }
     throw new IllegalArgumentException(
         messages.getMessage(
@@ -187,15 +182,15 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private InventorySettingType settingTypeFor(IdentifierType identifierType) {
     if (identifierType == null) {
       // identifiers persisted before the type column was populated load with a null type;
-      // they predate PDINST, so default to IGSN (matches DigitalObjectIdentifier's own default)
+      // they predate PIDINST, so default to IGSN (matches DigitalObjectIdentifier's own default)
       // instead of letting the switch below throw a NullPointerException.
       return InventorySettingType.IGSN;
     }
     switch (identifierType) {
       case IGSN_DATACITE:
         return InventorySettingType.IGSN;
-      case PDINST_DATACITE:
-        return InventorySettingType.PDINST;
+      case PIDINST_DATACITE:
+        return InventorySettingType.PIDINST;
       default:
         throw new UnsupportedOperationException(
             messages.getMessage(
@@ -203,29 +198,13 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
   }
 
-  private void assertPdinstRegistrationSupported() {
-    if (!dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PDINST)) {
+  private void assertPidinstRegistrationSupported() {
+    if (!dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST)) {
       throw new UnsupportedOperationException(
           messages.getMessage(
               "errors.inventory.identifier.integration.not.enabled",
-              new Object[] {InventorySettingType.PDINST}));
+              new Object[] {InventorySettingType.PIDINST}));
     }
-    String providerValue = getPdinstProviderValue();
-    if (!IdentifierType.PDINST_DATACITE.equals(
-        EnumUtils.getEnum(IdentifierType.class, providerValue))) {
-      throw new UnsupportedOperationException(
-          messages.getMessage(
-              "errors.inventory.identifier.pdinst.provider.unsupported",
-              new Object[] {providerValue}));
-    }
-  }
-
-  private String getPdinstProviderValue() {
-    SystemPropertyValue providerProperty =
-        sysPropertyMgr
-            .getAllSysadminPropertiesAsMap()
-            .get(SystemPropertyName.PDINST_DATACITE_PROVIDER.getPropertyName());
-    return providerProperty == null ? null : providerProperty.getValue();
   }
 
   @Override
@@ -382,8 +361,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     newDoi.setCreatorType("Personal");
     newDoi.setPublisher(properties.getCustomerName());
     newDoi.setPublicationYear(Year.now().getValue());
-    if (InventorySettingType.PDINST.equals(settingType)) {
-      newDoi.setDoiType(IdentifierType.PDINST_DATACITE.name());
+    if (InventorySettingType.PIDINST.equals(settingType)) {
+      newDoi.setDoiType(IdentifierType.PIDINST_DATACITE.name());
       newDoi.setResourceType("Instrument");
       newDoi.setResourceTypeGeneral("Instrument");
     } else {

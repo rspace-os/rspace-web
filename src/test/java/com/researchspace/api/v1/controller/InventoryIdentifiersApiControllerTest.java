@@ -68,12 +68,12 @@ class InventoryIdentifiersApiControllerTest {
   }
 
   @Test
-  void testPdinstConnectionTestsPdinstClient() {
-    when(mockDataCiteConnector.testDataCiteConnection(InventorySettingType.PDINST))
+  void testPidinstConnectionTestsPidinstClient() {
+    when(mockDataCiteConnector.testDataCiteConnection(InventorySettingType.PIDINST))
         .thenReturn(true);
 
-    assertTrue(controller.testPdinstConnection(user));
-    verify(mockDataCiteConnector).testDataCiteConnection(InventorySettingType.PDINST);
+    assertTrue(controller.testPidinstConnection(user));
+    verify(mockDataCiteConnector).testDataCiteConnection(InventorySettingType.PIDINST);
   }
 
   private ApiInventoryRecordInfo recordWithOneIdentifier() {
@@ -89,7 +89,7 @@ class InventoryIdentifiersApiControllerTest {
   }
 
   @Test
-  void registerForInstrumentGlobalIdGatesOnPdinst() {
+  void registerForInstrumentGlobalIdGatesOnPidinst() {
     when(mockIdentifierMgr.registerNewIdentifier(any(), eq(user)))
         .thenReturn(recordWithOneIdentifier());
     ApiInventoryIdentifierPost registerPost = new ApiInventoryIdentifierPost();
@@ -98,7 +98,7 @@ class InventoryIdentifiersApiControllerTest {
     controller.registerNewIdentifier(registerPost, user);
 
     verify(mockApiHandler)
-        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PDINST);
+        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
     verify(mockApiHandler, never())
         .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.IGSN);
   }
@@ -117,10 +117,10 @@ class InventoryIdentifiersApiControllerTest {
 
   @Test
   void publishGatesByIdentifierType() {
-    ApiInventoryDOI pdinstDoi = new ApiInventoryDOI();
-    pdinstDoi.setDoiType("PDINST_DATACITE");
+    ApiInventoryDOI pidinstDoi = new ApiInventoryDOI();
+    pidinstDoi.setDoiType("PIDINST_DATACITE");
     InventoryRecord instrumentRecord = recordWithOid("IN12345");
-    when(mockIdentifierMgr.getIdentifierById(5L)).thenReturn(pdinstDoi);
+    when(mockIdentifierMgr.getIdentifierById(5L)).thenReturn(pidinstDoi);
     when(mockIdentifierMgr.getInventoryRecordByIdentifierId(5L)).thenReturn(instrumentRecord);
     when(mockIdentifierMgr.publishIdentifier(any(), eq(user)))
         .thenReturn(recordWithOneIdentifier());
@@ -128,7 +128,7 @@ class InventoryIdentifiersApiControllerTest {
     controller.publishIdentifier(5L, user);
 
     verify(mockApiHandler)
-        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PDINST);
+        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
   }
 
   @Test
@@ -148,16 +148,16 @@ class InventoryIdentifiersApiControllerTest {
 
   @Test
   void deleteGatesByIdentifierType() {
-    ApiInventoryDOI pdinstDraftDoi = new ApiInventoryDOI();
-    pdinstDraftDoi.setDoiType("PDINST_DATACITE");
-    pdinstDraftDoi.setState("draft");
-    when(mockIdentifierMgr.getIdentifierById(7L)).thenReturn(pdinstDraftDoi);
-    when(mockIdentifierMgr.deleteUnassociatedIdentifier(pdinstDraftDoi, user)).thenReturn(true);
+    ApiInventoryDOI pidinstDraftDoi = new ApiInventoryDOI();
+    pidinstDraftDoi.setDoiType("PIDINST_DATACITE");
+    pidinstDraftDoi.setState("draft");
+    when(mockIdentifierMgr.getIdentifierById(7L)).thenReturn(pidinstDraftDoi);
+    when(mockIdentifierMgr.deleteUnassociatedIdentifier(pidinstDraftDoi, user)).thenReturn(true);
 
     controller.deleteIdentifier(7L, user);
 
     verify(mockApiHandler)
-        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PDINST);
+        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
   }
 
   @Test

@@ -124,30 +124,30 @@ class ApiAvailabilityHandlerImplTest {
   }
 
   @Test
-  void testInventoryAndPdinstEnabled() {
+  void testInventoryAndPidinstEnabled() {
     setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
-    assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PDINST));
-    handler.assertInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PDINST);
+    assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST));
+    handler.assertInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST);
   }
 
   @Test
-  void testPdinstDisabledIgsnUnaffected() {
+  void testPidinstDisabledIgsnUnaffected() {
     DataCiteConnectorDummy dummyConnector = new DataCiteConnectorDummy();
-    dummyConnector.setEnabled(InventorySettingType.PDINST, false);
+    dummyConnector.setEnabled(InventorySettingType.PIDINST, false);
     handler.setDataCiteConnector(dummyConnector);
     setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
 
     assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.IGSN));
-    assertFalse(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PDINST));
+    assertFalse(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST));
 
     Exception exception =
         assertThrows(
             UnsupportedOperationException.class,
             () ->
                 handler.assertInventoryAndIdentifierTypeEnabled(
-                    anyUser, InventorySettingType.PDINST));
+                    anyUser, InventorySettingType.PIDINST));
     assertEquals(
-        "PDINST integration is not enabled on this RSpace instance.", exception.getMessage());
+        "PIDINST integration is not enabled on this RSpace instance.", exception.getMessage());
   }
 
   @Test

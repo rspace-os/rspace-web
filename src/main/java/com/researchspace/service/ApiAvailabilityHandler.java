@@ -37,14 +37,14 @@ public interface ApiAvailabilityHandler {
 
   /**
    * Asserts that inventory is available for the user and that the identifier integration for the
-   * given setting type (IGSN or PDINST) is configured and enabled, throwing {@link
+   * given setting type (IGSN or PIDINST) is configured and enabled, throwing {@link
    * UnsupportedOperationException} otherwise.
    */
   void assertInventoryAndIdentifierTypeEnabled(User user, InventorySettingType settingType);
 
   /**
    * @return whether inventory is available for the user and the identifier integration for the
-   *     given setting type (IGSN or PDINST) is configured and enabled
+   *     given setting type (IGSN or PIDINST) is configured and enabled
    */
   boolean isInventoryAndIdentifierTypeEnabled(User user, InventorySettingType settingType);
 
