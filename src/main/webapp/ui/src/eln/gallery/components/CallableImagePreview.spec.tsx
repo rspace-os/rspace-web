@@ -17,7 +17,7 @@ import { CallableImagePreviewPage } from "./pageObjects/CallableImagePreviewPage
  *
  * IMAGE MOCKING: PhotoSwipe loads the image URL via a real <img> fetch. We
  * serve every https://via.placeholder.com/** request with a minimal 1×1
- * transparent PNG so the onLoad event fires and PhotoSwipe can open.
+ * transparent SVG so the onLoad event fires and PhotoSwipe can open.
  * The invalid-URL case returns a 404, which means the image never loads and
  * PhotoSwipe is never opened (matching the Playwright spec's expectation that
  * the trigger button remains visible with no modal).
