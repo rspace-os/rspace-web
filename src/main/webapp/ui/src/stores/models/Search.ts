@@ -64,6 +64,7 @@ import {
 import { type Sample } from "../definitions/Sample";
 import { type Instrument } from "../definitions/Instrument";
 import { type InstrumentTemplateAttrs } from "./InstrumentTemplateModel";
+import FieldModel from "./FieldModel";
 import {
   getErrorMessage,
   InvalidState,
@@ -1090,12 +1091,46 @@ export default class Search implements SearchInterface {
     try {
       const args = {
         name,
-        extraFields: instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
-          name: fieldName,
-          type,
-          content: includeContentForFields.has(id) ? content : "",
-          definition: null,
-        })),
+        fields: [
+          ...instrument.fields.map((f) => {
+            const fm = f as FieldModel;
+            const includeContent = includeContentForFields.has(fm.id);
+            const isOptions = fm.type === "radio" || fm.type === "choice";
+            return {
+              name: fm.name,
+              type: fm.type,
+              ...(isOptions
+                ? { selectedOptions: includeContent ? (fm.selectedOptions ?? []) : [] }
+                : {
+                    content: includeContent
+                      ? (fm.content instanceof Date
+                          ? fm.content.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                            })
+                          : String(fm.content ?? ""))
+                      : null,
+                  }),
+              definition:
+                fm.options.length > 0
+                  ? { options: fm.options.map((o) => o.value) }
+                  : null,
+              columnIndex: fm.columnIndex,
+              mandatory: fm.mandatory,
+              newFieldRequest: true,
+            };
+          }),
+          ...instrument.extraFields.map((ef) => ({
+            name: ef.name,
+            type: ef.type.toLowerCase(),
+            content: includeContentForFields.has(ef.id) ? ef.content : null,
+            definition: null,
+            columnIndex: null,
+            mandatory: false,
+            newFieldRequest: true,
+          })),
+        ],
       };
       const { data } = await ApiService.post<InstrumentTemplateAttrs>(
         "instrumentTemplates",

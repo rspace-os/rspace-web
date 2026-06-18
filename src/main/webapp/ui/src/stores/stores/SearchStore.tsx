@@ -394,11 +394,9 @@ export default class SearchStore {
       id: null,
       type: "INSTRUMENT",
       globalId: null,
-      name: template?.name ?? "",
+      name: "",
       permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
       tags: null,
-      description: template?.description ?? undefined,
-      templateId: opts?.templateId ?? null,
       owner: null,
       created: null,
       deleted: false,
@@ -407,15 +405,7 @@ export default class SearchStore {
       attachments: [],
       barcodes: [],
       identifiers: [],
-      extraFields: template?.extraFields.map(({ name, type, content }) => ({
-        id: null,
-        globalId: null,
-        name,
-        type: type.toLowerCase() as "text" | "number",
-        content,
-        lastModified: null,
-        parentGlobalId: null,
-      })) ?? [],
+      fields: [],
       parentContainers: [],
       parentLocation: null,
       lastNonWorkbenchParent: null,
@@ -431,11 +421,7 @@ export default class SearchStore {
       })),
     });
     if (template) {
-      instrument.setAttributes({
-        tags: [...template.tags],
-        image: template.image,
-        newBase64Image: template.newBase64Image,
-      });
+      await instrument.setTemplate(template);
     }
     await this.createNewHelper(instrument);
     return instrument;

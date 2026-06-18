@@ -7,7 +7,7 @@ import NameField from "../components/Fields/Name";
 import DescriptionField from "../components/Fields/Description";
 import TagsField from "../components/Fields/Tags";
 import ImageField from "../components/Fields/Image";
-import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
+import CustomFields from "./Fields/CustomFields";
 import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import docLinks from "../../assets/DocLinks";
 import { observer } from "mobx-react-lite";
@@ -94,11 +94,10 @@ const CustomFieldsSection = observer(
         formSectionError={formSectionError}
         recordType="instrumentTemplate"
       >
-        <ExtraFields
+        <CustomFields
           onErrorStateChange={(field, value) =>
             setFormSectionError(formSectionError, field, value)
           }
-          result={activeResult}
         />
       </StepperPanel>
     );

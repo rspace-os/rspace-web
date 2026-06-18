@@ -1,8 +1,7 @@
 import useStores from "../../stores/use-stores";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
-import IdentifiersField from "../components/Fields/Identifiers/Identifiers";
 import DescriptionField from "../components/Fields/Description";
-import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
+import CustomFields from "./Fields/CustomFields";
 import ImageField from "../components/Fields/Image";
 import NameField from "../components/Fields/Name";
 import TagsField from "../components/Fields/Tags";
@@ -90,7 +89,7 @@ type ExtraFieldSectionArgs = {
   activeResult: InstrumentTemplateModel;
 };
 
-const ExtraFieldSection = observer(
+const CustomFieldSection = observer(
   ({ activeResult }: ExtraFieldSectionArgs) => {
     const formSectionError = useFormSectionError({
       editing: activeResult.editing,
@@ -105,11 +104,10 @@ const ExtraFieldSection = observer(
         formSectionError={formSectionError}
         recordType="instrumentTemplate"
       >
-        <ExtraFields
+        <CustomFields
           onErrorStateChange={(field, value) =>
             setFormSectionError(formSectionError, field, value)
           }
-          result={activeResult}
         />
       </StepperPanel>
     );
@@ -159,14 +157,6 @@ function InstrumentTemplateForm(): ReactNode {
         <>
           <StepperPanel
             icon="instrumentTemplate"
-            title="Identifiers"
-            sectionName="identifiers"
-            recordType="instrumentTemplate"
-          >
-            <IdentifiersField fieldOwner={activeResult} />
-          </StepperPanel>
-          <StepperPanel
-            icon="instrumentTemplate"
             title="Attachments"
             sectionName="attachments"
             recordType="instrumentTemplate"
@@ -181,7 +171,7 @@ function InstrumentTemplateForm(): ReactNode {
           >
             <AccessPermissions fieldOwner={activeResult} />
           </StepperPanel>
-          <ExtraFieldSection activeResult={activeResult} />
+          <CustomFieldSection activeResult={activeResult} />
         </>
       )}
     </Stepper>

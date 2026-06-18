@@ -2,6 +2,7 @@ import useStores from "../../stores/use-stores";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
 import IdentifiersField from "../components/Fields/Identifiers/Identifiers";
 import DescriptionField from "../components/Fields/Description";
+import TemplateFields from "./Fields/TemplateFields";
 import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
 import ImageField from "../components/Fields/Image";
 import NameField from "../components/Fields/Name";
@@ -89,12 +90,12 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
   );
 });
 
-type ExtraFieldSectionArgs = {
+type CustomFieldSectionArgs = {
   activeResult: InstrumentModel;
 };
 
-const ExtraFieldSection = observer(
-  ({ activeResult }: ExtraFieldSectionArgs) => {
+const CustomFieldSection = observer(
+  ({ activeResult }: CustomFieldSectionArgs) => {
     const formSectionError = useFormSectionError({
       editing: activeResult.editing,
       globalId: activeResult.globalId,
@@ -108,6 +109,12 @@ const ExtraFieldSection = observer(
         formSectionError={formSectionError}
         recordType="instrument"
       >
+        <TemplateFields
+          onErrorStateChange={(field, value) =>
+            setFormSectionError(formSectionError, field, value)
+          }
+          instrument={activeResult}
+        />
         <ExtraFields
           onErrorStateChange={(field, value) =>
             setFormSectionError(formSectionError, field, value)
@@ -175,7 +182,7 @@ function InstrumentForm(): ReactNode {
           >
             <AttachmentsField fieldOwner={activeResult} />
           </StepperPanel>
-          <ExtraFieldSection activeResult={activeResult} />
+          <CustomFieldSection activeResult={activeResult} />
         </>
       )}
     </Stepper>
