@@ -20,6 +20,7 @@ allowBuilds:
   core-js: true
   esbuild: true
   protobufjs: true
+  vue-demi: true
 
 # Block packages published less than 7 days ago (10080 minutes) as a defence
 # against supply-chain attacks that are typically caught within that window.
@@ -34,5 +35,8 @@ peerDependencyRules:
     'draft-js-custom-styles>draft-js': 0.11.7
     # This comes from `@playwright/experimental-ct`
     '@vitejs/plugin-react>vite': 8.0.16
-    # @sa11y/vitest pulls vitest@3.2.4, which wants the matching UI package.
+    # @sa11y/vitest pulls an older vitest, which wants the matching UI package.
     'vitest>@vitest/ui': 4.1.6
+    # @scalar/api-reference-react pulls neverpanic, which peer-declares
+    # typescript@5 but works with the repo's typescript@6.0.3.
+    'neverpanic>typescript': 6.0.3

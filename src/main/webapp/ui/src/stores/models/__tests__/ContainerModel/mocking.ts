@@ -2,9 +2,7 @@ import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
 import { personAttrs } from "../PersonModel/mocking";
 
-export const containerAttrs = (
-  attrs?: Readonly<Partial<ContainerAttrs>>
-): ContainerAttrs => ({
+export const containerAttrs = (attrs?: Readonly<Partial<ContainerAttrs>>): ContainerAttrs => ({
   id: 1,
   type: "CONTAINER",
   globalId: "IC1",
@@ -42,15 +40,10 @@ export const containerAttrs = (
   ...attrs,
 });
 
-export const makeMockContainer = (
-  attrs?: Readonly<Partial<ContainerAttrs>>
-): ContainerModel =>
+export const makeMockContainer = (attrs?: Readonly<Partial<ContainerAttrs>>): ContainerModel =>
   new ContainerModel(new AlwaysNewFactory(), containerAttrs(attrs));
 
-export const benchAttrs = ({
-  owner,
-  ...attrs
-}: Readonly<Partial<ContainerAttrs>>): ContainerAttrs => ({
+export const benchAttrs = ({ owner, ...attrs }: Readonly<Partial<ContainerAttrs>>): ContainerAttrs => ({
   id: 1,
   type: "CONTAINER",
   globalId: "BE1",

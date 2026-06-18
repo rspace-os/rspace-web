@@ -1,9 +1,9 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/dropbox";
+import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DropboxArgs = {
   integrationState: IntegrationStates["DROPBOX"];
@@ -26,8 +26,9 @@ function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Dropbox"
         integrationState={integrationState}
@@ -42,10 +43,7 @@ function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
         setupSection={
           <ol>
             <li>Enable the integration.</li>
-            <li>
-              When editing a document, click on the Dropbox icon in the text
-              editor toolbar.
-            </li>
+            <li>When editing a document, click on the Dropbox icon in the text editor toolbar.</li>
           </ol>
         }
       />

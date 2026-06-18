@@ -1,30 +1,27 @@
-import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
-import React, { useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import {
-  type IntegrationStates,
-  useIntegrationsEndpoint,
-} from "../useIntegrationsEndpoint";
 import Table from "@mui/material/Table";
-import TableRow from "@mui/material/TableRow";
+import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
-import TableBody from "@mui/material/TableBody";
-import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { runInAction, observable } from "mobx";
-import { observer, useLocalObservable } from "mobx-react-lite";
-import { Optional } from "../../../util/optional";
-import { useGitHubEndpoint, type Repository } from "../useGitHubEndpoint";
-import ListItemText from "@mui/material/ListItemText";
+import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import RsSet from "../../../util/set";
-import GitHubIcon from "../../../assets/branding/github/logo.svg";
-import * as ArrayUtils from "../../../util/ArrayUtils";
-import { LOGO_COLOR } from "../../../assets/branding/github";
+import { observable, runInAction } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import React, { useContext, useState } from "react";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import { LOGO_COLOR } from "../../../assets/branding/github";
+import GitHubIcon from "../../../assets/branding/github/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import { Optional } from "../../../util/optional";
+import RsSet from "../../../util/set";
+import IntegrationCard from "../IntegrationCard";
+import { type Repository, useGitHubEndpoint } from "../useGitHubEndpoint";
+import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
@@ -50,12 +47,8 @@ const DialogContent = observer(
     const { addAlert } = useContext(AlertContext);
     const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
-    const copyOfRepos = useLocalObservable(() =>
-      linkedRepos.map((c) => observable(c)),
-    );
-    const [allRepositories, setAllRepositories] = useState<
-      Optional<Array<Repository>>
-    >(Optional.empty());
+    const copyOfRepos = useLocalObservable(() => linkedRepos.map((c) => observable(c)));
+    const [allRepositories, setAllRepositories] = useState<Optional<Array<Repository>>>(Optional.empty());
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [loadingAllRepositories, setLoadingAllRepositories] = useState(false);
 
@@ -63,8 +56,7 @@ const DialogContent = observer(
       GITHUB_CONNECTION_CHANNEL,
       (e: MessageEvent<GitHubConnectedMessage>) => {
         if (
-          !e.data ||
-          e.data.type !== "GITHUB_CONNECTED" ||
+          e.data?.type !== "GITHUB_CONNECTED" ||
           typeof e.data.authToken !== "string" ||
           e.data.authToken.length === 0
         ) {
@@ -131,9 +123,7 @@ const DialogContent = observer(
             <TableBody>
               {copyOfRepos.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={2}>
-                    There are no linked repositories.
-                  </TableCell>
+                  <TableCell colSpan={2}>There are no linked repositories.</TableCell>
                 </TableRow>
               )}
               {copyOfRepos.map((config, i) => (
@@ -141,9 +131,7 @@ const DialogContent = observer(
                   <TableCell>
                     <ListItemText
                       primary={config.GITHUB_REPOSITORY_FULL_NAME}
-                      secondary={config.GITHUB_ACCESS_TOKEN.map(
-                        () => null,
-                      ).orElse(
+                      secondary={config.GITHUB_ACCESS_TOKEN.map(() => null).orElse(
                         "Repository is in an invalid state. Please remove and re-add.",
                       )}
                     />
@@ -154,15 +142,10 @@ const DialogContent = observer(
                         void (async () => {
                           try {
                             await deleteAppOptions("GITHUB", config.optionsId);
-                            const indexOfDeleted = copyOfRepos.findIndex(
-                              (c) => c.optionsId === config.optionsId,
-                            );
+                            const indexOfDeleted = copyOfRepos.findIndex((c) => c.optionsId === config.optionsId);
                             runInAction(() => {
                               copyOfRepos.splice(indexOfDeleted, 1);
-                              integrationState.credentials.splice(
-                                indexOfDeleted,
-                                1,
-                              );
+                              integrationState.credentials.splice(indexOfDeleted, 1);
                             });
                             addAlert(
                               mkAlert({
@@ -207,60 +190,39 @@ const DialogContent = observer(
                 <TableBody>
                   {repos.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={2}>
-                        There are no available repositories.
-                      </TableCell>
+                      <TableCell colSpan={2}>There are no available repositories.</TableCell>
                     </TableRow>
                   )}
                   {repos.map((repo, i) => (
                     <TableRow key={i}>
                       <TableCell>
-                        <ListItemText
-                          primary={repo.full_name}
-                          secondary={repo.description}
-                        />
+                        <ListItemText primary={repo.full_name} secondary={repo.description} />
                       </TableCell>
                       <TableCell>
                         <Button
                           onClick={() => {
                             void (async () => {
                               try {
-                                const newState = await saveAppOptions(
-                                  "GITHUB",
-                                  Optional.empty(),
-                                  {
-                                    GITHUB_ACCESS_TOKEN: accessToken,
-                                    GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
-                                  },
-                                );
+                                const newState = await saveAppOptions("GITHUB", Optional.empty(), {
+                                  GITHUB_ACCESS_TOKEN: accessToken,
+                                  GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
+                                });
                                 const optionIdsOfExistingRepos = new RsSet(
                                   copyOfRepos.map(({ optionsId }) => optionsId),
                                 );
                                 runInAction(() => {
-                                  integrationState.credentials =
-                                    newState.credentials;
+                                  integrationState.credentials = newState.credentials;
                                   try {
-                                    const newlySavedRepo = new RsSet(
-                                      newState.credentials,
-                                    )
+                                    const newlySavedRepo = new RsSet(newState.credentials)
                                       .mapOptional((x) => x)
-                                      .subtractMap(
-                                        ({ optionsId }) => optionsId,
-                                        optionIdsOfExistingRepos,
-                                      ).first;
-                                    copyOfRepos.push(
-                                      observable(newlySavedRepo),
-                                    );
+                                      .subtractMap(({ optionsId }) => optionsId, optionIdsOfExistingRepos).first;
+                                    copyOfRepos.push(observable(newlySavedRepo));
                                   } catch {
-                                    throw new Error(
-                                      "Save completed but cannot show results.",
-                                    );
+                                    throw new Error("Save completed but cannot show results.");
                                   }
                                   setAllRepositories(
                                     allRepositories.map((allRepos) =>
-                                      allRepos.filter(
-                                        (r) => r.full_name !== repo.full_name,
-                                      ),
+                                      allRepos.filter((r) => r.full_name !== repo.full_name),
                                     ),
                                   );
                                 });
@@ -302,9 +264,7 @@ const DialogContent = observer(
                 void addHandler();
               }}
             >
-              {loadingAllRepositories
-                ? "Loading available repositories"
-                : "Add"}
+              {loadingAllRepositories ? "Loading available repositories" : "Add"}
             </Button>
           </Box>
         )}
@@ -350,9 +310,7 @@ function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
         explanatoryText="Store and manage your code through a software development and Git version control platform."
         image={GitHubIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText="You can link to projects, folders, or files stored in GitHub repositories directly from RSpace."
         helpLinkText="GitHub integration docs"
         website="github.com"
@@ -360,24 +318,14 @@ function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
         setupSection={
           <>
             <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your GitHub
-                account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your GitHub account.</li>
               <li>Select repositories you want to give RSpace access to.</li>
               <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the GitHub icon in the text
-                editor toolbar.
-              </li>
+              <li>When editing a document, click on the GitHub icon in the text editor toolbar.</li>
             </ol>
             {ArrayUtils.all(integrationState.credentials)
               .map((linkedRepos) => (
-                <DialogContent
-                  key={null}
-                  linkedRepos={linkedRepos}
-                  integrationState={integrationState}
-                />
+                <DialogContent key={null} linkedRepos={linkedRepos} integrationState={integrationState} />
               ))
               .orElse("Error getting configured repositories")}
           </>

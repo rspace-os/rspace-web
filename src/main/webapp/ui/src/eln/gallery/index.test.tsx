@@ -1,4 +1,5 @@
-import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 /*
  * Under vitest's `--conditions=require` resolution, `react-router` and
  * `react-router-dom` resolve to two separate module copies (the dom package's
@@ -18,22 +19,15 @@ vi.mock("react-router-dom", async () => {
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
-import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-  cleanup,
-  within,
-} from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
 import fc from "fast-check";
 import { MemoryRouter } from "react-router";
+import axios from "@/common/axios";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { Gallery } from ".";
-import { type GallerySection } from "./common";
+import type { GallerySection } from "./common";
 
 /**
  * Equivalent to `GalleryStory` from `./index.story`, but pulling `MemoryRouter`
@@ -46,10 +40,7 @@ import { type GallerySection } from "./common";
 function GalleryStory({
   urlSuffix,
 }: {
-  urlSuffix?:
-    | `?mediaType=${GallerySection}`
-    | `/${number}`
-    | `/item/${number}`;
+  urlSuffix?: `?mediaType=${GallerySection}` | `/${number}` | `/item/${number}`;
 }) {
   return (
     <LandmarksProvider>
@@ -137,14 +128,10 @@ function mockNetwork() {
   });
 
   // Analytics provider (axios.create with baseURL /session/ajax).
-  mockAxios
-    .onGet("/session/ajax/analyticsProperties")
-    .reply(200, { analyticsEnabled: false });
+  mockAxios.onGet("/session/ajax/analyticsProperties").reply(200, { analyticsEnabled: false });
 
   // AppBar live chat properties (axios.create with baseURL /session/ajax).
-  mockAxios
-    .onGet("/session/ajax/livechatProperties")
-    .reply(200, { livechatEnabled: false });
+  mockAxios.onGet("/session/ajax/livechatProperties").reply(200, { livechatEnabled: false });
 
   // Deployment property lookups (e.g. netfilestores.enabled).
   mockAxios.onGet("/deploymentproperties/ajax/property").reply(200, false);
@@ -307,27 +294,19 @@ describe("Gallery", () => {
 
     test("On '/{id}', the title should be '{folder name} | RSpace Gallery'", async () => {
       await fc.assert(
-        fc.asyncProperty(
-          fc.nat(1000),
-          fc.string({ minLength: 1, maxLength: 20 }),
-          async (id, folderName) => {
-            cleanup();
-            document.title = "";
-            mockAxios.reset();
-            mockNetwork();
-            mockAxios
-              .onGet(/\/api\/v1\/folders\//)
-              .reply(200, folderDetails({ id, name: folderName }));
+        fc.asyncProperty(fc.nat(1000), fc.string({ minLength: 1, maxLength: 20 }), async (id, folderName) => {
+          cleanup();
+          document.title = "";
+          mockAxios.reset();
+          mockNetwork();
+          mockAxios.onGet(/\/api\/v1\/folders\//).reply(200, folderDetails({ id, name: folderName }));
 
-            render(<GalleryStory urlSuffix={`/${id}`} />);
+          render(<GalleryStory urlSuffix={`/${id}`} />);
 
-            await waitFor(() => {
-              expect(document.title).toBe(
-                normalizeTitle(`${folderName} | RSpace Gallery`),
-              );
-            });
-          },
-        ),
+          await waitFor(() => {
+            expect(document.title).toBe(normalizeTitle(`${folderName} | RSpace Gallery`));
+          });
+        }),
         { numRuns: 5 },
       );
     });
@@ -357,9 +336,7 @@ describe("Gallery", () => {
             render(<GalleryStory urlSuffix={`/item/${id}`} />);
 
             await waitFor(() => {
-              expect(document.title).toBe(
-                normalizeTitle(`${filename}.jpg | RSpace Gallery`),
-              );
+              expect(document.title).toBe(normalizeTitle(`${filename}.jpg | RSpace Gallery`));
             });
           },
         ),
@@ -379,16 +356,12 @@ describe("Gallery", () => {
       });
 
       // the user taps on the 'Chemistry' section
-      await user.click(
-        await screen.findByRole("button", { name: "Chemistry" }),
-      );
+      await user.click(await screen.findByRole("button", { name: "Chemistry" }));
 
       // the breadcrumbs reflect the new section
       await waitFor(() => {
         expect(
-          within(
-            screen.getByRole("navigation", { name: "Breadcrumbs" }),
-          ).getByRole("button", { name: "Chemistry" }),
+          within(screen.getByRole("navigation", { name: "Breadcrumbs" })).getByRole("button", { name: "Chemistry" }),
         ).toBeVisible();
       });
 
@@ -400,9 +373,7 @@ describe("Gallery", () => {
 
     test("Should handle simultaneous change in path and section", async () => {
       const user = userEvent.setup();
-      mockAxios
-        .onGet(/\/api\/v1\/folders\//)
-        .reply(200, folderDetails({ id: 123, name: "some folder" }));
+      mockAxios.onGet(/\/api\/v1\/folders\//).reply(200, folderDetails({ id: 123, name: "some folder" }));
 
       render(<GalleryStory urlSuffix="/123" />);
 
@@ -412,16 +383,12 @@ describe("Gallery", () => {
       });
 
       // the user taps on the 'Chemistry' section
-      await user.click(
-        await screen.findByRole("button", { name: "Chemistry" }),
-      );
+      await user.click(await screen.findByRole("button", { name: "Chemistry" }));
 
       // the breadcrumbs reflect the new section
       await waitFor(() => {
         expect(
-          within(
-            screen.getByRole("navigation", { name: "Breadcrumbs" }),
-          ).getByRole("button", { name: "Chemistry" }),
+          within(screen.getByRole("navigation", { name: "Breadcrumbs" })).getByRole("button", { name: "Chemistry" }),
         ).toBeVisible();
       });
 
@@ -545,15 +512,11 @@ describe("Gallery", () => {
       render(<GalleryStory urlSuffix="?mediaType=Images" />);
 
       // the snippet appears in the listing
-      await user.click(
-        await screen.findByRole("gridcell", { name: "My Snippet" }),
-      );
+      await user.click(await screen.findByRole("gridcell", { name: "My Snippet" }));
 
       // open the actions menu and choose Share
       await user.click(screen.getByRole("button", { name: /actions/i }));
-      await user.click(
-        await screen.findByRole("menuitem", { name: /share/i }),
-      );
+      await user.click(await screen.findByRole("menuitem", { name: /share/i }));
 
       // the share dialog for the selected snippet is shown
       const shareDialog = await screen.findByRole("dialog", {
@@ -569,14 +532,10 @@ describe("Gallery", () => {
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
 
       // save the share
-      await user.click(
-        within(shareDialog).getByRole("button", { name: /Save/i }),
-      );
+      await user.click(within(shareDialog).getByRole("button", { name: /Save/i }));
 
       // the success toast appears
-      expect(
-        await screen.findByText(/Shares updated successfully\./i),
-      ).toBeVisible();
+      expect(await screen.findByText(/Shares updated successfully\./i)).toBeVisible();
     });
   });
 });

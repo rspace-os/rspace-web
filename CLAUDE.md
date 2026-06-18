@@ -17,6 +17,7 @@ These instructions apply to the entire repository unless a deeper `AGENTS.md` ov
 - When searching the repo, prefer `rg` and `rg --files`.
 - Do not edit minified files unless the user explicitly asks for it.
 - Plan documents (design notes, multi-step implementation plans, scratch analyses) must be written to the `.claude/` folder, which is gitignored. Never place plan files at the repository root or anywhere else inside `src/`. The `.claude/` folder is the only sanctioned location for ephemeral working notes that should not be committed.
+- **Never run the Maven `install` phase or install dependencies into the local Maven repository.** Do not run `mvn install`, `./mvnw install`, `mvn install:install-file`, `mvn deploy:deploy-file`, or any command that would write artefacts into `~/.m2/repository`. This applies to this project, to sibling projects in the workspace (notably `rspace-core-model`), and to any dependency the user is iterating on. Reason: locally installed artefacts silently shadow the jitpack-built artefact at the same Maven coordinate, so the running JVM ends up with bytecode that does not match what the pom claims to use. That mismatch produces failures that look like a code bug but are really a classpath bug, and it wastes hours to track down. Stick to phases that do not touch `~/.m2`: `mvn compile`, `mvn package`, `mvn test`, `mvn verify`. Dependencies are consumed via jitpack at the version pinned in `pom.xml` — if the user wants to test an unpublished change to a sibling project, ask them to push it and trigger a remote build, then bump the pom to the new commit-hash version. Do not work around this by installing locally.
 
 ## Project Overview
 
@@ -29,7 +30,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ## Tech Stack
 
 **Backend:**
-- Java 11 source level, Java 17 JDK runtime — do **not** use Java 17+ language features (e.g., records, sealed classes, pattern matching)
+- Java 17 source level and Java 17 JDK runtime (Adoptium Temurin); Java 17 language features are allowed
 - Spring Framework (MVC, Security, WebSocket)
 - Maven 3.8.1+ build tool (`./mvnw`)
 - MariaDB 10.6 or 10.11 with Hibernate ORM + Envers auditing
@@ -46,7 +47,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ## Build & Run
 
 ### Prerequisites
-- Java 17 JDK (Adoptium Temurin recommended) — required even though source level is 11
+- Java 17 JDK (Adoptium Temurin recommended)
 - Maven 3.8.1+ or use `./mvnw`
 - MariaDB 10.6 or 10.11
 - Node 24 (frontend dev only)
@@ -74,7 +75,45 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 ./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run -DreactDevMode=true
 ```
 
+> **Dev cache-busting for legacy assets:** in dev mode (`reactDevMode=true`), legacy
+> `/scripts/` and `/styles/` assets (e.g. `recordInfoPanel.js`) are served without a `?v=`
+> cache-buster, so the browser keeps serving a previously cached copy after you edit them.
+> If a legacy JS/CSS change does not show up, hard-refresh (Cmd+Shift+R), or add
+> `-DlegacyAssetCacheBustingInDevMode=true` to the `jetty:run` command so those assets are
+> cache-busted automatically. The React/Vite bundle is unaffected (it is always served fresh).
+
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
+
+### Experimental: Dockerized dev stack (per worktree)
+
+An experimental Docker workflow can boot the whole stack (MariaDB + Jetty
+backend + Vite frontend) for the current git worktree, with the worktree source
+bind-mounted in (frontend hot-reloads; Java changes apply via `rspace-dev
+reload`). It lives in `docker/dev/` (launcher `docker/dev/rspace-dev`, docs in
+`docker/dev/README.md`). Each worktree gets its own isolated instance with
+auto-assigned host ports, so several can run concurrently.
+
+```bash
+./docker/dev/rspace-dev up      # build + start db, backend, frontend
+./docker/dev/rspace-dev down    # stop + remove containers (keeps data + caches)
+./docker/dev/rspace-dev nuke    # destroy this worktree's instance AND its volumes
+```
+
+**Agent guidance:** when a developer wants to run RSpace locally — especially
+across multiple worktrees — you MAY mention this option and explain how it
+works. Do NOT start it on their behalf: never run `rspace-dev up` (or otherwise
+launch the containers) unless the user explicitly asks you to. It is
+resource-heavy (a full JVM, database, and Node server per worktree) and not yet
+officially supported, so leave the decision to launch it to the developer.
+
+**Tearing down:** `rspace-dev down` stops an instance (reversible; keeps the
+database, node_modules, build output, and shared caches), while `rspace-dev
+nuke` destroys it along with this worktree's volumes (database, node_modules,
+build output, search indices, filestore). Both are scoped to the current
+worktree and never affect another worktree or the shared Maven/pnpm caches. You
+MAY run these when the user asks you to stop or destroy their instance. `nuke`
+permanently deletes that worktree's local dev data, so confirm first unless the
+user was explicit, and never run it on your own initiative.
 
 ### Frontend Development (watch mode)
 
@@ -137,11 +176,12 @@ pnpm run test          # Vitest unit tests
 pnpm run test:ui       # Vitest with browser UI
 pnpm run test-ct       # Playwright component tests
 pnpm run tsc           # TypeScript type check
-pnpm run lint          # ESLint
-pnpm run lint:fix      # ESLint with auto-fix
+pnpm run lint          # Biome lint + format check (read-only)
+pnpm run lint:fix      # Biome lint + format with auto-fix
+pnpm run format        # Biome format only (write)
 ```
 
-When changing frontend code in `src/main/webapp/ui`, run the most relevant checks from the repo root. At minimum, run `pnpm run tsc`; run `pnpm run test` for behavioral changes and `pnpm run lint` when the change could affect linted code or formatting.
+When changing frontend code in `src/main/webapp/ui`, run the most relevant checks before finishing. At minimum, run `pnpm run tsc`; run `pnpm run test` for behavioral changes and `pnpm run lint` when the change could affect linted code or formatting.
 
 Run a single Vitest test file:
 ```bash
@@ -157,6 +197,14 @@ pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 - **Test setup:** Global setup in `src/__tests__/setup.ts` polyfills `localStorage`, `sessionStorage`, `TextEncoder`/`TextDecoder`.
 - **Console suppression:** Use `silenceConsole()` from test helpers to suppress expected errors.
 - **Test timeout:** 20 seconds (configured in `vitest.config.ts`).
+- **Vitest must execute with `src/main/webapp/ui` as its working directory.** The `vite.config.ts` that owns module aliases (`@/` -> `src/`, `Styles` -> `src/util/styles.ts`) lives there. Running `vitest` from any other directory produces module-resolution failures such as `Cannot find package '@/__tests__/customQueries'` or `Cannot find package 'Styles'`, which look like a source bug but are a cwd problem. Since the pnpm migration the package.json lives at the repo root, so the sanctioned entry is `pnpm test <path-relative-to-ui>` from the repo root (the script cd's into `ui` itself). `npx vitest run <path>` from inside `ui` also works. Beware: `pnpm exec vitest` from inside `ui` can fail with `ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE` because `ui` no longer has its own package.json.
+- **Lint dialect required by this repo's ESLint config — write it compliant from the first draft instead of fixing up afterwards:**
+  - Use `expect(node).toBeInTheDocument()` / `not.toBeInTheDocument()`, never `.toBeTruthy()` / `toBeNull()` for DOM existence.
+  - Use `expect(node).toHaveAttribute(name, value)`, never `expect(node.getAttribute(name)).toBe(value)`.
+  - Use `expect(button).toBeDisabled()`, never `expect((button as HTMLButtonElement).disabled).toBe(true)`.
+  - For `vi.mocked(obj.method)`, extract the method to a local first (`const m = obj.method; vi.mocked(m)`), otherwise `@typescript-eslint/unbound-method` fires.
+  - `testing-library/no-container` and `no-node-access` are enabled. If you genuinely need `container.querySelector` (rare — usually to inspect a non-semantic child of a MUI component), wrap the block in `/* eslint-disable testing-library/no-node-access, testing-library/no-container */` with a comment explaining why.
+- **MUI `Select` inside `FormField` has a broken accessible name.** Its `aria-labelledby` is set to its own id rather than the label's, so `getByRole('combobox', { name: /field type/i })` returns no matches and `getByLabelText('Field type')` resolves to the FormControl wrapper rather than the select itself, so neither query reliably reaches the control. The reliable query is a stable `data-testid` on the display element: pass `SelectDisplayProps={{ "data-testid": "MySelect" } as React.HTMLAttributes<HTMLDivElement>}` and then `screen.getByTestId('MySelect')`.
 
 ### Internationalization (i18n)
 
@@ -250,7 +298,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 
 ## Common Development Pitfalls
 
-1. **Java language level:** Source is Java 11 (`<release>11</release>`) despite using JDK 17. Do not use records, sealed classes, text blocks, or other post-Java 11 features.
+1. **Java language level:** Source and runtime are both Java 17 (`<release>17</release>`); Java 17 language features (records, sealed classes, text blocks, pattern matching) are allowed.
 2. **Transaction boundary:** Calling a DAO directly from a controller will fail silently or throw — always go through a `*Manager` service.
 3. **Test class separation:** `*Test.java` (transactional rollback) and `*IT.java` (real commits) run in different Maven phases. Mixing them causes failures.
 4. **Lazy loading in tests:** Spring transactional tests with auto-rollback mask lazy-loading exceptions that will surface in production.
@@ -277,7 +325,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 - Functional components with hooks only
 - Axios for API calls (centralized)
 - DOMPurify for any user-generated HTML (XSS prevention)
-- ESLint + Prettier enforced; run `pnpm run lint` from the repo root before committing
+- Biome (lint + format) configured; run `pnpm run lint` (or `pnpm run lint:fix`) before committing
 - Use the existing workspace package manager (`pnpm` for `src/main/webapp/ui`)
 - Install dependencies only when needed for the task
 - Do not add new dependencies unless they are necessary to solve the requested problem
@@ -322,7 +370,7 @@ DevDocs/                           # Developer documentation
 
 - **GitHub Actions:** `.github/workflows/lint-and-test.yml` (public CI) — auto-detects frontend vs Java changes and runs appropriate test suites
 - **Jenkins:** `Jenkinsfile` (internal CI with code coverage)
-- Code quality: SonarQube, SpotBugs, Checkstyle
+- Code quality: SonarQube, Checkstyle
 - **PR template:** `.github/pull_request_template.md` — requires a description; design decisions and testing notes optional; include screenshots for UI changes
 
 ## Agent-Specific Config Files

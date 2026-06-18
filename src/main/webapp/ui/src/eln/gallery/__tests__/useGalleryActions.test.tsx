@@ -1,20 +1,20 @@
-import { test, describe, expect } from 'vitest';
+import { describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import RsSet from "../../../util/set";
-import { useGalleryActions, rootDestination } from "../useGalleryActions";
-import { dummyId, Description, LocalGalleryFile } from "../useGalleryListing";
-import Alerts from "../../../components/Alerts/Alerts";
 import MockAdapter from "axios-mock-adapter";
-
 import axios from "@/common/axios";
+import Alerts from "../../../components/Alerts/Alerts";
+import RsSet from "../../../util/set";
+import { rootDestination, useGalleryActions } from "../useGalleryActions";
+import { Description, dummyId, LocalGalleryFile } from "../useGalleryListing";
+
 describe("useGalleryActions", () => {
   describe("duplicateFiles", () => {
     function TestingDuplicateComponent() {
       const { duplicateFiles } = useGalleryActions();
       return (
+        // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button
           onClick={() => {
             void duplicateFiles(
@@ -49,7 +49,6 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-
     }
     test("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
@@ -64,7 +63,6 @@ describe("useGalleryActions", () => {
         errorMsg: {
           errorMessages: ["This is a test error message."],
         },
-
       });
       render(
         <Alerts>
@@ -85,7 +83,6 @@ describe("useGalleryActions", () => {
         exceptionMessage: "This is a test error message.",
         tstamp: "2024-12-10T15:12:57.591Z",
         errorId: "dvnaxNHumB",
-
       });
       render(
         <Alerts>
@@ -103,6 +100,7 @@ describe("useGalleryActions", () => {
     function TestingDeleteComponent() {
       const { deleteFiles } = useGalleryActions();
       return (
+        // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button
           onClick={() => {
             void deleteFiles(
@@ -137,7 +135,6 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-
     }
     test("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
@@ -152,7 +149,6 @@ describe("useGalleryActions", () => {
         errorMsg: {
           errorMessages: ["This is a test error message."],
         },
-
       });
       render(
         <Alerts>
@@ -173,7 +169,6 @@ describe("useGalleryActions", () => {
         exceptionMessage: "This is a test error message.",
         tstamp: "2024-12-10T15:12:57.591Z",
         errorId: "dvnaxNHumB",
-
       });
       render(
         <Alerts>
@@ -191,6 +186,7 @@ describe("useGalleryActions", () => {
     function TestingMoveComponent() {
       const { moveFiles } = useGalleryActions();
       return (
+        // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button
           onClick={() => {
             void moveFiles(
@@ -227,7 +223,6 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-
     }
     test("errorMessages should result in an error alert", async () => {
       const user = userEvent.setup();
@@ -242,7 +237,6 @@ describe("useGalleryActions", () => {
         errorMsg: {
           errorMessages: ["This is a test error message."],
         },
-
       });
       render(
         <Alerts>
@@ -263,7 +257,6 @@ describe("useGalleryActions", () => {
         exceptionMessage: "This is a test error message.",
         tstamp: "2024-12-10T15:12:57.591Z",
         errorId: "dvnaxNHumB",
-
       });
       render(
         <Alerts>
@@ -278,13 +271,10 @@ describe("useGalleryActions", () => {
     });
   });
   describe("changeDescription", () => {
-    function TestingChangeDescriptionComponent({
-      shouldFail = false,
-    }: {
-      shouldFail?: boolean;
-    }) {
+    function TestingChangeDescriptionComponent({ shouldFail = false }: { shouldFail?: boolean }) {
       const { changeDescription } = useGalleryActions();
       return (
+        // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button
           onClick={() => {
             void changeDescription(
@@ -316,9 +306,7 @@ describe("useGalleryActions", () => {
               }),
               new Description({
                 key: "present",
-                value: shouldFail
-                  ? "new description that is too long".repeat(10)
-                  : "new valid description",
+                value: shouldFail ? "new description that is too long".repeat(10) : "new valid description",
               }),
             ).catch(() => {
               // Expect error to be thrown and caught here
@@ -328,7 +316,6 @@ describe("useGalleryActions", () => {
           click me
         </button>
       );
-
     }
     test("successful description update should result in success alert", async () => {
       const user = userEvent.setup();
@@ -336,7 +323,6 @@ describe("useGalleryActions", () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("description").reply(200, {
         success: true,
-
       });
       render(
         <Alerts>
@@ -348,18 +334,15 @@ describe("useGalleryActions", () => {
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("Successfully updated description.");
-
     });
     test("exceptionMessage error response format should result in error toast", async () => {
       const user = userEvent.setup();
 
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("description").reply(200, {
-        exceptionMessage:
-          "Something went wrong: \ndescription too long, should be max 250 chars\n\n",
+        exceptionMessage: "Something went wrong: \ndescription too long, should be max 250 chars\n\n",
         tstamp: "2025-09-15T14:17:48.775+01:00",
         errorId: "XWBuZQsJik",
-
       });
       render(
         <Alerts>
@@ -371,9 +354,7 @@ describe("useGalleryActions", () => {
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("Failed to update description.");
-      expect(toast).toHaveTextContent(
-        "Something went wrong: description too long, should be max 250 chars",
-      );
+      expect(toast).toHaveTextContent("Something went wrong: description too long, should be max 250 chars");
     });
   });
 });

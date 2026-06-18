@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
-import { type Person, type StandardValidations } from "./common";
-import { type Tag } from "./Tags";
+import type React from "react";
+import { useEffect } from "react";
+import type { Person, StandardValidations } from "./common";
+import type { Tag } from "./Tags";
 
 /*
  * This component collects the metadata required by Digital Commons Data to make a deposit.
@@ -14,9 +15,7 @@ type DigitalCommonsDataRepoArgs = {
   // current value is passed in from the caller; modified values are simply
   // propagated up and the fields initialise to empty.
   updatePeople: (people: Array<Person>) => void;
-  handleChange: (event: {
-    target: { name: "subject" | "title" | "description"; value: string };
-  }) => void;
+  handleChange: (event: { target: { name: "subject" | "title" | "description"; value: string } }) => void;
 
   // Callers of this component should validate the modified values and use
   // this prop to signal as to whether the corresponding field should be in an
@@ -90,9 +89,7 @@ export default function DigitalCommonsDataRepo({
           name="title"
           error={submitAttempt && !inputValidations.title}
           label="Title *"
-          onChange={({ target: { value } }) =>
-            handleChange({ target: { name: "title", value } })
-          }
+          onChange={({ target: { value } }) => handleChange({ target: { name: "title", value } })}
           margin="normal"
           fullWidth
           value={title}
@@ -105,9 +102,7 @@ export default function DigitalCommonsDataRepo({
           name="description"
           multiline
           maxRows="4"
-          onChange={({ target: { value } }) =>
-            handleChange({ target: { name: "description", value } })
-          }
+          onChange={({ target: { value } }) => handleChange({ target: { name: "description", value } })}
           margin="normal"
           fullWidth
           value={description}

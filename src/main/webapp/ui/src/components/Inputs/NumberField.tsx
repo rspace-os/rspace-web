@@ -1,5 +1,5 @@
-import React from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import type React from "react";
 import NoValue from "../../components/NoValue";
 
 export type NumberFieldArgs = {
@@ -23,7 +23,7 @@ export type NumberFieldArgs = {
      * storable in state variables. Examples include the empty string and
      * strings ending in the letter "e".
      */
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
@@ -84,9 +84,10 @@ export default function NumberField({
            */
           inputMode: "text",
           lang: "en", // force dot in decimal numbers in compatible browsers
-          ["aria-label"]: ariaLabel,
+          "aria-label": ariaLabel,
           ...slotProps?.htmlInput,
         },
-      }} />
+      }}
+    />
   );
 }

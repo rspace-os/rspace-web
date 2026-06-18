@@ -1,15 +1,10 @@
-import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { buttonClasses } from "@mui/material/Button";
+import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ThemeProvider } from "@mui/material/styles";
-import { buttonClasses } from "@mui/material/Button";
 import materialTheme from "@/theme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RaidConnectionsDisassociateButton from "../RaidConnectionsDisassociateButton";
 import "@/__tests__/__mocks__/matchMedia";
 
@@ -37,11 +32,7 @@ vi.mock("@/modules/raid/mutations", () => ({
   })),
 }));
 
-const renderWithProviders = (props: {
-  groupId: string;
-  raidIdentifier: string;
-  raidTitle: string;
-}) => {
+const renderWithProviders = (props: { groupId: string; raidIdentifier: string; raidTitle: string }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -54,7 +45,7 @@ const renderWithProviders = (props: {
       <QueryClientProvider client={queryClient}>
         <RaidConnectionsDisassociateButton {...props} />
       </QueryClientProvider>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
 };
 
@@ -73,6 +64,7 @@ describe("RaidConnectionsDisassociateButton", () => {
     if (!window.RS) {
       window.RS = {
         exportModal: { openWithExportSelection: vi.fn() },
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       } as any;
     }
   });
@@ -104,9 +96,7 @@ describe("RaidConnectionsDisassociateButton", () => {
     it("Should render the disassociate button", () => {
       renderWithProviders(defaultProps);
 
-      expect(
-        screen.getByRole("button", { name: /disassociate/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /disassociate/i })).toBeInTheDocument();
     });
 
     it("Should render button with error color variant", () => {
@@ -141,9 +131,7 @@ describe("RaidConnectionsDisassociateButton", () => {
 
       await user.click(screen.getByRole("button", { name: /disassociate/i }));
 
-      expect(
-        await screen.findByText("Confirm Disassociation")
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Confirm Disassociation")).toBeInTheDocument();
     });
 
     it("Should display RAiD title and identifier in dialog", async () => {
@@ -170,9 +158,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(
-        screen.getByText(/Are you sure you want to disassociate/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Are you sure you want to disassociate/i)).toBeInTheDocument();
     });
 
     it("Should call mutation reset when opening dialog", async () => {
@@ -300,9 +286,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         groupId: "67890",
       });
 
-      expect(
-        screen.getByRole("button", { name: /disassociate/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /disassociate/i })).toBeInTheDocument();
     });
 
     it("Should handle different raidIdentifier values", async () => {

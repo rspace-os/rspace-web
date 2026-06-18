@@ -1,28 +1,23 @@
-import Grid from "@mui/material/Grid";
-import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
-import { observer } from "mobx-react-lite";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import { useDmpAssistantEndpoint } from "../useDmpAssistantEndpoint";
+import Grid from "@mui/material/Grid";
+import { observer } from "mobx-react-lite";
+import React from "react";
 import { LOGO_COLOR } from "../../../assets/branding/dmpassistant";
+import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useDmpAssistantEndpoint } from "../useDmpAssistantEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DMPAssistantArgs = {
   integrationState: IntegrationStates["DMPASSISTANT"];
   update: (newIntegrationState: IntegrationStates["DMPASSISTANT"]) => void;
 };
 
-function DMPAssistant({
-  integrationState,
-  update,
-}: DMPAssistantArgs): React.ReactNode {
+function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpAssistantEndpoint();
-  const [connected, setConnected] = React.useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
   React.useEffect(() => {
     const f = () => {
@@ -31,7 +26,7 @@ function DMPAssistant({
         mkAlert({
           variant: "success",
           message: "Successfully connected to DMP Assistant.",
-        })
+        }),
       );
     };
     window.addEventListener("DMPASSISTANT_CONNECTED", f);
@@ -60,14 +55,10 @@ function DMPAssistant({
         setupSection={
           <>
             <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your DMP
-                Assistant account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your DMP Assistant account.</li>
               <li>Enable the integration.</li>
               <li>
-                You can now import a DMP when in the Gallery, and associate a
-                DMP with data when in the export dialog.
+                You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.
               </li>
             </ol>
             {connected ? (
@@ -85,12 +76,7 @@ function DMPAssistant({
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/dmpassistant/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/dmpassistant/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>
@@ -98,9 +84,7 @@ function DMPAssistant({
             )}
           </>
         }
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         integrationState={integrationState}
       />
     </Grid>

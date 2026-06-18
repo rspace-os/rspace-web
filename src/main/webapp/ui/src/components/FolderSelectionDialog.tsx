@@ -1,13 +1,13 @@
-import React from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import React from "react";
+import type { FolderTreeNode } from "../hooks/api/useFolders";
 import FolderTree from "./FolderTree";
-import { type FolderTreeNode } from "../hooks/api/useFolders";
 
 type FolderSelectionDialogProps = {
   open: boolean;
@@ -24,15 +24,11 @@ export default function FolderSelectionDialog({
   rootFolderId,
   title = "Select Folder",
 }: FolderSelectionDialogProps): React.ReactNode {
-  const [selectedFolder, setSelectedFolder] =
-    React.useState<FolderTreeNode | null>(null);
+  const [selectedFolder, setSelectedFolder] = React.useState<FolderTreeNode | null>(null);
 
-  const handleFolderSelect = React.useCallback(
-    (folder: FolderTreeNode | null) => {
-      setSelectedFolder(folder);
-    },
-    [],
-  );
+  const handleFolderSelect = React.useCallback((folder: FolderTreeNode | null) => {
+    setSelectedFolder(folder);
+  }, []);
 
   const handleConfirm = React.useCallback(() => {
     if (selectedFolder) {
@@ -57,10 +53,7 @@ export default function FolderSelectionDialog({
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Box sx={{ minHeight: 300, maxHeight: 500 }}>
-          <FolderTree
-            onFolderSelect={handleFolderSelect}
-            rootFolderId={rootFolderId}
-          />
+          <FolderTree onFolderSelect={handleFolderSelect} rootFolderId={rootFolderId} />
         </Box>
         {selectedFolder && (
           <Box
@@ -78,12 +71,7 @@ export default function FolderSelectionDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCancel}>Cancel</Button>
-        <Button
-          color="callToAction"
-          onClick={handleConfirm}
-          variant="contained"
-          disabled={!selectedFolder}
-        >
+        <Button color="callToAction" onClick={handleConfirm} variant="contained" disabled={!selectedFolder}>
           Select
         </Button>
       </DialogActions>

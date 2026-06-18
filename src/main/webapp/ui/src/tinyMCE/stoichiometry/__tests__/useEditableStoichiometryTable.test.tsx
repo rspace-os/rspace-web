@@ -1,10 +1,10 @@
-import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inventoryQueryKeys } from "@/modules/inventory/queries";
-import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
+import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import {
@@ -219,39 +219,40 @@ const {
     revision: 1,
     molecules: [],
   },
-  mockUseSubSampleQuantitiesQuery: vi.fn(() =>
-    new Map([
-      [
-        "SS123",
-        {
-          status: "available",
-          quantity: {
-            numericValue: 4,
-            unitId: 7,
+  mockUseSubSampleQuantitiesQuery: vi.fn(
+    () =>
+      new Map([
+        [
+          "SS123",
+          {
+            status: "available",
+            quantity: {
+              numericValue: 4,
+              unitId: 7,
+            },
           },
-        },
-      ],
-      [
-        "SS124",
-        {
-          status: "available",
-          quantity: {
-            numericValue: 10,
-            unitId: 7,
+        ],
+        [
+          "SS124",
+          {
+            status: "available",
+            quantity: {
+              numericValue: 10,
+              unitId: 7,
+            },
           },
-        },
-      ],
-      [
-        "SS125",
-        {
-          status: "available",
-          quantity: {
-            numericValue: 25,
-            unitId: 3,
+        ],
+        [
+          "SS125",
+          {
+            status: "available",
+            quantity: {
+              numericValue: 25,
+              unitId: 3,
+            },
           },
-        },
-      ],
-    ]),
+        ],
+      ]),
   ),
   mockUpdateStoichiometryMutateAsync: vi.fn(),
 }));
@@ -269,9 +270,7 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 }));
 
 vi.mock("@/modules/inventory/queries", async () => {
-  const actual = await vi.importActual<typeof import("@/modules/inventory/queries")>(
-    "@/modules/inventory/queries",
-  );
+  const actual = await vi.importActual<typeof import("@/modules/inventory/queries")>("@/modules/inventory/queries");
 
   return {
     ...actual,
@@ -457,16 +456,8 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     act(() => {
-      void latestValue?.tableController.addReagent(
-        "O",
-        "New Water",
-        "manual",
-      );
-      void latestValue?.tableController.addReagent(
-        "CC(=O)O",
-        "Acetic acid",
-        "manual",
-      );
+      void latestValue?.tableController.addReagent("O", "New Water", "manual");
+      void latestValue?.tableController.addReagent("CC(=O)O", "Acetic acid", "manual");
     });
 
     act(() => {
@@ -480,16 +471,13 @@ describe("useEditableStoichiometryTable", () => {
       expect(latestValue?.allMolecules).toHaveLength(6);
     });
 
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const addedReagents = latestValue!.allMolecules.filter(
-      ({ name, id }) =>
-        (name === "New Water" || name === "Acetic acid") &&
-        typeof id === "number",
+      ({ name, id }) => (name === "New Water" || name === "Acetic acid") && typeof id === "number",
     );
 
     expect(addedReagents).toHaveLength(2);
-    expect(addedReagents.map(({ id }) => id)).toEqual(
-      expect.arrayContaining([expect.any(Number), expect.any(Number)]),
-    );
+    expect(addedReagents.map(({ id }) => id)).toEqual(expect.arrayContaining([expect.any(Number), expect.any(Number)]));
     expect(new Set(addedReagents.map(({ id }) => id)).size).toBe(2);
     expect(addedReagents.every(({ id }) => id < 0)).toBe(true);
   });
@@ -514,20 +502,16 @@ describe("useEditableStoichiometryTable", () => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
 
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
     let updatedRow: EditableMolecule | undefined;
 
     act(() => {
-      updatedRow = latestValue?.tableController.processRowUpdate(
-        { ...originalRow, role: "REACTANT" },
-        originalRow,
-      );
+      updatedRow = latestValue?.tableController.processRowUpdate({ ...originalRow, role: "REACTANT" }, originalRow);
     });
 
     await waitFor(() => {
-      expect(latestValue?.allMolecules.find(({ id }) => id === 6)?.role).toBe(
-        "REACTANT",
-      );
+      expect(latestValue?.allMolecules.find(({ id }) => id === 6)?.role).toBe("REACTANT");
     });
     expect(updatedRow?.role).toBe("REACTANT");
   });
@@ -554,20 +538,17 @@ describe("useEditableStoichiometryTable", () => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
 
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
     let returnedRow: EditableMolecule | undefined;
 
     act(() => {
-      returnedRow = latestValue?.tableController.processRowUpdate(
-        { ...originalRow, role: "REACTANT" },
-        originalRow,
-      );
+      returnedRow = latestValue?.tableController.processRowUpdate({ ...originalRow, role: "REACTANT" }, originalRow);
     });
 
     expect(returnedRow).toEqual(originalRow);
-    expect(latestValue!.allMolecules.find(({ id }) => id === 6)?.role).toBe(
-      "PRODUCT",
-    );
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    expect(latestValue!.allMolecules.find(({ id }) => id === 6)?.role).toBe("PRODUCT");
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "Error updating row:",
       "Modifying the role of a molecule is not supported",
@@ -577,77 +558,71 @@ describe("useEditableStoichiometryTable", () => {
   it.each([
     { label: "reactant", moleculeId: 5 },
     { label: "product", moleculeId: 6 },
-  ])(
-    "allows deleting $label molecules when there is no active chem id",
-    async ({ moleculeId }) => {
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-          mutations: { retry: false },
-        },
-      });
-      let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+  ])("allows deleting $label molecules when there is no active chem id", async ({ moleculeId }) => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
 
-      renderWithProviders({
-        queryClient,
-        onValue: (value) => {
-          latestValue = value;
-        },
-      });
+    renderWithProviders({
+      queryClient,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
 
-      await waitFor(() => {
-        expect(latestValue?.allMolecules).toHaveLength(4);
-      });
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
 
-      act(() => {
-        latestValue?.tableController.deleteReagent(moleculeId);
-      });
+    act(() => {
+      latestValue?.tableController.deleteReagent(moleculeId);
+    });
 
-      await waitFor(() => {
-        expect(latestValue?.allMolecules).toHaveLength(3);
-      });
-      const remainingMolecules = latestValue!.allMolecules;
-      expect(remainingMolecules.find(({ id }) => id === moleculeId)).toBeUndefined();
-    },
-  );
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(3);
+    });
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    const remainingMolecules = latestValue!.allMolecules;
+    expect(remainingMolecules.find(({ id }) => id === moleculeId)).toBeUndefined();
+  });
 
   it.each([
     { label: "reactant", moleculeId: 5 },
     { label: "product", moleculeId: 6 },
-  ])(
-    "keeps $label molecules when an active chem id is present",
-    async ({ moleculeId }) => {
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-          mutations: { retry: false },
-        },
-      });
-      let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
+  ])("keeps $label molecules when an active chem id is present", async ({ moleculeId }) => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
 
-      renderWithProviders({
-        queryClient,
-        activeChemId: 123,
-        onValue: (value) => {
-          latestValue = value;
-        },
-      });
+    renderWithProviders({
+      queryClient,
+      activeChemId: 123,
+      onValue: (value) => {
+        latestValue = value;
+      },
+    });
 
-      await waitFor(() => {
-        expect(latestValue?.allMolecules).toHaveLength(4);
-      });
+    await waitFor(() => {
+      expect(latestValue?.allMolecules).toHaveLength(4);
+    });
 
-      act(() => {
-        latestValue?.tableController.deleteReagent(moleculeId);
-      });
+    act(() => {
+      latestValue?.tableController.deleteReagent(moleculeId);
+    });
 
-      const moleculesAfterDeleteAttempt = latestValue!.allMolecules;
-      expect(moleculesAfterDeleteAttempt).toHaveLength(4);
-      expect(
-        moleculesAfterDeleteAttempt.find(({ id }) => id === moleculeId),
-      ).toBeDefined();
-    },
-  );
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    const moleculesAfterDeleteAttempt = latestValue!.allMolecules;
+    expect(moleculesAfterDeleteAttempt).toHaveLength(4);
+    expect(moleculesAfterDeleteAttempt.find(({ id }) => id === moleculeId)).toBeDefined();
+  });
 
   it("still allows deleting agent molecules when an active chem id is present", async () => {
     const queryClient = new QueryClient({
@@ -677,6 +652,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(3);
     });
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.allMolecules.find(({ id }) => id === 7)).toBeUndefined();
   });
 
@@ -706,6 +682,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.hasChanges).toBe(false);
 
     act(() => {
@@ -713,9 +690,7 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     await waitFor(() => {
-      expect(
-        latestValue?.allMolecules.find((molecule) => molecule.id === 5),
-      ).toMatchObject({
+      expect(latestValue?.allMolecules.find((molecule) => molecule.id === 5)).toMatchObject({
         inventoryLink: null,
         deletedInventoryLink: {
           inventoryItemGlobalId: "SS123",
@@ -728,9 +703,8 @@ describe("useEditableStoichiometryTable", () => {
       latestValue?.tableController.pickInventoryLink(5, 999, "SS999");
     });
 
-    expect(
-      latestValue!.allMolecules.find((molecule) => molecule.id === 5),
-    ).toMatchObject({
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    expect(latestValue!.allMolecules.find((molecule) => molecule.id === 5)).toMatchObject({
       inventoryLink: null,
       deletedInventoryLink: {
         inventoryItemGlobalId: "SS123",
@@ -742,9 +716,7 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     await waitFor(() => {
-      expect(
-        latestValue?.allMolecules.find((molecule) => molecule.id === 5),
-      ).toMatchObject({
+      expect(latestValue?.allMolecules.find((molecule) => molecule.id === 5)).toMatchObject({
         inventoryLink: {
           inventoryItemGlobalId: "SS123",
         },
@@ -776,6 +748,7 @@ describe("useEditableStoichiometryTable", () => {
     await waitFor(() => {
       expect(latestValue?.allMolecules).toHaveLength(4);
     });
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
     expect(latestValue!.hasChanges).toBe(false);
 
     act(() => {
@@ -783,9 +756,7 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     await waitFor(() => {
-      expect(
-        latestValue?.allMolecules.find((molecule) => molecule.id === 8),
-      ).toMatchObject({
+      expect(latestValue?.allMolecules.find((molecule) => molecule.id === 8)).toMatchObject({
         inventoryLink: {
           inventoryItemGlobalId: "SS999",
         },
@@ -799,9 +770,7 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     await waitFor(() => {
-      expect(
-        latestValue?.allMolecules.find((molecule) => molecule.id === 8),
-      ).toMatchObject({
+      expect(latestValue?.allMolecules.find((molecule) => molecule.id === 8)).toMatchObject({
         inventoryLink: null,
         deletedInventoryLink: null,
       });
@@ -927,16 +896,13 @@ describe("useEditableStoichiometryTable", () => {
     expect(updateRequest?.stoichiometryId).toBe(3);
     expect(updateRequest?.stoichiometryData.id).toBe(3);
     expect(
-      updateRequest?.stoichiometryData.molecules.find(
-        (molecule) => "id" in molecule && molecule.id === 5,
-      ),
+      updateRequest?.stoichiometryData.molecules.find((molecule) => "id" in molecule && molecule.id === 5),
     ).toMatchObject({
       id: 5,
       inventoryLink: null,
     });
-    expect(
-      latestValue!.allMolecules.find((molecule) => molecule.id === 5),
-    ).toMatchObject({
+    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+    expect(latestValue!.allMolecules.find((molecule) => molecule.id === 5)).toMatchObject({
       inventoryLink: null,
       savedInventoryLink: null,
       deletedInventoryLink: null,
@@ -979,10 +945,8 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     act(() => {
-      latestValue?.tableController.processRowUpdate(
-        { ...newMolecule!, role: "PRODUCT" },
-        newMolecule!,
-      );
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+      latestValue?.tableController.processRowUpdate({ ...newMolecule!, role: "PRODUCT" }, newMolecule!);
     });
 
     await act(async () => {
@@ -1065,9 +1029,7 @@ describe("useEditableStoichiometryTable", () => {
       id: 9,
       revision: 4,
     });
-    expect(
-      queryClient.getQueryData(stoichiometryQueryKeys.byId(9, 4)),
-    ).toEqual(mockRefreshedStoichiometry);
+    expect(queryClient.getQueryData(stoichiometryQueryKeys.byId(9, 4))).toEqual(mockRefreshedStoichiometry);
     expect(invalidateQueriesSpy).toHaveBeenCalledTimes(2);
 
     expect(invalidateQueriesSpy.mock.calls[0]?.[0]).toMatchObject({
@@ -1075,24 +1037,15 @@ describe("useEditableStoichiometryTable", () => {
     });
 
     const queryFilters = invalidateQueriesSpy.mock.calls[1]?.[0];
-    const matchesQueryFilter = (queryKey: readonly unknown[]) =>
-      queryFilters?.predicate?.({ queryKey } as never);
+    const matchesQueryFilter = (queryKey: readonly unknown[]) => queryFilters?.predicate?.({ queryKey } as never);
 
     expect(queryFilters).toMatchObject({
       queryKey: inventoryQueryKeys.all,
     });
-    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS123"))).toBe(
-      true,
-    );
-    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS124"))).toBe(
-      true,
-    );
-    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS125"))).toBe(
-      true,
-    );
-    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS999"))).toBe(
-      false,
-    );
+    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS123"))).toBe(true);
+    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS124"))).toBe(true);
+    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS125"))).toBe(true);
+    expect(matchesQueryFilter(inventoryQueryKeys.subSampleQuantity("SS999"))).toBe(false);
     expect(mockTrackEvent).toHaveBeenCalledWith(
       "user:decrement:stoichiometry:inventory_stock",
       expect.objectContaining({
@@ -1175,9 +1128,7 @@ describe("useEditableStoichiometryTable", () => {
       revision: 7,
       token: "resolved-token",
     });
-    expect(
-      queryClient.getQueryData(stoichiometryQueryKeys.byId(11, 7)),
-    ).toEqual({
+    expect(queryClient.getQueryData(stoichiometryQueryKeys.byId(11, 7))).toEqual({
       id: 11,
       revision: 7,
       molecules: [],
@@ -1235,9 +1186,7 @@ describe("useEditableStoichiometryTable", () => {
     const saveCall = mockUpdateStoichiometryMutateAsync.mock.calls.at(-1)?.[0] as
       | { stoichiometryData: StoichiometryRequest }
       | undefined;
-    const newReagent = saveCall?.stoichiometryData.molecules.find(
-      (m) => !("id" in m) && m.name === "New Water",
-    );
+    const newReagent = saveCall?.stoichiometryData.molecules.find((m) => !("id" in m) && m.name === "New Water");
 
     expect(newReagent).toBeDefined();
     expect(newReagent).toMatchObject({
@@ -1289,5 +1238,3 @@ describe("useEditableStoichiometryTable", () => {
     });
   });
 });
-
-

@@ -1,18 +1,17 @@
-import React, { useEffect, useContext } from "react";
-import { Observer } from "mobx-react-lite";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
-import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import CardHeader from "@mui/material/CardHeader";
-import { cardHeaderClasses } from "@mui/material/CardHeader";
-import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
-import NameWithBadge from "../NameWithBadge";
-import { match } from "../../../util/Util";
-import NavigateToNode from "./NavigateToNode";
-import SearchContext from "../../../stores/contexts/Search";
+import CardHeader, { cardHeaderClasses } from "@mui/material/CardHeader";
 import { useTheme } from "@mui/material/styles";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect } from "react";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import SearchContext from "../../../stores/contexts/Search";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { match } from "../../../util/Util";
+import NameWithBadge from "../NameWithBadge";
+import NavigateToNode from "./NavigateToNode";
 
 type TreeNodeArgs = {
   node: InventoryRecord;
@@ -27,13 +26,11 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
   }, []);
 
   const children = () => {
-    const filteredChildren: Array<InventoryRecord> = node.children.filter(
-      (child) => search.tree.filteredTypes.includes(child.recordType)
+    const filteredChildren: Array<InventoryRecord> = node.children.filter((child) =>
+      search.tree.filteredTypes.includes(child.recordType),
     );
 
-    return filteredChildren.map((child: InventoryRecord) => (
-      <TreeNode key={child.globalId} node={child} />
-    ));
+    return filteredChildren.map((child: InventoryRecord) => <TreeNode key={child.globalId} node={child} />);
   };
 
   const nodeAvatar = () =>
@@ -64,9 +61,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
           itemId={node.globalId || ""}
           label={
             <CardHeader
-              action={
-                node.canNavigateToChildren && <NavigateToNode node={node} />
-              }
+              action={node.canNavigateToChildren && <NavigateToNode node={node} />}
               avatar={
                 <Avatar sx={{ backgroundColor: "white", color: "black" }} variant="rounded">
                   {nodeAvatar()}
@@ -80,7 +75,9 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
                   marginTop: "0 !important",
                   marginRight: "0 !important",
                 },
-                ...(search.alwaysFilterOut(node) ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 } : {}),
+                ...(search.alwaysFilterOut(node)
+                  ? { filter: "grayscale(1)", pointerEvents: "none", opacity: 0.6 }
+                  : {}),
               }}
               data-testid={`recordTreeNode_${node.globalId ?? "NEW"}`}
             />

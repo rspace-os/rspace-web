@@ -1,54 +1,54 @@
 # Getting started as a React developer
 
-In general, we use [TypeScript](https://www.typescriptlang.org/) and [Prettier](https://prettier.io/) for
-making the development less error prone and more convenient.
-
-[ESlint](https://eslint.org/) is used for editors that don't come with great out of
-the box JavaScript IDE functionalities.
+In general, we use [TypeScript](https://www.typescriptlang.org/) and
+[Biome](https://biomejs.dev/) to make development less error prone and more
+convenient. Biome is a single fast tool that both formats and lints the frontend,
+replacing the previous ESLint + Prettier setup.
 
 ## Do
-- If Prettier is not run on autosave, run Prettier on all modified JavaScript files
-  before commit
+- Type new and modified code with TypeScript. Run `pnpm run tsc` to type-check
+  the whole project (`tsc --noEmit`).
+- If your editor does not format with Biome on save, run `pnpm run lint:fix` on
+  modified files before committing.
+- When you add a new npm package that ships its own types, no extra step is
+  needed; otherwise install the community types, e.g. `pnpm add -D @types/<package-name>`.
 
 ## Notes
-- Prettier works with JavaScript, JSON, Markdown, ...
+- Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
+- Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
+  in CI and in the pre-commit hook, and any Biome info/warning/error fails the
+  check (`pnpm run lint:ci`).
 
 ## Editor set up
 
 ### VSCode
-1. Make sure you have the latest version of VS Code
-2. Install ESlint plugin `dbaeumer.vscode-eslint`
-3. Install Prettier plugin `esbenp.prettier-vscode`. VSCode will now automatically
-   format code on save. In addition, you can use the following shortcuts to manually
-   trigger Prettier:
+1. Make sure you have the latest version of VS Code.
+2. Install the Biome plugin `biomejs.biome`. VSCode will then automatically
+   format code on save. You can also trigger formatting manually:
    - Windows `Shift + Alt + F`
    - Mac `Shift + Option + F`
    - Ubuntu `Ctrl + Shift + I`
 
-#### VSCode comments
-_Correct as of 2020 June:_
-In VSCode JavaScript and TypeScript are tightly coupled. VSCode intellisense and
-other IDE features for JavaScript are dependent on TypeScript.
+   The workspace `.vscode/settings.json` already sets Biome as the default
+   formatter and enables fix-all / organize-imports on save.
 
 #### VSCode __recommendations__
 - Additional plugins:
   1. npm - `eg2.vscode-npm-script`
   1. npm-intellisense - `christian-kohler.npm-intellisense`
 - Replace VSCode with VSCodium. VSCodium is a drop-in replacement for VSCode
-  without Microsoft telemetry and tracking
+  without Microsoft telemetry and tracking.
 
 ### WebStorm / Intellij
-- ESLint is optional, WebStorm/Intellij provide decent inspections out of the box
-- Install Prettier plugin in `File > Settings/Preferences > Plugins`.
-  Two ways to trigger it:
-  1. Use the “Reformat with Prettier” action (`Alt-Shift-Cmd-P` on macOS or
-     `Alt-Shift-Ctrl-P` on Windows and Linux) or find it using the “Find Action”
-     popup (`Cmd/Ctrl-Shift-A`)
-  1. Tick the "Run on save for files" option in `File > Settings/Preferences >
-     Languages & Frameworks > JavaScript > Prettier`
+- WebStorm/IntelliJ provide decent TypeScript inspections out of the box.
+- Install the Biome plugin from `File > Settings/Preferences > Plugins`, then
+  enable "Run Biome on save" (or trigger the "Reformat with Biome" action) so
+  formatting and safe lint fixes are applied automatically.
+
 ### Other editors
-You need to set up TypeScript, Prettier and Eslint. If your editor/IDE does not
-provide plugins for these, it is possible to run these from the command line.
+Biome ships a language server. If your editor does not have a dedicated Biome
+plugin, point its Language Server Protocol integration at `biome lsp-proxy`, or
+run `pnpm run lint` / `pnpm run lint:fix` from the command line.
 
 
 ## General Notes

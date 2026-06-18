@@ -1,17 +1,15 @@
-import React, { useState } from "react";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import TextField from "@mui/material/TextField";
-import ValidatingSubmitButton, {
-  IsInvalid,
-  IsValid,
-} from "@/components/ValidatingSubmitButton";
-import Result from "../../util/result";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import type React from "react";
+import { useState } from "react";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
+import Result from "../../util/result";
 
 export type AddReagentDialogArgs = {
   open: boolean;
@@ -19,19 +17,13 @@ export type AddReagentDialogArgs = {
   onAddReagent: (smilesString: string, name: string) => void;
 };
 
-const StoichiometryAddReagentDialog = ({
-  open,
-  onClose,
-  onAddReagent,
-}: AddReagentDialogArgs) => {
+const StoichiometryAddReagentDialog = ({ open, onClose, onAddReagent }: AddReagentDialogArgs) => {
   const [smilesString, setSmilesString] = useState<string>("");
   const [name, setName] = useState<string>("");
 
   const validate = () => {
     return Result.all(
-      smilesString.length === 0
-        ? IsInvalid("SMILES string is required")
-        : IsValid(),
+      smilesString.length === 0 ? IsInvalid("SMILES string is required") : IsValid(),
       name.length === 0 ? IsInvalid("Name is required") : IsValid(),
     ).map(() => null);
   };
@@ -81,11 +73,7 @@ const StoichiometryAddReagentDialog = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <ValidatingSubmitButton
-            onClick={onSubmitHandler}
-            validationResult={validate()}
-            loading={false}
-          >
+          <ValidatingSubmitButton onClick={onSubmitHandler} validationResult={validate()} loading={false}>
             Add Chemical
           </ValidatingSubmitButton>
         </DialogActions>

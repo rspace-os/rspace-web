@@ -6,8 +6,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
@@ -16,11 +18,14 @@ import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoRService;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -46,8 +51,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private @Autowired SampleApiManager sampleApiMgr;
   private @Autowired SubSampleApiManager subSampleApiMgr;
   private @Autowired ContainerApiManager containerApiMgr;
+  private @Autowired InstrumentEntityApiManager instrumentApiMgr;
   private @Autowired DigitalObjectIdentifierDao doiDao;
   private @Autowired ApiIdentifiersHelper apiIdentifiersHelper;
+  private @Autowired MessageSourceUtils messages;
 
   @Autowired private RoRService rorService;
 
@@ -124,7 +131,14 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   @Override
   public ApiInventoryRecordInfo registerNewIdentifier(GlobalIdentifier invRecOid, User user) {
     InventoryRecord invRec = getInventoryRecordIfNotAlreadyAssociated(invRecOid);
-    return updateInventoryRecordWithDoiUpdate(user, invRec, createUpdateWithNewDoi(invRec, user));
+    // resolve the setting type and run all checks before registering anything with DataCite,
+    // so no draft DOI is leaked for unsupported or disabled configurations
+    InventorySettingType settingType = settingTypeFor(invRec);
+    if (InventorySettingType.PIDINST.equals(settingType)) {
+      assertPidinstRegistrationSupported();
+    }
+    return updateInventoryRecordWithDoiUpdate(
+        user, invRec, createUpdateWithNewDoi(invRec, user, settingType));
   }
 
   @Override
@@ -141,9 +155,56 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       throw new IllegalArgumentException(
           "You can only assign an active unassigned identifier in \"draft\" state");
     }
+    if (!settingTypeFor(inventoryItem).equals(settingTypeFor(identifierToAssign.getType()))) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.inventory.identifier.assign.type.mismatch",
+              new Object[] {identifierToAssign.getType(), inventoryOid}));
+    }
 
     return updateInventoryRecordWithDoiUpdate(
         user, inventoryItem, assignUpdateWithNewDoi(inventoryItem, identifierToAssign));
+  }
+
+  private InventorySettingType settingTypeFor(InventoryRecord invRec) {
+    if (invRec.isSample() || invRec.isSubSample() || invRec.isContainer()) {
+      return InventorySettingType.IGSN;
+    }
+    if (invRec.isInstrument()) {
+      return InventorySettingType.PIDINST;
+    }
+    throw new IllegalArgumentException(
+        messages.getMessage(
+            "errors.inventory.identifier.minting.unsupported.type",
+            new Object[] {invRec.getType()}));
+  }
+
+  private InventorySettingType settingTypeFor(IdentifierType identifierType) {
+    if (identifierType == null) {
+      // identifiers persisted before the type column was populated load with a null type;
+      // they predate PIDINST, so default to IGSN (matches DigitalObjectIdentifier's own default)
+      // instead of letting the switch below throw a NullPointerException.
+      return InventorySettingType.IGSN;
+    }
+    switch (identifierType) {
+      case IGSN_DATACITE:
+        return InventorySettingType.IGSN;
+      case PIDINST_DATACITE:
+        return InventorySettingType.PIDINST;
+      default:
+        throw new UnsupportedOperationException(
+            messages.getMessage(
+                "errors.inventory.identifier.type.unsupported", new Object[] {identifierType}));
+    }
+  }
+
+  private void assertPidinstRegistrationSupported() {
+    if (!dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST)) {
+      throw new UnsupportedOperationException(
+          messages.getMessage(
+              "errors.inventory.identifier.integration.not.enabled",
+              new Object[] {InventorySettingType.PIDINST}));
+    }
   }
 
   @Override
@@ -184,6 +245,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (invRec.isContainer()) {
       ApiContainer containerUpdate = getApiContainerUpdateWithIdentifier(invRec, doiUpdate);
       return containerApiMgr.updateApiContainer(containerUpdate, user);
+    }
+    if (invRec.isInstrument()) {
+      ApiInstrument instrumentUpdate = getApiInstrumentUpdateWithIdentifier(invRec, doiUpdate);
+      return instrumentApiMgr.updateApiInstrument(instrumentUpdate, user);
     }
     throw new IllegalArgumentException("unsupported type for minting: " + invRec.getType());
   }
@@ -261,11 +326,25 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     return container;
   }
 
-  @SneakyThrows
+  private ApiInstrument getApiInstrumentUpdateWithIdentifier(
+      InventoryRecord invRec, ApiInventoryDOI identifier) {
+    ApiInstrument instrument = new ApiInstrument();
+    instrument.setName(invRec.getName());
+    instrument.setId(invRec.getId());
+    instrument.getIdentifiers().add(identifier);
+    instrument.setTags(null); // skip tags update
+    return instrument;
+  }
+
   private ApiInventoryDOI createNewDoi(User user) {
+    return createNewDoi(user, InventorySettingType.IGSN);
+  }
+
+  @SneakyThrows
+  private ApiInventoryDOI createNewDoi(User user, InventorySettingType settingType) {
     DataCiteDoi createdDoi;
     try {
-      createdDoi = dataCiteConnector.registerDoi(new DataCiteDoi());
+      createdDoi = dataCiteConnector.registerDoi(new DataCiteDoi(), settingType);
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
           "Error when registering new DOI with DataCite. "
@@ -282,8 +361,15 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     newDoi.setCreatorType("Personal");
     newDoi.setPublisher(properties.getCustomerName());
     newDoi.setPublicationYear(Year.now().getValue());
-    newDoi.setResourceType("Material Sample");
-    newDoi.setResourceTypeGeneral("PhysicalObject");
+    if (InventorySettingType.PIDINST.equals(settingType)) {
+      newDoi.setDoiType(IdentifierType.PIDINST_DATACITE.name());
+      newDoi.setResourceType("Instrument");
+      newDoi.setResourceTypeGeneral("Instrument");
+    } else {
+      newDoi.setDoiType(IdentifierType.IGSN_DATACITE.name());
+      newDoi.setResourceType("Material Sample");
+      newDoi.setResourceTypeGeneral("PhysicalObject");
+    }
     return newDoi;
   }
 
@@ -293,8 +379,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     return doi;
   }
 
-  private ApiInventoryDOI createUpdateWithNewDoi(InventoryRecord invRec, User user) {
-    ApiInventoryDOI newDoi = createNewDoi(user);
+  private ApiInventoryDOI createUpdateWithNewDoi(
+      InventoryRecord invRec, User user, InventorySettingType settingType) {
+    ApiInventoryDOI newDoi = createNewDoi(user, settingType);
     return updateNewAssociatedDoi(invRec, newDoi);
   }
 
@@ -320,7 +407,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private boolean deleteFromDatacite(DigitalObjectIdentifier doi) {
     boolean dataCiteDeleteResult;
     try {
-      dataCiteDeleteResult = dataCiteConnector.deleteDoi(doi.getIdentifier());
+      dataCiteDeleteResult =
+          dataCiteConnector.deleteDoi(doi.getIdentifier(), settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       log.error("Error when deleting the DOI from DataCite: ", dcException.getCause());
       throw new DataCiteConnectionException(
@@ -346,7 +434,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     DataCiteDoi doiToPublish = actualdoi.convertToDataCiteDoi();
     DataCiteDoi publishResult;
     try {
-      publishResult = dataCiteConnector.publishDoi(doiToPublish);
+      publishResult = dataCiteConnector.publishDoi(doiToPublish, settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
           "Error when publishing the DOI in DataCite. "
@@ -379,7 +467,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
     DataCiteDoi retractResult;
     try {
-      retractResult = dataCiteConnector.retractDoi(doiToRetract);
+      retractResult = dataCiteConnector.retractDoi(doiToRetract, settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
           "Error when retracting the DOI in DataCite. "

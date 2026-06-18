@@ -1,12 +1,11 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
 import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
 } from "./StoichiometryDialog.story";
-import * as Jwt from "jsonwebtoken";
 
-import AxeBuilder from "@axe-core/playwright";
 type CalledSpy = {
   handler: () => void;
   hasBeenCalled: () => boolean;
@@ -17,9 +16,7 @@ const hasStoichiometryRequest = (
   method: "POST" | "PUT" | "DELETE",
 ): boolean =>
   networkRequests.some(
-    (request) =>
-      request.url.pathname.includes("/api/v1/stoichiometry") &&
-      request.method === method,
+    (request) => request.url.pathname.includes("/api/v1/stoichiometry") && request.method === method,
   );
 
 const feature = test.extend<{
@@ -47,15 +44,9 @@ const feature = test.extend<{
   };
   Then: {
     "the calculate button is visible": () => Promise<void>;
-    "an inline calculate error should be displayed": (
-      message: string,
-    ) => Promise<void>;
+    "an inline calculate error should be displayed": (message: string) => Promise<void>;
     "the table is displayed": () => Promise<void>;
-    "the callback should have been invoked": ({
-      onTableCreatedSpy,
-    }: {
-      onTableCreatedSpy: CalledSpy;
-    }) => void;
+    "the callback should have been invoked": ({ onTableCreatedSpy }: { onTableCreatedSpy: CalledSpy }) => void;
     "a POST request should have been made to create the stoichiometry table": () => void;
     "the save button should not be visible": () => Promise<void>;
     "the save button should be visible": () => Promise<void>;
@@ -72,21 +63,12 @@ const feature = test.extend<{
     await use({
       "the dialog is open without a stoichiometry table": async (spies) => {
         const onTableCreatedSpy = spies?.onTableCreatedSpy;
-        await mount(
-          <StoichiometryDialogWithCalculateButtonStory
-            onTableCreated={onTableCreatedSpy?.handler}
-          />,
-        );
+        await mount(<StoichiometryDialogWithCalculateButtonStory onTableCreated={onTableCreatedSpy?.handler} />);
       },
       "the dialog is open with a stoichiometry table": async (spies) => {
         const onSaveSpy = spies?.onSaveSpy;
         const onDeleteSpy = spies?.onDeleteSpy;
-        await mount(
-          <StoichiometryDialogWithTableStory
-            onSave={onSaveSpy?.handler}
-            onDelete={onDeleteSpy?.handler}
-          />,
-        );
+        await mount(<StoichiometryDialogWithTableStory onSave={onSaveSpy?.handler} onDelete={onDeleteSpy?.handler} />);
       },
     });
   },
@@ -103,22 +85,14 @@ const feature = test.extend<{
         await expect(table).toBeVisible();
 
         const indexOfMassColumn = await Promise.all(
-          (await table.getByRole("columnheader").all()).map((cell) =>
-            cell.textContent(),
-          ),
-        ).then((textOfCells) =>
-          textOfCells.findIndex((text) => /mass \(g\)/i.test(text ?? "")),
-        );
+          (await table.getByRole("columnheader").all()).map((cell) => cell.textContent()),
+        ).then((textOfCells) => textOfCells.findIndex((text) => /mass \(g\)/i.test(text ?? "")));
 
         if (indexOfMassColumn < 0) {
           throw new Error("Mass column not found");
         }
 
-        const massCell = table
-          .getByRole("row")
-          .nth(1)
-          .getByRole("gridcell")
-          .nth(indexOfMassColumn);
+        const massCell = table.getByRole("row").nth(1).getByRole("gridcell").nth(indexOfMassColumn);
 
         await massCell.click();
         await massCell.press("Enter");
@@ -172,29 +146,22 @@ const feature = test.extend<{
       "the callback should have been invoked": ({ onTableCreatedSpy }) => {
         expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
       },
-      "a POST request should have been made to create the stoichiometry table":
-        () => {
-          expect(hasStoichiometryRequest(networkRequests, "POST")).toBe(true);
-        },
+      "a POST request should have been made to create the stoichiometry table": () => {
+        expect(hasStoichiometryRequest(networkRequests, "POST")).toBe(true);
+      },
       "the save button should not be visible": async () => {
-        await expect(
-          page.getByRole("button", { name: "Save Changes" }),
-        ).toHaveCount(0);
+        await expect(page.getByRole("button", { name: "Save Changes" })).toHaveCount(0);
       },
       "the save button should be visible": async () => {
         const saveButton = page.getByRole("button", { name: "Save Changes" });
         await expect(saveButton).toBeVisible();
       },
-      "a PUT request should have been made to update the stoichiometry table":
-        () => {
-          expect(hasStoichiometryRequest(networkRequests, "PUT")).toBe(true);
-        },
-      "a DELETE request should have been made to delete the stoichiometry table":
-        () => {
-          expect(hasStoichiometryRequest(networkRequests, "DELETE")).toBe(
-            true,
-          );
-        },
+      "a PUT request should have been made to update the stoichiometry table": () => {
+        expect(hasStoichiometryRequest(networkRequests, "PUT")).toBe(true);
+      },
+      "a DELETE request should have been made to delete the stoichiometry table": () => {
+        expect(hasStoichiometryRequest(networkRequests, "DELETE")).toBe(true);
+      },
       "the delete button should be visible": async () => {
         const deleteButton = page.getByRole("button", {
           name: "Delete",
@@ -229,8 +196,7 @@ const feature = test.extend<{
              * 4. Content not in landmarks is expected in component testing context
              */
             return (
-              v.description !==
-                "Ensure elements with an ARIA role that require child roles contain them" &&
+              v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
               v.id !== "landmark-one-main" &&
               v.id !== "page-has-heading-one" &&
               v.id !== "region"
@@ -240,19 +206,18 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
   networkRequests: async ({}, use) => {
     await use([]);
   },
-
 });
 feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -261,7 +226,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         data: Jwt.sign(payload, "dummySecretKey"),
       }),
     });
-
   });
   const mockResponse = {
     id: 3,
@@ -373,10 +337,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         notes: null,
       },
     ],
-
   };
   await router.route("/api/v1/stoichiometry*", (route) => {
-
     const method = route.request().method();
     if (method === "GET" || method === "POST" || method === "PUT") {
       return route.fulfill({
@@ -384,7 +346,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         contentType: "application/json",
         body: JSON.stringify(mockResponse),
       });
-
     }
     if (method === "DELETE") {
       return route.fulfill({
@@ -392,10 +353,8 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         contentType: "application/json",
         body: JSON.stringify({ success: true }),
       });
-
     }
     throw new Error("Other methods are not supported");
-
   });
   await router.route("/integration/integrationInfo?name=CHEMISTRY", (route) => {
     return route.fulfill({
@@ -415,7 +374,6 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         errorMsg: null,
       }),
     });
-
   });
   page.on("request", (request) => {
     networkRequests.push({
@@ -424,11 +382,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       method: request.method(),
     });
   });
-
 });
 feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
-
 });
 /*
  * Only the genuinely browser-bound cases remain here. The behavioural cases
@@ -443,16 +399,11 @@ test.describe("Stoichiometry Dialog", () => {
     await page.emulateMedia({ contrast: "more" });
     await Given["the dialog is open with a stoichiometry table"]();
     await Then["there shouldn't be any axe violations"]();
-
   });
-  feature(
-    "shows save button when table data is modified by editing a cell",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user edits a cell in the table"]();
-      await Then["the save button should be visible"]();
-    },
-
-  );
+  feature("shows save button when table data is modified by editing a cell", async ({ Given, When, Then }) => {
+    await Given["the dialog is open with a stoichiometry table"]();
+    await Then["the table is displayed"]();
+    await When["the user edits a cell in the table"]();
+    await Then["the save button should be visible"]();
+  });
 });

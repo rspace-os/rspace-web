@@ -1,6 +1,6 @@
-import { type BaseRecord, type Id, type GlobalId } from "./BaseRecord";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type URL } from "../../util/types";
+import type { URL } from "../../util/types";
+import type { BaseRecord, GlobalId, Id } from "./BaseRecord";
+import type { InventoryRecord } from "./InventoryRecord";
 
 /**
  * @module Basket

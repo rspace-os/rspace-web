@@ -1,14 +1,13 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockSample, makeMockSampleWithASubsample } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("computed: paramsForBackend", () => {
   /*
@@ -21,17 +20,11 @@ describe("computed: paramsForBackend", () => {
   describe("paramsForBackend should be JSON serialisable when", () => {
     test("the Sample has no subsamples.", () => {
       const Sample = makeMockSample();
-      expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
-
+      expect(JSON.stringify(Sample.paramsForBackend)).toEqual(expect.any(String));
     });
     test("the Sample has a subsample.", () => {
       const Sample = makeMockSampleWithASubsample();
-      expect(JSON.stringify(Sample.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
+      expect(JSON.stringify(Sample.paramsForBackend)).toEqual(expect.any(String));
     });
   });
 });
-

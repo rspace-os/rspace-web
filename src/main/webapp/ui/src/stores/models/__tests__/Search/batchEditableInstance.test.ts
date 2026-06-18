@@ -1,14 +1,14 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
+import RsSet from "../../../../util/set";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
-import RsSet from "../../../../util/set";
 import { makeMockContainer } from "../ContainerModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
-  default: {
-  }})); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
-  default: () => ({})
+  default: {},
+})); // break import cycle
+vi.mock("../../../../stores/stores/getRootStore", () => ({
+  default: () => ({}),
 }));
 describe("batchEditableInstance", () => {
   describe("Submittable", () => {
@@ -37,4 +37,3 @@ describe("batchEditableInstance", () => {
     });
   });
 });
-

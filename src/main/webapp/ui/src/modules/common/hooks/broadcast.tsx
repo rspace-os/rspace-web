@@ -2,13 +2,7 @@
 
 import * as React from "react";
 
-export type BroadcastChannelData =
-  | string
-  | number
-  | boolean
-  | Record<string, unknown>
-  | undefined
-  | null;
+export type BroadcastChannelData = string | number | boolean | Record<string, unknown> | undefined | null;
 
 /**
  * React hook to create and manage a Broadcast Channel across multiple browser windows.
@@ -36,9 +30,7 @@ export function useBroadcastChannel<T extends BroadcastChannelData = string>(
   handleMessageError?: (event: MessageEvent) => void,
 ): (data: T) => void {
   const [channel] = React.useState<BroadcastChannel | null>(
-    typeof window !== "undefined" && "BroadcastChannel" in window
-      ? new BroadcastChannel(channelName)
-      : null,
+    typeof window !== "undefined" && "BroadcastChannel" in window ? new BroadcastChannel(channelName) : null,
   );
 
   useChannelEventListener(channel, "message", handleMessage);
@@ -78,21 +70,18 @@ export function useBroadcastState<T extends BroadcastChannelData = string>(
 ): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
   const [isPending, startTransition] = React.useTransition();
   const [state, setState] = React.useState<T>(initialState);
-  const broadcast = useBroadcastChannel<T>(channelName, (ev) =>
-    setState(ev.data),
-  );
+  const broadcast = useBroadcastChannel<T>(channelName, (ev) => setState(ev.data));
 
-  const updateState: React.Dispatch<React.SetStateAction<T>> =
-    React.useCallback(
-      (input) => {
-        setState((prev) => {
-          const newState = typeof input === "function" ? input(prev) : input;
-          startTransition(() => broadcast(newState));
-          return newState;
-        });
-      },
-      [broadcast],
-    );
+  const updateState: React.Dispatch<React.SetStateAction<T>> = React.useCallback(
+    (input) => {
+      setState((prev) => {
+        const newState = typeof input === "function" ? input(prev) : input;
+        startTransition(() => broadcast(newState));
+        return newState;
+      });
+    },
+    [broadcast],
+  );
 
   return [state, updateState, isPending];
 }

@@ -1,12 +1,12 @@
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import { type Record } from "../../../stores/definitions/Record";
-import { observer } from "mobx-react-lite";
-import RsSet from "../../../util/set";
-import IconButton from "@mui/material/IconButton";
-import React from "react";
-import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
+import IconButton from "@mui/material/IconButton";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import type { Record } from "../../../stores/definitions/Record";
+import type RsSet from "../../../util/set";
 import SimpleRecordsTable from "../SimpleRecordsTable";
 
 type BatchEditingItemsTableArgs<RecordLike extends Record> = {
@@ -35,10 +35,7 @@ function BatchEditingItemsTable<RecordLike extends Record>({
             title: { variant: "body1" },
           }}
         />
-        <SimpleRecordsTable
-          open={open}
-          records={records.toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))}
-        />
+        <SimpleRecordsTable open={open} records={records.toArray((a, b) => (a.id ?? -1) - (b.id ?? -1))} />
       </Card>
     </Box>
   );

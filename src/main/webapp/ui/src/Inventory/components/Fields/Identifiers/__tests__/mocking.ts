@@ -1,9 +1,6 @@
-import React from "react";
-import {
-  type Identifier,
-  type IdentifierAttrs,
-} from "../../../../../stores/definitions/Identifier";
-import { type Alert } from "../../../../../stores/contexts/Alert";
+import type React from "react";
+import type { Alert } from "../../../../../stores/contexts/Alert";
+import type { Identifier, IdentifierAttrs } from "../../../../../stores/definitions/Identifier";
 
 type TestRecordType = "sample" | "container"; // render for subSample like for sample
 
@@ -15,8 +12,7 @@ export const mockIGSNAttrs = (): IdentifierAttrs => {
     doiType: "DATACITE_IGSN",
     creatorName: "User 1",
     creatorType: "Personal",
-    creatorAffiliation:
-      "Association of Asian Pacific Community Health Organizations",
+    creatorAffiliation: "Association of Asian Pacific Community Health Organizations",
     creatorAffiliationIdentifier: "https://ror.org/03zsq2967",
     title: "Item one",
     publicUrl: "https://doi.org/10.82316/2z52-vx20",
@@ -63,8 +59,7 @@ export const mockIGSNIdentifier = (recordType: TestRecordType): Identifier => {
     doiType: "DATACITE_IGSN",
     creatorName: "User 1",
     creatorType: "Personal",
-    creatorAffiliation:
-      "Association of Asian Pacific Community Health Organizations",
+    creatorAffiliation: "Association of Asian Pacific Community Health Organizations",
     creatorAffiliationIdentifier: "https://ror.org/03zsq2967",
     title: "Item one",
     publicUrl: "https://doi.org/10.82316/2z52-vx20",
@@ -98,24 +93,25 @@ export const mockIGSNIdentifier = (recordType: TestRecordType): Identifier => {
     recommendedFields: [],
     customFieldsOnPublicPage: false,
 
-    publish: async ({ confirm, addAlert }: { 
+    publish: async (_args: {
       confirm: (
         title: React.ReactNode,
         body: React.ReactNode,
         confirmLabel: string,
-        cancelLabel: string
+        cancelLabel: string,
       ) => Promise<boolean>;
       addAlert: (alert: Alert) => void;
     }): Promise<void> => {},
-    retract: async ({ confirm, addAlert }: {
+    retract: async (_args: {
       confirm: (
         title: React.ReactNode,
         body: React.ReactNode,
         confirmLabel: string,
-        cancelLabel: string
+        cancelLabel: string,
       ) => Promise<boolean>;
       addAlert: (alert: Alert) => void;
     }): Promise<void> => {},
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     republish: async ({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void> => {},
 
     toJson() {

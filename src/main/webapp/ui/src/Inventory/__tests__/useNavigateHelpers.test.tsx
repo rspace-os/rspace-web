@@ -1,16 +1,9 @@
-import { test, describe, expect, afterEach, beforeAll, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import {
-  makeMockContainer,
-  containerAttrs,
-} from "../../stores/models/__tests__/ContainerModel/mocking";
-import NavigateContext from "../../stores/contexts/Navigate";
+import "@/stores/stores/RootStore";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
+import NavigateContext from "../../stores/contexts/Navigate";
+import { containerAttrs, makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
 
 const setActiveResult = vi.fn(() => Promise.resolve());
 const generateNewQuery = vi.fn(() => new URLSearchParams("query=foo"));
@@ -36,7 +29,6 @@ vi.mock("../../stores/use-stores", () => ({
 let useNavigateHelpers: typeof import("../useNavigateHelpers").default;
 beforeAll(async () => {
   ({ default: useNavigateHelpers } = await import("../useNavigateHelpers"));
-
 });
 describe("useNavigateHelpers", () => {
   afterEach(() => {
@@ -51,6 +43,7 @@ describe("useNavigateHelpers", () => {
       const FunctionComponent = () => {
         const { navigateToRecord } = useNavigateHelpers();
         return (
+          // biome-ignore lint/a11y/useButtonType: initial biome migration
           <button
             onClick={() => {
               void navigateToRecord(mockContainer);
@@ -59,7 +52,6 @@ describe("useNavigateHelpers", () => {
             Click me.
           </button>
         );
-
       };
       render(
         <NavigateContext.Provider
@@ -69,15 +61,12 @@ describe("useNavigateHelpers", () => {
           }}
         >
           <FunctionComponent />
-        </NavigateContext.Provider>
+        </NavigateContext.Provider>,
       );
       await user.click(screen.getByText("Click me."));
 
-      await waitFor(() =>
-        expect(setActiveResult).toHaveBeenCalledWith(mockContainer)
-      );
+      await waitFor(() => expect(setActiveResult).toHaveBeenCalledWith(mockContainer));
     });
-
   });
   describe("navigateToSearch should", () => {
     test("not call setActiveResult", async () => {
@@ -86,6 +75,7 @@ describe("useNavigateHelpers", () => {
       const FunctionComponent = () => {
         const { navigateToSearch } = useNavigateHelpers();
         return (
+          // biome-ignore lint/a11y/useButtonType: initial biome migration
           <button
             onClick={() => {
               navigateToSearch(mockSearchParams);
@@ -94,7 +84,6 @@ describe("useNavigateHelpers", () => {
             Click me.
           </button>
         );
-
       };
       render(
         <NavigateContext.Provider
@@ -104,7 +93,7 @@ describe("useNavigateHelpers", () => {
           }}
         >
           <FunctionComponent />
-        </NavigateContext.Provider>
+        </NavigateContext.Provider>,
       );
       await user.click(screen.getByText("Click me."));
 

@@ -1,13 +1,15 @@
-import React, { forwardRef } from "react";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import MenuList from "@mui/material/MenuList";
 import Paper from "@mui/material/Paper";
-import { FIELD_DATA, type FieldType } from "@/stores/models/FieldTypes";
+import Stack from "@mui/material/Stack";
 import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { forwardRef } from "react";
+import { FIELD_DATA, type FieldType } from "@/stores/models/FieldTypes";
 
 type FieldTypeMenuItemArgs = {
   field: FieldType;
@@ -34,10 +36,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
             <Avatar>{_fieldData.icon}</Avatar>
           </ListItemAvatar>
           <Box sx={{ flexGrow: 1 }}>
-            <ListItemText
-              primary={_fieldData.label}
-              secondary={_fieldData.help}
-            />
+            <ListItemText primary={_fieldData.label} secondary={_fieldData.help} />
           </Box>
         </Stack>
       </MenuItem>
@@ -50,7 +49,15 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
             menuItem
           ) : (
             <Box sx={{ height: 72 }}>
-              <Paper>{menuItem}</Paper>
+              {/*
+               * MUI v9's MenuItem requires a surrounding MenuList/Menu context;
+               * when used standalone (as the type-selector trigger) it must be
+               * wrapped in a MenuList, otherwise it throws "MenuListContext is
+               * missing". See FieldTypeMenu for the trigger usage.
+               */}
+              <Paper>
+                <MenuList disablePadding>{menuItem}</MenuList>
+              </Paper>
             </Box>
           )
         }

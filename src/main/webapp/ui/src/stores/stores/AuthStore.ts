@@ -1,29 +1,26 @@
+import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
-import { action, observable, makeObservable } from "mobx";
-import InvApiService from "../../common/InvApiService";
 import ElnApiService from "../../common/ElnApiService";
+import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
-import type { RootStore } from "./RootStore";
-import { mkAlert } from "../contexts/Alert";
 import { getErrorMessage } from "../../util/error";
+import { mkAlert } from "../contexts/Alert";
+import type { RootStore } from "./RootStore";
+import {
+  type ApiInventorySystemSettings,
+  dataciteSettingsToIgsnPayload,
+  type SystemSettings,
+  systemSettingsFromApiResponse,
+} from "./systemSettingsMapping";
 
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
 
-export type IntegrationState = "true" | "false";
-export type DataCiteServerUrl =
-  | "https://api.datacite.org"
-  | "https://api.test.datacite.org";
-
-export type SystemSettings = {
-  datacite: {
-    enabled: IntegrationState;
-    serverUrl: DataCiteServerUrl;
-    username: string;
-    password: string;
-    repositoryPrefix: string;
-  };
-};
+export type {
+  DataCiteServerUrl,
+  IntegrationState,
+  SystemSettings,
+} from "./systemSettingsMapping";
 
 export default class AuthStore {
   rootStore: RootStore;
@@ -53,9 +50,7 @@ export default class AuthStore {
       clearTimeout(this.timeoutId);
     }
     this.isAuthenticated = false;
-    const oAuthUrl =
-      (publicView ? "/public/publicView" : "") +
-      "/userform/ajax/inventoryOauthToken";
+    const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
     return axios
       .get<{ data: string }>(oAuthUrl)
       .then(
@@ -74,11 +69,8 @@ export default class AuthStore {
           this.isSynchronizing = false;
 
           // Reauthenticate few minutes before token expiry
-          this.timeoutId = setTimeout(
-            () => void this.authenticate(),
-            JwtService.secondsToExpiry(token) * 1000
-          );
-        })
+          this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+        }),
       )
       .then(() => {})
       .catch(() => {
@@ -111,10 +103,7 @@ export default class AuthStore {
       this.isSynchronizing = false;
 
       // Reauthenticate few minutes before token expiry
-      this.timeoutId = setTimeout(
-        () => void this.authenticate(),
-        JwtService.secondsToExpiry(token) * 1000
-      );
+      this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
       return Promise.resolve();
     }
 
@@ -127,18 +116,16 @@ export default class AuthStore {
 
   async getSystemSettings(): Promise<void> {
     try {
-      const { data } = await InvApiService.get<SystemSettings>(
-        "system/settings",
-        ""
-      );
-      this.setSystemSettings(data);
+      const { data } = await InvApiService.get<ApiInventorySystemSettings>("system/settings", "");
+      // the endpoint now returns identifiersSettings keyed by type; the dialog uses the IGSN entry
+      this.setSystemSettings(systemSettingsFromApiResponse(data));
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
           title: `Could not get System Settings.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error(`Error fetching System Settings`, error);
       throw error;
@@ -146,18 +133,23 @@ export default class AuthStore {
   }
 
   async updateSystemSettings<SettingFor extends keyof SystemSettings>(
-    settingFor: SettingFor,
-    newSettings: SystemSettings[SettingFor]
+    _settingFor: SettingFor,
+    newSettings: SystemSettings[SettingFor],
   ): Promise<void> {
     try {
-      await InvApiService.put<void>("system/settings", {
-        [settingFor]: newSettings,
-      });
+      // PUT now takes a single identifier-settings object routed by `provider`. The dialog only
+      // configures IGSN, so send the IGSN payload (provider = IGSN_DATACITE).
+      // This is needed because the payload has changed but the UI has not, this adapt the old UI
+      // to work with the new payload.
+      // The UI strategic solution that will handle both configurations
+      // (PDINST Datacite, PDINST b2inst and IGSN datacite)
+      // will be handled by the jira ticket https://researchspace.atlassian.net/browse/RSDEV-1180
+      await InvApiService.put<void>("system/settings", dataciteSettingsToIgsnPayload(newSettings));
       this.rootStore.uiStore.addAlert(
         mkAlert({
           message: `System Settings have been updated.`,
           variant: "success",
-        })
+        }),
       );
     } catch (error) {
       this.rootStore.uiStore.addAlert(
@@ -165,7 +157,7 @@ export default class AuthStore {
           title: `Could not update System Settings.`,
           message: getErrorMessage(error, "Unknown reason."),
           variant: "error",
-        })
+        }),
       );
       console.error(`Error updating system settings`, error);
       throw error;

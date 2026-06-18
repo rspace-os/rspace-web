@@ -1,6 +1,6 @@
-import { type Record } from "./Record";
-import { type URL } from "../../util/types";
-import { type GlobalId } from "./BaseRecord";
+import type { URL } from "../../util/types";
+import type { GlobalId } from "./BaseRecord";
+import type { Record } from "./Record";
 
 /*
  * Some records have an associated or set of associated attachments, which

@@ -1,47 +1,46 @@
-import { describe, expect, test, vi } from 'vitest';
-import Search from "../../Search";
+import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+import Search from "../../Search";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  query: () =>
-    Promise.resolve({
-      data: {
-        totalHits: 0,
-        records: [],
-        containers: [],
-      },
-    }),
-  }}));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+    query: () =>
+      Promise.resolve({
+        data: {
+          totalHits: 0,
+          records: [],
+          containers: [],
+        },
+      }),
+  },
+}));
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  uiStore: {
-    addAlert: () => {},
-  },
-  peopleStore: {
-    getUser: vi.fn(() => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(null);
-        }, 100);
-      });
-    }),
-    getPersonFromBenchId: vi.fn(() => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(null);
-        }, 100);
-      });
-    }),
-  },
-})
-
+    uiStore: {
+      addAlert: () => {},
+    },
+    peopleStore: {
+      getUser: vi.fn(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(null);
+          }, 100);
+        });
+      }),
+      getPersonFromBenchId: vi.fn(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(null);
+          }, 100);
+        });
+      }),
+    },
+  }),
 }));
 describe("setupAndPerformInitialSearch", () => {
   test("A second call whilst the first is being processed should cancel the first.", async () => {
     const search = new Search({
       factory: mockFactory(),
-
     });
     const promise1 = search.setupAndPerformInitialSearch({
       parentGlobalId: "BE1",
@@ -56,4 +55,3 @@ describe("setupAndPerformInitialSearch", () => {
     expect(search.fetcher.parentGlobalId).toEqual(null);
   });
 });
-

@@ -1,16 +1,17 @@
-import React from "react";
-import TableContainer from "@mui/material/TableContainer";
-import Table from "@mui/material/Table";
-import EnhancedTableHead, { Cell } from "../../components/EnhancedTableHead";
-import TableBody from "@mui/material/TableBody";
-import { getSorting, stableSort } from "../../util/table";
-import TableRow, { tableRowClasses } from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import Checkbox from "@mui/material/Checkbox";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import type React from "react";
+import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
+import { getSorting, stableSort } from "../../util/table";
+import type { BookingAndEquipmentDetails } from "./ClustermarketData";
 import { BookingType, Order } from "./Enums";
-import { BookingAndEquipmentDetails } from "./ClustermarketData";
+
 type HeaderCellId =
   | "bookingID"
   | "equipmentName"
@@ -41,24 +42,16 @@ export default function ResultsTable({
   orderBy: string;
   setOrderBy: (newOrderBy: string) => void;
   selectedBookingIds: Array<string>;
-  setSelectedBookingIds: (
-    newSelection: Array<BookingAndEquipmentDetails["bookingID"]>,
-  ) => void;
+  setSelectedBookingIds: (newSelection: Array<BookingAndEquipmentDetails["bookingID"]>) => void;
   bookingType: string;
 }) {
-  function onRowClick(
-    event: unknown,
-    item_id: BookingAndEquipmentDetails["bookingID"],
-  ) {
+  function onRowClick(_event: unknown, item_id: BookingAndEquipmentDetails["bookingID"]) {
     const newSelected = selectedBookingIds.includes(item_id)
       ? selectedBookingIds.filter((id) => id !== item_id)
       : [...selectedBookingIds, item_id];
     setSelectedBookingIds(newSelected);
   }
-  function handleRequestSort(
-    event: React.MouseEvent<HTMLSpanElement>,
-    property: string,
-  ) {
+  function handleRequestSort(_event: React.MouseEvent<HTMLSpanElement>, property: string) {
     const isDesc = orderBy === property && order === Order.desc;
     setOrder(isDesc ? Order.asc : Order.desc);
     setOrderBy(property);
@@ -82,9 +75,7 @@ export default function ResultsTable({
             selectAll={true}
             onSelectAllClick={(event) => {
               if (event.target.checked) {
-                const newSelected = results.map((booking) =>
-                  getBookingOrEquipmentID(booking),
-                );
+                const newSelected = results.map((booking) => getBookingOrEquipmentID(booking));
                 // @ts-expect-error looks like a mix up of id types
                 return setSelectedBookingIds(newSelected);
               }
@@ -94,89 +85,72 @@ export default function ResultsTable({
             rowCount={results.length}
           />
           <TableBody>
-            {stableSort(results, getSorting(order, orderBy)).map(
-              (booking, index) => {
-                const isItemSelected =
-                  selectedBookingIds.indexOf(
+            {stableSort(results, getSorting(order, orderBy)).map((booking, index) => {
+              const isItemSelected =
+                selectedBookingIds.indexOf(
+                  // @ts-expect-error looks like a mix up of id types
+                  getBookingOrEquipmentID(booking),
+                ) !== -1;
+              const labelId = `booking-search-results-checkbox-${index}`;
+              return (
+                <TableRow
+                  id={labelId}
+                  sx={{
+                    [`&.${tableRowClasses.selected}`]: {
+                      backgroundColor: "#e3f2fd",
+                    },
+                    [`&.${tableRowClasses.selected}:hover`]: {
+                      backgroundColor: "#e3f2fd",
+                    },
+                  }}
+                  hover
+                  tabIndex={-1}
+                  role="checkbox"
+                  onClick={(event) =>
                     // @ts-expect-error looks like a mix up of id types
-                    getBookingOrEquipmentID(booking),
-                  ) !== -1;
-                const labelId = `booking-search-results-checkbox-${index}`;
-                return (
-                  <TableRow
-                    id={labelId}
-                    sx={{
-                      [`&.${tableRowClasses.selected}`]: {
-                        backgroundColor: "#e3f2fd",
-                      },
-                      [`&.${tableRowClasses.selected}:hover`]: {
-                        backgroundColor: "#e3f2fd",
-                      },
-                    }}
-                    hover
-                    tabIndex={-1}
-                    role="checkbox"
-                    onClick={(event) =>
-                      // @ts-expect-error looks like a mix up of id types
-                      onRowClick(event, getBookingOrEquipmentID(booking))
-                    }
-                    aria-checked={isItemSelected}
-                    selected={isItemSelected}
-                    key={getBookingOrEquipmentID(booking)}
-                  >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        checked={isItemSelected}
-                        slotProps={{
-                          input: {
-                            "aria-labelledby": labelId,
-                          },
-                        }}
-                      />
+                    onRowClick(event, getBookingOrEquipmentID(booking))
+                  }
+                  aria-checked={isItemSelected}
+                  selected={isItemSelected}
+                  key={getBookingOrEquipmentID(booking)}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      color="primary"
+                      checked={isItemSelected}
+                      slotProps={{
+                        input: {
+                          "aria-labelledby": labelId,
+                        },
+                      }}
+                    />
+                  </TableCell>
+                  {visibleHeaderCells.map((cell, i) => (
+                    <TableCell key={`${cell.id}${i}`} data-testid={`${cell.id}${index}`}>
+                      {cell.id === "bookingID" ? (
+                        <a
+                          target="_blank"
+                          href={`${clustermarket_web_url}accounts/${booking.labID}/my_bookings/${booking[cell.id]}`}
+                          rel="noreferrer"
+                        >
+                          {booking[cell.id]}
+                        </a>
+                      ) : cell.id === "equipmentName" ? (
+                        <a
+                          target="_blank"
+                          href={`${clustermarket_web_url}accounts/${booking.labID}/equipment/${booking.equipmentID}`}
+                          rel="noreferrer"
+                        >
+                          {booking[cell.id]}
+                        </a>
+                      ) : (
+                        (booking[cell.id] as React.ReactNode)
+                      )}
                     </TableCell>
-                    {visibleHeaderCells.map((cell, i) => (
-                      <TableCell
-                        key={`${cell.id}${i}`}
-                        data-testid={`${cell.id}${index}`}
-                      >
-                        {cell.id === "bookingID" ? (
-                          <a
-                            target="_blank"
-                            href={
-                              clustermarket_web_url +
-                              "accounts/" +
-                              booking.labID +
-                              "/my_bookings/" +
-                              booking[cell.id]
-                            }
-                            rel="noreferrer"
-                          >
-                            {booking[cell.id]}
-                          </a>
-                        ) : cell.id === "equipmentName" ? (
-                          <a
-                            target="_blank"
-                            href={
-                              clustermarket_web_url +
-                              "accounts/" +
-                              booking.labID +
-                              "/equipment/" +
-                              booking.equipmentID
-                            }
-                            rel="noreferrer"
-                          >
-                            {booking[cell.id]}
-                          </a>
-                        ) : (
-                          (booking[cell.id] as React.ReactNode)
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                );
-              },
-            )}
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -193,12 +167,7 @@ export default function ResultsTable({
           backgroundColor: "#f6f6f6",
         }}
       >
-        <Typography
-          sx={{ pl: "16px" }}
-          component="span"
-          variant="body2"
-          color="textPrimary"
-        >
+        <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
           Selected: {selectedBookingIds.length}
         </Typography>
       </Box>

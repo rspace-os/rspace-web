@@ -26,7 +26,6 @@
     "jstz-detect": "~1.0.5",
     "mustache": "4.2.0",
     "photoswipe": "~4.1.1",
-    "zeroclipboard": "~2.2.0",
     "Apprise-v2": "ThrivingKings/Apprise-v2",
     "jasmine-ajax": "^3.4.0",
     "jasmine-core": "^3.5.0",
@@ -36,8 +35,7 @@
     "select2": "~4.0",
     "mathjs": "^3.17.0",
     "jquery.scrollTo": "^2.1.2",
-    "js-owncloud-client": "*",
-    "swagger-ui": "^5.31.0"
+    "js-owncloud-client": "*"
   },
   "resolutions": {
     "jquery": "~2.1.3"

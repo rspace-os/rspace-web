@@ -1,8 +1,7 @@
-
 import { expect } from "vitest";
-import { match } from "../util/Util";
-import { Optional } from "../util/optional";
 import * as ArrayUtils from "../util/ArrayUtils";
+import { Optional } from "../util/optional";
+import { match } from "../util/Util";
 
 type HeadingsSpec = Array<{
   level: 1 | 2 | 3 | 4 | 5 | 6;
@@ -50,19 +49,13 @@ expect.extend({
    * ```
    */
   assertHeadings(actualRootNode: HTMLElement, expectedHeadings: HeadingsSpec) {
-    const tw = document.createTreeWalker(
-      actualRootNode,
-      NodeFilter.SHOW_ELEMENT,
-      {
-        acceptNode(node) {
-          if (node instanceof SVGElement) return NodeFilter.FILTER_SKIP;
-          if (!(node instanceof HTMLElement)) throw new Error("Not an element");
-          return /^H\d$/.test(node.tagName)
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_SKIP;
-        },
-      }
-    );
+    const tw = document.createTreeWalker(actualRootNode, NodeFilter.SHOW_ELEMENT, {
+      acceptNode(node) {
+        if (node instanceof SVGElement) return NodeFilter.FILTER_SKIP;
+        if (!(node instanceof HTMLElement)) throw new Error("Not an element");
+        return /^H\d$/.test(node.tagName) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      },
+    });
 
     const actualHeadings: HeadingsSpec = [];
     while (tw.nextNode()) {
@@ -75,8 +68,7 @@ expect.extend({
         [(t) => t === "H6", 6],
       ])((tw.currentNode as HTMLElement).tagName);
 
-      if (tw.currentNode.textContent === null)
-        throw new Error("Node has no text content");
+      if (tw.currentNode.textContent === null) throw new Error("Node has no text content");
       actualHeadings.push({
         level,
         content: tw.currentNode.textContent,
@@ -92,30 +84,18 @@ expect.extend({
     if (expectedHeadings.length > actualHeadings.length)
       return {
         pass: false,
-        message: () =>
-          "There are fewer actual headings than expected headings.",
+        message: () => "There are fewer actual headings than expected headings.",
       };
 
-    const mismatches: Array<string> = ArrayUtils.mapOptional<
-      Optional<string>,
-      string
-    >(
+    const mismatches: Array<string> = ArrayUtils.mapOptional<Optional<string>, string>(
       (mismatch) => mismatch,
-      ArrayUtils.zipWith(
-        actualHeadings,
-        expectedHeadings,
-        (actualHeading, expectedHeading, index) => {
-          if (actualHeading.level !== expectedHeading.level)
-            return Optional.present(
-              `${actualHeading.level} !== ${expectedHeading.level} on line ${index}`
-            );
-          if (actualHeading.content !== expectedHeading.content)
-            return Optional.present(
-              `"${actualHeading.content}" !== "${expectedHeading.content}" on line ${index}`
-            );
-          return Optional.empty<string>();
-        }
-      )
+      ArrayUtils.zipWith(actualHeadings, expectedHeadings, (actualHeading, expectedHeading, index) => {
+        if (actualHeading.level !== expectedHeading.level)
+          return Optional.present(`${actualHeading.level} !== ${expectedHeading.level} on line ${index}`);
+        if (actualHeading.content !== expectedHeading.content)
+          return Optional.present(`"${actualHeading.content}" !== "${expectedHeading.content}" on line ${index}`);
+        return Optional.empty<string>();
+      }),
     );
 
     if (mismatches.length > 0) {
@@ -130,4 +110,3 @@ expect.extend({
     };
   },
 });
-

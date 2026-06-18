@@ -1,25 +1,26 @@
-import React, { useContext } from "react";
-import TitledBox from "../../components/TitledBox";
-import { observer } from "mobx-react-lite";
-import FileForImport from "./Fields/File";
-import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
-import TemplateDetails from "./Fields/TemplateDetails";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import SubmitSpinner from "../../components/SubmitSpinnerButton";
 import Grid from "@mui/material/Grid";
-import useStores from "../../stores/use-stores";
-import HelpLinkIcon from "../../components/HelpLinkIcon";
-import docLinks from "../../assets/DocLinks";
-import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import CustomTooltip from "../../components/CustomTooltip";
-import { type ImportRecordType } from "../../stores/stores/ImportStore";
-import NavigateContext from "../../stores/contexts/Navigate";
-import { capitaliseJustFirstChar } from "../../util/Util";
-import { type URL } from "../../util/types";
+import Tabs from "@mui/material/Tabs";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import docLinks from "../../assets/DocLinks";
+import CustomTooltip from "../../components/CustomTooltip";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import SubmitSpinner from "../../components/SubmitSpinnerButton";
+import TitledBox from "../../components/TitledBox";
+import NavigateContext from "../../stores/contexts/Navigate";
+import type { ImportRecordType } from "../../stores/stores/ImportStore";
+import useStores from "../../stores/use-stores";
+import type { URL } from "../../util/types";
+import { capitaliseJustFirstChar } from "../../util/Util";
+import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
+import FileForImport from "./Fields/File";
+import TemplateDetails from "./Fields/TemplateDetails";
 
 function RecordsImport(): React.ReactNode {
   const { importStore } = useStores();
@@ -32,10 +33,7 @@ function RecordsImport(): React.ReactNode {
   const recordType = importData?.recordType;
   const isSamplesImport = importData?.isSamplesImport;
 
-  const loadedFileByRecordType = importData?.byRecordType("file") as
-    | File
-    | null
-    | undefined;
+  const loadedFileByRecordType = importData?.byRecordType("file") as File | null | undefined;
   const submitting = importStore.isCurrentImportState("submitting");
 
   const importSubmittable = importData?.importSubmittable;
@@ -47,12 +45,9 @@ function RecordsImport(): React.ReactNode {
 
   const notImportable = () => {
     const types: string[] = [];
-    if (importData?.containersFile && !importData.containersSubmittable)
-      types.push("Containers");
-    if (importData?.samplesFile && !importData.samplesSubmittable)
-      types.push("Samples");
-    if (importData?.subSamplesFile && !importData.subSamplesSubmittable)
-      types.push("Subsamples");
+    if (importData?.containersFile && !importData.containersSubmittable) types.push("Containers");
+    if (importData?.samplesFile && !importData.samplesSubmittable) types.push("Samples");
+    if (importData?.subSamplesFile && !importData.subSamplesSubmittable) types.push("Subsamples");
     return types;
   };
 
@@ -156,11 +151,7 @@ function RecordsImport(): React.ReactNode {
                   <span key={i}>
                     {i > 0 && <>, </>}
                     {t.toUpperCase() !== recordType ? (
-                      <Link
-                        to={onTypeSelect(t.toUpperCase() as ImportRecordType)}
-                      >
-                        {t}
-                      </Link>
+                      <Link to={onTypeSelect(t.toUpperCase() as ImportRecordType)}>{t}</Link>
                     ) : (
                       t
                     )}

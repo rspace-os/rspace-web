@@ -1,8 +1,8 @@
-import { describe, expect, test, vi } from 'vitest';
-import { makeMockSample } from "./mocking";
+import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
+import { makeMockSample } from "./mocking";
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     unitStore: {
       getUnit: () => ({ label: "ml" }),
@@ -13,7 +13,6 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {
     post: vi.fn(),
   },
-
 }));
 describe("saveFieldAttachments", () => {
   describe("When the sample has an attachment field with an existing file", () => {
@@ -58,4 +57,3 @@ describe("saveFieldAttachments", () => {
     });
   });
 });
-

@@ -66,7 +66,7 @@ describe("<filename>", () => {
 });
 ```
 
-Be sure to also run eslint and type checking over any new or modified tests.
+Be sure to also run Biome (`pnpm run lint`) and type checking over any new or modified tests.
 
 ### Using fireEvent
 

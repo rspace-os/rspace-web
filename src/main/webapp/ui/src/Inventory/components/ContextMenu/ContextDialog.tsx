@@ -1,5 +1,5 @@
-import React from "react";
 import Dialog from "@mui/material/Dialog";
+import type React from "react";
 import useStores from "../../../stores/use-stores";
 
 type ContextDialogArgs = {

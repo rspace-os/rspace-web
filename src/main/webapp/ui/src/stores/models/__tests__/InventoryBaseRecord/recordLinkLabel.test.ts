@@ -1,15 +1,12 @@
-import { describe, expect, test, vi } from 'vitest';
 import fc from "fast-check";
-import { makeMockSample } from "../SampleModel/mocking";
-import { makeMockBench, makeMockContainer } from "../ContainerModel/mocking";
-import {
-  makeMockSubSample,
-  subSampleAttrsArbitrary,
-} from "../SubSampleModel/mocking";
-import getRootStore from "../../../stores/RootStore";
-import { personAttrs } from "../PersonModel/mocking";
-
+import { describe, expect, test, vi } from "vitest";
+import getRootStore from "../../../stores/getRootStore";
 import PersonModel from "../../PersonModel";
+import { makeMockBench, makeMockContainer } from "../ContainerModel/mocking";
+import { personAttrs } from "../PersonModel/mocking";
+import { makeMockSample } from "../SampleModel/mocking";
+import { makeMockSubSample, subSampleAttrsArbitrary } from "../SubSampleModel/mocking";
+
 const mockRootStore = {
   peopleStore: {
     currentUser: null,
@@ -20,7 +17,7 @@ const mockRootStore = {
 };
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => mockRootStore,
 }));
 describe("computed: recordLinkLabel", () => {
@@ -33,13 +30,12 @@ describe("computed: recordLinkLabel", () => {
       fc.property(subSampleAttrsArbitrary, (subSampleAttrs) => {
         const subsample = makeMockSubSample(subSampleAttrs);
         expect(subsample.recordLinkLabel).toBe(subsample.name);
-      })
+      }),
     );
   });
   test("Regular containers should always return their name.", () => {
     const container = makeMockContainer();
     expect(container.recordLinkLabel).toBe(container.name);
-
   });
   test("A bench, where the current user is unknown, should show the owner's name.", () => {
     const bench = makeMockBench({
@@ -71,9 +67,8 @@ describe("computed: recordLinkLabel", () => {
       personAttrs({
         ...personAttrs(),
         username: "bar",
-      })
+      }),
     );
     expect(bench.recordLinkLabel).toBe("Joe Bloggs's Bench");
   });
 });
-

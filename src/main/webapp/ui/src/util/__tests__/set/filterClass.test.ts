@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 
 import RsSet from "../../set";
+
 describe("filterClass", () => {
   test("Simple example", () => {
     class Foo {}

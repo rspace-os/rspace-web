@@ -1,12 +1,11 @@
-import { test, describe, expect, beforeEach, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { render, screen, waitFor } from "@/__tests__/customQueries";
 import MockAdapter from "axios-mock-adapter";
+import { render, screen, waitFor } from "@/__tests__/customQueries";
 
 import axios from "@/common/axios";
-import useS3Filestores from "../components/useS3Filestores";
 import Alerts from "../../../components/Alerts/Alerts";
+import useS3Filestores from "../components/useS3Filestores";
 
 // The hook calls axios.create(...) and uses the returned instance, but
 // axios-mock-adapter only intercepts the instance it was constructed against.
@@ -16,8 +15,7 @@ import Alerts from "../../../components/Alerts/Alerts";
 function FilestoreList() {
   const result = useS3Filestores();
   if (result.tag === "loading") return <div data-testid="state">loading</div>;
-  if (result.tag === "error")
-    return <div data-testid="state">error:{result.error}</div>;
+  if (result.tag === "error") return <div data-testid="state">error:{result.error}</div>;
   return (
     <ul data-testid="filestores">
       {result.value.map((fs) => (
@@ -34,9 +32,7 @@ describe("useS3Filestores", () => {
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
-    vi.spyOn(axios, "create").mockReturnValue(
-      axios as unknown as ReturnType<typeof axios.create>,
-    );
+    vi.spyOn(axios, "create").mockReturnValue(axios as unknown as ReturnType<typeof axios.create>);
   });
 
   afterEach(() => {
@@ -67,12 +63,8 @@ describe("useS3Filestores", () => {
     );
 
     await waitFor(() => screen.getByTestId("filestores"));
-    expect(screen.getByTestId("fs-1")).toHaveTextContent(
-      "writable-s3|canRead=true|canWrite=true",
-    );
-    expect(screen.getByTestId("fs-2")).toHaveTextContent(
-      "read-only-s3|canRead=true|canWrite=false",
-    );
+    expect(screen.getByTestId("fs-1")).toHaveTextContent("writable-s3|canRead=true|canWrite=true");
+    expect(screen.getByTestId("fs-2")).toHaveTextContent("read-only-s3|canRead=true|canWrite=false");
   });
 
   test("stale filestore (canRead=false) is still listed", async () => {
@@ -94,9 +86,7 @@ describe("useS3Filestores", () => {
     );
 
     await waitFor(() => screen.getByTestId("filestores"));
-    expect(screen.getByTestId("fs-3")).toHaveTextContent(
-      "stale-s3|canRead=false|canWrite=false",
-    );
+    expect(screen.getByTestId("fs-3")).toHaveTextContent("stale-s3|canRead=false|canWrite=false");
   });
 
   test("defaults canRead/canWrite to true when userPermissions absent", async () => {
@@ -117,9 +107,7 @@ describe("useS3Filestores", () => {
     );
 
     await waitFor(() => screen.getByTestId("filestores"));
-    expect(screen.getByTestId("fs-4")).toHaveTextContent(
-      "legacy-s3|canRead=true|canWrite=true",
-    );
+    expect(screen.getByTestId("fs-4")).toHaveTextContent("legacy-s3|canRead=true|canWrite=true");
   });
 
   test("non-S3 filestores are filtered out of the list", async () => {

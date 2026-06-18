@@ -25,10 +25,7 @@ import { match } from "./Util";
  * const parsedValue: Options = parseString("Foo", value);
  * ```
  */
-export function parseString<T extends string>(
-  pattern: T,
-  value: string,
-): Result<T> {
+export function parseString<T extends string>(pattern: T, value: string): Result<T> {
   if (pattern === value) return Result.Ok(pattern);
   return Result.Error<T>([new Error(`"${value}" !== "${pattern}"`)]);
 }
@@ -46,21 +43,18 @@ export function parseInteger(value: string): Result<number> {
 /**
  * Parse a boolean from a string of either "true" or "false".
  */
-export const parseBoolean: (value: "true" | "false") => Result<boolean> = match(
-  [
-    [(value: "false" | "true") => value === "false", Result.Ok(false)],
-    [(value: "false" | "true") => value === "true", Result.Ok(true)],
-    [() => true, Result.Error([new Error("Neither 'true' nor 'false'")])],
-  ],
-);
+export const parseBoolean: (value: "true" | "false") => Result<boolean> = match([
+  [(value: "false" | "true") => value === "false", Result.Ok(false)],
+  [(value: "false" | "true") => value === "true", Result.Ok(true)],
+  [() => true, Result.Error([new Error("Neither 'true' nor 'false'")])],
+]);
 
 /**
  * Parses a string into a date.
  */
 export function parseDate(s: string | number): Result<Date> {
   const d = new Date(s);
-  if (d.toString() === "Invalid Date")
-    return Result.Error([new Error(`"${s}" is not a valid date.`)]);
+  if (d.toString() === "Invalid Date") return Result.Error([new Error(`"${s}" is not a valid date.`)]);
   return Result.Ok(d);
 }
 
@@ -85,9 +79,7 @@ export function parseDate(s: string | number): Result<Date> {
  * `typeof null === "object"`.
  */
 export function isObject(m: unknown): Result<object | null> {
-  return typeof m === "object"
-    ? Result.Ok(m)
-    : Result.Error([new TypeError("Not an object")]);
+  return typeof m === "object" ? Result.Ok(m) : Result.Error([new TypeError("Not an object")]);
 }
 
 /**
@@ -99,12 +91,9 @@ export function isObject(m: unknown): Result<object | null> {
  * a record and assumes that its keys are strings.
  */
 export function isRecord(obj: object): Result<Record<string, unknown>> {
-  if (!(obj instanceof Object))
-    return Result.Error([new TypeError("Not an object")]);
-  if (Array.isArray(obj))
-    return Result.Error([new TypeError("Not an object, is an array")]);
-  if (Object.getPrototypeOf(obj) !== Object.prototype)
-    return Result.Error([new TypeError("Not a plain object")]);
+  if (!(obj instanceof Object)) return Result.Error([new TypeError("Not an object")]);
+  if (Array.isArray(obj)) return Result.Error([new TypeError("Not an object, is an array")]);
+  if (Object.getPrototypeOf(obj) !== Object.prototype) return Result.Error([new TypeError("Not a plain object")]);
   return Result.Ok(obj as Record<string, unknown>);
 }
 
@@ -112,9 +101,7 @@ export function isRecord(obj: object): Result<Record<string, unknown>> {
  * Parses something that might be null into the something that certainly is.
  */
 export function isNull<T>(x: T | null): Result<null> {
-  return x === null
-    ? Result.Ok(null)
-    : Result.Error<null>([new TypeError("Is not null")]);
+  return x === null ? Result.Ok(null) : Result.Error<null>([new TypeError("Is not null")]);
 }
 
 /**
@@ -128,9 +115,7 @@ export function isNull<T>(x: T | null): Result<null> {
  * ```
  */
 export function isNotNull<T>(x: T | null): Result<T> {
-  return x === null
-    ? Result.Error<T>([new TypeError("Is null")])
-    : Result.Ok(x);
+  return x === null ? Result.Error<T>([new TypeError("Is null")]) : Result.Ok(x);
 }
 
 /**
@@ -147,27 +132,21 @@ export function isNotBottom<T>(x: T | undefined | null): Result<T> {
  * Parses anything into an array of anything
  */
 export function isArray(m: unknown): Result<ReadonlyArray<unknown>> {
-  return Array.isArray(m)
-    ? Result.Ok(m)
-    : Result.Error([new TypeError("Is not an array")]);
+  return Array.isArray(m) ? Result.Ok(m) : Result.Error([new TypeError("Is not an array")]);
 }
 
 /**
  * Parses anything into a string
  */
 export function isString(m: unknown): Result<string> {
-  return typeof m === "string"
-    ? Result.Ok(m)
-    : Result.Error([new TypeError("Is not a string")]);
+  return typeof m === "string" ? Result.Ok(m) : Result.Error([new TypeError("Is not a string")]);
 }
 
 /**
  * Parses anything into a number
  */
 export function isNumber(m: unknown): Result<number> {
-  return typeof m === "number"
-    ? Result.Ok(m)
-    : Result.Error([new TypeError("Is not a number")]);
+  return typeof m === "number" ? Result.Ok(m) : Result.Error([new TypeError("Is not a number")]);
 }
 
 /**
@@ -175,18 +154,14 @@ export function isNumber(m: unknown): Result<number> {
  * Unfortunately, there's no way to encoded this in the type.
  */
 export function isNotNaN(n: number): Result<number> {
-  return Number.isNaN(n)
-    ? Result.Error([new TypeError("In NaN")])
-    : Result.Ok(n);
+  return Number.isNaN(n) ? Result.Error([new TypeError("In NaN")]) : Result.Ok(n);
 }
 
 /**
  * Parses anything into a boolean
  */
 export function isBoolean(m: unknown): Result<boolean> {
-  return typeof m === "boolean"
-    ? Result.Ok(m)
-    : Result.Error([new TypeError("Is not a boolean")]);
+  return typeof m === "boolean" ? Result.Ok(m) : Result.Error([new TypeError("Is not a boolean")]);
 }
 
 /**
@@ -212,9 +187,7 @@ export function isTrue(b: boolean): Result<true> {
 export const getValueWithKey =
   (key: string): ((obj: object) => Result<unknown>) =>
   (obj: object): Result<unknown> =>
-    getByKey(key as never, obj).toResult(
-      () => new Error(`key '${key}' is missing`),
-    );
+    getByKey(key as never, obj).toResult(() => new Error(`key '${key}' is missing`));
 
 /**
  * Traverses a series of nested objects, only returning Result.Ok if each is an
@@ -225,10 +198,7 @@ export const getValueWithKey =
  *   }).flatMap(isNumber);     // Result.Ok(3)
  * ```
  */
-export const objectPath = (
-  path: ReadonlyArray<string>,
-  obj: unknown,
-): Result<unknown> => {
+export const objectPath = (path: ReadonlyArray<string>, obj: unknown): Result<unknown> => {
   if (path.length === 0) return Result.Ok(obj);
   const [head, ...tail] = path;
   return isObject(obj)

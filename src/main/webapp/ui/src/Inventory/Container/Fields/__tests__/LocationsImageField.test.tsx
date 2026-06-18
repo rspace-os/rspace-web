@@ -1,25 +1,20 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { act, render, screen } from "@testing-library/react";
-import { storesContext } from "../../../../stores/stores-context";
-import ContainerModel from "../../../../stores/models/ContainerModel";
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
-import {
-  makeMockRootStore,
-  type MockStores,
-} from "../../../../stores/stores/__tests__/RootStore/mocking";
-import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
-
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, test, vi } from "vitest";
+import ImageField from "../../../../components/Inputs/ImageField";
+import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import type ContainerModel from "../../../../stores/models/ContainerModel";
+import { type MockStores, makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import type { StoreContainer } from "../../../../stores/stores/RootStore";
+import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import LocationsImageField from "../LocationsImageField";
-import ImageField from "../../../../components/Inputs/ImageField";
 import LocationsImageMarkersDialog from "../LocationsImageMarkersDialog";
 
-import userEvent from "@testing-library/user-event";
 let storeImageFunction: (arg: { dataUrl: string; file: Blob }) => void;
 
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: vi.fn(() => ({
     uiStore: {
       setPageNavigationConfirmation: vi.fn(),
@@ -40,10 +35,10 @@ vi.mock("../LocationsImageMarkersDialog", () => ({
   default: vi.fn(({ close }) => {
     return (
       <div>
+        {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
         <button onClick={close}>Close</button>
       </div>
     );
-
   }),
 }));
 class ResizeObserver {
@@ -51,10 +46,9 @@ class ResizeObserver {
   unobserve(): void {}
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 window.ResizeObserver = ResizeObserver as any;
-const mockRootStore = (
-  mockedStores?: MockStores
-): [StoreContainer, ContainerModel] => {
+const mockRootStore = (mockedStores?: MockStores): [StoreContainer, ContainerModel] => {
   const activeResult = makeMockContainer({
     cType: "IMAGE",
   });
@@ -77,7 +71,6 @@ const mockRootStore = (
     }),
     activeResult,
   ];
-
 };
 describe("LocationImageField", () => {
   /*
@@ -91,8 +84,7 @@ describe("LocationImageField", () => {
           <storesContext.Provider value={mockRootStore()[0]}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
@@ -100,28 +92,24 @@ describe("LocationImageField", () => {
           warningAlert:
             "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
         }),
-        expect.anything()
+        expect.anything(),
       );
-
     });
     test("be a button labelled 'Edit Locations' that can't be tapped.", () => {
-
       const rootStore = mockRootStore()[0];
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         screen.getByRole("button", {
           name: /Edit Locations/,
-        })
+        }),
       ).toBeDisabled();
     });
-
   });
   /*
    * When a user has uploaded or edited a file the ImageField will call
@@ -132,86 +120,69 @@ describe("LocationImageField", () => {
   describe("When an image is uploaded or edited there should", () => {
     test("be a call to setImage.", () => {
       const rootStore = mockRootStore()[0];
-      const setImageSpy = vi.spyOn(
-        rootStore.searchStore.activeResult! as any,
-        "setImage"
-
-      ).mockImplementation(() => async () => {});
+      const setImageSpy = vi
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+        .spyOn(rootStore.searchStore.activeResult! as any, "setImage")
+        .mockImplementation(() => async () => {});
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
           storeImage: expect.any(Function),
         }),
-        expect.anything()
-
+        expect.anything(),
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
-
       });
-      expect(setImageSpy).toHaveBeenCalledWith(
-        "locationsImage",
-        expect.any(String)
-      );
-
+      expect(setImageSpy).toHaveBeenCalledWith("locationsImage", expect.any(String));
     });
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
-      const addScopedToastSpy = vi.spyOn(
-        rootStore.searchStore.activeResult! as any,
-        "addScopedToast"
-      );
-      const setImageSpy = vi.spyOn(
-        rootStore.searchStore.activeResult! as any,
-        "setImage"
-
-      ).mockImplementation(() => async () => {});
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+      const addScopedToastSpy = vi.spyOn(rootStore.searchStore.activeResult! as any, "addScopedToast");
+      const setImageSpy = vi
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+        .spyOn(rootStore.searchStore.activeResult! as any, "setImage")
+        .mockImplementation(() => async () => {});
       let setPreviewImageFunction: () => void;
-      const addAlertMock = vi
-        .spyOn(rootStore.uiStore, "addAlert")
-        .mockImplementation(({ onActionClick }) => {
-          setPreviewImageFunction = onActionClick;
-
-        });
+      const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert").mockImplementation(({ onActionClick }) => {
+        setPreviewImageFunction = onActionClick;
+      });
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
-
       });
       expect(addScopedToastSpy).toHaveBeenCalled();
-      expect(addAlertMock).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "Set preview image too?" })
-      );
+      expect(addAlertMock).toHaveBeenCalledWith(expect.objectContaining({ message: "Set preview image too?" }));
       act(() => {
         setPreviewImageFunction();
       });
       expect(setImageSpy).toHaveBeenCalledWith("image", expect.any(String));
-
     });
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
-      vi.spyOn(
-        rootStore.searchStore.activeResult! as any,
-        "setImage"
-      ).mockImplementation(() => async () => {});
-      const addScopedToastSpy = vi.spyOn(
-        rootStore.searchStore.activeResult! as any,
-        "addScopedToast"
-      );
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+      vi.spyOn(rootStore.searchStore.activeResult! as any, "setImage").mockImplementation(() => async () => {});
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+      const addScopedToastSpy = vi.spyOn(rootStore.searchStore.activeResult! as any, "addScopedToast");
       container.image = "theBlobUrlOfSomeImage";
 
       const addAlertMock = vi.spyOn(rootStore.uiStore, "addAlert");
@@ -220,16 +191,14 @@ describe("LocationImageField", () => {
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
-
       });
       expect(addScopedToastSpy).not.toHaveBeenCalled();
       expect(addAlertMock).not.toHaveBeenCalledWith();
     });
-
   });
   describe("When a visual container has a locationsImage there should", () => {
     test("be a button labelled 'Edit Locations' that can be tapped.", () => {
@@ -241,16 +210,14 @@ describe("LocationImageField", () => {
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         screen.getByRole("button", {
           name: /Edit Locations/,
-        })
+        }),
       ).toBeEnabled();
     });
-
   });
   describe("When a visual container has a locationsImage but no markers there should", () => {
     test("be some help text.", () => {
@@ -263,19 +230,16 @@ describe("LocationImageField", () => {
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
-          warningAlert:
-            "Click on 'Edit Locations' to add locations and start using the visual container.",
+          warningAlert: "Click on 'Edit Locations' to add locations and start using the visual container.",
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
-
   });
   /*
    * Once a locationsImage has been set, the user can open the location marking
@@ -292,17 +256,15 @@ describe("LocationImageField", () => {
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       const editLocationsButtons = screen.getByText("Edit Locations");
       await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: true, close: expect.any(Function) },
-        expect.anything()
+        expect.anything(),
       );
     });
-
   });
   describe('When the "Close" button inside the LocationsImageMarkersDialog is tapped', () => {
     test("The dialog should close.", async () => {
@@ -319,15 +281,14 @@ describe("LocationImageField", () => {
           <storesContext.Provider value={rootStore}>
             <LocationsImageField />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       const editLocationsButtons = screen.getByText("Edit Locations");
       await user.click(editLocationsButtons);
       await user.click(screen.getByText("Close"));
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: false, close: expect.any(Function) },
-        expect.anything()
+        expect.anything(),
       );
     });
   });

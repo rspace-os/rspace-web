@@ -1,32 +1,24 @@
-import { test, describe, vi, expect } from "vitest";
+import "@/stores/stores/RootStore";
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
-import * as React from "react";
-import {
-  render,
-  screen,
-  within,
-  waitFor,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { storesContext } from "../../../stores/stores-context";
-import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
-import ResultsTable from "../ResultsTable";
-import Search from "../../../stores/models/Search";
-import SearchContext from "../../../stores/contexts/Search";
-import { menuIDs } from "../../../util/menuIDs";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../theme";
-import { containerAttrs } from "../../../stores/models/__tests__/ContainerModel/mocking";
-import { makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import ApiServiceBase from "../../../common/ApiServiceBase";
-import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-
+import SearchContext from "../../../stores/contexts/Search";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import { containerAttrs, makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import { personAttrs } from "../../../stores/models/__tests__/PersonModel/mocking";
+import MemoisedFactory from "../../../stores/models/Factory/MemoisedFactory";
+import Search from "../../../stores/models/Search";
+import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../stores/stores-context";
+import materialTheme from "../../../theme";
+import { menuIDs } from "../../../util/menuIDs";
+import ResultsTable from "../ResultsTable";
 
-const REQUIRED_PERMISSIONS_TOOLTIP =
-  "You do not have permission to select this item.";
+const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
 
 const renderResultsTable = (search: Search) => {
   const rootStore = makeMockRootStore({
@@ -111,7 +103,6 @@ describe("Results Table", () => {
       );
       await waitFor(() => {
         void search.setupAndPerformInitialSearch({});
-
       });
 
       const rootStore = makeMockRootStore({});
@@ -129,7 +120,6 @@ describe("Results Table", () => {
             </SearchContext.Provider>
           </storesContext.Provider>
         </ThemeProvider>,
-
       );
       within(screen.getByRole("navigation")).getByRole("combobox");
     });
@@ -163,9 +153,7 @@ describe("Results Table", () => {
       if (!row) throw new Error("Could not find table row for result");
 
       await user.hover(row);
-      expect(
-        await screen.findByText(REQUIRED_PERMISSIONS_TOOLTIP),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(REQUIRED_PERMISSIONS_TOOLTIP)).toBeInTheDocument();
     });
 
     test("select all skips results that lack the required permissions", async () => {
@@ -257,13 +245,8 @@ describe("Results Table", () => {
       if (!row) throw new Error("Could not find table row for result");
 
       await user.hover(row);
-      expect(
-        await screen.findByText("This item is already linked."),
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByText(REQUIRED_PERMISSIONS_TOOLTIP),
-      ).not.toBeInTheDocument();
+      expect(await screen.findByText("This item is already linked.")).toBeInTheDocument();
+      expect(screen.queryByText(REQUIRED_PERMISSIONS_TOOLTIP)).not.toBeInTheDocument();
     });
   });
 });
-

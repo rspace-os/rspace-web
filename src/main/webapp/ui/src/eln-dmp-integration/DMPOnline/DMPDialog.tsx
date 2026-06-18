@@ -1,43 +1,29 @@
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Link from "@mui/material/Link";
+import Portal from "@mui/material/Portal";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from "@mui/x-data-grid";
 import React from "react";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
-import Portal from "@mui/material/Portal";
-import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import {
-  Toolbar as DataGridToolbar,
-  ColumnsPanelTrigger,
-  GridRowId,
-} from "@mui/x-data-grid";
-import { ThemeProvider } from "@mui/material/styles";
-import Link from "@mui/material/Link";
-import * as FetchingData from "../../util/fetchingData";
-import {
-  useDmpOnlineEndpoint,
-  type DmpListing,
-  type DmpSummary,
-} from "./useDmpOnlineEndpoint";
-import docLinks from "../../assets/DocLinks";
-import NoValue from "../../components/NoValue";
 import createAccentedTheme from "../../accentedTheme";
-import AppBar from "../../components/AppBar";
-import ValidatingSubmitButton, {
-  IsValid,
-  IsInvalid,
-} from "../../components/ValidatingSubmitButton";
-import { DataGridColumn } from "../../util/table";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
+import docLinks from "../../assets/DocLinks";
+import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import NoValue from "../../components/NoValue";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
+import * as FetchingData from "../../util/fetchingData";
+import { DataGridColumn } from "../../util/table";
+import { type DmpListing, type DmpSummary, useDmpOnlineEndpoint } from "./useDmpOnlineEndpoint";
 
-function CustomDialog({
-  fullScreen,
-  ...props
-}: React.ComponentProps<typeof Dialog>): React.ReactNode {
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
     <Dialog
       {...props}
@@ -59,17 +45,12 @@ function CustomDialog({
   );
 }
 
-const DMPDialogContent = ({
-  setOpen,
-}: {
-  setOpen: (open: boolean) => void;
-}) => {
+const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
   const [selection, setSelection] = React.useState<DmpSummary | null>(null);
   const [importing, setImporting] = React.useState(false);
 
   const { firstPage } = useDmpOnlineEndpoint();
-  const [listing, setListing] =
-    React.useState<FetchingData.Fetched<DmpListing>>(firstPage);
+  const [listing, setListing] = React.useState<FetchingData.Fetched<DmpListing>>(firstPage);
 
   React.useEffect(() => {
     setListing(firstPage);
@@ -94,16 +75,13 @@ const DMPDialogContent = ({
     {
       field: "contact name",
       headerName: "Contact Name",
-      renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactName.orElse(<NoValue label="Not Specified" />),
+      renderCell: (params: { row: DmpSummary }) => params.row.contactName.orElse(<NoValue label="Not Specified" />),
     },
     {
       field: "contact affiliation",
       headerName: "Contact Affiliation",
       renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactAffiliationName.orElse(
-          <NoValue label="Not Specified" />,
-        ),
+        params.row.contactAffiliationName.orElse(<NoValue label="Not Specified" />),
     },
     DataGridColumn.newColumnWithFieldName<"created", DmpSummary>("created", {
       headerName: "Created",
@@ -146,31 +124,20 @@ const DMPDialogContent = ({
         >
           <Box>
             <Typography variant="body2">
-              Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will
-              make it available to view and reference within RSpace.
+              Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference
+              within RSpace.
             </Typography>
             <Typography variant="body2">
-              See{" "}
-              <Link href="https://dmponline.dcc.ac.uk">
-                dmponline.dcc.ac.uk
-              </Link>{" "}
-              and our{" "}
-              <Link href={docLinks.dmponline}>DMPonline integration docs</Link>{" "}
-              for more.
+              See <Link href="https://dmponline.dcc.ac.uk">dmponline.dcc.ac.uk</Link> and our{" "}
+              <Link href={docLinks.dmponline}>DMPonline integration docs</Link> for more.
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
-              loading: () => (
-                <Typography variant="body2">
-                  Loading listing of DMPs.
-                </Typography>
-              ),
+              loading: () => <Typography variant="body2">Loading listing of DMPs.</Typography>,
               error: (error) => (
                 <>
-                  <Typography variant="body2">
-                    Failed to load listing of DMPs. Please try refreshing.
-                  </Typography>
+                  <Typography variant="body2">Failed to load listing of DMPs. Please try refreshing.</Typography>
                   <samp>{error}</samp>
                 </>
               ),
@@ -218,10 +185,7 @@ const DMPDialogContent = ({
                 success: (l) => ({ page: l.page, pageSize: l.pageSize }),
               })}
               pageSizeOptions={[10, 25, 100]}
-              onPaginationModelChange={({
-                pageSize: newPageSize,
-                page: newPage,
-              }) => {
+              onPaginationModelChange={({ pageSize: newPageSize, page: newPage }) => {
                 FetchingData.match(listing, {
                   loading: () => {},
                   error: () => {},
@@ -236,8 +200,7 @@ const DMPDialogContent = ({
                           });
                         }
                       } catch (error) {
-                        if (error instanceof Error)
-                          setListing({ tag: "error", error: error.message });
+                        if (error instanceof Error) setListing({ tag: "error", error: error.message });
                       }
                       try {
                         if (newPageSize !== l.pageSize) {
@@ -248,8 +211,7 @@ const DMPDialogContent = ({
                           });
                         }
                       } catch (error) {
-                        if (error instanceof Error)
-                          setListing({ tag: "error", error: error.message });
+                        if (error instanceof Error) setListing({ tag: "error", error: error.message });
                       }
                     })();
                   },
@@ -282,9 +244,7 @@ const DMPDialogContent = ({
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Close</Button>
         <ValidatingSubmitButton
-          validationResult={
-            selection ? IsValid() : IsInvalid("No DMP is selected.")
-          }
+          validationResult={selection ? IsValid() : IsInvalid("No DMP is selected.")}
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
@@ -308,10 +268,7 @@ type DMPDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-export default function DMPDialog({
-  open,
-  setOpen,
-}: DMPDialogArgs): React.ReactNode {
+export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*

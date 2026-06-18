@@ -1,24 +1,20 @@
-import { test, describe, expect, afterEach } from 'vitest';
+import { afterEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import MockAdapter from "axios-mock-adapter";
+import React from "react";
+import axios from "@/common/axios";
 import * as FetchingData from "../../../util/fetchingData";
 import {
-  useGalleryListing,
-  type GalleryFile,
-  RemoteFile,
-  Filestore,
-  LocalGalleryFile,
   Description,
   dummyId,
+  Filestore,
+  type GalleryFile,
+  LocalGalleryFile,
+  RemoteFile,
+  useGalleryListing,
 } from "../useGalleryListing";
-import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
 import page1 from "./getUploadedFiles_1.json";
 
 import page2 from "./getUploadedFiles_2.json";
@@ -35,14 +31,13 @@ function WrapperComponent() {
       section: "Images" as const,
       path: [],
     }),
-    []
+    [],
   );
   const { galleryListing, refreshListing } = useGalleryListing({
     listingOf,
     searchTerm: "",
     sortOrder: "DESC",
     orderBy: "modificationDate",
-
   });
   return FetchingData.match(galleryListing, {
     loading: () => "loading",
@@ -56,11 +51,13 @@ function WrapperComponent() {
           There are {listing.list.length} results.
           {listing.loadMore
             .map((loadMore) => (
+              // biome-ignore lint/a11y/useButtonType: initial biome migration
               <button key={null} onClick={() => void loadMore()}>
                 Load more
               </button>
             ))
             .orElse(null)}
+          {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
           <button
             onClick={() => {
               void refreshListing();
@@ -72,7 +69,6 @@ function WrapperComponent() {
       );
     },
   });
-
 }
 
 function OwnerFieldsWrapper() {
@@ -110,7 +106,6 @@ function OwnerFieldsWrapper() {
 }
 describe("useGalleryListing", () => {
   test("Load more button should disappear on last page", async () => {
-
     const user = userEvent.setup();
     /*
      * The asymmetricMatch thing here is to match the URLSearchParams.
@@ -123,15 +118,13 @@ describe("useGalleryListing", () => {
     mockAxios
       .onGet("/gallery/getUploadedFiles", {
         params: {
-          asymmetricMatch: (params: URLSearchParams) =>
-            params.get("pageNumber") === "0",
+          asymmetricMatch: (params: URLSearchParams) => params.get("pageNumber") === "0",
         },
       })
       .reply(200, page1)
       .onGet("/gallery/getUploadedFiles", {
         params: {
-          asymmetricMatch: (params: URLSearchParams) =>
-            params.get("pageNumber") === "1",
+          asymmetricMatch: (params: URLSearchParams) => params.get("pageNumber") === "1",
         },
       })
 
@@ -144,14 +137,9 @@ describe("useGalleryListing", () => {
 
     await user.click(screen.getByRole("button", { name: /load more/i }));
     await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: /load more/i })
-      ).not.toBeInTheDocument();
-
+      expect(screen.queryByRole("button", { name: /load more/i })).not.toBeInTheDocument();
     });
-    const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) =>
-      /getUploadedFiles/.test(url ?? "")
-    );
+    const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) => /getUploadedFiles/.test(url ?? ""));
     const firstPageParams = getUploadedFilesCalls[0].params as URLSearchParams;
     const secondPageParams = getUploadedFilesCalls[1].params as URLSearchParams;
     expect(getUploadedFilesCalls.length).toBe(2);
@@ -216,13 +204,7 @@ function makeFilestore(filesystemType: string): Filestore {
   });
 }
 
-function makeRemoteFile({
-  folder,
-  path,
-}: {
-  folder: boolean;
-  path: ReadonlyArray<GalleryFile>;
-}): RemoteFile {
+function makeRemoteFile({ folder, path }: { folder: boolean; path: ReadonlyArray<GalleryFile> }): RemoteFile {
   return new RemoteFile({
     nfsId: null,
     name: "test.jpg",

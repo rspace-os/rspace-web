@@ -1,21 +1,16 @@
-import Divider from "@mui/material/Divider";
-import Drawer from "@mui/material/Drawer";
-import IconButton from "@mui/material/IconButton";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { observer } from "mobx-react-lite";
-import React from "react";
-import useStores from "../../../stores/use-stores";
-import GlobalId from "./GlobalId";
-import Date from "./Date";
-import LatestTemplateActions from "./LatestTemplateActions";
-import VersionHistory from "./VersionHistory";
-import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
-import LinkedDocuments from "./LinkedDocuments";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import type { Factory } from "../../../stores/definitions/Factory";
+import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import SidebarBody from "./SidebarBody";
 
 type SidebarArgs = {
   factory: Factory | null;
@@ -44,28 +39,13 @@ function Sidebar({ factory }: SidebarArgs): React.ReactNode {
     >
       <Card elevation={0} sx={{ display: "flex", flexDirection: "column" }}>
         <CardActions>
-          <IconButton
-            onClick={() => uiStore.toggleInfo()}
-            aria-label="Close more info sidebar"
-          >
+          <IconButton onClick={() => uiStore.toggleInfo()} aria-label="Close more info sidebar">
             <ChevronRightIcon />
           </IconButton>
         </CardActions>
         <Divider />
         <CardContent sx={{ overflowX: "hidden" }}>
-          <Stack spacing={5}>
-            <GlobalId record={activeResult} />
-            <Date label="Created" date={activeResult.created} />
-            <Date label="Last Modified" date={activeResult.lastModified} />
-            <VersionHistory record={activeResult} />
-            <LatestTemplateActions record={activeResult} />
-            {activeResult.usableInLoM && activeResult.globalId && (
-              <LinkedDocuments
-                globalId={activeResult.globalId}
-                factory={factory}
-              />
-            )}
-          </Stack>
+          <SidebarBody record={activeResult} factory={factory} />
         </CardContent>
       </Card>
     </Drawer>

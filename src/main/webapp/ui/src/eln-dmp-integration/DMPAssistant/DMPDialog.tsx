@@ -1,46 +1,35 @@
-import React from "react";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
-import Portal from "@mui/material/Portal";
-import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
-import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarColumnsButton,
-  GridRenderCellParams,
-} from "@mui/x-data-grid";
-import { ThemeProvider } from "@mui/material/styles";
-import Link from "@mui/material/Link";
 import Checkbox from "@mui/material/Checkbox";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Link from "@mui/material/Link";
+import Portal from "@mui/material/Portal";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import { DataGrid, type GridRenderCellParams, GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
+import React from "react";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
+import docLinks from "../../assets/DocLinks";
+import AppBar from "../../components/AppBar";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import NoValue from "../../components/NoValue";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
+import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
+import { DataGridColumn } from "../../util/table";
 import {
-  useDmpAssistantEndpoint,
-  importDmpsIntoGallery,
   type DmpListing,
   type DmpSummary,
+  importDmpsIntoGallery,
+  useDmpAssistantEndpoint,
 } from "./useDmpAssistantEndpoint";
-import docLinks from "../../assets/DocLinks";
-import NoValue from "../../components/NoValue";
-import createAccentedTheme from "../../accentedTheme";
-import AppBar from "../../components/AppBar";
-import ValidatingSubmitButton, {
-  IsValid,
-  IsInvalid,
-} from "../../components/ValidatingSubmitButton";
-import { DataGridColumn } from "../../util/table";
-import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 
-function CustomDialog({
-  fullScreen,
-  ...props
-}: React.ComponentProps<typeof Dialog>): React.ReactNode {
+function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
     <Dialog
       {...props}
@@ -60,20 +49,13 @@ function CustomDialog({
   );
 }
 
-const DMPDialogContent = ({
-  setOpen,
-}: {
-  setOpen: (open: boolean) => void;
-}) => {
-  const [selectedDmpIds, setSelectedDmpIds] = React.useState<Set<string>>(
-    new Set(),
-  );
+const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
+  const [selectedDmpIds, setSelectedDmpIds] = React.useState<Set<string>>(new Set());
   const [importing, setImporting] = React.useState(false);
   const { addAlert } = React.useContext(AlertContext);
 
   const { firstPage } = useDmpAssistantEndpoint();
-  const [listing, setListing] =
-    React.useState<FetchingData.Fetched<DmpListing>>(firstPage);
+  const [listing, setListing] = React.useState<FetchingData.Fetched<DmpListing>>(firstPage);
 
   React.useEffect(() => {
     setListing(firstPage);
@@ -120,29 +102,24 @@ const DMPDialogContent = ({
     }
   };
 
-  const currentPageDmps: ReadonlyArray<DmpSummary> = FetchingData.match(
-    listing,
-    {
-      loading: () => [],
-      error: () => [],
-      success: (l) => l.dmps,
-    },
-  );
+  const currentPageDmps: ReadonlyArray<DmpSummary> = FetchingData.match(listing, {
+    loading: () => [],
+    error: () => [],
+    success: (l) => l.dmps,
+  });
   const pageIds = currentPageDmps.map((d) => d.id);
-  const selectedOnPageCount = pageIds.filter((id) =>
-    selectedDmpIds.has(id),
-  ).length;
-  const allOnPageSelected =
-    pageIds.length > 0 && selectedOnPageCount === pageIds.length;
-  const someOnPageSelected =
-    selectedOnPageCount > 0 && selectedOnPageCount < pageIds.length;
+  const selectedOnPageCount = pageIds.filter((id) => selectedDmpIds.has(id)).length;
+  const allOnPageSelected = pageIds.length > 0 && selectedOnPageCount === pageIds.length;
+  const someOnPageSelected = selectedOnPageCount > 0 && selectedOnPageCount < pageIds.length;
 
   const toggleSelectAllOnPage = () => {
     setSelectedDmpIds((prev) => {
       const next = new Set(prev);
       if (allOnPageSelected) {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         pageIds.forEach((id) => next.delete(id));
       } else {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         pageIds.forEach((id) => next.add(id));
       }
       return next;
@@ -186,16 +163,13 @@ const DMPDialogContent = ({
     {
       field: "contact name",
       headerName: "Contact Name",
-      renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactName.orElse(<NoValue label="Not Specified" />),
+      renderCell: (params: { row: DmpSummary }) => params.row.contactName.orElse(<NoValue label="Not Specified" />),
     },
     {
       field: "contact affiliation",
       headerName: "Contact Affiliation",
       renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactAffiliationName.orElse(
-          <NoValue label="Not Specified" />,
-        ),
+        params.row.contactAffiliationName.orElse(<NoValue label="Not Specified" />),
     },
     DataGridColumn.newColumnWithFieldName<"created", DmpSummary>("created", {
       headerName: "Created",
@@ -233,25 +207,17 @@ const DMPDialogContent = ({
         >
           <Box>
             <Typography variant="body2">
-              Importing DMPs from <strong>dmp-pgd.ca</strong> will make them
-              available to view and reference within RSpace. Select one or more
-              and click Import.
+              Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within
+              RSpace. Select one or more and click Import.
             </Typography>
             <Typography variant="body2">
               See <Link href="https://dmp-pgd.ca">dmp-pgd.ca</Link> and our{" "}
-              <Link href={docLinks.dmpassistant}>
-                DMP Assistant integration docs
-              </Link>{" "}
-              for more.
+              <Link href={docLinks.dmpassistant}>DMP Assistant integration docs</Link> for more.
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
-              loading: () => (
-                <Typography variant="body2">
-                  Loading listing of DMPs.
-                </Typography>
-              ),
+              loading: () => <Typography variant="body2">Loading listing of DMPs.</Typography>,
               // The dialog is closed by the effect above when listing fails, so
               // we render nothing here — the upstream message (which may contain
               // HTML) is never displayed.
@@ -289,10 +255,7 @@ const DMPDialogContent = ({
                 success: (l) => ({ page: l.page, pageSize: l.pageSize }),
               })}
               pageSizeOptions={[10, 25, 100]}
-              onPaginationModelChange={({
-                pageSize: newPageSize,
-                page: newPage,
-              }) => {
+              onPaginationModelChange={({ pageSize: newPageSize, page: newPage }) => {
                 FetchingData.match(listing, {
                   loading: () => {},
                   error: () => {},
@@ -303,13 +266,10 @@ const DMPDialogContent = ({
                       if (!pageSizeChanged && !pageChanged) return;
                       try {
                         setListing({ tag: "loading" });
-                        const next = pageSizeChanged
-                          ? await l.setPageSize(newPageSize)
-                          : await l.setPage(newPage);
+                        const next = pageSizeChanged ? await l.setPageSize(newPageSize) : await l.setPage(newPage);
                         setListing({ tag: "success", value: next });
                       } catch (error) {
-                        if (error instanceof Error)
-                          setListing({ tag: "error", error: error.message });
+                        if (error instanceof Error) setListing({ tag: "error", error: error.message });
                       }
                     })();
                   },
@@ -342,17 +302,11 @@ const DMPDialogContent = ({
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Close</Button>
         <ValidatingSubmitButton
-          validationResult={
-            selectedDmps.length > 0
-              ? IsValid()
-              : IsInvalid("No DMP is selected.")
-          }
+          validationResult={selectedDmps.length > 0 ? IsValid() : IsInvalid("No DMP is selected.")}
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          {selectedDmps.length > 1
-            ? `Import (${selectedDmps.length})`
-            : "Import"}
+          {selectedDmps.length > 1 ? `Import (${selectedDmps.length})` : "Import"}
         </ValidatingSubmitButton>
       </DialogActions>
     </>
@@ -364,10 +318,7 @@ type DMPDialogArgs = {
   setOpen: (open: boolean) => void;
 };
 
-export default function DMPDialog({
-  open,
-  setOpen,
-}: DMPDialogArgs): React.ReactNode {
+export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   return (

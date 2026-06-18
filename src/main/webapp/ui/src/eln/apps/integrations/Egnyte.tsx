@@ -1,15 +1,15 @@
-import Grid from "@mui/material/Grid";
-import React, { useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import TextField from "@mui/material/TextField";
-import { Optional } from "../../../util/optional";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import React, { useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/egnyte";
+import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
+import { Optional } from "../../../util/optional";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type EgnyteArgs = {
   integrationState: IntegrationStates["EGNYTE"];
@@ -27,8 +27,9 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Egnyte"
         integrationState={integrationState}
@@ -50,10 +51,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
             <ol>
               <li>Provide your Egnyte domain URL and Save.</li>
               <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the Egnyte icon in the text
-                editor toolbar.
-              </li>
+              <li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form

@@ -1,18 +1,12 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  within,
-  act,
-} from "@testing-library/react";
-import SearchContext from "../../../../stores/contexts/Search";
-import materialTheme from "../../../../theme";
+import "@/stores/stores/RootStore";
 import { ThemeProvider } from "@mui/material/styles";
-import Searchbar from "../Searchbar";
-import Search from "../../../../stores/models/Search";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
+import Search from "../../../../stores/models/Search";
+import materialTheme from "../../../../theme";
+import Searchbar from "../Searchbar";
 
 import "@/__tests__/__mocks__/resizeObserver";
 describe("Searchbar", () => {
@@ -31,21 +25,16 @@ describe("Searchbar", () => {
         >
           <Searchbar handleSearch={handleSearch} />
         </SearchContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     fireEvent.change(screen.getByRole("searchbox", { name: "Search" }), {
       target: { value: "this is a really long piece of text" },
-
     });
     expect(screen.getByRole("button", { name: "Expand field" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Expand field" }));
-    fireEvent.click(
-      within(screen.getByRole("dialog")).getByRole("button", { name: "Search" })
-    );
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Search" }));
     expect(handleSearch).toHaveBeenCalled();
-
   });
   test("When the query search parameter changes, the new value should be shown.", () => {
     const search = new Search({
@@ -61,16 +50,13 @@ describe("Searchbar", () => {
         >
           <Searchbar handleSearch={() => {}} />
         </SearchContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     act(() => {
       search.fetcher.setAttributes({
         query: "foo",
       });
-
     });
     expect(screen.getByRole("searchbox")).toHaveValue("foo");
   });
 });
-

@@ -1,30 +1,25 @@
-import React, { useState, useId } from "react";
-import useStores from "../../../stores/use-stores";
 import Box from "@mui/material/Box";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import RadioField, {
-  type RadioOption,
-} from "../../../components/Inputs/RadioField";
-import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
-import TextField from "@mui/material/TextField";
-import {
-  type IntegrationState,
-  type DataCiteServerUrl,
-  type SystemSettings,
-} from "../../../stores/stores/AuthStore";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
-import WarningBar from "../../../components/WarningBar";
-import docLinks from "../../../assets/DocLinks";
-import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import FormHelperText from "@mui/material/FormHelperText";
 import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
 import Fade from "@mui/material/Fade";
+import FormControl from "@mui/material/FormControl";
+import FormHelperText from "@mui/material/FormHelperText";
+import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import type React from "react";
+import { useId, useState } from "react";
+import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
+import HelpLinkIcon from "../../../components/HelpLinkIcon";
+import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import WarningBar from "../../../components/WarningBar";
+import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
+import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
 
 const SETTINGS_LABELS: Record<keyof SystemSettings["datacite"], string> = {
@@ -49,11 +44,8 @@ type DataciteCardArgs = {
   currentSettings: SystemSettings["datacite"];
 };
 
-export default function DataciteCard({
-  currentSettings,
-}: DataciteCardArgs): React.ReactNode {
-  const [updatedSettings, setUpdatedSettings] =
-    useState<SystemSettings["datacite"]>(currentSettings);
+export default function DataciteCard({ currentSettings }: DataciteCardArgs): React.ReactNode {
+  const [updatedSettings, setUpdatedSettings] = useState<SystemSettings["datacite"]>(currentSettings);
   const [savedSettings, setSavedSettings] = useState(currentSettings);
   const [lastTestResult, setLastTestResult] = useState<
     { response: "success" } | { response: "failed"; message: string } | null
@@ -72,8 +64,7 @@ export default function DataciteCard({
     }
   };
 
-  const unsavedChanges: boolean =
-    JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
+  const unsavedChanges: boolean = JSON.stringify(updatedSettings) !== JSON.stringify(savedSettings);
 
   const connectionStatusId = useId();
   const showConnectionStatus = !unsavedChanges && Boolean(lastTestResult);
@@ -84,10 +75,7 @@ export default function DataciteCard({
         <FormControl>
           <FormLabel>
             DataCite IGSN Integration
-            <HelpLinkIcon
-              link={docLinks.IGSNIdentifiers}
-              title="Add IGSN Identifiers to your Inventory Items"
-            />
+            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add IGSN Identifiers to your Inventory Items" />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
             You can associate IGSN IDs with Inventory items by connecting to{" "}
@@ -100,10 +88,7 @@ export default function DataciteCard({
             name={"DataCite Integration Settings"}
             value={updatedSettings.enabled}
             onChange={({ target }) => {
-              if (
-                target.value !== null &&
-                typeof target.value !== "undefined"
-              ) {
+              if (target.value !== null && typeof target.value !== "undefined") {
                 setUpdatedSettings({
                   ...updatedSettings,
                   enabled: target.value,
@@ -117,11 +102,7 @@ export default function DataciteCard({
         <Box sx={{ mt: 1.5 }}>
           <FormControl component="fieldset" fullWidth>
             <FormLabel id="igsn-details-label">Details</FormLabel>
-            {(
-              Object.entries(updatedSettings) as ReadonlyArray<
-                [keyof typeof updatedSettings, string]
-              >
-            )
+            {(Object.entries(updatedSettings) as ReadonlyArray<[keyof typeof updatedSettings, string]>)
               .filter((entry) => entry[0] !== "enabled")
               .map((entry) => (
                 <Grid
@@ -148,16 +129,10 @@ export default function DataciteCard({
                       }}
                       error={entry[1] === ""}
                       value={entry[1]}
-                      placeholder={`Please enter a value for ${
-                        SETTINGS_LABELS[entry[0]]
-                      }`}
-                      helperText={
-                        entry[1] === "" ? "A valid value is required" : null
-                      }
+                      placeholder={`Please enter a value for ${SETTINGS_LABELS[entry[0]]}`}
+                      helperText={entry[1] === "" ? "A valid value is required" : null}
                       variant="outlined"
-                      disabled={
-                        !updatedSettings.enabled || entry[0] === "serverUrl"
-                      }
+                      disabled={!updatedSettings.enabled || entry[0] === "serverUrl"}
                       slotProps={{
                         inputLabel: {
                           shrink: true,
@@ -171,10 +146,7 @@ export default function DataciteCard({
                         name={"DataCite Server URL"}
                         value={updatedSettings.serverUrl}
                         onChange={({ target }) => {
-                          if (
-                            target.value !== null &&
-                            typeof target.value !== "undefined"
-                          ) {
+                          if (target.value !== null && typeof target.value !== "undefined") {
                             setUpdatedSettings({
                               ...updatedSettings,
                               serverUrl: target.value,
@@ -220,13 +192,9 @@ export default function DataciteCard({
           variant="outlined"
           sx={{ minWidth: "max-content" }}
           onClick={() => {
-            ApiService.get<boolean>("/identifiers/testDataCiteConnection")
+            ApiService.get<boolean>("/identifiers/testIgsnConnection")
               .then(({ data }) => {
-                setLastTestResult(
-                  data
-                    ? { response: "success" }
-                    : { response: "failed", message: "" },
-                );
+                setLastTestResult(data ? { response: "success" } : { response: "failed", message: "" });
               })
               .catch((e) => {
                 setLastTestResult({

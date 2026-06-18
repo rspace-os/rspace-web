@@ -1,7 +1,5 @@
-//@flow
-
 import axios from "@/common/axios";
-import { type PlanSummary } from "./PlanSummary";
+import type { PlanSummary } from "./PlanSummary";
 
 /*
  * Code for completing the process of importing the DMP from Argos and into the

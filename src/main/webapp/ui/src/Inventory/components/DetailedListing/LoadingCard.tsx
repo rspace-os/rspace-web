@@ -1,6 +1,6 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import Skeleton from "@mui/material/Skeleton";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import CardStructure from "./CardStructure";
 
 function LoadingCard(): React.ReactNode {

@@ -1,12 +1,13 @@
-import React, { useId } from "react";
-import MenuItem from "@mui/material/MenuItem";
-import TextField from "@mui/material/TextField";
-import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
-import Grid from "@mui/material/Grid";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import { type PageSize } from "./common";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Grid from "@mui/material/Grid";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import type React from "react";
+import { useId } from "react";
+import type { PageSize } from "./common";
 
 export type WordExportDetails = {
   exportFormat: "WORD";
@@ -18,10 +19,7 @@ export type WordExportDetails = {
 
 export type WordExportDetailsArgs = {
   exportDetails: WordExportDetails;
-  updateExportDetails: <T extends keyof WordExportDetails>(
-    key: T,
-    value: WordExportDetails[T]
-  ) => void;
+  updateExportDetails: <T extends keyof WordExportDetails>(key: T, value: WordExportDetails[T]) => void;
 };
 
 type WordExportArgs = WordExportDetailsArgs & {
@@ -34,12 +32,7 @@ type WordExportArgs = WordExportDetailsArgs & {
 };
 
 export default function WordExport({
-  exportDetails: {
-    exportName,
-    pageSize,
-    setPageSizeAsDefault,
-    defaultPageSize,
-  },
+  exportDetails: { exportName, pageSize, setPageSizeAsDefault, defaultPageSize },
   updateExportDetails,
   validations,
 }: WordExportArgs): React.ReactNode {
@@ -50,15 +43,10 @@ export default function WordExport({
         <TextField
           variant="standard"
           fullWidth
-          error={
-            validations.submitAttempt &&
-            !validations.inputValidations.exportName
-          }
+          error={validations.submitAttempt && !validations.inputValidations.exportName}
           label="Name your file"
           value={exportName}
-          onChange={({ target: { value } }) =>
-            updateExportDetails("exportName", value)
-          }
+          onChange={({ target: { value } }) => updateExportDetails("exportName", value)}
           margin="normal"
           data-test-id="word-title"
         />
@@ -70,9 +58,7 @@ export default function WordExport({
             variant="standard"
             fullWidth
             value={pageSize}
-            onChange={({ target: { value } }) =>
-              updateExportDetails("pageSize", value)
-            }
+            onChange={({ target: { value } }) => updateExportDetails("pageSize", value)}
             inputProps={{ id: pageSizeId }}
             data-test-id="word-size"
           >

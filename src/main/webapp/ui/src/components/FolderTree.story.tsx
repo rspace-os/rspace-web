@@ -1,18 +1,17 @@
-import React from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../theme";
-import FolderTree from "./FolderTree";
-import { type FolderTreeNode } from "../hooks/api/useFolders";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import React from "react";
+import type { FolderTreeNode } from "../hooks/api/useFolders";
+import materialTheme from "../theme";
+import FolderTree from "./FolderTree";
 
 /**
  * Simple test component for specs
  */
 export function TestFolderTreeExample() {
-  const [selectedFolder, setSelectedFolder] =
-    React.useState<FolderTreeNode | null>(null);
+  const [selectedFolder, setSelectedFolder] = React.useState<FolderTreeNode | null>(null);
 
   return (
     <ThemeProvider theme={materialTheme}>
@@ -33,8 +32,7 @@ export function TestFolderTreeExample() {
  * Simple example of FolderTree component
  */
 export function SimpleFolderTreeExample() {
-  const [selectedFolder, setSelectedFolder] =
-    React.useState<FolderTreeNode | null>(null);
+  const [selectedFolder, setSelectedFolder] = React.useState<FolderTreeNode | null>(null);
 
   return (
     <ThemeProvider theme={materialTheme}>

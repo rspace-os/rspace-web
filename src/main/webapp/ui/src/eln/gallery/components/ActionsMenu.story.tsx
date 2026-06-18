@@ -1,14 +1,14 @@
-import React from "react";
-import ActionsMenu from "./ActionsMenu";
-import { dummyId, type GalleryFile, Description } from "../useGalleryListing";
-import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import { ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../../accentedTheme";
-import Result from "../../../util/result";
-import { ACCENT_COLOR } from "../../../assets/branding/irods";
-import { LandmarksProvider } from "@/components/LandmarksContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
 import Alerts from "@/components/Alerts/Alerts";
+import { LandmarksProvider } from "@/components/LandmarksContext";
+import createAccentedTheme from "../../../accentedTheme";
+import { ACCENT_COLOR } from "../../../assets/branding/irods";
+import Result from "../../../util/result";
+import { Description, dummyId, type GalleryFile } from "../useGalleryListing";
+import { GallerySelection, useGallerySelection } from "../useGallerySelection";
+import ActionsMenu from "./ActionsMenu";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -215,10 +215,7 @@ export function ActionsMenuWithFolder() {
 }
 
 export function ActionsMenuWithMultipleFiles() {
-  return renderWithProviders([
-    folderFile,
-    { ...folderFile, globalId: "GF4", key: "GF4" },
-  ]);
+  return renderWithProviders([folderFile, { ...folderFile, globalId: "GF4", key: "GF4" }]);
 }
 
 export function ActionsMenuWithSnippet() {
@@ -299,4 +296,3 @@ export function ActionsMenuWithSnippetInSystemSharedFolder() {
     },
   ]);
 }
-

@@ -1,5 +1,5 @@
-import React from "react";
 import { useTheme } from "@mui/material/styles";
+import type React from "react";
 
 type MyBenchIconArgs = {
   size?: "small";
@@ -9,6 +9,7 @@ type MyBenchIconArgs = {
 function MyBenchIcon({ size, color }: MyBenchIconArgs): React.ReactNode {
   const theme = useTheme();
   return (
+    // biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration
     <svg
       version="1.1"
       id="Layer_1"

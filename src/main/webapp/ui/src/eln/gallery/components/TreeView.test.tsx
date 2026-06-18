@@ -1,16 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { render, screen, waitFor, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
-import {
-  TreeViewWithFiles,
-  TreeViewLoading,
-  TreeViewFoldersOnly,
-} from "./TreeView.story";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render, screen, waitFor } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
+import { TreeViewFoldersOnly, TreeViewLoading, TreeViewWithFiles } from "./TreeView.story";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -20,9 +15,7 @@ beforeEach(() => {
    * useDeploymentProperty, usePrimaryAction) and the per-folder
    * useGalleryListing fetches actually fire on mount.
    */
-  mockAxios
-    .onGet("/session/ajax/analyticsProperties")
-    .reply(200, { analyticsEnabled: false });
+  mockAxios.onGet("/session/ajax/analyticsProperties").reply(200, { analyticsEnabled: false });
   mockAxios.onGet("/deploymentproperties/ajax/property").reply(200, false);
   // usePrimaryAction fetches the office-suite supported extensions on mount.
   mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, {});
@@ -77,13 +70,9 @@ function treeItemByType(fileType: string): HTMLElement {
  * so the selection/double-click handlers fire.
  */
 function treeItemContentByType(fileType: string): HTMLElement {
-  const content = treeItemByType(fileType).querySelector(
-    ".MuiTreeItem-content",
-  );
+  const content = treeItemByType(fileType).querySelector(".MuiTreeItem-content");
   if (!(content instanceof HTMLElement)) {
-    throw new Error(
-      `No content element found for tree item "${getFileNameByType(fileType)}"`,
-    );
+    throw new Error(`No content element found for tree item "${getFileNameByType(fileType)}"`);
   }
   return content;
 }
@@ -144,10 +133,7 @@ describe("TreeView", () => {
       await user.click(treeItemContentByType("image"));
 
       await waitFor(() => {
-        expect(treeItemByType("image")).toHaveAttribute(
-          "aria-checked",
-          "true",
-        );
+        expect(treeItemByType("image")).toHaveAttribute("aria-checked", "true");
       });
     });
   });
@@ -192,10 +178,7 @@ describe("TreeView", () => {
       await user.keyboard("{ }");
 
       await waitFor(() => {
-        expect(treeItemByType("image")).toHaveAttribute(
-          "aria-checked",
-          "true",
-        );
+        expect(treeItemByType("image")).toHaveAttribute("aria-checked", "true");
       });
     });
   });

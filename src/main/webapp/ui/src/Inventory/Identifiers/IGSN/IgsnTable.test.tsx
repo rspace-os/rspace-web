@@ -1,17 +1,12 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { render, screen, waitFor, within, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render, screen, waitFor, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import identifiersJson from "../../__tests__/identifiers.json";
-import {
-  SimpleIgsnTable,
-  SingularSelectionIgsnTable,
-  IgsnTableWithControlDefaults,
-} from "./IgsnTable.story";
+import { IgsnTableWithControlDefaults, SimpleIgsnTable, SingularSelectionIgsnTable } from "./IgsnTable.story";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -29,23 +24,15 @@ function setupIdentifiersEndpoint(rows: typeof identifiersJson = identifiersJson
 
     let filteredIdentifiers = rows;
     if (state) {
-      filteredIdentifiers = filteredIdentifiers.filter(
-        (identifier) => identifier.state === state
-      );
+      filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.state === state);
     }
     if (searchTerm) {
-      filteredIdentifiers = filteredIdentifiers.filter((identifier) =>
-        identifier.doi.includes(searchTerm)
-      );
+      filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.doi.includes(searchTerm));
     }
     if (isAssociated === "true") {
-      filteredIdentifiers = filteredIdentifiers.filter(
-        (identifier) => identifier.associatedGlobalId !== null
-      );
+      filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId !== null);
     } else if (isAssociated === "false") {
-      filteredIdentifiers = filteredIdentifiers.filter(
-        (identifier) => identifier.associatedGlobalId === null
-      );
+      filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId === null);
     }
     return [200, filteredIdentifiers];
   });
@@ -90,9 +77,7 @@ describe("IGSN Table", () => {
 
   test("The default columns should be Select, DOI, State, and Linked Item", () => {
     render(<SimpleIgsnTable />);
-    const headers = screen
-      .getAllByRole("columnheader")
-      .map((header) => header.textContent);
+    const headers = screen.getAllByRole("columnheader").map((header) => header.textContent);
     // the empty string at the beginning is the checkbox column
     expect(headers).toEqual(["Select", "DOI", "State", "Linked Item"]);
   });
@@ -115,10 +100,7 @@ describe("IGSN Table", () => {
      * International Generic Sample Number (IGSN), confusingly, refers to the
      * organization and the IDs themselves are referred to as IGSN IDs.
      */
-    expect(screen.getByRole("searchbox")).toHaveAttribute(
-      "placeholder",
-      "Search IGSN IDs..."
-    );
+    expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", "Search IGSN IDs...");
   });
 
   test("Searching makes API call with searchTerm parameter", async () => {
@@ -129,11 +111,7 @@ describe("IGSN Table", () => {
     await user.type(screen.getByRole("searchbox"), "test");
 
     await waitFor(() => {
-      expect(
-        identifiersRequestParams().some(
-          (params) => params.get("identifier") === "test"
-        )
-      ).toBe(true);
+      expect(identifiersRequestParams().some((params) => params.get("identifier") === "test")).toBe(true);
     });
   });
 
@@ -144,9 +122,7 @@ describe("IGSN Table", () => {
     await user.click(screen.getByRole("button", { name: "Select columns" }));
     // The columns menu is identified by its distinctive "Show/Hide All" toggle;
     // the toolbar renders more than one role="menu", so scope to this control.
-    expect(
-      screen.getByRole("checkbox", { name: "Show/Hide All" })
-    ).toBeVisible();
+    expect(screen.getByRole("checkbox", { name: "Show/Hide All" })).toBeVisible();
   });
 
   test("There should be a menu for exporting the IGSN table to CSV", async () => {
@@ -156,9 +132,7 @@ describe("IGSN Table", () => {
     await user.click(screen.getByRole("button", { name: "Export" }));
     // Scope to the export menu's distinctive item rather than role="menu", since
     // the toolbar renders more than one menu.
-    expect(
-      screen.getByRole("menuitem", { name: /Export to CSV/i })
-    ).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: /Export to CSV/i })).toBeVisible();
   });
 
   test("Filtering by state makes API call with state parameter", async () => {
@@ -170,11 +144,7 @@ describe("IGSN Table", () => {
     await user.click(screen.getByRole("menuitem", { name: /Draft/ }));
 
     await waitFor(() => {
-      expect(
-        identifiersRequestParams().some(
-          (params) => params.get("state") === "draft"
-        )
-      ).toBe(true);
+      expect(identifiersRequestParams().some((params) => params.get("state") === "draft")).toBe(true);
     });
   });
 
@@ -187,11 +157,7 @@ describe("IGSN Table", () => {
     await user.click(screen.getByRole("menuitem", { name: /No Linked Item/ }));
 
     await waitFor(() => {
-      expect(
-        identifiersRequestParams().some(
-          (params) => params.get("isAssociated") === "false"
-        )
-      ).toBe(true);
+      expect(identifiersRequestParams().some((params) => params.get("isAssociated") === "false")).toBe(true);
     });
   });
 
@@ -200,9 +166,7 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
-    const row = screen
-      .getAllByRole("row")
-      .find((r) => r.textContent?.includes("10.82316/khma-em96"));
+    const row = screen.getAllByRole("row").find((r) => r.textContent?.includes("10.82316/khma-em96"));
     if (!row) throw new Error("Could not find row for DOI 10.82316/khma-em96");
     const checkbox = within(row).getByRole("checkbox", { name: /Select row/ });
     await user.click(checkbox);
@@ -211,11 +175,7 @@ describe("IGSN Table", () => {
      * IgsnTable.story renders the selection, so we check what's been rendered
      * to confirm setSelectedIdentifiers has been called.
      */
-    expect(
-      within(screen.getByLabelText("selected IGSNs")).getByText(
-        "10.82316/khma-em96"
-      )
-    ).toBeVisible();
+    expect(within(screen.getByLabelText("selected IGSNs")).getByText("10.82316/khma-em96")).toBeVisible();
     expect(checkbox).toBeChecked();
   });
 
@@ -224,18 +184,12 @@ describe("IGSN Table", () => {
     render(<SingularSelectionIgsnTable />);
     await waitForTableLoaded();
 
-    const row = screen
-      .getAllByRole("row")
-      .find((r) => r.textContent?.includes("10.82316/khma-em96"));
+    const row = screen.getAllByRole("row").find((r) => r.textContent?.includes("10.82316/khma-em96"));
     if (!row) throw new Error("Could not find row for DOI 10.82316/khma-em96");
     const radio = within(row).getByRole("radio");
     await user.click(radio);
 
-    expect(
-      within(screen.getByLabelText("selected IGSNs")).getByText(
-        "10.82316/khma-em96"
-      )
-    ).toBeVisible();
+    expect(within(screen.getByLabelText("selected IGSNs")).getByText("10.82316/khma-em96")).toBeVisible();
     expect(radio).toBeChecked();
   });
 
@@ -245,15 +199,9 @@ describe("IGSN Table", () => {
 
     await waitFor(() => {
       const params = identifiersRequestParams();
-      expect(
-        params.some((p) => p.get("state") === "draft")
-      ).toBe(true);
-      expect(
-        params.some((p) => p.get("isAssociated") === "false")
-      ).toBe(true);
-      expect(
-        params.some((p) => p.get("identifier") === "test")
-      ).toBe(true);
+      expect(params.some((p) => p.get("state") === "draft")).toBe(true);
+      expect(params.some((p) => p.get("isAssociated") === "false")).toBe(true);
+      expect(params.some((p) => p.get("identifier") === "test")).toBe(true);
     });
   });
 
@@ -265,17 +213,13 @@ describe("IGSN Table", () => {
     const allRows = within(table).getAllByRole("row");
     const headerRow = allRows[0];
     const headers = within(headerRow).getAllByRole("columnheader");
-    const linkedItemColumnIndex = headers.findIndex(
-      (header) => header.textContent?.trim() === "Linked Item"
-    );
+    const linkedItemColumnIndex = headers.findIndex((header) => header.textContent?.trim() === "Linked Item");
     expect(linkedItemColumnIndex).not.toBe(-1);
 
     const dataRows = allRows.slice(1);
     expect(dataRows.length).toBeGreaterThan(0);
     for (const dataRow of dataRows) {
-      const cell = within(dataRow).getAllByRole("gridcell")[
-        linkedItemColumnIndex
-      ];
+      const cell = within(dataRow).getAllByRole("gridcell")[linkedItemColumnIndex];
       expect(cell.querySelectorAll("a").length).toBeGreaterThan(0);
     }
   });
@@ -286,15 +230,9 @@ describe("IGSN Table", () => {
     await waitForTableLoaded();
 
     // Verify the overlay message is displayed
-    expect(
-      within(screen.getByRole("grid")).getByText("No IGSN IDs")
-    ).toBeVisible();
+    expect(within(screen.getByRole("grid")).getByText("No IGSN IDs")).toBeVisible();
     // Verify the grid has a header row but no data rows
-    const headerRow = screen
-      .getAllByRole("row")
-      .filter(
-        (row) => within(row).queryAllByRole("columnheader").length > 0
-      );
+    const headerRow = screen.getAllByRole("row").filter((row) => within(row).queryAllByRole("columnheader").length > 0);
     expect(headerRow).toHaveLength(1);
     expect(headerRow[0]).toBeVisible();
   });
@@ -313,16 +251,12 @@ describe("IGSN Table", () => {
       await screen.findByRole("textbox", {
         name: "Alternatively, enter the data encoded in the barcode",
       }),
-      "test"
+      "test",
     );
     await user.click(screen.getByRole("button", { name: /Search for IGSN/ }));
 
     await waitFor(() => {
-      expect(
-        identifiersRequestParams().some(
-          (params) => params.get("identifier") === "test"
-        )
-      ).toBe(true);
+      expect(identifiersRequestParams().some((params) => params.get("identifier") === "test")).toBe(true);
     });
   });
 
@@ -343,22 +277,9 @@ describe("IGSN Table", () => {
     expect(state).toBeVisible();
     expect(linkedItem).toBeVisible();
 
-    expect(
-      Boolean(
-        search.compareDocumentPosition(scan) & Node.DOCUMENT_POSITION_FOLLOWING
-      )
-    ).toBe(true);
-    expect(
-      Boolean(
-        scan.compareDocumentPosition(state) & Node.DOCUMENT_POSITION_FOLLOWING
-      )
-    ).toBe(true);
-    expect(
-      Boolean(
-        state.compareDocumentPosition(linkedItem) &
-          Node.DOCUMENT_POSITION_FOLLOWING
-      )
-    ).toBe(true);
+    expect(Boolean(search.compareDocumentPosition(scan) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(Boolean(scan.compareDocumentPosition(state) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(Boolean(state.compareDocumentPosition(linkedItem) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 
   test("Should have no axe violations.", async () => {

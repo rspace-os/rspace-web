@@ -1,10 +1,11 @@
-import Button, { buttonClasses } from "@mui/material/Button";
-import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
-import { observer } from "mobx-react-lite";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button, { buttonClasses } from "@mui/material/Button";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Tooltip from "@mui/material/Tooltip";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useState } from "react";
 
 type ContextMenuButtonArgs = {
   icon?: React.ReactElement;
@@ -38,6 +39,8 @@ function ContextMenuButton({
 
   return (
     <ClickAwayListener onClickAway={handleTooltipClose}>
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration */}
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: initial biome migration */}
       <div onClick={() => disabledHelp !== "" && setOpen(true)}>
         <Tooltip
           onClose={handleTooltipClose}
@@ -76,13 +79,7 @@ function ContextMenuButton({
             })}
             size="medium"
             variant={inContrast ? "contained" : "outlined"}
-            startIcon={
-              loading ? (
-                <FontAwesomeIcon icon={faSpinner} spin size="sm" />
-              ) : (
-                icon
-              )
-            }
+            startIcon={loading ? <FontAwesomeIcon icon={faSpinner} spin size="sm" /> : icon}
             disabled={disabledHelp !== ""}
             aria-disabled={disabledHelp !== ""}
             aria-label={label}

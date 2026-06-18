@@ -19,13 +19,10 @@ type NavigationContextArgs = {
  * results in the whole page being navigated and not the `activeResult` of the
  * inner search which is never shown in the UI.
  */
-export default function NavigationContext({
-  children,
-}: NavigationContextArgs): React.ReactNode {
+export default function NavigationContext({ children }: NavigationContextArgs): React.ReactNode {
   const { search } = React.useContext(SearchContext);
 
-  const { useNavigate: parentUseNavigate, useLocation } =
-    React.useContext(NavigateContext);
+  const { useNavigate: parentUseNavigate, useLocation } = React.useContext(NavigateContext);
   const parentNavigate = parentUseNavigate();
 
   const useNavigate =
@@ -35,7 +32,7 @@ export default function NavigationContext({
       opts?: {
         skipToParentContext?: boolean;
         modifyVisiblePanel?: boolean;
-      }
+      },
     ) => {
       const { skipToParentContext = false } = opts ?? {
         skipToParentContext: false,
@@ -43,14 +40,10 @@ export default function NavigationContext({
       };
       /* Navigation to search pages are changes to the right panel's search */
       if (/^\/inventory\/search/.test(url) && !skipToParentContext) {
-        const searchParams = new URLSearchParams(
-          url.match(/\/inventory\/search\?(.*)/)?.[1]
-        );
+        const searchParams = new URLSearchParams(url.match(/\/inventory\/search\?(.*)/)?.[1]);
         const newCoreFetcherArgs = parseCoreFetcherArgsFromUrl(searchParams);
         // by combining with existing fetcher args, we keep the `parentGlobalId`
-        const combinedCoreFetcherArgs = parseCoreFetcherArgsFromUrl(
-          search.fetcher.generateQuery(newCoreFetcherArgs)
-        );
+        const combinedCoreFetcherArgs = parseCoreFetcherArgsFromUrl(search.fetcher.generateQuery(newCoreFetcherArgs));
         void search.setupAndPerformInitialSearch(combinedCoreFetcherArgs);
       } else {
         /* Open all other pages, such as permalink pages, in the left panel's search */

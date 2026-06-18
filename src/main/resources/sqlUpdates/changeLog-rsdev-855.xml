@@ -5,7 +5,7 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <!-- RaID integration -->
-    <changeSet id="2025-10-20a" context="run,dev-test" author="nico">
+    <changeSet id="2025-10-20a" context="run" author="nico">
         <comment>Create a new system properties for RaID</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>

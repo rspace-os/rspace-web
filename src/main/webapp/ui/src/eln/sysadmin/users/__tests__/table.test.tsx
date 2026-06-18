@@ -1,19 +1,15 @@
-import { test, describe, expect, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useUiPreference";
-import React from "react";
-import {
-  screen,
-  waitFor,
-} from "@testing-library/react";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../../../../theme";
+import { screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
-import USER_LISTING from "./userListing.json";
-import PDF_CONFIG from "./pdfConfig.json";
 import { render, within } from "@/__tests__/customQueries";
+import axios from "@/common/axios";
 import { UsersPage } from "@/eln/sysadmin/users";
+import materialTheme from "../../../../theme";
+import PDF_CONFIG from "./pdfConfig.json";
+import USER_LISTING from "./userListing.json";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),
@@ -34,18 +30,12 @@ window.RS = { newFileStoresExportEnabled: false };
 const mockAxios = new MockAdapter(axios);
 describe("Table Listing", () => {
   test("Usage should be shown in human-readable format", async () => {
-
     mockAxios.onGet("system/ajax/jsonList").reply(200, { ...USER_LISTING });
-    mockAxios
-      .onGet("/userform/ajax/preference?preference=UI_JSON_SETTINGS")
-      .reply(200, {});
+    mockAxios.onGet("/userform/ajax/preference?preference=UI_JSON_SETTINGS").reply(200, {});
     mockAxios.onPost("/userform/ajax/preference").reply(200, {});
-    mockAxios
-      .onGet("/export/ajax/defaultPDFConfig")
-      .reply(200, { ...PDF_CONFIG });
+    mockAxios.onGet("/export/ajax/defaultPDFConfig").reply(200, { ...PDF_CONFIG });
     mockAxios.onGet("/analyticsProperties").reply(200, {
       analyticsEnabled: false,
-
     });
     render(
       <StyledEngineProvider injectFirst>
@@ -53,13 +43,9 @@ describe("Table Listing", () => {
           <UsersPage />
         </ThemeProvider>
       </StyledEngineProvider>,
-
     );
     const grid = await screen.findByRole("grid");
-    await waitFor(() =>
-      expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1),
-
-    );
+    await waitFor(() => expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1));
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call

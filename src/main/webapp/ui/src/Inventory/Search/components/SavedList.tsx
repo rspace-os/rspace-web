@@ -1,20 +1,21 @@
-import React, { useContext, useState } from "react";
-import { observer } from "mobx-react-lite";
-import Badge from "@mui/material/Badge";
-import ListItemText from "@mui/material/ListItemText";
-import StyledMenu from "../../../components/StyledMenu";
-import MenuItem from "@mui/material/MenuItem";
-import useStores from "../../../stores/use-stores";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
-import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import NameDialog from "../../../Inventory/Search/components/NameDialog";
-import { type SavedItem } from "../../../Inventory/Search/components/SearchParameterControls";
-import BasketModel from "../../../stores/models/Basket";
-import CustomTooltip from "../../../components/CustomTooltip";
+import EditIcon from "@mui/icons-material/Edit";
 import Alert from "@mui/material/Alert";
+import Badge from "@mui/material/Badge";
+import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
+import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useState } from "react";
+import CustomTooltip from "../../../components/CustomTooltip";
+import StyledMenu from "../../../components/StyledMenu";
+import NameDialog from "../../../Inventory/Search/components/NameDialog";
+import type { SavedItem } from "../../../Inventory/Search/components/SearchParameterControls";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import BasketModel from "../../../stores/models/Basket";
+import useStores from "../../../stores/use-stores";
 
 export type ItemType = "searches" | "baskets";
 
@@ -59,8 +60,7 @@ function SavedList<T extends SavedItem>({
     if (item instanceof BasketModel) {
       await searchStore.deleteBasket(item.id);
       // if we are on the deleted basket listing, navigate to bench
-      if (searchStore.search.fetcher.parentGlobalId === item.globalId)
-        leaveDeletedBasketListing();
+      if (searchStore.search.fetcher.parentGlobalId === item.globalId) leaveDeletedBasketListing();
       if (searchStore.savedBaskets.length === 0) onSelect(null);
     } else {
       searchStore.deleteSearch(item);
@@ -69,11 +69,7 @@ function SavedList<T extends SavedItem>({
 
   return (
     <>
-      <StyledMenu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => onSelect(null)}
-      >
+      <StyledMenu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => onSelect(null)}>
         {items.length > 0 ? (
           items.map((item, i) => (
             <MenuItem
@@ -97,11 +93,7 @@ function SavedList<T extends SavedItem>({
                 })}
               >
                 {itemType === "baskets" && (
-                  <Badge
-                    sx={{ mx: 1 }}
-                    badgeContent={(item as BasketModel).itemCount || "0"}
-                    color="primary"
-                  />
+                  <Badge sx={{ mx: 1 }} badgeContent={(item as BasketModel).itemCount || "0"} color="primary" />
                 )}
                 <CustomTooltip title="Edit name">
                   <IconButton
@@ -116,11 +108,7 @@ function SavedList<T extends SavedItem>({
                     <EditIcon sx={{ color: "primary.main" }} />
                   </IconButton>
                 </CustomTooltip>
-                <CustomTooltip
-                  title={`Delete ${
-                    itemType === "searches" ? "Saved Search" : "Basket"
-                  }`}
-                >
+                <CustomTooltip title={`Delete ${itemType === "searches" ? "Saved Search" : "Basket"}`}>
                   <IconButton
                     edge="end"
                     aria-label="delete saved item"
@@ -136,11 +124,7 @@ function SavedList<T extends SavedItem>({
             </MenuItem>
           ))
         ) : (
-          <Alert
-            sx={{ width: "300px" }}
-            severity="info"
-            onClose={() => onSelect(null)}
-          >
+          <Alert sx={{ width: "300px" }} severity="info" onClose={() => onSelect(null)}>
             {helpText[itemType]}
           </Alert>
         )}

@@ -6,14 +6,14 @@ import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import NumberedLocation from "../NumberedLocation";
-import React from "react";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import { preventEventBubbling } from "../../../../../util/Util";
+import type React from "react";
+import type { Location } from "../../../../../stores/definitions/Container";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
-import { type Location } from "../../../../../stores/definitions/Container";
+import { preventEventBubbling } from "../../../../../util/Util";
 import useNavigateHelpers from "../../../../useNavigateHelpers";
+import NumberedLocation from "../NumberedLocation";
 
 type ActionButtonArgs = {
   children: React.ReactNode;
@@ -21,18 +21,8 @@ type ActionButtonArgs = {
   disabled?: boolean;
 };
 
-const ActionButton = ({
-  children,
-  onClick,
-  disabled = false,
-}: ActionButtonArgs) => (
-  <Button
-    color="primary"
-    disabled={disabled}
-    onClick={onClick}
-    size="small"
-    sx={{ pointerEvents: "initial" }}
-  >
+const ActionButton = ({ children, onClick, disabled = false }: ActionButtonArgs) => (
+  <Button color="primary" disabled={disabled} onClick={onClick} size="small" sx={{ pointerEvents: "initial" }}>
     {children}
   </Button>
 );
@@ -58,56 +48,36 @@ function SummaryCard({
 }: SummaryCardArgs): React.ReactNode {
   const { navigateToRecord } = useNavigateHelpers();
 
-  const helperText = location.hasContent
-    ? ""
-    : "This location can be chosen as the destination in a move operation.";
+  const helperText = location.hasContent ? "" : "This location can be chosen as the destination in a move operation.";
 
-  const hasImage =
-    location.content instanceof InventoryBaseRecord &&
-    Boolean(location.content.image);
+  const hasImage = location.content instanceof InventoryBaseRecord && Boolean(location.content.image);
 
   return (
-    <Card
-      sx={{ display: "flex", width: fullWidth ? "100%" : 400 }}
-      onClick={onClick}
-      variant="outlined"
-    >
+    <Card sx={{ display: "flex", width: fullWidth ? "100%" : 400 }} onClick={onClick} variant="outlined">
       <Grid container>
         <Grid size={hasImage ? 7 : 12}>
           <Stack sx={{ height: "100%" }}>
             <Box sx={{ flexGrow: 1 }}>
               <CardContent sx={{ flex: "1 0 auto", pb: "8px !important" }}>
                 <Typography gutterBottom variant="h5" component="h2">
-                  <NumberedLocation
-                    number={number}
-                    inline
-                    selected={selected === number}
-                  />
+                  <NumberedLocation number={number} inline selected={selected === number} />
                   {location.name ?? <em>Empty Location</em>}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  component="em"
-                  gutterBottom
-                >
+                <Typography variant="body2" color="textSecondary" component="em" gutterBottom>
                   {helperText}
                 </Typography>
               </CardContent>
             </Box>
             <CardActions>
               {editable && !location.hasContent && (
-                <ActionButton onClick={preventEventBubbling(onRemove)}>
-                  Remove
-                </ActionButton>
+                <ActionButton onClick={preventEventBubbling(onRemove)}>Remove</ActionButton>
               )}
               {!editable && location.content && (
                 <ActionButton
                   disabled={!location.hasContent}
                   onClick={(event: React.MouseEvent) => {
                     event.stopPropagation();
-                    if (location.content)
-                      void navigateToRecord(location.content);
+                    if (location.content) void navigateToRecord(location.content);
                   }}
                 >
                   Open

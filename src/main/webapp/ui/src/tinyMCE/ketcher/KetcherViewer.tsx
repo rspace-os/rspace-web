@@ -1,14 +1,12 @@
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 import React, { useEffect, useState } from "react";
-
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
-import Analytics from "../../components/Analytics";
-import CircularProgress from "@mui/material/CircularProgress";
-import Backdrop from "@mui/material/Backdrop";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
-const KetcherDialog = React.lazy(
-  () => import("../../components/Ketcher/KetcherDialog"),
-);
+import Analytics from "../../components/Analytics";
+
+const KetcherDialog = React.lazy(() => import("../../components/Ketcher/KetcherDialog"));
 
 type TinyMceEditor = {
   selection: {
@@ -26,8 +24,7 @@ type TinyMceDialogUtils = {
 const CHEM_CLASS_NAME = "chem";
 
 function getActiveEditor(): TinyMceEditor | null {
-  return (globalThis as { tinymce?: { activeEditor?: TinyMceEditor } }).tinymce
-    ?.activeEditor ?? null;
+  return (globalThis as { tinymce?: { activeEditor?: TinyMceEditor } }).tinymce?.activeEditor ?? null;
 }
 
 function getSelectedNode(editor: TinyMceEditor | null): Node | null {
@@ -55,9 +52,7 @@ function getSelectedChemicalElement(editor: TinyMceEditor | null): Element | nul
 }
 
 function showErrorAlert(message: string): void {
-  (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils }).tinymceDialogUtils?.showErrorAlert(
-    message,
-  );
+  (globalThis as { tinymceDialogUtils?: TinyMceDialogUtils }).tinymceDialogUtils?.showErrorAlert(message);
 }
 
 /**

@@ -1,23 +1,18 @@
-import axios from "@/common/axios";
 import React from "react";
-import Result from "../../../util/result";
-import * as Parsers from "../../../util/parsers";
-import * as FetchingData from "../../../util/fetchingData";
+import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
-import AlertContext, {
-  mkAlert,
-  type Alert,
-} from "../../../stores/contexts/Alert";
+import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
+import type * as FetchingData from "../../../util/fetchingData";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
 
 function handleErrors(
   response: unknown,
   successMessage = "Successfully moved the files to S3.",
   partialFailureMessage = "Moving some files to S3 failed.",
 ): Alert {
-  const data = Parsers.objectPath(["data"], response)
-    .flatMap(Parsers.isObject)
-    .flatMap(Parsers.isNotNull);
+  const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
   return data
     .flatMap(Parsers.getValueWithKey("numFilesInput"))
@@ -43,9 +38,7 @@ function handleErrors(
                   Parsers.isObject(d)
                     .flatMap(Parsers.isNotNull)
                     .flatMap((obj) => {
-                      const succeeded = Parsers.getValueWithKey("succeeded")(
-                        obj,
-                      )
+                      const succeeded = Parsers.getValueWithKey("succeeded")(obj)
                         .flatMap(Parsers.isBoolean)
                         .flatMap(Parsers.isTrue);
 
@@ -64,12 +57,8 @@ function handleErrors(
                             title: filename,
                             help: reason,
                           }))(
-                            Parsers.getValueWithKey("fileName")(obj).flatMap(
-                              Parsers.isString,
-                            ),
-                            Parsers.getValueWithKey("reason")(obj).flatMap(
-                              Parsers.isString,
-                            ),
+                            Parsers.getValueWithKey("fileName")(obj).flatMap(Parsers.isString),
+                            Parsers.getValueWithKey("reason")(obj).flatMap(Parsers.isString),
                           ),
                         );
                     }),
@@ -113,10 +102,7 @@ export type S3Filestore = {
   canWrite: boolean;
   copy: (recordIds: ReadonlyArray<number>) => Promise<void>;
   move: (recordIds: ReadonlyArray<number>) => Promise<void>;
-  transfer: (
-    sources: ReadonlyArray<S3TransferSource>,
-    deleteSource: boolean,
-  ) => Promise<void>;
+  transfer: (sources: ReadonlyArray<S3TransferSource>, deleteSource: boolean) => Promise<void>;
 };
 
 /**
@@ -124,47 +110,28 @@ export type S3Filestore = {
  * GET /api/v1/gallery/filestores (filtering for clientType === "S3") and
  * provides move/copy operations for each.
  */
-export default function useS3Filestores(): FetchingData.Fetched<
-  ReadonlyArray<S3Filestore>
-> {
+export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3Filestore>> {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
-  const [filestores, setFilestores] = React.useState<
-    Result<ReadonlyArray<S3Filestore>>
-  >(Result.Ok([]));
+  const [filestores, setFilestores] = React.useState<Result<ReadonlyArray<S3Filestore>>>(Result.Ok([]));
 
-  function mkS3Filestore(
-    id: number,
-    name: string,
-    canRead: boolean,
-    canWrite: boolean,
-  ): S3Filestore {
-    async function callEndpoint(
-      operation: "move" | "copy",
-      recordIds: ReadonlyArray<number>,
-    ): Promise<void> {
+  function mkS3Filestore(id: number, name: string, canRead: boolean, canWrite: boolean): S3Filestore {
+    async function callEndpoint(operation: "move" | "copy", recordIds: ReadonlyArray<number>): Promise<void> {
       try {
         const api = axios.create({
           baseURL: "/api/v1/gallery",
           headers: {
-            Authorization: "Bearer " + (await getToken()),
+            Authorization: `Bearer ${await getToken()}`,
           },
         });
-        const response = await api.post<unknown>(
-          `/filestores/${id}/${operation}`,
-          { recordIds },
-        );
+        const response = await api.post<unknown>(`/filestores/${id}/${operation}`, { recordIds });
         addAlert(
           handleErrors(
             response,
-            operation === "copy"
-              ? "Successfully copied the files to S3."
-              : "Successfully moved the files to S3.",
-            operation === "copy"
-              ? "Copying some files to S3 failed."
-              : "Moving some files to S3 failed.",
+            operation === "copy" ? "Successfully copied the files to S3." : "Successfully moved the files to S3.",
+            operation === "copy" ? "Copying some files to S3 failed." : "Moving some files to S3 failed.",
           ),
         );
       } catch (e) {
@@ -193,16 +160,17 @@ export default function useS3Filestores(): FetchingData.Fetched<
         const api = axios.create({
           baseURL: "/api/v1/gallery",
           headers: {
-            Authorization: "Bearer " + (await getToken()),
+            Authorization: `Bearer ${await getToken()}`,
           },
         });
         for (const { sourceFilestoreId, sourcePath } of sources) {
-          const destPath =
-            sourcePath.split("/").filter(Boolean).pop() ?? sourcePath;
-          const response = await api.post<unknown>(
-            `/filestores/${sourceFilestoreId}/transfer`,
-            { sourcePath, destFilestoreId: id, destPath, deleteSource },
-          );
+          const destPath = sourcePath.split("/").filter(Boolean).pop() ?? sourcePath;
+          const response = await api.post<unknown>(`/filestores/${sourceFilestoreId}/transfer`, {
+            sourcePath,
+            destFilestoreId: id,
+            destPath,
+            deleteSource,
+          });
           addAlert(
             handleErrors(
               response,
@@ -236,8 +204,7 @@ export default function useS3Filestores(): FetchingData.Fetched<
       canWrite,
       copy: (recordIds) => callEndpoint("copy", recordIds),
       move: (recordIds) => callEndpoint("move", recordIds),
-      transfer: (sources, deleteSource) =>
-        callTransferEndpoint(sources, deleteSource),
+      transfer: (sources, deleteSource) => callTransferEndpoint(sources, deleteSource),
     };
   }
 
@@ -248,7 +215,7 @@ export default function useS3Filestores(): FetchingData.Fetched<
       const api = axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
       const { data } = await api.get<unknown>("/filestores");
@@ -287,15 +254,10 @@ export default function useS3Filestores(): FetchingData.Fetched<
                     .flatMap(Parsers.isBoolean)
                     .orElse(true);
                   return Result.lift2(
-                    (id: number, name: string): S3Filestore =>
-                      mkS3Filestore(id, name, canRead, canWrite),
+                    (id: number, name: string): S3Filestore => mkS3Filestore(id, name, canRead, canWrite),
                   )(
-                    Parsers.getValueWithKey("id")(obj).flatMap(
-                      Parsers.isNumber,
-                    ),
-                    Parsers.getValueWithKey("name")(obj).flatMap(
-                      Parsers.isString,
-                    ),
+                    Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber),
+                    Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString),
                   );
                 }),
             ),

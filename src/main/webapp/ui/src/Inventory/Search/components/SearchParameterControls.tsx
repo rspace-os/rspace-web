@@ -1,22 +1,23 @@
-import React, { useState, useContext } from "react";
-import useStores from "../../../stores/use-stores";
-import SearchContext from "../../../stores/contexts/Search";
-import { observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
-import TypeFilter from "./TypeFilter";
-import StatusFilter from "./StatusFilter";
 import Popover from "@mui/material/Popover";
-import PeopleField from "../../components/Inputs/PeopleField";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useState } from "react";
 import DropdownButton from "../../../components/DropdownButton";
-import SavedList from "./SavedList";
+import TagsCombobox from "../../../components/Tags/TagsCombobox";
 import NavigateContext from "../../../stores/contexts/Navigate";
-import { type SavedSearch } from "../../../stores/stores/SearchStore";
+import SearchContext from "../../../stores/contexts/Search";
+import type { Tag } from "../../../stores/definitions/Tag";
+import type BasketModel from "../../../stores/models/Basket";
+import type { SavedSearch } from "../../../stores/stores/SearchStore";
+import useStores from "../../../stores/use-stores";
+import RsSet from "../../../util/set";
 import { dropProperty, isInventoryPermalink } from "../../../util/Util";
 import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
-import BasketModel from "../../../stores/models/Basket";
-import TagsCombobox from "../../../components/Tags/TagsCombobox";
-import RsSet from "../../../util/set";
-import { type Tag } from "../../../stores/definitions/Tag";
+import PeopleField from "../../components/Inputs/PeopleField";
+import SavedList from "./SavedList";
+import StatusFilter from "./StatusFilter";
+import TypeFilter from "./TypeFilter";
 
 type PanelProps = {
   anchorEl: HTMLElement | null;
@@ -60,16 +61,12 @@ function SearchParameterControls(): React.ReactNode {
   const navigate = useNavigate();
 
   const [typeDropdown, setTypeDropdown] = useState<HTMLElement | null>(null);
-  const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(
-    null,
-  );
+  const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
   const [ownerDropdown, setOwnerDropdown] = useState<HTMLElement | null>(null);
   const [benchDropdown, setBenchDropdown] = useState<HTMLElement | null>(null);
   const [scanDropdown, setScanDropdown] = useState<HTMLElement | null>(null);
-  const [savedSearchesDropdown, setSavedSearchesDropdown] =
-    useState<HTMLElement | null>(null);
-  const [savedBasketsDropdown, setSavedBasketsDropdown] =
-    useState<HTMLElement | null>(null);
+  const [savedSearchesDropdown, setSavedSearchesDropdown] = useState<HTMLElement | null>(null);
+  const [savedBasketsDropdown, setSavedBasketsDropdown] = useState<HTMLElement | null>(null);
   const [tagsDropdown, setTagsDropdown] = useState<HTMLElement | null>(null);
 
   return (
@@ -86,8 +83,7 @@ function SearchParameterControls(): React.ReactNode {
           current={search.fetcher.resultType ?? "ALL"}
           onClose={(resultType) => {
             setTypeDropdown(null);
-            if (search.fetcher.resultType !== resultType)
-              search.setTypeFilter(resultType);
+            if (search.fetcher.resultType !== resultType) search.setTypeFilter(resultType);
           }}
         />
       </DropdownButton>
@@ -104,6 +100,7 @@ function SearchParameterControls(): React.ReactNode {
               setOwnerDropdown(null);
               search.setOwner(user, doSearch as boolean | undefined);
             }}
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             recipient={search.fetcher.owner as any}
             outsideGroup={false}
           />
@@ -120,15 +117,12 @@ function SearchParameterControls(): React.ReactNode {
           <PeopleField
             onSelection={(user, doSearch) => {
               setBenchDropdown(null);
-              if (
-                ["SAMPLE", "TEMPLATE"].includes(
-                  search.fetcher.resultType as string,
-                )
-              ) {
+              if (["SAMPLE", "TEMPLATE"].includes(search.fetcher.resultType as string)) {
                 search.setTypeFilter("ALL");
               }
               search.setBench(user, doSearch as boolean | undefined);
             }}
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             recipient={search.fetcher.benchOwner as any}
             outsideGroup={false}
           />
@@ -146,8 +140,7 @@ function SearchParameterControls(): React.ReactNode {
           current={search.fetcher.deletedItems}
           onClose={(status) => {
             setStatusDropdown(null);
-            if (search.fetcher.deletedItems !== status)
-              search.setDeletedItems(status);
+            if (search.fetcher.deletedItems !== status) search.setDeletedItems(status);
           }}
         />
       </DropdownButton>
@@ -233,9 +226,7 @@ function SearchParameterControls(): React.ReactNode {
                * to do this by navigating, with the navigation context
                * faciliating scoped navigation e.g. with the picker.
                */
-              const params = search.fetcher.generateNewQuery(
-                dropProperty(savedSearch, "name"),
-              );
+              const params = search.fetcher.generateNewQuery(dropProperty(savedSearch, "name"));
               navigate(`/inventory/search?${params.toString()}`);
             }
           }}

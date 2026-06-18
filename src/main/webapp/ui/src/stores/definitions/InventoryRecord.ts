@@ -1,59 +1,42 @@
-import { type Id, type GlobalId } from "./BaseRecord";
-import { type Record, type ReadAccessLevel } from "./Record";
-import { type BlobUrl } from "../../util/types";
-import { type Editable } from "./Editable";
-import { type HasChildren } from "./HasChildren";
-import { type Factory } from "./Factory";
-import { type Attachment } from "./Attachment";
-import { type Identifier } from "./Identifier";
-import React from "react";
-import { type ExtraField, type ExtraFieldAttrs } from "./ExtraField";
-import { type BarcodeRecord } from "./Barcode";
-import { type AdjustableTableRowOptions } from "./Tables";
-import { type CoreFetcherArgs } from "./Search";
-import { type Tag } from "./Tag";
-import { type Alert } from "../contexts/Alert";
-import { type Container } from "./Container";
+import type React from "react";
+import type { BlobUrl } from "../../util/types";
+import type { Alert } from "../contexts/Alert";
+import type { Attachment } from "./Attachment";
+import type { BarcodeRecord } from "./Barcode";
+import type { GlobalId, Id } from "./BaseRecord";
+import type { Container } from "./Container";
+import type { Editable } from "./Editable";
+import type { ExtraField, ExtraFieldAttrs } from "./ExtraField";
+import type { Factory } from "./Factory";
+import type { HasChildren } from "./HasChildren";
+import type { Identifier } from "./Identifier";
+import type { ReadAccessLevel, Record } from "./Record";
+import type { CoreFetcherArgs } from "./Search";
+import type { AdjustableTableRowOptions } from "./Tables";
+import type { Tag } from "./Tag";
 
 export type State = "create" | "edit" | "preview";
 export type Action = "LIMITED_READ" | "READ" | "UPDATE" | "CHANGE_OWNER";
 export type SharingMode = "OWNER_GROUPS" | "WHITELIST" | "OWNER_ONLY";
 
-export function hasRequiredPermissions(
-  permittedActions: Set<Action>,
-  requiredPermissions?: Array<Action>,
-): boolean {
-  return !requiredPermissions?.length
-    ? true
-    : requiredPermissions.some((action) => permittedActions.has(action));
+export function hasRequiredPermissions(permittedActions: Set<Action>, requiredPermissions?: Array<Action>): boolean {
+  return !requiredPermissions?.length ? true : requiredPermissions.some((action) => permittedActions.has(action));
 }
 
-export type LockStatus =
-  | "LOCKED_OK"
-  | "WAS_ALREADY_LOCKED"
-  | "UNLOCKED_OK"
-  | "CANNOT_LOCK";
+export type LockStatus = "LOCKED_OK" | "WAS_ALREADY_LOCKED" | "UNLOCKED_OK" | "CANNOT_LOCK";
 
 /**
  * Where it is inconvenient to identify the class of an inventory record by any
  * other means, these strings provide a simple enum for switching over
  * instances of their respective classes.
  */
-export type RecordType =
-  | "sample"
-  | "container"
-  | "subSample"
-  | "sampleTemplate";
+export type RecordType = "sample" | "container" | "subSample" | "sampleTemplate";
 
 /**
  * The API encodes the type of the various Inventory records using an all-caps
  * snake-case encoding.
  */
-export type ApiRecordType =
-  | "SAMPLE"
-  | "CONTAINER"
-  | "SUBSAMPLE"
-  | "SAMPLE_TEMPLATE";
+export type ApiRecordType = "SAMPLE" | "CONTAINER" | "SUBSAMPLE" | "SAMPLE_TEMPLATE";
 
 export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   if (rt === "sample") return "SAMPLE";
@@ -179,8 +162,7 @@ export interface CreateFrom {
  * and methods, as documented, have behaviours that are dependent on these two
  * different views.
  */
-export interface InventoryRecord
-  extends Record, Editable, HasChildren, CreateFrom {
+export interface InventoryRecord extends Record, Editable, HasChildren, CreateFrom {
   /*
    * These properties are simply shared by all record classes.
    */
@@ -209,9 +191,7 @@ export interface InventoryRecord
    * various image types with setAttributesDirty
    */
   image: BlobUrl | null;
-  fetchImage(
-    imageType: "image" | "locationsImage" | "thumbnail",
-  ): Promise<BlobUrl | null>;
+  fetchImage(imageType: "image" | "locationsImage" | "thumbnail"): Promise<BlobUrl | null>;
 
   /*
    * These relate to loading and fetching of the data associated with the Record.
@@ -242,11 +222,8 @@ export interface InventoryRecord
    * When new data is available, typically by making a GET request, the
    * instance of InventoryRecord can be repopulated with this method.
    */
-  populateFromJson(
-    factory: Factory,
-    params: any,
-    defaultParams: any | null,
-  ): void;
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  populateFromJson(factory: Factory, params: any, defaultParams: any | null): void;
 
   /*
    * After some set of other Records have been modified, it may be desirable to
@@ -262,11 +239,7 @@ export interface InventoryRecord
    */
   readonly state: State;
   create(): Promise<void>;
-  setEditing(
-    value: boolean,
-    refresh?: boolean | null,
-    silent?: boolean | null,
-  ): Promise<LockStatus>;
+  setEditing(value: boolean, refresh?: boolean | null, silent?: boolean | null): Promise<LockStatus>;
   editing: boolean;
   isFieldEditable(field: string): boolean;
   setFieldsStateForBatchEditing(): void;
@@ -321,6 +294,7 @@ export interface InventoryRecord
    * MUST always be JSON serialisable, and it is advisable to write a unit test
    * to assert as such for each implementation.
    */
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   readonly paramsForBackend: any;
 
   /*
@@ -338,6 +312,7 @@ export interface InventoryRecord
    * InventoryRecord at once whilst also setting a dirty flag to signify to
    * various UI elements that the user has made changes.
    */
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   setAttributesDirty({}): void;
 
   /*
@@ -372,7 +347,15 @@ export interface InventoryRecord
   addExtraField(newExtraFieldAttrs: ExtraFieldAttrs): void;
   updateExtraField(
     oldFieldName: string,
-    updatedField: { name: string; type: string },
+    updatedField: {
+      name: string;
+      type: string;
+      link?: {
+        relationType: string;
+        targetGlobalId: string;
+        versionPin: number | null;
+      };
+    },
   ): void;
   removeExtraField(id: number | null, index: number): void;
   readonly visibleExtraFields: Array<ExtraField>;

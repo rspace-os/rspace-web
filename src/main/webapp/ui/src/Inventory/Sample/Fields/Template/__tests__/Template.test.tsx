@@ -1,27 +1,19 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import {
-  render,
-  waitFor,
-  screen,
-} from "@testing-library/react";
-import {
-  makeMockTemplate,
-  templateAttrs,
-} from "../../../../../stores/models/__tests__/TemplateModel/mocking";
+import { ThemeProvider } from "@mui/material/styles";
+import { render, screen, waitFor } from "@testing-library/react";
+import ApiService from "../../../../../common/InvApiService";
 import { fieldAttrs } from "../../../../../stores/models/__tests__/FieldModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
-import Template from "../Template";
+import { makeMockTemplate, templateAttrs } from "../../../../../stores/models/__tests__/TemplateModel/mocking";
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../../stores/stores-context";
-import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
-import ApiService from "../../../../../common/InvApiService";
 import { sleep } from "../../../../../util/Util";
+import Template from "../Template";
 import "@/__tests__/__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
-import { type AxiosResponse } from "@/common/axios";
+import type { AxiosResponse } from "@/common/axios";
 
 vi.mock("../../../../../common/InvApiService", () => ({
   default: {
@@ -29,7 +21,7 @@ vi.mock("../../../../../common/InvApiService", () => ({
     get: vi.fn(() => {}),
   },
 }));
-vi.mock("../../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       search: null,
@@ -57,7 +49,6 @@ vi.mock("../../../../../stores/stores/RootStore", () => ({
 }));
 vi.mock("../../../../Container/Content/ImageView/PreviewImage", () => ({
   default: vi.fn(() => <></>),
-
 }));
 // Mock fetch
 window.fetch = vi.fn().mockImplementation(() =>
@@ -65,8 +56,7 @@ window.fetch = vi.fn().mockImplementation(() =>
     status: 200,
     ok: true,
     json: () => Promise.resolve({}),
-  })
-
+  }),
 );
 describe("Template", () => {
   describe("When the sample is deleted, Template field should", () => {
@@ -74,9 +64,7 @@ describe("Template", () => {
       const oldVersionOfTemplate = makeMockTemplate({
         historicalVersion: true,
       });
-      vi
-        .spyOn(oldVersionOfTemplate, "getLatest")
-        .mockImplementation(() => {});
+      vi.spyOn(oldVersionOfTemplate, "getLatest").mockImplementation(() => {});
       const sample = makeMockSample({
         deleted: true,
       });
@@ -90,27 +78,25 @@ describe("Template", () => {
         uiStore: {
           setVisiblePanel: () => {},
         },
-
       });
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <Template />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       expect(
         screen.getByRole("button", {
           name: /Update/,
-        })
+        }),
       ).toBeDisabled();
     });
   });
   describe("When a template is chosen", () => {
     test("all of the template's fields should be copied to the sample.", async () => {
       const user = userEvent.setup();
-      vi.spyOn(ApiService, "query").mockImplementation((endpoint, params) => {
+      vi.spyOn(ApiService, "query").mockImplementation((_endpoint, params) => {
         if (params.get("resultType") === "TEMPLATE") {
           return Promise.resolve({
             data: {
@@ -157,7 +143,6 @@ describe("Template", () => {
           headers: {},
           config: {},
         } as AxiosResponse;
-
       });
       const sample = makeMockSample({
         id: null,
@@ -186,14 +171,13 @@ describe("Template", () => {
         uiStore: {
           setVisiblePanel: () => {},
         },
-
       });
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <Template />
           </storesContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       await waitFor(() => {
         expect(screen.getByText("A template")).toBeVisible();
@@ -206,4 +190,3 @@ describe("Template", () => {
     });
   });
 });
-

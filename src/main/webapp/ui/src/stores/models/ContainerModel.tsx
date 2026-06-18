@@ -1,102 +1,56 @@
+import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
+import type React from "react";
+import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
+import { layoutToLabels } from "@/util/labels";
+import GridContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/GridContainer";
+import ListContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/ListContainer";
+import VisualContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/VisualContainer";
+import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
-import { type URL, type Point, type _LINK } from "../../util/types";
-import { match, clamp } from "../../util/Util";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
+import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
-import {
-  type Container,
-  type Location,
-  cTypeToDefaultSearchView,
-} from "../definitions/Container";
-import {
-  type AllowedTypeFilters,
-  type Search as SearchInterface,
-  type CoreFetcherArgs,
-} from "../definitions/Search";
-import {
-  type HasEditableFields,
-  type HasUneditableFields,
-} from "../definitions/Editable";
-import {
-  type InventoryRecord,
-  type RecordType,
-  type Action,
-  type SharingMode,
-  type CreateOption,
-} from "../definitions/InventoryRecord";
-import {
-  type Id,
-  type GlobalId,
-  inventoryRecordTypeLabels,
-} from "../definitions/BaseRecord";
-import { type RecordDetails } from "../definitions/Record";
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import {
-  type Permissioned,
-  mapPermissioned,
-} from "../definitions/PermissionedData";
-import { type BlobUrl } from "../../util/types";
-import getRootStore from "../stores/RootStore";
-import { type AttachmentJson } from "./AttachmentModel";
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import LocationModel, { type LocationAttrs } from "./LocationModel";
-import { type PersonAttrs } from "../definitions/Person";
+import type { _LINK, BlobUrl, Point, URL } from "../../util/types";
+import { clamp, match } from "../../util/Util";
+import { pick } from "../../util/unsafeUtils";
+import type { BarcodeAttrs } from "../definitions/Barcode";
+import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import { type Container, cTypeToDefaultSearchView, type Location } from "../definitions/Container";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { SharedWithGroup } from "../definitions/Group";
+import type { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
+import type { IdentifierAttrs } from "../definitions/Identifier";
+import type { Action, CreateOption, InventoryRecord, RecordType, SharingMode } from "../definitions/InventoryRecord";
+import { mapPermissioned, type Permissioned } from "../definitions/PermissionedData";
+import type { PersonAttrs } from "../definitions/Person";
+import type { RecordDetails } from "../definitions/Record";
+import type { AllowedTypeFilters, CoreFetcherArgs, Search as SearchInterface } from "../definitions/Search";
+import type { SubSample } from "../definitions/SubSample";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import type { Tag } from "../definitions/Tag";
+import getRootStore from "../stores/getRootStore";
+import type { AttachmentJson } from "./AttachmentModel";
+import { HasLocationMixin } from "./HasLocation";
 import InventoryBaseRecord, {
-  defaultVisibleResultFields,
   defaultEditableResultFields,
-  RESULT_FIELDS,
+  defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
   type InventoryBaseRecordUneditableFields,
+  RESULT_FIELDS,
 } from "./InventoryBaseRecord";
-import { type Factory } from "../definitions/Factory";
 import InventoryBaseRecordCollection, {
   type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
+import LocationModel, { type LocationAttrs } from "./LocationModel";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
-import {
-  action,
-  computed,
-  observable,
-  override,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import React from "react";
-import ListContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/ListContainer";
-import GridContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/GridContainer";
-import VisualContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/VisualContainer";
-import { type BarcodeAttrs } from "../definitions/Barcode";
-import { type SubSample } from "../definitions/SubSample";
-import { type SharedWithGroup } from "../definitions/Group";
-import type { IdentifierAttrs } from "../definitions/Identifier";
-import { type Tag } from "../definitions/Tag";
-import { pick } from "../../util/unsafeUtils";
-import {
-  IsInvalid,
-  IsValid,
-  type ValidationResult,
-  allAreValid,
-} from "../../components/ValidatingSubmitButton";
-import * as Parsers from "../../util/parsers";
-import { HasLocationMixin } from "./HasLocation";
-import {
-  HasLocationEditableFields,
-  HasLocationUneditableFields,
-} from "../definitions/HasLocation";
-import { layoutToLabels } from "@/util/labels";
-import {
-  ContainerType,
-  ContentSummary,
-  GridLayout,
-} from "@/stores/definitions/container/types";
 
-type ContainerEditableFields = InventoryBaseRecordEditableFields &
-  HasLocationEditableFields;
+type ContainerEditableFields = InventoryBaseRecordEditableFields & HasLocationEditableFields;
 
-type ContainerUneditableFields = InventoryBaseRecordUneditableFields &
-  HasLocationUneditableFields;
+type ContainerUneditableFields = InventoryBaseRecordUneditableFields & HasLocationUneditableFields;
 
 export type ContainerInContainerParams = {
   parentContainers?: Array<{ id: Id }>;
@@ -188,22 +142,12 @@ const FIELDS = new Set([
   "locationsImage",
   "canStore",
 ]);
-const defaultVisibleFields = new Set([
-  ...FIELDS,
-  ...defaultVisibleResultFields,
-]);
-const defaultEditableFields = new Set([
-  ...defaultEditableResultFields,
-  "organization",
-  "canStore",
-]);
+const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
+const defaultEditableFields = new Set([...defaultEditableResultFields, "organization", "canStore"]);
 
 export default class ContainerModel
   extends HasLocationMixin(InventoryBaseRecord)
-  implements
-    Container,
-    HasEditableFields<ContainerEditableFields>,
-    HasUneditableFields<ContainerUneditableFields>
+  implements Container, HasEditableFields<ContainerEditableFields>, HasUneditableFields<ContainerUneditableFields>
 {
   canStoreContainers: boolean = true;
   canStoreSamples: boolean = true;
@@ -296,15 +240,10 @@ export default class ContainerModel
       hasSelectedRecord: computed,
     });
 
-    if (this.recordType === "container")
-      this.populateFromJson(factory, params, DEFAULT_CONTAINER);
+    if (this.recordType === "container") this.populateFromJson(factory, params, DEFAULT_CONTAINER);
   }
 
-  populateFromJson(
-    factory: Factory,
-    passedParams: object,
-    defaultParams: object = {},
-  ) {
+  populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}) {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = {
       ...DEFAULT_CONTAINER,
@@ -316,8 +255,7 @@ export default class ContainerModel
     this.locationsImage = null;
     this.gridLayout = params.gridLayout;
     this.cType = params.cType;
-    this.locationsCount =
-      params.locationsCount === null ? Infinity : params.locationsCount;
+    this.locationsCount = params.locationsCount === null ? Infinity : params.locationsCount;
     this.contentSummary = params.contentSummary
       ? {
           isAccessible: true,
@@ -333,11 +271,7 @@ export default class ContainerModel
         parentGlobalId: this.globalId,
       },
       uiConfig: {
-        allowedSearchModules: new Set([
-          "TYPE" as const,
-          "OWNER" as const,
-          "TAG" as const,
-        ]),
+        allowedSearchModules: new Set(["TYPE" as const, "OWNER" as const, "TAG" as const]),
         allowedTypeFilters: this.allowedTypeFilters,
         hideContentsOfChip: true,
       },
@@ -346,9 +280,7 @@ export default class ContainerModel
     if (!this.contentSearch) this.contentSearch = new Search(searchParams);
     void this.contentSearch.setSearchView(cTypeToDefaultSearchView(this.cType));
 
-    const locations: Array<Location> = (
-      (params.locations ?? []) as Array<LocationAttrs>
-    ).map((l) => {
+    const locations: Array<Location> = ((params.locations ?? []) as Array<LocationAttrs>).map((l) => {
       const content = l.content
         ? factory.newRecord(
             l.content as unknown as Record<string, string> & {
@@ -363,9 +295,7 @@ export default class ContainerModel
         parentContainer: this,
       });
     });
-    this.contentSearch.cacheFetcher.setResults(
-      ArrayUtils.filterNull(locations.map((l) => l.content)),
-    );
+    this.contentSearch.cacheFetcher.setResults(ArrayUtils.filterNull(locations.map((l) => l.content)));
     this.initializedLocations = false;
     if (this.cType === "LIST") this.locations = locations;
     if (this.cType === "IMAGE") this.locations = locations;
@@ -384,9 +314,7 @@ export default class ContainerModel
           }),
       ).flat();
     if (this.locations) {
-      this.unchangedLocationsIds = Object.freeze(
-        ArrayUtils.filterNull(this.locations.map((l) => l.id)),
-      );
+      this.unchangedLocationsIds = Object.freeze(ArrayUtils.filterNull(this.locations.map((l) => l.id)));
       this.initializedLocations = true;
     }
   }
@@ -419,8 +347,7 @@ export default class ContainerModel
     const gIdsOfContentOfLocations = new RsSet(this.locations).map((l) =>
       l.content === null ? null : l.content.globalId,
     );
-    const gIdsOfItemsBeingMovedThatAreYetToBePlaced =
-      gIdsOfItemsBeingMoved.subtract(gIdsOfContentOfLocations);
+    const gIdsOfItemsBeingMovedThatAreYetToBePlaced = gIdsOfItemsBeingMoved.subtract(gIdsOfContentOfLocations);
     const numberOfEmptySlots = locations.filter((loc) => !loc.content).length;
     return numberOfEmptySlots >= gIdsOfItemsBeingMovedThatAreYetToBePlaced.size;
   }
@@ -437,8 +364,7 @@ export default class ContainerModel
   get canStoreRecordTypes(): boolean {
     const moveStore = getRootStore().moveStore;
     return (
-      (!moveStore.selectedResultsIncludesContainers ||
-        this.canStoreContainers) &&
+      (!moveStore.selectedResultsIncludesContainers || this.canStoreContainers) &&
       (!moveStore.selectedResultsIncludesSubSamples || this.canStoreSamples)
     );
   }
@@ -448,17 +374,11 @@ export default class ContainerModel
    * container or one of its parents to prevent cycles
    */
   get movingIntoItself(): boolean {
-    if (!this.allParentContainers)
-      throw new Error("Not yet fully initialised.");
+    if (!this.allParentContainers) throw new Error("Not yet fully initialised.");
     const allParentContainers = this.allParentContainers;
     const moveStore = getRootStore().moveStore;
-    const selectedIds = new RsSet(
-      moveStore.selectedResults.map((r) => r.globalId),
-    );
-    const parentAndThisIds = new RsSet([
-      ...allParentContainers.map((c) => c.globalId),
-      this.globalId,
-    ]);
+    const selectedIds = new RsSet(moveStore.selectedResults.map((r) => r.globalId));
+    const parentAndThisIds = new RsSet([...allParentContainers.map((c) => c.globalId), this.globalId]);
     return !selectedIds.intersection(parentAndThisIds).isEmpty;
   }
 
@@ -480,10 +400,7 @@ export default class ContainerModel
   }
 
   get availableLocations(): Permissioned<number> {
-    return mapPermissioned(
-      this.contentCount,
-      (contentCount) => this.locationsCount - contentCount,
-    );
+    return mapPermissioned(this.contentCount, (contentCount) => this.locationsCount - contentCount);
   }
 
   get canStore(): Array<"containers" | "samples"> {
@@ -494,9 +411,7 @@ export default class ContainerModel
   }
 
   get dimensions(): [number | "", number | ""] | null {
-    return this.gridLayout
-      ? [this.gridLayout.columnsNumber, this.gridLayout.rowsNumber]
-      : null;
+    return this.gridLayout ? [this.gridLayout.columnsNumber, this.gridLayout.rowsNumber] : null;
   }
 
   get selectedLocations(): Array<Location> | null {
@@ -523,10 +438,7 @@ export default class ContainerModel
   get rows(): Array<{ value: number; label: string | number }> {
     if (!this.gridLayout) return [];
     if (this.gridLayout.rowsNumber === "") return [];
-    return layoutToLabels(
-      this.gridLayout.rowsLabelType,
-      this.gridLayout.rowsNumber,
-    );
+    return layoutToLabels(this.gridLayout.rowsLabelType, this.gridLayout.rowsNumber);
   }
 
   get columns(): Array<{
@@ -535,23 +447,15 @@ export default class ContainerModel
   }> {
     if (!this.gridLayout) return [];
     if (this.gridLayout.columnsNumber === "") return [];
-    return layoutToLabels(
-      this.gridLayout.columnsLabelType,
-      this.gridLayout.columnsNumber,
-    );
+    return layoutToLabels(this.gridLayout.columnsLabelType, this.gridLayout.columnsNumber);
   }
 
   get sortedLocations(): Array<Location> | null {
     const locations = this.locations;
     if (!locations) return null;
-    const existingLocations = locations.filter(
-      (l) => Boolean(l.id) && l instanceof LocationModel,
-    );
+    const existingLocations = locations.filter((l) => Boolean(l.id) && l instanceof LocationModel);
     const newLocations = locations.filter((l) => !l.id);
-    return [
-      ...existingLocations.sort((a, b) => (a.id ?? 0) - (b.id ?? 0)),
-      ...newLocations,
-    ];
+    return [...existingLocations.sort((a, b) => (a.id ?? 0) - (b.id ?? 0)), ...newLocations];
   }
 
   get getLocationsForApi(): Array<
@@ -575,9 +479,7 @@ export default class ContainerModel
     const existingLocations = locations.filter((l) => Boolean(l.id));
 
     const existingLocationIds = existingLocations.map((l) => l.id);
-    const deletedLocationIds = this.unchangedLocationsIds.filter(
-      (id) => !existingLocationIds.includes(id),
-    );
+    const deletedLocationIds = this.unchangedLocationsIds.filter((id) => !existingLocationIds.includes(id));
 
     return [
       ...existingLocations.map(locationModelToObject),
@@ -608,12 +510,7 @@ export default class ContainerModel
     const groups = this.siblingGroups;
     // recalculate all colours so that they're evenly spaced through the hues
     this.siblingColorCache = new Map(
-      groups
-        .toArray()
-        .map((siblingSampleId, i) => [
-          siblingSampleId,
-          selectColor(i, groups.size),
-        ]),
+      groups.toArray().map((siblingSampleId, i) => [siblingSampleId, selectColor(i, groups.size)]),
     );
     return this.siblingColorCache.get(sampleId);
   }
@@ -710,12 +607,11 @@ export default class ContainerModel
   }
 
   findLocation(col: number, row: number): Location | undefined {
-    return this.locations?.find(
-      (loc) => loc.coordX === col && loc.coordY === row,
-    );
+    return this.locations?.find((loc) => loc.coordX === col && loc.coordY === row);
   }
 
   toggleAllLocations(value: boolean) {
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     this.selectedLocations?.forEach((l) => l.toggleSelected(value));
   }
 
@@ -728,15 +624,12 @@ export default class ContainerModel
    */
   get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
-    if (this.currentlyEditableFields.has("canStoreContainers"))
-      params.canStoreContainers = this.canStoreContainers;
-    if (this.currentlyEditableFields.has("canStoreSamples"))
-      params.canStoreSamples = this.canStoreSamples;
+    if (this.currentlyEditableFields.has("canStoreContainers")) params.canStoreContainers = this.canStoreContainers;
+    if (this.currentlyEditableFields.has("canStoreSamples")) params.canStoreSamples = this.canStoreSamples;
     if (this.cType === "IMAGE") params.locations = this.getLocationsForApi;
     if (this.currentlyEditableFields.has("locationsImage"))
       params.newBase64LocationsImage = this.newBase64LocationsImage;
-    if (this.currentlyEditableFields.has("organization"))
-      params.cType = this.cType;
+    if (this.currentlyEditableFields.has("organization")) params.cType = this.cType;
     params.gridLayout = this.gridLayout;
     return params;
   }
@@ -797,9 +690,7 @@ export default class ContainerModel
         x: clamp(
           event.pageX + horzScroll - leftPosOfSelectableArea,
           padding.left + horzScroll,
-          widthOfSelectableArea +
-            horzScroll -
-            (DRAGGER_SIZE / 2 + padding.right),
+          widthOfSelectableArea + horzScroll - (DRAGGER_SIZE / 2 + padding.right),
         ),
         y: clamp(
           event.pageY - vertScroll - topPosOfSelectableArea,
@@ -820,15 +711,13 @@ export default class ContainerModel
   }
 
   onSelect(location: Location, search: SearchInterface): void {
-    if (!this.selectedLocations)
-      throw new Error("Locations of container must be known.");
+    if (!this.selectedLocations) throw new Error("Locations of container must be known.");
     const selectedLocations = this.selectedLocations;
 
     if (location.selected) {
       location.toggleSelected(false);
     } else {
-      const canSelectOneMore =
-        selectedLocations.length + 1 <= search.uiConfig.selectionLimit;
+      const canSelectOneMore = selectedLocations.length + 1 <= search.uiConfig.selectionLimit;
       const canSelectThisLocation = location.isSelectable(search);
 
       if (search.uiConfig.onlyAllowSelectingEmptyLocations) {
@@ -843,8 +732,7 @@ export default class ContainerModel
 
   // have to delete by index of sortedLocations because new locations don't yet have an id
   deleteSortedLocation(index: number): void {
-    if (!this.sortedLocations)
-      throw new Error("Locations of container must be known.");
+    if (!this.sortedLocations) throw new Error("Locations of container must be known.");
     const sortedLocations = this.sortedLocations;
     sortedLocations.splice(index, 1);
     this.updateLocationsCount(-1);
@@ -854,9 +742,7 @@ export default class ContainerModel
   }
 
   get recordTypeLabel(): string {
-    return this.cType === "WORKBENCH"
-      ? inventoryRecordTypeLabels.bench
-      : inventoryRecordTypeLabels.container;
+    return this.cType === "WORKBENCH" ? inventoryRecordTypeLabels.bench : inventoryRecordTypeLabels.container;
   }
 
   get containerTypeLabel(): string {
@@ -879,8 +765,7 @@ export default class ContainerModel
   }
 
   get hasSelectedLocation(): boolean {
-    if (!this.selectedLocations)
-      throw new Error("Locations of container must be known.");
+    if (!this.selectedLocations) throw new Error("Locations of container must be known.");
     const selectedLocations = this.selectedLocations;
     return Boolean(selectedLocations[0]);
   }
@@ -890,11 +775,9 @@ export default class ContainerModel
   }
 
   contextMenuDisabled(): string | null {
-    const listViewAndASelectedRecord =
-      this.contentSearch.searchView === "LIST" && this.hasSelectedRecord;
+    const listViewAndASelectedRecord = this.contentSearch.searchView === "LIST" && this.hasSelectedRecord;
     const gridOrImageViewAndSelectedLocation =
-      (this.contentSearch.searchView === "GRID" ||
-        this.contentSearch.searchView === "IMAGE") &&
+      (this.contentSearch.searchView === "GRID" || this.contentSearch.searchView === "IMAGE") &&
       this.hasSelectedLocation;
     return (
       super.contextMenuDisabled() ??
@@ -905,23 +788,17 @@ export default class ContainerModel
   }
 
   get fieldNamesInUse(): Array<string> {
-    return [
-      ...super.fieldNamesInUse,
-      ...["Can Store", "Type", "Locations Image", "Grid Dimensions"],
-    ];
+    return [...super.fieldNamesInUse, ...["Can Store", "Type", "Locations Image", "Grid Dimensions"]];
   }
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const renderAvailableLocations = (): string | null => {
       if (!this.availableLocations.isAccessible) return null;
-      if (isFinite(this.availableLocations.value))
-        return `${this.availableLocations.value}`;
+      if (Number.isFinite(this.availableLocations.value)) return `${this.availableLocations.value}`;
       return "Unlimited";
     };
 
-    const options: AdjustableTableRowOptions<string> = new Map([
-      ...super.adjustableTableOptions(),
-    ]);
+    const options: AdjustableTableRowOptions<string> = new Map([...super.adjustableTableOptions()]);
     if (this.readAccessLevel !== "full") {
       options.set("Contents", () => ({ renderOption: "node", data: null }));
     } else {
@@ -977,9 +854,7 @@ export default class ContainerModel
   validate(): ValidationResult {
     const validateCanStore = () => {
       if (this.canStoreContainers || this.canStoreSamples) return IsValid();
-      return IsInvalid(
-        "Must be permitted to contain either containers or subsamples.",
-      );
+      return IsInvalid("Must be permitted to contain either containers or subsamples.");
     };
 
     const validateGridLayout = () => {
@@ -1004,29 +879,21 @@ export default class ContainerModel
         Parsers.isNumber(columnsNumber)
           .mapError(() => new Error("Number of columns is invalid."))
           .flatMap((cols) => {
-            if (cols <= 0)
-              return IsInvalid("Number of columns must be a positive value.");
-            if (cols > 24)
-              return IsInvalid("Number of columns cannot be greater than 24.");
+            if (cols <= 0) return IsInvalid("Number of columns must be a positive value.");
+            if (cols > 24) return IsInvalid("Number of columns cannot be greater than 24.");
             return IsValid();
           }),
         Parsers.isNumber(rowsNumber)
           .mapError(() => new Error("Number of rows is invalid."))
           .flatMap((rows) => {
-            if (rows <= 0)
-              return IsInvalid("Number of rows must be a positive value.");
-            if (rows > 24)
-              return IsInvalid("Number of rows cannot be greater than 24.");
+            if (rows <= 0) return IsInvalid("Number of rows must be a positive value.");
+            if (rows > 24) return IsInvalid("Number of rows cannot be greater than 24.");
             return IsValid();
           }),
       ]);
     };
 
-    return allAreValid([
-      super.validate(),
-      validateCanStore(),
-      validateGridLayout(),
-    ]);
+    return allAreValid([super.validate(), validateCanStore(), validateGridLayout()]);
   }
 
   get children(): Array<InventoryRecord> {
@@ -1077,16 +944,13 @@ export default class ContainerModel
 
   get permalinkURL(): URL | null {
     if (!this.globalId) return null;
-    if (this.isWorkbench)
-      return `/inventory/search?parentGlobalId=${this.globalId}`;
+    if (this.isWorkbench) return `/inventory/search?parentGlobalId=${this.globalId}`;
     return super.permalinkURL;
   }
 
   refreshAssociatedSearch() {
     if (this.id !== null) {
-      void this.contentSearch.setSearchView(
-        cTypeToDefaultSearchView(this.cType),
-      );
+      void this.contentSearch.setSearchView(cTypeToDefaultSearchView(this.cType));
       void this.contentSearch.fetcher.performInitialSearch(null);
     }
   }
@@ -1105,9 +969,7 @@ export default class ContainerModel
 
   get inContainerParams(): ContainerInContainerParams {
     return {
-      ...(this.beingCreatedInContainer
-        ? { parentContainers: [{ id: this.parentContainers[0].id }] }
-        : {}),
+      ...(this.beingCreatedInContainer ? { parentContainers: [{ id: this.parentContainers[0].id }] } : {}),
       ...(this.parentLocation ? { parentLocation: this.parentLocation } : {}),
     };
   }
@@ -1120,23 +982,13 @@ export default class ContainerModel
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
-    let newContainerExplanation =
-      "The container will be automatically added to this container.";
-    if (!this.canStoreContainers)
-      newContainerExplanation =
-        "Containers cannot be stored inside this container.";
-    if (!this.canEdit)
-      newContainerExplanation =
-        "You do not have permission to edit the contents of this container.";
+    let newContainerExplanation = "The container will be automatically added to this container.";
+    if (!this.canStoreContainers) newContainerExplanation = "Containers cannot be stored inside this container.";
+    if (!this.canEdit) newContainerExplanation = "You do not have permission to edit the contents of this container.";
 
-    let newSampleExplanation =
-      "The subsample will be automatically added to this container.";
-    if (!this.canStoreSamples)
-      newSampleExplanation =
-        "Subsamples cannot be stored inside this container.";
-    if (!this.canEdit)
-      newSampleExplanation =
-        "You do not have permission to edit the contents of this container.";
+    let newSampleExplanation = "The subsample will be automatically added to this container.";
+    if (!this.canStoreSamples) newSampleExplanation = "Subsamples cannot be stored inside this container.";
+    if (!this.canEdit) newSampleExplanation = "You do not have permission to edit the contents of this container.";
 
     return [
       {
@@ -1150,8 +1002,7 @@ export default class ContainerModel
                 ? "No location selection required for list containers."
                 : "Specify a single location for where the new container should be placed.",
             state: { key: "location", container: this },
-            validState: () =>
-              this.cType === "LIST" || this.selectedLocations?.length === 1,
+            validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
           },
         ],
         disabled: !this.canStoreContainers || !this.canEdit,
@@ -1166,8 +1017,7 @@ export default class ContainerModel
             });
             return;
           }
-          if (this.selectedLocations?.length !== 1)
-            throw new Error("Only one selection permitted");
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
           await getRootStore().searchStore.createNewContainer({
             parentContainers: [this],
@@ -1189,8 +1039,7 @@ export default class ContainerModel
                 ? "No location selection required for list containers."
                 : "Specify a single location for where the new container should be placed.",
             state: { key: "location", container: this },
-            validState: () =>
-              this.cType === "LIST" || this.selectedLocations?.length === 1,
+            validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
           },
         ],
         disabled: !this.canStoreSamples || !this.canEdit,
@@ -1205,8 +1054,7 @@ export default class ContainerModel
             });
             return;
           }
-          if (this.selectedLocations?.length !== 1)
-            throw new Error("Only one selection permitted");
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
           const location = this.selectedLocations[0];
           await getRootStore().searchStore.createNewSample({
             parentContainers: [this],

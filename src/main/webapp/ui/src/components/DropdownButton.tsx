@@ -1,11 +1,9 @@
-//@flow strict
-
-import React from "react";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Box from "@mui/material/Box";
 import Button, { buttonClasses } from "@mui/material/Button";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import type { SxProps } from "@mui/system";
+import type React from "react";
 import CustomTooltip from "./CustomTooltip";
-import { type SxProps } from "@mui/system";
 
 type DropdownButtonArgs = {
   name: React.ReactNode;
@@ -16,15 +14,9 @@ type DropdownButtonArgs = {
   sx?: SxProps;
 };
 
-const DropdownButton = ({
-  name,
-  children,
-  onClick,
-  disabled,
-  title,
-  sx,
-}: DropdownButtonArgs) => (
+const DropdownButton = ({ name, children, onClick, disabled, title, sx }: DropdownButtonArgs) => (
   <Box>
+    {/** biome-ignore lint/a11y/useValidAriaValues: initial biome migration */}
     <CustomTooltip title={title ?? ""} aria-label="">
       <Button
         endIcon={<KeyboardArrowDownIcon />}

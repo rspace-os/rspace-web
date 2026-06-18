@@ -1,8 +1,6 @@
 import type { Barcode, BarcodeFormat } from "../../util/barcode";
 
 class BarcodeDetector {
-  constructor() {}
-
   detect(): Promise<Array<Barcode>> {
     return Promise.resolve([
       {

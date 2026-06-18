@@ -7,12 +7,8 @@ export const StoichiometryDialogWithCalculateButtonStory = ({
   onTableCreated?: () => void;
 } = {}) => {
   const [open, setOpen] = React.useState(true);
-  const [stoichiometryId, setStoichiometryId] = React.useState<
-    number | undefined
-  >(undefined);
-  const [stoichiometryRevision, setStoichiometryRevision] = React.useState<
-    number | undefined
-  >(undefined);
+  const [stoichiometryId, setStoichiometryId] = React.useState<number | undefined>(undefined);
+  const [stoichiometryRevision, setStoichiometryRevision] = React.useState<number | undefined>(undefined);
 
   const handleTableCreated = () => {
     setStoichiometryId(1);
@@ -57,12 +53,8 @@ export const StoichiometryDialogWithTableStory = ({
 };
 
 export const StoichiometryDialogClosedStory = () => {
-  const [stoichiometryId, setStoichiometryId] = React.useState<
-    number | undefined
-  >(undefined);
-  const [stoichiometryRevision, setStoichiometryRevision] = React.useState<
-    number | undefined
-  >(undefined);
+  const [stoichiometryId, setStoichiometryId] = React.useState<number | undefined>(undefined);
+  const [stoichiometryRevision, setStoichiometryRevision] = React.useState<number | undefined>(undefined);
 
   const handleTableCreated = () => {
     setStoichiometryId(1);

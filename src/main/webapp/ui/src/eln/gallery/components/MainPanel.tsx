@@ -1,155 +1,132 @@
-import React from "react";
-import { useLandmark } from "../../../components/LandmarksContext";
-import DialogContent from "@mui/material/DialogContent";
-import Typography from "@mui/material/Typography";
-import Grid from "@mui/material/Grid";
-import Fade from "@mui/material/Fade";
 import {
-  gallerySectionLabel,
-  gallerySectionIcon,
-  SELECTED_OR_FOCUS_BORDER,
-  SELECTED_OR_FOCUS_BLUE,
-  type GallerySection,
-  GALLERY_SECTION,
-} from "../common";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import {
-  alpha,
-  lighten,
-  type SxProps,
-  type Theme,
-  useTheme,
-} from "@mui/material/styles";
-import { mergeSx } from "../../../modules/common/utils/styles";
-import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
-import Avatar from "@mui/material/Avatar";
-import BrokenImageIcon from "@mui/icons-material/BrokenImage";
-import * as FetchingData from "../../../util/fetchingData";
-import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
-import {
-  useGalleryActions,
-  folderDestination,
-  rootDestination,
-  Destination,
-} from "../useGalleryActions";
-import { useGallerySelection } from "../useGallerySelection";
-import { match } from "../../../util/Util";
-import {
-  useDroppable,
-  useDraggable,
-  useDndContext,
   DndContext,
-  useSensor,
+  DragOverlay,
+  KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  KeyboardSensor,
-  DragOverlay,
+  useDndContext,
+  useDraggable,
+  useDroppable,
+  useSensor,
 } from "@dnd-kit/core";
-import Button from "@mui/material/Button";
-import GridIcon from "@mui/icons-material/ViewCompact";
 import TreeIcon from "@mui/icons-material/AccountTree";
-import Menu from "@mui/material/Menu";
-import AccentMenuItem from "../../../components/AccentMenuItem";
-import Stack from "@mui/material/Stack";
-import { observer } from "mobx-react-lite";
-import { useFileImportDropZone } from "../../../hooks/ui/useFileImportDragAndDrop";
-import ActionsMenu from "./ActionsMenu";
-import RsSet from "../../../util/set";
-import TreeView from "./TreeView";
-import PlaceholderLabel from "./PlaceholderLabel";
-import SwapVertIcon from "@mui/icons-material/SwapVert";
-import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import { Link as ReactRouterLink } from "react-router-dom";
-import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
-import Box from "@mui/material/Box";
-import Fab from "@mui/material/Fab";
-import useUiPreference, {
-  PREFERENCES,
-} from "../../../hooks/api/useUiPreference";
-import Divider from "@mui/material/Divider";
-import {
-  InfoPanelForSmallViewports,
-  InfoPanelForLargeViewports,
-} from "./InfoPanel";
-import { useImagePreview } from "./CallableImagePreview";
-import { usePdfPreview } from "./CallablePdfPreview";
-import { useAsposePreview } from "./CallableAsposePreview";
-import { useSnapGenePreview } from "./CallableSnapGenePreview";
-import { useSnippetPreview } from "./CallableSnippetPreview";
-import usePrimaryAction from "../primaryActionHooks";
-import { Optional, getByKey } from "../../../util/optional";
-import LoadMoreButton from "./LoadMoreButton";
-import Carousel from "./Carousel";
-import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
-import { useFolderOpen } from "./OpenFolderProvider";
-import Breadcrumbs, { breadcrumbsClasses } from "@mui/material/Breadcrumbs";
-import Chip, { chipClasses } from "@mui/material/Chip";
-import Badge, { badgeClasses } from "@mui/material/Badge";
-import { paperClasses } from "@mui/material/Paper";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import CloseIcon from "@mui/icons-material/Close";
+import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
+import LinkIcon from "@mui/icons-material/Link";
 import SearchIcon from "@mui/icons-material/Search";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
+import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
+import GridIcon from "@mui/icons-material/ViewCompact";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { IconButton, Paper } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Badge, { badgeClasses } from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import Breadcrumbs, { breadcrumbsClasses } from "@mui/material/Breadcrumbs";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import Chip, { chipClasses } from "@mui/material/Chip";
+import DialogContent from "@mui/material/DialogContent";
+import Divider from "@mui/material/Divider";
+import Fab from "@mui/material/Fab";
+import Fade from "@mui/material/Fade";
+import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
+import Menu from "@mui/material/Menu";
+import { paperClasses } from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import { alpha, lighten, type SxProps, type Theme, useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { Link as ReactRouterLink } from "react-router-dom";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import AccentMenuItem from "../../../components/AccentMenuItem";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import { useLandmark } from "../../../components/LandmarksContext";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
+import { useFileImportDropZone } from "../../../hooks/ui/useFileImportDragAndDrop";
+import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
+import { mergeSx } from "../../../modules/common/utils/styles";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as ArrayUtils from "../../../util/ArrayUtils";
-import LinkIcon from "@mui/icons-material/Link";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { IconButton, Paper } from "@mui/material";
-function useIsBeingMoved(): (
-  file: GalleryFile,
-  fileBeingMoved: GalleryFile | null | typeof undefined,
-) => boolean {
+import * as FetchingData from "../../../util/fetchingData";
+import { getByKey, type Optional } from "../../../util/optional";
+import RsSet from "../../../util/set";
+import { match } from "../../../util/Util";
+import {
+  GALLERY_SECTION,
+  type GallerySection,
+  gallerySectionIcon,
+  gallerySectionLabel,
+  SELECTED_OR_FOCUS_BLUE,
+  SELECTED_OR_FOCUS_BORDER,
+} from "../common";
+import usePrimaryAction from "../primaryActionHooks";
+import { type Destination, folderDestination, rootDestination, useGalleryActions } from "../useGalleryActions";
+import { type GalleryFile, type Id, idToString } from "../useGalleryListing";
+import { useGallerySelection } from "../useGallerySelection";
+import ActionsMenu from "./ActionsMenu";
+import { useAsposePreview } from "./CallableAsposePreview";
+import { useImagePreview } from "./CallableImagePreview";
+import { usePdfPreview } from "./CallablePdfPreview";
+import { useSnapGenePreview } from "./CallableSnapGenePreview";
+import { useSnippetPreview } from "./CallableSnippetPreview";
+import Carousel from "./Carousel";
+import { InfoPanelForLargeViewports, InfoPanelForSmallViewports } from "./InfoPanel";
+import LoadMoreButton from "./LoadMoreButton";
+import { useFolderOpen } from "./OpenFolderProvider";
+import PlaceholderLabel from "./PlaceholderLabel";
+import TreeView from "./TreeView";
+
+function useIsBeingMoved(): (file: GalleryFile, fileBeingMoved: GalleryFile | null | typeof undefined) => boolean {
   const selection = useGallerySelection();
   return (file, fileBeingMoved) => {
-    if (fileBeingMoved === null || typeof fileBeingMoved === "undefined")
-      return false;
-    if (selection.includes(fileBeingMoved) && selection.includes(file))
-      return true;
+    if (fileBeingMoved === null || typeof fileBeingMoved === "undefined") return false;
+    if (selection.includes(fileBeingMoved) && selection.includes(file)) return true;
     if (file.id === fileBeingMoved.id) return true;
     return false;
   };
 }
 const DragOverlayContents = observer(() => {
-    const dndContext = useDndContext();
-    const selection = useGallerySelection();
-    let numberBeingMoved = 0;
-    if (dndContext.active) {
-      if (
-        selection.includes(
-          dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
-        )
-      )
-        numberBeingMoved = selection.size;
-      else numberBeingMoved = 1;
-    }
-    return (
-      <Badge
-        badgeContent={numberBeingMoved}
-        color="callToAction"
-        sx={(theme) => ({
-          width: "100%",
-          height: "100%",
-          borderRadius: "5px",
-          backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
-          border: `2px solid ${theme.palette.callToAction.main}`,
-          cursor: "grabbing",
-          [`& .${badgeClasses.badge}`]: {
-            height: "75px",
-            width: "75px",
-            right: "50%",
-            top: "50%",
-            fontSize: "2em",
-            borderRadius: "50%",
-          },
-        })}
-      ></Badge>
-    );
-  });
+  const dndContext = useDndContext();
+  const selection = useGallerySelection();
+  let numberBeingMoved = 0;
+  if (dndContext.active) {
+    if (selection.includes(dndContext.active?.data.current?.fileBeingMoved as GalleryFile))
+      numberBeingMoved = selection.size;
+    else numberBeingMoved = 1;
+  }
+  return (
+    <Badge
+      badgeContent={numberBeingMoved}
+      color="callToAction"
+      sx={(theme) => ({
+        width: "100%",
+        height: "100%",
+        borderRadius: "5px",
+        backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
+        border: `2px solid ${theme.palette.callToAction.main}`,
+        cursor: "grabbing",
+        [`& .${badgeClasses.badge}`]: {
+          height: "75px",
+          width: "75px",
+          right: "50%",
+          top: "50%",
+          fontSize: "2em",
+          borderRadius: "50%",
+        },
+      })}
+    ></Badge>
+  );
+});
 const DragCancelFab = () => {
   const dndContext = useDndContext();
   const dndInProgress = Boolean(dndContext.active);
@@ -208,11 +185,7 @@ const BreadcrumbLink = React.forwardRef<
   }
 >(({ folder, section, setSelectedSection, tabIndex, sx }, ref) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `/${[
-      section,
-      ...(folder?.path.map(({ name }) => name) ?? []),
-      folder?.name ?? "",
-    ].join("/")}/`,
+    id: `/${[section, ...(folder?.path.map(({ name }) => name) ?? []), folder?.name ?? ""].join("/")}/`,
     disabled: false,
     data: {
       path: folder?.path ?? [],
@@ -223,11 +196,8 @@ const BreadcrumbLink = React.forwardRef<
   const dndInProgress = Boolean(dndContext.active);
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const icon = folder
-    ? undefined
-    : getByKey(section, gallerySectionIcon).orElse(undefined);
-  const label =
-    folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN");
+  const icon = folder ? undefined : getByKey(section, gallerySectionIcon).orElse(undefined);
+  const label = folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN");
   return (
     <Box
       ref={(node: HTMLDivElement | null) => {
@@ -248,9 +218,7 @@ const BreadcrumbLink = React.forwardRef<
       }}
       tabIndex={tabIndex}
       sx={mergeSx(
-        dndInProgress && !isOver
-          ? { animation: "drop 2s linear infinite" }
-          : undefined,
+        dndInProgress && !isOver ? { animation: "drop 2s linear infinite" } : undefined,
         isOver ? { border: SELECTED_OR_FOCUS_BORDER } : undefined,
         sx,
       )}
@@ -369,8 +337,7 @@ const Path = observer(
                 console.error(e);
                 addAlert(
                   mkAlert({
-                    message:
-                      "Failed to copy link to clipboard. Please try again.",
+                    message: "Failed to copy link to clipboard. Please try again.",
                     variant: "error",
                   }),
                 );
@@ -380,11 +347,9 @@ const Path = observer(
           color="standardIcon"
           icon={<LinkIcon />}
           sx={{
-            backgroundColor: (theme) =>
-              alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
+            backgroundColor: (theme) => alpha(lighten(theme.palette.primary.main, 0.1), 0.6),
             "&:hover": {
-              backgroundColor: (theme) =>
-                alpha(lighten(theme.palette.primary.main, 0.1), 0.85),
+              backgroundColor: (theme) => alpha(lighten(theme.palette.primary.main, 0.1), 0.85),
             },
             padding: "2px",
             marginLeft: (theme) => theme.spacing(1),
@@ -431,412 +396,373 @@ const FileCard = observer(
       },
       ref: React.ForwardedRef<HTMLElement>,
     ) => {
-        const NAME_STYLES = {
-          LINE_HEIGHT: 1.5,
-          FONT_SIZE: "0.8125rem",
-        };
-        const { uploadFiles } = useGalleryActions();
-        const { openFolder } = useFolderOpen();
-        const selection = useGallerySelection();
-        const isBeingMoved = useIsBeingMoved();
-        const dndContext = useDndContext();
-        const dndInProgress = Boolean(dndContext.active);
-        const { trackEvent } = React.useContext(AnalyticsContext);
-        const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-          useFileImportDropZone({
-            onDrop: (files) => {
-              void uploadFiles(file.id, files).then(() => {
-                trackEvent("user:drag_uploads:file:into_folder");
-              });
-              /*
-               * No need to refresh the listing as the uploaded file has been
-               * placed inside a folder into which the user cannot currently see
-               */
-            },
-            disabled: !file.isFolder,
+      const NAME_STYLES = {
+        LINE_HEIGHT: 1.5,
+        FONT_SIZE: "0.8125rem",
+      };
+      const { uploadFiles } = useGalleryActions();
+      const { openFolder } = useFolderOpen();
+      const selection = useGallerySelection();
+      const isBeingMoved = useIsBeingMoved();
+      const dndContext = useDndContext();
+      const dndInProgress = Boolean(dndContext.active);
+      const { trackEvent } = React.useContext(AnalyticsContext);
+      const { onDragEnter, onDragOver, onDragLeave, onDrop, over } = useFileImportDropZone({
+        onDrop: (files) => {
+          void uploadFiles(file.id, files).then(() => {
+            trackEvent("user:drag_uploads:file:into_folder");
           });
+          /*
+           * No need to refresh the listing as the uploaded file has been
+           * placed inside a folder into which the user cannot currently see
+           */
+        },
+        disabled: !file.isFolder,
+      });
 
-        /*
-         * When file.id can be null (some external filestores), we happen to
-         * not support drag-and-drop. If want to support drag-and-drop there
-         * in the future then we will need to combine id and pathAsString to
-         * create a unique id for every file.
-         */
-        const { setNodeRef: setDropRef, isOver } = useDroppable({
-          id: file.id ?? -1,
-          disabled:
-            !file.isFolder ||
-            isBeingMoved(
-              file,
-              dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
-            ) ||
-            file.id === null,
-          data: {
-            path: file.path,
-            destination: folderDestination(file),
-          },
-        });
-        const {
-          attributes,
-          listeners,
-          setNodeRef: setDragRef,
-        } = useDraggable({
-          disabled: file.id === null,
-          id: file.id ?? -1,
-          data: {
-            fileBeingMoved: file,
-          },
-        });
-        /*
-         * DndKit wants to set the role to "button" but if we do that then the
-         * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
-         * correct role for tree items doesn't prevent DndKit from working.
-         */
-        // @ts-expect-error This is a bit of a hack
-        delete attributes.role;
+      /*
+       * When file.id can be null (some external filestores), we happen to
+       * not support drag-and-drop. If want to support drag-and-drop there
+       * in the future then we will need to combine id and pathAsString to
+       * create a unique id for every file.
+       */
+      const { setNodeRef: setDropRef, isOver } = useDroppable({
+        id: file.id ?? -1,
+        disabled:
+          !file.isFolder ||
+          isBeingMoved(file, dndContext.active?.data.current?.fileBeingMoved as GalleryFile) ||
+          file.id === null,
+        data: {
+          path: file.path,
+          destination: folderDestination(file),
+        },
+      });
+      const {
+        attributes,
+        listeners,
+        setNodeRef: setDragRef,
+      } = useDraggable({
+        disabled: file.id === null,
+        id: file.id ?? -1,
+        data: {
+          fileBeingMoved: file,
+        },
+      });
+      /*
+       * DndKit wants to set the role to "button" but if we do that then the
+       * keyboard controls of MUI's SimpleTreeView stop working. Keeping the
+       * correct role for tree items doesn't prevent DndKit from working.
+       */
+      // @ts-expect-error This is a bit of a hack
+      delete attributes.role;
 
-        /*
-         * When the user taps the FileCard, we don't want to immediately
-         * trigger useDraggable's listeners because otherwise react gets bogged
-         * down in re-rendering all of the FileCards a couple of times over
-         * before actually updating the new selection state. When the user taps,
-         * onMouseDown/onTouchStart trigger which causes a re-rendering with
-         * drag-and-drop active, then onMouseUp/onTouchEnd fire immediately
-         * after triggering another re-rendering with drag-and-drop not active,
-         * and then onClick fires to update the selection state.
-         *
-         * This state variable contains a reference to a setTimeout that is
-         * intended to only fire onMouseDown/onTouchStart if the user holds the
-         * mouse key/their finger down for more than half a second to prevent
-         * these excessive re-renders and make the UI more responsive in
-         * updating the selection state.
-         */
-        const [dndDebounce, setDndDebounce] =
-          React.useState<null | NodeJS.Timeout>(null);
-        const dropStyle = {
-          ...(isOver
-            ? {
-                borderColor: SELECTED_OR_FOCUS_BLUE,
-              }
-            : {}),
-          ...(!isOver &&
-          dndInProgress &&
-          file.isFolder &&
-          !isBeingMoved(
-            file,
-            dndContext.active?.data.current?.fileBeingMoved as
-              | GalleryFile
-              | null
-              | typeof undefined,
-          )
-            ? {
-                border: "2px solid white",
-                borderWidth: "2px",
-                borderRadius: "8px",
-                animation: "drop 2s linear infinite",
-              }
-            : {}),
-        };
-        const inGroupBeingDraggedStyle =
-          Boolean(dndContext.active?.data.current?.fileBeingMoved) &&
-          (selection.includes(
-            dndContext.active?.data.current?.fileBeingMoved as GalleryFile,
-          )
-            ? selection.includes(file)
-            : file.id ===
-              (dndContext.active?.data.current?.fileBeingMoved as GalleryFile)
-                .id)
-            ? {
-                opacity: 0.2,
-              }
-            : {};
-        const fileUploadDropping = over
+      /*
+       * When the user taps the FileCard, we don't want to immediately
+       * trigger useDraggable's listeners because otherwise react gets bogged
+       * down in re-rendering all of the FileCards a couple of times over
+       * before actually updating the new selection state. When the user taps,
+       * onMouseDown/onTouchStart trigger which causes a re-rendering with
+       * drag-and-drop active, then onMouseUp/onTouchEnd fire immediately
+       * after triggering another re-rendering with drag-and-drop not active,
+       * and then onClick fires to update the selection state.
+       *
+       * This state variable contains a reference to a setTimeout that is
+       * intended to only fire onMouseDown/onTouchStart if the user holds the
+       * mouse key/their finger down for more than half a second to prevent
+       * these excessive re-renders and make the UI more responsive in
+       * updating the selection state.
+       */
+      const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(null);
+      const dropStyle = {
+        ...(isOver
           ? {
               borderColor: SELECTED_OR_FOCUS_BLUE,
             }
-          : {};
-        const viewportDimensions = useViewportDimensions();
-        const cardWidth = {
-          xs: 6,
-          sm: 4,
-          md: 4,
-          lg: 3,
-          xl: 2,
-        };
-        return (
-          <Fade
-            in={true}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 400
+          : {}),
+        ...(!isOver &&
+        dndInProgress &&
+        file.isFolder &&
+        !isBeingMoved(file, dndContext.active?.data.current?.fileBeingMoved as GalleryFile | null | typeof undefined)
+          ? {
+              border: "2px solid white",
+              borderWidth: "2px",
+              borderRadius: "8px",
+              animation: "drop 2s linear infinite",
             }
-          >
-            <Card
-              component="div"
-              elevation={0}
-              sx={(theme) => ({
-                height: "150px",
-                ...(selected
-                  ? {
-                      border: window.matchMedia("(prefers-contrast: more)")
-                        .matches
-                        ? "2px solid black"
-                        : SELECTED_OR_FOCUS_BORDER,
-                      "&:hover": {
-                        border: window.matchMedia("(prefers-contrast: more)")
-                          .matches
-                          ? "2px solid black !important"
-                          : `${SELECTED_OR_FOCUS_BORDER} !important`,
-                        backgroundColor: `${alpha(theme.palette.callToAction.background, 0.05)} !important`,
-                      },
-                      backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
-                    }
-                  : {}),
-                borderRadius: "8px",
-                boxShadow: selected
-                  ? "none"
-                  : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
-                ...dropStyle,
-                ...inGroupBeingDraggedStyle,
-                ...fileUploadDropping,
-                /*
-                 * We don't need the outline as the selected styles will indicate
-                 * which item has focus
-                 */
-                outline: "none",
-                /*
-                 * This way, the animation takes the same amount of time (36ms) for
-                 * each row of cards
-                 */
-                transitionDelay: window.matchMedia(
-                  "(prefers-reduced-motion: reduce)",
-                ).matches
-                  ? "0s"
-                  : `${(index + 1) * cardWidth[viewportDimensions.viewportSize] * 3}ms !important`,
-              })}
-              /*
-               * These are for dragging files from outside the browser
-               */
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onDragEnter={onDragEnter}
-              onDragLeave={onDragLeave}
-              /*
-               * These are for dragging files between folders within the gallery
-               */
-              ref={(node: HTMLDivElement) => {
-                setDropRef(node);
-                setDragRef(node);
-                if (ref) {
-                  if (typeof ref === "function") {
-                    ref(node);
-                  } else {
-                    ref.current = node;
+          : {}),
+      };
+      const inGroupBeingDraggedStyle =
+        dndContext.active?.data.current?.fileBeingMoved &&
+        (selection.includes(dndContext.active?.data.current?.fileBeingMoved as GalleryFile)
+          ? selection.includes(file)
+          : file.id === (dndContext.active?.data.current?.fileBeingMoved as GalleryFile).id)
+          ? {
+              opacity: 0.2,
+            }
+          : {};
+      const fileUploadDropping = over
+        ? {
+            borderColor: SELECTED_OR_FOCUS_BLUE,
+          }
+        : {};
+      const viewportDimensions = useViewportDimensions();
+      const cardWidth = {
+        xs: 6,
+        sm: 4,
+        md: 4,
+        lg: 3,
+        xl: 2,
+      };
+      return (
+        <Fade in={true} timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400}>
+          <Card
+            component="div"
+            elevation={0}
+            sx={(theme) => ({
+              height: "150px",
+              ...(selected
+                ? {
+                    border: window.matchMedia("(prefers-contrast: more)").matches
+                      ? "2px solid black"
+                      : SELECTED_OR_FOCUS_BORDER,
+                    "&:hover": {
+                      border: window.matchMedia("(prefers-contrast: more)").matches
+                        ? "2px solid black !important"
+                        : `${SELECTED_OR_FOCUS_BORDER} !important`,
+                      backgroundColor: `${alpha(theme.palette.callToAction.background, 0.05)} !important`,
+                    },
+                    backgroundColor: alpha(theme.palette.callToAction.background, 0.15),
                   }
-                }
-              }}
-              onMouseDown={(...args) => {
-                setDndDebounce(
-                  setTimeout(() => {
-                    listeners?.onMouseDown(...args);
-                  }, 500),
-                );
-              }}
-              onMouseUp={() => {
-                if (dndDebounce) clearTimeout(dndDebounce);
-              }}
-              onTouchStart={(...args) => {
-                setDndDebounce(
-                  setTimeout(() => {
-                    listeners?.onTouchStart(...args);
-                  }, 500),
-                );
-              }}
-              onTouchEnd={() => {
-                if (dndDebounce) clearTimeout(dndDebounce);
-              }}
-              onKeyDown={
-                listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>
-              }
-              {...attributes}
-              tabIndex={tabIndex}
-              onFocus={onFocus}
-              onBlur={onBlur}
+                : {}),
+              borderRadius: "8px",
+              boxShadow: selected ? "none" : `hsl(${ACCENT_COLOR.main.hue} 66% 20% / 20%) 0px 2px 8px 0px`,
+              ...dropStyle,
+              ...inGroupBeingDraggedStyle,
+              ...fileUploadDropping,
               /*
-               * We conditionally just add the onKeyDown when file has an
-               * `open` action (which is to say it is a folder), leaving the
-               * keyDown event to propagate up to the KeyboardSensor of the
-               * drag-and-drop mechanism for all other files
+               * We don't need the outline as the selected styles will indicate
+               * which item has focus
                */
-              {...file.canOpen
-                .map(() => ({
-                  onKeyDown: (e: React.KeyboardEvent) => {
-                    if (e.key === " ") openFolder(file);
-                  },
-                }))
-                .orElse({})}
+              outline: "none",
+              /*
+               * This way, the animation takes the same amount of time (36ms) for
+               * each row of cards
+               */
+              transitionDelay: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "0s"
+                : `${(index + 1) * cardWidth[viewportDimensions.viewportSize] * 3}ms !important`,
+            })}
+            /*
+             * These are for dragging files from outside the browser
+             */
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            onDragEnter={onDragEnter}
+            onDragLeave={onDragLeave}
+            /*
+             * These are for dragging files between folders within the gallery
+             */
+            ref={(node: HTMLDivElement) => {
+              setDropRef(node);
+              setDragRef(node);
+              if (ref) {
+                if (typeof ref === "function") {
+                  ref(node);
+                } else {
+                  ref.current = node;
+                }
+              }
+            }}
+            onMouseDown={(...args) => {
+              setDndDebounce(
+                setTimeout(() => {
+                  listeners?.onMouseDown(...args);
+                }, 500),
+              );
+            }}
+            onMouseUp={() => {
+              if (dndDebounce) clearTimeout(dndDebounce);
+            }}
+            onTouchStart={(...args) => {
+              setDndDebounce(
+                setTimeout(() => {
+                  listeners?.onTouchStart(...args);
+                }, 500),
+              );
+            }}
+            onTouchEnd={() => {
+              if (dndDebounce) clearTimeout(dndDebounce);
+            }}
+            onKeyDown={listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>}
+            {...attributes}
+            tabIndex={tabIndex}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            /*
+             * We conditionally just add the onKeyDown when file has an
+             * `open` action (which is to say it is a folder), leaving the
+             * keyDown event to propagate up to the KeyboardSensor of the
+             * drag-and-drop mechanism for all other files
+             */
+            {...file.canOpen
+              .map(() => ({
+                onKeyDown: (e: React.KeyboardEvent) => {
+                  if (e.key === " ") openFolder(file);
+                },
+              }))
+              .orElse({})}
+          >
+            <CardActionArea
+              role="gridcell"
+              aria-selected={selected}
+              tabIndex={-1}
+              onFocus={(e) => {
+                /*
+                 * We're manually handling focus states through a roving tab
+                 * index on the GridView component, so we don't need to
+                 * handle focus state triggered by keyboard events here.
+                 * Moreover, we don't want mouse events, such as clicking, to
+                 * trigger a focus event either as the file with the current
+                 * tabIndexCoord will end up selected instead of the one the
+                 * user taps.
+                 */
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                onClick(e);
+              }}
+              sx={{
+                height: "100%",
+              }}
             >
-              <CardActionArea
-                role="gridcell"
-                aria-selected={selected}
-                tabIndex={-1}
-                onFocus={(e) => {
-                  /*
-                   * We're manually handling focus states through a roving tab
-                   * index on the GridView component, so we don't need to
-                   * handle focus state triggered by keyboard events here.
-                   * Moreover, we don't want mouse events, such as clicking, to
-                   * trigger a focus event either as the file with the current
-                   * tabIndexCoord will end up selected instead of the one the
-                   * user taps.
-                   */
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  onClick(e);
-                }}
+              <Grid
+                container
                 sx={{
                   height: "100%",
+                  flexWrap: "nowrap",
+                  flexDirection: "column",
                 }}
               >
                 <Grid
-                  container
                   sx={{
-                    height: "100%",
-                    flexWrap: "nowrap",
+                    flexShrink: 0,
+                    padding: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "calc(100% - 9999999px)",
                     flexDirection: "column",
+                    flexGrow: 1,
+                  }}
+                >
+                  <Avatar
+                    src={file.thumbnailUrl}
+                    variant="rounded"
+                    sx={{
+                      width: "auto",
+                      height: "100%",
+                      aspectRatio: "1 / 1",
+                      fontSize: "5em",
+                      backgroundColor: "transparent",
+                      pointerEvents: "none",
+                    }}
+                    slotProps={{
+                      img: {
+                        role: "presentation",
+                      },
+                    }}
+                  >
+                    <BrokenImageIcon fontSize="inherit" />
+                  </Avatar>
+                </Grid>
+                <Grid
+                  container
+                  direction="row"
+                  sx={{
+                    alignItems: "baseline",
+                    flexWrap: "nowrap",
+                    padding: "8px",
+                    paddingTop: 0,
                   }}
                 >
                   <Grid
                     sx={{
-                      flexShrink: 0,
-                      padding: "8px",
+                      // give room for two lines of text
+                      lineHeight: NAME_STYLES.LINE_HEIGHT,
+                      fontSize: NAME_STYLES.FONT_SIZE,
+                      minHeight: `calc(2* ${NAME_STYLES.LINE_HEIGHT}* ${NAME_STYLES.FONT_SIZE})`,
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "calc(100% - 9999999px)",
                       flexDirection: "column",
+                      justifyContent: "end",
                       flexGrow: 1,
+                      textAlign: "center",
                     }}
                   >
-                    <Avatar
-                      src={file.thumbnailUrl}
-                      variant="rounded"
+                    <Typography
                       sx={{
-                        width: "auto",
-                        height: "100%",
-                        aspectRatio: "1 / 1",
-                        fontSize: "5em",
-                        backgroundColor: "transparent",
-                        pointerEvents: "none",
-                      }}
-                      slotProps={{
-                        img: {
-                          role: "presentation",
-                        },
+                        ...(selected
+                          ? {
+                              backgroundColor: (theme) =>
+                                window.matchMedia("(prefers-contrast: more)").matches
+                                  ? "black"
+                                  : theme.palette.callToAction.main,
+                              p: 0.25,
+                              borderRadius: "4px",
+                              mx: 0.5,
+                              color: (theme) =>
+                                window.matchMedia("(prefers-contrast: more)").matches
+                                  ? "white"
+                                  : theme.palette.callToAction.contrastText,
+                            }
+                          : {}),
+                        fontSize: "0.8125rem",
+                        fontWeight: window.matchMedia("(prefers-contrast: more)").matches ? 700 : 400,
+                        // wrap onto a second line, but use an ellipsis after that
+                        overflowWrap: "anywhere",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: "2",
+                        WebkitBoxOrient: "vertical",
                       }}
                     >
-                      <BrokenImageIcon fontSize="inherit" />
-                    </Avatar>
-                  </Grid>
-                  <Grid
-                    container
-                    direction="row"
-                    sx={{
-                      alignItems: "baseline",
-                      flexWrap: "nowrap",
-                      padding: "8px",
-                      paddingTop: 0,
-                    }}
-                  >
-                    <Grid
-                      sx={{
-                        // give room for two lines of text
-                        lineHeight: NAME_STYLES.LINE_HEIGHT,
-                        fontSize: NAME_STYLES.FONT_SIZE,
-                        minHeight: `calc(2* ${NAME_STYLES.LINE_HEIGHT}* ${NAME_STYLES.FONT_SIZE})`,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "end",
-                        flexGrow: 1,
-                        textAlign: "center",
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          ...(selected
-                            ? {
-                                backgroundColor: (theme) =>
-                                  window.matchMedia("(prefers-contrast: more)")
-                                    .matches
-                                    ? "black"
-                                    : theme.palette.callToAction.main,
-                                p: 0.25,
-                                borderRadius: "4px",
-                                mx: 0.5,
-                                color: (theme) =>
-                                  window.matchMedia("(prefers-contrast: more)")
-                                    .matches
-                                    ? "white"
-                                    : theme.palette.callToAction.contrastText,
-                              }
-                            : {}),
-                          fontSize: "0.8125rem",
-                          fontWeight: window.matchMedia(
-                            "(prefers-contrast: more)",
-                          ).matches
-                            ? 700
-                            : 400,
-                          // wrap onto a second line, but use an ellipsis after that
-                          overflowWrap: "anywhere",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitLineClamp: "2",
-                          WebkitBoxOrient: "vertical",
-                        }}
-                      >
-                        {file.name}
-                      </Typography>
-                    </Grid>
+                      {file.name}
+                    </Typography>
                   </Grid>
                 </Grid>
-                {typeof file.version === "number" && file.version > 1 && (
-                  <Box
-                    aria-label={`version ${file.version}`}
-                    sx={(theme) => ({
-                      position: "absolute",
-                      top: "0",
-                      right: "0",
-                      margin: theme.spacing(0.25),
-                      padding: theme.spacing(0.25, 0.5),
-                      borderRadius: "5px",
-                      color: window.matchMedia("(prefers-contrast: more)")
-                        .matches
-                        ? "rgb(255,255,255)"
-                        : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
-                      border: `1px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
-                      ...(selected
-                        ? {
-                            borderColor: window.matchMedia(
-                              "(prefers-contrast: more)",
-                            ).matches
-                              ? "black"
-                              : theme.palette.callToAction.main,
-                          }
-                        : {}),
-                    })}
-                  >
-                    v{file.version}
-                  </Box>
-                )}
-              </CardActionArea>
-            </Card>
-          </Fade>
-        );
-      },
-    )
+              </Grid>
+              {typeof file.version === "number" && file.version > 1 && (
+                <Box
+                  aria-label={`version ${file.version}`}
+                  sx={(theme) => ({
+                    position: "absolute",
+                    top: "0",
+                    right: "0",
+                    margin: theme.spacing(0.25),
+                    padding: theme.spacing(0.25, 0.5),
+                    borderRadius: "5px",
+                    color: window.matchMedia("(prefers-contrast: more)").matches
+                      ? "rgb(255,255,255)"
+                      : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
+                    border: `1px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, ${ACCENT_COLOR.background.lightness}%)`,
+                    ...(selected
+                      ? {
+                          borderColor: window.matchMedia("(prefers-contrast: more)").matches
+                            ? "black"
+                            : theme.palette.callToAction.main,
+                        }
+                      : {}),
+                  })}
+                >
+                  v{file.version}
+                </Box>
+              )}
+            </CardActionArea>
+          </Card>
+        </Fade>
+      );
+    },
+  ),
 );
 FileCard.displayName = "FileCard";
 const GridView = observer(
@@ -925,25 +851,14 @@ const GridView = observer(
      * escape key or the only selected files deleted, this variable maintains
      * that Id.
      */
-    const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(
-      null,
-    );
+    const [shiftOriginFileId, setShiftOriginFileId] = React.useState<null | Id>(null);
     if (listing.tag === "empty")
       return (
         <div key={listing.reason}>
-          <Fade
-            in={true}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 300
-            }
-          >
+          <Fade in={true} timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300}>
             <div>
               <PlaceholderLabel>
-                {listing.refreshing
-                  ? "Refreshing..."
-                  : (listing.reason ?? "There are no folders.")}
+                {listing.refreshing ? "Refreshing..." : (listing.reason ?? "There are no folders.")}
               </PlaceholderLabel>
             </div>
           </Fade>
@@ -1006,9 +921,7 @@ const GridView = observer(
             };
             if (e.shiftKey) {
               if (shiftOriginFileId !== null) {
-                const indexOfShiftOriginFile = listing.list.findIndex(
-                  (f) => f.id === shiftOriginFileId,
-                );
+                const indexOfShiftOriginFile = listing.list.findIndex((f) => f.id === shiftOriginFileId);
                 const shiftOriginX = indexOfShiftOriginFile % cols;
                 const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
                 origin = {
@@ -1027,18 +940,10 @@ const GridView = observer(
             listing.list.forEach((file, i) => {
               const fileX = i % cols;
               const fileY = Math.floor(i / cols);
-              if (
-                fileX >= left &&
-                fileX <= right &&
-                fileY >= top &&
-                fileY <= bottom
-              )
-                selection.append(file);
+              if (fileX >= left && fileX <= right && fileY >= top && fileY <= bottom) selection.append(file);
             });
             setShiftOriginFileId(
-              e.shiftKey
-                ? (shiftOriginFileId ?? listing.list[y * cols + x].id)
-                : listing.list[y * cols + x].id,
+              e.shiftKey ? (shiftOriginFileId ?? listing.list[y * cols + x].id) : listing.list[y * cols + x].id,
             );
             setTabIndexCoord({
               x,
@@ -1057,148 +962,132 @@ const GridView = observer(
             if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
           }}
         >
-          {ArrayUtils.chunksOf(cols, listing.list).map(
-            (files: Array<GalleryFile>, y: number) => (
-              <Box
-                role="row"
-                key={y}
-                sx={{
-                  display: "contents",
-                }}
-              >
-                {files.map((file: GalleryFile, x: number) => (
-                  <FileCard
-                    ref={
-                      x === tabIndexCoord.x && y === tabIndexCoord.y
-                        ? focusFileCardRef
-                        : null
-                    }
-                    onFocus={() => {
-                      setGridHasFocus(true);
-                    }}
-                    onBlur={() => {
-                      setGridHasFocus(false);
-                    }}
-                    selected={selection.includes(file)}
-                    file={file}
-                    key={file.key}
-                    index={y * cols + x}
-                    tabIndex={
-                      x === tabIndexCoord.x && y === tabIndexCoord.y ? 0 : -1
-                    }
-                    onClick={(e) => {
-                      if (e.shiftKey) {
-                        if (shiftOriginFileId === null) return;
-                        const indexOfShiftOriginFile = listing.list.findIndex(
-                          (f) => f.id === shiftOriginFileId,
-                        );
-                        /*
-                         * if shiftOriginFileId is an Id of a file that has been
-                         * deleted then it will no longer be in the listing, will not
-                         * be visible and this code should act as if no file has been
-                         * focussed
-                         */
-                        if (indexOfShiftOriginFile === -1) return;
-                        const tappedCoord = {
-                          x,
-                          y,
+          {ArrayUtils.chunksOf(cols, listing.list).map((files: Array<GalleryFile>, y: number) => (
+            <Box
+              role="row"
+              key={y}
+              sx={{
+                display: "contents",
+              }}
+            >
+              {files.map((file: GalleryFile, x: number) => (
+                <FileCard
+                  ref={x === tabIndexCoord.x && y === tabIndexCoord.y ? focusFileCardRef : null}
+                  onFocus={() => {
+                    setGridHasFocus(true);
+                  }}
+                  onBlur={() => {
+                    setGridHasFocus(false);
+                  }}
+                  selected={selection.includes(file)}
+                  file={file}
+                  key={file.key}
+                  index={y * cols + x}
+                  tabIndex={x === tabIndexCoord.x && y === tabIndexCoord.y ? 0 : -1}
+                  onClick={(e) => {
+                    if (e.shiftKey) {
+                      if (shiftOriginFileId === null) return;
+                      const indexOfShiftOriginFile = listing.list.findIndex((f) => f.id === shiftOriginFileId);
+                      /*
+                       * if shiftOriginFileId is an Id of a file that has been
+                       * deleted then it will no longer be in the listing, will not
+                       * be visible and this code should act as if no file has been
+                       * focussed
+                       */
+                      if (indexOfShiftOriginFile === -1) return;
+                      const tappedCoord = {
+                        x,
+                        y,
+                      };
+                      const shiftOriginX = indexOfShiftOriginFile % cols;
+                      const shiftOriginY = Math.floor(indexOfShiftOriginFile / cols);
+                      const toSelect = listing.list.filter((_file, i) => {
+                        const coord = {
+                          x: i % cols,
+                          y: Math.floor(i / cols),
                         };
-                        const shiftOriginX = indexOfShiftOriginFile % cols;
-                        const shiftOriginY = Math.floor(
-                          indexOfShiftOriginFile / cols,
+                        return (
+                          coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
+                          coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
+                          coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
+                          coord.y <= Math.max(tappedCoord.y, shiftOriginY)
                         );
-                        const toSelect = listing.list.filter((_file, i) => {
-                          const coord = {
-                            x: i % cols,
-                            y: Math.floor(i / cols),
-                          };
-                          return (
-                            coord.x >= Math.min(tappedCoord.x, shiftOriginX) &&
-                            coord.x <= Math.max(tappedCoord.x, shiftOriginX) &&
-                            coord.y >= Math.min(tappedCoord.y, shiftOriginY) &&
-                            coord.y <= Math.max(tappedCoord.y, shiftOriginY)
-                          );
-                        });
-                        selection.clear();
-                        toSelect.forEach((f) => {
-                          selection.append(f);
-                        });
-                        setTabIndexCoord({
-                          x,
-                          y,
-                        });
-                      } else if (e.ctrlKey || e.metaKey) {
-                        if (selection.includes(file)) {
-                          selection.remove(file);
-                        } else {
-                          selection.append(file);
-                        }
-                        setTabIndexCoord({
-                          x,
-                          y,
-                        });
+                      });
+                      selection.clear();
+                      toSelect.forEach((f) => {
+                        selection.append(f);
+                      });
+                      setTabIndexCoord({
+                        x,
+                        y,
+                      });
+                    } else if (e.ctrlKey || e.metaKey) {
+                      if (selection.includes(file)) {
+                        selection.remove(file);
                       } else {
-                        // on double click, try and figure out what the user would want
-                        // to do with a file of this type based on what services are
-                        // configured
-                        if (e.detail > 1) {
-                          primaryAction(file).do((action) => {
-                            if (action.tag === "open") {
-                              openFolder(file);
-                              return;
-                            }
-                            if (action.tag === "image") {
-                              void action
-                                .downloadHref()
-                                .then((downloadHref) => {
-                                  openImagePreview(downloadHref, {
-                                    caption: action.caption,
-                                  });
-                                });
-                              return;
-                            }
-                            if (action.tag === "collabora") {
-                              window.open(action.url);
-                              return;
-                            }
-                            if (action.tag === "officeonline") {
-                              window.open(action.url);
-                              return;
-                            }
-                            if (action.tag === "pdf") {
-                              void action
-                                .downloadHref()
-                                .then((downloadHref) => {
-                                  openPdfPreview(downloadHref);
-                                });
-                              return;
-                            }
-                            if (action.tag === "aspose") {
-                              void openAsposePreview(file);
-                            }
-                            if (action.tag === "snapgene") {
-                              void openSnapGenePreview(file);
-                            }
-                            if (action.tag === "snippet") {
-                              void openSnippetPreview(file);
-                            }
-                          });
-                          return;
-                        }
-                        selection.clear();
                         selection.append(file);
-                        setShiftOriginFileId(file.id);
-                        setTabIndexCoord({
-                          x,
-                          y,
-                        });
                       }
-                    }}
-                  />
-                ))}
-              </Box>
-            ),
-          )}
+                      setTabIndexCoord({
+                        x,
+                        y,
+                      });
+                    } else {
+                      // on double click, try and figure out what the user would want
+                      // to do with a file of this type based on what services are
+                      // configured
+                      if (e.detail > 1) {
+                        primaryAction(file).do((action) => {
+                          if (action.tag === "open") {
+                            openFolder(file);
+                            return;
+                          }
+                          if (action.tag === "image") {
+                            void action.downloadHref().then((downloadHref) => {
+                              openImagePreview(downloadHref, {
+                                caption: action.caption,
+                              });
+                            });
+                            return;
+                          }
+                          if (action.tag === "collabora") {
+                            window.open(action.url);
+                            return;
+                          }
+                          if (action.tag === "officeonline") {
+                            window.open(action.url);
+                            return;
+                          }
+                          if (action.tag === "pdf") {
+                            void action.downloadHref().then((downloadHref) => {
+                              openPdfPreview(downloadHref);
+                            });
+                            return;
+                          }
+                          if (action.tag === "aspose") {
+                            void openAsposePreview(file);
+                          }
+                          if (action.tag === "snapgene") {
+                            void openSnapGenePreview(file);
+                          }
+                          if (action.tag === "snippet") {
+                            void openSnippetPreview(file);
+                          }
+                        });
+                        return;
+                      }
+                      selection.clear();
+                      selection.append(file);
+                      setShiftOriginFileId(file.id);
+                      setTabIndexCoord({
+                        x,
+                        y,
+                      });
+                    }
+                  }}
+                />
+              ))}
+            </Box>
+          ))}
         </Box>
         {listing.loadMore
           .map((loadMore) => (
@@ -1266,13 +1155,7 @@ const PathAndSearch = observer(
             minWidth: 0,
           }}
         >
-          {path !== null && (
-            <Path
-              section={selectedSection}
-              path={path}
-              setSelectedSection={setSelectedSection}
-            />
-          )}
+          {path !== null && <Path section={selectedSection} path={path} setSelectedSection={setSelectedSection} />}
         </Grid>
         {isViewportVerySmall && !searchOpen && (
           <IconButtonWithTooltip
@@ -1301,9 +1184,7 @@ const PathAndSearch = observer(
                   disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
                   placeholder="Search"
                   value={searchTerm}
-                  onChange={({ currentTarget: { value } }) =>
-                    setSearchTerm(value)
-                  }
+                  onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
                   sx={{
                     ...(searchOpen
                       ? {
@@ -1315,11 +1196,7 @@ const PathAndSearch = observer(
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
-                          <IconButton
-                            aria-label="Search"
-                            size="small"
-                            edge="start"
-                          >
+                          <IconButton aria-label="Search" size="small" edge="start">
                             <SearchIcon />
                           </IconButton>
                         </InputAdornment>
@@ -1406,44 +1283,36 @@ function GalleryMainPanel({
   const { uploadFiles } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
-  const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-    useFileImportDropZone({
-      onDrop: (files) => {
-        void (async () => {
-          const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(
-            () => {
-              addAlert(
-                mkAlert({
-                  variant: "error",
-                  message: "Cannot drop files to upload here.",
-                }),
-              );
-              throw new Error("Unknown folder id");
-            },
+  const { onDragEnter, onDragOver, onDragLeave, onDrop, over } = useFileImportDropZone({
+    onDrop: (files) => {
+      void (async () => {
+        const fId = FetchingData.getSuccessValue<Id>(folderId).orElseGet(() => {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              message: "Cannot drop files to upload here.",
+            }),
           );
-          await uploadFiles(fId, files);
-          void refreshListing();
-          if (!path) return;
-          if (path.length > 0) {
-            trackEvent("user:drag_uploads:file:into_current_folder");
-          } else {
-            trackEvent("user:drag_uploads:file:section_root", {
-              section: selectedSection,
-            });
-          }
-        })();
-      },
-    });
-  const [viewMenuAnchorEl, setViewMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
-  const [viewMode, _setViewMode] = useUiPreference(
-    PREFERENCES.GALLERY_VIEW_MODE,
-    {
-      defaultValue: "grid",
+          throw new Error("Unknown folder id");
+        });
+        await uploadFiles(fId, files);
+        void refreshListing();
+        if (!path) return;
+        if (path.length > 0) {
+          trackEvent("user:drag_uploads:file:into_current_folder");
+        } else {
+          trackEvent("user:drag_uploads:file:section_root", {
+            section: selectedSection,
+          });
+        }
+      })();
     },
-  );
-  const [sortMenuAnchorEl, setSortMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  });
+  const [viewMenuAnchorEl, setViewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [viewMode, _setViewMode] = useUiPreference(PREFERENCES.GALLERY_VIEW_MODE, {
+    defaultValue: "grid",
+  });
+  const [sortMenuAnchorEl, setSortMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const { moveFiles } = useGalleryActions();
   const selection = useGallerySelection();
   const mouseSensor = useSensor(MouseSensor, {
@@ -1496,11 +1365,8 @@ function GalleryMainPanel({
         sensors={[mouseSensor, touchSensor, keyboardSensor]}
         onDragEnd={(event) => {
           if (!event.over?.data.current) return;
-          const fileBeingMoved = event.active.data.current
-            ?.fileBeingMoved as GalleryFile;
-          const filesBeingMoved = selection.includes(fileBeingMoved)
-            ? selection.asSet()
-            : new RsSet([fileBeingMoved]);
+          const fileBeingMoved = event.active.data.current?.fileBeingMoved as GalleryFile;
+          const filesBeingMoved = selection.includes(fileBeingMoved) ? selection.asSet() : new RsSet([fileBeingMoved]);
           /*
            * When tapping, holding, and then releasing on a folder onDragEnd is
            * invoked with event.over.data.current.destination.folder and
@@ -1509,20 +1375,17 @@ function GalleryMainPanel({
            * to move the container into itself.
            */
 
-          const destination = event.over.data.current
-            .destination as Destination;
+          const destination = event.over.data.current.destination as Destination;
           if (destination.key === "folder") {
             const destinationFolder = destination.folder;
             if (filesBeingMoved.has(destinationFolder)) return;
           }
           if (!selectedSection) return;
-          void moveFiles(
-            selectedSection,
-            event.over.data.current.destination as Destination,
-            filesBeingMoved,
-          ).then(() => {
-            void refreshListing();
-          });
+          void moveFiles(selectedSection, event.over.data.current.destination as Destination, filesBeingMoved).then(
+            () => {
+              void refreshListing();
+            },
+          );
         }}
       >
         <Grid
@@ -1557,11 +1420,7 @@ function GalleryMainPanel({
               role="region"
               aria-label="files listing controls"
             >
-              <ActionsMenu
-                refreshListing={refreshListing}
-                section={selectedSection}
-                folderId={folderId}
-              />
+              <ActionsMenu refreshListing={refreshListing} section={selectedSection} folderId={folderId} />
               <Box
                 sx={{
                   flexGrow: 1,
@@ -1663,9 +1522,7 @@ function GalleryMainPanel({
                         <>
                           {" "}
                           <Box component="span" sx={{ whiteSpace: "nowrap" }}>
-                            {sortOrder === "ASC"
-                              ? "(Sorted from A to Z)"
-                              : "(Sorted from Z to A)"}
+                            {sortOrder === "ASC" ? "(Sorted from A to Z)" : "(Sorted from Z to A)"}
                           </Box>
                         </>
                       )}
@@ -1679,24 +1536,14 @@ function GalleryMainPanel({
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={match<void, React.ReactNode>([
-                    [
-                      () => orderBy !== "name",
-                      <HorizontalRuleIcon key={null} />,
-                    ],
-                    [
-                      () => sortOrder === "ASC",
-                      <ArrowDownwardIcon key={null} />,
-                    ],
-                    [
-                      () => sortOrder === "DESC",
-                      <ArrowUpwardIcon key={null} />,
-                    ],
+                    [() => orderBy !== "name", <HorizontalRuleIcon key={null} />],
+                    [() => sortOrder === "ASC", <ArrowDownwardIcon key={null} />],
+                    [() => sortOrder === "DESC", <ArrowUpwardIcon key={null} />],
                   ])()}
                   onClick={() => {
                     setSortMenuAnchorEl(null);
                     let newSortOrder: "ASC" | "DESC" = "ASC";
-                    if (orderBy === "name" && sortOrder === "ASC")
-                      newSortOrder = "DESC";
+                    if (orderBy === "name" && sortOrder === "ASC") newSortOrder = "DESC";
                     setSortOrder(newSortOrder);
                     setOrderBy("name");
                     trackEvent("user:change:sorting:gallery", {
@@ -1714,43 +1561,28 @@ function GalleryMainPanel({
                         <>
                           {" "}
                           <Box component="span" sx={{ whiteSpace: "nowrap" }}>
-                            {sortOrder === "ASC"
-                              ? "(Sorted oldest first)"
-                              : "(Sorted newest first)"}
+                            {sortOrder === "ASC" ? "(Sorted oldest first)" : "(Sorted newest first)"}
                           </Box>
                         </>
                       )}
                     </>
                   }
                   subheader={match<void, string>([
-                    [
-                      () => orderBy !== "modificationDate",
-                      "Tap to sort oldest first",
-                    ],
+                    [() => orderBy !== "modificationDate", "Tap to sort oldest first"],
                     [() => sortOrder === "ASC", "Tap to sort newest first"],
                     [() => sortOrder === "DESC", "Tap to sort oldest first"],
                   ])()}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={match<void, React.ReactNode>([
-                    [
-                      () => orderBy !== "modificationDate",
-                      <HorizontalRuleIcon key={null} />,
-                    ],
-                    [
-                      () => sortOrder === "ASC",
-                      <ArrowDownwardIcon key={null} />,
-                    ],
-                    [
-                      () => sortOrder === "DESC",
-                      <ArrowUpwardIcon key={null} />,
-                    ],
+                    [() => orderBy !== "modificationDate", <HorizontalRuleIcon key={null} />],
+                    [() => sortOrder === "ASC", <ArrowDownwardIcon key={null} />],
+                    [() => sortOrder === "DESC", <ArrowUpwardIcon key={null} />],
                   ])()}
                   onClick={() => {
                     setSortMenuAnchorEl(null);
                     let newSortOrder: "ASC" | "DESC" = "ASC";
-                    if (orderBy === "modificationDate" && sortOrder === "ASC")
-                      newSortOrder = "DESC";
+                    if (orderBy === "modificationDate" && sortOrder === "ASC") newSortOrder = "DESC";
                     setSortOrder(newSortOrder);
                     setOrderBy("modificationDate");
                     trackEvent("user:change:sorting:gallery", {
@@ -1792,10 +1624,7 @@ function GalleryMainPanel({
                * This prevents content from being hidden underneath the
                * floating info panel. 136px was found by visual inspection.
                */
-              maxHeight:
-                viewportDimensions.isViewportSmall && !selection.isEmpty
-                  ? "calc(100% - 136px)"
-                  : "100%",
+              maxHeight: viewportDimensions.isViewportSmall && !selection.isEmpty ? "calc(100% - 136px)" : "100%",
             }}
           >
             <Grid
@@ -1827,6 +1656,7 @@ function GalleryMainPanel({
                     error: (error) => <>{error}</>,
                     success: (listing) =>
                       selectedSection === null || path === null ? (
+                        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
                         <></>
                       ) : (
                         <TreeView
@@ -1894,9 +1724,7 @@ function GalleryMainPanel({
                  * state and should open the Save and Cancel buttons. Same
                  * applies to the Description field.
                  */
-                key={selection
-                  .asSet()
-                  .reduce((acc, f) => `${acc},${f.key}`, "")}
+                key={selection.asSet().reduce((acc, f) => `${acc},${f.key}`, "")}
               />
             </Grid>
             {selection

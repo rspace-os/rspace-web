@@ -1,27 +1,25 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { action, observable } from "mobx";
-import { storesContext } from "../../../../stores/stores-context";
-import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
-import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
-import Search from "../../../../stores/models/Search";
-import MoveAction from "../MoveAction";
-import MoveDialog from "../../MoveToTarget/MoveDialog";
-import { type StoreContainer } from "../../../../stores/stores/RootStore";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { action, observable } from "mobx";
+import type React from "react";
+import { describe, expect, test, vi } from "vitest";
+import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
+import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
+import Search from "../../../../stores/models/Search";
+import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import type { StoreContainer } from "../../../../stores/stores/RootStore";
+import { storesContext } from "../../../../stores/stores-context";
+import materialTheme from "../../../../theme";
+import MoveDialog from "../../MoveToTarget/MoveDialog";
+import MoveAction from "../MoveAction";
 import "@/__tests__/__mocks__/matchMedia";
 
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
 }));
 vi.mock("@mui/material/Dialog", () => ({
-  default: vi.fn(({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  )),
+  default: vi.fn(({ children }: { children: React.ReactNode }) => <>{children}</>),
 }));
 // this is because the Search component renders hidden "Cancel" buttons
 
@@ -54,23 +52,17 @@ describe("MoveAction", () => {
           savedBaskets: [],
           getBaskets: () => {},
         },
-      })
+      }),
     );
 
     const closeMenu = vi.fn(() => {});
     render(
       <ThemeProvider theme={materialTheme}>
         <storesContext.Provider value={rootStore}>
-          <MoveAction
-            as="button"
-            selectedResults={[makeMockContainer()]}
-            disabled=""
-            closeMenu={closeMenu}
-          />
+          <MoveAction as="button" selectedResults={[makeMockContainer()]} disabled="" closeMenu={closeMenu} />
           <MoveDialog />
         </storesContext.Provider>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     await user.click(screen.getAllByRole("button", { name: "Move" })[0]);
 

@@ -1,12 +1,12 @@
-import React, {useContext} from "react";
+import React, { useContext } from "react";
 import axios from "@/common/axios";
-import {getByKey, Optional} from "../../util/optional";
-import AlertContext, {mkAlert} from "../../stores/contexts/Alert";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import {parseString} from "../../util/parsers";
-import Result from "../../util/result";
+import { getByKey, Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
-import {type emptyObject} from "../../util/types";
+import { parseString } from "../../util/parsers";
+import Result from "../../util/result";
+import type { emptyObject } from "../../util/types";
 
 /*
  * This module provide the functionality for interacting with the
@@ -68,15 +68,15 @@ export type IntegrationStates = {
     ACCESS_TOKEN: Optional<string>;
   }>;
   DATAVERSE: IntegrationState<
-      Array<
-          Optional<{
-            DATAVERSE_APIKEY: string;
-            DATAVERSE_URL: string;
-            DATAVERSE_ALIAS: string;
-            _label: string;
-            optionsId: OptionsId;
-          }>
-      >
+    Array<
+      Optional<{
+        DATAVERSE_APIKEY: string;
+        DATAVERSE_URL: string;
+        DATAVERSE_ALIAS: string;
+        _label: string;
+        optionsId: OptionsId;
+      }>
+    >
   >;
   DIGITALCOMMONSDATA: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -95,14 +95,14 @@ export type IntegrationStates = {
     ACCESS_TOKEN: Optional<string>;
   }>;
   DSW: IntegrationState<
-      Array<
-          Optional<{
-            DSW_APIKEY: string;
-            DSW_URL: string;
-            DSW_ALIAS: string;
-            optionsId: OptionsId;
-          }>
-      >
+    Array<
+      Optional<{
+        DSW_APIKEY: string;
+        DSW_URL: string;
+        DSW_ALIAS: string;
+        optionsId: OptionsId;
+      }>
+    >
   >;
   EGNYTE: IntegrationState<{
     EGNYTE_DOMAIN: Optional<string>;
@@ -127,29 +127,29 @@ export type IntegrationStates = {
     }>;
   }>;
   GITHUB: IntegrationState<
-      Array<
-          Optional<{
-            /*
-             * we use an inner Optional so that the user can see which repo is in an
-             * invalid state, and can thus remove and readd
-             */
-            GITHUB_ACCESS_TOKEN: Optional<string>;
-            GITHUB_REPOSITORY_FULL_NAME: string;
-            optionsId: OptionsId;
-          }>
-      >
+    Array<
+      Optional<{
+        /*
+         * we use an inner Optional so that the user can see which repo is in an
+         * invalid state, and can thus remove and readd
+         */
+        GITHUB_ACCESS_TOKEN: Optional<string>;
+        GITHUB_REPOSITORY_FULL_NAME: string;
+        optionsId: OptionsId;
+      }>
+    >
   >;
   GOOGLEDRIVE: IntegrationState<{
-    ["googledrive.linking.enabled"]: Optional<boolean>;
+    "googledrive.linking.enabled": Optional<boolean>;
   }>;
   MSTEAMS: IntegrationState<
-      Array<
-          Optional<{
-            MSTEAMS_CHANNEL_LABEL: string;
-            MSTEAMS_WEBHOOK_URL: string;
-            optionsId: OptionsId;
-          }>
-      >
+    Array<
+      Optional<{
+        MSTEAMS_CHANNEL_LABEL: string;
+        MSTEAMS_WEBHOOK_URL: string;
+        optionsId: OptionsId;
+      }>
+    >
   >;
   NEXTCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -187,19 +187,19 @@ export type IntegrationStates = {
     }>;
   }>;
   SLACK: IntegrationState<
-      Array<
-          Optional<{
-            SLACK_TEAM_NAME: string;
-            SLACK_CHANNEL_ID: string;
-            SLACK_CHANNEL_NAME: string;
-            SLACK_USER_ID: string;
-            SLACK_CHANNEL_LABEL: string;
-            SLACK_USER_ACCESS_TOKEN: string;
-            SLACK_TEAM_ID: string;
-            SLACK_WEBHOOK_URL: string;
-            optionsId: OptionsId;
-          }>
-      >
+    Array<
+      Optional<{
+        SLACK_TEAM_NAME: string;
+        SLACK_CHANNEL_ID: string;
+        SLACK_CHANNEL_NAME: string;
+        SLACK_USER_ID: string;
+        SLACK_CHANNEL_LABEL: string;
+        SLACK_USER_ACCESS_TOKEN: string;
+        SLACK_TEAM_ID: string;
+        SLACK_WEBHOOK_URL: string;
+        optionsId: OptionsId;
+      }>
+    >
   >;
   ZENODO: IntegrationState<{
     ZENODO_USER_TOKEN: Optional<string>;
@@ -219,10 +219,7 @@ export type FetchedState = {
  * use two booleans, but with JS and Flow we can make the fourth possibility
  * (where is unavailable but enabled) impossible to model.
  */
-function parseState({
-                      enabled,
-                      available,
-                    }: FetchedState): IntegrationState<unknown>["mode"] {
+function parseState({ enabled, available }: FetchedState): IntegrationState<unknown>["mode"] {
   if (!available) return "UNAVAILABLE";
   if (!enabled) return "DISABLED";
   return "ENABLED";
@@ -233,12 +230,9 @@ function parseState({
  * does that that value is a string. If so, then the value is returned wrapped
  * in Optional.present, otherwise Optional.empty is returned.
  */
-function parseCredentialString<K extends string>(
-    options: Record<K, unknown>,
-    key: K
-): Optional<string> {
+function parseCredentialString<K extends string>(options: Record<K, unknown>, key: K): Optional<string> {
   return getByKey(key, options).flatMap((cred) =>
-      typeof cred === "string" ? Optional.present(cred) : Optional.empty()
+    typeof cred === "string" ? Optional.present(cred) : Optional.empty(),
   );
 }
 
@@ -247,19 +241,16 @@ function parseCredentialString<K extends string>(
  * does that that value is a boolean. If so, then the value is returned wrapped
  * in Optional.present, otherwise Optional.empty is returned.
  */
-function parseCredentialBoolean<K extends string>(
-    options: Record<K, unknown>,
-    key: K
-): Optional<boolean> {
+function parseCredentialBoolean<K extends string>(options: Record<K, unknown>, key: K): Optional<boolean> {
   return getByKey(key, options).flatMap((cred) =>
-      typeof cred === "boolean" ? Optional.present(cred) : Optional.empty()
+    typeof cred === "boolean" ? Optional.present(cred) : Optional.empty(),
   );
 }
 
 export type Integration = keyof IntegrationStates;
 
 function decodeArgos(data: FetchedState): IntegrationStates["ARGOS"] {
-  return {mode: parseState(data), credentials: {}};
+  return { mode: parseState(data), credentials: {} };
 }
 
 function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
@@ -267,19 +258,12 @@ function decodeBox(data: FetchedState): IntegrationStates["BOX"] {
     mode: parseState(data),
     credentials: {
       BOX_LINK_TYPE: Parsers.getValueWithKey("BOX_LINK_TYPE")(data.options)
-      .flatMap(Parsers.isString)
-      .flatMap((option) =>
-          Result.first(
-              parseString("LIVE", option),
-              parseString("VERSIONED", option),
-              parseString("ASK", option)
-          )
-      )
-      .toOptional(),
-      ["box.api.enabled"]: parseCredentialBoolean(
-          data.options,
-          "box.api.enabled"
-      ),
+        .flatMap(Parsers.isString)
+        .flatMap((option) =>
+          Result.first(parseString("LIVE", option), parseString("VERSIONED", option), parseString("ASK", option)),
+        )
+        .toOptional(),
+      "box.api.enabled": parseCredentialBoolean(data.options, "box.api.enabled"),
     },
   };
 }
@@ -291,9 +275,7 @@ function decodeChemistry(data: FetchedState): IntegrationStates["CHEMISTRY"] {
   };
 }
 
-function decodeClustermarket(
-    data: FetchedState
-): IntegrationStates["CLUSTERMARKET"] {
+function decodeClustermarket(data: FetchedState): IntegrationStates["CLUSTERMARKET"] {
   return {
     mode: parseState(data),
     credentials: {
@@ -310,55 +292,48 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
     _label: string;
   } {
     return Parsers.isObject(config)
-    .flatMap(Parsers.isNotNull)
-    .flatMap(Parsers.isRecord)
-    .map<boolean>((configRecord: Record<string, unknown>) => {
-      return (
+      .flatMap(Parsers.isNotNull)
+      .flatMap(Parsers.isRecord)
+      .map<boolean>((configRecord: Record<string, unknown>) => {
+        return (
           typeof configRecord.DATAVERSE_APIKEY === "string" &&
           typeof configRecord.DATAVERSE_URL === "string" &&
           typeof configRecord.DATAVERSE_ALIAS === "string" &&
           typeof configRecord._label === "string"
-      );
-    })
-    .orElse(false);
+        );
+      })
+      .orElse(false);
   }
 
   return {
     mode: parseState(data),
     credentials:
-        Object.entries(data.options).length > 0
-            ? Object.entries(data.options).map(([optionsId, config]) =>
-                isValidConfig(config)
-                    ? Optional.present({
-                      DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
-                      DATAVERSE_URL: config.DATAVERSE_URL,
-                      DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
-                      _label: config._label,
-                      optionsId,
-                    })
-                    : Optional.empty()
-            )
-            : [],
+      Object.entries(data.options).length > 0
+        ? Object.entries(data.options).map(([optionsId, config]) =>
+            isValidConfig(config)
+              ? Optional.present({
+                  DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
+                  DATAVERSE_URL: config.DATAVERSE_URL,
+                  DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
+                  _label: config._label,
+                  optionsId,
+                })
+              : Optional.empty(),
+          )
+        : [],
   };
 }
 
-function decodeDigitalCommonsData(
-    data: FetchedState
-): IntegrationStates["DIGITALCOMMONSDATA"] {
+function decodeDigitalCommonsData(data: FetchedState): IntegrationStates["DIGITALCOMMONSDATA"] {
   return {
     mode: parseState(data),
     credentials: {
-      ACCESS_TOKEN: parseCredentialString(
-          data.options,
-          "DIGITAL_COMMONS_DATA_USER_TOKEN"
-      ),
+      ACCESS_TOKEN: parseCredentialString(data.options, "DIGITAL_COMMONS_DATA_USER_TOKEN"),
     },
   };
 }
 
-function decodeDmpAssistant(
-    data: FetchedState
-): IntegrationStates["DMPASSISTANT"] {
+function decodeDmpAssistant(data: FetchedState): IntegrationStates["DMPASSISTANT"] {
   return {
     mode: parseState(data),
     credentials: {
@@ -386,7 +361,7 @@ function decodeDmponline(data: FetchedState): IntegrationStates["DMPONLINE"] {
 }
 
 function decodeDropbox(data: FetchedState): IntegrationStates["DROPBOX"] {
-  return {mode: parseState(data), credentials: {}};
+  return { mode: parseState(data), credentials: {} };
 }
 
 function decodeDryad(data: FetchedState): IntegrationStates["DRYAD"] {
@@ -405,33 +380,33 @@ function decodeDsw(data: FetchedState): IntegrationStates["DSW"] {
     DSW_ALIAS: string;
   } {
     return Parsers.isObject(config)
-        .flatMap(Parsers.isNotNull)
-        .flatMap(Parsers.isRecord)
-        .map<boolean>((configRecord: Record<string, unknown>) => {
-          return (
-              typeof configRecord.DSW_APIKEY === "string" &&
-              typeof configRecord.DSW_URL === "string" &&
-              typeof configRecord.DSW_ALIAS === "string"
-          );
-        })
-        .orElse(false);
+      .flatMap(Parsers.isNotNull)
+      .flatMap(Parsers.isRecord)
+      .map<boolean>((configRecord: Record<string, unknown>) => {
+        return (
+          typeof configRecord.DSW_APIKEY === "string" &&
+          typeof configRecord.DSW_URL === "string" &&
+          typeof configRecord.DSW_ALIAS === "string"
+        );
+      })
+      .orElse(false);
   }
 
   return {
     mode: parseState(data),
     credentials:
-        Object.entries(data.options).length > 0
-            ? Object.entries(data.options).map(([optionsId, config]) =>
-                isValidConfig(config)
-                    ? Optional.present({
-                      DSW_APIKEY: config.DSW_APIKEY,
-                      DSW_URL: config.DSW_URL,
-                      DSW_ALIAS: config.DSW_ALIAS,
-                      optionsId,
-                    })
-                    : Optional.empty()
-            )
-            : [],
+      Object.entries(data.options).length > 0
+        ? Object.entries(data.options).map(([optionsId, config]) =>
+            isValidConfig(config)
+              ? Optional.present({
+                  DSW_APIKEY: config.DSW_APIKEY,
+                  DSW_URL: config.DSW_URL,
+                  DSW_ALIAS: config.DSW_ALIAS,
+                  optionsId,
+                })
+              : Optional.empty(),
+          )
+        : [],
   };
 }
 
@@ -440,32 +415,27 @@ function decodeEgnyte(data: FetchedState): IntegrationStates["EGNYTE"] {
     mode: parseState(data),
     credentials: {
       EGNYTE_DOMAIN:
-          Object.values(data.options).length === 1
-              ? ArrayUtils.head(Object.values(data.options))
+        Object.values(data.options).length === 1
+          ? ArrayUtils.head(Object.values(data.options))
               .flatMap(Parsers.isObject)
               .flatMap(Parsers.isNotNull)
               .flatMap(Parsers.isRecord)
               .toOptional()
-              .flatMap((option) =>
-                  parseCredentialString(option, "EGNYTE_DOMAIN")
-              )
-              : Optional.empty(),
+              .flatMap((option) => parseCredentialString(option, "EGNYTE_DOMAIN"))
+          : Optional.empty(),
     },
   };
 }
 
 function decodeEvernote(data: FetchedState): IntegrationStates["EVERNOTE"] {
-  return {mode: parseState(data), credentials: {}};
+  return { mode: parseState(data), credentials: {} };
 }
 
 function decodeFieldmark(data: FetchedState): IntegrationStates["FIELDMARK"] {
   return {
     mode: parseState(data),
     credentials: {
-      FIELDMARK_USER_TOKEN: parseCredentialString(
-          data.options,
-          "FIELDMARK_USER_TOKEN"
-      ),
+      FIELDMARK_USER_TOKEN: parseCredentialString(data.options, "FIELDMARK_USER_TOKEN"),
     },
   };
 }
@@ -483,76 +453,53 @@ function decodeGalaxy(data: FetchedState): IntegrationStates["GALAXY"] {
   return {
     mode: parseState(data),
     credentials: {
-      configuredServers: Parsers.objectPath(
-          ["options", "GALAXY_CONFIGURED_SERVERS"],
-          data
-      )
-      .flatMap(Parsers.isObject)
-      .flatMap(Parsers.isNotNull)
-      .flatMap((configuredServers) =>
+      configuredServers: Parsers.objectPath(["options", "GALAXY_CONFIGURED_SERVERS"], data)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .flatMap((configuredServers) =>
           Result.all(
-              ...Object.values(configuredServers).map((config: unknown) => {
-                try {
-                  const server = Parsers.isObject(config)
-                  .flatMap(Parsers.isNotNull)
-                  .elseThrow();
-                  const alias = Parsers.getValueWithKey("alias")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const url = Parsers.getValueWithKey("url")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  return Result.Ok({alias, url});
-                } catch {
-                  return Result.Error<{
-                    url: string;
-                    alias: string;
-                  }>([new Error("Could not parse out galaxy configured server")]);
-                }
-              })
-          )
-      )
-      .orElse([]),
+            ...Object.values(configuredServers).map((config: unknown) => {
+              try {
+                const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                const alias = Parsers.getValueWithKey("alias")(server).flatMap(Parsers.isString).elseThrow();
+                const url = Parsers.getValueWithKey("url")(server).flatMap(Parsers.isString).elseThrow();
+                return Result.Ok({ alias, url });
+              } catch {
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                }>([new Error("Could not parse out galaxy configured server")]);
+              }
+            }),
+          ),
+        )
+        .orElse([]),
       authenticatedServers: Parsers.objectPath(["options"], data)
-      .flatMap(Parsers.isObject)
-      .flatMap(Parsers.isNotNull)
-      .map((servers) =>
-          Object.entries(servers).filter(
-              ([k]) => k !== "GALAXY_CONFIGURED_SERVERS"
-          )
-      )
-      .flatMap((servers) =>
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .map((servers) => Object.entries(servers).filter(([k]) => k !== "GALAXY_CONFIGURED_SERVERS"))
+        .flatMap((servers) =>
           Result.all(
-              ...servers.map(([key, config]: [string, unknown]) => {
-                try {
-                  const server = Parsers.isObject(config)
-                  .flatMap(Parsers.isNotNull)
-                  .elseThrow();
-                  const alias = Parsers.getValueWithKey("GALAXY_ALIAS")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const url = Parsers.getValueWithKey("GALAXY_URL")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const apiKey = Parsers.getValueWithKey("GALAXY_APIKEY")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const optionsId = Parsers.isString(key).elseThrow();
-                  return Result.Ok({alias, url, apiKey, optionsId});
-                } catch {
-                  return Result.Error<{
-                    url: string;
-                    alias: string;
-                    apiKey: string;
-                    optionsId: OptionsId;
-                  }>([
-                    new Error("Could not parse out Galaxy authenticated server"),
-                  ]);
-                }
-              })
-          )
-      )
-      .orElse([]),
+            ...servers.map(([key, config]: [string, unknown]) => {
+              try {
+                const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                const alias = Parsers.getValueWithKey("GALAXY_ALIAS")(server).flatMap(Parsers.isString).elseThrow();
+                const url = Parsers.getValueWithKey("GALAXY_URL")(server).flatMap(Parsers.isString).elseThrow();
+                const apiKey = Parsers.getValueWithKey("GALAXY_APIKEY")(server).flatMap(Parsers.isString).elseThrow();
+                const optionsId = Parsers.isString(key).elseThrow();
+                return Result.Ok({ alias, url, apiKey, optionsId });
+              } catch {
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                  apiKey: string;
+                  optionsId: OptionsId;
+                }>([new Error("Could not parse out Galaxy authenticated server")]);
+              }
+            }),
+          ),
+        )
+        .orElse([]),
     },
   };
 }
@@ -561,42 +508,33 @@ function decodeGitHub(data: FetchedState): IntegrationStates["GITHUB"] {
   return {
     mode: parseState(data),
     credentials:
-        Object.entries(data.options).length > 0
-            ? Object.entries(data.options).map(([optionsId, config]) =>
-                Parsers.isObject(config)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.isRecord)
-                .flatMap((configRecord) =>
-                    Parsers.isString(configRecord.GITHUB_REPOSITORY_FULL_NAME).map(
-                        (GITHUB_REPOSITORY_FULL_NAME) => ({
-                          /*
-                           * we use an inner Optional so that the user can see which repo
-                           * is in an invalid state, and can thus remove and readd
-                           */
-                          GITHUB_ACCESS_TOKEN: Parsers.isString(
-                              configRecord.GITHUB_ACCESS_TOKEN
-                          ).toOptional(),
-                          GITHUB_REPOSITORY_FULL_NAME,
-                          optionsId,
-                        })
-                    )
-                )
-                .toOptional()
-            )
-            : [],
+      Object.entries(data.options).length > 0
+        ? Object.entries(data.options).map(([optionsId, config]) =>
+            Parsers.isObject(config)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.isRecord)
+              .flatMap((configRecord) =>
+                Parsers.isString(configRecord.GITHUB_REPOSITORY_FULL_NAME).map((GITHUB_REPOSITORY_FULL_NAME) => ({
+                  /*
+                   * we use an inner Optional so that the user can see which repo
+                   * is in an invalid state, and can thus remove and readd
+                   */
+                  GITHUB_ACCESS_TOKEN: Parsers.isString(configRecord.GITHUB_ACCESS_TOKEN).toOptional(),
+                  GITHUB_REPOSITORY_FULL_NAME,
+                  optionsId,
+                })),
+              )
+              .toOptional(),
+          )
+        : [],
   };
 }
 
-function decodeGoogleDrive(
-    data: FetchedState
-): IntegrationStates["GOOGLEDRIVE"] {
+function decodeGoogleDrive(data: FetchedState): IntegrationStates["GOOGLEDRIVE"] {
   return {
     mode: parseState(data),
     credentials: {
-      ["googledrive.linking.enabled"]: parseCredentialBoolean(
-          data.options,
-          "googledrive.linking.enabled"
-      ),
+      "googledrive.linking.enabled": parseCredentialBoolean(data.options, "googledrive.linking.enabled"),
     },
   };
 }
@@ -606,27 +544,24 @@ function decodeMsTeams(data: FetchedState): IntegrationStates["MSTEAMS"] {
     mode: parseState(data),
     credentials: Object.entries(data.options).map(([optionsId, config]) => {
       return Parsers.isObject(config)
-      .flatMap(Parsers.isNotNull)
-      .flatMap(Parsers.isRecord)
-      .flatMap((configRecord) =>
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.isRecord)
+        .flatMap((configRecord) =>
           Result.lift2<
-              string,
-              string,
-              {
-                MSTEAMS_CHANNEL_LABEL: string;
-                MSTEAMS_WEBHOOK_URL: string;
-                optionsId: string;
-              }
+            string,
+            string,
+            {
+              MSTEAMS_CHANNEL_LABEL: string;
+              MSTEAMS_WEBHOOK_URL: string;
+              optionsId: string;
+            }
           >((MSTEAMS_CHANNEL_LABEL, MSTEAMS_WEBHOOK_URL) => ({
             MSTEAMS_CHANNEL_LABEL,
             MSTEAMS_WEBHOOK_URL,
             optionsId,
-          }))(
-              Parsers.isString(configRecord.MSTEAMS_CHANNEL_LABEL),
-              Parsers.isString(configRecord.MSTEAMS_WEBHOOK_URL)
-          )
-      )
-      .toOptional();
+          }))(Parsers.isString(configRecord.MSTEAMS_CHANNEL_LABEL), Parsers.isString(configRecord.MSTEAMS_WEBHOOK_URL)),
+        )
+        .toOptional();
     }),
   };
 }
@@ -641,11 +576,11 @@ function decodeNextCloud(data: FetchedState): IntegrationStates["NEXTCLOUD"] {
 }
 
 function decodeOmero(data: FetchedState): IntegrationStates["OMERO"] {
-  return {mode: parseState(data), credentials: {}};
+  return { mode: parseState(data), credentials: {} };
 }
 
 function decodeOneDrive(data: FetchedState): IntegrationStates["ONEDRIVE"] {
-  return {mode: parseState(data), credentials: {}};
+  return { mode: parseState(data), credentials: {} };
 }
 
 function decodeOwnCloud(data: FetchedState): IntegrationStates["OWNCLOUD"] {
@@ -657,9 +592,7 @@ function decodeOwnCloud(data: FetchedState): IntegrationStates["OWNCLOUD"] {
   };
 }
 
-function decodeProtocolsIo(
-    data: FetchedState
-): IntegrationStates["PROTOCOLS_IO"] {
+function decodeProtocolsIo(data: FetchedState): IntegrationStates["PROTOCOLS_IO"] {
   return {
     mode: parseState(data),
     credentials: {
@@ -672,76 +605,53 @@ function decodePyrat(data: FetchedState): IntegrationStates["PYRAT"] {
   return {
     mode: parseState(data),
     credentials: {
-      configuredServers: Parsers.objectPath(
-          ["options", "PYRAT_CONFIGURED_SERVERS"],
-          data
-      )
-      .flatMap(Parsers.isObject)
-      .flatMap(Parsers.isNotNull)
-      .flatMap((configuredServers) =>
+      configuredServers: Parsers.objectPath(["options", "PYRAT_CONFIGURED_SERVERS"], data)
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .flatMap((configuredServers) =>
           Result.all(
-              ...Object.values(configuredServers).map((config: unknown) => {
-                try {
-                  const server = Parsers.isObject(config)
-                  .flatMap(Parsers.isNotNull)
-                  .elseThrow();
-                  const alias = Parsers.getValueWithKey("alias")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const url = Parsers.getValueWithKey("url")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  return Result.Ok({alias, url});
-                } catch {
-                  return Result.Error<{
-                    url: string;
-                    alias: string;
-                  }>([new Error("Could not parse out pyrat configured server")]);
-                }
-              })
-          )
-      )
-      .orElse([]),
+            ...Object.values(configuredServers).map((config: unknown) => {
+              try {
+                const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                const alias = Parsers.getValueWithKey("alias")(server).flatMap(Parsers.isString).elseThrow();
+                const url = Parsers.getValueWithKey("url")(server).flatMap(Parsers.isString).elseThrow();
+                return Result.Ok({ alias, url });
+              } catch {
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                }>([new Error("Could not parse out pyrat configured server")]);
+              }
+            }),
+          ),
+        )
+        .orElse([]),
       authenticatedServers: Parsers.objectPath(["options"], data)
-      .flatMap(Parsers.isObject)
-      .flatMap(Parsers.isNotNull)
-      .map((servers) =>
-          Object.entries(servers).filter(
-              ([k]) => k !== "PYRAT_CONFIGURED_SERVERS"
-          )
-      )
-      .flatMap((servers) =>
+        .flatMap(Parsers.isObject)
+        .flatMap(Parsers.isNotNull)
+        .map((servers) => Object.entries(servers).filter(([k]) => k !== "PYRAT_CONFIGURED_SERVERS"))
+        .flatMap((servers) =>
           Result.all(
-              ...servers.map(([key, config]: [string, unknown]) => {
-                try {
-                  const server = Parsers.isObject(config)
-                  .flatMap(Parsers.isNotNull)
-                  .elseThrow();
-                  const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const url = Parsers.getValueWithKey("PYRAT_URL")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                  const optionsId = Parsers.isString(key).elseThrow();
-                  return Result.Ok({alias, url, apiKey, optionsId});
-                } catch {
-                  return Result.Error<{
-                    url: string;
-                    alias: string;
-                    apiKey: string;
-                    optionsId: OptionsId;
-                  }>([
-                    new Error("Could not parse out pyrat authenticated server"),
-                  ]);
-                }
-              })
-          )
-      )
-      .orElse([]),
+            ...servers.map(([key, config]: [string, unknown]) => {
+              try {
+                const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server).flatMap(Parsers.isString).elseThrow();
+                const url = Parsers.getValueWithKey("PYRAT_URL")(server).flatMap(Parsers.isString).elseThrow();
+                const apiKey = Parsers.getValueWithKey("PYRAT_APIKEY")(server).flatMap(Parsers.isString).elseThrow();
+                const optionsId = Parsers.isString(key).elseThrow();
+                return Result.Ok({ alias, url, apiKey, optionsId });
+              } catch {
+                return Result.Error<{
+                  url: string;
+                  alias: string;
+                  apiKey: string;
+                  optionsId: OptionsId;
+                }>([new Error("Could not parse out pyrat authenticated server")]);
+              }
+            }),
+          ),
+        )
+        .orElse([]),
     },
   };
 }
@@ -750,74 +660,53 @@ function decodeRaid(data: FetchedState): IntegrationStates["RAID"] {
   return {
     mode: parseState(data),
     credentials: {
-      configuredServers: Parsers.objectPath(
-        ["options", "RAID_CONFIGURED_SERVERS"],
-        data
-      )
+      configuredServers: Parsers.objectPath(["options", "RAID_CONFIGURED_SERVERS"], data)
         .flatMap(Parsers.isObject)
         .flatMap(Parsers.isNotNull)
         .flatMap((configuredServers) =>
           Result.all(
             ...Object.values(configuredServers).map((config: unknown) => {
               try {
-                const server = Parsers.isObject(config)
-                  .flatMap(Parsers.isNotNull)
-                  .elseThrow();
-                const alias = Parsers.getValueWithKey("alias")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                const url = Parsers.getValueWithKey("url")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                return Result.Ok({alias, url});
+                const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                const alias = Parsers.getValueWithKey("alias")(server).flatMap(Parsers.isString).elseThrow();
+                const url = Parsers.getValueWithKey("url")(server).flatMap(Parsers.isString).elseThrow();
+                return Result.Ok({ alias, url });
               } catch {
                 return Result.Error<{
                   url: string;
                   alias: string;
                 }>([new Error("Could not parse out RAiD configured server")]);
               }
-            })
-          )
+            }),
+          ),
         )
         .orElse([]),
       authenticatedServers: Parsers.objectPath(["options"], data)
         .flatMap(Parsers.isObject)
         .flatMap(Parsers.isNotNull)
-        .map((servers) =>
-          Object.entries(servers).filter(
-            ([k]) => k !== "RAID_CONFIGURED_SERVERS"
-          )
-        )
+        .map((servers) => Object.entries(servers).filter(([k]) => k !== "RAID_CONFIGURED_SERVERS"))
         .flatMap((servers) =>
           Result.all(
             ...servers.map(([key, config]: [string, unknown]) => {
               try {
-                const server = Parsers.isObject(config)
-                  .flatMap(Parsers.isNotNull)
-                  .elseThrow();
-                const alias = Parsers.getValueWithKey("RAID_ALIAS")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                const url = Parsers.getValueWithKey("RAID_URL")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow();
-                const authenticated = (Parsers.getValueWithKey("RAID_OAUTH_CONNECTED")(server)
-                  .flatMap(Parsers.isString)
-                  .elseThrow()) === 'true';
+                const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                const alias = Parsers.getValueWithKey("RAID_ALIAS")(server).flatMap(Parsers.isString).elseThrow();
+                const url = Parsers.getValueWithKey("RAID_URL")(server).flatMap(Parsers.isString).elseThrow();
+                const authenticated =
+                  Parsers.getValueWithKey("RAID_OAUTH_CONNECTED")(server).flatMap(Parsers.isString).elseThrow() ===
+                  "true";
                 const optionsId = Parsers.isString(key).elseThrow();
-                return Result.Ok({alias, url, authenticated, optionsId});
+                return Result.Ok({ alias, url, authenticated, optionsId });
               } catch {
                 return Result.Error<{
                   url: string;
                   alias: string;
                   authenticated: boolean;
                   optionsId: OptionsId;
-                }>([
-                  new Error("Could not parse out RAiD authenticated server"),
-                ]);
+                }>([new Error("Could not parse out RAiD authenticated server")]);
               }
-            })
-          )
+            }),
+          ),
         )
         .orElse([]),
     },
@@ -829,50 +718,34 @@ function decodeSlack(data: FetchedState): IntegrationStates["SLACK"] {
     mode: parseState(data),
     credentials: Object.entries(data.options).map(([optionsId, config]) => {
       return Parsers.isObject(config)
-      .flatMap(Parsers.isNotNull)
-      .flatMap(Parsers.isRecord)
-      .toOptional()
-      .flatMap((configRecord) => {
-        try {
-          const SLACK_TEAM_NAME = Parsers.isString(
-              configRecord.SLACK_TEAM_NAME
-          ).elseThrow();
-          const SLACK_CHANNEL_ID = Parsers.isString(
-              configRecord.SLACK_CHANNEL_ID
-          ).elseThrow();
-          const SLACK_CHANNEL_NAME = Parsers.isString(
-              configRecord.SLACK_CHANNEL_NAME
-          ).elseThrow();
-          const SLACK_CHANNEL_LABEL = Parsers.isString(
-              configRecord.SLACK_CHANNEL_LABEL
-          ).elseThrow();
-          const SLACK_USER_ID = Parsers.isString(
-              configRecord.SLACK_USER_ID
-          ).elseThrow();
-          const SLACK_USER_ACCESS_TOKEN = Parsers.isString(
-              configRecord.SLACK_USER_ACCESS_TOKEN
-          ).elseThrow();
-          const SLACK_TEAM_ID = Parsers.isString(
-              configRecord.SLACK_TEAM_ID
-          ).elseThrow();
-          const SLACK_WEBHOOK_URL = Parsers.isString(
-              configRecord.SLACK_WEBHOOK_URL
-          ).elseThrow();
-          return Optional.present({
-            SLACK_TEAM_NAME,
-            SLACK_CHANNEL_ID,
-            SLACK_CHANNEL_NAME,
-            SLACK_CHANNEL_LABEL,
-            SLACK_USER_ID,
-            SLACK_USER_ACCESS_TOKEN,
-            SLACK_TEAM_ID,
-            SLACK_WEBHOOK_URL,
-            optionsId,
-          });
-        } catch {
-          return Optional.empty();
-        }
-      });
+        .flatMap(Parsers.isNotNull)
+        .flatMap(Parsers.isRecord)
+        .toOptional()
+        .flatMap((configRecord) => {
+          try {
+            const SLACK_TEAM_NAME = Parsers.isString(configRecord.SLACK_TEAM_NAME).elseThrow();
+            const SLACK_CHANNEL_ID = Parsers.isString(configRecord.SLACK_CHANNEL_ID).elseThrow();
+            const SLACK_CHANNEL_NAME = Parsers.isString(configRecord.SLACK_CHANNEL_NAME).elseThrow();
+            const SLACK_CHANNEL_LABEL = Parsers.isString(configRecord.SLACK_CHANNEL_LABEL).elseThrow();
+            const SLACK_USER_ID = Parsers.isString(configRecord.SLACK_USER_ID).elseThrow();
+            const SLACK_USER_ACCESS_TOKEN = Parsers.isString(configRecord.SLACK_USER_ACCESS_TOKEN).elseThrow();
+            const SLACK_TEAM_ID = Parsers.isString(configRecord.SLACK_TEAM_ID).elseThrow();
+            const SLACK_WEBHOOK_URL = Parsers.isString(configRecord.SLACK_WEBHOOK_URL).elseThrow();
+            return Optional.present({
+              SLACK_TEAM_NAME,
+              SLACK_CHANNEL_ID,
+              SLACK_CHANNEL_NAME,
+              SLACK_CHANNEL_LABEL,
+              SLACK_USER_ID,
+              SLACK_USER_ACCESS_TOKEN,
+              SLACK_TEAM_ID,
+              SLACK_WEBHOOK_URL,
+              optionsId,
+            });
+          } catch {
+            return Optional.empty();
+          }
+        });
     }),
   };
 }
@@ -881,17 +754,16 @@ function decodeZenodo(data: FetchedState): IntegrationStates["ZENODO"] {
   return {
     mode: parseState(data),
     credentials: {
-      ZENODO_USER_TOKEN: parseCredentialString(
-          data.options,
-          "ZENODO_USER_TOKEN"
-      ),
+      ZENODO_USER_TOKEN: parseCredentialString(data.options, "ZENODO_USER_TOKEN"),
     },
   };
 }
 
-function decodeIntegrationStates(data: {
-  [integration in Integration]: FetchedState;
-}): IntegrationStates {
+function decodeIntegrationStates(
+  data: {
+    [integration in Integration]: FetchedState;
+  },
+): IntegrationStates {
   return {
     API_DIRECT: {
       mode: "EXTERNAL",
@@ -929,10 +801,7 @@ function decodeIntegrationStates(data: {
   };
 }
 
-const encodeIntegrationState = <I extends Integration>(
-    integration: I,
-    data: IntegrationStates[I]
-): FetchedState => {
+const encodeIntegrationState = <I extends Integration>(integration: I, data: IntegrationStates[I]): FetchedState => {
   if (integration === "ARGOS") {
     return {
       name: "ARGOS",
@@ -955,12 +824,12 @@ const encodeIntegrationState = <I extends Integration>(
           BOX_LINK_TYPE: "",
         }),
         ...creds["box.api.enabled"]
-        .map((token) => ({
-          ["box.api.enabled"]: token,
-        }))
-        .orElse({
-          ["box.api.enabled"]: "",
-        }),
+          .map((token) => ({
+            "box.api.enabled": token,
+          }))
+          .orElse({
+            "box.api.enabled": "",
+          }),
       },
     };
   }
@@ -982,50 +851,48 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "DATAVERSE") {
     // @ts-expect-error Looks like this is a bug in TypeScript
-    const creds: IntegrationStates["DATAVERSE"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["DATAVERSE"]["credentials"] = data.credentials;
     return {
       name: "DATAVERSE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-          ArrayUtils.mapOptional<
-              Optional<{
-                DATAVERSE_APIKEY: string;
-                DATAVERSE_URL: string;
-                DATAVERSE_ALIAS: string;
-                _label: string;
-                optionsId: OptionsId;
-              }>,
-              [
-                OptionsId,
-                {
-                  DATAVERSE_APIKEY: string;
-                  DATAVERSE_URL: string;
-                  DATAVERSE_ALIAS: string;
-                  _label: string;
-                }
-              ]
-          >(
-              (config) =>
-                  config.map((c) => [
-                    c.optionsId,
-                    {
-                      DATAVERSE_ALIAS: c.DATAVERSE_ALIAS,
-                      DATAVERSE_URL: c.DATAVERSE_URL,
-                      DATAVERSE_APIKEY: c.DATAVERSE_APIKEY,
-                      _label: c._label,
-                    },
-                  ]),
-              creds
-          )
+        ArrayUtils.mapOptional<
+          Optional<{
+            DATAVERSE_APIKEY: string;
+            DATAVERSE_URL: string;
+            DATAVERSE_ALIAS: string;
+            _label: string;
+            optionsId: OptionsId;
+          }>,
+          [
+            OptionsId,
+            {
+              DATAVERSE_APIKEY: string;
+              DATAVERSE_URL: string;
+              DATAVERSE_ALIAS: string;
+              _label: string;
+            },
+          ]
+        >(
+          (config) =>
+            config.map((c) => [
+              c.optionsId,
+              {
+                DATAVERSE_ALIAS: c.DATAVERSE_ALIAS,
+                DATAVERSE_URL: c.DATAVERSE_URL,
+                DATAVERSE_APIKEY: c.DATAVERSE_APIKEY,
+                _label: c._label,
+              },
+            ]),
+          creds,
+        ),
       ),
     };
   }
   if (integration === "DIGITALCOMMONSDATA") {
     // @ts-expect-error Looks like this is a bug in TypeScript
-    const creds: IntegrationStates["DIGITALCOMMONSDATA"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["DIGITALCOMMONSDATA"]["credentials"] = data.credentials;
     return {
       name: "DIGITALCOMMONSDATA",
       available: data.mode !== "UNAVAILABLE",
@@ -1037,8 +904,7 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "DMPASSISTANT") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["DMPASSISTANT"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["DMPASSISTANT"]["credentials"] = data.credentials;
     return {
       name: "DMPASSISTANT",
       available: data.mode !== "UNAVAILABLE",
@@ -1050,8 +916,7 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "DMPONLINE") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["DMPONLINE"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["DMPONLINE"]["credentials"] = data.credentials;
     return {
       name: "DMPONLINE",
       available: data.mode !== "UNAVAILABLE",
@@ -1097,40 +962,39 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "DSW") {
     // @ts-expect-error Looks like this is a bug in TypeScript
-    const creds: IntegrationStates["DSW"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["DSW"]["credentials"] = data.credentials;
     return {
       name: "DSW",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-          ArrayUtils.mapOptional<
-              Optional<{
-                DSW_APIKEY: string;
-                DSW_URL: string;
-                DSW_ALIAS: string;
-                optionsId: OptionsId;
-              }>,
-              [
-                OptionsId,
-                {
-                  DSW_APIKEY: string;
-                  DSW_URL: string;
-                  DSW_ALIAS: string;
-                }
-              ]
-          >(
-              (config) =>
-                  config.map((c) => [
-                    c.optionsId,
-                    {
-                      DSW_ALIAS: c.DSW_ALIAS,
-                      DSW_URL: c.DSW_URL,
-                      DSW_APIKEY: c.DSW_APIKEY
-                    },
-                  ]),
-              creds
-          )
+        ArrayUtils.mapOptional<
+          Optional<{
+            DSW_APIKEY: string;
+            DSW_URL: string;
+            DSW_ALIAS: string;
+            optionsId: OptionsId;
+          }>,
+          [
+            OptionsId,
+            {
+              DSW_APIKEY: string;
+              DSW_URL: string;
+              DSW_ALIAS: string;
+            },
+          ]
+        >(
+          (config) =>
+            config.map((c) => [
+              c.optionsId,
+              {
+                DSW_ALIAS: c.DSW_ALIAS,
+                DSW_URL: c.DSW_URL,
+                DSW_APIKEY: c.DSW_APIKEY,
+              },
+            ]),
+          creds,
+        ),
       ),
     };
   }
@@ -1158,8 +1022,7 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "FIELDMARK") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["FIELDMARK"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["FIELDMARK"]["credentials"] = data.credentials;
     return {
       name: "FIELDMARK",
       available: data.mode !== "UNAVAILABLE",
@@ -1173,8 +1036,7 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "FIGSHARE") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["FIGSHARE"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["FIGSHARE"]["credentials"] = data.credentials;
     return {
       name: "FIGSHARE",
       available: data.mode !== "UNAVAILABLE",
@@ -1194,14 +1056,14 @@ const encodeIntegrationState = <I extends Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-          creds.authenticatedServers.map(({alias, url, apiKey, optionsId}) => [
-            optionsId,
-            {
-              GALAXY_ALIAS: alias,
-              GALAXY_URL: url,
-              GALAXY_APIKEY: apiKey,
-            },
-          ])
+        creds.authenticatedServers.map(({ alias, url, apiKey, optionsId }) => [
+          optionsId,
+          {
+            GALAXY_ALIAS: alias,
+            GALAXY_URL: url,
+            GALAXY_APIKEY: apiKey,
+          },
+        ]),
       ),
     };
   }
@@ -1213,34 +1075,33 @@ const encodeIntegrationState = <I extends Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-          ArrayUtils.mapOptional(
-              (config) =>
-                  config.map((c) => [
-                    c.optionsId,
-                    {
-                      GITHUB_ACCESS_TOKEN: c.GITHUB_ACCESS_TOKEN,
-                      GITHUB_REPOSITORY_FULL_NAME: c.GITHUB_REPOSITORY_FULL_NAME,
-                    },
-                  ]),
-              creds
-          )
+        ArrayUtils.mapOptional(
+          (config) =>
+            config.map((c) => [
+              c.optionsId,
+              {
+                GITHUB_ACCESS_TOKEN: c.GITHUB_ACCESS_TOKEN,
+                GITHUB_REPOSITORY_FULL_NAME: c.GITHUB_REPOSITORY_FULL_NAME,
+              },
+            ]),
+          creds,
+        ),
       ),
     };
   }
   if (integration === "GOOGLEDRIVE") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["GOOGLEDRIVE"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["GOOGLEDRIVE"]["credentials"] = data.credentials;
     return {
       name: "GOOGLEDRIVE",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: {
         ...creds["googledrive.linking.enabled"]
-        .map((enabled) => ({
-          ["googledrive.linking.enabled"]: enabled,
-        }))
-        .orElse({}),
+          .map((enabled) => ({
+            "googledrive.linking.enabled": enabled,
+          }))
+          .orElse({}),
       },
     };
   }
@@ -1254,8 +1115,7 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "NEXTCLOUD") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["NEXTCLOUD"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["NEXTCLOUD"]["credentials"] = data.credentials;
     return {
       name: "NEXTCLOUD",
       available: data.mode !== "UNAVAILABLE",
@@ -1285,8 +1145,7 @@ const encodeIntegrationState = <I extends Integration>(
   }
   if (integration === "OWNCLOUD") {
     // @ts-expect-error Looks like this is a bug in TypeScript?
-    const creds: IntegrationStates["OWNCLOUD"]["credentials"] =
-        data.credentials;
+    const creds: IntegrationStates["OWNCLOUD"]["credentials"] = data.credentials;
     return {
       name: "OWNCLOUD",
       available: data.mode !== "UNAVAILABLE",
@@ -1314,14 +1173,14 @@ const encodeIntegrationState = <I extends Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-          creds.authenticatedServers.map(({alias, url, apiKey, optionsId}) => [
-            optionsId,
-            {
-              PYRAT_ALIAS: alias,
-              PYRAT_URL: url,
-              PYRAT_APIKEY: apiKey,
-            },
-          ])
+        creds.authenticatedServers.map(({ alias, url, apiKey, optionsId }) => [
+          optionsId,
+          {
+            PYRAT_ALIAS: alias,
+            PYRAT_URL: url,
+            PYRAT_APIKEY: apiKey,
+          },
+        ]),
       ),
     };
   }
@@ -1333,14 +1192,14 @@ const encodeIntegrationState = <I extends Integration>(
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
       options: Object.fromEntries(
-        creds.authenticatedServers.map(({alias, url, optionsId}) => [
+        creds.authenticatedServers.map(({ alias, url, optionsId }) => [
           optionsId,
           {
             RAID_ALIAS: alias,
             RAID_URL: url,
             RAID_OAUTH_CONNECTED: false, // TODO: return the actual status
           },
-        ])
+        ]),
       ),
     };
   }
@@ -1373,9 +1232,7 @@ const encodeIntegrationState = <I extends Integration>(
       },
     };
   }
-  throw new Error(
-      `encodeIntegrationState has not been implemented for integration ${integration}`
-  );
+  throw new Error(`encodeIntegrationState has not been implemented for integration ${integration}`);
 };
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
@@ -1407,10 +1264,7 @@ export function useIntegrationsEndpoint(): {
    *         `Error`. Should the update be successful, then a success toast is
    *         shown and the returned promise resolves with void.
    */
-  update: <I extends Integration>(
-      integration: I,
-      newState: IntegrationStates[I]
-  ) => Promise<IntegrationStates[I]>;
+  update: <I extends Integration>(integration: I, newState: IntegrationStates[I]) => Promise<IntegrationStates[I]>;
 
   /**
    * Calls the `/saveAppOptions` API endpoint, creating a new configuration or
@@ -1436,9 +1290,9 @@ export function useIntegrationsEndpoint(): {
    *         UI updates.
    */
   saveAppOptions: <I extends Integration>(
-      appName: I,
-      optionsId: Optional<OptionsId>,
-      newOption: object
+    appName: I,
+    optionsId: Optional<OptionsId>,
+    newOption: object,
   ) => Promise<IntegrationStates[I]>;
 
   /**
@@ -1450,29 +1304,26 @@ export function useIntegrationsEndpoint(): {
    *         that the caller displays an alert to indicate to the user that the
    *         action failed, displaying `error.message`.
    */
-  deleteAppOptions: <I extends Integration>(
-      appName: I,
-      optionsId: OptionsId
-  ) => Promise<void>;
+  deleteAppOptions: <I extends Integration>(appName: I, optionsId: OptionsId) => Promise<void>;
 } {
   const api = axios.create({
     baseURL: "/integration",
     timeout: ONE_MINUTE_IN_MS,
   });
-  const {addAlert} = useContext(AlertContext);
+  const { addAlert } = useContext(AlertContext);
 
   const allIntegrations = async (): Promise<IntegrationStates> => {
     const states = await api.get<
-        | {
-      success: true;
-      data: { [integration in Integration]: FetchedState };
-      error: null;
-    }
-        | {
-      success: false;
-      data: null;
-      error: string;
-    }
+      | {
+          success: true;
+          data: { [integration in Integration]: FetchedState };
+          error: null;
+        }
+      | {
+          success: false;
+          data: null;
+          error: string;
+        }
     >("allIntegrations");
     if (states.data.success) {
       const data = states.data.data;
@@ -1482,164 +1333,138 @@ export function useIntegrationsEndpoint(): {
   };
 
   const update = React.useCallback(
-
-      async <I extends Integration>(
-          integration: I,
-          newState: IntegrationStates[I]
-      ): Promise<IntegrationStates[I]> => {
-        try {
-          const {data: responseData} = await api.post<
-              | { success: true; data: FetchedState }
-              | {
-            success: false;
-            data: null;
-            errorMsg:
+    async <I extends Integration>(integration: I, newState: IntegrationStates[I]): Promise<IntegrationStates[I]> => {
+      try {
+        const { data: responseData } = await api.post<
+          | { success: true; data: FetchedState }
+          | {
+              success: false;
+              data: null;
+              errorMsg:
                 | string
                 | {
-              errorMessages: Array<string>;
-            };
-          }
-              | { errorId: string; exceptionMessage: string; tstamp: string }
-          >("update", encodeIntegrationState(integration, newState));
+                    errorMessages: Array<string>;
+                  };
+            }
+          | { errorId: string; exceptionMessage: string; tstamp: string }
+        >("update", encodeIntegrationState(integration, newState));
 
-          if (!("success" in responseData))
-            throw new Error(responseData.exceptionMessage);
-          if (!responseData.success) {
-            if (
-                !responseData.success &&
-                responseData.errorMsg !== null &&
-                typeof responseData.errorMsg !== "undefined"
-            ) {
-              const errorMsg = responseData.errorMsg;
-              if (typeof errorMsg === "string") {
-                throw new Error(errorMsg);
-              } else {
-                throw new Error(
-                    ArrayUtils.getAt(0, errorMsg.errorMessages).orElse(
-                        "Unknown reason"
-                    )
-                );
-              }
-            }
-            throw new Error("Unknown error");
-          } else {
-            addAlert(
-                mkAlert({
-                  variant: "success",
-                  message: "Update successful.",
-                })
-            );
-            switch (integration) {
-              case "ARGOS":
-                return decodeArgos(responseData.data) as IntegrationStates[I];
-              case "BOX":
-                return decodeBox(responseData.data) as IntegrationStates[I];
-              case "CHEMISTRY":
-                return decodeChemistry(responseData.data) as IntegrationStates[I];
-              case "CLUSTERMARKET":
-                return decodeClustermarket(
-                    responseData.data
-                ) as IntegrationStates[I];
-              case "DATAVERSE":
-                return decodeDataverse(responseData.data) as IntegrationStates[I];
-              case "DIGITALCOMMONSDATA":
-                return decodeDigitalCommonsData(
-                    responseData.data
-                ) as IntegrationStates[I];
-              case "DMPASSISTANT":
-                return decodeDmpAssistant(
-                    responseData.data
-                ) as IntegrationStates[I];
-              case "DMPONLINE":
-                return decodeDmponline(responseData.data) as IntegrationStates[I];
-              case "DMPTOOL":
-                return decodeDmpTool(responseData.data) as IntegrationStates[I];
-              case "DROPBOX":
-                return decodeDropbox(responseData.data) as IntegrationStates[I];
-              case "DRYAD":
-                return decodeDryad(responseData.data) as IntegrationStates[I];
-              case "DSW":
-                return decodeDsw(responseData.data) as IntegrationStates[I];
-              case "EGNYTE":
-                return decodeEgnyte(responseData.data) as IntegrationStates[I];
-              case "EVERNOTE":
-                return decodeEvernote(responseData.data) as IntegrationStates[I];
-              case "FIELDMARK":
-                return decodeFieldmark(responseData.data) as IntegrationStates[I];
-              case "FIGSHARE":
-                return decodeFigshare(responseData.data) as IntegrationStates[I];
-              case "GALAXY":
-                return decodeGalaxy(responseData.data) as IntegrationStates[I];
-              case "GITHUB":
-                return decodeGitHub(responseData.data) as IntegrationStates[I];
-              case "GOOGLEDRIVE":
-                return decodeGoogleDrive(
-                    responseData.data
-                ) as IntegrationStates[I];
-              case "MSTEAMS":
-                return decodeMsTeams(responseData.data) as IntegrationStates[I];
-              case "NEXTCLOUD":
-                return decodeNextCloud(responseData.data) as IntegrationStates[I];
-              case "OMERO":
-                return decodeOmero(responseData.data) as IntegrationStates[I];
-              case "ONEDRIVE":
-                return decodeOneDrive(responseData.data) as IntegrationStates[I];
-              case "OWNCLOUD":
-                return decodeOwnCloud(responseData.data) as IntegrationStates[I];
-              case "PROTOCOLS_IO":
-                return decodeProtocolsIo(
-                    responseData.data
-                ) as IntegrationStates[I];
-              case "PYRAT":
-                return decodePyrat(responseData.data) as IntegrationStates[I];
-              case "RAID":
-                return decodeRaid(responseData.data) as IntegrationStates[I];
-              case "SLACK":
-                return decodeSlack(responseData.data) as IntegrationStates[I];
-              case "ZENODO":
-                return decodeZenodo(responseData.data) as IntegrationStates[I];
-              default:
-                throw new Error("Invalid integration");
+        if (!("success" in responseData)) throw new Error(responseData.exceptionMessage);
+        if (!responseData.success) {
+          if (!responseData.success && responseData.errorMsg !== null && typeof responseData.errorMsg !== "undefined") {
+            const errorMsg = responseData.errorMsg;
+            if (typeof errorMsg === "string") {
+              throw new Error(errorMsg);
+            } else {
+              throw new Error(ArrayUtils.getAt(0, errorMsg.errorMessages).orElse("Unknown reason"));
             }
           }
-        } catch (e) {
-          if (e instanceof Error)
-            addAlert(
-                mkAlert({
-                  variant: "error",
-                  title: "Update failed.",
-                  message: e.message,
-                })
-            );
-          throw e;
+          throw new Error("Unknown error");
+        } else {
+          addAlert(
+            mkAlert({
+              variant: "success",
+              message: "Update successful.",
+            }),
+          );
+          switch (integration) {
+            case "ARGOS":
+              return decodeArgos(responseData.data) as IntegrationStates[I];
+            case "BOX":
+              return decodeBox(responseData.data) as IntegrationStates[I];
+            case "CHEMISTRY":
+              return decodeChemistry(responseData.data) as IntegrationStates[I];
+            case "CLUSTERMARKET":
+              return decodeClustermarket(responseData.data) as IntegrationStates[I];
+            case "DATAVERSE":
+              return decodeDataverse(responseData.data) as IntegrationStates[I];
+            case "DIGITALCOMMONSDATA":
+              return decodeDigitalCommonsData(responseData.data) as IntegrationStates[I];
+            case "DMPASSISTANT":
+              return decodeDmpAssistant(responseData.data) as IntegrationStates[I];
+            case "DMPONLINE":
+              return decodeDmponline(responseData.data) as IntegrationStates[I];
+            case "DMPTOOL":
+              return decodeDmpTool(responseData.data) as IntegrationStates[I];
+            case "DROPBOX":
+              return decodeDropbox(responseData.data) as IntegrationStates[I];
+            case "DRYAD":
+              return decodeDryad(responseData.data) as IntegrationStates[I];
+            case "DSW":
+              return decodeDsw(responseData.data) as IntegrationStates[I];
+            case "EGNYTE":
+              return decodeEgnyte(responseData.data) as IntegrationStates[I];
+            case "EVERNOTE":
+              return decodeEvernote(responseData.data) as IntegrationStates[I];
+            case "FIELDMARK":
+              return decodeFieldmark(responseData.data) as IntegrationStates[I];
+            case "FIGSHARE":
+              return decodeFigshare(responseData.data) as IntegrationStates[I];
+            case "GALAXY":
+              return decodeGalaxy(responseData.data) as IntegrationStates[I];
+            case "GITHUB":
+              return decodeGitHub(responseData.data) as IntegrationStates[I];
+            case "GOOGLEDRIVE":
+              return decodeGoogleDrive(responseData.data) as IntegrationStates[I];
+            case "MSTEAMS":
+              return decodeMsTeams(responseData.data) as IntegrationStates[I];
+            case "NEXTCLOUD":
+              return decodeNextCloud(responseData.data) as IntegrationStates[I];
+            case "OMERO":
+              return decodeOmero(responseData.data) as IntegrationStates[I];
+            case "ONEDRIVE":
+              return decodeOneDrive(responseData.data) as IntegrationStates[I];
+            case "OWNCLOUD":
+              return decodeOwnCloud(responseData.data) as IntegrationStates[I];
+            case "PROTOCOLS_IO":
+              return decodeProtocolsIo(responseData.data) as IntegrationStates[I];
+            case "PYRAT":
+              return decodePyrat(responseData.data) as IntegrationStates[I];
+            case "RAID":
+              return decodeRaid(responseData.data) as IntegrationStates[I];
+            case "SLACK":
+              return decodeSlack(responseData.data) as IntegrationStates[I];
+            case "ZENODO":
+              return decodeZenodo(responseData.data) as IntegrationStates[I];
+            default:
+              throw new Error("Invalid integration");
+          }
         }
-      },
-      []
+      } catch (e) {
+        if (e instanceof Error)
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Update failed.",
+              message: e.message,
+            }),
+          );
+        throw e;
+      }
+    },
+    [],
   );
 
   const saveAppOptions = async <I extends Integration>(
-      appName: I,
-      optionsId: Optional<OptionsId>,
-      newOption: object
+    appName: I,
+    optionsId: Optional<OptionsId>,
+    newOption: object,
   ): Promise<IntegrationStates[I]> => {
     const params = new URLSearchParams({
       appName,
-      ...optionsId.map((o) => ({optionsId: o})).orElse({}),
+      ...optionsId.map((o) => ({ optionsId: o })).orElse({}),
     });
     const response = await api.post<
-        | { success: true; data: FetchedState }
-        | { success: false; data: null; errorMsg: string }
-        | { errorId: string; exceptionMessage: string; tstamp: string }
-    >("saveAppOptions", newOption, {params});
+      | { success: true; data: FetchedState }
+      | { success: false; data: null; errorMsg: string }
+      | { errorId: string; exceptionMessage: string; tstamp: string }
+    >("saveAppOptions", newOption, { params });
 
     if (!("success" in response.data)) {
       throw new Error(response.data.exceptionMessage);
     }
     if (!response.data.success) {
-      if (
-          response.data.errorMsg !== null &&
-          typeof response.data.errorMsg !== "undefined"
-      ) {
+      if (response.data.errorMsg !== null && typeof response.data.errorMsg !== "undefined") {
         throw new Error(response.data.errorMsg);
       }
       throw new Error("Unknown reason");
@@ -1652,15 +1477,11 @@ export function useIntegrationsEndpoint(): {
         case "CHEMISTRY":
           return decodeChemistry(response.data.data) as IntegrationStates[I];
         case "CLUSTERMARKET":
-          return decodeClustermarket(
-              response.data.data
-          ) as IntegrationStates[I];
+          return decodeClustermarket(response.data.data) as IntegrationStates[I];
         case "DATAVERSE":
           return decodeDataverse(response.data.data) as IntegrationStates[I];
         case "DIGITALCOMMONSDATA":
-          return decodeDigitalCommonsData(
-              response.data.data
-          ) as IntegrationStates[I];
+          return decodeDigitalCommonsData(response.data.data) as IntegrationStates[I];
         case "DMPASSISTANT":
           return decodeDmpAssistant(response.data.data) as IntegrationStates[I];
         case "DMPONLINE":
@@ -1713,18 +1534,15 @@ export function useIntegrationsEndpoint(): {
     }
   };
 
-  const deleteAppOptions = async <I extends Integration>(
-      appName: I,
-      optionsId: OptionsId
-  ): Promise<void> => {
+  const deleteAppOptions = async <I extends Integration>(appName: I, optionsId: OptionsId): Promise<void> => {
     const formData = new FormData();
     formData.append("optionsId", `${optionsId}`);
     const response = await api.post<
-        | { success: true; data: FetchedState }
-        | { success: false; data: null; errorMsg: string }
-        | { errorId: string; exceptionMessage: string; tstamp: string }
+      | { success: true; data: FetchedState }
+      | { success: false; data: null; errorMsg: string }
+      | { errorId: string; exceptionMessage: string; tstamp: string }
     >("deleteAppOptions", formData, {
-      params: new URLSearchParams({appName}),
+      params: new URLSearchParams({ appName }),
     });
 
     if (!("success" in response.data)) {
@@ -1735,5 +1553,5 @@ export function useIntegrationsEndpoint(): {
     }
   };
 
-  return {allIntegrations, update, saveAppOptions, deleteAppOptions};
+  return { allIntegrations, update, saveAppOptions, deleteAppOptions };
 }

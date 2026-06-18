@@ -1,9 +1,7 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import { ImportDialogStory } from "./ImportDialog.story";
 import AxeBuilder from "@axe-core/playwright";
-
+import { expect, test } from "@playwright/experimental-ct-react";
 import * as Jwt from "jsonwebtoken";
+import { ImportDialogStory } from "./ImportDialog.story";
 
 /*
  * Only the browser-bound cases remain in Playwright. The bulk of the behavioural
@@ -61,9 +59,7 @@ const feature = test.extend<{
       },
       "tab key is used to navigate to a compound checkbox": async () => {
         const checkbox = page.getByLabel("Aspirin").getByRole("checkbox");
-        while (
-          await checkbox.evaluate((input) => input !== document.activeElement)
-        ) {
+        while (await checkbox.evaluate((input) => input !== document.activeElement)) {
           await page.keyboard.press("Tab");
         }
       },
@@ -93,13 +89,12 @@ const feature = test.extend<{
         expect(accessibilityScanResults.violations).toEqual([]);
       },
       "the compound should be selected": async () => {
-        const checkbox = page
-          .getByRole("checkbox", { name: /select/i })
-          .first();
+        const checkbox = page.getByRole("checkbox", { name: /select/i }).first();
         await expect(checkbox).toBeChecked();
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
   networkRequests: async ({}, use) => {
     await use([]);
   },
@@ -108,10 +103,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -166,8 +160,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       const multipleResults = [
         {
           name: "Aspirin",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
           smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
           formula: "C9H8O4",
           pubchemId: "2244",
@@ -176,8 +169,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
         },
         {
           name: "Paracetamol",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=1983&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=1983&t=l",
           smiles: "CC(=O)NC1=CC=C(O)C=C1",
           formula: "C8H9NO2",
           pubchemId: "1983",
@@ -194,8 +186,7 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       const searchResults = [
         {
           name: "Aspirin",
-          pngImage:
-            "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
+          pngImage: "https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2244&t=l",
           smiles: "CC(=O)OC1=CC=CC=C1C(=O)O",
           formula: "C9H8O4",
           pubchemId: "2244",
@@ -245,22 +236,19 @@ test.describe("ImportDialog", () => {
       await Then["the compound should be selected"]();
     },
   );
-  feature(
-    "Should not toggle selection when clicking on external links",
-    async ({ Given, When, Then }) => {
-      await Given["that the ImportDialog is mounted"]();
-      await When["a search is performed that returns multiple results"]();
-      await When["a compound is selected"]();
-      await When["the 'View on PubChem' link is clicked"]();
-      await Then["the compound should be selected"]();
-      /*
-       * Clicking a link inside of the interactive card should not toggle the
-       * selection state. Having interactive items be nested is less than ideal,
-       * given the potentially issues with misclicking but given that a misclick
-       * would only toggle the selected state which can be easily reverted this
-       * was not considered worth foregoing the convenience of having the link
-       * inside the card.
-       */
-    },
-  );
+  feature("Should not toggle selection when clicking on external links", async ({ Given, When, Then }) => {
+    await Given["that the ImportDialog is mounted"]();
+    await When["a search is performed that returns multiple results"]();
+    await When["a compound is selected"]();
+    await When["the 'View on PubChem' link is clicked"]();
+    await Then["the compound should be selected"]();
+    /*
+     * Clicking a link inside of the interactive card should not toggle the
+     * selection state. Having interactive items be nested is less than ideal,
+     * given the potentially issues with misclicking but given that a misclick
+     * would only toggle the selected state which can be easily reverted this
+     * was not considered worth foregoing the convenience of having the link
+     * inside the card.
+     */
+  });
 });

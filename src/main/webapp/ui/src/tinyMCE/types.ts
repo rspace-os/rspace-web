@@ -6,10 +6,4 @@ export type TinyMceEditor = {
   remove?: () => void;
 };
 
-export type InternalLinkInsertParams = [
-  RevisionIdentifier,
-  string,
-  string,
-  TinyMceEditor,
-];
-
+export type InternalLinkInsertParams = [RevisionIdentifier, string, string, TinyMceEditor];

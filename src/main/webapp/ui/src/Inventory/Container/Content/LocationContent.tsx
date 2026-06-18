@@ -1,21 +1,17 @@
-import React from "react";
-import Box from "@mui/material/Box";
-import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
+import { Observer, observer } from "mobx-react-lite";
+import React from "react";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import SearchContext from "../../../stores/contexts/Search";
+import type { Container, Location } from "../../../stores/definitions/Container";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import InfoBadge from "../../components/InfoBadge";
 import InfoCard from "../../components/InfoCard";
-import { useTheme } from "@mui/material/styles";
-import { observer, Observer } from "mobx-react-lite";
-import {
-  type Location,
-  type Container,
-} from "../../../stores/definitions/Container";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import * as DragAndDrop from "./DragAndDrop";
-import SearchContext from "../../../stores/contexts/Search";
 
-const border = (color: string, isImportant: boolean = false) =>
-  `3px solid ${color}${isImportant ? " !important" : ""}`;
+const border = (color: string, isImportant: boolean = false) => `3px solid ${color}${isImportant ? " !important" : ""}`;
 
 // Shared styling for the placeholder number shown in empty GRID/IMAGE locations.
 const numberBoxSx = {
@@ -41,10 +37,7 @@ type ActualLocationContentProps = {
   location: Location;
 };
 
-function ActualLocationContent({
-  content,
-  location,
-}: ActualLocationContentProps): React.ReactNode {
+function ActualLocationContent({ content, location }: ActualLocationContentProps): React.ReactNode {
   return (
     <Observer>
       {() => (
@@ -81,9 +74,7 @@ function ActualLocationContent({
                * selects/deselect the location the sibling border
                * appears/disappears
                */
-              border: `${
-                location.isSiblingSelected ? location.uniqueColor : "white"
-              } 3px solid`,
+              border: `${location.isSiblingSelected ? location.uniqueColor : "white"} 3px solid`,
             }}
           >
             {content.thumbnail ?? <RecordTypeIcon record={content} />}
@@ -100,12 +91,7 @@ function ActualLocationContent({
 /**
  * Component that renders the content of a location
  */
-function LocationContent({
-  location,
-  container,
-  tabIndex,
-  hasFocus,
-}: LocationContentArgs): React.ReactNode {
+function LocationContent({ location, container, tabIndex, hasFocus }: LocationContentArgs): React.ReactNode {
   const theme = useTheme();
   const { search } = React.useContext(SearchContext);
 
@@ -168,34 +154,22 @@ function LocationContent({
             tabIndex={tabIndex}
             hasFocus={hasFocus}
           >
-            <ActualLocationContent
-              location={location}
-              content={location.content}
-            />
+            <ActualLocationContent location={location} content={location.content} />
           </DragAndDrop.Draggable>
         ) : location.parentContainer.cType === "GRID" ? (
-          <Box
-            tabIndex={tabIndex}
-            sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}
-          >
-            {(location.coordY - 1) *
-              (location.parentContainer.gridLayout?.columnsNumber || 0) +
-              location.coordX}
+          <Box tabIndex={tabIndex} sx={{ ...numberBoxSx, paddingTop: "calc(50% - 10px)" }}>
+            {(location.coordY - 1) * (location.parentContainer.gridLayout?.columnsNumber || 0) + location.coordX}
           </Box>
         ) : location.parentContainer.cType === "IMAGE" ? (
           (() => {
-            if (!location.parentContainer.sortedLocations)
-              throw new Error("Locations of container must be known.");
+            if (!location.parentContainer.sortedLocations) throw new Error("Locations of container must be known.");
             const sortedLocations = location.parentContainer.sortedLocations;
             const imageIndex =
-              sortedLocations.findIndex(
-                (loc) =>
-                  loc.coordX === location.coordX &&
-                  loc.coordY === location.coordY,
-              ) + 1;
+              sortedLocations.findIndex((loc) => loc.coordX === location.coordX && loc.coordY === location.coordY) + 1;
             return <Box sx={numberBoxSx}>{imageIndex}</Box>;
           })()
         ) : (
+          // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           <></>
         )}
       </Box>

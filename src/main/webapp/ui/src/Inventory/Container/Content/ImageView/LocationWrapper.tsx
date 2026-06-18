@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
-import { type Location } from "../../../../stores/definitions/Container";
+import React, { useEffect } from "react";
+import type { Location } from "../../../../stores/definitions/Container";
 import * as DragAndDrop from "../DragAndDrop";
 
 type LocationWrapperArgs = {
@@ -21,23 +21,15 @@ const locationMarkerOffset = {
   y: iconDimension - 4, // the point of the icon is 4px up from the bottom
 };
 
-function LocationWrapper({
-  children,
-  parentRect,
-  location,
-}: LocationWrapperArgs): React.ReactNode {
+function LocationWrapper({ children, parentRect, location }: LocationWrapperArgs): React.ReactNode {
   const cellRef = React.useRef<HTMLDivElement | null>(null);
 
-  const positionX = () =>
-    Math.round((location.coordX / 1000) * parentRect.width) -
-    locationMarkerOffset.x;
+  const positionX = () => Math.round((location.coordX / 1000) * parentRect.width) - locationMarkerOffset.x;
 
-  const positionY = () =>
-    Math.round((location.coordY / 1000) * parentRect.height) -
-    locationMarkerOffset.y;
+  const positionY = () => Math.round((location.coordY / 1000) * parentRect.height) - locationMarkerOffset.y;
 
   useEffect(() => {
-    if (parentRect.hasOwnProperty("width")) {
+    if (Object.hasOwn(parentRect, "width")) {
       location.setPosition(positionX(), positionY());
       location.setDimensions(55, 55);
     }
@@ -60,9 +52,7 @@ function LocationWrapper({
       })}
       ref={cellRef}
     >
-      <DragAndDrop.Dropzone location={location}>
-        {children}
-      </DragAndDrop.Dropzone>
+      <DragAndDrop.Dropzone location={location}>{children}</DragAndDrop.Dropzone>
     </Box>
   );
 }

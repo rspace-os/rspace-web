@@ -1,15 +1,13 @@
-import { describe, expect, test } from 'vitest';
+import fc from "fast-check";
+import { describe, expect, test } from "vitest";
 import { formatFileSize } from "../../files";
 
-import fc from "fast-check";
 describe("formatFileSize", () => {
   test('formatFileSize(1024) === "1.02 kB"', () => {
     expect(formatFileSize(1024)).toBe("1.02 kB");
-
   });
   test('formatFileSize(9976500, 3) === "9.976 MB"', () => {
     expect(formatFileSize(9976500, 3)).toBe("9.976 MB");
-
   });
   test("formatFileSize output should match regex", () => {
     fc.assert(
@@ -22,10 +20,10 @@ describe("formatFileSize", () => {
            * subtle bug because a period matches anything and so the test was
            * passing, but simply wasn't being as rigorous as it ought to be.
            */
-          new RegExp("[0-9]{1,3}(\\.[0-9]{1," + Math.max(dp, 1) + "})? .?B")
+
+          new RegExp(`[0-9]{1,3}(\\.[0-9]{1,${Math.max(dp, 1)}})? .?B`),
         );
-      })
+      }),
     );
   });
 });
-

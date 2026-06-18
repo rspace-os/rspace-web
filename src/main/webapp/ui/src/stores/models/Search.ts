@@ -1,94 +1,61 @@
-import ApiService, {
-  BulkEndpointRecordSerialisation,
-} from "../../common/InvApiService";
-import { match, omitNull, sameKeysAndValues, mapObject } from "../../util/Util";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
+import { allAreValid, IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import * as ArrayUtils from "../../util/ArrayUtils";
-import {
-  handleDetailedErrors,
-  handleDetailedSuccesses,
-  showToastWhilstPending,
-} from "../../util/alerts";
+import { handleDetailedErrors, handleDetailedSuccesses, showToastWhilstPending } from "../../util/alerts";
+import { getErrorMessage, InvalidState, UserCancelledAction } from "../../util/error";
+import * as Parsers from "../../util/parsers";
+import { noProgress } from "../../util/progress";
+import Result from "../../util/result";
 import RsSet from "../../util/set";
-import { type Editable } from "../definitions/Editable";
-import {
-  globalIdPatterns,
-  type Id,
-  type GlobalId,
-  getSavedGlobalId,
-} from "../definitions/BaseRecord";
-import {
-  type InventoryRecord,
-  type ApiRecordType,
-} from "../definitions/InventoryRecord";
-import { type AdjustableTableRowLabel } from "../definitions/Tables";
-import getRootStore from "../stores/RootStore";
+import { mapObject, match, omitNull, sameKeysAndValues } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
+import { type GlobalId, getSavedGlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
+import type { Basket } from "../definitions/Basket";
+import type { Editable } from "../definitions/Editable";
+import type { Factory } from "../definitions/Factory";
+import type { Quantity } from "../definitions/HasQuantity";
+import type { ApiRecordType, InventoryRecord } from "../definitions/InventoryRecord";
+import type { Person, Username } from "../definitions/Person";
+import type { Sample } from "../definitions/Sample";
+import type {
+  AllowedTypeFilters,
+  CacheFetcher as CacheFetcherInterface,
+  CoreFetcherArgs,
+  CoreFetcher as CoreFetcherInterface,
+  DeletedItems,
+  DynamicFetcher as DynamicFetcherInterface,
+  ExportOptions,
+  ResultType,
+  Search as SearchInterface,
+  SearchView,
+  UiConfig,
+} from "../definitions/Search";
+import type { SubSample } from "../definitions/SubSample";
+import type { AdjustableTableRowLabel } from "../definitions/Tables";
+import type { TreeView } from "../definitions/TreeView";
+import getRootStore from "../stores/getRootStore";
 import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
-import { type Username, type Person } from "../definitions/Person";
 import InventoryBaseRecord from "./InventoryBaseRecord";
-import { type Factory } from "../definitions/Factory";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
-import { type TemplateAttrs } from "./TemplateModel";
+import type { TemplateAttrs } from "./TemplateModel";
 import TreeModel, { type TreeAttrs } from "./TreeModel";
-import { type TreeView } from "../definitions/TreeView";
-import {
-  action,
-  computed,
-  observable,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import {
-  type CoreFetcherArgs,
-  type CoreFetcher as CoreFetcherInterface,
-  type DynamicFetcher as DynamicFetcherInterface,
-  type CacheFetcher as CacheFetcherInterface,
-  type Search as SearchInterface,
-  type AllowedTypeFilters,
-  type UiConfig,
-  type ResultType,
-  type DeletedItems,
-  type SearchView,
-  type ExportOptions,
-} from "../definitions/Search";
-import { type Sample } from "../definitions/Sample";
-import {
-  getErrorMessage,
-  InvalidState,
-  UserCancelledAction,
-} from "../../util/error";
-import { type Basket } from "../definitions/Basket";
-import { type SubSample } from "../definitions/SubSample";
-import { noProgress } from "../../util/progress";
-import {
-  IsInvalid,
-  IsValid,
-  allAreValid,
-} from "../../components/ValidatingSubmitButton";
-import { type Quantity } from "../definitions/HasQuantity";
-import * as Parsers from "../../util/parsers";
-import Result from "../../util/result";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
 
-export const getViewGroup = (
-  view: SearchView,
-): "dynamic" | "cache" | "static" =>
+export const getViewGroup = (view: SearchView): "dynamic" | "cache" | "static" =>
   match<SearchView, "dynamic" | "cache" | "static">([
     [(v) => DYNAMIC_VIEWS.includes(v), "dynamic"],
     [(v) => CACHE_VIEWS.includes(v), "cache"],
     [() => true, "static"],
   ])(view);
 
-const prepareRecordsForBulkApi = (
-  records: Array<InventoryRecord>,
-  opts?: { forceDelete?: boolean },
-) =>
+const prepareRecordsForBulkApi = (records: Array<InventoryRecord>, opts?: { forceDelete?: boolean }) =>
   records.map((record) => ({
     id: record.id,
     type: record.type,
@@ -113,23 +80,8 @@ type SearchArgs = {
 };
 
 const DEFAULT_UI_CONFIG: UiConfig = {
-  allowedSearchModules: new Set([
-    "BENCHES",
-    "TYPE",
-    "STATUS",
-    "OWNER",
-    "SCAN",
-    "TAG",
-    "SAVEDSEARCHES",
-    "SAVEDBASKETS",
-  ]),
-  allowedTypeFilters: new Set([
-    "ALL",
-    "CONTAINER",
-    "SAMPLE",
-    "SUBSAMPLE",
-    "TEMPLATE",
-  ]),
+  allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
+  allowedTypeFilters: new Set(["ALL", "CONTAINER", "SAMPLE", "SUBSAMPLE", "TEMPLATE"]),
   mainColumn: "Name",
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
   adjustableColumns: ["Global ID", "Owner", "Last Modified"],
@@ -174,13 +126,7 @@ export default class Search implements SearchInterface {
   uiConfig: UiConfig;
   factory: Factory;
 
-  constructor({
-    fetcherParams,
-    treeArgs,
-    uiConfig,
-    callbacks,
-    factory,
-  }: SearchArgs) {
+  constructor({ fetcherParams, treeArgs, uiConfig, callbacks, factory }: SearchArgs) {
     makeObservable(this, {
       activeResult: observable,
       processingContextActions: observable,
@@ -314,15 +260,10 @@ export default class Search implements SearchInterface {
   }
 
   get mixedSelectedStatus(): boolean {
-    return (
-      this.selectedResults.some((r) => r.deleted) &&
-      this.selectedResults.some((r) => !r.deleted)
-    );
+    return this.selectedResults.some((r) => r.deleted) && this.selectedResults.some((r) => !r.deleted);
   }
 
-  async cleanUpActiveResult(
-    options: { releaseLock?: boolean } = {},
-  ): Promise<void> {
+  async cleanUpActiveResult(options: { releaseLock?: boolean } = {}): Promise<void> {
     const { releaseLock = true } = options;
     const activeResult = this.activeResult;
     if (activeResult) {
@@ -393,8 +334,7 @@ export default class Search implements SearchInterface {
   ): Promise<void> {
     const { defaultToFirstResult = true, force = false } = options;
     if (this.canEditActiveResult && !force) {
-      if (!(await getRootStore().uiStore.confirmDiscardAnyChanges()))
-        throw new UserCancelledAction("Unsaved changes.");
+      if (!(await getRootStore().uiStore.confirmDiscardAnyChanges())) throw new UserCancelledAction("Unsaved changes.");
     }
 
     await this.cleanBatchEditing();
@@ -409,15 +349,13 @@ export default class Search implements SearchInterface {
         if (!r.infoLoaded && r.id) await r.fetchAdditionalInfo();
         this.callbacks?.setActiveResult?.(r);
       } else if (this.filteredResults.length > 0 && defaultToFirstResult) {
-        if (this.filteredResults[0] instanceof InventoryBaseRecord)
-          await assignment(this.filteredResults[0]);
+        if (this.filteredResults[0] instanceof InventoryBaseRecord) await assignment(this.filteredResults[0]);
       } else {
         this.activeResult = null;
         this.callbacks?.setActiveResult?.(null);
       }
     });
-    if (result instanceof InventoryBaseRecord || result === null)
-      await assignment(result);
+    if (result instanceof InventoryBaseRecord || result === null) await assignment(result);
   }
 
   /*
@@ -440,10 +378,7 @@ export default class Search implements SearchInterface {
    * Deletes the passed records, displays toasts accordingly, and invokes the
    * refreshing of the UI's state.
    */
-  async deleteRecords(
-    records: Array<InventoryRecord>,
-    opts?: { forceDelete?: boolean },
-  ): Promise<void> {
+  async deleteRecords(records: Array<InventoryRecord>, opts?: { forceDelete?: boolean }): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore } = getRootStore();
 
@@ -479,20 +414,16 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(
-        data.results.map(({ record }) => record),
-      ).filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
-      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(
-        data.results.map(({ record }) => record),
-      ).filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
+      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
+        ({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted,
+      );
+      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
+        (r) => r.type === "SAMPLE" && r.canBeDeleted,
+      );
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
-        ...ArrayUtils.filterNull(
-          data.results
-            .filter(({ error }) => !error)
-            .map(({ record }) => record),
-        )
+        ...ArrayUtils.filterNull(data.results.filter(({ error }) => !error).map(({ record }) => record))
           .filter((record) => record.type !== "SAMPLE")
           /*
            * The list is reversed because the server processes each record in
@@ -515,31 +446,23 @@ export default class Search implements SearchInterface {
       });
 
       if (samplesThatCouldNotBeDeleted.length > 0) {
-        const subsamplesThatPreventedSampleDeletion =
-          samplesThatCouldNotBeDeleted
-            .flatMap((s) =>
-              s.subSamples.map<[SampleResponse, SubSampleResponse]>((ss) => [
-                s,
-                ss,
-              ]),
-            )
-            .filter(([, ss]) => ss.storedInContainer);
+        const subsamplesThatPreventedSampleDeletion = samplesThatCouldNotBeDeleted
+          .flatMap((s) => s.subSamples.map<[SampleResponse, SubSampleResponse]>((ss) => [s, ss]))
+          .filter(([, ss]) => ss.storedInContainer);
         uiStore.addAlert(
           mkAlert({
             variant: "error",
-            title:
-              "Some of the samples could not be trashed because the subsamples are in containers.",
+            title: "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${
-                ss.name ?? "UNKNOWN"
-              }" ${ArrayUtils.head(ss.parentContainers)
+              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${ArrayUtils.head(ss.parentContainers)
                 .map(({ name, globalId }) => `(in ${name} ${globalId ?? ""})`)
                 .orElse("")}`,
               variant: "error",
               record: factory.newRecord({
                 ...ss,
                 sample: s,
+                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
               } as any as Record<string, unknown> & { globalId: GlobalId }),
             })),
             actionLabel: "Move all to trash",
@@ -558,8 +481,7 @@ export default class Search implements SearchInterface {
         "sending to trash",
         (erroredRecords) => this.deleteRecords(erroredRecords),
       );
-      if (successfullyDeleted.length > 0)
-        handleDetailedSuccesses(successfullyDeleted, "trashed");
+      if (successfullyDeleted.length > 0) handleDetailedSuccesses(successfullyDeleted, "trashed");
       this.offerToDeleteNowEmptySamples(successfullyDeleted);
 
       await this.updateStateAfterDelete(new RsSet(successfullyDeleted));
@@ -588,8 +510,7 @@ export default class Search implements SearchInterface {
       peopleStore: { currentUser },
       uiStore,
     } = getRootStore();
-    const deletedGlobalIds: RsSet<GlobalId> =
-      deletedRecords.map(getSavedGlobalId);
+    const deletedGlobalIds: RsSet<GlobalId> = deletedRecords.map(getSavedGlobalId);
 
     // update sidebar bench count
     if (currentUser) void currentUser.getBench();
@@ -597,10 +518,7 @@ export default class Search implements SearchInterface {
     await this.fetcher.reperformCurrentSearch();
 
     // if the activeResult has been deleted then set to first result
-    if (
-      searchStore.activeResult?.globalId &&
-      deletedGlobalIds.has(searchStore.activeResult.globalId)
-    ) {
+    if (searchStore.activeResult?.globalId && deletedGlobalIds.has(searchStore.activeResult.globalId)) {
       /*
        * force setting active result because if the active result has unsaved
        * changes we want to unconditionally discard them
@@ -622,17 +540,16 @@ export default class Search implements SearchInterface {
 
   offerToDeleteNowEmptySamples(deletedRecords: Array<InventoryRecord>) {
     const { uiStore, searchStore } = getRootStore();
-    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> =
-      ArrayUtils.filterClass(SubSampleModel, deletedRecords);
-    const samplesOfDeletedSubSamples: Array<SampleModel> =
-      justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
+    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = ArrayUtils.filterClass(
+      SubSampleModel,
+      deletedRecords,
+    );
+    const samplesOfDeletedSubSamples: Array<SampleModel> = justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
     /*
      * Creating a set works because each sample is only instantiated once due
      * to MemoisedFactory
      */
-    const nowEmptySamples = new Set(
-      samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0),
-    );
+    const nowEmptySamples = new Set(samplesOfDeletedSubSamples.filter((s) => s.subSamplesCount === 0));
 
     for (const sample of nowEmptySamples) {
       uiStore.addAlert(
@@ -725,15 +642,12 @@ export default class Search implements SearchInterface {
     await this.fetcher.performInitialSearch(null);
 
     if (activeResult) {
-      if (recordIds.has(activeResult.globalId))
-        await activeResult.fetchAdditionalInfo();
+      if (recordIds.has(activeResult.globalId)) await activeResult.fetchAdditionalInfo();
 
       // Re-search because restoring a sample also restores its subsamples
-      if (activeResult instanceof SampleModel)
-        activeResult.refreshAssociatedSearch();
+      if (activeResult instanceof SampleModel) activeResult.refreshAssociatedSearch();
 
-      if (this.isActiveResultTemplateOfAny(restoredRecords))
-        activeResult.refreshAssociatedSearch();
+      if (this.isActiveResultTemplateOfAny(restoredRecords)) activeResult.refreshAssociatedSearch();
     }
   }
 
@@ -778,25 +692,15 @@ export default class Search implements SearchInterface {
       });
 
       const newBenchItems = [
-        ...(newRecords.some(
-          (r) => r.hasSubSamples || r instanceof SubSampleModel,
-        )
-          ? ["subsamples"]
-          : []),
-        ...(newRecords.some((r) => r instanceof ContainerModel)
-          ? ["containers"]
-          : []),
+        ...(newRecords.some((r) => r.hasSubSamples || r instanceof SubSampleModel) ? ["subsamples"] : []),
+        ...(newRecords.some((r) => r instanceof ContainerModel) ? ["containers"] : []),
       ];
 
       handleDetailedSuccesses(
         newRecords,
         "duplicated",
         () => "created",
-        newBenchItems.length > 0
-          ? `Newly created ${newBenchItems.join(
-              " and ",
-            )} are placed on your Bench.`
-          : null,
+        newBenchItems.length > 0 ? `Newly created ${newBenchItems.join(" and ")} are placed on your Bench.` : null,
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
       await this.fetcher.performInitialSearch(null);
@@ -818,8 +722,7 @@ export default class Search implements SearchInterface {
   }
 
   async splitRecord(copies: number, subsample: SubSample): Promise<void> {
-    if (!(subsample instanceof SubSampleModel))
-      throw new Error("Can only split SubSamples");
+    if (!(subsample instanceof SubSampleModel)) throw new Error("Can only split SubSamples");
     this.setProcessingContextActions(true);
     if (!subsample.id) throw new Error("id is required.");
     const id = subsample.id;
@@ -828,13 +731,10 @@ export default class Search implements SearchInterface {
     try {
       const { data } = await showToastWhilstPending(
         "Splitting...",
-        ApiService.post<Array<SubSampleAttrs>>(
-          `subSamples/${id}/actions/split`,
-          {
-            split: true,
-            numSubSamples: `${copies}`,
-          },
-        ),
+        ApiService.post<Array<SubSampleAttrs>>(`subSamples/${id}/actions/split`, {
+          split: true,
+          numSubSamples: `${copies}`,
+        }),
       );
 
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
@@ -891,8 +791,7 @@ export default class Search implements SearchInterface {
      */
     if (
       subsample instanceof SubSampleModel &&
-      (subsample.sample.globalId === activeResult?.globalId ||
-        subsample.globalId === activeResult?.globalId)
+      (subsample.sample.globalId === activeResult?.globalId || subsample.globalId === activeResult?.globalId)
     ) {
       promises.push(activeResult?.fetchAdditionalInfo() ?? Promise.resolve());
     }
@@ -904,10 +803,7 @@ export default class Search implements SearchInterface {
     this.fetcher.replaceResult(result);
   }
 
-  async transferRecords(
-    username: Username,
-    records: Array<InventoryRecord>,
-  ): Promise<void> {
+  async transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void> {
     const { peopleStore } = getRootStore();
     this.setProcessingContextActions(true);
 
@@ -937,13 +833,9 @@ export default class Search implements SearchInterface {
           return newRecord;
         });
       const recordsOnBench = successfullyTranferred.every(
-        (r) =>
-          (r instanceof ContainerModel || r instanceof SubSampleModel) &&
-          r.isDirectlyOnWorkbench,
+        (r) => (r instanceof ContainerModel || r instanceof SubSampleModel) && r.isDirectlyOnWorkbench,
       );
-      const helpMessage = recordsOnBench
-        ? `The records have been moved to ${username}'s bench`
-        : null;
+      const helpMessage = recordsOnBench ? `The records have been moved to ${username}'s bench` : null;
 
       handleDetailedErrors(
         data.errorCount,
@@ -954,12 +846,7 @@ export default class Search implements SearchInterface {
         "transfer",
         (erroredRecords) => this.transferRecords(username, erroredRecords),
       );
-      handleDetailedSuccesses(
-        successfullyTranferred,
-        "transferred",
-        () => "transferred",
-        helpMessage,
-      );
+      handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", helpMessage);
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
       getRootStore().uiStore.addAlert(
@@ -980,9 +867,7 @@ export default class Search implements SearchInterface {
    * that need to refetch their associated data to ensure they are displaying
    * the correct state of the system.
    */
-  async updateStateAfterTransfer(
-    transferredRecords: RsSet<InventoryRecord>,
-  ): Promise<void> {
+  async updateStateAfterTransfer(transferredRecords: RsSet<InventoryRecord>): Promise<void> {
     const {
       peopleStore: { currentUser },
       searchStore,
@@ -1012,16 +897,11 @@ export default class Search implements SearchInterface {
        * if the activeResult is a template of one of the transferred samples
        * then refresh the template's sample listing
        */
-      if (this.isActiveResultTemplateOfAny(transferredRecords))
-        activeResult.refreshAssociatedSearch();
+      if (this.isActiveResultTemplateOfAny(transferredRecords)) activeResult.refreshAssociatedSearch();
     }
   }
 
-  async createTemplateFromSample(
-    name: string,
-    sample: Sample,
-    includeContentForFields: Set<Id>,
-  ): Promise<void> {
+  async createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void> {
     const { uiStore } = getRootStore();
     try {
       if (!sample.infoLoaded) await sample.fetchAdditionalInfo();
@@ -1029,10 +909,7 @@ export default class Search implements SearchInterface {
         ...(await sample.sampleCreationParams(includeContentForFields)),
         name,
       };
-      const { data } = await ApiService.post<TemplateAttrs>(
-        "sampleTemplates",
-        args,
-      );
+      const { data } = await ApiService.post<TemplateAttrs>("sampleTemplates", args);
       const factory = this.factory.newFactory();
       const template = factory.newRecord(data);
       uiStore.addAlert(
@@ -1080,14 +957,11 @@ export default class Search implements SearchInterface {
   }): Promise<void> {
     const { uiStore, searchStore } = getRootStore();
     try {
-      const { data } = await ApiService.post<ReadonlyArray<SubSampleAttrs>>(
-        "subSamples",
-        {
-          sampleId: opts.sample.id,
-          numSubSamples: `${opts.numberOfNewSubsamples}`,
-          singleSubSampleQuantity: opts.quantityPerSubsample,
-        },
-      );
+      const { data } = await ApiService.post<ReadonlyArray<SubSampleAttrs>>("subSamples", {
+        sampleId: opts.sample.id,
+        numSubSamples: `${opts.numberOfNewSubsamples}`,
+        singleSubSampleQuantity: opts.quantityPerSubsample,
+      });
       await Promise.all([
         opts.sample.fetchAdditionalInfo(),
         opts.sample.refreshAssociatedSearch(),
@@ -1137,19 +1011,11 @@ export default class Search implements SearchInterface {
     }
   }
 
-  async exportRecords(
-    exportOptions: ExportOptions,
-    records: Array<InventoryRecord>,
-  ): Promise<void> {
+  async exportRecords(exportOptions: ExportOptions, records: Array<InventoryRecord>): Promise<void> {
     this.setProcessingContextActions(true);
     const { uiStore, trackingStore } = getRootStore();
     try {
-      const {
-        exportMode,
-        includeSubsamplesInSample,
-        includeContainerContent,
-        resultFileType,
-      } = exportOptions;
+      const { exportMode, includeSubsamplesInSample, includeContainerContent, resultFileType } = exportOptions;
       const globalIds = records.map((r) => r.globalId);
       const params = new FormData();
 
@@ -1164,8 +1030,7 @@ export default class Search implements SearchInterface {
           ...(includeSubsamplesInSample === null
             ? {}
             : {
-                includeSubsamplesInSample:
-                  includeSubsamplesInSample === "INCLUDE",
+                includeSubsamplesInSample: includeSubsamplesInSample === "INCLUDE",
               }),
           ...(includeContainerContent === null
             ? {}
@@ -1176,10 +1041,7 @@ export default class Search implements SearchInterface {
       );
       const { data } = await showToastWhilstPending(
         "Exporting...",
-        ApiService.post<{ _links: Array<{ link: string; rel: string }> }>(
-          "export",
-          params,
-        ),
+        ApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
       const fileName = downloadLink.link.split("downloadArchive/")[1];
@@ -1231,9 +1093,7 @@ export default class Search implements SearchInterface {
     if (getViewGroup(priorView) !== getViewGroup(view)) {
       await this.fetcher.performInitialSearch(currentSearchParams);
 
-      this.filteredResults.map((res) =>
-        res.toggleSelected(selectedResultsIds.includes(res.globalId)),
-      );
+      this.filteredResults.map((res) => res.toggleSelected(selectedResultsIds.includes(res.globalId)));
 
       /*
        * If the new view doesn't have a record with the same Global ID as a
@@ -1242,13 +1102,9 @@ export default class Search implements SearchInterface {
        * as the context menu at the top of the viewport being disabled, will
        * continue to alter their behaviour without apparent reason.
        */
-      const gIdsOfResultsOfNewFetcher = new Set(
-        this.filteredResults.map((r) => r.globalId),
-      );
+      const gIdsOfResultsOfNewFetcher = new Set(this.filteredResults.map((r) => r.globalId));
       priorFetcher.results.map((res) =>
-        res.toggleSelected(
-          res.selected && gIdsOfResultsOfNewFetcher.has(res.globalId),
-        ),
+        res.toggleSelected(res.selected && gIdsOfResultsOfNewFetcher.has(res.globalId)),
       );
     }
   }
@@ -1272,31 +1128,19 @@ export default class Search implements SearchInterface {
   }
 
   get showBenchFilter(): boolean {
-    return (
-      this.enableAdvancedOptions &&
-      Boolean(this.uiConfig.allowedSearchModules.has("BENCHES"))
-    );
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("BENCHES"));
   }
 
   get showTypeFilter(): boolean {
-    return (
-      this.enableAdvancedOptions &&
-      Boolean(this.uiConfig.allowedSearchModules.has("TYPE"))
-    );
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("TYPE"));
   }
 
   get showStatusFilter(): boolean {
-    return (
-      this.enableAdvancedOptions &&
-      Boolean(this.uiConfig.allowedSearchModules.has("STATUS"))
-    );
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("STATUS"));
   }
 
   get showOwnershipFilter(): boolean {
-    return (
-      this.enableAdvancedOptions &&
-      Boolean(this.uiConfig.allowedSearchModules.has("OWNER"))
-    );
+    return this.enableAdvancedOptions && Boolean(this.uiConfig.allowedSearchModules.has("OWNER"));
   }
 
   get showBarcodeScan(): boolean {
@@ -1309,8 +1153,7 @@ export default class Search implements SearchInterface {
 
   get showSavedSearches(): boolean {
     return Boolean(
-      this.uiConfig.allowedSearchModules.has("SAVEDSEARCHES") &&
-      getRootStore().searchStore.savedSearches.length > 0,
+      this.uiConfig.allowedSearchModules.has("SAVEDSEARCHES") && getRootStore().searchStore.savedSearches.length > 0,
     );
   }
 
@@ -1320,9 +1163,7 @@ export default class Search implements SearchInterface {
 
   get adjustableColumnOptions(): RsSet<AdjustableTableRowLabel> {
     return new RsSet<AdjustableTableRowLabel>().union(
-      ...this.filteredResults.map(
-        (r) => new RsSet([...r.adjustableTableOptions().keys()]),
-      ),
+      ...this.filteredResults.map((r) => new RsSet([...r.adjustableTableOptions().keys()])),
     );
   }
 
@@ -1398,10 +1239,7 @@ export default class Search implements SearchInterface {
   }
 
   onUsersBench(user: Person): boolean {
-    return (
-      this.benchSearch &&
-      this.fetcher.parentGlobalId === `BE${user.workbenchId}`
-    );
+    return this.benchSearch && this.fetcher.parentGlobalId === `BE${user.workbenchId}`;
   }
 
   /*
@@ -1419,9 +1257,7 @@ export default class Search implements SearchInterface {
     const resolved = await promise;
     const searchParameterAfter = this.fetcher.serialize;
     if (!sameKeysAndValues(searchParameterBefore, searchParameterAfter))
-      throw new InvalidState(
-        "Search parameters have changed, cancelling search.",
-      );
+      throw new InvalidState("Search parameters have changed, cancelling search.");
     return resolved;
   }
 
@@ -1442,9 +1278,7 @@ export default class Search implements SearchInterface {
 
     if (params.ownedBy) {
       try {
-        const person = await this.rejectIfSearchParametersChange(
-          peopleStore.getUser(params.ownedBy),
-        );
+        const person = await this.rejectIfSearchParametersChange(peopleStore.getUser(params.ownedBy));
         this.setOwner(person ?? null, false);
       } catch (e) {
         if (e instanceof InvalidState) return;
@@ -1478,8 +1312,7 @@ export default class Search implements SearchInterface {
   }
 
   get allowedStatusFilters(): RsSet<DeletedItems> {
-    if (this.fetcher.parentIsContainer || this.benchSearch)
-      return new RsSet(["EXCLUDE"]);
+    if (this.fetcher.parentIsContainer || this.benchSearch) return new RsSet(["EXCLUDE"]);
     return new RsSet(["EXCLUDE", "INCLUDE", "DELETED_ONLY"]);
   }
 
@@ -1511,8 +1344,7 @@ export default class Search implements SearchInterface {
   }
 
   get batchEditableInstance(): Editable {
-    if (!this.batchEditingRecords)
-      throw new Error("Batch editing is not enabled.");
+    if (!this.batchEditingRecords) throw new Error("Batch editing is not enabled.");
     const records: Array<InventoryRecord> = this.batchEditingRecords.toArray();
     if (records.length === 0) throw new Error("Nothing selected.");
     const { uiStore } = getRootStore();
@@ -1567,6 +1399,7 @@ export default class Search implements SearchInterface {
           ) {
             return;
           }
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           const newRecordData: Record<GlobalId, any> = Object.fromEntries(
             results.map(({ record }) => [record.globalId, record]),
           );
@@ -1596,9 +1429,7 @@ export default class Search implements SearchInterface {
       submittable: allAreValid([
         this.editLoading === "no" ? IsValid() : IsInvalid("Loading."),
         ...records.map((r) => r.submittable),
-        this.batchEditingRecords?.some(
-          (r) => r.currentlyEditableFields.size > 0,
-        )
+        this.batchEditingRecords?.some((r) => r.currentlyEditableFields.size > 0)
           ? IsValid()
           : IsInvalid("No fields have been edited."),
       ]),
@@ -1618,11 +1449,8 @@ export default class Search implements SearchInterface {
    * implements InventoryRecord in test code, without worrying that this method
    * might add elements to the set that would violate the subtype invariant.
    */
-  isActiveResultTemplateOfAny<T extends InventoryRecord>(
-    records: RsSet<T>,
-  ): boolean {
-    const activeResultGlobalId =
-      getRootStore().searchStore.activeResult?.globalId;
+  isActiveResultTemplateOfAny<T extends InventoryRecord>(records: RsSet<T>): boolean {
+    const activeResultGlobalId = getRootStore().searchStore.activeResult?.globalId;
     for (const sample of records.filterClass(SampleModel)) {
       const templateId = sample.templateId;
       if (!templateId) continue;

@@ -27,5 +27,3 @@ declare global {
    */
   const __TINYMCE_BASE__: string;
 }
-
-export {};

@@ -10,50 +10,42 @@
  *
  * ============================================================================
  */
-import React, {
-  useState,
-  useEffect,
-  type ReactNode,
-  type ComponentType,
-  type ReactElement,
-} from "react";
-import { createRoot } from "react-dom/client";
-import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
-import { observer } from "mobx-react-lite";
-import { ThemeProvider, type Theme } from "@mui/material/styles";
-import materialTheme from "../../theme";
+
 import Box from "@mui/material/Box";
-import axios from "@/common/axios";
-import Grid from "@mui/material/Grid";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
-import { capitaliseJustFirstChar } from "../../util/Util";
-import MapViewer from "../../Inventory/components/Fields/Identifiers/MapViewer";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import Divider from "@mui/material/Divider";
-import {
-  type Identifier,
-  type IdentifierAttrs,
-} from "../../stores/definitions/Identifier";
-import Description from "../../Inventory/components/Fields/Description";
-import Tags from "../../Inventory/components/Fields/Tags";
-import { Optional } from "../../util/optional";
-import { decodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
-import AlwaysNewWindowNavigationContext from "../AlwaysNewWindowNavigationContext";
-import { type Tag } from "../../stores/definitions/Tag";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import { type Theme, ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
+import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
+import { decodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
+import Description from "../../Inventory/components/Fields/Description";
+import MapViewer from "../../Inventory/components/Fields/Identifiers/MapViewer";
+import Tags from "../../Inventory/components/Fields/Tags";
+import type { Identifier, IdentifierAttrs } from "../../stores/definitions/Identifier";
+import type { Tag } from "../../stores/definitions/Tag";
+import { truncateIsoTimestamp } from "../../stores/definitions/Units";
+import IdentifierModel from "../../stores/models/IdentifierModel";
+import materialTheme from "../../theme";
+import { Optional } from "../../util/optional";
+import { capitaliseJustFirstChar } from "../../util/Util";
+import AlwaysNewWindowNavigationContext from "../AlwaysNewWindowNavigationContext";
 import NoValue from "../NoValue";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
-import IdentifierModel from "../../stores/models/IdentifierModel";
-import { truncateIsoTimestamp } from "../../stores/definitions/Units";
 
 const STYLED_DL_SX = (theme: Theme) => ({
   fontSize: "0.85rem",
@@ -76,12 +68,7 @@ const COLUMN_SX = (theme: Theme) => ({
 const LABEL_SX = { width: "230px", fontWeight: "bold" as const };
 
 type DividedPairArgs = {
-  children: [
-    ReactElement<"dt">,
-    ReactElement<"dd">,
-    ReactElement<"dt">,
-    ReactElement<"dd">,
-  ];
+  children: [ReactElement<"dt">, ReactElement<"dd">, ReactElement<"dt">, ReactElement<"dd">];
 };
 
 function DividedPair({ children }: DividedPairArgs) {
@@ -126,6 +113,7 @@ const RECOMMENDED_FIELDS_LABELS: Record<string, string> = {
   classificationCode: "Classification Code",
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const subFields = (fValue: any): Array<{ key: string; value: string }> =>
   Object.entries(fValue)
     .filter((item) => item[0] !== "value" && item[0] !== "type")
@@ -173,10 +161,7 @@ type IdentifierDataGridArgs = {
   };
 };
 
-export const IdentifierDataGrid = ({
-  record,
-  identifier,
-}: IdentifierDataGridArgs): ReactNode => {
+export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArgs): ReactNode => {
   const institutionName: string = identifier.publisher.split(" (")[0];
 
   const anyRecommendedGiven: boolean = [
@@ -189,9 +174,7 @@ export const IdentifierDataGrid = ({
 
   return (
     <Grid container sx={{ fontFamily: "Arial" }}>
-      <VisuallyHiddenHeading variant="h1">
-        {identifier.title}
-      </VisuallyHiddenHeading>
+      <VisuallyHiddenHeading variant="h1">{identifier.title}</VisuallyHiddenHeading>
       <Grid
         aria-hidden={true}
         container
@@ -219,11 +202,7 @@ export const IdentifierDataGrid = ({
           />
         </Grid>
         <Grid>
-          <Typography
-            component="h3"
-            variant="h6"
-            sx={(theme) => ({ color: theme.palette.primary.main })}
-          >
+          <Typography component="h3" variant="h6" sx={(theme) => ({ color: theme.palette.primary.main })}>
             RSpace Public Pages
           </Typography>
           <h2>{institutionName}</h2>
@@ -253,30 +232,16 @@ export const IdentifierDataGrid = ({
                   {identifier.doi}
                 </a>
               ) : (
-                <>{identifier.doi}</>
+                identifier.doi
               )}
             </Typography>
           </Stack>
         </Grid>
         <Grid>
-          <Grid
-            container
-            sx={{ flexDirection: "column", alignItems: "center" }}
-            spacing={0.5}
-          >
+          <Grid container sx={{ flexDirection: "column", alignItems: "center" }} spacing={0.5}>
             <Grid>
-              <a
-                href={IGSN_BASE_URL}
-                title="IGSN Homepage"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <img
-                  src={IGSNlogo}
-                  alt="IGSN Logo"
-                  title="IGSN Logo"
-                  style={{ padding: "0 4px", width: "70px" }}
-                />
+              <a href={IGSN_BASE_URL} title="IGSN Homepage" target="_blank" rel="noreferrer">
+                <img src={IGSNlogo} alt="IGSN Logo" title="IGSN Logo" style={{ padding: "0 4px", width: "70px" }} />
               </a>
             </Grid>
             <Grid>
@@ -312,9 +277,7 @@ export const IdentifierDataGrid = ({
       </Grid>
       <Grid container direction="row" sx={ROW_SX} spacing={1}>
         <Grid sx={LABEL_SX}>Resource Type:</Grid>
-        <Grid data-testid="identifier-resource-type">
-          {identifier.resourceType}
-        </Grid>
+        <Grid data-testid="identifier-resource-type">{identifier.resourceType}</Grid>
       </Grid>
       <Grid container direction="row" sx={ROW_SX} spacing={1}>
         <Grid sx={LABEL_SX}>Creator: </Grid>
@@ -330,11 +293,7 @@ export const IdentifierDataGrid = ({
         <Grid container direction="row" sx={ROW_SX} spacing={1}>
           <Grid sx={LABEL_SX}>Creator Affiliation Identifier: </Grid>
           <Grid>
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href={identifier.creatorAffiliationIdentifier}
-            >
+            <a target="_blank" rel="noreferrer" href={identifier.creatorAffiliationIdentifier}>
               {identifier.creatorAffiliationIdentifier}
             </a>
           </Grid>
@@ -355,297 +314,187 @@ export const IdentifierDataGrid = ({
               <h2>Optional Fields</h2>
             </Grid>
           </Grid>
-          {Array.isArray(identifier.subjects) &&
-            identifier.subjects.length > 0 && (
-              <Grid
-                container
-                sx={COLUMN_SX}
-                spacing={1}
-                role="group"
-                aria-label="subjects"
-              >
-                <Grid>
-                  <h3>Subjects</h3>
-                </Grid>
-                {identifier.subjects.map((s) => (
-                  <Grid sx={ROW_SX} key={s.value}>
-                    <Grid sx={{ margin: "8px" }}>{s.value}</Grid>
-                    {subFields(s).length > 0 &&
-                      subFields(s).map((sf) => (
-                        <Grid
-                          container
-                          direction="row"
-                          sx={ROW_SX}
-                          spacing={1}
-                          key={sf.key}
-                        >
-                          <Grid sx={LABEL_SX}>
-                            {RECOMMENDED_FIELDS_LABELS[sf.key]}
-                          </Grid>
-                          <Grid>
-                            {sf.value ? (
-                              <>{sf.value}</>
-                            ) : (
-                              <Typography
-                                variant="inherit"
-                                component="em"
-                                sx={{ color: "#949494" }}
-                              >
-                                None
-                              </Typography>
-                            )}
-                          </Grid>
-                        </Grid>
-                      ))}
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          {Array.isArray(identifier.descriptions) &&
-            identifier.descriptions.length > 0 && (
-              <Grid
-                container
-                sx={COLUMN_SX}
-                spacing={1}
-                role="group"
-                aria-label="descriptions"
-              >
-                <Grid>
-                  <h3>Descriptions</h3>
-                </Grid>
-                {identifier.descriptions.map((d) => (
-                  <Grid
-                    container
-                    direction="row"
-                    sx={ROW_SX}
-                    spacing={1}
-                    key={d.value}
-                  >
-                    <Grid sx={LABEL_SX}>
-                      {capitaliseJustFirstChar(d.type.toLowerCase())}
-                    </Grid>
-                    <Grid>{d.value}</Grid>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          {Array.isArray(identifier.alternateIdentifiers) &&
-            identifier.alternateIdentifiers.length > 0 && (
-              <Grid
-                container
-                sx={COLUMN_SX}
-                spacing={1}
-                role="group"
-                aria-label="alternate-identifiers"
-              >
-                <Grid>
-                  <h3>Alternate Identifiers</h3>
-                </Grid>
-                {identifier.alternateIdentifiers.map((id) => (
-                  <Grid
-                    container
-                    direction="row"
-                    sx={ROW_SX}
-                    spacing={1}
-                    key={id.value}
-                  >
-                    <Grid sx={{ marginBottom: "8px" }}>{id.value}</Grid>
-                    {subFields(id).length > 0 &&
-                      subFields(id).map((sf) => (
-                        <Grid
-                          container
-                          direction="row"
-                          sx={ROW_SX}
-                          spacing={1}
-                          key={sf.key}
-                        >
-                          <Grid sx={LABEL_SX}>
-                            {RECOMMENDED_FIELDS_LABELS[sf.key]}
-                          </Grid>
-                          <Grid>
-                            {sf.value ? <>{sf.value}</> : <em>None</em>}
-                          </Grid>
-                        </Grid>
-                      ))}
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          {Array.isArray(identifier.dates) && identifier.dates.length > 0 && (
-            <Grid
-              container
-              sx={COLUMN_SX}
-              spacing={1}
-              role="group"
-              aria-label="dates"
-            >
+          {Array.isArray(identifier.subjects) && identifier.subjects.length > 0 && (
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="subjects">
               <Grid>
-                <h3>Dates</h3>
+                <h3>Subjects</h3>
               </Grid>
-              {identifier.dates.map((d, i) => (
-                <Grid
-                  container
-                  direction="row"
-                  sx={ROW_SX}
-                  spacing={1}
-                  key={d.value.toString() + "-" + i}
-                >
-                  <Grid sx={LABEL_SX}>
-                    {capitaliseJustFirstChar(d.type.toLowerCase())}
-                  </Grid>
-                  <Grid>
-                    {truncateIsoTimestamp(d.value, "date").orElse(
-                      "Invalid date",
-                    )}
-                  </Grid>
+              {identifier.subjects.map((s) => (
+                <Grid sx={ROW_SX} key={s.value}>
+                  <Grid sx={{ margin: "8px" }}>{s.value}</Grid>
+                  {subFields(s).length > 0 &&
+                    subFields(s).map((sf) => (
+                      <Grid container direction="row" sx={ROW_SX} spacing={1} key={sf.key}>
+                        <Grid sx={LABEL_SX}>{RECOMMENDED_FIELDS_LABELS[sf.key]}</Grid>
+                        <Grid>
+                          {sf.value ? (
+                            sf.value
+                          ) : (
+                            <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
+                              None
+                            </Typography>
+                          )}
+                        </Grid>
+                      </Grid>
+                    ))}
                 </Grid>
               ))}
             </Grid>
           )}
-          {Array.isArray(identifier.geoLocations) &&
-            identifier.geoLocations.length > 0 && (
-              <>
-                <h3>Geolocations</h3>
-                <Grid
-                  container
-                  direction="row"
-                  spacing={1}
-                  role="group"
-                  aria-label="geoLocations"
-                >
-                  {identifier.geoLocations.map((gl, i) => (
-                    <Grid key={i}>
-                      <Card variant="outlined">
-                        <CardMedia>
-                          <MapViewer
-                            point={gl.geoLocationPoint}
-                            box={gl.geoLocationBox}
-                            polygon={gl.geoLocationPolygon}
-                          />
-                        </CardMedia>
-                        <CardContent>
-                          {glPointComplete(gl.geoLocationPoint) && (
-                            <>
-                              <Typography component="h4" variant="h6">
-                                Point
-                              </Typography>
-                              <Box component="dl" sx={STYLED_DL_SX}>
-                                <DividedPair>
-                                  <dt>Latitude</dt>
-                                  <dd>{gl.geoLocationPoint.pointLatitude}˚</dd>
-                                  <dt>Longitude</dt>
-                                  <dd>{gl.geoLocationPoint.pointLongitude}˚</dd>
-                                </DividedPair>
-                              </Box>
-                            </>
-                          )}
-                          {gl.geoLocationPlace && (
-                            <>
-                              <Typography component="h4" variant="h6">
-                                Place
-                              </Typography>
-                              <Box component="dl" sx={STYLED_DL_SX}>
-                                <Grid container direction="row" spacing={1}>
-                                  <Grid size={1}></Grid>
-                                  <Grid size={11}>
-                                    <span>
-                                      <dt>Description</dt>
-                                      <dd>{gl.geoLocationPlace}</dd>
-                                    </span>
-                                  </Grid>
-                                </Grid>
-                              </Box>
-                            </>
-                          )}
-                          {glBoxComplete(gl.geoLocationBox) && (
-                            <>
-                              <Typography component="h4" variant="h6">
-                                Box
-                              </Typography>
-                              <Box component="dl" sx={STYLED_DL_SX}>
-                                {/* width style is used to align vertical dividers */}
-                                <DividedPair>
-                                  <dt style={{ minWidth: "140px" }}>
-                                    Northbound Latitude
-                                  </dt>
-                                  <dd>
-                                    {gl.geoLocationBox.northBoundLatitude}˚
-                                  </dd>
-                                  <dt>Westbound Longitude</dt>
-                                  <dd>
-                                    {gl.geoLocationBox.westBoundLongitude}˚
-                                  </dd>
-                                </DividedPair>
-                                <DividedPair>
-                                  <dt style={{ minWidth: "140px" }}>
-                                    Southbound Latitude
-                                  </dt>
-                                  <dd>
-                                    {gl.geoLocationBox.southBoundLatitude}˚
-                                  </dd>
-                                  <dt>Eastbound Longitude</dt>
-                                  <dd>
-                                    {gl.geoLocationBox.eastBoundLongitude}˚
-                                  </dd>
-                                </DividedPair>
-                              </Box>
-                            </>
-                          )}
-                          {gl.geoLocationPolygon.isValid && (
-                            <>
-                              <Typography component="h4" variant="h6">
-                                Polygon
-                              </Typography>
-                              <Box component="dl" sx={STYLED_DL_SX}>
-                                {gl.geoLocationPolygon.mapPoints(
-                                  (point: PolygonPoint, index: number) => (
-                                    <DividedPair key={index}>
-                                      <dt>Point {index + 1} Latitude</dt>
-                                      <dd>{point.pointLatitude}˚</dd>
-                                      <dt>Point {index + 1} Longitude</dt>
-                                      <dd>{point.pointLongitude}˚</dd>
-                                    </DividedPair>
-                                  ),
-                                )}
-                              </Box>
-                              {glPointComplete(
-                                gl.geoLocationInPolygonPoint,
-                              ) && (
-                                <>
-                                  <Typography component="h4" variant="h6">
-                                    In Polygon Point
-                                  </Typography>
-                                  <Box component="dl" sx={STYLED_DL_SX}>
-                                    <DividedPair>
-                                      <dt>Latitude</dt>
-                                      <dd>
-                                        {
-                                          gl.geoLocationInPolygonPoint
-                                            .pointLatitude
-                                        }
-                                        ˚
-                                      </dd>
-                                      <dt>Longitude</dt>
-                                      <dd>
-                                        {
-                                          gl.geoLocationInPolygonPoint
-                                            .pointLongitude
-                                        }
-                                        ˚
-                                      </dd>
-                                    </DividedPair>
-                                  </Box>
-                                </>
-                              )}
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+          {Array.isArray(identifier.descriptions) && identifier.descriptions.length > 0 && (
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="descriptions">
+              <Grid>
+                <h3>Descriptions</h3>
+              </Grid>
+              {identifier.descriptions.map((d) => (
+                <Grid container direction="row" sx={ROW_SX} spacing={1} key={d.value}>
+                  <Grid sx={LABEL_SX}>{capitaliseJustFirstChar(d.type.toLowerCase())}</Grid>
+                  <Grid>{d.value}</Grid>
                 </Grid>
-              </>
-            )}
+              ))}
+            </Grid>
+          )}
+          {Array.isArray(identifier.alternateIdentifiers) && identifier.alternateIdentifiers.length > 0 && (
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="alternate-identifiers">
+              <Grid>
+                <h3>Alternate Identifiers</h3>
+              </Grid>
+              {identifier.alternateIdentifiers.map((id) => (
+                <Grid container direction="row" sx={ROW_SX} spacing={1} key={id.value}>
+                  <Grid sx={{ marginBottom: "8px" }}>{id.value}</Grid>
+                  {subFields(id).length > 0 &&
+                    subFields(id).map((sf) => (
+                      <Grid container direction="row" sx={ROW_SX} spacing={1} key={sf.key}>
+                        <Grid sx={LABEL_SX}>{RECOMMENDED_FIELDS_LABELS[sf.key]}</Grid>
+                        <Grid>{sf.value ? sf.value : <em>None</em>}</Grid>
+                      </Grid>
+                    ))}
+                </Grid>
+              ))}
+            </Grid>
+          )}
+          {Array.isArray(identifier.dates) && identifier.dates.length > 0 && (
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="dates">
+              <Grid>
+                <h3>Dates</h3>
+              </Grid>
+              {identifier.dates.map((d, i) => (
+                <Grid container direction="row" sx={ROW_SX} spacing={1} key={`${d.value.toString()}-${i}`}>
+                  <Grid sx={LABEL_SX}>{capitaliseJustFirstChar(d.type.toLowerCase())}</Grid>
+                  <Grid>{truncateIsoTimestamp(d.value, "date").orElse("Invalid date")}</Grid>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+          {Array.isArray(identifier.geoLocations) && identifier.geoLocations.length > 0 && (
+            <>
+              <h3>Geolocations</h3>
+              <Grid container direction="row" spacing={1} role="group" aria-label="geoLocations">
+                {identifier.geoLocations.map((gl, i) => (
+                  <Grid key={i}>
+                    <Card variant="outlined">
+                      <CardMedia>
+                        <MapViewer
+                          point={gl.geoLocationPoint}
+                          box={gl.geoLocationBox}
+                          polygon={gl.geoLocationPolygon}
+                        />
+                      </CardMedia>
+                      <CardContent>
+                        {glPointComplete(gl.geoLocationPoint) && (
+                          <>
+                            <Typography component="h4" variant="h6">
+                              Point
+                            </Typography>
+                            <Box component="dl" sx={STYLED_DL_SX}>
+                              <DividedPair>
+                                <dt>Latitude</dt>
+                                <dd>{gl.geoLocationPoint.pointLatitude}˚</dd>
+                                <dt>Longitude</dt>
+                                <dd>{gl.geoLocationPoint.pointLongitude}˚</dd>
+                              </DividedPair>
+                            </Box>
+                          </>
+                        )}
+                        {gl.geoLocationPlace && (
+                          <>
+                            <Typography component="h4" variant="h6">
+                              Place
+                            </Typography>
+                            <Box component="dl" sx={STYLED_DL_SX}>
+                              <Grid container direction="row" spacing={1}>
+                                <Grid size={1}></Grid>
+                                <Grid size={11}>
+                                  <span>
+                                    <dt>Description</dt>
+                                    <dd>{gl.geoLocationPlace}</dd>
+                                  </span>
+                                </Grid>
+                              </Grid>
+                            </Box>
+                          </>
+                        )}
+                        {glBoxComplete(gl.geoLocationBox) && (
+                          <>
+                            <Typography component="h4" variant="h6">
+                              Box
+                            </Typography>
+                            <Box component="dl" sx={STYLED_DL_SX}>
+                              {/* width style is used to align vertical dividers */}
+                              <DividedPair>
+                                <dt style={{ minWidth: "140px" }}>Northbound Latitude</dt>
+                                <dd>{gl.geoLocationBox.northBoundLatitude}˚</dd>
+                                <dt>Westbound Longitude</dt>
+                                <dd>{gl.geoLocationBox.westBoundLongitude}˚</dd>
+                              </DividedPair>
+                              <DividedPair>
+                                <dt style={{ minWidth: "140px" }}>Southbound Latitude</dt>
+                                <dd>{gl.geoLocationBox.southBoundLatitude}˚</dd>
+                                <dt>Eastbound Longitude</dt>
+                                <dd>{gl.geoLocationBox.eastBoundLongitude}˚</dd>
+                              </DividedPair>
+                            </Box>
+                          </>
+                        )}
+                        {gl.geoLocationPolygon.isValid && (
+                          <>
+                            <Typography component="h4" variant="h6">
+                              Polygon
+                            </Typography>
+                            <Box component="dl" sx={STYLED_DL_SX}>
+                              {gl.geoLocationPolygon.mapPoints((point: PolygonPoint, index: number) => (
+                                <DividedPair key={index}>
+                                  <dt>Point {index + 1} Latitude</dt>
+                                  <dd>{point.pointLatitude}˚</dd>
+                                  <dt>Point {index + 1} Longitude</dt>
+                                  <dd>{point.pointLongitude}˚</dd>
+                                </DividedPair>
+                              ))}
+                            </Box>
+                            {glPointComplete(gl.geoLocationInPolygonPoint) && (
+                              <>
+                                <Typography component="h4" variant="h6">
+                                  In Polygon Point
+                                </Typography>
+                                <Box component="dl" sx={STYLED_DL_SX}>
+                                  <DividedPair>
+                                    <dt>Latitude</dt>
+                                    <dd>{gl.geoLocationInPolygonPoint.pointLatitude}˚</dd>
+                                    <dt>Longitude</dt>
+                                    <dd>{gl.geoLocationInPolygonPoint.pointLongitude}˚</dd>
+                                  </DividedPair>
+                                </Box>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </>
+          )}
         </>
       )}
       {identifier.customFieldsOnPublicPage && (
@@ -720,10 +569,7 @@ export const IdentifierDataGrid = ({
                             <TableRow key={f.id}>
                               <TableCell>{f.name}</TableCell>
                               <TableCell>
-                                {(f.selectedOptions?.join(", ") ??
-                                  f.content?.toString()) || (
-                                  <NoValue label="None" />
-                                )}
+                                {(f.selectedOptions?.join(", ") ?? f.content?.toString()) || <NoValue label="None" />}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -781,12 +627,11 @@ export const IdentifierDataGrid = ({
         spacing={1}
       >
         <Grid>
-          If you wish to obtain more information about this item, please contact
-          the research data management department at {institutionName}.
+          If you wish to obtain more information about this item, please contact the research data management department
+          at {institutionName}.
           <br />
           <br />
-          This page was generated by {institutionName} using RSpace Public
-          Pages.
+          This page was generated by {institutionName} using RSpace Public Pages.
         </Grid>
       </Grid>
     </Grid>
@@ -797,9 +642,7 @@ type IdentifierPublicPageArgs = {
   publicId: string;
 };
 
-const IdentifierPublicPage = ({
-  publicId,
-}: IdentifierPublicPageArgs): ReactNode => {
+const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode => {
   const [fetching, setFetching] = useState(false);
   const [publicData, setPublicData] = useState<{
     identifiers: Array<Identifier>;
@@ -844,25 +687,19 @@ const IdentifierPublicPage = ({
         }>(`/api/inventory/v1/public/view/${publicId}`);
         setPublicData({
           ...data,
-          identifiers: data.identifiers.map(
-            (x) => new IdentifierModel(x, publicId),
-          ),
+          identifiers: data.identifiers.map((x) => new IdentifierModel(x, publicId)),
           tags: data.tags.map((tag) => ({
             value: decodeTagString(tag.value),
-            uri:
-              tag.uri === ""
-                ? Optional.empty<string>()
-                : Optional.present(decodeTagString(tag.uri)),
+            uri: tag.uri === "" ? Optional.empty<string>() : Optional.present(decodeTagString(tag.uri)),
             vocabulary:
-              tag.ontologyName === ""
-                ? Optional.empty<string>()
-                : Optional.present(decodeTagString(tag.ontologyName)),
+              tag.ontologyName === "" ? Optional.empty<string>() : Optional.present(decodeTagString(tag.ontologyName)),
             version:
               tag.ontologyVersion === ""
                 ? Optional.empty<string>()
                 : Optional.present(decodeTagString(tag.ontologyVersion)),
           })),
         });
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       } catch (e: any) {
         setErrorMessage(e.response.data.message);
         throw new Error(e);
@@ -885,10 +722,7 @@ const IdentifierPublicPage = ({
   return (
     <ThemeProvider theme={materialTheme}>
       <AlwaysNewWindowNavigationContext>
-        <IdentifierDataGrid
-          record={publicData}
-          identifier={publicData.identifiers[0]}
-        />
+        <IdentifierDataGrid record={publicData} identifier={publicData.identifiers[0]} />
       </AlwaysNewWindowNavigationContext>
     </ThemeProvider>
   );

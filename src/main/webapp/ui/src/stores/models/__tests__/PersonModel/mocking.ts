@@ -1,8 +1,6 @@
-import { type PersonAttrs } from "../../../definitions/Person";
+import type { PersonAttrs } from "../../../definitions/Person";
 
-export const personAttrs = (
-  attrs?: Readonly<Partial<PersonAttrs>>
-): PersonAttrs => ({
+export const personAttrs = (attrs?: Readonly<Partial<PersonAttrs>>): PersonAttrs => ({
   id: 1,
   username: "user1a",
   firstName: "User",

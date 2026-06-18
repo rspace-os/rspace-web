@@ -1,10 +1,9 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import React from "react";
-import { render, screen, within, waitFor, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render, screen, waitFor, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import { TestFolderTreeExample } from "./FolderTree.story";
 
@@ -31,12 +30,7 @@ import { TestFolderTreeExample } from "./FolderTree.story";
 
 const mockAxios = new MockAdapter(axios);
 
-const rootFolderRecord = (overrides: {
-  id: number;
-  globalId: string;
-  name: string;
-  type: string;
-}) => ({
+const rootFolderRecord = (overrides: { id: number; globalId: string; name: string; type: string }) => ({
   ...overrides,
   created: "2025-01-01T10:00:00.000Z",
   lastModified: "2025-01-15T14:00:00.000Z",
@@ -86,9 +80,7 @@ const subFolderRecord = (id: number, name: string) => ({
 const setupApiMocks = () => {
   // Root tree listing.
   mockAxios.onGet(/\/api\/v1\/folders\/tree(\?.*)?$/).reply((config) => {
-    const typesToInclude =
-      (config.params as URLSearchParams | undefined)?.get("typesToInclude") ??
-      "";
+    const typesToInclude = (config.params as URLSearchParams | undefined)?.get("typesToInclude") ?? "";
     if (/folder/.test(typesToInclude)) {
       return [
         200,
@@ -125,10 +117,7 @@ const setupApiMocks = () => {
 
   // Children of folder 100 (paginated: 20 on page 0, 5 on page 1).
   mockAxios.onGet(/\/api\/v1\/folders\/tree\/100(\?.*)?$/).reply((config) => {
-    const pageNumber = parseInt(
-      (config.params as URLSearchParams | undefined)?.get("pageNumber") ?? "0",
-      10,
-    );
+    const pageNumber = parseInt((config.params as URLSearchParams | undefined)?.get("pageNumber") ?? "0", 10);
     if (pageNumber === 0) {
       return [
         200,
@@ -137,9 +126,7 @@ const setupApiMocks = () => {
           pageNumber: 0,
           _links: [],
           parentId: 100,
-          records: Array.from({ length: 20 }, (_, i) =>
-            subFolderRecord(200 + i, `Subfolder ${i + 1}`),
-          ),
+          records: Array.from({ length: 20 }, (_, i) => subFolderRecord(200 + i, `Subfolder ${i + 1}`)),
         },
       ];
     }
@@ -150,9 +137,7 @@ const setupApiMocks = () => {
         pageNumber: 1,
         _links: [],
         parentId: 100,
-        records: Array.from({ length: 5 }, (_, i) =>
-          subFolderRecord(220 + i, `Subfolder ${20 + i + 1}`),
-        ),
+        records: Array.from({ length: 5 }, (_, i) => subFolderRecord(220 + i, `Subfolder ${20 + i + 1}`)),
       },
     ];
   });
@@ -196,8 +181,7 @@ const setupApiMocks = () => {
   });
 };
 
-const getTreeItem = (name: RegExp | string): HTMLElement =>
-  screen.getByRole("treeitem", { name });
+const getTreeItem = (name: RegExp | string): HTMLElement => screen.getByRole("treeitem", { name });
 
 /*
  * MUI's TreeItem registers its click handler on the inner `.MuiTreeItem-content`
@@ -222,12 +206,8 @@ describe("FolderTree", () => {
   test("Initially displays root folder listing", async () => {
     render(<TestFolderTreeExample />);
 
-    expect(
-      await screen.findByRole("treeitem", { name: /Research Projects/ }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("treeitem", { name: /Lab Notebooks/ }),
-    ).toBeVisible();
+    expect(await screen.findByRole("treeitem", { name: /Research Projects/ })).toBeVisible();
+    expect(screen.getByRole("treeitem", { name: /Lab Notebooks/ })).toBeVisible();
   });
 
   test("Allows selecting folders", async () => {
@@ -244,9 +224,7 @@ describe("FolderTree", () => {
 
     // the selected folder details should be displayed
     expect(await screen.findByTestId("selected-folder")).toBeVisible();
-    expect(screen.getByTestId("folder-name")).toHaveTextContent(
-      "Research Projects",
-    );
+    expect(screen.getByTestId("folder-name")).toHaveTextContent("Research Projects");
     expect(screen.getByTestId("folder-id")).toHaveTextContent("100");
   });
 
@@ -277,9 +255,7 @@ describe("FolderTree", () => {
     await user.click(getTreeItemContent(/Research Projects/));
 
     // 20 of 25 subfolders loaded -> a Load More button should be visible
-    expect(
-      (await screen.findAllByRole("button", { name: "Load More" }))[0],
-    ).toBeVisible();
+    expect((await screen.findAllByRole("button", { name: "Load More" }))[0]).toBeVisible();
   });
 
   test("Loads additional folders when Load More is clicked", async () => {
@@ -290,9 +266,7 @@ describe("FolderTree", () => {
     const user = userEvent.setup();
     await user.click(getTreeItemContent(/Research Projects/));
 
-    const loadMore = (
-      await screen.findAllByRole("button", { name: "Load More" })
-    )[0];
+    const loadMore = (await screen.findAllByRole("button", { name: "Load More" }))[0];
     await user.click(loadMore);
 
     // page 1 brings in subfolders 21-25. Query by the label text node rather
@@ -356,10 +330,7 @@ describe("FolderTree", () => {
     expect(dialog).toBeVisible();
 
     // the user enters a folder name
-    await user.type(
-      within(dialog).getByLabelText("Folder Name"),
-      "New Test Folder",
-    );
+    await user.type(within(dialog).getByLabelText("Folder Name"), "New Test Folder");
 
     // the user submits the create folder dialog
     await user.click(within(dialog).getByRole("button", { name: "Create" }));
@@ -371,9 +342,7 @@ describe("FolderTree", () => {
     const matches = await screen.findAllByRole("treeitem", {
       name: /New Test Folder/,
     });
-    const newFolder = matches.find(
-      (item) => item.getAttribute("aria-checked") === "true",
-    );
+    const newFolder = matches.find((item) => item.getAttribute("aria-checked") === "true");
     expect(newFolder).toBeDefined();
     expect(newFolder).toBeVisible();
   });

@@ -1,9 +1,9 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockContainer } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
-  default: () => ({})
+vi.mock("../../../../stores/stores/getRootStore", () => ({
+  default: () => ({}),
 }));
 describe("permalinkURL", () => {
   test("When the container has not yet been saved, the permalinkURL should be null.", () => {
@@ -11,4 +11,3 @@ describe("permalinkURL", () => {
     expect(container.permalinkURL).toBe(null);
   });
 });
-

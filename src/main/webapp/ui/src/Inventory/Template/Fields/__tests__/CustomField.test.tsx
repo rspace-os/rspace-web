@@ -1,24 +1,22 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
-import CustomField from "../CustomField";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
+import materialTheme from "../../../../theme";
+import CustomField from "../CustomField";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 vi.mock("../../../../components/Ketcher/KetcherDialog", () => ({
   default: vi.fn(() => <div></div>),
-
 }));
 describe("CustomField", () => {
   describe("Should be able to delete the field", () => {
@@ -44,13 +42,10 @@ describe("CustomField", () => {
             forceColumnLayout={false}
             onMove={() => {}}
           />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByRole("button", { name: "Delete field" }));
-      await user.click(
-        screen.getByRole("menuitem", { name: "Keep field in existing samples" })
-      );
+      await user.click(screen.getByRole("menuitem", { name: "Keep field in existing samples" }));
       expect(onRemove).toHaveBeenCalledWith(false);
     });
     test("Remove field in existing samples", async () => {
@@ -75,17 +70,15 @@ describe("CustomField", () => {
             forceColumnLayout={false}
             onMove={() => {}}
           />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByRole("button", { name: "Delete field" }));
       await user.click(
         screen.getByRole("menuitem", {
           name: "Remove field from existing samples",
-        })
+        }),
       );
       expect(onRemove).toHaveBeenCalledWith(true);
     });
   });
 });
-

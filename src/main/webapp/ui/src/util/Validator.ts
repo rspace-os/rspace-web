@@ -41,9 +41,7 @@ export type Validator = {
 /**
  * Constructor function for creating new Validator objects
  */
-export const mkValidator = (
-  isValidFunc?: () => Promise<boolean>
-): Validator => {
+export const mkValidator = (isValidFunc?: () => Promise<boolean>): Validator => {
   let validFunc = isValidFunc ?? (() => Promise.resolve(true));
   return {
     setValidFunc: (f: () => Promise<boolean>) => {

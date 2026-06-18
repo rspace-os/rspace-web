@@ -1,12 +1,11 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import InitialScreen from "../InitialScreen";
-import Header from "../Header";
-import Sidebar from "../Sidebar";
-import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
+import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
+import Header from "../Header";
+import InitialScreen from "../InitialScreen";
+import Sidebar from "../Sidebar";
 
 vi.mock("../Header", () => ({
   default: vi.fn(() => <></>),
@@ -21,8 +20,7 @@ describe("InitialScreen", () => {
         <BrowserRouter>
           <InitialScreen />
         </BrowserRouter>
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     expect(Header).toHaveBeenCalled();
     expect(Sidebar).toHaveBeenCalled();

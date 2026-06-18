@@ -1,12 +1,13 @@
 import Box from "@mui/material/Box";
-import ToastMessage from "./ToastMessage";
-import React, { useMemo } from "react";
+import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
-import { preventEventBubbling } from "../../util/Util";
+import type React from "react";
+import { useMemo } from "react";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
-import { runInAction } from "mobx";
+import { preventEventBubbling } from "../../util/Util";
 import { DialogBoundary } from "../DialogBoundary";
+import ToastMessage from "./ToastMessage";
 
 type AlertsArgs = {
   children: React.ReactNode;

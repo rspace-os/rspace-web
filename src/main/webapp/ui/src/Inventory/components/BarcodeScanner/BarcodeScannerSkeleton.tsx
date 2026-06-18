@@ -1,17 +1,17 @@
-import React from "react";
-import Stack from "@mui/material/Stack";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
-import useStores from "../../../stores/use-stores";
+import Divider from "@mui/material/Divider";
+import Stack from "@mui/material/Stack";
+import type React from "react";
 import { mkAlert } from "@/stores/contexts/Alert";
-import Alert from "@mui/material/Alert";
+import { type Barcode, barcodeFormatAsString } from "@/util/barcode";
 import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import Divider from "@mui/material/Divider";
-import Box from "@mui/material/Box";
-import StringField from "../../../components/Inputs/StringField";
-import { barcodeFormatAsString, type Barcode } from "@/util/barcode";
 import FormField from "../../../components/Inputs/FormField";
+import StringField from "../../../components/Inputs/StringField";
+import useStores from "../../../stores/use-stores";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 
@@ -95,10 +95,7 @@ export default function BarcodeScannerSkeleton({
             `Barcode Scanner: ${beforeScanHelpText}.`
           )}
         </Alert>
-        <HelpLinkIcon
-          link={docLinks.barcodes}
-          title="Info on using barcodes."
-        />
+        <HelpLinkIcon link={docLinks.barcodes} title="Info on using barcodes." />
       </Stack>
       <CardActions>
         <Button

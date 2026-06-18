@@ -219,6 +219,7 @@ There are no references to this file.
         this or a new document
       </div>
       <div class="infoPanelInternalLinksDiv" style="display:none"></div>
+      <div class="infoPanelRelatedInventoryItemsDiv" style="display:none"></div>
       <div class="infoPanelSharingDiv" style="display:none"></div>
       <div class="publicLinksDiv" style="display:none"></div>
 

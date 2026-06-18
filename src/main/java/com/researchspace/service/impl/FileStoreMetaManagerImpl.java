@@ -43,6 +43,11 @@ public class FileStoreMetaManagerImpl extends GenericManagerImpl<FileProperty, L
   }
 
   @Override
+  public long countFilePropertiesWithoutRoot() {
+    return fileDao.countFilePropertiesWithoutRoot();
+  }
+
+  @Override
   public boolean doesUserOwnDocWithHash(User user, String contentsHash) {
     return fileDao.doesUserOwnDocWithHash(user, contentsHash);
   }

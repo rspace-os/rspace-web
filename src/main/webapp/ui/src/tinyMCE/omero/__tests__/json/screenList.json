@@ -14,7 +14,7 @@
     {
       "name": "idr0002-heriche-condensation/screenA",
       "id": 102,
-      "description" : "K",
+      "description": "K",
       "childCounts": 12,
       "omeroConnectionKey": "user1a",
       "annotations": [],
@@ -25,7 +25,7 @@
     {
       "name": "idr0145-ho-replicationstress/screenA",
       "id": 3301,
-      "description" : "K",
+      "description": "K",
       "childCounts": 7,
       "omeroConnectionKey": "user1a",
       "annotations": [],
@@ -47,7 +47,7 @@
     {
       "name": "idr0094-ellinger-sarscov2/screenB",
       "id": 2603,
-      "description" : "K",
+      "description": "K",
       "childCounts": 102,
       "omeroConnectionKey": "user1a",
       "annotations": [],
@@ -58,7 +58,7 @@
     {
       "name": "idr0145-ho-replicationstress/screenB",
       "id": 3302,
-      "description" : "K",
+      "description": "K",
       "childCounts": 7,
       "omeroConnectionKey": "user1a",
       "annotations": [],

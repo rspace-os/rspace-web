@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
 
@@ -24,9 +24,7 @@ function setGlobal(name: string, value: unknown) {
   });
 }
 
-function makeRecord(
-  overrides: Partial<WorkspaceRecordInformation> = {},
-): WorkspaceRecordInformation {
+function makeRecord(overrides: Partial<WorkspaceRecordInformation> = {}): WorkspaceRecordInformation {
   return {
     id: 21,
     oid: {
@@ -95,14 +93,11 @@ describe("addFromGallery", () => {
     addFromGallery(makeRecord({ type: "Document", extension: "docx" }));
 
     expect(generateIconSrc).toHaveBeenCalledWith("Documents", "docx", 301, 21);
-    expect(RS.insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
-      "#insertedDocumentTemplate",
-      {
-        id: 21,
-        name: "Gallery asset",
-        iconPath: "/icons/file.svg",
-      },
-    );
+    expect(RS.insertTemplateIntoTinyMCE).toHaveBeenCalledWith("#insertedDocumentTemplate", {
+      id: 21,
+      name: "Gallery asset",
+      iconPath: "/icons/file.svg",
+    });
   });
 
   it("posts snippet insertion with fetch and inserts returned HTML", async () => {
@@ -122,9 +117,7 @@ describe("addFromGallery", () => {
           body: "snippetId=21&fieldId=11",
         }),
       );
-      expect(RS.tinymceInsertContent).toHaveBeenCalledWith(
-        "<p>Inserted snippet</p>",
-      );
+      expect(RS.tinymceInsertContent).toHaveBeenCalledWith("<p>Inserted snippet</p>");
     });
   });
 
@@ -134,9 +127,7 @@ describe("addFromGallery", () => {
     addFromGallery(makeRecord({ type: "Snippet" }));
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith(
-        "An error occurred while inserting the snippet 21",
-      );
+      expect(window.alert).toHaveBeenCalledWith("An error occurred while inserting the snippet 21");
     });
     expect(RS.tinymceInsertContent).not.toHaveBeenCalled();
   });
@@ -159,4 +150,3 @@ describe("addFromGallery", () => {
     );
   });
 });
-

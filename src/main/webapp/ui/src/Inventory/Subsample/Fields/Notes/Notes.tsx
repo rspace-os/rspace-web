@@ -1,10 +1,10 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import NotesList from "./NotesList";
-import NewNote from "./NewNote";
-import FormControl from "../../../../components/Inputs/FormControl";
-import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import FormLabel from "@mui/material/FormLabel";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import FormControl from "../../../../components/Inputs/FormControl";
+import type SubSampleModel from "../../../../stores/models/SubSampleModel";
+import NewNote from "./NewNote";
+import NotesList from "./NotesList";
 
 type NotesArgs = {
   record: SubSampleModel;
@@ -12,11 +12,7 @@ type NotesArgs = {
   hideLabel?: boolean;
 };
 
-function Notes({
-  record,
-  onErrorStateChange,
-  hideLabel = false,
-}: NotesArgs): React.ReactNode {
+function Notes({ record, onErrorStateChange, hideLabel = false }: NotesArgs): React.ReactNode {
   return (
     <FormControl>
       {!hideLabel && <FormLabel>Notes</FormLabel>}

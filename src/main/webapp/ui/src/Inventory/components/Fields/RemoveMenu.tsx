@@ -1,8 +1,9 @@
-import React, { useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
-import StyledMenu from "../../../components/StyledMenu";
 import MenuItem from "@mui/material/MenuItem";
+import type React from "react";
+import { useState } from "react";
 import RemoveButton from "../../../components/RemoveButton";
+import StyledMenu from "../../../components/StyledMenu";
 
 export type DeleteOption = {
   value: boolean;
@@ -15,11 +16,7 @@ type RemoveMenuArgs = {
   tooltipTitle?: string;
 };
 
-const RemoveMenu = ({
-  deleteOptions,
-  onClick,
-  tooltipTitle,
-}: RemoveMenuArgs): React.ReactNode => {
+const RemoveMenu = ({ deleteOptions, onClick, tooltipTitle }: RemoveMenuArgs): React.ReactNode => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleClose = () => {
@@ -34,12 +31,7 @@ const RemoveMenu = ({
         }}
         title={tooltipTitle}
       />
-      <StyledMenu
-        anchorEl={anchorEl}
-        keepMounted
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
+      <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
         {deleteOptions.map((option) => (
           <MenuItem
             key={String(option.value)}

@@ -1,6 +1,6 @@
 import fc, { type Arbitrary } from "fast-check";
-import { type Person } from "../../Person";
-import { type Container } from "../../Container";
+import type { Container } from "../../Container";
+import type { Person } from "../../Person";
 
 export const arbitraryPerson: Arbitrary<Person> = fc
   .record<Omit<Person, "fullName" | "label">>({
@@ -10,9 +10,7 @@ export const arbitraryPerson: Arbitrary<Person> = fc
     lastName: fc.string(),
     bench: fc.constant(null),
     workbenchId: fc.nat(),
-    getBench: fc.func<[], Promise<Container>>(
-      fc.constant(Promise.resolve({} as Container))
-    ),
+    getBench: fc.func<[], Promise<Container>>(fc.constant(Promise.resolve({} as Container))),
     isCurrentUser: fc.boolean(),
     hasSysAdminRole: fc.constant(false),
     hasPiRole: fc.constant(false),

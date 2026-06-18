@@ -1,22 +1,16 @@
-import {
-  observable,
-  action,
-  computed,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import { type URL as Url, type _LINK } from "../../util/types";
-import { mkAlert } from "../contexts/Alert";
-import ApiService from "../../common/InvApiService";
-import { type RecordDetails } from "../../stores/definitions/Record";
-import getRootStore from "../stores/RootStore";
-import { justFilenameExtension } from "../../util/files";
-import { type Person } from "../definitions/Person";
-import { type Attachment } from "../definitions/Attachment";
-import { type GlobalId, type Id } from "../definitions/BaseRecord";
-import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
-import { type LinkableRecord } from "../definitions/LinkableRecord";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { getErrorMessage } from "@/util/error";
+import ApiService from "../../common/InvApiService";
+import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { RecordDetails } from "../../stores/definitions/Record";
+import { justFilenameExtension } from "../../util/files";
+import type { _LINK, URL as Url } from "../../util/types";
+import { mkAlert } from "../contexts/Alert";
+import type { Attachment } from "../definitions/Attachment";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { LinkableRecord } from "../definitions/LinkableRecord";
+import type { Person } from "../definitions/Person";
+import getRootStore from "../stores/getRootStore";
 
 type AttachmentId = number | null;
 type Bytes = number;
@@ -158,11 +152,7 @@ export class ExistingAttachment implements Attachment {
   permalinkURL: Url | null;
   owner: Person | null; // For the info button
 
-  constructor(
-    attrs: FromServer,
-    permalinkURL: Url | null,
-    onRemoveCallback: (attachment: Attachment) => void
-  ) {
+  constructor(attrs: FromServer, permalinkURL: Url | null, onRemoveCallback: (attachment: Attachment) => void) {
     makeObservable(this, {
       name: observable,
       size: observable,
@@ -192,8 +182,7 @@ export class ExistingAttachment implements Attachment {
     this.size = attrs.size;
     this.globalId = attrs.globalId;
     this.contentMimeType = attrs.contentMimeType;
-    this.link =
-      attrs._links.find(({ rel }) => rel === "enclosure")?.link ?? null;
+    this.link = attrs._links.find(({ rel }) => rel === "enclosure")?.link ?? null;
     this.removed = false;
     this.onRemoveCallback = onRemoveCallback;
     this.permalinkURL = permalinkURL;
@@ -202,11 +191,7 @@ export class ExistingAttachment implements Attachment {
   async getFile(): Promise<File> {
     if (this.file) return this.file;
     if (!this.link) throw new Error("No file specified");
-    const { data } = await ApiService.query<Blob>(
-      this.link,
-      new URLSearchParams(),
-      true
-    );
+    const { data } = await ApiService.query<Blob>(this.link, new URLSearchParams(), true);
     return runInAction(() => {
       const file = new File([data], this.name, { type: this.contentMimeType });
       this.file = file;
@@ -242,6 +227,7 @@ export class ExistingAttachment implements Attachment {
     if (this.imageLink) {
       this.imageLink = null;
     }
+    // biome-ignore lint/correctness/noVoidTypeReturn: initial biome migration
     return URL.revokeObjectURL(link);
   }
 
@@ -289,7 +275,7 @@ export class ExistingAttachment implements Attachment {
             // scale: 1.0, // optional
           }),
         }),
-        true
+        true,
       )
         .then((r) => {
           return r.data;
@@ -306,9 +292,7 @@ export class ExistingAttachment implements Attachment {
       throw new Error("Cannot generate chemical preview without file id");
     } else {
       this.setLoadingString(true);
-      const response = ApiService.get<{ data: { chemElements: string } }>(
-        `/files/${id}/chemFileDetails`
-      );
+      const response = ApiService.get<{ data: { chemElements: string } }>(`/files/${id}/chemFileDetails`);
       return response
         .then((r) => {
           if (r.status === 200) {
@@ -322,12 +306,9 @@ export class ExistingAttachment implements Attachment {
               title: "Fetching chemical file failed.",
               message: getErrorMessage(error, "Unknown reason."),
               variant: "error",
-            })
+            }),
           );
-          console.error(
-            `Could not get a string representation of chemical file ${id}.`,
-            error
-          );
+          console.error(`Could not get a string representation of chemical file ${id}.`, error);
         })
         .finally(() => {
           this.setLoadingString(false);
@@ -399,7 +380,7 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
   constructor(
     attrs: FromServerFromGallery,
     permalinkURL: Url | null,
-    onRemoveCallback: (attachment: Attachment) => void
+    onRemoveCallback: (attachment: Attachment) => void,
   ) {
     const { mediaFileGlobalId, ...rest } = attrs;
     super(rest, permalinkURL, onRemoveCallback);
@@ -430,15 +411,11 @@ export class ExistingAttachmentFromGallery extends ExistingAttachment {
 export function newExistingAttachment(
   attrs: AttachmentJson,
   permalinkURL: Url | null,
-  onRemoveCallback: (attachment: Attachment) => void
+  onRemoveCallback: (attachment: Attachment) => void,
 ): ExistingAttachment {
   const { mediaFileGlobalId, ...rest } = attrs as FromServerFromGallery;
   if (typeof mediaFileGlobalId === "string") {
-    return new ExistingAttachmentFromGallery(
-      { ...rest, mediaFileGlobalId },
-      permalinkURL,
-      onRemoveCallback
-    );
+    return new ExistingAttachmentFromGallery({ ...rest, mediaFileGlobalId }, permalinkURL, onRemoveCallback);
   }
   return new ExistingAttachment(rest, permalinkURL, onRemoveCallback);
 }
@@ -464,11 +441,7 @@ export class NewlyUploadedAttachment implements Attachment {
   permalinkURL: Url | null;
   owner: Person | null; // For the info button
 
-  constructor(
-    attrs: FromUpload,
-    permalinkURL: Url | null,
-    onRemoveCallback: (attachment: Attachment) => void
-  ) {
+  constructor(attrs: FromUpload, permalinkURL: Url | null, onRemoveCallback: (attachment: Attachment) => void) {
     makeObservable(this, {
       name: observable,
       size: observable,
@@ -510,9 +483,7 @@ export class NewlyUploadedAttachment implements Attachment {
 
   getFile(): Promise<File> {
     if (this.file) return Promise.resolve(this.file);
-    throw new Error(
-      "Impossible because the user already selected a file to upload"
-    );
+    throw new Error("Impossible because the user already selected a file to upload");
   }
 
   setLoadingImage(value: boolean): void {
@@ -525,10 +496,7 @@ export class NewlyUploadedAttachment implements Attachment {
 
   async setImageLink(): Promise<void> {
     const file = this.file;
-    if (!file)
-      throw new Error(
-        "Impossible because the user already selected a file to upload"
-      );
+    if (!file) throw new Error("Impossible because the user already selected a file to upload");
     let imageFile: Blob;
     if (this.isChemicalFile) imageFile = await this.fetchChemicalImage();
     runInAction(() => {
@@ -546,6 +514,7 @@ export class NewlyUploadedAttachment implements Attachment {
     if (this.imageLink) {
       this.imageLink = null;
     }
+    // biome-ignore lint/correctness/noVoidTypeReturn: initial biome migration
     return URL.revokeObjectURL(link);
   }
 
@@ -593,7 +562,7 @@ export class NewlyUploadedAttachment implements Attachment {
             // scale: 1.0, // optional
           }),
         }),
-        true
+        true,
       )
         .then((r) => {
           return r.data;
@@ -610,9 +579,7 @@ export class NewlyUploadedAttachment implements Attachment {
       throw new Error("Cannot generate chemical preview without file id");
     } else {
       this.setLoadingString(true);
-      const response = ApiService.get<{ data: { chemElements: string } }>(
-        `/files/${id}/chemFileDetails`
-      );
+      const response = ApiService.get<{ data: { chemElements: string } }>(`/files/${id}/chemFileDetails`);
       return response
         .then((r) => {
           if (r.status === 200) {
@@ -624,17 +591,11 @@ export class NewlyUploadedAttachment implements Attachment {
           getRootStore().uiStore.addAlert(
             mkAlert({
               title: "Fetching chemical file failed.",
-              message:
-                error?.response?.data.message ??
-                error.message ??
-                "Unknown reason.",
+              message: error?.response?.data.message ?? error.message ?? "Unknown reason.",
               variant: "error",
-            })
+            }),
           );
-          console.error(
-            `Could not get a string representation of chemical file ${id}.`,
-            error
-          );
+          console.error(`Could not get a string representation of chemical file ${id}.`, error);
         })
         .finally(() => {
           this.setLoadingString(false);
@@ -660,9 +621,7 @@ export class NewlyUploadedAttachment implements Attachment {
 
   get isImageFile(): boolean {
     if (this.file) return /^image/.test(this.file.type);
-    throw new Error(
-      "Impossible because the user already selected a file to upload"
-    );
+    throw new Error("Impossible because the user already selected a file to upload");
   }
 
   get isChemicalFile(): boolean {
@@ -692,17 +651,14 @@ export class NewlyUploadedAttachment implements Attachment {
   async save(parentGlobalId: GlobalId): Promise<void> {
     const toFormData = () => {
       const fd = new FormData();
-      if (!this.file)
-        throw new Error(
-          "Impossible because the user already selected a file to upload"
-        );
+      if (!this.file) throw new Error("Impossible because the user already selected a file to upload");
       fd.append("file", this.file);
       fd.append(
         "fileSettings",
         JSON.stringify({
           fileName: this.name,
           parentGlobalId,
-        })
+        }),
       );
       return fd;
     };
@@ -722,7 +678,7 @@ export class NewlyUploadedAttachment implements Attachment {
 export const newAttachment = (
   file: File,
   permalinkURL: Url | null,
-  onRemoveCallback: (attachment: Attachment) => void
+  onRemoveCallback: (attachment: Attachment) => void,
 ): NewlyUploadedAttachment => {
   return new NewlyUploadedAttachment(
     {
@@ -732,7 +688,7 @@ export const newAttachment = (
       file,
     },
     permalinkURL,
-    onRemoveCallback
+    onRemoveCallback,
   );
 };
 
@@ -761,10 +717,7 @@ export class NewGalleryAttachment implements Attachment {
   loadingString: boolean = false;
   chemicalString: string = "";
 
-  constructor(
-    attrs: FromGallery,
-    onRemoveCallback: (attachment: Attachment) => void
-  ) {
+  constructor(attrs: FromGallery, onRemoveCallback: (attachment: Attachment) => void) {
     makeObservable(this, {
       galleryId: observable,
       name: observable,
@@ -804,8 +757,7 @@ export class NewGalleryAttachment implements Attachment {
 
   async download(): Promise<void> {
     const anchor = document.createElement("a");
-    if (!this.downloadHref)
-      throw new Error("There isn't a URL to download the file from");
+    if (!this.downloadHref) throw new Error("There isn't a URL to download the file from");
     anchor.href = await this.downloadHref();
     anchor.download = this.name;
     if (document.body) document.body.appendChild(anchor);
@@ -816,17 +768,13 @@ export class NewGalleryAttachment implements Attachment {
   }
 
   async createChemicalPreview(): Promise<void> {
-    return Promise.reject(
-      new Error("Gallery files do not support chemical preview")
-    );
+    return Promise.reject(new Error("Gallery files do not support chemical preview"));
   }
 
   revokeChemicalPreview(): void {}
 
   setImageLink(): Promise<void> {
-    return Promise.reject(
-      new Error("Gallery files do not yet support preview image")
-    );
+    return Promise.reject(new Error("Gallery files do not yet support preview image"));
   }
 
   revokeAuthenticatedLink() {}
@@ -885,10 +833,9 @@ export class NewGalleryAttachment implements Attachment {
  */
 export const newGalleryAttachment = (
   file: GalleryFile,
-  onRemoveCallback: (attachment: Attachment) => void
+  onRemoveCallback: (attachment: Attachment) => void,
 ): NewGalleryAttachment => {
-  if (!file.globalId)
-    throw new Error("Cannot attach a file that does not have a Global Id");
+  if (!file.globalId) throw new Error("Cannot attach a file that does not have a Global Id");
   return new NewGalleryAttachment(
     {
       id: null,
@@ -897,6 +844,6 @@ export const newGalleryAttachment = (
       galleryId: file.globalId,
       downloadHref: file.downloadHref ?? null,
     },
-    onRemoveCallback
+    onRemoveCallback,
   );
 };

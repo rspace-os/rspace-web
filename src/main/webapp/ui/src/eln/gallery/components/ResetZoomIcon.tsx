@@ -1,5 +1,5 @@
-import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
+import type React from "react";
 
 /**
  * A magnifying glass icon with a '1' inside to indicate that the zoom level
@@ -8,11 +8,8 @@ import SvgIcon from "@mui/material/SvgIcon";
 export default function ResetZoomIcon(): React.ReactNode {
   return (
     <SvgIcon>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        version="1.1"
-        viewBox="0 0 100 100"
-      >
+      {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
         <g>
           <g id="Layer_2">
             <g>

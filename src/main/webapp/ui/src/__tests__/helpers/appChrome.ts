@@ -54,18 +54,9 @@ export function uiNavigationData(visibleTabs: Partial<VisibleTabs> = {}) {
  * test-specific handlers. `axios-mock-adapter` matches handlers in registration
  * order, so a catch-all registered first would intercept your specific stubs.
  */
-export function stubAppChrome(
-  mockAxios: MockAdapter,
-  options: { visibleTabs?: Partial<VisibleTabs> } = {},
-): void {
-  mockAxios
-    .onGet("/userform/ajax/inventoryOauthToken")
-    .reply(200, { data: STUB_JWT });
-  mockAxios
-    .onGet("/session/ajax/livechatProperties")
-    .reply(200, { livechatEnabled: false });
-  mockAxios
-    .onGet("/api/v1/userDetails/uiNavigationData")
-    .reply(200, uiNavigationData(options.visibleTabs));
+export function stubAppChrome(mockAxios: MockAdapter, options: { visibleTabs?: Partial<VisibleTabs> } = {}): void {
+  mockAxios.onGet("/userform/ajax/inventoryOauthToken").reply(200, { data: STUB_JWT });
+  mockAxios.onGet("/session/ajax/livechatProperties").reply(200, { livechatEnabled: false });
+  mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData(options.visibleTabs));
   mockAxios.onGet("/public/banner").reply(200, "fake image data");
 }

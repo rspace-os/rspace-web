@@ -1,32 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import FormControl from "@mui/material/FormControl";
-import DataciteCard from "./DataciteCard";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useState } from "react";
+import useStores from "../../../stores/use-stores";
+import DataciteCard from "./DataciteCard";
 
 type SettingsDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
 };
 
-function SettingsDialog({
-  open,
-  setOpen,
-}: SettingsDialogArgs): React.ReactNode {
+function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode {
   const { authStore } = useStores();
 
   const [fetchingSystemSettings, setFetchingSystemSettings] = useState<
-    | null
-    | { state: "loading" }
-    | { state: "loaded" }
-    | { state: "error"; error: string }
+    null | { state: "loading" } | { state: "loaded" } | { state: "error"; error: string }
   >(null);
 
   /**
@@ -40,8 +35,7 @@ function SettingsDialog({
         await authStore.getSystemSettings();
         setFetchingSystemSettings({ state: "loaded" });
       } catch (e) {
-        if (e instanceof Error)
-          setFetchingSystemSettings({ state: "error", error: e.message });
+        if (e instanceof Error) setFetchingSystemSettings({ state: "error", error: e.message });
       }
     }
     void initialiseSettings();

@@ -2,21 +2,30 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 
 public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
 
   private @Autowired SystemSettingsApiController settingsController;
+  private @Autowired SystemPropertyManager sysPropertyMgr;
 
   private MockHttpServletRequest request;
   private BindingResult mockBindingResult = mock(BindingResult.class);
@@ -33,23 +42,89 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
     ApiInventorySystemSettings initialSettings =
         settingsController.getInventorySettings(request, sysadmin);
     assertNotNull(initialSettings);
-    assertNotNull(initialSettings.getDatacite());
-    assertEquals("https://api.datacite.org", initialSettings.getDatacite().getServerUrl());
-    assertEquals("", initialSettings.getDatacite().getUsername());
-    assertEquals("", initialSettings.getDatacite().getPassword());
-    assertEquals("", initialSettings.getDatacite().getRepositoryPrefix());
-    assertEquals("false", initialSettings.getDatacite().getEnabled());
 
-    ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setUsername("updated");
+    IdentifierSettings initialIgsn =
+        initialSettings.getIdentifiersSettings().get(InventorySettingType.IGSN);
+    assertNotNull(initialIgsn);
+    assertEquals(IdentifierType.IGSN_DATACITE, initialIgsn.getProvider());
+    assertNotNull(initialSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST));
+
+    // capture the current PIDINST username, so we can prove the IGSN update leaves it untouched
+    String initialPidinstUsername =
+        initialSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername();
+
+    // a single IGSN-provider object updates only the IGSN config
+    IdentifierSettings igsnUpdate = new IdentifierSettings();
+    igsnUpdate.setProvider(IdentifierType.IGSN_DATACITE);
+    igsnUpdate.setUsername("igsnUserUpdated");
     ApiInventorySystemSettings updatedSettings =
-        settingsController.updateInventorySettings(request, update, mockBindingResult, sysadmin);
+        settingsController.updateInventorySettings(
+            request, igsnUpdate, mockBindingResult, sysadmin);
     assertNotNull(updatedSettings);
-    assertEquals("updated", updatedSettings.getDatacite().getUsername());
+    assertEquals(
+        "igsnUserUpdated",
+        updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
+    assertEquals(
+        initialPidinstUsername,
+        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
+
+    // a single PIDINST-provider object updates only the PIDINST config
+    IdentifierSettings pidinstUpdate = new IdentifierSettings();
+    pidinstUpdate.setProvider(IdentifierType.PIDINST_DATACITE);
+    pidinstUpdate.setUsername("pidinstUserUpdated");
+    updatedSettings =
+        settingsController.updateInventorySettings(
+            request, pidinstUpdate, mockBindingResult, sysadmin);
+    assertNotNull(updatedSettings);
+    assertEquals(
+        "pidinstUserUpdated",
+        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
+    assertEquals(
+        "igsnUserUpdated",
+        updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
 
     ApiInventorySystemSettings reloadedSettings =
         settingsController.getInventorySettings(request, sysadmin);
     assertNotNull(reloadedSettings);
-    assertEquals("updated", reloadedSettings.getDatacite().getUsername());
+    assertEquals(
+        "igsnUserUpdated",
+        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
+    assertEquals(
+        "pidinstUserUpdated",
+        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
+  }
+
+  @Test
+  public void updateWithoutProviderRejected() {
+    User sysadmin = logoutAndLoginAsSysAdmin();
+
+    IdentifierSettings noProvider = new IdentifierSettings();
+    noProvider.setUsername("whatever");
+    assertThrows(
+        BindException.class,
+        () ->
+            settingsController.updateInventorySettings(
+                request,
+                noProvider,
+                new BeanPropertyBindingResult(noProvider, "identifierSettings"),
+                sysadmin));
+  }
+
+  @Test
+  public void pidinstSystemPropertiesAreSeeded() {
+    // asserts the RSDEV-1175 changeset seeded the five pidinst.datacite.* properties; values are
+    // mutable sysadmin config (so not asserted here)
+    Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
+
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.enabled");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.server.url");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.username");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.password");
+    assertPropertyPresent(propertiesMap, "pidinst.datacite.repositoryPrefix");
+  }
+
+  private void assertPropertyPresent(
+      Map<String, SystemPropertyValue> propertiesMap, String propertyName) {
+    assertNotNull(propertiesMap.get(propertyName), "missing system property: " + propertyName);
   }
 }

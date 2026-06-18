@@ -1,14 +1,14 @@
-import React from "react";
+import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import QueryBuilderOutlinedIcon from "@mui/icons-material/QueryBuilderOutlined";
 import RadioButtonCheckedOutlinedIcon from "@mui/icons-material/RadioButtonCheckedOutlined";
 import ShortTextOutlinedIcon from "@mui/icons-material/ShortTextOutlined";
 import SubjectOutlinedIcon from "@mui/icons-material/SubjectOutlined";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
-import QueryBuilderOutlinedIcon from "@mui/icons-material/QueryBuilderOutlined";
-import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
-import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
-import { listToObject } from "../../util/Util";
+import type React from "react";
 import NumberIcon from "../../components/NumberIcon";
+import { listToObject } from "../../util/Util";
 
 export const FieldTypes: { [fieldName: string]: symbol } = {
   choice: Symbol.for("choice"),
@@ -21,18 +21,14 @@ export const FieldTypes: { [fieldName: string]: symbol } = {
   uri: Symbol.for("uri"),
   reference: Symbol.for("reference"),
   attachment: Symbol.for("attachment"),
+  link: Symbol.for("link"),
 };
 
 export type FieldType = (typeof FieldTypes)[keyof typeof FieldTypes];
 
-export const compatibleFieldTypes = (
-  fieldType: FieldType
-): Array<FieldType> => {
+export const compatibleFieldTypes = (fieldType: FieldType): Array<FieldType> => {
   const types = new Set([fieldType]);
-  if (
-    fieldType !== FieldTypes.reference &&
-    fieldType !== FieldTypes.attachment
-  ) {
+  if (fieldType !== FieldTypes.reference && fieldType !== FieldTypes.attachment) {
     types.add(FieldTypes.formatted_text);
     types.add(FieldTypes.plain_text);
     types.add(FieldTypes.radio);
@@ -42,8 +38,7 @@ export const compatibleFieldTypes = (
 };
 
 export const fieldTypeToApiString = (fieldType: FieldType): string => {
-  if (!(typeof fieldType === "symbol"))
-    throw new Error("FieldTypes are all Symbols.");
+  if (!(typeof fieldType === "symbol")) throw new Error("FieldTypes are all Symbols.");
   const map = {
     [FieldTypes.choice]: "choice",
     [FieldTypes.date]: "date",
@@ -55,9 +50,9 @@ export const fieldTypeToApiString = (fieldType: FieldType): string => {
     [FieldTypes.time]: "time",
     [FieldTypes.reference]: "reference",
     [FieldTypes.attachment]: "attachment",
+    [FieldTypes.link]: "link",
   };
-  if (!map[fieldType])
-    throw new Error(`Invalid field type: Symbol(${Symbol.keyFor(fieldType)})`);
+  if (!map[fieldType]) throw new Error(`Invalid field type: Symbol(${Symbol.keyFor(fieldType)})`);
   return map[fieldType];
 };
 
@@ -73,11 +68,9 @@ export const apiStringToFieldType = (apiString: string): FieldType => {
     time: FieldTypes.time,
     reference: FieldTypes.reference,
     attachment: FieldTypes.attachment,
+    link: FieldTypes.link,
   };
-  if (!map[apiString])
-    throw new Error(
-      `Invalid api string '${apiString}'; not a valid field type.`
-    );
+  if (!map[apiString]) throw new Error(`Invalid api string '${apiString}'; not a valid field type.`);
   return map[apiString];
 };
 
@@ -95,6 +88,7 @@ export const FIELD_LABEL: { [fieldName: FieldType]: string } = {
   [FieldTypes.time]: "Time",
   [FieldTypes.attachment]: "Attachment",
   [FieldTypes.reference]: "Reference",
+  [FieldTypes.link]: "Link",
 };
 
 export const FIELD_ICON: { [fieldName: FieldType]: React.ReactNode } = {
@@ -107,6 +101,7 @@ export const FIELD_ICON: { [fieldName: FieldType]: React.ReactNode } = {
   [FieldTypes.uri]: <LinkOutlinedIcon />,
   [FieldTypes.time]: <QueryBuilderOutlinedIcon />,
   [FieldTypes.attachment]: <AttachFileOutlinedIcon />,
+  [FieldTypes.link]: <LinkOutlinedIcon />,
 };
 
 export const FIELD_HELP_TEXT: { [fieldName: FieldType]: string } = {
@@ -120,6 +115,7 @@ export const FIELD_HELP_TEXT: { [fieldName: FieldType]: string } = {
   [FieldTypes.time]: "A time of day.",
   [FieldTypes.attachment]: "A single file, e.g. document, or chemistry file.",
   [FieldTypes.reference]: "",
+  [FieldTypes.link]: "A link to another Inventory item or ELN record.",
 };
 
 export const SUPPORTED_TYPES: Set<FieldType> = new Set<FieldType>([
@@ -132,6 +128,7 @@ export const SUPPORTED_TYPES: Set<FieldType> = new Set<FieldType>([
   FieldTypes.uri,
   FieldTypes.time,
   FieldTypes.attachment,
+  FieldTypes.link,
 ]);
 
 export const FIELD_DATA: {

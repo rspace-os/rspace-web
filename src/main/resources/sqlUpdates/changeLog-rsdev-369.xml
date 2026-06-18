@@ -5,7 +5,7 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <!-- Fieldmark integration -->
-    <changeSet id="2024-10-09a" context="run,dev-test" author="nico">
+    <changeSet id="2024-10-09a" context="run" author="nico">
         <comment>Create a new app - Fieldmark</comment>
         <insert tableName="App">
             <column name="id" type="NUMERIC" value="NULL" />
@@ -15,7 +15,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2024-10-09b" context="run,dev-test" author="nico">
+    <changeSet id="2024-10-09b" context="run" author="nico">
         <comment>Create a new system properties for Fieldmark</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
@@ -37,7 +37,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2024-10-09c" context="run,dev-test" author="nico">
+    <changeSet id="2024-10-09c" context="run" author="nico">
         <comment>Property Descriptor for Fieldmark App</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
@@ -47,7 +47,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2024-10-09d" context="run,dev-test" author="nico">
+    <changeSet id="2024-10-09d" context="run" author="nico">
         <comment>AppConfigElementDescriptor for Fieldmark App: id, descriptor_id, app_id</comment>
         <sql>insert into AppConfigElementDescriptor (descriptor_id, app_id)
                  select pd.id as descriptor_id, app.id as app_id

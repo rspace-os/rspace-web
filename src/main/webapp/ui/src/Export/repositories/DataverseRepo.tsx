@@ -1,9 +1,9 @@
-import React from "react";
-import Users from "../ExportRepoUser";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
 import Grid from "@mui/material/Grid";
-import { type Person, type Repo, type StandardValidations } from "./common";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import type React from "react";
+import Users from "../ExportRepoUser";
+import type { Person, Repo, StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
 
 type DataverseArgs = {
@@ -130,12 +130,11 @@ export default function DataverseRepo({
             fullWidth
             value={metadataLanguage}
           >
-            {repo.metadataLanguages &&
-              repo.metadataLanguages.map((option) => (
-                <MenuItem key={option.title} value={option.locale}>
-                  {option.title}
-                </MenuItem>
-              ))}
+            {repo.metadataLanguages?.map((option) => (
+              <MenuItem key={option.title} value={option.locale}>
+                {option.title}
+              </MenuItem>
+            ))}
           </TextField>
         </Grid>
       )}

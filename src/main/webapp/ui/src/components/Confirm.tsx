@@ -13,9 +13,9 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import useStores from "../stores/use-stores";
-import { default as React } from "react";
 import { observer } from "mobx-react-lite";
+import { default as React } from "react";
+import useStores from "../stores/use-stores";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 function Confirm(): React.ReactNode {
@@ -35,9 +35,7 @@ function Confirm(): React.ReactNode {
     >
       <DialogTitle>{uiStore.confirmationDialogProps?.title ?? ""}</DialogTitle>
       <DialogContent sx={{ overscrollBehavior: "contain" }}>
-        <DialogContentText>
-          {uiStore.confirmationDialogProps?.message ?? ""}
-        </DialogContentText>
+        <DialogContentText>{uiStore.confirmationDialogProps?.message ?? ""}</DialogContentText>
       </DialogContent>
       <DialogActions>
         {uiStore.confirmationDialogProps?.noLabel && (
@@ -53,12 +51,8 @@ function Confirm(): React.ReactNode {
           onClick={() => {
             uiStore.confirmationDialogProps?.yes();
           }}
-          loading={Boolean(
-            uiStore.confirmationDialogProps?.confirmationSpinner
-          )}
-          disabled={Boolean(
-            uiStore.confirmationDialogProps?.confirmationSpinner
-          )}
+          loading={Boolean(uiStore.confirmationDialogProps?.confirmationSpinner)}
+          disabled={Boolean(uiStore.confirmationDialogProps?.confirmationSpinner)}
           label={uiStore.confirmationDialogProps?.yesLabel ?? "OK"}
         />
       </DialogActions>

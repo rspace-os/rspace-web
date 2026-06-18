@@ -1,12 +1,11 @@
-import React from "react";
 import { ThemeProvider } from "@mui/material/styles";
-import Carousel from "./Carousel";
 import createAccentedTheme from "@/accentedTheme";
-import { Optional } from "@/util/optional";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
-import { Description, LocalGalleryFile } from "../useGalleryListing";
-import { incrementForever, take } from "@/util/iterators";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { incrementForever, take } from "@/util/iterators";
+import { Optional } from "@/util/optional";
+import { Description, LocalGalleryFile } from "../useGalleryListing";
+import Carousel from "./Carousel";
 
 export function SimpleCarousel() {
   return (

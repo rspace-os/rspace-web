@@ -1,8 +1,9 @@
-import { describe, expect, test } from 'vitest';
-import RsSet from "../../set";
 import fc from "fast-check";
+import { describe, expect, test } from "vitest";
+import RsSet from "../../set";
 
 import { arbRsSet } from "./helpers";
+
 describe("constructor", () => {
   describe("Should behave just like native set", () => {
     const expectSameSizeAsNativeSet = (data?: Iterable<unknown> | null) => {
@@ -18,7 +19,7 @@ describe("constructor", () => {
       fc.assert(
         fc.property(fc.array(fc.anything()), (array) => {
           expectSameSizeAsNativeSet(array);
-        })
+        }),
       );
     });
     test("set", () => {
@@ -27,17 +28,16 @@ describe("constructor", () => {
           fc.array(fc.anything()).map((array) => new Set(array)),
           (set) => {
             expectSameSizeAsNativeSet(set);
-          }
-        )
+          },
+        ),
       );
     });
     test("RsSet", () => {
       fc.assert(
         fc.property(arbRsSet(fc.anything()), (rsset) => {
           expectSameSizeAsNativeSet(rsset);
-        })
+        }),
       );
     });
   });
 });
-

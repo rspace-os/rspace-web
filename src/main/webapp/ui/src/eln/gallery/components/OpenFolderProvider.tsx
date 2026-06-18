@@ -1,5 +1,5 @@
 import React from "react";
-import { type GalleryFile } from "../useGalleryListing";
+import type { GalleryFile } from "../useGalleryListing";
 
 /**
  * There are various ways to open a folder in a listing:
