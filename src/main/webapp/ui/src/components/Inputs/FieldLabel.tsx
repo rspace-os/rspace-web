@@ -1,6 +1,7 @@
 import FormLabel from "@mui/material/FormLabel";
 import type { SxProps, Theme } from "@mui/material/styles";
 import type React from "react";
+import { mergeSx } from "@/modules/common/utils/styles";
 import { Heading } from "../DynamicHeadingLevel";
 
 /**
@@ -84,14 +85,17 @@ export default function FieldLabel({
       ? "legend"
       : "label";
 
+  // Reset styles added by the browser when setting the `component` prop, then
+  // merge any caller overrides on top.
+  const mergedSx: SxProps<Theme> = mergeSx({ mt: 0, textAlign: "left" }, sx);
+
   return (
     <FormLabel
       id={id}
       component={component}
       classes={classes}
       required={required}
-      // reset styles added by the browser when setting the component prop
-      sx={[{ mt: 0, textAlign: "left" }, ...(Array.isArray(sx) ? sx : [sx])]}
+      sx={mergedSx}
       {...(!disabled && !asFieldset && typeof htmlFor === "string" ? { htmlFor } : {})}
     >
       {children}

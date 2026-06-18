@@ -35,6 +35,7 @@ export type TemplateAttrs = Omit<SampleAttrs, "quantity"> & {
   defaultUnitId: number | null;
   historicalVersion: boolean;
   version: number;
+  samplesToUpdateCount: number;
   quantity: null;
 };
 
@@ -68,6 +69,7 @@ const DEFAULT_TEMPLATE: TemplateAttrs = {
   defaultUnitId: 3,
   version: 0,
   historicalVersion: false,
+  samplesToUpdateCount: 0,
   barcodes: [],
   identifiers: [],
   sharingMode: "OWNER_GROUPS",
@@ -86,6 +88,7 @@ export default class TemplateModel extends SampleModel implements Template {
   // The inherited number | null is narrowed to number to satisfy the Template
   // interface: the API contract guarantees every sample template has a version.
   declare version: number;
+  samplesToUpdateCount: number = 0;
   latest: Template | null = null;
   icon: string | null = null;
 
@@ -93,6 +96,7 @@ export default class TemplateModel extends SampleModel implements Template {
     super(factory, params as unknown as SampleAttrs);
     makeObservable(this, {
       defaultUnitId: observable,
+      samplesToUpdateCount: observable,
       latest: observable,
       icon: observable,
       addField: action,
@@ -139,9 +143,12 @@ export default class TemplateModel extends SampleModel implements Template {
 
   populateFromJson(factory: Factory, params: object, defaultParams: object = {}) {
     super.populateFromJson(factory, params, defaultParams);
-    params = { ...defaultParams, ...params };
-    // @ts-expect-error We assume that params has this property
-    this.defaultUnitId = params.defaultUnitId ?? 3;
+    const merged = { ...defaultParams, ...params } as {
+      defaultUnitId?: number;
+      samplesToUpdateCount?: number;
+    };
+    this.defaultUnitId = merged.defaultUnitId ?? 3;
+    this.samplesToUpdateCount = merged.samplesToUpdateCount ?? 0;
     // version and historicalVersion are populated by the base class
   }
 

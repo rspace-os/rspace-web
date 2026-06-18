@@ -249,6 +249,27 @@ export type FormFieldArgs<T> = {
   doNotAttachIdToLabel?: boolean;
 
   sx?: SxProps<Theme>;
+
+  /**
+   * When true the label stays in the DOM (so screen readers and the
+   * `aria-labelledby` wiring still find it) but is hidden visually. Use this
+   * where the field's name is presented elsewhere in the input itself - e.g. a
+   * Link field renders its name inside the link card, so the duplicate label
+   * above the card is suppressed.
+   */
+  hideLabel?: boolean;
+};
+
+const VISUALLY_HIDDEN: SxProps<Theme> = {
+  border: 0,
+  clip: "rect(0 0 0 0)",
+  height: "1px",
+  margin: "-1px",
+  overflow: "hidden",
+  padding: 0,
+  position: "absolute",
+  whiteSpace: "nowrap",
+  width: "1px",
 };
 
 export default function FormField<T>({
@@ -265,6 +286,7 @@ export default function FormField<T>({
   asFieldset,
   doNotAttachIdToLabel,
   sx,
+  hideLabel,
 }: FormFieldArgs<T>): React.ReactNode {
   const inputId = React.useId();
   const labelId = React.useId();
@@ -295,6 +317,7 @@ export default function FormField<T>({
         disabled={disabled}
         asFieldset={asFieldset}
         htmlFor={doNotAttachIdToLabel ? undefined : inputId}
+        sx={hideLabel ? VISUALLY_HIDDEN : undefined}
       >
         {label}
       </FieldLabel>

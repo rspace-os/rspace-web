@@ -158,6 +158,20 @@ public class AuditManagerImpl implements AuditManager {
   }
 
   @Override
+  public Number findRevisionNumberForDocumentVersion(Long docId, Number userVersion) {
+    List<AuditedEntity<StructuredDocument>> docRevisionList =
+        auditDao.getRevisionsForDocumentVersion(docId, userVersion);
+    return docRevisionList.isEmpty() ? null : docRevisionList.get(0).getRevision().intValue();
+  }
+
+  @Override
+  public Number findRevisionNumberForMediaFileVersion(Long mediaId, Number version) {
+    List<AuditedEntity<EcatMediaFile>> revisionList =
+        auditDao.getRevisionsForMediaFileVersion(mediaId, version);
+    return revisionList.isEmpty() ? null : revisionList.get(0).getRevision().intValue();
+  }
+
+  @Override
   public <T> Number getRevisionNumberForInventoryRecordVersion(
       Class<T> cls, Long recordId, Number version) {
     List<AuditedEntity<T>> revisionList =

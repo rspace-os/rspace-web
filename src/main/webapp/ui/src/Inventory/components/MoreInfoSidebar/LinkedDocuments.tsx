@@ -8,6 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
+import Grid from "@mui/material/Grid";
 import Skeleton from "@mui/material/Skeleton";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -28,11 +29,152 @@ import type { Document, DocumentAttrs } from "../../../stores/definitions/Docume
 import type { Factory } from "../../../stores/definitions/Factory";
 import RsSet, { unionWith } from "../../../util/set";
 
+type ReferencingItem = {
+  sourceGlobalId: string;
+  sourceName: string;
+  sourceType: string;
+  relationType: string;
+  versionPin: number | null;
+};
+
 type State =
   | { state: "init" }
   | { state: "loading" }
-  | { state: "success"; documents: RsSet<Document> }
+  | {
+      state: "success";
+      documents: RsSet<Document>;
+      referencingItems: ReferencingItem[];
+    }
   | { state: "fail"; error: Error };
+
+import { GLOBAL_ID_PATTERN, INVENTORY_PREFIX_TO_API_PATH } from "@/Inventory/components/Fields/Link/linkTarget";
+
+function referencingItemsEndpoint(globalId: string): string | null {
+  const match = GLOBAL_ID_PATTERN.exec(globalId);
+  if (!match) return null;
+  // sample templates have no typed referencingItems endpoint; use the
+  // generic by-Global-ID route instead
+  if (match[1] === "IT") return `referencingItems/${globalId}`;
+  const segment = INVENTORY_PREFIX_TO_API_PATH[match[1]];
+  if (segment) return `${segment}/${match[2]}/referencingItems`;
+  return null;
+}
+
+function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.ReactElement {
+  return (
+    <Table size="small" aria-label="Inventory items linking to this item">
+      <TableHead>
+        <TableRow>
+          <TableCell>Name</TableCell>
+          <TableCell>Global ID</TableCell>
+          <TableCell>Relation</TableCell>
+          {/* Which version of THIS item the linking item points at (not a version
+              of the linking item itself). */}
+          <TableCell>Linked version</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {items.map((item, index) => (
+          // one item can link to the same target through several fields, so
+          // the global id alone is not a unique row key
+          <TableRow key={`${item.sourceGlobalId}-${index}`}>
+            <TableCell>{item.sourceName}</TableCell>
+            <TableCell>
+              <a href={`/globalId/${item.sourceGlobalId}`} rel="noreferrer" target="_blank">
+                {item.sourceGlobalId}
+              </a>
+            </TableCell>
+            <TableCell>{item.relationType}</TableCell>
+            <TableCell>{item.versionPin != null ? `v${item.versionPin}` : "Latest"}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function DocumentsTable({ documents }: { documents: RsSet<Document> }): React.ReactElement {
+  return (
+    <Table aria-label="Documents containing this item">
+      <TableHead>
+        <TableRow>
+          <TableCell>Name</TableCell>
+          <TableCell>Global ID</TableCell>
+          <TableCell>Owner</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {documents.map((document) => (
+          <TableRow key={document.globalId}>
+            <TableCell>{document.name}</TableCell>
+            <TableCell>
+              <GlobalIdLink record={document} />
+            </TableCell>
+            <TableCell>
+              {document.owner ? (
+                <UserDetails
+                  userId={document.owner.id}
+                  fullName={document.owner.fullName}
+                  position={["bottom", "right"]}
+                />
+              ) : (
+                <>-</>
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function DialogContents({ state }: { state: State }): React.ReactNode {
+  if (state.state === "loading") return <Skeleton variant="rectangular" width={210} height={118} />;
+  if (state.state === "fail") return <Alert severity="error">{state.error.message}</Alert>;
+  if (state.state === "success") {
+    const { documents, referencingItems } = state;
+    const bothEmpty = documents.size === 0 && referencingItems.length === 0;
+    return (
+      <>
+        <Box>
+          <Typography variant="subtitle1" gutterBottom>
+            Documents containing this item
+          </Typography>
+          {documents.size > 0 ? <DocumentsTable documents={documents} /> : <NoValue label="No documents" />}
+        </Box>
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Inventory items linking to this item
+          </Typography>
+          {referencingItems.length > 0 ? (
+            <ReferencingItemsTable items={referencingItems} />
+          ) : (
+            <NoValue label="No inventory links" />
+          )}
+        </Box>
+        {bothEmpty && (
+          <>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="body1">
+                Adding this item to a document&apos;s{" "}
+                <a href={docLinks.listOfMaterials} rel="noreferrer" target="_blank">
+                  List of Materials
+                </a>{" "}
+                will add an entry for the document in this panel.
+              </Typography>
+            </Box>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="body1">
+                Other Inventory items that link to this item through a Link custom field will also be listed here.
+              </Typography>
+            </Box>
+          </>
+        )}
+      </>
+    );
+  }
+  return null;
+}
 
 type LinkedDocumentsArgs = {
   globalId: GlobalId;
@@ -49,9 +191,17 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
       setState({ state: "loading" });
       void (async () => {
         try {
-          const { data } = await ApiService.get<Array<{ elnDocument: DocumentAttrs }>>(
+          const docsRequest = ApiService.get<Array<{ elnDocument: DocumentAttrs }>>(
             `listOfMaterials/forInventoryItem/${globalId}`,
           );
+          const refsEndpoint = referencingItemsEndpoint(globalId);
+          const refsRequest = refsEndpoint
+            ? ApiService.get<{ referencingItems: ReferencingItem[] }>(refsEndpoint)
+            : Promise.resolve({
+                data: { referencingItems: [] },
+              } as { data: { referencingItems: ReferencingItem[] } });
+
+          const [docsResponse, refsResponse] = await Promise.all([docsRequest, refsRequest]);
 
           // always use a new factory so that closing and reopening the
           // dialog uses the newly fetched data
@@ -59,11 +209,9 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
 
           setState({
             state: "success",
-            // take the union of the documents, where id defines equality, to
-            // only show each document in the table once
             documents: unionWith(
               ({ id }: Document) => id,
-              data.map(
+              docsResponse.data.map(
                 ({ elnDocument: { globalId: docGlobalId, name, id, owner } }: { elnDocument: DocumentAttrs }) =>
                   new RsSet([
                     newFactory.newDocument({
@@ -75,6 +223,7 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
                   ]),
               ),
             ),
+            referencingItems: refsResponse.data.referencingItems ?? [],
           });
         } catch (e) {
           setState({ state: "fail", error: e as Error });
@@ -84,77 +233,32 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
   }, [open]);
 
   return (
-    <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
-      <FormLabel component="legend">Linked Documents</FormLabel>
-      <FormGroup>
-        <Button
-          variant="outlined"
-          disableElevation
-          onClick={() => {
-            setOpen(true);
-          }}
-          disabled={!factory}
-        >
-          Show Linked Documents
-        </Button>
-        <Dialog open={open} onClose={() => setOpen(false)}>
-          <DialogTitle>Linked Documents</DialogTitle>
-          <DialogContent>
-            {state.state === "loading" && <Skeleton variant="rectangular" width={210} height={118} />}
-            {state.state === "fail" && <Alert severity="error">{state.error.message}</Alert>}
-            {state.state === "success" && state.documents.size === 0 && (
-              <>
-                <NoValue label="None" />
-                <Box sx={{ mt: 1 }}>
-                  <Typography variant="body1">
-                    Adding this item to a document&apos;s{" "}
-                    <a href={docLinks.listOfMaterials} rel="noreferrer" target="_blank">
-                      List of Materials
-                    </a>{" "}
-                    will add an entry for the document in this panel.
-                  </Typography>
-                </Box>
-              </>
-            )}
-            {state.state === "success" && state.documents.size > 0 && (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Global ID</TableCell>
-                    <TableCell>Owner</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {state.documents.map((document) => (
-                    <TableRow key={document.globalId}>
-                      <TableCell>{document.name}</TableCell>
-                      <TableCell>
-                        <GlobalIdLink record={document} />
-                      </TableCell>
-                      <TableCell>
-                        {document.owner ? (
-                          <UserDetails
-                            userId={document.owner.id}
-                            fullName={document.owner.fullName}
-                            position={["bottom", "right"]}
-                          />
-                        ) : (
-                          <>&emdash;</>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpen(false)}>Close</Button>
-          </DialogActions>
-        </Dialog>
-      </FormGroup>
-    </FormControl>
+    <Grid>
+      <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
+        <FormLabel component="legend">Linked Documents</FormLabel>
+        <FormGroup>
+          <Button
+            variant="outlined"
+            disableElevation
+            onClick={() => {
+              setOpen(true);
+            }}
+            disabled={!factory}
+          >
+            Show Linked Documents
+          </Button>
+          <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Linked Documents</DialogTitle>
+            <DialogContent>
+              <DialogContents state={state} />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpen(false)}>Close</Button>
+            </DialogActions>
+          </Dialog>
+        </FormGroup>
+      </FormControl>
+    </Grid>
   );
 }
 

@@ -76,3 +76,6 @@ src/main/webapp/ui/junit.xml
 .worktrees/
 
 .pnpm-store
+# Playwright outputs (repo root; written by the component-test runner)
+/test-results/
+/playwright-report/

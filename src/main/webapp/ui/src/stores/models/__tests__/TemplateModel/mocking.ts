@@ -42,6 +42,7 @@ export const templateAttrs = (attrs?: Partial<TemplateAttrs>): TemplateAttrs => 
   defaultUnitId: 3,
   historicalVersion: false,
   version: 1,
+  samplesToUpdateCount: 0,
   barcodes: [],
   identifiers: [],
   sharingMode: "OWNER_GROUPS",

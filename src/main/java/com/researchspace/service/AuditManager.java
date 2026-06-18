@@ -55,6 +55,21 @@ public interface AuditManager {
   Number getRevisionNumberForMediaFileVersion(Long mediaId, Number version);
 
   /**
+   * Like {@link #getRevisionNumberForDocumentVersion} but returns {@code null} when that version
+   * has no audit row instead of throwing. Mirrors {@link
+   * #getRevisionNumberForInventoryRecordVersion}'s null-on-absent contract, so a best-effort caller
+   * (e.g. capturing a link's pinned revision) can degrade to "unresolved" without the throwing
+   * variant's {@link IllegalArgumentException} marking the surrounding transaction rollback-only.
+   */
+  Number findRevisionNumberForDocumentVersion(Long docId, Number userVersion);
+
+  /**
+   * Like {@link #getRevisionNumberForMediaFileVersion} but returns {@code null} when that version
+   * has no audit row instead of throwing. See {@link #findRevisionNumberForDocumentVersion}.
+   */
+  Number findRevisionNumberForMediaFileVersion(Long mediaId, Number version);
+
+  /**
    * Returns the newest Envers revision number carrying the given user-facing version of an audited
    * inventory record, or null if no revision carries that version.
    */

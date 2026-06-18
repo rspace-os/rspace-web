@@ -4,7 +4,6 @@ import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.tagDifferenc
 
 import com.axiope.search.SearchUtils;
 import com.researchspace.api.v1.model.ApiBarcode;
-import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiGroupBasicInfo;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
@@ -26,7 +25,6 @@ import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.PermissionDomain;
@@ -41,7 +39,6 @@ import com.researchspace.service.inventory.ApiBarcodesHelper;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.InventoryApiManager;
-import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.awt.image.BufferedImage;
@@ -111,15 +108,10 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
     saveSharingACLForIncomingApiInvRec(invRec, apiInvRec);
 
-    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        null, apiInvRec.getExtraFields());
-    for (ApiExtraField apiExtraField : apiInvRec.getExtraFields()) {
-      ExtraField extraField =
-          recordFactory.createExtraField(
-              apiExtraField.getName(), apiExtraField.getTypeAsFieldType(), user, invRec);
-      extraField.setData(apiExtraField.getContent());
-      invRec.addExtraField(extraField);
-    }
+    // create extra-fields (Link fields included) through the link-aware helper so a record
+    // created together with a link persists that link; a plain create loop here built the
+    // ExtraLinkField but dropped its InventoryLink (RSDEV-1131).
+    extraFieldHelper.addExtraFieldsForNewInventoryRecord(apiInvRec.getExtraFields(), invRec, user);
 
     for (ApiBarcode apiBarcode : apiInvRec.getBarcodes()) {
       Barcode barcode = new Barcode(apiBarcode.getData(), user.getUsername());
