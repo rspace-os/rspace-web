@@ -565,6 +565,12 @@
       <version>${javax-mail-api.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>javax.mail</artifactId>
+      <version>${javax-mail-api.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>${servlet.version}</version>
