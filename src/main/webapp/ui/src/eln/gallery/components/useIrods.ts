@@ -7,7 +7,6 @@ import type * as FetchingData from "../../../util/fetchingData";
 import type { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-import { stableSort } from "../../../util/table";
 
 type Link = { operation: string; href: string };
 
@@ -338,7 +337,7 @@ export default function useIrods(
     throw new Error("Invalid selected Ids");
   });
   const sortedStringOfSelectedIds = JSON.stringify(
-    stableSort(parsedSelectedIds, (a, b) => {
+    [...parsedSelectedIds].sort((a, b) => {
       if (a > b) return 1;
       if (a < b) return -1;
       return 0;

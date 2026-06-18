@@ -1,7 +1,7 @@
+import { mapValues } from "es-toolkit";
 import React from "react";
 import axios from "@/common/axios";
 import type { UseState } from "../../util/types";
-import { mapObject } from "../../util/Util";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -23,7 +23,7 @@ type UiPreferencesContextType = {
 };
 
 const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
-  uiPreferences: mapObject(() => null, PREFERENCES),
+  uiPreferences: mapValues(PREFERENCES, () => null),
   setUiPreferences: () => {},
 };
 
@@ -53,13 +53,13 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
     void fetchPreferences()
       .then((data) => {
         if (data === "") {
-          setUiPreferences(mapObject<string, unknown, unknown>(() => null, PREFERENCES));
+          setUiPreferences(mapValues(PREFERENCES, () => null) as { [key in keyof typeof PREFERENCES]: unknown });
           return;
         }
         setUiPreferences(data);
       })
       .catch(() => {
-        setUiPreferences(mapObject(() => null, PREFERENCES));
+        setUiPreferences(mapValues(PREFERENCES, () => null));
       });
   }, []);
 

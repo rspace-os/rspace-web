@@ -8,7 +8,7 @@ import axios from "@/common/axios";
 import ConnectedAppsTableRow from "@/my-rspace/profile/ConnectedAppsTableRow";
 import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
-import { getSorting, paginationOptions, stableSort } from "@/util/table";
+import { getSorting, paginationOptions } from "@/util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 const headCells = [
@@ -108,12 +108,12 @@ export default function ConnectedAppsTable() {
                 rowCount={apps.length}
               />
               <TableBody>
-                {/* @ts-expect-error stableSort needs better types */}
-                {stableSort(apps, getSorting(order, orderBy))
+                {[...apps]
+                  // @ts-expect-error getSorting types its comparator params more loosely than the row type
+                  .sort(getSorting(order, orderBy))
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((app) => (
                     <ConnectedAppsTableRow
-                      // @ts-expect-error stableSort needs better types
                       app={app}
                       onConfirmDisconnectApp={() => handleConfirmDisconnectApp(app.clientId)}
                       key={app.clientId}

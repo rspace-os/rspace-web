@@ -1,9 +1,9 @@
 import Box from "@mui/material/Box";
+import { pick } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useLayoutEffect, useRef, useState } from "react";
 import SearchContext from "../../../../stores/contexts/Search";
 import ContainerModel from "../../../../stores/models/ContainerModel";
-import { pick } from "../../../../util/unsafeUtils";
 import OverlayLoadingSpinner from "../../../components/OverlayLoadingSpinner";
 import EmptyListing from "../../../Search/components/EmptyListing";
 import * as DragAndDrop from "../DragAndDrop";
@@ -28,7 +28,7 @@ function PreviewImage(): React.ReactNode {
   } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
-      setImageDimensions(pick("width", "height")(entries[0].target.getBoundingClientRect()));
+      setImageDimensions(pick(entries[0].target.getBoundingClientRect(), ["width", "height"]));
     }),
   );
   const imgRef = useRef<HTMLImageElement | null>(null);

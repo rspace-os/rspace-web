@@ -14,7 +14,7 @@ import React, { useEffect } from "react";
 import axios from "@/common/axios";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
-import { getSorting, paginationOptions, stableSort } from "../../util/table";
+import { getSorting, paginationOptions } from "../../util/table";
 import type { Order } from "../../util/types";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -144,7 +144,8 @@ export default function EnzymeTable(props: any) {
                   rowCount={enzymeList.length}
                 />
                 <TableBody>
-                  {stableSort(enzymeList, getSorting(order, orderBy))
+                  {[...enzymeList]
+                    .sort(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                     .map((enzyme: any) => (

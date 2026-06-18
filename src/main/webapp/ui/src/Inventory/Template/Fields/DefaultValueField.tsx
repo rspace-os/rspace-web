@@ -179,12 +179,12 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
     props.hideWhenDisabled = false;
     props.onOptionChange = (index: number, changedOption: Option) => {
       field.setAttributesDirty({
-        options: ArrayUtils.splice(field.options, index, 1, changedOption),
+        options: field.options.toSpliced(index, 1, changedOption),
       });
     };
     props.onOptionRemove = (index: number) => {
       field.setAttributesDirty({
-        options: ArrayUtils.splice(field.options, index, 1),
+        options: field.options.toSpliced(index, 1),
       });
     };
   }

@@ -20,7 +20,6 @@ import InfiniteLoader from "react-window-infinite-loader";
 import axios from "@/common/axios";
 import { checkUserInputString, helpText, isAllowed } from "../../../components/Tags/TagValidation";
 import type RsSet from "../../../util/set";
-import { stableSort } from "../../../util/table";
 
 /*
  * This component is a general purpose combobox for selecting a user tag. The
@@ -275,7 +274,7 @@ function TagsComboboxContent({
   };
 
   const sortedOptions = useMemo(() => {
-    return stableSort(tags, (tagA, tagB) => {
+    return [...tags].sort((tagA, tagB) => {
       // sort all complete matches above all other suggestions
       if (tagA.value === filter) return -1;
       if (tagB.value === filter) return 1;

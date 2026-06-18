@@ -1,3 +1,4 @@
+import { pick, pickBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import ApiService from "../../common/InvApiService";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -9,8 +10,7 @@ import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
 import StateMachine from "../../util/stateMachine";
-import { filterObject, match, toTitleCase } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
+import { match, toTitleCase } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import type { GlobalId } from "../definitions/BaseRecord";
 import type { FieldModelAttrs as TemplateField } from "../models/FieldModel";
@@ -251,7 +251,9 @@ export class ColumnFieldMap {
       ]),
       SUBSAMPLES: new Set(["expiry_date", "source", "import_identifier", "custom"]),
     };
-    return filterObject((key: string) => !exclusions[this.recordType].has(key), Fields);
+    return pickBy(Fields, (_, key) => !exclusions[this.recordType].has(key as string)) as {
+      [fieldName: string]: symbol;
+    };
   }
 }
 
@@ -758,7 +760,8 @@ export default class Import {
         name: string;
       }
     | { id: number } {
-    if (!this.createNewTemplate) return pick("id")(this.template) as { id: number };
+    // biome-ignore lint/style/noNonNullAssertion: template is set whenever createNewTemplate is false
+    if (!this.createNewTemplate) return pick(this.template!, ["id"]) as { id: number };
     if (!this.templateInfo) throw new Error("TemplateInfo is null");
     const templateFieldWithMappings: Array<{
       field: TemplateField;

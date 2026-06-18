@@ -396,6 +396,10 @@ Currently available:
 - `.agents/skills/rspace-dev-stack/` — boot, drive, and tear down the per-worktree
   Dockerized dev stack (`docker/dev/rspace-dev`) to reproduce bugs, diagnose issues,
   and manually test functionality against a real running RSpace instance.
+- `.agents/skills/es-toolkit-utils/` — when and how to use es-toolkit (the
+  zero-dependency, tree-shakeable, typed lodash replacement) for generic
+  array/object/number helpers in the frontend, including the bespoke-util →
+  es-toolkit/native mapping and what stays bespoke.
 
 **Discovery:** `.agents/skills/` is the cross-agent convention (used by
 agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md

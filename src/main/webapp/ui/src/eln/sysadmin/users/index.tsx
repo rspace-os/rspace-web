@@ -61,6 +61,7 @@ import {
   useGridApiContext,
 } from "@mui/x-data-grid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { delay } from "es-toolkit";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import createAccentedTheme from "../../../accentedTheme";
@@ -86,7 +87,6 @@ import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import RsSet, { flattenWithIntersection } from "../../../util/set";
 import { DataGridColumn, paginationOptions } from "../../../util/table";
-import { sleep } from "../../../util/Util";
 import TagsCombobox from "./TagsCombobox";
 
 /*
@@ -1211,12 +1211,12 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         return listing.allUsers();
       },
     });
-    await sleep(2000); // wait for the table to be re-rendered
+    await delay(2000); // wait for the table to be re-rendered
     apiRef.current?.exportDataAsCsv({
       getRowsToExport: () => newListing.users.map((u) => u.id),
       allColumns: true,
     });
-    await sleep(2000); // wait for download to be done
+    await delay(2000); // wait for download to be done
     if (priorSearchParameters) {
       await newListing.setSearchParameters(priorSearchParameters);
     }

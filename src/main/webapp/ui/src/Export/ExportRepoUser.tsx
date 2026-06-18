@@ -25,7 +25,6 @@ import EmailValidator from "email-validator";
 import type React from "react";
 import { useEffect, useState } from "react";
 import axios from "@/common/axios";
-import * as ArrayUtils from "../util/ArrayUtils";
 import type { Person } from "./repositories/common";
 
 const VALIDATIONS = {
@@ -202,7 +201,7 @@ export default function ExportRepoUser({
   }, []);
 
   const handleDeletePerson = (index: number) => {
-    const newPeople = ArrayUtils.splice(people, index, 1);
+    const newPeople = people.toSpliced(index, 1);
     setPeople(newPeople);
     updatePeople(newPeople);
   };

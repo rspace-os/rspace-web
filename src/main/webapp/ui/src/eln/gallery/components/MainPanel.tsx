@@ -42,6 +42,7 @@ import Stack from "@mui/material/Stack";
 import { alpha, lighten, type SxProps, type Theme, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { chunk } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { Link as ReactRouterLink } from "react-router-dom";
@@ -962,7 +963,7 @@ const GridView = observer(
             if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
           }}
         >
-          {ArrayUtils.chunksOf(cols, listing.list).map((files: Array<GalleryFile>, y: number) => (
+          {chunk(listing.list, cols).map((files: Array<GalleryFile>, y: number) => (
             <Box
               role="row"
               key={y}

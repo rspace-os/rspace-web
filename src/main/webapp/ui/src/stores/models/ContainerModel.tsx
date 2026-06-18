@@ -1,3 +1,4 @@
+import { clamp, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
@@ -12,8 +13,7 @@ import { selectColor } from "../../util/colors";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
 import type { _LINK, BlobUrl, Point, URL } from "../../util/types";
-import { clamp, match } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
+import { match } from "../../util/Util";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import { type Container, cTypeToDefaultSearchView, type Location } from "../definitions/Container";
@@ -470,7 +470,7 @@ export default class ContainerModel
         deleteLocationRequest: boolean;
       }
   > {
-    const locationModelToObject = pick("id", "coordX", "coordY");
+    const locationModelToObject = (l: Location) => pick(l, ["id", "coordX", "coordY"]);
 
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");

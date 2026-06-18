@@ -7,7 +7,7 @@ import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
-import { getSorting, stableSort } from "@/util/table";
+import { getSorting } from "@/util/table";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import UserDetails from "./../../../components/UserDetails";
 
@@ -70,7 +70,7 @@ function GroupActivity({ groupId }: GroupActivityProps) {
           rowCount={activities.length}
         />
         <TableBody>
-          {stableSort(activities, getSorting(order, orderBy)).map((row) => {
+          {[...activities].sort(getSorting(order, orderBy)).map((row) => {
             return (
               <TableRow hover tabIndex={-1} key={row.eventId}>
                 <TableCell scope="row">

@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { CurrentRecord, InTrash, RecordLink, TopLink } from "./RecordLink";
 
 type BreadcrumbsArgs = {
@@ -15,7 +14,7 @@ const _Breadcrumbs = ({ record, showCurrent = false }: BreadcrumbsArgs): React.R
   const showTopLink = record.showTopLinkInBreadcrumbs();
 
   const parents = hasLocation(record)
-    .map((r) => ArrayUtils.reverse(r.allParentContainers))
+    .map((r) => r.allParentContainers.toReversed())
     .orElse([]);
 
   return (

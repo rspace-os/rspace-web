@@ -7,6 +7,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
+import { mapValues } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
@@ -14,7 +15,6 @@ import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import NumberField from "../../../../components/Inputs/NumberField";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import useStores from "../../../../stores/use-stores";
-import { mapObject } from "../../../../util/Util";
 
 const minGridSize = 1;
 const maxGridSize = 24;
@@ -144,16 +144,15 @@ function GridDimensions(): React.ReactNode {
       >
         <FormControl fullWidth size="small">
           <Select value={commonSize} label="" onChange={handleChooseCommonSize}>
+            {/* reverse() reproduces the prior mapObject behaviour, which prepended each
+                entry and so emitted commonSizes in reverse-insertion order (96-well first) */}
             {Object.values(
-              mapObject(
-                (value, size) => (
-                  <MenuItem value={value} key={value}>
-                    {size.name}
-                  </MenuItem>
-                ),
-                commonSizes,
-              ),
-            )}
+              mapValues(commonSizes, (size, value) => (
+                <MenuItem value={value} key={value}>
+                  {size.name}
+                </MenuItem>
+              )),
+            ).reverse()}
           </Select>
         </FormControl>
       </Grid>

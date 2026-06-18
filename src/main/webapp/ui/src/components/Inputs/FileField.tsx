@@ -7,7 +7,7 @@ import Grid from "@mui/material/Grid";
 import InputBase from "@mui/material/InputBase";
 import { observer } from "mobx-react-lite";
 import React, { forwardRef, useEffect, useState } from "react";
-import { readFileAsBinaryString } from "../../util/Util";
+
 import BigIconButton from "../BigIconButton";
 import SelectedFileInfo from "./SelectedFileInfo";
 
@@ -144,7 +144,8 @@ function FileField({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    readFileAsBinaryString(file)
+    Promise.resolve(file.arrayBuffer())
+      .then((buf) => Array.from(new Uint8Array(buf), (b) => String.fromCharCode(b)).join(""))
       .then((binaryString) => {
         setFailedToLoad(false);
         setSelectedFilename(file.name);

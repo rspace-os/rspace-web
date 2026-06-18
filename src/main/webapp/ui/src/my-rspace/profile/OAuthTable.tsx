@@ -8,7 +8,7 @@ import axios from "@/common/axios";
 import OAuthTableRow from "@/my-rspace/profile/OAuthTableRow";
 import type { OAuthApp } from "@/my-rspace/profile/types";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
-import { getSorting, paginationOptions, stableSort } from "@/util/table";
+import { getSorting, paginationOptions } from "@/util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import OAuthDialog from "./OAuthDialog";
 
@@ -126,16 +126,12 @@ export default function OAuthTable() {
                 rowCount={apps.length}
               />
               <TableBody>
-                {/* @ts-expect-error stableSort needs better types */}
-                {stableSort(apps, getSorting(order, orderBy))
+                {[...apps]
+                  // @ts-expect-error getSorting types its comparator params more loosely than the row type
+                  .sort(getSorting(order, orderBy))
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((app) => (
-                    <OAuthTableRow
-                      key={app.clientId}
-                      // @ts-expect-error stableSort needs better types
-                      app={app}
-                      onDeleteApp={() => deleteApp(app.clientId)}
-                    />
+                    <OAuthTableRow key={app.clientId} app={app} onDeleteApp={() => deleteApp(app.clientId)} />
                   ))}
               </TableBody>
             </Table>

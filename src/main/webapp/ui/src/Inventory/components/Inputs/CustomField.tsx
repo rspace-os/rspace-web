@@ -1,3 +1,4 @@
+import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import ChoiceField, { type ChoiceFieldArgs } from "../../../components/Inputs/ChoiceField";
@@ -11,7 +12,6 @@ import StringField, { type StringFieldArgs } from "../../../components/Inputs/St
 import TextField, { type TextFieldArgs } from "../../../components/Inputs/TextField";
 import TimeField, { type TimeFieldArgs } from "../../../components/Inputs/TimeField";
 import UriField, { type UriFieldArgs } from "../../../components/Inputs/UriField";
-import { dropProperty } from "../../../util/Util";
 import AttachmentField, { type AttachmentFieldArgs } from "../Fields/Attachments/AttachmentField";
 
 /**
@@ -82,7 +82,7 @@ function CustomField<T extends string>(props: CustomFieldArgs<T>): React.ReactNo
     required: props.required,
   };
 
-  const fieldProps: Record<string, unknown> = dropProperty(props, "type");
+  const fieldProps: Record<string, unknown> = omit(props, ["type"]);
   delete fieldProps.label;
   delete fieldProps.helperText;
   delete fieldProps.required;

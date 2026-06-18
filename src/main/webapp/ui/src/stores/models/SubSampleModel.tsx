@@ -1,3 +1,4 @@
+import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
@@ -6,7 +7,6 @@ import { IsInvalid, IsValid, type ValidationResult } from "../../components/Vali
 import { getErrorMessage } from "../../util/error";
 import RsSet from "../../util/set";
 import type { _LINK } from "../../util/types";
-import { pick } from "../../util/unsafeUtils";
 import { mkAlert } from "../contexts/Alert";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
@@ -215,7 +215,8 @@ export default class SubSampleModel
     if (this.state === "edit") {
       const newNote: Note = {
         ...params,
-        createdBy: pick("firstName", "lastName", "id")(getRootStore().peopleStore.currentUser),
+        // biome-ignore lint/style/noNonNullAssertion: currentUser is non-null for any authenticated session
+        createdBy: pick(getRootStore().peopleStore.currentUser!, ["firstName", "lastName", "id"]),
         created: new Date().toISOString(),
       };
       this.setAttributesDirty({

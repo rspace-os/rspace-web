@@ -1,3 +1,4 @@
+import { isEqual, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
 import type { AxiosProgressEvent } from "@/common/axios";
@@ -13,8 +14,7 @@ import * as Parsers from "../../util/parsers";
 import { noProgress, type Progress } from "../../util/progress";
 import Result from "../../util/result";
 import type { _LINK, BlobUrl, URL as URLType } from "../../util/types";
-import { isoToLocale, match, sameKeysAndValues } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
+import { isoToLocale, match } from "../../util/Util";
 import { type Alert, mkAlert } from "../contexts/Alert";
 import type { Attachment } from "../definitions/Attachment";
 import type { BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcode";
@@ -1340,7 +1340,6 @@ export default class InventoryBaseRecord
       } else if (typeChanged) {
         attrs.link = null;
       }
-      const justNameAndType = pick("name", "type");
       const existingLink = field.link;
       const incomingLink = updatedField.link;
       const linkUnchanged =
@@ -1350,8 +1349,7 @@ export default class InventoryBaseRecord
           existingLink.relationType === incomingLink.relationType &&
           existingLink.targetGlobalId === incomingLink.targetGlobalId &&
           (existingLink.versionPin ?? null) === (incomingLink.versionPin ?? null));
-      const areEqual =
-        sameKeysAndValues(justNameAndType(field) as object, justNameAndType(updatedField) as object) && linkUnchanged;
+      const areEqual = isEqual(pick(field, ["name", "type"]), pick(updatedField, ["name", "type"])) && linkUnchanged;
       if (areEqual) {
         field.setAttributes(attrs);
       } else {
@@ -1465,10 +1463,9 @@ export default class InventoryBaseRecord
 
   setImage(
     imageName: "image" | "locationsImage",
-    canvasId: string,
   ): ({ dataURL, file }: { dataURL: string; file: Blob }) => Promise<void> {
     return async ({ dataURL, file }: { dataURL: string; file: Blob }) => {
-      const scaledImage = await capImageAt1MB(file, dataURL, canvasId);
+      const scaledImage = await capImageAt1MB(file, dataURL);
       this.setAttributesDirty({
         ...(imageName === "image"
           ? {

@@ -1,9 +1,9 @@
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { get } from "es-toolkit/compat";
 import { mkAlert } from "../stores/contexts/Alert";
 import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import getRootStore from "../stores/stores/getRootStore";
-import { traverseObjectTree } from "../util/unsafeUtils";
 import * as ArrayUtils from "./ArrayUtils";
 import { Optional } from "./optional";
 import { toTitleCase } from "./Util";
@@ -118,10 +118,12 @@ export const handleDetailedErrors = (
         variant,
         details: errorData.flatMap(({ record, response }) =>
           response.error.errors.map((error) => ({
-            ...traverseObjectTree(messages, error, () => ({
-              title: error,
-              help: defaultHelp ?? "Please refresh and try again.",
-            }))(record ?? {}),
+            ...(
+              get(messages, error, () => ({
+                title: error,
+                help: defaultHelp ?? "Please refresh and try again.",
+              })) as (record: object) => { title: string; help: string }
+            )(record ?? {}),
             variant,
             record,
           })),

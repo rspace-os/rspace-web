@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
+import { delay } from "es-toolkit";
 import ApiService from "../../../../../common/InvApiService";
 import { fieldAttrs } from "../../../../../stores/models/__tests__/FieldModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
@@ -9,7 +10,6 @@ import { makeMockTemplate, templateAttrs } from "../../../../../stores/models/__
 import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../../stores/stores-context";
 import materialTheme from "../../../../../theme";
-import { sleep } from "../../../../../util/Util";
 import Template from "../Template";
 import "@/__tests__/__mocks__/resizeObserver";
 import userEvent from "@testing-library/user-event";
@@ -119,7 +119,7 @@ describe("Template", () => {
       });
       vi.spyOn(ApiService, "get").mockImplementation(async (endpoint) => {
         if (endpoint === "sampleTemplates") {
-          await sleep(500);
+          await delay(500);
           return {
             data: {
               ...templateAttrs(),

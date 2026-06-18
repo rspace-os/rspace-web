@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
-import { getSorting, stableSort } from "../../util/table";
+import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 // eslint-disable-next-line no-duplicate-imports
 import Clustermarket, { getHeaders, getOrder, getOrderBy, getSelectedBookings } from "./Clustermarket";
@@ -38,7 +38,7 @@ function createTinyMceTable() {
   });
   clustermarketTable.appendChild(tableHeader);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  stableSort(getSelectedBookings(), getSorting(getOrder() as Order, getOrderBy())).forEach((booking: any) => {
+  [...getSelectedBookings()].sort(getSorting(getOrder() as Order, getOrderBy())).forEach((booking: any) => {
     const row = document.createElement("tr");
 
     headersWithNotes.forEach((headerCell) => {

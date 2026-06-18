@@ -2,30 +2,16 @@
  * General purpose functions for working with files
  */
 
+import prettyBytes from "pretty-bytes";
+
 /**
- * Given the number of bytes, return a human-readable string using SI units.
+ * Given the number of bytes, return a human-readable string using SI units
+ * (decimal, e.g. "1.02 kB"). Returns "" for null/undefined so callers can pass
+ * an optional size straight through.
  */
 export function formatFileSize(bytes: number | null | undefined, decimalPlaces: number = 2): string {
   if (bytes === null || typeof bytes === "undefined") return "";
-  if (bytes === 0) return "0 B";
-  const k = 1000;
-  const sizes = [
-    "B",
-    // yes, kB is the correct symbol of kilobyte that is not a typo
-    "kB",
-    "MB",
-    "GB",
-    "TB",
-    "PB",
-    "EB",
-    "ZB",
-    "YB",
-    "RB",
-    "QB",
-  ];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  const rounded = parseFloat((bytes / k ** i).toFixed(decimalPlaces));
-  return `${rounded} ${sizes[i]}`;
+  return prettyBytes(bytes, { maximumFractionDigits: decimalPlaces });
 }
 
 /**

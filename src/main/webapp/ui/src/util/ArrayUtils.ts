@@ -22,26 +22,6 @@ export const zipWith = <A, B, C>(
 export const allAreUnique = <T>(array: ReadonlyArray<T>): boolean => array.length === [...new Set(array)].length;
 
 /**
- * Same as Array.prototype.splice, but without mutation.
- */
-export const splice = <T>(
-  arr: ReadonlyArray<T>,
-  start: number,
-  deleteCount: number,
-  ...items: ReadonlyArray<T>
-): Array<T> => {
-  const array = [...arr];
-  array.splice(start, deleteCount, ...items);
-  return array;
-};
-
-/**
- * Simply reverses a list, making it clear that the copying of the array is due
- * to the fact that Array.prototype.reverse acts on the array in place.
- */
-export const reverse = <A>(list: ReadonlyArray<A>): Array<A> => [...list].reverse();
-
-/**
  * Extract the head of the passed array, if there is one.
  */
 export function head<T>(array: ReadonlyArray<T>): Result<T> {
@@ -66,36 +46,6 @@ export const outerProduct = <A, B, C>(
   bs: ReadonlyArray<B>,
   f: (a: A, b: B) => C,
 ): Array<Array<C>> => as.map((a) => bs.map((b) => f(a, b)));
-
-/**
- * The partition function takes a predicate and a list, and returns the pair of
- * lists of elements which do and do not satisfy the predicate, respectively.
- *
- * @example
- * partition((c) => 'aeiou'.split('').includes(c), "Hello World".split(''))
- *   // [['e', 'o', 'o'], ['H', 'l', 'l', ' ', 'W', 'r', 'l', 'd']]
- */
-export const partition = <T>(predicate: (t: T) => boolean, list: ReadonlyArray<T>): [Array<T>, Array<T>] =>
-  list.reduce<[Array<T>, Array<T>]>(
-    ([yes, no], element) => {
-      if (predicate(element)) return [[...yes, element], no];
-      return [yes, [...no, element]];
-    },
-    [[], []],
-  );
-
-/**
- * Group the elements of an array based on the result of the passed function.
- */
-export const groupBy = <T, K extends string>(f: (t: T) => K, list: ReadonlyArray<T>): { [key in K]: Array<T> } =>
-  list.reduce(
-    (acc, element) => {
-      const key = f(element);
-      // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
-      return { ...acc, [key]: [...(acc[key] || []), element] };
-    },
-    {} as { [key in K]: Array<T> },
-  );
 
 /**
  * Just like normal filter, but specifically just to check whether the elements
@@ -237,16 +187,3 @@ export const all = <A>(as: ReadonlyArray<Optional<A>>): Optional<Array<A>> => {
   const [h, ...t] = as;
   return lift2((newHead, newTail) => [newHead, ...newTail], h, all(t));
 };
-
-/**
- * Splits the array into chunks of size n. If the last chunk is smaller than n,
- * it will still be included in the result.
- */
-export function chunksOf<T>(n: number, array: ReadonlyArray<T>): Array<Array<T>> {
-  if (n <= 0) throw new Error("Chunk size must be greater than zero");
-  const result: Array<Array<T>> = [];
-  for (let i = 0; i < array.length; i += n) {
-    result.push(array.slice(i, i + n));
-  }
-  return result;
-}
