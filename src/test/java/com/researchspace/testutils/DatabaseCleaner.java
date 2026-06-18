@@ -130,6 +130,8 @@ public class DatabaseCleaner {
             "DigitalObjectIdentifier",
             "ExtraField",
             "InventoryEntityField",
+            // after BOTH field tables: their link_id FKs point at InventoryLink
+            "InventoryLink",
             "SubSampleNote",
             "SubSample",
             "Sample",

@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import {
   WorkspaceGetRecordInformationResponseSchema,
@@ -55,7 +55,10 @@ export async function getWorkspaceRecordInformationAjax({
 }
 
 export function useGetWorkspaceRecordInformationAjaxQuery(params: GetWorkspaceRecordInformationParams) {
-  return useSuspenseQuery({
+  // A plain (non-suspense) query so callers can handle a failed load explicitly
+  // from the returned error state, rather than the query throwing into a React
+  // error boundary. A 404 / not-readable record is an expected outcome here.
+  return useQuery({
     queryKey: workspaceQueryKeys.recordInformation(params),
     queryFn: () => getWorkspaceRecordInformationAjax(params),
     retry: false,

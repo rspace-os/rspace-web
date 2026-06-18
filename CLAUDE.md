@@ -17,6 +17,7 @@ These instructions apply to the entire repository unless a deeper `AGENTS.md` ov
 - When searching the repo, prefer `rg` and `rg --files`.
 - Do not edit minified files unless the user explicitly asks for it.
 - Plan documents (design notes, multi-step implementation plans, scratch analyses) must be written to the `.claude/` folder, which is gitignored. Never place plan files at the repository root or anywhere else inside `src/`. The `.claude/` folder is the only sanctioned location for ephemeral working notes that should not be committed.
+- **Never run the Maven `install` phase or install dependencies into the local Maven repository.** Do not run `mvn install`, `./mvnw install`, `mvn install:install-file`, `mvn deploy:deploy-file`, or any command that would write artefacts into `~/.m2/repository`. This applies to this project, to sibling projects in the workspace (notably `rspace-core-model`), and to any dependency the user is iterating on. Reason: locally installed artefacts silently shadow the jitpack-built artefact at the same Maven coordinate, so the running JVM ends up with bytecode that does not match what the pom claims to use. That mismatch produces failures that look like a code bug but are really a classpath bug, and it wastes hours to track down. Stick to phases that do not touch `~/.m2`: `mvn compile`, `mvn package`, `mvn test`, `mvn verify`. Dependencies are consumed via jitpack at the version pinned in `pom.xml` — if the user wants to test an unpublished change to a sibling project, ask them to push it and trigger a remote build, then bump the pom to the new commit-hash version. Do not work around this by installing locally.
 
 ## Project Overview
 
@@ -73,6 +74,13 @@ The `rspacedbuser` credentials must match `src/main/resources/rs.properties`.
 # Subsequent runs (keep existing DB)
 ./mvnw jetty:run -Denvironment=keepdbintact -Dspring.profiles.active=run -DreactDevMode=true
 ```
+
+> **Dev cache-busting for legacy assets:** in dev mode (`reactDevMode=true`), legacy
+> `/scripts/` and `/styles/` assets (e.g. `recordInfoPanel.js`) are served without a `?v=`
+> cache-buster, so the browser keeps serving a previously cached copy after you edit them.
+> If a legacy JS/CSS change does not show up, hard-refresh (Cmd+Shift+R), or add
+> `-DlegacyAssetCacheBustingInDevMode=true` to the `jetty:run` command so those assets are
+> cache-busted automatically. The React/Vite bundle is unaffected (it is always served fresh).
 
 Access at `http://localhost:8080`. Test users: `user1a`–`user8h`, admin: `sysadmin1`.
 
@@ -189,6 +197,14 @@ pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 - **Test setup:** Global setup in `src/__tests__/setup.ts` polyfills `localStorage`, `sessionStorage`, `TextEncoder`/`TextDecoder`.
 - **Console suppression:** Use `silenceConsole()` from test helpers to suppress expected errors.
 - **Test timeout:** 20 seconds (configured in `vitest.config.ts`).
+- **Vitest must execute with `src/main/webapp/ui` as its working directory.** The `vite.config.ts` that owns module aliases (`@/` -> `src/`, `Styles` -> `src/util/styles.ts`) lives there. Running `vitest` from any other directory produces module-resolution failures such as `Cannot find package '@/__tests__/customQueries'` or `Cannot find package 'Styles'`, which look like a source bug but are a cwd problem. Since the pnpm migration the package.json lives at the repo root, so the sanctioned entry is `pnpm test <path-relative-to-ui>` from the repo root (the script cd's into `ui` itself). `npx vitest run <path>` from inside `ui` also works. Beware: `pnpm exec vitest` from inside `ui` can fail with `ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE` because `ui` no longer has its own package.json.
+- **Lint dialect required by this repo's ESLint config — write it compliant from the first draft instead of fixing up afterwards:**
+  - Use `expect(node).toBeInTheDocument()` / `not.toBeInTheDocument()`, never `.toBeTruthy()` / `toBeNull()` for DOM existence.
+  - Use `expect(node).toHaveAttribute(name, value)`, never `expect(node.getAttribute(name)).toBe(value)`.
+  - Use `expect(button).toBeDisabled()`, never `expect((button as HTMLButtonElement).disabled).toBe(true)`.
+  - For `vi.mocked(obj.method)`, extract the method to a local first (`const m = obj.method; vi.mocked(m)`), otherwise `@typescript-eslint/unbound-method` fires.
+  - `testing-library/no-container` and `no-node-access` are enabled. If you genuinely need `container.querySelector` (rare — usually to inspect a non-semantic child of a MUI component), wrap the block in `/* eslint-disable testing-library/no-node-access, testing-library/no-container */` with a comment explaining why.
+- **MUI `Select` inside `FormField` has a broken accessible name.** Its `aria-labelledby` is set to its own id rather than the label's, so `getByRole('combobox', { name: /field type/i })` returns no matches and `getByLabelText('Field type')` resolves to the FormControl wrapper rather than the select itself, so neither query reliably reaches the control. The reliable query is a stable `data-testid` on the display element: pass `SelectDisplayProps={{ "data-testid": "MySelect" } as React.HTMLAttributes<HTMLDivElement>}` and then `screen.getByTestId('MySelect')`.
 
 ### Internationalization (i18n)
 

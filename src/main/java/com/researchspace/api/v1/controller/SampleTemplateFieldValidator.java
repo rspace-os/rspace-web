@@ -1,9 +1,11 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiField;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.service.inventory.DataCiteRelationType;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -63,6 +65,21 @@ abstract class SampleTemplateFieldValidator implements Validator {
             "errors.inventory.template.invalid.field.content",
             new Object[] {e.getMessage()},
             e.getMessage());
+      }
+    }
+
+    // Link fields: every entry in the allowed-relation-types whitelist must be a valid DataCite
+    // relation type. A null/empty whitelist is permitted and means "all relation types allowed".
+    if (apiTemplateField.getType() == ApiFieldType.LINK
+        && apiTemplateField.getAllowedRelationTypes() != null) {
+      for (String relationType : apiTemplateField.getAllowedRelationTypes()) {
+        if (!DataCiteRelationType.isValid(relationType)) {
+          errors.rejectValue(
+              "allowedRelationTypes",
+              "errors.inventory.template.invalid.relation.type",
+              new Object[] {relationType},
+              "invalid relation type");
+        }
       }
     }
   }

@@ -222,7 +222,6 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * When new data is available, typically by making a GET request, the
    * instance of InventoryRecord can be repopulated with this method.
    */
-
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   populateFromJson(factory: Factory, params: any, defaultParams: any | null): void;
 
@@ -295,7 +294,6 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * MUST always be JSON serialisable, and it is advisable to write a unit test
    * to assert as such for each implementation.
    */
-
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   readonly paramsForBackend: any;
 
@@ -314,7 +312,6 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    * InventoryRecord at once whilst also setting a dirty flag to signify to
    * various UI elements that the user has made changes.
    */
-
   // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   setAttributesDirty({}): void;
 
@@ -348,7 +345,18 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
    */
   extraFields: Array<ExtraField>;
   addExtraField(newExtraFieldAttrs: ExtraFieldAttrs): void;
-  updateExtraField(oldFieldName: string, updatedField: { name: string; type: string }): void;
+  updateExtraField(
+    oldFieldName: string,
+    updatedField: {
+      name: string;
+      type: string;
+      link?: {
+        relationType: string;
+        targetGlobalId: string;
+        versionPin: number | null;
+      };
+    },
+  ): void;
   removeExtraField(id: number | null, index: number): void;
   readonly visibleExtraFields: Array<ExtraField>;
   readonly hasUnsavedExtraField: boolean;
