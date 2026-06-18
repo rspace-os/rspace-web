@@ -1456,7 +1456,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>RSDEV-1131-Inventory-link-related-items-ee1fb11cc3-1</version>
+      <version>2.27.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
