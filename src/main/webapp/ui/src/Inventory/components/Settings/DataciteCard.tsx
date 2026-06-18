@@ -192,7 +192,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
           variant="outlined"
           sx={{ minWidth: "max-content" }}
           onClick={() => {
-            ApiService.get<boolean>("/identifiers/testDataCiteConnection")
+            ApiService.get<boolean>("/identifiers/testIgsnConnection")
               .then(({ data }) => {
                 setLastTestResult(data ? { response: "success" } : { response: "failed", message: "" });
               })

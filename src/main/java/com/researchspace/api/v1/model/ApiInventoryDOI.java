@@ -10,6 +10,7 @@ import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierOtherProperty;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /** External identifier based on DataCite IGSN. */
@@ -281,6 +283,18 @@ public class ApiInventoryDOI extends LinkableApiObject {
   public boolean applyChangesToDatabaseDOI(DigitalObjectIdentifier dbIdentifier) {
     boolean contentChanged = false;
 
+    // doiType may hold values that are not IdentifierType names (e.g. the "dois" JSON:API
+    // literal copied from DataCite responses), which must not override the entity default.
+    // Only apply the incoming type when creating a new identifier (transient, no id yet):
+    // an existing identifier's type is immutable so it keeps its provider routing (IGSN vs
+    // PIDINST).
+    IdentifierType incomingType = EnumUtils.getEnum(IdentifierType.class, getDoiType());
+    if (dbIdentifier.getId() == null
+        && incomingType != null
+        && !incomingType.equals(dbIdentifier.getType())) {
+      dbIdentifier.setType(incomingType);
+      contentChanged = true;
+    }
     if (getDoi() != null) {
       if (!getDoi().equals(dbIdentifier.getIdentifier())) {
         dbIdentifier.setIdentifier(getDoi());

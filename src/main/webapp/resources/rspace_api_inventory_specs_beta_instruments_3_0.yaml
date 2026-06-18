@@ -3,10 +3,11 @@ info:
   title: RSpace Inventory API
   description: |
     Welcome to the RSpace Inventory API.
-    
-    
+
+    This variant additionally documents the beta **Instruments** and **Instrument Templates** endpoints.
+
     **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
-  version: "2.13"
+  version: "2.14"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -55,6 +56,624 @@ paths:
                 $ref: "#/components/schemas/Container"
         "404":
           $ref: "#/components/responses/NotFound"
+  /instruments:
+    get:
+      summary: Get all Instruments visible to the current User
+      description: >
+        Returns a paginated list of summary information about Instruments visible to the current user.
+
+        | Request | Explanation |
+
+        | --- | --- |
+
+        /instruments?pageSize=10| Gets first 10 instruments
+
+        /instruments?ownedBy=user1a| Gets page of instruments owned by user1a (assuming current user can see them)
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/ownedByParam"
+        - $ref: "#/components/parameters/deletedItemsParam"
+        - $ref: "#/components/parameters/pageNumberParam"
+        - $ref: "#/components/parameters/pageSizeParam"
+        - $ref: "#/components/parameters/orderByParam"
+      responses:
+        "200":
+          description: A list of InstrumentInfo objects.
+    post:
+      summary: Create a new Instrument
+      description: >-
+        Creates a new Instrument in RSpace Inventory.
+
+        Content body is a JSON object defining properties of the instrument:
+                 - `name` is the only required property.
+                 - `fields` array contains values for fields coming from the instrument template. The ordering is important as the content is assigned to subsequent template fields.
+                 - All fields except Choice and Radio fields are defined as `{"content": <value>}` objects, where `<value>` is appropriate for the field type. Radio and Choice fields are defined as `"selectedOptions": ["<option1>", "<option2>"...]`
+                 - If `templateId` is set, `fields` can be omitted, in which case the instrument will be created using default values supplied by the instrument template (if any).
+                 - For Attachment fields, the `content` field is used to describe the attached file, and it is not possible to attach the actual file in this request. To attach the file, use `/files POST` setting `parentGlobalId` to the Id of the field once this instrument is created.
+                 - `extraFields` array contains values for additional fields that can be added independently from template fields. The order of the fields in array is not important, but each field need to specify `type` and `name`.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+
+        | --- | --- |
+
+        `{ "name": "Generic instrument" }` | Creates an Instrument named "Generic instrument", based on Basic Instrument template, with empty content
+
+        `{ "name": "Instrument with image", "newBase64Image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEU..." }` | As previous example, but includes an image of the instrument in Base64.
+
+        `{ "name": "My Instrument", "templateId": 1 }` | Creates a new Instrument based on Instrument Template with `id = 1`, with default field values
+
+        `{ "name": "My Instrument", "templateId": 22, "fields": [{}, {}, {"content": "some data"}] }` | Creates a new Instrument based on template with `id = 22`, with default field values for the first two fields and explicit value for the 3rd field.
+      tags:
+        - Instruments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Instrument"
+        description: An instrument, with optional fields
+        required: true
+      responses:
+        "201":
+          description: Success. Returned object represents a created instrument.
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+  "/instruments/{instrumentId}":
+    get:
+      summary: Retrieve a complete Instrument by ID
+      description: |
+        Gets a complete Instrument
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      responses:
+        "200":
+          description: An Instrument
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Update an Instrument
+      description: |
+        Updates an existing Instrument. This endpoint allows updating properties of the instrument and its fields. Use `/instruments/{instrumentId}/actions/changeOwner` to transfer ownership.
+
+        Extra fields can be updated, added and deleted as part of the update action. To create a new extra field, include its definition with `newFieldRequest` set to `true`. To delete an extra field, include a `deleteFieldRequest` property set to `true`.
+
+        An instrument can be moved as part of the update by setting `parentContainers` (and, for grid/image containers, `parentLocation`) directly on the body. This endpoint requires `UPDATE` permission to the Instrument (and to the target container when moving).
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "name": "new name", "description": "new description" }` | Updates instrument name and description.
+        `{ "parentContainers": [ { "id": 11 } ] }` | Moves the instrument into the LIST/workbench container with id 11.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Instrument"
+        description: An Instrument object
+        required: true
+      responses:
+        "200":
+          description: Success - instrument is updated.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+    delete:
+      summary: Delete an Instrument
+      description: |
+        Mark instrument as deleted, so it won't appear in Inventory UI and default listings.
+        The instrument will also be removed from its current location.
+
+        This action requires `UPDATE` permission to the Instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      responses:
+        "200":
+          description: Deleted instrument object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+  "/instruments/{instrumentId}/restore":
+    put:
+      summary: Restore a deleted Instrument
+      description: |
+        Restores a previously deleted instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      responses:
+        "200":
+          description: Success - instrument is restored.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+  "/instruments/{instrumentId}/image/{timestamp}":
+    get:
+      summary: Gets the full image connected to the Instrument
+      description: Returns full image uploaded for the instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+        - $ref: "#/components/parameters/timeStampParam"
+      responses:
+        "200":
+          description: File as bytes.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+  "/instruments/{instrumentId}/thumbnail/{timestamp}":
+    get:
+      summary: Gets the thumbnail image connected to the Instrument
+      description: Returns a reduced-size image uploaded for the instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+        - $ref: "#/components/parameters/timeStampParam"
+      responses:
+        "200":
+          description: File as bytes.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+  "/instruments/validateNameForNewInstrument":
+    get:
+      summary: Check if a given string is valid for naming a new Instrument
+      tags:
+        - Instruments
+      parameters:
+        - in: query
+          name: name
+          required: true
+          description: Name to check.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: JSON object with 'valid' field (true/false) and 'message' field if there is a problem with the name
+          content:
+            application/json:
+              schema:
+                type: string
+  "/instruments/{instrumentId}/actions/changeOwner":
+    put:
+      summary: Transfer the Instrument to a new owner
+      description: |
+        Updates the `owner` field of an existing Instrument. No other changes are processed. Use `/instruments/{instrumentId}` PUT to update other fields.
+
+        This action requires `CHANGE_OWNER` permission to the instrument.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "owner": { "username": "newOwner" } }` | Changes owner of an instrument to newOwner (requires `CHANGE_OWNER` permission). |
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Instrument"
+        description: An Instrument object
+        required: true
+      responses:
+        "200":
+          description: Success - instrument owner is updated.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+  "/instruments/{instrumentId}/actions/duplicate":
+    post:
+      summary: Duplicate an Instrument
+      description: |
+        Generates a copy of the instrument, including fields, extra fields and images.
+
+        This action requires `UPDATE` permission to the Instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      responses:
+        "201":
+          description: The new, duplicate instrument.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+  "/instruments/{instrumentId}/actions/updateToLatestTemplateVersion":
+    post:
+      summary: Update an Instrument to match the latest version of its Instrument Template
+      description: |
+        If the Instrument Template used to create this Instrument has been updated since,
+        calling this endpoint applies those changes to this Instrument (e.g. adds newly
+        added template fields, renames existing fields). No-op if the instrument is already
+        on the latest template version. Returns the updated Instrument.
+
+        This action requires `UPDATE` permission to the Instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      responses:
+        "200":
+          description: The updated Instrument.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  "/instruments/{instrumentId}/revisions":
+    get:
+      summary: Gets historical revisions of the Instrument
+      description: Returns list of historical revisions saved for the Instrument, starting from the earliest revision.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+      responses:
+        "200":
+          description: A list of revision information objects.
+  "/instruments/{instrumentId}/revisions/{revisionId}":
+    get:
+      summary: Gets a historical revision of the Instrument
+      description: Returns full details of a historical revision saved for the Instrument.
+      tags:
+        - Instruments
+      parameters:
+        - $ref: "#/components/parameters/instrumentIdParam"
+        - $ref: "#/components/parameters/revisionIdParam"
+      responses:
+        "200":
+          description: An Instrument, as it was at the requested historical revision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /instrumentTemplates:
+    get:
+      summary: List Instrument Templates visible to the current user
+      description: >
+        Provides a paginated list of Instrument Templates visible to the current user.
+
+        Instrument templates can be used to create Instruments with a pre-defined set of fields.
+        Distinguished from instances by `template=true`. The list can be limited to templates
+        belonging to a particular user by passing their username in the `ownedBy` parameter.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/ownedByParam"
+        - $ref: "#/components/parameters/deletedItemsParam"
+        - $ref: "#/components/parameters/pageNumberParam"
+        - $ref: "#/components/parameters/pageSizeParam"
+        - $ref: "#/components/parameters/orderByParam"
+      responses:
+        "200":
+          description: A list of Instrument Templates.
+          content:
+            application/json:
+              schema:
+                title: InstrumentTemplate List Results
+                properties:
+                  totalHits:
+                    type: number
+                  pageNumber:
+                    type: number
+                  templates:
+                    $ref: "#/components/schemas/InstrumentTemplateList"
+                  _links:
+                    $ref: "#/components/schemas/LinkItemList"
+    post:
+      summary: Create a new Instrument Template
+      description: |
+        Create a new Instrument Template, supplying the field definitions.
+
+        ## Mandatory content
+        - `name` is required.
+
+        ## Fields
+        Zero or more fields can be defined. Each field is `{ "name": "...", "type": "...", "content": "..." }`,
+        or for choice/radio fields `{ "name": "...", "type": "radio", "definition": { "options": [...] } }`.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "name": "Microscope template" }` | Creates a basic template with no fields.
+        `{ "name": "Microscope template", "fields": [{"name":"Serial Number","type":"string"},{"name":"Calibration","type":"number"}] }` | Creates a template with two fields.
+      tags:
+        - Instrument Templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentTemplatePost"
+        description: An InstrumentTemplate definition with optional fields.
+        required: true
+      responses:
+        "201":
+          description: The newly created Instrument Template.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentTemplate"
+  "/instrumentTemplates/{instrumentTemplateId}":
+    get:
+      summary: Retrieve an Instrument Template by ID
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      responses:
+        "200":
+          description: Instrument Template definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentTemplate"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Update an Instrument Template
+      description: >
+        Updates properties of an existing Instrument Template and its fields. On a content change
+        the template's `version` is bumped, allowing instruments to track and update from older versions.
+
+        This action requires `UPDATE` permission to the template.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "name": "new name" }` | Updates the template name.
+        `{ "fields": [ { "id": 21, "name": "newName", "content": "..." }, { "newFieldRequest": true, "name": "new field", "type": "string" }, { "id": 22, "deleteFieldRequest": true, "deleteFieldOnSampleUpdate": true } ] }` | Updates field 21, adds a new field, and deletes field 22 (with option to remove from pre-existing instruments).
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentTemplate"
+        description: An InstrumentTemplate object
+        required: true
+      responses:
+        "200":
+          description: Success - template is updated.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+    delete:
+      summary: Delete an Instrument Template
+      description: >
+        Marks an instrument template as deleted, so it won't appear in default listings.
+
+        This action requires `UPDATE` permission to the template.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      responses:
+        "200":
+          description: Deleted Instrument Template object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentTemplate"
+  "/instrumentTemplates/{instrumentTemplateId}/restore":
+    put:
+      summary: Restore a deleted Instrument Template
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      responses:
+        "200":
+          description: Success - instrument template is restored.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+  "/instrumentTemplates/{instrumentTemplateId}/versions/{version}":
+    get:
+      summary: Get a specific version of an Instrument Template
+      description: |
+        Each Instrument Template has a `version` property starting at 1, incremented on each content update.
+        Use this endpoint to retrieve a particular historical version. Returned object has `historicalVersion=true`,
+        a `globalId` carrying the version, and a populated `revisionId`.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+        - $ref: "#/components/parameters/versionParam"
+      responses:
+        "200":
+          description: An Instrument Template at the requested historical version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentTemplate"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  "/instrumentTemplates/{instrumentTemplateId}/image/{timestamp}":
+    get:
+      summary: Get the full image attached to the Instrument Template
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+        - $ref: "#/components/parameters/timeStampParam"
+      responses:
+        "200":
+          description: File as bytes.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+  "/instrumentTemplates/{instrumentTemplateId}/thumbnail/{timestamp}":
+    get:
+      summary: Get the thumbnail image attached to the Instrument Template
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+        - $ref: "#/components/parameters/timeStampParam"
+      responses:
+        "200":
+          description: File as bytes.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+  "/instrumentTemplates/{instrumentTemplateId}/icon":
+    post:
+      summary: Set or replace the display icon of an Instrument Template
+      description: |
+        Upload a display icon for the template; should be viewable at 96x96px.
+
+        This action requires `UPDATE` permission to the template.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+        required: true
+      responses:
+        "201":
+          description: Updated InstrumentTemplate info with the new iconId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentTemplateInfo"
+  "/instrumentTemplates/{instrumentTemplateId}/icon/{iconId}":
+    get:
+      summary: Get the icon for an Instrument Template
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+        - name: iconId
+          description: The id for the formIcon
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Icon bytes.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  "/instrumentTemplates/{instrumentTemplateId}/actions/changeOwner":
+    put:
+      summary: Transfer the Instrument Template to a new owner
+      description: |
+        Updates the `owner` field of an existing Instrument Template. No other changes are processed.
+        Use `/instrumentTemplates/{instrumentTemplateId}` PUT to update other fields.
+
+        This action requires `CHANGE_OWNER` permission to the template.
+
+        ## Examples of the request body
+
+        | Body | Explanation |
+        | --- | --- |
+        `{ "owner": { "username": "newOwner" } }` | Changes owner of the template to newOwner (requires `CHANGE_OWNER` permission). |
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentTemplate"
+        description: An InstrumentTemplate object
+        required: true
+      responses:
+        "200":
+          description: Success - instrument template owner is updated.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+        "500":
+          $ref: "#/components/responses/LicenseProblem"
+  "/instrumentTemplates/{instrumentTemplateId}/actions/updateInstrumentsToLatestTemplateVersion":
+    post:
+      summary: Update user's instruments created from the template to match its latest definition
+      description: |
+        Walks the current user's instruments that were created from this template at an older version and
+        applies the template's latest changes to each (e.g. add or rename fields). If updating a particular
+        instrument fails, it is skipped and the process continues.
+
+        Result contains the list of updated instruments and any errors encountered.
+
+        This action checks `UPDATE` permission to each instrument.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      responses:
+        "200":
+          description: Success.
   /samples:
     get:
       summary: Get all Samples visible to the current User
@@ -1837,6 +2456,11 @@ paths:
           * `columnNames` list of column names in CSV file. This are the names that should be provided in `fieldMappings` object used by `/import/importFiles`.
           * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
           * `rowsCount`: number of data rows found in CSV file
+
+
+        ### Parsing instruments CSV file
+
+        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response object contains `templateInfo` (an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`), `fieldNameForColumnName`, `radioOptionsForColumn`, `columnNames`, `columnsWithoutBlankValue`, and `rowsCount`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
       tags:
         - Import
       parameters:
@@ -1848,6 +2472,7 @@ paths:
               - SAMPLES
               - SUBSAMPLES
               - CONTAINERS
+              - INSTRUMENTS
             default: SAMPLES
       requestBody:
         $ref: "#/components/requestBodies/postSampletemplates_sampletemplateid_icon"
@@ -1856,19 +2481,20 @@ paths:
           description: Parse results.
   /import/importFiles:
     post:
-      summary: Import Containers, Samples and SubSamples from CSV files
+      summary: Import Containers, Samples, SubSamples and Instruments from CSV files
       description: >-
-        
-        Allows import of up to three CSV files describing samples and/or subSamples and/or containers. Providing multiple files allows referencing rows in one file with rows in another file, e.g. saying that particular subSample from subSample CSV should be part of a particular samples from sample CSV file placed in a particular container from container CSV. If the files don't need to reference each other it may be easier to to import them separately.
+
+        Allows import of up to four CSV files describing samples and/or subSamples and/or containers and/or instruments. Providing multiple files allows referencing rows in one file with rows in another file, e.g. saying that particular subSample from subSample CSV should be part of a particular samples from sample CSV file placed in a particular container from container CSV. If the files don't need to reference each other it may be easier to to import them separately.
 
 
         `importSettings` must be a JSON object that contains settings for one or more imported csv file:
            * `containerSettings` for containers (skip if not importing containers)
            * `sampleSettings` for samples (skip if not importing samples)
            * `subSampleSettings` for subSamples (skip if not importing subSamples)
+           * `instrumentSettings` for instruments (skip if not importing instruments)
 
 
-        There is a limit on size of CSV files. By default CSVs can containe no more than 500 containers, 1000 samples or 2000 subSamples.
+        There is a limit on size of CSV files. By default CSVs can containe no more than 500 containers, 1000 samples, 2000 subSamples or 500 instruments.
 
 
         ## Containers import
@@ -1924,10 +2550,23 @@ paths:
         Created subSamples will be placed by default in a new container that is created on user's Bench during import. To put a subsample into one of the containers imported through containers CSV in the same import operation the subSample CSV column can be mapped to `parent container import id`, with values corresponding to values in containers CSV mapped to `import identifier`. To put a subsample into preexisting container put the global id of that container in subSample CSV column mapped to `parent container global id`.
 
 
+        ## Instrument import
+
+        Imports content of CSV file as instruments based on a newly created, or pre-existing, Instrument Template.
+
+
+        `instrumentSettings` must be a JSON object with following properties:
+           * `templateInfo` field containing either a full definition for a new Instrument Template (same shape as used by `POST /instrumentTemplates`, or returned by `/import/parseFile?recordType=INSTRUMENTS`), or with `id` property pointing to an existing Instrument Template that should be used. Alternatively, `templateId` can be set at the same level as `templateInfo` to reference an existing template directly.
+           * `fieldMappings` field that maps CSV columns to standard instrument fields (optional, apart from `name`), and marks CSV columns that should be ignored.
+
+
+        To map a CSV column name to a standard instrument field set a property of `fieldMappings` with the CSV column name as key and a value being one of: `name`, `description`, `tags`, `parent container global id`. To ignore a CSV column set the value to null. The values from CSV columns not mentioned in `fieldMappings` are imported into instrument fields defined by the template, in order; the number of mapped columns has to exactly match the number of template fields. Imported instruments are placed on the user's Workbench unless a `parent container global id` mapping is provided.
+
+
         ## Import results
 
         Import result object contains:
-          * `containerResults`, `sampleResults` and `subSampleResults` objects with details of container/sample/subsamples imports
+          * `containerResults`, `sampleResults`, `subSampleResults` and `instrumentResults` objects with details of container/sample/subsample/instrument imports
           * `status` property, which for successful import will be set to "COMPLETED".
 
         If any error occurs before/during import process, then all changes are reverted, i.e. nothing is created unless the import completes with status "COMPLETED".
@@ -1951,6 +2590,10 @@ paths:
         { "containerSettings" : { "fieldMappings" : { "Name": "name", "Import Id": "import identifier" } }, "sampleSettings": { "templateInfo": { ... }, "fieldMappings" : { "Name": "name", "Import Id": "import identifier" } }, "subSampleSettings": { "fieldMappings" : { "Name": "name", "Parent Sample Import Id": "parent sample import id", "Parent Container Import Id": "parent container import id" } } } | Combined container/sample/subSample import that puts subSamples into imported samples, and can also move imported subSamples into imported containers (with "paret container import id" -> "import identifier" mappings)
 
         { "subSampleSettings": { "fieldMappings" : { "Name": "name", "Parent Sample Global Id": "parent sample global id", "Parent Container Global Id": "parent container global id" } } } | Import subSamples into pre-existing samples and containers.
+
+        { "instrumentSettings": { "templateInfo": { ... }, "fieldMappings" : { "Name": "name" } } } | Import instruments using a brand-new Instrument Template inferred from the CSV.
+
+        { "instrumentSettings": { "templateInfo": { "id": 42 }, "fieldMappings" : { "Name": "name", "Lab": "description" } } } | Import instruments based on pre-existing Instrument Template with id = 42, mapping `Lab` CSV column into the instrument `description`.
       tags:
         - Import
       requestBody:
@@ -1966,6 +2609,9 @@ paths:
                   type: string
                   format: binary
                 subSamplesFile:
+                  type: string
+                  format: binary
+                instrumentsFile:
                   type: string
                   format: binary
                 importSettings:
@@ -2774,156 +3420,6 @@ paths:
           description: Success - settings are updated.
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
-  "/samples/{sampleId}/referencingItems":
-    get:
-      summary: List Inventory items linking to a Sample
-      description: >
-        Returns the Inventory items whose "Related Items" Link field points at
-        this Sample (its inbound links / back-references). Results are
-        permission-filtered to the source items the current user can read. A
-        target that does not exist, or that the user cannot read, is reported
-        with the same "not found" error as a missing one, so the endpoint cannot
-        be used to probe which records exist.
-      tags:
-        - Related Items
-      parameters:
-        - $ref: "#/components/parameters/sampleIdParam"
-      responses:
-        "200":
-          description: The items referencing this Sample.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InventoryReferencingItems"
-        "422":
-          $ref: "#/components/responses/UnprocessableQuery"
-  "/subSamples/{subSampleId}/referencingItems":
-    get:
-      summary: List Inventory items linking to a SubSample
-      description: >
-        As `/samples/{sampleId}/referencingItems`, but for a SubSample target.
-      tags:
-        - Related Items
-      parameters:
-        - $ref: "#/components/parameters/subSampleIdParam"
-      responses:
-        "200":
-          description: The items referencing this SubSample.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InventoryReferencingItems"
-        "422":
-          $ref: "#/components/responses/UnprocessableQuery"
-  "/containers/{containerId}/referencingItems":
-    get:
-      summary: List Inventory items linking to a Container
-      description: >
-        As `/samples/{sampleId}/referencingItems`, but for a Container target.
-      tags:
-        - Related Items
-      parameters:
-        - $ref: "#/components/parameters/containerIdParam"
-      responses:
-        "200":
-          description: The items referencing this Container.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InventoryReferencingItems"
-        "422":
-          $ref: "#/components/responses/UnprocessableQuery"
-  "/instruments/{instrumentId}/referencingItems":
-    get:
-      summary: List Inventory items linking to an Instrument
-      description: >
-        As `/samples/{sampleId}/referencingItems`, but for an Instrument target.
-      tags:
-        - Related Items
-      parameters:
-        - name: instrumentId
-          in: path
-          required: true
-          description: A unique identifier of the instrument.
-          schema:
-            type: integer
-            format: int64
-      responses:
-        "200":
-          description: The items referencing this Instrument.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InventoryReferencingItems"
-        "422":
-          $ref: "#/components/responses/UnprocessableQuery"
-  "/referencingItems/{globalId}":
-    get:
-      summary: List Inventory items linking to any target by Global ID
-      description: >
-        Target-agnostic back-reference lookup: returns the Inventory items whose
-        "Related Items" Link field points at the supplied target Global ID. The
-        target may be an Inventory item (SA, SS, IC, IN) or an ELN record - a
-        document (SD), notebook (NB) or gallery file (GL). Used by the ELN-side
-        "Related inventory items" panels. Results are permission-filtered to the
-        source items the current user can read; a target that does not exist, or
-        that the user cannot read, returns the same "not found" error as a
-        missing one.
-      tags:
-        - Related Items
-      parameters:
-        - name: globalId
-          in: path
-          required: true
-          description: >-
-            Global ID of the target - an Inventory item (e.g. `SA123`) or an ELN
-            record (e.g. `SD456`, `NB78`, `GL90`). Any version suffix (e.g.
-            `SA123v2`) is ignored; back-references match on the base record.
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The items referencing this target.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InventoryReferencingItems"
-        "422":
-          $ref: "#/components/responses/UnprocessableQuery"
-  "/linkTargets/{globalId}/summary":
-    get:
-      summary: Summarise an Inventory Link target
-      description: >
-        Resolves the current state (Global ID, name, type, deleted) of a
-        "Related Items" Link target, Inventory or ELN alike. Backs the target
-        name and "Target deleted" indicator shown on link cards. Permission
-        redacted: for a target the caller cannot read (or that does not exist)
-        the response contains only `globalId` with `readable` false, deliberately
-        identical for unreadable and nonexistent targets so callers cannot probe
-        which records exist.
-      tags:
-        - Related Items
-      parameters:
-        - name: globalId
-          in: path
-          required: true
-          description: >-
-            Global ID of the link target - an Inventory item or an ELN record
-            (document, notebook or gallery file). A version suffix (e.g.
-            `SD456v2`) is accepted.
-          schema:
-            type: string
-      responses:
-        "200":
-          description: >-
-            The target summary (redacted to `globalId` only when the caller
-            cannot read the target).
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InventoryLinkTargetSummary"
-        "422":
-          $ref: "#/components/responses/UnprocessableQuery"
 servers:
   - url: /api/inventory/v1
 components:
@@ -2981,6 +3477,22 @@ components:
       in: path
       required: true
       description: An identifier of the sample template.
+      schema:
+        type: integer
+        format: int64
+    instrumentIdParam:
+      name: instrumentId
+      in: path
+      required: true
+      description: A unique identifier of the instrument.
+      schema:
+        type: integer
+        format: int64
+    instrumentTemplateIdParam:
+      name: instrumentTemplateId
+      in: path
+      required: true
+      description: An identifier of the instrument template.
       schema:
         type: integer
         format: int64
@@ -3254,6 +3766,101 @@ components:
   schemas:
     BasicObject:
       type: object
+    InstrumentInfo:
+      description: Basic information about RSpace Inventory Instrument.
+      allOf:
+        - $ref: "#/components/schemas/InventoryRecordInfo"
+        - properties:
+            templateId:
+              type: number
+              description: Identifier of the template used to create this instrument. May be unset if this instrument was not created from a Template
+              example: 1
+            templateVersion:
+              type: number
+              description: Version of the connected template
+            revisionId:
+              type: number
+              description: Revision id of the instrument
+            version:
+              type: number
+              description: Version number
+            historicalVersion:
+              type: boolean
+              description: Whether object represents a historical, or latest, version of the sample
+            sampleSource:
+              type: string
+              description: The source of the sample, must be one of allowed values.
+              enum:
+                - LAB_CREATED
+                - VENDOR_SUPPLIED
+                - OTHER
+    Instrument:
+      example:
+        name: Generic Instrument
+      description: The complete information on an Instrument
+      allOf:
+        - $ref: "#/components/schemas/SampleInfo"
+        - properties:
+            sharedWith:
+              $ref: "#/components/schemas/GroupShareInfoList"
+            fields:
+              $ref: "#/components/schemas/SampleFieldList"
+            extraFields:
+              $ref: "#/components/schemas/ExtraFieldList"
+    InstrumentTemplateInfo:
+      description: Summary information about an Instrument Template.
+      allOf:
+        - $ref: "#/components/schemas/InstrumentInfo"
+        - properties:
+            type:
+              example: INSTRUMENT_TEMPLATE
+            template:
+              type: boolean
+              example: true
+              description: Always true for an Instrument Template.
+    InstrumentTemplateList:
+      description: List of Instrument Template summary objects
+      type: array
+      items:
+        $ref: "#/components/schemas/InstrumentTemplateInfo"
+    InstrumentTemplate:
+      description: Full information about an Inventory Instrument Template
+      allOf:
+        - $ref: "#/components/schemas/InstrumentTemplateInfo"
+        - properties:
+            fields:
+              $ref: "#/components/schemas/SampleFieldList"
+            extraFields:
+              $ref: "#/components/schemas/ExtraFieldList"
+            sharedWith:
+              $ref: "#/components/schemas/GroupShareInfoList"
+    InstrumentTemplatePost:
+      description: Definition of a new Instrument Template, including fields.
+      properties:
+        name:
+          type: string
+          description: A required display name for the template.
+          minLength: 1
+        description:
+          type: string
+        tags:
+          $ref: "#/components/schemas/TagList"
+        iconId:
+          type: integer
+          format: int64
+        fields:
+          $ref: "#/components/schemas/SampleFieldList"
+        extraFields:
+          $ref: "#/components/schemas/ExtraFieldList"
+      example:
+        name: Microscope template
+        description: A template for the lab's microscopes
+        tags: [{ "value": "microscope" }]
+        fields:
+          - name: Serial Number
+            type: string
+          - name: Calibration
+            type: number
     InventoryRecordInfo:
       description: Basic information common for RSpace Inventory Entities
       properties:
@@ -4041,83 +4648,3 @@ components:
         httpCode: 422
         internalCode: 42201
         message: Query could not be processed.
-    InventoryReferencingItems:
-      type: object
-      description: >
-        Inventory items that reference a target record through a "Related Items"
-        Link field (the target's inbound links). The target may be an Inventory
-        item or an ELN record.
-      properties:
-        referencingItems:
-          type: array
-          description: >-
-            The referencing items, permission-filtered to those the caller can
-            read. Empty when nothing readable links to the target.
-          items:
-            $ref: "#/components/schemas/InventoryReferencingItem"
-    InventoryReferencingItem:
-      type: object
-      description: A single Inventory item that links to the requested target.
-      properties:
-        sourceGlobalId:
-          type: string
-          description: Global ID of the referencing (source) Inventory item.
-          example: SA123
-        sourceName:
-          type: string
-          description: Name of the referencing item.
-        sourceType:
-          type: string
-          description: Inventory type of the referencing item.
-          enum:
-            - SAMPLE
-            - SUBSAMPLE
-            - CONTAINER
-            - INSTRUMENT
-        relationType:
-          type: string
-          description: >-
-            The DataCite 4.7 relationship type of the link (plus the PIDINST
-            `IsCalibratedBy` / `Calibrates` pair).
-          example: References
-        versionPin:
-          type: integer
-          format: int64
-          nullable: true
-          description: >-
-            The pinned user-facing version of the target this link points at, or
-            null when the link follows the latest version.
-        modifiedAt:
-          type: string
-          format: date-time
-          description: When the link was last modified.
-    InventoryLinkTargetSummary:
-      type: object
-      description: >
-        Read-time summary of a "Related Items" Link target. For a target the
-        caller cannot read (or that does not exist) only `globalId` is populated
-        and `readable` is false - deliberately identical for unreadable and
-        nonexistent targets (see ADR 0002, link-target-state non-disclosure).
-      properties:
-        globalId:
-          type: string
-          description: >-
-            Global ID of the target, including a version suffix when the link is
-            pinned (e.g. `SA123v2`).
-          example: SA123
-        name:
-          type: string
-          description: Current name of the target. Empty when not readable.
-        type:
-          type: string
-          description: >-
-            Type of the target, e.g. SAMPLE, SUBSAMPLE, CONTAINER, INSTRUMENT,
-            DOCUMENT, NOTEBOOK or MEDIA_FILE.
-        deleted:
-          type: boolean
-          description: True when the target record is currently soft-deleted.
-        readable:
-          type: boolean
-          description: >-
-            True only when the caller can read the target; false deliberately
-            conflates "unreadable" with "nonexistent".
