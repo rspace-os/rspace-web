@@ -83,9 +83,13 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   // Block record Save while the link editor is open or holds unapplied changes; the
   // `hasLink` guard keeps an empty optional field saveable. A dedicated flag, not
   // field.error (see Field.linkEditInProgress), so an open editor reads as in-progress.
+  // In view mode (`disabled`) the editor - and its Apply/Discard buttons - is never shown, so a
+  // left-open editor must not keep the field flagged: that would block save with an "Apply or
+  // discard" message the user has no way to act on. A record Save happens while still editable
+  // (`disabled` is false), so gating on `!disabled` does not weaken the guard.
   useEffect(() => {
-    field.setLinkEditInProgress(changed || (editing && hasLink));
-  }, [changed, editing, hasLink, field]);
+    field.setLinkEditInProgress(!disabled && (changed || (editing && hasLink)));
+  }, [changed, editing, hasLink, disabled, field]);
 
   const relationOptions =
     field.allowedRelationTypes.length > 0 ? field.allowedRelationTypes : [...DATACITE_RELATION_TYPES];

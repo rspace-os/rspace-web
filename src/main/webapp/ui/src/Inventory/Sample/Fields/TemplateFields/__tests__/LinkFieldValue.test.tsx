@@ -326,6 +326,43 @@ describe("LinkFieldValue", () => {
     expect(screen.queryByText("None")).not.toBeInTheDocument();
   });
 
+  it("clears the save block when the editor was left open but the record is in view mode", async () => {
+    // RSDEV-1201 (review follow-up): the editor (and its Apply/Discard buttons) is never shown in
+    // view mode (disabled=true), so a committed-link field flipped to view mode while the editor was
+    // left open must NOT keep reporting an in-progress edit. Otherwise FieldModel.validate() blocks
+    // save with an "Apply or discard" message the user cannot act on, because the editor is hidden.
+    const user = userEvent.setup();
+    const setLinkEditInProgress = vi.fn();
+    const field = linkField({
+      link: {
+        relationType: "References",
+        targetGlobalId: "SA20",
+        versionPin: null,
+      },
+      setLinkEditInProgress,
+    });
+    const { rerender } = renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    // opening the editor on the committed link blocks save while still editable
+    await user.click(screen.getByRole("button", { name: /edit link/i }));
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(true);
+
+    // record flips to view mode while the editor was left open
+    rerender(
+      <ThemeProvider theme={materialTheme}>
+        <LinkFieldValue field={field} sourceGlobalId="SA1" disabled={true} onChange={() => {}} />
+      </ThemeProvider>,
+    );
+
+    // no editor is visible to apply/discard from, so the field must stop blocking save
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(false);
+  });
+
   it("shows the field name while editing", () => {
     // the editor opens immediately for an empty field; because the FormField
     // label above the editor is hidden (the name is meant to live inside the
