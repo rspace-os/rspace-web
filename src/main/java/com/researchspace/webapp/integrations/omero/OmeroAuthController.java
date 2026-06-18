@@ -17,16 +17,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 @Slf4j
 @Controller
 @RequestMapping("/apps/omero") // NOT AN OAUTH CONTROLLER
 public class OmeroAuthController extends BaseController {
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "OMERO";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.omero.connection";
+  private static final String CONNECTION_TYPE = "OMERO_CONNECTED";
+
   public static class OmeroAccessTokenReader {
     private static final String credentialsDelimiter = "_,_";
 
@@ -51,26 +58,33 @@ public class OmeroAuthController extends BaseController {
   private Map<String, UserConnection> userUserConnectionMap;
 
   @PostMapping("/connect")
-  public RedirectView connect(OmeroUser loginData) throws Exception {
+  public ModelAndView connect(OmeroUser loginData) {
     User subject = userManager.getAuthenticatedUserInSession();
-    JSONClient jsonClient = new JSONClient(omeroWebUrl);
-    Map<String, Integer> servers = jsonClient.getServers();
-    jsonClient.login(
-        loginData.getOmerousername(), loginData.getOmeropassword(), servers.get(omeroServerName));
-    UserConnection omeroConn = new UserConnection();
-    omeroConn.setAccessToken(OmeroAccessTokenReader.createDelimitedStringFromOmeroLogin(loginData));
-    omeroConn.setDisplayName("RSpace Omero login credentials");
-    omeroConn.setId(
-        new UserConnectionId(subject.getUsername(), OMERO_APP_NAME, loginData.getOmerousername()));
-    omeroConn.setRank(1);
-    userUserConnectionMap.put("omero_" + subject.getUsername(), omeroConn);
-    String redirectUri = properties.getServerUrl() + "/apps/omero/redirect_uri";
-    return new RedirectView(redirectUri);
-  }
-
-  @GetMapping("/connect")
-  public String getConnect() {
-    return "connect/omero/connect";
+    try {
+      JSONClient jsonClient = new JSONClient(omeroWebUrl);
+      Map<String, Integer> servers = jsonClient.getServers();
+      jsonClient.login(
+          loginData.getOmerousername(), loginData.getOmeropassword(), servers.get(omeroServerName));
+      UserConnection omeroConn = new UserConnection();
+      omeroConn.setAccessToken(
+          OmeroAccessTokenReader.createDelimitedStringFromOmeroLogin(loginData));
+      omeroConn.setDisplayName("RSpace Omero login credentials");
+      omeroConn.setId(
+          new UserConnectionId(
+              subject.getUsername(), OMERO_APP_NAME, loginData.getOmerousername()));
+      omeroConn.setRank(1);
+      userUserConnectionMap.put("omero_" + subject.getUsername(), omeroConn);
+      String redirectUri = properties.getServerUrl() + "/apps/omero/redirect_uri";
+      return new ModelAndView(new RedirectView(redirectUri));
+    } catch (Exception e) {
+      log.warn("Could not connect to OMERO for user {}", subject.getUsername(), e);
+      ModelAndView mav = new ModelAndView(CONNECTED_VIEW);
+      mav.addObject("appName", APP_DISPLAY_NAME);
+      mav.addObject("connectionChannel", CONNECTION_CHANNEL);
+      mav.addObject("connectionType", CONNECTION_TYPE);
+      mav.addObject("connectionError", "Could not log in to OMERO: " + e.getMessage());
+      return mav;
+    }
   }
 
   @DeleteMapping("/connect")
@@ -81,8 +95,11 @@ public class OmeroAuthController extends BaseController {
   }
 
   @GetMapping("/redirect_uri")
-  public String onAuthorization() {
-    return "connect/omero/connected";
+  public String onAuthorization(Model model) {
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+    return CONNECTED_VIEW;
   }
 
   @Data

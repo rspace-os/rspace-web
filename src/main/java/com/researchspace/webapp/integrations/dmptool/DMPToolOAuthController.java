@@ -50,6 +50,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequestMapping("/apps/dmptool")
 public class DMPToolOAuthController extends BaseOAuth2Controller {
 
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "DMPTool";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.dmptool.connection";
+  private static final String CONNECTION_TYPE = "DMPTOOL_CONNECTED";
+
   @Value("${dmptool.client.id}")
   private String clientId;
 
@@ -102,9 +107,9 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
+      addErrorAttributes(model, error);
 
-      return "connect/authorizationError";
+      return CONNECTED_VIEW;
     }
 
     UserConnection conn = new UserConnection();
@@ -115,7 +120,25 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     userConnectionManager.save(conn);
     log.info("Connected DMPTool for user {}", principal.getName());
 
-    return "connect/dmptool/connected";
+    addSuccessAttributes(model);
+    return CONNECTED_VIEW;
+  }
+
+  private void addSuccessAttributes(Model model) {
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+  }
+
+  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
+    String connectionError = error.getErrorMsg();
+    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
+      connectionError += ": " + error.getErrorDetails();
+    }
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+    model.addAttribute("connectionError", connectionError);
   }
 
   private URL getServerUrl() throws MalformedURLException {

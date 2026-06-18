@@ -46,7 +46,6 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequestMapping("/apps/nextcloud")
 public class NextCloudController extends BaseOAuth2Controller {
   private static final String ERROR = "error";
-  private static final String CONNECT_AUTHORIZATION_ERROR = "connect/authorizationError";
   private static final String ACCESS_TOKEN = "access_token";
   private static final String USERNAME = "username";
 
@@ -131,8 +130,9 @@ public class NextCloudController extends BaseOAuth2Controller {
               .errorDetails(params.get(ERROR))
               .build();
 
-      model.addAttribute(ERROR, error);
-      return CONNECT_AUTHORIZATION_ERROR;
+      addConnectionAttributes(model);
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
 
     if (userManager.getAuthenticatedUserInSession() == null) {
@@ -142,8 +142,9 @@ public class NextCloudController extends BaseOAuth2Controller {
               .errorDetails(params.get(ERROR))
               .build();
 
-      model.addAttribute(ERROR, error);
-      return CONNECT_AUTHORIZATION_ERROR;
+      addConnectionAttributes(model);
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
 
     String authorizationCode = params.get("code");
@@ -178,8 +179,6 @@ public class NextCloudController extends BaseOAuth2Controller {
       conn.setSecret(clientSecret);
 
       userConnectionManager.save(conn);
-      model.addAttribute("nextCloudAccessToken", contentMap.get(ACCESS_TOKEN));
-      model.addAttribute("nextCloudUsername", conn.getId().getProviderUserId());
 
       log.info("NextCloud response retrieved");
 
@@ -191,11 +190,27 @@ public class NextCloudController extends BaseOAuth2Controller {
               .errorDetails(e.getMessage())
               .build();
 
-      model.addAttribute(ERROR, error);
-      return CONNECT_AUTHORIZATION_ERROR;
+      addConnectionAttributes(model);
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
 
-    return "connect/nextcloud/connected";
+    addConnectionAttributes(model);
+    return "connect/connected";
+  }
+
+  private void addConnectionAttributes(Model model) {
+    model.addAttribute("appName", "Nextcloud");
+    model.addAttribute("connectionChannel", "rspace.apps.nextcloud.connection");
+    model.addAttribute("connectionType", "NEXTCLOUD_CONNECTED");
+  }
+
+  private String buildConnectionError(OauthAuthorizationError error) {
+    String message = error.getErrorMsg();
+    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
+      message += ": " + error.getErrorDetails();
+    }
+    return message;
   }
 
   private OauthAuthorizationErrorBuilder getAuthErrorBuilder() {

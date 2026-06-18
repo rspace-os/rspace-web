@@ -78,7 +78,10 @@ import org.springframework.web.servlet.view.RedirectView;
 public class DMPAssistantController extends BaseOAuth2Controller {
 
   static final String APP_NAME = "DMPASSISTANT";
-  private static final String CONNECTED_VIEW = "connect/dmpassistant/connected";
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "DMP Assistant";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.dmpassistant.connection";
+  private static final String CONNECTION_TYPE = "DMPASSISTANT_CONNECTED";
 
   /** Each imported plan costs an upstream fetch plus a media write; cap the batch size. */
   static final int MAX_IMPORT_BATCH_SIZE = 50;
@@ -151,13 +154,14 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       AccessToken accessToken = requestAccessToken(params.get("code"));
       createUserConnection(principal, accessToken);
       log.info("Connected DMP Assistant for user {}", principal.getName());
+      addSuccessAttributes(model);
       return CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMP Assistant", ex);
       error.errorMsg("Error during token creation");
       error.errorDetails(ex.getMessage());
-      model.addAttribute("error", error.build());
-      return "connect/authorizationError";
+      addErrorAttributes(model, error.build());
+      return "connect/connected";
     }
   }
 
@@ -184,14 +188,32 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       conn.setDisplayName("DMP Assistant refreshed access token");
       userConnectionManager.save(conn);
       log.info("Refreshed DMP Assistant token for user {}", principal.getName());
+      addSuccessAttributes(model);
       return CONNECTED_VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing DMP Assistant token: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
       error.errorDetails(e.getMessage());
-      model.addAttribute("error", error.build());
-      return "connect/authorizationError";
+      addErrorAttributes(model, error.build());
+      return "connect/connected";
     }
+  }
+
+  private void addSuccessAttributes(Model model) {
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+  }
+
+  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
+    String connectionError = error.getErrorMsg();
+    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
+      connectionError += ": " + error.getErrorDetails();
+    }
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+    model.addAttribute("connectionError", connectionError);
   }
 
   @GetMapping("/me")

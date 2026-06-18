@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
 import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -12,6 +13,12 @@ type ClustermarketArgs = {
   integrationState: IntegrationStates["CLUSTERMARKET"];
   update: (newIntegrationState: IntegrationStates["CLUSTERMARKET"]) => void;
 };
+
+export interface ClustermarketConnectedMessage extends Record<string, unknown> {
+  type: "CLUSTERMARKET_CONNECTED";
+  error?: string;
+}
+export const CLUSTERMARKET_CONNECTION_CHANNEL = "rspace.apps.clustermarket.connection";
 
 /*
  * Clustermarket uses OAuth based authentication, as implemented by this form.
@@ -42,8 +49,20 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
   const { disconnect } = useClustermarketEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<ClustermarketConnectedMessage>(
+    CLUSTERMARKET_CONNECTION_CHANNEL,
+    (e: MessageEvent<ClustermarketConnectedMessage>) => {
+      if (e.data?.type !== "CLUSTERMARKET_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to Calira",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -51,12 +70,8 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
           message: "Successfully connected to Calira.",
         }),
       );
-    };
-    window.addEventListener("CLUSTERMARKET_CONNECTED", f);
-    return () => {
-      window.removeEventListener("CLUSTERMARKET_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

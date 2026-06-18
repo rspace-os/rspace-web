@@ -126,10 +126,24 @@ public class DryadOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      model.addAttribute("appName", "Dryad");
+      model.addAttribute("connectionChannel", "rspace.apps.dryad.connection");
+      model.addAttribute("connectionType", "DRYAD_CONNECTED");
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
-    return "connect/dryad/connected";
+    model.addAttribute("appName", "Dryad");
+    model.addAttribute("connectionChannel", "rspace.apps.dryad.connection");
+    model.addAttribute("connectionType", "DRYAD_CONNECTED");
+    return "connect/connected";
+  }
+
+  private String buildConnectionError(OauthAuthorizationError error) {
+    String message = error.getErrorMsg();
+    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
+      message += ": " + error.getErrorDetails();
+    }
+    return message;
   }
 
   private long getDryadUserId(String accessTokenStr) {

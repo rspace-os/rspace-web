@@ -23,6 +23,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -45,6 +46,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequestMapping("/apps/figshare")
 @Slf4j
 public class FigshareOAuthController extends BaseOAuth2Controller {
+
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "Figshare";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.figshare.connection";
+  private static final String CONNECTION_TYPE = "FIGSHARE_CONNECTED";
 
   @Value("${figshare.id}")
   private String clientId;
@@ -127,7 +133,8 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
       conn.setRefreshToken(token.getRefreshToken());
       log.info("Plain text access token is {}", accessTokenStr);
       userConnectionManager.save(conn);
-      return "connect/figshare/connected";
+      addSuccessAttributes(model);
+      return CONNECTED_VIEW;
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -135,9 +142,26 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      addErrorAttributes(model, error);
+      return CONNECTED_VIEW;
     }
+  }
+
+  private void addSuccessAttributes(Model model) {
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+  }
+
+  private void addErrorAttributes(Model model, OauthAuthorizationError error) {
+    String connectionError = error.getErrorMsg();
+    if (StringUtils.isNotEmpty(error.getErrorDetails())) {
+      connectionError += ": " + error.getErrorDetails();
+    }
+    model.addAttribute("appName", APP_DISPLAY_NAME);
+    model.addAttribute("connectionChannel", CONNECTION_CHANNEL);
+    model.addAttribute("connectionType", CONNECTION_TYPE);
+    model.addAttribute("connectionError", connectionError);
   }
 
   long extractIdFromAccount(String accessTokenStr) {

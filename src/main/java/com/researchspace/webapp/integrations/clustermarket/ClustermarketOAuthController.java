@@ -85,7 +85,10 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
     String authorizationCode = params.get("code");
     try {
       clustermarketOAuthService.generateAndSaveAuthCodeAccessToken(authorizationCode, subject);
-      return "connect/clustermarket/connected";
+      model.addAttribute("appName", "Clustermarket");
+      model.addAttribute("connectionChannel", "rspace.apps.clustermarket.connection");
+      model.addAttribute("connectionType", "CLUSTERMARKET_CONNECTED");
+      return "connect/connected";
     } catch (HttpStatusCodeException e) {
       log.error(makeMessage(e), e);
       OauthAuthorizationError error =
@@ -94,9 +97,20 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      model.addAttribute("appName", "Clustermarket");
+      model.addAttribute("connectionChannel", "rspace.apps.clustermarket.connection");
+      model.addAttribute("connectionType", "CLUSTERMARKET_CONNECTED");
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
+  }
+
+  private String buildConnectionError(OauthAuthorizationError error) {
+    String message = error.getErrorMsg();
+    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
+      message += ": " + error.getErrorDetails();
+    }
+    return message;
   }
 
   private String makeMessage(Exception exception) {

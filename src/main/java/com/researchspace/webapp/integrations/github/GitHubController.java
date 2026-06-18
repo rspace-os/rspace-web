@@ -228,8 +228,9 @@ public class GitHubController {
               .errorMsg("Github access denied")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      addConnectionAttributes(model);
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     } catch (Exception e) {
       log.error("Exception during GitHub token exchange", e);
       OauthAuthorizationError error =
@@ -237,13 +238,13 @@ public class GitHubController {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      addConnectionAttributes(model);
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
 
-    List<Repository> repositories;
     try {
-      repositories = getUserRepositories(accessToken);
+      getUserRepositories(accessToken);
     } catch (Exception e) {
       log.error("Getting GitHub repositories list failed", e);
       OauthAuthorizationError error =
@@ -251,15 +252,30 @@ public class GitHubController {
               .errorMsg("Getting repositories list failed")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      addConnectionAttributes(model);
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
-    model.addAttribute("gitHubAccessToken", accessToken);
-    model.addAttribute("gitHubRepositories", repositories);
+    addConnectionAttributes(model);
+    model.addAttribute("connectionToken", accessToken);
 
-    return "connect/github/connected";
+    return "connect/connected";
+  }
+
+  private void addConnectionAttributes(Model model) {
+    model.addAttribute("appName", "GitHub");
+    model.addAttribute("connectionChannel", "rspace.apps.github.connection");
+    model.addAttribute("connectionType", "GITHUB_CONNECTED");
+  }
+
+  private String buildConnectionError(OauthAuthorizationError error) {
+    String message = error.getErrorMsg();
+    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
+      message += ": " + error.getErrorDetails();
+    }
+    return message;
   }
 
   private OauthAuthorizationErrorBuilder getAuthorizationBuilder() {

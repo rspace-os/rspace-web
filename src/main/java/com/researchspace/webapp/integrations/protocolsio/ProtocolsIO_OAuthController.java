@@ -138,8 +138,10 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
       conn.setRank(1);
       conn.setRefreshToken(accessToken.getBody().getRefreshToken());
       userConnectionManager.save(conn);
-      model.addAttribute("pioAccessToken", conn.getAccessToken());
-      return "connect/protocolsio/connected";
+      model.addAttribute("appName", "Protocols.io");
+      model.addAttribute("connectionChannel", "rspace.apps.protocolsio.connection");
+      model.addAttribute("connectionType", "PROTOCOLS_IO_CONNECTED");
+      return "connect/connected";
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -147,9 +149,20 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      model.addAttribute("appName", "Protocols.io");
+      model.addAttribute("connectionChannel", "rspace.apps.protocolsio.connection");
+      model.addAttribute("connectionType", "PROTOCOLS_IO_CONNECTED");
+      model.addAttribute("connectionError", buildConnectionError(error));
+      return "connect/connected";
     }
+  }
+
+  private String buildConnectionError(OauthAuthorizationError error) {
+    String message = error.getErrorMsg();
+    if (error.getErrorDetails() != null && !error.getErrorDetails().isEmpty()) {
+      message += ": " + error.getErrorDetails();
+    }
+    return message;
   }
 
   private long getExpireTime(ResponseEntity<AccessToken> accessToken) {

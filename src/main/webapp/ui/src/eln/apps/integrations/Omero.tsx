@@ -2,9 +2,11 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
 import OmeroIcon from "../../../assets/branding/omero/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
 import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
@@ -13,12 +15,40 @@ type OmeroArgs = {
   update: (newIntegrationState: IntegrationStates["OMERO"]) => void;
 };
 
+export interface OmeroConnectedMessage extends Record<string, unknown> {
+  type: "OMERO_CONNECTED";
+  error?: string;
+}
+export const OMERO_CONNECTION_CHANNEL = "rspace.apps.omero.connection";
+
 /*
  * Omero passes a username and password in a regular form submission.
  */
 function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
+  const { addAlert } = useContext(AlertContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  useBroadcastChannel<OmeroConnectedMessage>(OMERO_CONNECTION_CHANNEL, (e: MessageEvent<OmeroConnectedMessage>) => {
+    if (e.data?.type !== "OMERO_CONNECTED") return;
+    if (e.data.error) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Could not connect to OMERO",
+          message: e.data.error,
+        }),
+      );
+      return;
+    }
+    addAlert(
+      mkAlert({
+        variant: "success",
+        message: "Successfully connected to OMERO.",
+      }),
+    );
+  });
+
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -48,7 +78,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                 data.
               </li>
             </ol>
-            <form action="/apps/omero/connect" method="POST">
+            <form action="/apps/omero/connect" method="POST" target="_blank" rel="noopener opener">
               <Stack spacing={1}>
                 <TextField
                   fullWidth

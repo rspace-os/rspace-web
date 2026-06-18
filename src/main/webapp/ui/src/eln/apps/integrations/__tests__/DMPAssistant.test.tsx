@@ -1,11 +1,24 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import { describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import { Optional } from "../../../../util/optional";
-import DMPAssistant from "../DMPAssistant";
+import DMPAssistant, { type DMPAssistantConnectedMessage } from "../DMPAssistant";
 
 import "@/__tests__/__mocks__/matchMedia";
+
+const broadcastHandlers: Array<(e: MessageEvent<DMPAssistantConnectedMessage>) => void> = [];
+vi.mock("@/modules/common/hooks/broadcast", () => ({
+  useBroadcastChannel: (_channel: string, handler: (e: MessageEvent<DMPAssistantConnectedMessage>) => void) => {
+    broadcastHandlers.push(handler);
+  },
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  broadcastHandlers.length = 0;
+});
+
 describe("DMPAssistant", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
@@ -76,9 +89,11 @@ describe("DMPAssistant", () => {
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
 
-    // the OAuth popup's connected.jsp dispatches this event on the opener window
+    // the OAuth popup's shared result page posts this over the BroadcastChannel
     act(() => {
-      window.dispatchEvent(new Event("DMPASSISTANT_CONNECTED"));
+      broadcastHandlers.forEach((h) => {
+        h({ data: { type: "DMPASSISTANT_CONNECTED" } } as MessageEvent<DMPAssistantConnectedMessage>);
+      });
     });
 
     expect(await screen.findByRole("button", { name: /disconnect/i })).toBeVisible();

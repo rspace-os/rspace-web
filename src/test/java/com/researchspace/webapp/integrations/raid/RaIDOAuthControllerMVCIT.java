@@ -17,7 +17,6 @@ import com.researchspace.model.User;
 import com.researchspace.raid.model.exception.RaIDException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
-import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.nio.charset.StandardCharsets;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,14 +30,12 @@ import org.springframework.test.web.servlet.MvcResult;
 public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
 
   public static final String RAID_EXCEPTION_MESSAGE = "RaidExceptionMessage";
-  public static final String AUTHORIZATION_ERROR_PAGE = "connect/authorizationError";
-  public static final String ERROR_PAGE = "error";
   @Autowired private RaIDOAuthController raIDOAuthController;
   @Mock private RaIDServiceClientAdapter mockedRaidClientAdapter;
 
   private static final String SERVER_ALIAS = "DEMO";
   private static final String AUTH_CODE = "authCodeReceived";
-  private static final String URL_CONNECTED = "connect/raid/connected";
+  private static final String URL_CONNECTED = "connect/connected";
 
   private User user;
 
@@ -95,11 +92,9 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
-    assertFalse(result.getResponse().getForwardedUrl().contains(AUTHORIZATION_ERROR_PAGE));
-    assertFalse(result.getResponse().getForwardedUrl().contains(ERROR_PAGE));
 
-    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("serverAlias"));
-    assertNull(result.getModelAndView().getModel().get("error"));
+    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("connectionAlias"));
+    assertNull(result.getModelAndView().getModel().get("connectionError"));
   }
 
   @Test
@@ -118,14 +113,10 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertFalse(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
-    assertTrue(result.getResponse().getForwardedUrl().contains(AUTHORIZATION_ERROR_PAGE));
-    assertFalse(result.getResponse().getForwardedUrl().contains(ERROR_PAGE));
+    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
 
-    assertNull(result.getModelAndView().getModel().get("serverAlias"));
     assertTrue(
-        ((OauthAuthorizationError) result.getModelAndView().getModel().get("error"))
-            .getErrorMsg()
+        ((String) result.getModelAndView().getModel().get("connectionError"))
             .contains(RAID_EXCEPTION_MESSAGE));
   }
 
@@ -141,10 +132,9 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
-    assertFalse(result.getResponse().getForwardedUrl().contains(AUTHORIZATION_ERROR_PAGE));
-    assertFalse(result.getResponse().getForwardedUrl().contains(ERROR_PAGE));
 
-    assertNull(result.getModelAndView().getModel().get("error"));
+    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("connectionAlias"));
+    assertNull(result.getModelAndView().getModel().get("connectionError"));
   }
 
   @Test
@@ -158,13 +148,10 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertFalse(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
-    assertTrue(result.getResponse().getForwardedUrl().contains(AUTHORIZATION_ERROR_PAGE));
-    assertFalse(result.getResponse().getForwardedUrl().contains(ERROR_PAGE));
+    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
 
     assertTrue(
-        ((OauthAuthorizationError) result.getModelAndView().getModel().get("error"))
-            .getErrorMsg()
+        ((String) result.getModelAndView().getModel().get("connectionError"))
             .contains(RAID_EXCEPTION_MESSAGE));
   }
 

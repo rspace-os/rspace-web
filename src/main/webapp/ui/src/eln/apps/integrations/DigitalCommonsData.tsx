@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/digitalcommonsdata";
 import DcdIcon from "../../../assets/branding/digitalcommonsdata/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -13,6 +14,12 @@ type DigitalCommonsDataArgs = {
   update: (newIntegrationState: IntegrationStates["DIGITALCOMMONSDATA"]) => void;
 };
 
+export interface DigitalCommonsDataConnectedMessage extends Record<string, unknown> {
+  type: "DIGITALCOMMONSDATA_CONNECTED";
+  error?: string;
+}
+export const DIGITALCOMMONSDATA_CONNECTION_CHANNEL = "rspace.apps.digitalcommonsdata.connection";
+
 /*
  * Digital Commons Data uses OAuth based authentication, as implemeted by the form below.
  */
@@ -21,8 +28,20 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
   const { disconnect } = useDigitalCommonsDataEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  React.useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<DigitalCommonsDataConnectedMessage>(
+    DIGITALCOMMONSDATA_CONNECTION_CHANNEL,
+    (e: MessageEvent<DigitalCommonsDataConnectedMessage>) => {
+      if (e.data?.type !== "DIGITALCOMMONSDATA_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to Digital Commons Data",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -30,12 +49,8 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
           message: "Successfully connected to Digital Commons Data.",
         }),
       );
-    };
-    window.addEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DIGITALCOMMONSDATA_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

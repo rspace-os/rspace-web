@@ -32,6 +32,7 @@ type UnwrapArray<T extends Array<unknown>> = {
 export interface GitHubConnectedMessage extends Record<string, unknown> {
   type: "GITHUB_CONNECTED";
   authToken: string;
+  error?: string;
 }
 
 export const GITHUB_CONNECTION_CHANNEL = "rspace.apps.github.connection";
@@ -55,6 +56,16 @@ const DialogContent = observer(
     useBroadcastChannel<GitHubConnectedMessage>(
       GITHUB_CONNECTION_CHANNEL,
       (e: MessageEvent<GitHubConnectedMessage>) => {
+        if (e.data?.type === "GITHUB_CONNECTED" && e.data.error) {
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not connect to GitHub",
+              message: e.data.error,
+            }),
+          );
+          return;
+        }
         if (
           e.data?.type !== "GITHUB_CONNECTED" ||
           typeof e.data.authToken !== "string" ||
