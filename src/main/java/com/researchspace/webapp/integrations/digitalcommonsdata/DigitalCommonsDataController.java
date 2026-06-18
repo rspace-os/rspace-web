@@ -45,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 @Controller
@@ -106,10 +107,9 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
   }
 
   @PostMapping("/connect")
-  public RedirectView connect(Model model, Principal principal) throws MalformedURLException {
-    String redirectUrl = "";
+  public ModelAndView connect(Model model, Principal principal) throws MalformedURLException {
     try {
-      redirectUrl = triggerLoginClient(principal);
+      return new ModelAndView(new RedirectView(triggerLoginClient(principal)));
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -119,10 +119,8 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .build();
       ConnectionResultPage.addError(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
-
-      redirectUrl = CONNECTED_VIEW;
+      return new ModelAndView(CONNECTED_VIEW, model.asMap());
     }
-    return new RedirectView(redirectUrl);
   }
 
   private String triggerLoginClient(Principal principal) throws HttpStatusCodeException {

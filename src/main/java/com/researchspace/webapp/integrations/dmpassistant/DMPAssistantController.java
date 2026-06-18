@@ -378,7 +378,8 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     }
     Long expireTime = optConn.get().getExpireTime();
     if (expireTime != null && expireTime - Instant.now().toEpochMilli() < timeThreshold * 1000L) {
-      if (!CONNECTED_VIEW.equals(refreshToken(model, principal))) {
+      refreshToken(model, principal);
+      if (model.containsAttribute("connectionError")) {
         // proceeding with the stale token would only yield an opaque upstream 401; tell
         // the user to reconnect instead
         throw new TokenRefreshFailedException();

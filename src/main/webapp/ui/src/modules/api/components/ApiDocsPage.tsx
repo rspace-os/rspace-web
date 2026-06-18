@@ -1,8 +1,5 @@
+import { type ApiReferenceConfigurationWithMultipleSources, ApiReferenceReact } from "@scalar/api-reference-react";
 import React from "react";
-import {
-  ApiReferenceReact,
-  type ApiReferenceConfigurationWithMultipleSources,
-} from "@scalar/api-reference-react";
 import "@scalar/api-reference-react/style.css";
 
 /**

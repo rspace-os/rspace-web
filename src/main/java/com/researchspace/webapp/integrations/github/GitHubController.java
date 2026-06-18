@@ -226,7 +226,7 @@ public class GitHubController {
       log.error("GitHub access denied", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Github access denied")
+              .errorMsg("GitHub access denied")
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(
@@ -267,7 +267,7 @@ public class GitHubController {
   }
 
   private OauthAuthorizationErrorBuilder getAuthorizationBuilder() {
-    return OauthAuthorizationError.builder().appName("Github");
+    return OauthAuthorizationError.builder().appName("GitHub");
   }
 
   // Map is from repository name to access code

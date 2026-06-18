@@ -57,6 +57,7 @@ const DialogContent = observer(
       GITHUB_CONNECTION_CHANNEL,
       (e: MessageEvent<GitHubConnectedMessage>) => {
         if (e.data?.type === "GITHUB_CONNECTED" && e.data.error) {
+          setLoadingAllRepositories(false);
           addAlert(
             mkAlert({
               variant: "error",
@@ -114,7 +115,6 @@ const DialogContent = observer(
             }),
           );
         }
-      } finally {
         setLoadingAllRepositories(false);
       }
     };

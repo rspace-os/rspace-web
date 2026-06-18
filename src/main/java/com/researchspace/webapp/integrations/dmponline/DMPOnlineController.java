@@ -146,7 +146,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMPonline", ex);
       error.errorMsg("Error during token creation");
-      error.errorMsg(ex.getMessage());
+      error.errorDetails(ex.getMessage());
       ConnectionResultPage.addError(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
       redirectResult = CONNECTED_VIEW;

@@ -8,17 +8,17 @@ import { mkAlert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
 import {
   type ApiInventorySystemSettings,
+  dataciteSettingsToIgsnPayload,
   type SystemSettings,
   systemSettingsFromApiResponse,
-  dataciteSettingsToIgsnPayload,
 } from "./systemSettingsMapping";
 
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
 
 export type {
-  IntegrationState,
   DataCiteServerUrl,
+  IntegrationState,
   SystemSettings,
 } from "./systemSettingsMapping";
 
@@ -116,10 +116,7 @@ export default class AuthStore {
 
   async getSystemSettings(): Promise<void> {
     try {
-      const { data } = await InvApiService.get<ApiInventorySystemSettings>(
-        "system/settings",
-        ""
-      );
+      const { data } = await InvApiService.get<ApiInventorySystemSettings>("system/settings", "");
       // the endpoint now returns identifiersSettings keyed by type; the dialog uses the IGSN entry
       this.setSystemSettings(systemSettingsFromApiResponse(data));
     } catch (error) {
@@ -137,7 +134,7 @@ export default class AuthStore {
 
   async updateSystemSettings<SettingFor extends keyof SystemSettings>(
     _settingFor: SettingFor,
-    newSettings: SystemSettings[SettingFor]
+    newSettings: SystemSettings[SettingFor],
   ): Promise<void> {
     try {
       // PUT now takes a single identifier-settings object routed by `provider`. The dialog only
@@ -147,10 +144,7 @@ export default class AuthStore {
       // The UI strategic solution that will handle both configurations
       // (PDINST Datacite, PDINST b2inst and IGSN datacite)
       // will be handled by the jira ticket https://researchspace.atlassian.net/browse/RSDEV-1180
-      await InvApiService.put<void>(
-        "system/settings",
-        dataciteSettingsToIgsnPayload(newSettings)
-      );
+      await InvApiService.put<void>("system/settings", dataciteSettingsToIgsnPayload(newSettings));
       this.rootStore.uiStore.addAlert(
         mkAlert({
           message: `System Settings have been updated.`,

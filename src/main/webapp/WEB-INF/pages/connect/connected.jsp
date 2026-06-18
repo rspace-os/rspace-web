@@ -1,10 +1,10 @@
 <%@ include file="/common/taglibs.jsp"%>
 <%--
   Shared OAuth/credential result page for integrations configured from the React
-  Apps page (/apps). It carries no visible content: on load it posts the outcome
-  to the integration's BroadcastChannel and closes itself, so the user stays in
-  the Apps page SPA. The Apps page card listens on the channel and shows an
-  alert. Used for both success and failure.
+  Apps page (/apps). On load it posts the outcome to the integration's
+  BroadcastChannel and closes itself, so the user stays in the Apps page SPA.
+  The fallback body text is visible only if the window cannot close itself. Used
+  for both success and failure.
 
   Model attributes (all optional except channel + type):
     appName            page title
@@ -19,7 +19,7 @@
   script) so provider-supplied error text cannot break out of the JS context.
 --%>
 <head>
-	<title><c:out value="${appName}"/></title>
+  <title><c:out value="${appName}" default="RSpace connection result"/></title>
 </head>
 <body>
 <div id="rs-connection-result"
@@ -32,15 +32,24 @@
 <p>You may now close this window.</p>
 <script>
   window.addEventListener("load", () => {
-    const d = document.getElementById("rs-connection-result").dataset;
-    const msg = { type: d.type };
-    if (d.alias) msg.alias = d.alias;
-    if (d.token) msg.authToken = d.token;
-    if (d.response) msg.response = d.response;
-    if (d.error) msg.error = d.error;
-    const channel = new BroadcastChannel(d.channel);
-    channel.postMessage(msg);
-    channel.close();
+    const result = document.getElementById("rs-connection-result");
+    const d = result ? result.dataset : {};
+    if (d.channel && d.type && "BroadcastChannel" in window) {
+      const msg = { type: d.type };
+      if (d.alias) msg.alias = d.alias;
+      if (d.token) msg.authToken = d.token;
+      if (d.response) msg.response = d.response;
+      if (d.error) msg.error = d.error;
+      let channel;
+      try {
+        channel = new BroadcastChannel(d.channel);
+        channel.postMessage(msg);
+      } catch (e) {
+        console.warn("Unable to broadcast integration connection result", e);
+      } finally {
+        if (channel) channel.close();
+      }
+    }
     window.close();
   });
 </script>
