@@ -10,14 +10,9 @@
 
 export type IntegrationState = "true" | "false";
 
-export type DataCiteServerUrl =
-  | "https://api.datacite.org"
-  | "https://api.test.datacite.org";
+export type DataCiteServerUrl = "https://api.datacite.org" | "https://api.test.datacite.org";
 
-export type IdentifierProvider =
-  | "IGSN_DATACITE"
-  | "PIDINST_DATACITE"
-  | "PIDINST_B2INST";
+export type IdentifierProvider = "IGSN_DATACITE" | "PIDINST_DATACITE" | "PIDINST_B2INST";
 
 /** The datacite-shaped settings the dialog reads and edits. */
 export type DataciteSettings = {
@@ -57,9 +52,7 @@ const DEFAULT_DATACITE_SETTINGS: DataciteSettings = {
  * Adapts the API response to the dialog's datacite model, using only the IGSN entry and dropping
  * the `provider` field. Falls back to safe defaults if the IGSN entry is absent.
  */
-export function systemSettingsFromApiResponse(
-  response: ApiInventorySystemSettings
-): SystemSettings {
+export function systemSettingsFromApiResponse(response: ApiInventorySystemSettings): SystemSettings {
   const igsn = response?.identifiersSettings?.IGSN;
   if (!igsn) {
     return { datacite: { ...DEFAULT_DATACITE_SETTINGS } };
@@ -79,9 +72,7 @@ export function systemSettingsFromApiResponse(
  * Wraps the datacite settings into a single IGSN identifier-settings object for PUT
  * /system/settings, which is now routed by `provider`.
  */
-export function dataciteSettingsToIgsnPayload(
-  datacite: DataciteSettings
-): IdentifierSettings {
+export function dataciteSettingsToIgsnPayload(datacite: DataciteSettings): IdentifierSettings {
   return {
     provider: "IGSN_DATACITE",
     enabled: datacite.enabled,
