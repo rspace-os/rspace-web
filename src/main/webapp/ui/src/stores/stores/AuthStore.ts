@@ -142,6 +142,11 @@ export default class AuthStore {
     try {
       // PUT now takes a single identifier-settings object routed by `provider`. The dialog only
       // configures IGSN, so send the IGSN payload (provider = IGSN_DATACITE).
+      // This is needed because the payload has changed but the UI has not, this adapt the old UI
+      // to work with the new payload.
+      // The UI strategic solution that will handle both configurations
+      // (PDINST Datacite, PDINST b2inst and IGSN datacite)
+      // will be handled by the jira ticket https://researchspace.atlassian.net/browse/RSDEV-1180
       await InvApiService.put<void>(
         "system/settings",
         dataciteSettingsToIgsnPayload(newSettings)
