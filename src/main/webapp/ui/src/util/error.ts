@@ -1,5 +1,5 @@
-import Result from "./result";
 import * as Parsers from "./parsers";
+import Result from "./result";
 
 /**
  * This script contains various common general-purpose error classes and utility
@@ -61,14 +61,10 @@ export class InvalidLocalStorageState extends Error {
  */
 export function getErrorMessage(error: unknown, fallback: string): string {
   return Parsers.objectPath(["response", "data", "message"], error)
-    .orElseTry(() =>
-      Parsers.objectPath(["response", "data", "exceptionMessage"], error),
-    )
+    .orElseTry(() => Parsers.objectPath(["response", "data", "exceptionMessage"], error))
     .flatMap(Parsers.isString)
     .orElseTry(() =>
-      Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error ? Result.Ok(e.message) : Result.Error<string>([]),
-      ),
+      Parsers.isObject(error).flatMap((e) => (e instanceof Error ? Result.Ok(e.message) : Result.Error<string>([]))),
     )
     .orElse(fallback);
 }

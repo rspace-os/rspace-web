@@ -1,28 +1,26 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import { sampleAttrs } from "../../../stores/models/__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import { ListOfMaterials } from "../../../stores/models/MaterialsModel";
-import MaterialsTable from "../MaterialsTable";
-import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../theme";
+import MaterialsTable from "../MaterialsTable";
 
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({
-      id: 1,
-      label: "foo",
-      category: "mass",
-      description: "foo is mass",
-    }),
-    unitsOfCategory: () => [],
-  },
-  materialsStore: { canEdit: true },
-})
-
+    unitStore: {
+      getUnit: () => ({
+        id: 1,
+        label: "foo",
+        category: "mass",
+        description: "foo is mass",
+      }),
+      unitsOfCategory: () => [],
+    },
+    materialsStore: { canEdit: true },
+  }),
 }));
 const sample1 = sampleAttrs({
   id: 1,
@@ -40,7 +38,6 @@ const material1 = {
     unitId: 3,
     numericValue: 0,
   },
-
 };
 describe("MaterialsTable", () => {
   describe("Location column", () => {
@@ -54,18 +51,11 @@ describe("MaterialsTable", () => {
       });
       render(
         <ThemeProvider theme={materialTheme}>
-          <MaterialsTable
-            list={mockList}
-            isSingleColumn={false}
-            onRemove={() => {}}
-            canEdit={false}
-          />
-        </ThemeProvider>
-
+          <MaterialsTable list={mockList} isSingleColumn={false} onRemove={() => {}} canEdit={false} />
+        </ThemeProvider>,
       );
       // second cell because the MaterialTable row has only 2 cells in a row, despite what would be visually intuitive
       expect(screen.getAllByRole("cell")[1]).toHaveTextContent("In Trash");
     });
   });
 });
-

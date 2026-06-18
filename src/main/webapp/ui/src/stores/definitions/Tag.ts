@@ -1,4 +1,4 @@
-import { Optional, lift2 } from "../../util/optional";
+import { lift2, type Optional } from "../../util/optional";
 
 /**
  * The definition of a tag in RSpace. If the tag is describing a term from a

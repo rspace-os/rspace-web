@@ -1,5 +1,5 @@
 import "@/stores/stores/RootStore";
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
@@ -19,7 +19,7 @@ describe("method: validState", () => {
         selectedOptions: null,
         type: "number",
       },
-      makeMockSample()
+      makeMockSample(),
     );
 
     field.setError(true);

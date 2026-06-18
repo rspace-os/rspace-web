@@ -29,10 +29,7 @@ export interface Point {
 export type Order = "asc" | "desc";
 
 export function parseOrder(str: string): Result<Order> {
-  return Result.first(
-    parseString("asc", str),
-    parseString("desc", str)
-  );
+  return Result.first(parseString("asc", str), parseString("desc", str));
 }
 
 /*

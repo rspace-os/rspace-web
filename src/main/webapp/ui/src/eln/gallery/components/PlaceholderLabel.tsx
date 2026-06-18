@@ -1,15 +1,11 @@
-import React from "react";
 import Box from "@mui/material/Box";
+import type React from "react";
 
 /**
  * Simple label for displaying a message about the status of the listing e.g.
  * error messages, indicating that there are no files, etc.
  */
-export default function PlaceholderLabel({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
+export default function PlaceholderLabel({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     <Box
       sx={{
@@ -20,9 +16,7 @@ export default function PlaceholderLabel({
         "& > *": {
           fontSize: "2rem",
           fontWeight: 700,
-          color: window.matchMedia("(prefers-contrast: more)").matches
-            ? "black"
-            : "hsl(190deg, 20%, 29%, 37%)",
+          color: window.matchMedia("(prefers-contrast: more)").matches ? "black" : "hsl(190deg, 20%, 29%, 37%)",
           flexGrow: 1,
           textAlign: "center",
           overflowWrap: "anywhere",

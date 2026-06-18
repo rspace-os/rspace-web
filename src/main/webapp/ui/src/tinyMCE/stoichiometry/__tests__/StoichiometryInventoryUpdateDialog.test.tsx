@@ -1,13 +1,13 @@
-import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@mui/material/styles";
-import { describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import React from "react";
+import { describe, expect, it, vi } from "vitest";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import materialTheme from "@/theme";
-import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import StoichiometryInventoryUpdateDialog from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateDialog";
+import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 
 vi.mock("@/components/GlobalId", () => ({
   default: ({ record }: { record: { globalId: string } }) => <span>{record.globalId}</span>,
@@ -66,9 +66,7 @@ function makeMolecule({
   };
 }
 
-function makeQuantityMap(
-  entries: Array<[string, number]>,
-): ReadonlyMap<string, InventoryQuantityQueryResult> {
+function makeQuantityMap(entries: Array<[string, number]>): ReadonlyMap<string, InventoryQuantityQueryResult> {
   return new Map(
     entries.map(([globalId, numericValue]) => [
       globalId,
@@ -99,9 +97,7 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 function getMoleculeRow(name: string): HTMLElement {
-  const row = screen
-    .getAllByRole("row")
-    .find((candidate) => within(candidate).queryByText(name) !== null);
+  const row = screen.getAllByRole("row").find((candidate) => within(candidate).queryByText(name) !== null);
 
   if (!(row instanceof HTMLElement)) {
     throw new Error(`Molecule row not found: ${name}`);
@@ -125,16 +121,18 @@ function getMetric(moleculeName: string, column: string): HTMLElement {
 describe("StoichiometryInventoryUpdateDialog", () => {
   it("submits selected molecule ids and closes when all deductions succeed", async () => {
     const user = userEvent.setup();
-    const onSave = vi.fn(() => Promise.resolve({
-      results: [
-        {
-          moleculeId: 1,
-          moleculeName: "Cyclopentane",
-          success: true,
-          errorMessage: null,
-        },
-      ],
-    }));
+    const onSave = vi.fn(() =>
+      Promise.resolve({
+        results: [
+          {
+            moleculeId: 1,
+            moleculeName: "Cyclopentane",
+            success: true,
+            errorMessage: null,
+          },
+        ],
+      }),
+    );
     const onClose = vi.fn();
 
     renderWithProviders(
@@ -179,12 +177,12 @@ describe("StoichiometryInventoryUpdateDialog", () => {
           actualAmount: 4,
         }),
       ]);
-      const [quantityMap, setQuantityMap] = React.useState<
-        ReadonlyMap<string, InventoryQuantityQueryResult>
-      >(makeQuantityMap([
-        ["SS124", 10],
-        ["SS123", 10],
-      ]));
+      const [quantityMap, setQuantityMap] = React.useState<ReadonlyMap<string, InventoryQuantityQueryResult>>(
+        makeQuantityMap([
+          ["SS124", 10],
+          ["SS123", 10],
+        ]),
+      );
 
       return (
         <StoichiometryInventoryUpdateDialog
@@ -193,45 +191,46 @@ describe("StoichiometryInventoryUpdateDialog", () => {
           linkedInventoryQuantityInfoByGlobalId={quantityMap}
           onSave={() =>
             Promise.resolve().then(() => {
-            setMolecules((previousMolecules) =>
-              previousMolecules.map((molecule) =>
-                molecule.id === 1
-                  ? {
-                      ...molecule,
-                      inventoryLink: molecule.inventoryLink
-                        ? {
-                            ...molecule.inventoryLink,
-                            stockDeducted: true,
-                          }
-                        : null,
-                    }
-                  : molecule,
-              ),
-            );
-            setQuantityMap(
-              makeQuantityMap([
-                ["SS124", 5],
-                ["SS123", 10],
-              ]),
-            );
+              setMolecules((previousMolecules) =>
+                previousMolecules.map((molecule) =>
+                  molecule.id === 1
+                    ? {
+                        ...molecule,
+                        inventoryLink: molecule.inventoryLink
+                          ? {
+                              ...molecule.inventoryLink,
+                              stockDeducted: true,
+                            }
+                          : null,
+                      }
+                    : molecule,
+                ),
+              );
+              setQuantityMap(
+                makeQuantityMap([
+                  ["SS124", 5],
+                  ["SS123", 10],
+                ]),
+              );
 
-            return {
-              results: [
-                {
-                  moleculeId: 1,
-                  moleculeName: "Cyclopentane",
-                  success: true,
-                  errorMessage: null,
-                },
-                {
-                  moleculeId: 2,
-                  moleculeName: "Cyclopentadiene",
-                  success: false,
-                  errorMessage: "Insufficient stock to perform this action.",
-                },
-              ],
-            };
-            })}
+              return {
+                results: [
+                  {
+                    moleculeId: 1,
+                    moleculeName: "Cyclopentane",
+                    success: true,
+                    errorMessage: null,
+                  },
+                  {
+                    moleculeId: 2,
+                    moleculeName: "Cyclopentadiene",
+                    success: false,
+                    errorMessage: "Insufficient stock to perform this action.",
+                  },
+                ],
+              };
+            })
+          }
           onClose={onClose}
         />
       );
@@ -244,9 +243,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    await screen.findByText(
-      /Current stock amounts were refreshed\. Re-select any remaining molecules to retry\./i,
-    );
+    await screen.findByText(/Current stock amounts were refreshed\. Re-select any remaining molecules to retry\./i);
 
     await waitFor(() => {
       expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
@@ -254,18 +251,10 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeEnabled();
       expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).not.toBeChecked();
     });
-    expect(
-      within(getMetric("Cyclopentane", "In Stock")).getByText("5.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Cyclopentane", "Will Use")).getByText("5.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Cyclopentane", "Remaining")).getByText("0.0 g"),
-    ).toBeVisible();
-    expect(
-      screen.getByText("Insufficient stock to perform this action."),
-    ).toBeVisible();
+    expect(within(getMetric("Cyclopentane", "In Stock")).getByText("5.0 g")).toBeVisible();
+    expect(within(getMetric("Cyclopentane", "Will Use")).getByText("5.0 g")).toBeVisible();
+    expect(within(getMetric("Cyclopentane", "Remaining")).getByText("0.0 g")).toBeVisible();
+    expect(screen.getByText("Insufficient stock to perform this action.")).toBeVisible();
     expect(
       screen.getByText(
         "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
@@ -292,9 +281,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
-    expect(
-      screen.getByRole("checkbox", { name: "Cyclopentane" }),
-    ).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
     expect(
       screen.getByText(
         "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
@@ -306,9 +293,9 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     const user = userEvent.setup();
 
     function Wrapper() {
-      const [quantityMap, setQuantityMap] = React.useState<
-        ReadonlyMap<string, InventoryQuantityQueryResult>
-      >(makeQuantityMap([["SS124", 10]]));
+      const [quantityMap, setQuantityMap] = React.useState<ReadonlyMap<string, InventoryQuantityQueryResult>>(
+        makeQuantityMap([["SS124", 10]]),
+      );
 
       return (
         <>
@@ -348,9 +335,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeDisabled();
       expect(saveButton).toBeDisabled();
     });
-    expect(
-      screen.getByText("Re-select any invalid molecules before saving."),
-    ).toBeVisible();
+    expect(screen.getByText("Re-select any invalid molecules before saving.")).toBeVisible();
   });
 
   it("shows a local error message and clears selection when saving fails", async () => {
@@ -375,9 +360,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    await screen.findByText(
-      "Network down Current stock amounts were refreshed where possible.",
-    );
+    await screen.findByText("Network down Current stock amounts were refreshed where possible.");
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
   });
 });

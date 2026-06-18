@@ -1,8 +1,5 @@
+import { type UseSuspenseQueryResult, useSuspenseQuery } from "@tanstack/react-query";
 import * as v from "valibot";
-import {
-  useSuspenseQuery,
-  type UseSuspenseQueryResult,
-} from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 /**
@@ -26,9 +23,7 @@ export async function getApplicationVersion(): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch application version: ${response.statusText}`,
-    );
+    throw new Error(`Failed to fetch application version: ${response.statusText}`);
   }
 
   const data: unknown = await response.text();
@@ -49,10 +44,7 @@ export async function getApplicationVersion(): Promise<string> {
  * requested at most once per page no matter how many components mount this hook
  * or how often the About dialog is opened and closed.
  */
-export function useApplicationVersionQuery(): UseSuspenseQueryResult<
-  string,
-  Error
-> {
+export function useApplicationVersionQuery(): UseSuspenseQueryResult<string, Error> {
   return useSuspenseQuery({
     queryKey: applicationVersionQueryKeys.all,
     queryFn: getApplicationVersion,

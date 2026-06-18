@@ -156,6 +156,7 @@ export class Optional<T> {
    * is a call to `Array.prototype.map`.
    */
   do(func: (t: T) => void): void {
+    // biome-ignore lint/correctness/noVoidTypeReturn: initial biome migration
     return this.destruct(() => {}, func);
   }
 
@@ -180,9 +181,7 @@ export class Optional<T> {
    * Optional.empty and any other value is wrapped inside Optional.present
    */
   static fromNullable<U>(value: U | null | undefined): Optional<U> {
-    return value === null || typeof value === "undefined"
-      ? Optional.empty()
-      : Optional.present(value);
+    return value === null || typeof value === "undefined" ? Optional.empty() : Optional.present(value);
   }
 
   toResult(onEmpty: () => Error): Result<T> {
@@ -238,11 +237,7 @@ export function lift<A, B>(f: (a: A) => B, optA: Optional<A>): Optional<B> {
  * Lift a function that operates on two normal values into one that operates on
  * two Optional values.
  */
-export function lift2<A, B, C>(
-  f: (a: A, b: B) => C,
-  optA: Optional<A>,
-  optB: Optional<B>,
-): Optional<C> {
+export function lift2<A, B, C>(f: (a: A, b: B) => C, optA: Optional<A>, optB: Optional<B>): Optional<C> {
   return optA.flatMap((a) => lift((b) => f(a, b), optB));
 }
 
@@ -268,10 +263,7 @@ export function lift3<A, B, C, D>(
  * undefined when the object has no such key, this function returns
  * Optional.empty
  */
-export function getByKey<T extends object, K extends keyof T>(
-  key: K,
-  obj: T,
-): Optional<Required<T>[K]> {
+export function getByKey<T extends object, K extends keyof T>(key: K, obj: T): Optional<Required<T>[K]> {
   if (key in obj) {
     return Optional.present(obj[key]);
   }

@@ -141,10 +141,7 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
   };
 
   const src = readFileSync(
-    resolve(
-      __dirname,
-      "../../../../../scripts/pages/workspace/editor/tinymce5_configuration.js",
-    ),
+    resolve(__dirname, "../../../../../scripts/pages/workspace/editor/tinymce5_configuration.js"),
     "utf8",
   );
   runInNewContext(src, sandbox);

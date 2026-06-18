@@ -1,14 +1,13 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { mockFactory } from "../../../../../stores/definitions/__tests__/Factory/mocking";
 import FieldCard from "../FieldCard";
-import userEvent from "@testing-library/user-event";
 
 vi.mock("../../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../../stores/stores/getRootStore", () => ({
-  default: () => ({})
+  default: () => ({}),
 }));
 describe("FieldCard", () => {
   describe("Has a delete button", () => {
@@ -65,8 +64,7 @@ describe("FieldCard", () => {
             noValueLabel: { barcodes: null },
           }}
           factory={mockFactory()}
-        />
-
+        />,
       );
 
       await user.click(screen.getByRole("button", { name: "Remove" }));
@@ -108,8 +106,7 @@ describe("FieldCard", () => {
             noValueLabel: { barcodes: null },
           }}
           factory={mockFactory()}
-        />
-
+        />,
       );
 
       await user.click(screen.getByRole("button", { name: "Remove" }));
@@ -151,13 +148,9 @@ describe("FieldCard", () => {
             noValueLabel: { barcodes: null },
           }}
           factory={mockFactory()}
-        />
-
+        />,
       );
-      expect(
-        screen.getByLabelText("Scan a barcode to associate.")
-      ).toBeVisible();
+      expect(screen.getByLabelText("Scan a barcode to associate.")).toBeVisible();
     });
   });
 });
-

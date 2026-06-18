@@ -1,18 +1,17 @@
-import { test, describe, expect, vi } from 'vitest';
-import React,
-  { useState } from "react";
 import { render, screen } from "@testing-library/react";
+import { useState } from "react";
+import { describe, expect, test, vi } from "vitest";
 import StepperPanel from "../StepperPanel";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+import userEvent from "@testing-library/user-event";
+import FormSectionsContext from "../../../../stores/contexts/FormSections";
 import materialTheme from "../../../../theme";
 import SynchroniseFormSections from "../SynchroniseFormSections";
-import FormSectionsContext from "../../../../stores/contexts/FormSections";
-import userEvent from "@testing-library/user-event";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({})
+  default: () => ({}),
 }));
 describe("StepperPanel", () => {
   describe("Renders correctly", () => {
@@ -30,7 +29,7 @@ describe("StepperPanel", () => {
               <div data-testid="content"></div>
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("content")).toBeVisible();
     });
@@ -48,11 +47,10 @@ describe("StepperPanel", () => {
               <div data-testid="content"></div>
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       expect(screen.getByTestId("content")).not.toBeVisible();
     });
-
   });
   describe("Expands and collapses properly", () => {
     test("Expand button works correctly", async () => {
@@ -68,11 +66,10 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              <></>
+              <div />
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByLabelText("Expand section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
@@ -90,16 +87,14 @@ describe("StepperPanel", () => {
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              <></>
+              <div />
             </StepperPanel>
           </FormSectionsContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await user.click(screen.getByLabelText("Collapse section"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", false);
     });
-
   });
   describe("Expand/Collapse all appears after performing the operation once", () => {
     function TestComponent({
@@ -115,19 +110,18 @@ describe("StepperPanel", () => {
           <FormSectionsContext.Provider
             value={{
               isExpanded: () => open,
-              setExpanded: (recordType, sectionName, value) => {
+              setExpanded: (_recordType, _sectionName, value) => {
                 setOpen(value);
               },
               setAllExpanded,
             }}
           >
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              <></>
+              <div />
             </StepperPanel>
           </FormSectionsContext.Provider>
         </ThemeProvider>
       );
-
     }
     test("Collapse all", async () => {
       const user = userEvent.setup();
@@ -141,15 +135,11 @@ describe("StepperPanel", () => {
     test("Expand all", async () => {
       const user = userEvent.setup();
       const setAllExpanded = vi.fn();
-      render(
-        <TestComponent setAllExpanded={setAllExpanded} openInit={false} />
-
-      );
+      render(<TestComponent setAllExpanded={setAllExpanded} openInit={false} />);
       await user.click(screen.getByLabelText("Expand section"));
       await user.click(screen.getByRole("button", { name: "Expand All" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", true);
     });
-
   });
   describe("Accessibility", () => {
     test("Has role region", () => {
@@ -157,13 +147,12 @@ describe("StepperPanel", () => {
         <ThemeProvider theme={materialTheme}>
           <SynchroniseFormSections>
             <StepperPanel title="Bar" sectionName="bar" recordType="container">
-              <></>
+              <div />
             </StepperPanel>
           </SynchroniseFormSections>
-        </ThemeProvider>
+        </ThemeProvider>,
       );
       screen.getByRole("region", { name: "Bar" });
     });
   });
 });
-

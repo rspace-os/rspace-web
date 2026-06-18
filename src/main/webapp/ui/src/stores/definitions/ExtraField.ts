@@ -1,6 +1,6 @@
-import { type Id, type GlobalId } from "./BaseRecord";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { GlobalId, Id } from "./BaseRecord";
+import type { InventoryRecord } from "./InventoryRecord";
 
 export type ExtraFieldType = "Text" | "Number";
 
@@ -51,7 +51,9 @@ export interface ExtraField {
   editing: boolean;
   editable: boolean;
 
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   setAttributes({}): void;
+  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
   setAttributesDirty({}): void;
   setEditing(editing: boolean): void;
 

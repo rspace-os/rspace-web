@@ -1,5 +1,5 @@
-import { type RecordType, type InventoryRecord } from "./InventoryRecord";
-import { type GlobalId } from "./BaseRecord";
+import type { GlobalId } from "./BaseRecord";
+import type { InventoryRecord, RecordType } from "./InventoryRecord";
 
 /*
  * This interfaces describes the data necessary for tree view

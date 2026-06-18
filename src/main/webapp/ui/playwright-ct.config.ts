@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/experimental-ct-react";
-import getPort from "get-port";
-import path from "path";
+// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
 import fs from "fs";
+import getPort from "get-port";
+// biome-ignore lint/style/useNodejsImportProtocol: initial biome migration
+import path from "path";
 
 /*
  * The Inventory rich-text editor lazy-loads a self-hosted TinyMCE 8 build at

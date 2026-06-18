@@ -1,41 +1,35 @@
-import React, { type ReactNode, type ComponentType } from "react";
-import { observer } from "mobx-react-lite";
-import { runInAction } from "mobx";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import {
-  type GeoLocation,
-  type PolygonPoint,
-} from "../../../../stores/definitions/GeoLocation";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import docLinks from "../../../../assets/DocLinks";
-import HelpLinkIcon from "../../../../components/HelpLinkIcon";
+import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
+import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
-import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import AmberNumberField from "./AmberNumberField";
+import Typography from "@mui/material/Typography";
+import { runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+import type { ComponentType, ReactNode } from "react";
+import docLinks from "../../../../assets/DocLinks";
 import AddButton from "../../../../components/AddButton";
+import HelpLinkIcon from "../../../../components/HelpLinkIcon";
+import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../../components/RemoveButton";
-
-import { isEmpty } from "./MultipleInputHandler";
+import type { GeoLocation, PolygonPoint } from "../../../../stores/definitions/GeoLocation";
+import AmberNumberField from "./AmberNumberField";
 import {
   COORD_RANGE_X,
-  isOutOfRangeX,
   COORD_RANGE_Y,
+  isOutOfRangeX,
   isOutOfRangeY,
-  PolygonStateAlert,
   type PolygonMessages,
+  PolygonStateAlert,
 } from "./GeoLocationField";
+import { isEmpty } from "./MultipleInputHandler";
 
 const POLYGON_CARD_MESSAGES: PolygonMessages = {
   empty: "An empty Polygon will not be included in the Geolocation.",
-  incomplete:
-    "All points values need to be completed in order for the Polygon to be used.",
-  complete:
-    "All points are completed, the Polygon can be included in the Geolocation.",
+  incomplete: "All points values need to be completed in order for the Polygon to be used.",
+  complete: "All points are completed, the Polygon can be included in the Geolocation.",
 };
 
 const PolygonEditor = observer(
@@ -52,12 +46,8 @@ const PolygonEditor = observer(
 
     /* in some cases points cannot be removed, or added */
     const canBeRemoved = (i: number): boolean =>
-      editable &&
-      geoLocationPolygon.length > 4 &&
-      i > 0 &&
-      i < geoLocationPolygon.length - 1;
-    const canBeAdded = (i: number): boolean =>
-      editable && i < geoLocationPolygon.length - 1;
+      editable && geoLocationPolygon.length > 4 && i > 0 && i < geoLocationPolygon.length - 1;
+    const canBeAdded = (i: number): boolean => editable && i < geoLocationPolygon.length - 1;
 
     const handleAddPoint = (i: number): void => {
       geoLocationPolygon.addAnotherPoint(i);
@@ -69,11 +59,9 @@ const PolygonEditor = observer(
     };
 
     const polygonPointLatitudeError = (point: PolygonPoint): boolean =>
-      (isEmpty(point.pointLatitude) && !polygonEmpty) ||
-      isOutOfRangeY(Number(point.pointLatitude));
+      (isEmpty(point.pointLatitude) && !polygonEmpty) || isOutOfRangeY(Number(point.pointLatitude));
     const polygonPointLongitudeError = (point: PolygonPoint): boolean =>
-      (isEmpty(point.pointLongitude) && !polygonEmpty) ||
-      isOutOfRangeX(Number(point.pointLongitude));
+      (isEmpty(point.pointLongitude) && !polygonEmpty) || isOutOfRangeX(Number(point.pointLongitude));
 
     return geoLocationPolygon.mapPoints((point, i) => (
       <Grid
@@ -108,20 +96,12 @@ const PolygonEditor = observer(
                 }}
                 /* value is required for any polygon point (if at least another value is specified) */
                 error={polygonPointLatitudeError(point)}
-                helperText={
-                  polygonPointLatitudeError(point) ? (
-                    <>Between &minus;90.0˚ and 90.0˚.</>
-                  ) : null
-                }
+                helperText={polygonPointLatitudeError(point) ? <>Between &minus;90.0˚ and 90.0˚.</> : null}
               />
             ) : (
               /* last point is edited by editing first */
               point.pointLatitude || (
-                <Typography
-                  variant="inherit"
-                  component="span"
-                  sx={{ color: "#949494" }}
-                >
+                <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
                   -
                 </Typography>
               )
@@ -150,20 +130,12 @@ const PolygonEditor = observer(
                 }}
                 /* value is required for any polygon point (if at least another value is specified) */
                 error={polygonPointLongitudeError(point)}
-                helperText={
-                  polygonPointLongitudeError(point) ? (
-                    <>Between &minus;180.0˚ and 180.0˚.</>
-                  ) : null
-                }
+                helperText={polygonPointLongitudeError(point) ? <>Between &minus;180.0˚ and 180.0˚.</> : null}
               />
             ) : (
               /* last point is edited by editing first */
               point.pointLongitude || (
-                <Typography
-                  variant="inherit"
-                  component="span"
-                  sx={{ color: "#949494" }}
-                >
+                <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
                   -
                 </Typography>
               )
@@ -176,10 +148,7 @@ const PolygonEditor = observer(
           }}
         >
           {canBeAdded(i) ? (
-            <AddButton
-              onClick={() => handleAddPoint(i)}
-              title={`Add Point after ${i + 1}`}
-            />
+            <AddButton onClick={() => handleAddPoint(i)} title={`Add Point after ${i + 1}`} />
           ) : (
             <>&nbsp;</>
           )}
@@ -190,10 +159,7 @@ const PolygonEditor = observer(
           }}
         >
           {canBeRemoved(i) ? (
-            <RemoveButton
-              onClick={() => handleRemovePoint(i)}
-              title={`Remove Point ${i + 1}`}
-            />
+            <RemoveButton onClick={() => handleRemovePoint(i)} title={`Remove Point ${i + 1}`} />
           ) : (
             <>&nbsp;</>
           )}
@@ -209,14 +175,9 @@ type PolygonCardArgs = {
   doUpdateIdentifiers: () => void;
 };
 
-function PolygonCard({
-  editable,
-  geoLocation,
-  doUpdateIdentifiers,
-}: PolygonCardArgs): ReactNode {
+function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCardArgs): ReactNode {
   const InPolygonPointEditor = observer((): ReactNode => {
-    const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation =
-      geoLocation;
+    const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation = geoLocation;
     return (
       <Grid
         container
@@ -251,27 +212,19 @@ function PolygonCard({
                 }}
                 /* value is optional */
                 error={
-                  (isEmpty(geoLocationInPolygonPoint.pointLatitude) &&
-                    inPolygonPointIncomplete) ||
+                  (isEmpty(geoLocationInPolygonPoint.pointLatitude) && inPolygonPointIncomplete) ||
                   isOutOfRangeY(Number(geoLocationInPolygonPoint.pointLatitude))
                 }
                 helperText={
-                  (isEmpty(geoLocationInPolygonPoint.pointLatitude) &&
-                    inPolygonPointIncomplete) ||
-                  isOutOfRangeY(
-                    Number(geoLocationInPolygonPoint.pointLatitude),
-                  ) ? (
+                  (isEmpty(geoLocationInPolygonPoint.pointLatitude) && inPolygonPointIncomplete) ||
+                  isOutOfRangeY(Number(geoLocationInPolygonPoint.pointLatitude)) ? (
                     <>Between &minus;90.0˚ and 90.0˚.</>
                   ) : null
                 }
               />
             ) : (
               geoLocationInPolygonPoint.pointLatitude || (
-                <Typography
-                  variant="inherit"
-                  component="span"
-                  sx={{ color: "#949494" }}
-                >
+                <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
                   -
                 </Typography>
               )
@@ -302,29 +255,19 @@ function PolygonCard({
                 }}
                 /* value is optional */
                 error={
-                  (isEmpty(geoLocationInPolygonPoint.pointLongitude) &&
-                    inPolygonPointIncomplete) ||
-                  isOutOfRangeX(
-                    Number(geoLocationInPolygonPoint.pointLongitude),
-                  )
+                  (isEmpty(geoLocationInPolygonPoint.pointLongitude) && inPolygonPointIncomplete) ||
+                  isOutOfRangeX(Number(geoLocationInPolygonPoint.pointLongitude))
                 }
                 helperText={
-                  (isEmpty(geoLocationInPolygonPoint.pointLongitude) &&
-                    inPolygonPointIncomplete) ||
-                  isOutOfRangeX(
-                    Number(geoLocationInPolygonPoint.pointLongitude),
-                  ) ? (
+                  (isEmpty(geoLocationInPolygonPoint.pointLongitude) && inPolygonPointIncomplete) ||
+                  isOutOfRangeX(Number(geoLocationInPolygonPoint.pointLongitude)) ? (
                     <>Between &minus;180.0˚ and 180.0˚.</>
                   ) : null
                 }
               />
             ) : (
               geoLocationInPolygonPoint.pointLongitude || (
-                <Typography
-                  variant="inherit"
-                  component="span"
-                  sx={{ color: "#949494" }}
-                >
+                <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
                   -
                 </Typography>
               )
@@ -342,16 +285,12 @@ function PolygonCard({
         <FormControl component="fieldset" fullWidth>
           <FormLabel>
             {`Polygon ${editable ? "Editor" : "Configuration"}`}
-            <HelpLinkIcon
-              link={docLinks.IGSNIdentifiers}
-              title="Add a Polygon to your IGSN ID Geolocation"
-            />
+            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add a Polygon to your IGSN ID Geolocation" />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
-            You can add a Polygon to a Geolocation associated with an IGSN ID. A
-            Polygon is made of 4 or more points that form a closed shape. The
-            first and last points have the same coordinates, editing the first
-            point will automatically update the last one.
+            You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points
+            that form a closed shape. The first and last points have the same coordinates, editing the first point will
+            automatically update the last one.
           </FormHelperText>
           <Box sx={{ my: 1 }}>
             <PolygonStateAlert
@@ -360,15 +299,10 @@ function PolygonCard({
               textMessages={POLYGON_CARD_MESSAGES}
             />
           </Box>
-          <PolygonEditor
-            geoLocation={geoLocation}
-            editable={editable}
-            doUpdateIdentifiers={doUpdateIdentifiers}
-          />
+          <PolygonEditor geoLocation={geoLocation} editable={editable} doUpdateIdentifiers={doUpdateIdentifiers} />
           <FormHelperText component="div" sx={{ mx: 0, mt: 1, mb: 0.5 }}>
-            Optional: you can specify an In Polygon Point below. This is only
-            required if the Polygon covers more than the half of the
-            Earth&apos;s surface.
+            Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than
+            the half of the Earth&apos;s surface.
           </FormHelperText>
           <InPolygonPointEditor />
         </FormControl>

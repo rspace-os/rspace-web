@@ -17,11 +17,8 @@ import React from "react";
  * disabling the Drag and Drop API at the DOM root and only enabling it for the
  * particular dropzones. To do this, wrap the whole page in this component.
  */
-export const DisableDragAndDropByDefault = ({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode => (
+export const DisableDragAndDropByDefault = ({ children }: { children: React.ReactNode }): React.ReactNode => (
+  // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
   <div
     onDragOver={(e) => {
       /*

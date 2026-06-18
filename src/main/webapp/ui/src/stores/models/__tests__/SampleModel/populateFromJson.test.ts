@@ -1,18 +1,17 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import SampleModel, { type SampleAttrs } from "../../SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "../../SubSampleModel";
-import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
+import { sampleAttrs } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {
@@ -20,27 +19,26 @@ describe("action: populateFromJson", () => {
       const factory = mockFactory();
       const newRecordSpy = vi
         .spyOn(factory, "newRecord")
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .mockImplementation((attrs: any) =>
           attrs.type === "SAMPLE"
             ? new SampleModel(factory, attrs as SampleAttrs)
-            : new SubSampleModel(factory, attrs as SubSampleAttrs)
-
+            : new SubSampleModel(factory, attrs as SubSampleAttrs),
         );
       const attrs = () => ({
         ...sampleAttrs(),
         subSamples: [subsampleAttrs()],
-
       });
       const sample = factory.newRecord(attrs());
 
       expect(newRecordSpy).toHaveBeenCalled();
       newRecordSpy.mockClear();
       const factory2 = mockFactory();
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       vi.spyOn(factory2, "newRecord").mockImplementation((a: any) => {
         return a.type === "SAMPLE"
           ? new SampleModel(factory, a as SampleAttrs)
           : new SubSampleModel(factory, a as SubSampleAttrs);
-
       });
 
       sample.populateFromJson(factory2, attrs(), {});
@@ -48,4 +46,3 @@ describe("action: populateFromJson", () => {
     });
   });
 });
-

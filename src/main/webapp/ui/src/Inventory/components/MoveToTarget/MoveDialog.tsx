@@ -1,24 +1,23 @@
-import Layout2x1Dialog from "../Layout/Layout2x1Dialog";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useState } from "react";
+import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import type { Record } from "../../../stores/definitions/Record";
 import useStores from "../../../stores/use-stores";
+import Layout2x1Dialog from "../Layout/Layout2x1Dialog";
+import NameWithBadge from "../NameWithBadge";
+import SimpleRecordsTable from "../SimpleRecordsTable";
 import Actions from "./Actions";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
-import { observer } from "mobx-react-lite";
-import React, { useState } from "react";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import SimpleRecordsTable from "../SimpleRecordsTable";
-import { type Record } from "../../../stores/definitions/Record";
-import NameWithBadge from "../NameWithBadge";
-import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 
 type DialogTitleArgs<RecordLike extends Record> = {
   beingMoved: Array<RecordLike>;
 };
 
-const DialogTitle = <RecordLike extends Record>({
-  beingMoved,
-}: DialogTitleArgs<RecordLike>): React.ReactNode => {
+const DialogTitle = <RecordLike extends Record>({ beingMoved }: DialogTitleArgs<RecordLike>): React.ReactNode => {
   const [open, setOpen] = useState(false);
 
   const label = () => {

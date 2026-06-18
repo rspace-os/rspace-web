@@ -1,16 +1,15 @@
-import { describe, expect, test } from 'vitest';
+import fc from "fast-check";
+import { describe, expect, test } from "vitest";
 import Result from "../../result";
 
-import fc from "fast-check";
 describe("toPromise", () => {
   test("When the Result is OK, the promise should resolve", () => {
     return fc.assert(
       fc.asyncProperty(fc.anything(), async (expectedValue) => {
         const actualValue = await Result.Ok(expectedValue).toPromise();
         expect(actualValue).toBe(expectedValue);
-      })
+      }),
     );
-
   });
   test("When there are multiple errors, they should be wrapped in an AggregateError", async () => {
     const errors = [new Error("foo"), new Error("bar")];
@@ -20,7 +19,6 @@ describe("toPromise", () => {
       expect(e).toBeInstanceOf(AggregateError);
       expect((e as AggregateError).errors).toEqual(errors);
     }
-
   });
   test("When there is one error, it should simply be the rejected value", async () => {
     const errors = [new Error("foo")];
@@ -32,4 +30,3 @@ describe("toPromise", () => {
     }
   });
 });
-

@@ -1,8 +1,8 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import React from "react";
 
 type DescriptionListArgs = {
   content: Array<{
@@ -32,11 +32,7 @@ type DescriptionListArgs = {
  *      />
  *
  */
-function DescriptionList({
-  content,
-  dividers = false,
-  sx,
-}: DescriptionListArgs): React.ReactNode {
+function DescriptionList({ content, dividers = false, sx }: DescriptionListArgs): React.ReactNode {
   const theme = useTheme();
   return (
     <Box
@@ -51,62 +47,60 @@ function DescriptionList({
         ...sx,
       }}
     >
-      {content.map(
-        ({ label, value, below = false, reducedPadding = false }, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && dividers && (
-              <Divider
-                orientation="horizontal"
-                sx={{
-                  gridColumn: "1 / span 2",
-                }}
-                aria-hidden="true"
-                component="div"
-              />
-            )}
-            <Box
-              component="dt"
-              className={below ? "below" : undefined}
+      {content.map(({ label, value, below = false, reducedPadding = false }, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && dividers && (
+            <Divider
+              orientation="horizontal"
               sx={{
-                color: theme.palette.text.secondary,
-                fontWeight: 600,
-                marginRight: theme.spacing(2),
-                alignSelf: "center",
-                ...(reducedPadding
-                  ? {
-                      marginTop: `-${theme.spacing(1)}`,
-                      marginBottom: `-${theme.spacing(1)}`,
-                    }
-                  : {}),
+                gridColumn: "1 / span 2",
               }}
-            >
-              {label}
-            </Box>
-            <Box
-              component="dd"
-              className={below ? "below" : undefined}
-              sx={{
-                marginInlineStart: 0,
-                justifySelf: "end",
-                ...(reducedPadding
-                  ? {
-                      marginTop: `-${theme.spacing(1)}`,
-                      marginBottom: `-${theme.spacing(1)}`,
-                    }
-                  : {}),
-                ...(below
-                  ? {
-                      gridColumn: "1 / span 2",
-                      marginTop: "-10px",
-                    }
-                  : {}),
-              }}
-            >
-              {value}
-            </Box>
-          </React.Fragment>
-        ),
-      )}
+              aria-hidden="true"
+              component="div"
+            />
+          )}
+          <Box
+            component="dt"
+            className={below ? "below" : undefined}
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 600,
+              marginRight: theme.spacing(2),
+              alignSelf: "center",
+              ...(reducedPadding
+                ? {
+                    marginTop: `-${theme.spacing(1)}`,
+                    marginBottom: `-${theme.spacing(1)}`,
+                  }
+                : {}),
+            }}
+          >
+            {label}
+          </Box>
+          <Box
+            component="dd"
+            className={below ? "below" : undefined}
+            sx={{
+              marginInlineStart: 0,
+              justifySelf: "end",
+              ...(reducedPadding
+                ? {
+                    marginTop: `-${theme.spacing(1)}`,
+                    marginBottom: `-${theme.spacing(1)}`,
+                  }
+                : {}),
+              ...(below
+                ? {
+                    gridColumn: "1 / span 2",
+                    marginTop: "-10px",
+                  }
+                : {}),
+            }}
+          >
+            {value}
+          </Box>
+        </React.Fragment>
+      ))}
     </Box>
   );
 }

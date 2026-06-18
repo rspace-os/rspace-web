@@ -1,7 +1,8 @@
-import { describe, expect, test } from 'vitest';
 import fc from "fast-check";
+import { describe, expect, test } from "vitest";
 
 import { clamp } from "../../Util";
+
 describe("clamp", () => {
   test("y <= clamp(x,y,z) <= z", () => {
     fc.assert(
@@ -9,8 +10,7 @@ describe("clamp", () => {
         fc.pre(min < max);
         expect(clamp(x, min, max)).toBeGreaterThanOrEqual(min);
         expect(clamp(x, min, max)).toBeLessThanOrEqual(max);
-      })
+      }),
     );
   });
 });
-

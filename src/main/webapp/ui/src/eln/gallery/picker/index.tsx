@@ -1,38 +1,36 @@
-import { Dialog } from "../../../components/DialogBoundary";
-import { dialogClasses } from "@mui/material/Dialog";
-import { paperClasses } from "@mui/material/Paper";
-import { dialogContentClasses } from "@mui/material/DialogContent";
-import React from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import AppBar from "../../../components/AppBar";
-import Button from "@mui/material/Button";
-import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
-import createAccentedTheme from "../../../accentedTheme";
+import Button from "@mui/material/Button";
+import { dialogClasses } from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import { dialogContentClasses } from "@mui/material/DialogContent";
 import Grow from "@mui/material/Grow";
-import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
-import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
-import Result from "../../../util/result";
+import { paperClasses } from "@mui/material/Paper";
+import { ThemeProvider } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
-import Sidebar from "../components/Sidebar";
-import MainPanel from "../components/MainPanel";
-import useUiPreference, {
-  PREFERENCES,
-} from "../../../hooks/api/useUiPreference";
-import { type GallerySection } from "../common";
+import React from "react";
+import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
+import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import AppBar from "../../../components/AppBar";
+import SidebarToggle from "../../../components/AppBar/SidebarToggle";
+import { Dialog } from "../../../components/DialogBoundary";
+import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
+import { DisableDragAndDropByDefault } from "../../../hooks/ui/useFileImportDragAndDrop";
+import Result from "../../../util/result";
+import type RsSet from "../../../util/set";
+import type { GallerySection } from "../common";
+import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
-import { CallableAsposePreview } from "../components/CallableAsposePreview";
-import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
-import RsSet from "../../../util/set";
-import { DisableDragAndDropByDefault } from "../../../hooks/ui/useFileImportDragAndDrop";
-import OpenFolderProvider from "../components/OpenFolderProvider";
-import SidebarToggle from "../../../components/AppBar/SidebarToggle";
 import { CallableSnippetPreview } from "../components/CallableSnippetPreview";
-import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
+import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
+import MainPanel from "../components/MainPanel";
+import OpenFolderProvider from "../components/OpenFolderProvider";
+import Sidebar from "../components/Sidebar";
+import { type GalleryFile, useGalleryListing } from "../useGalleryListing";
+import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 
 const Picker = observer(
   ({
@@ -50,31 +48,25 @@ const Picker = observer(
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
-    const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(
-      PREFERENCES.GALLERY_SORT_BY,
+    const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(PREFERENCES.GALLERY_SORT_BY, {
+      defaultValue: "modificationDate",
+    });
+    const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(PREFERENCES.GALLERY_SORT_ORDER, {
+      defaultValue: "DESC",
+    });
+    const [selectedSection, setSelectedSection] = useUiPreference<GallerySection>(
+      PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
       {
-        defaultValue: "modificationDate",
+        defaultValue: "Chemistry",
       },
     );
-    const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(
-      PREFERENCES.GALLERY_SORT_ORDER,
+    const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
+      PREFERENCES.GALLERY_SIDEBAR_OPEN,
       {
-        defaultValue: "DESC",
-      },
-    );
-    const [selectedSection, setSelectedSection] =
-      useUiPreference<GallerySection>(
-        PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
-        {
-          defaultValue: "Chemistry",
-        },
-      );
-    const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] =
-      useUiPreference<boolean>(PREFERENCES.GALLERY_SIDEBAR_OPEN, {
         defaultValue: true,
-      });
-    const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] =
-      React.useState(false);
+      },
+    );
+    const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] = React.useState(false);
     /*
      * On the Gallery page, the sidebar is open on any viewport size that
      * isn't small -- on the smaller viewport sizes the sidebar is floating
@@ -85,9 +77,7 @@ const Picker = observer(
      * closed. The user can open it if they wish but at least we initially
      * present everything with enough space.
      */
-    const drawerOpen = viewport.isViewportLarge
-      ? largerViewportSidebarOpenState
-      : smallViewportSidebarOpenState;
+    const drawerOpen = viewport.isViewportLarge ? largerViewportSidebarOpenState : smallViewportSidebarOpenState;
     const setDrawerOpen = viewport.isViewportLarge
       ? setLargerViewportSidebarOpenState
       : setSmallViewportSidebarOpenState;
@@ -120,10 +110,7 @@ const Picker = observer(
                   fullScreen={viewport.isViewportSmall}
                   sx={(theme) => ({
                     height: {
-                      xs:
-                        selection.size > 0
-                          ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px) !important`
-                          : "100%",
+                      xs: selection.size > 0 ? `calc(100% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px) !important` : "100%",
                       md: "unset",
                     },
                     [`& .${dialogClasses.container} > .${paperClasses.root}`]: {
@@ -145,11 +132,7 @@ const Picker = observer(
                       "aria-label": "Gallery Picker",
                     },
                     transition: {
-                      timeout: window.matchMedia(
-                        "(prefers-reduced-motion: reduce)",
-                      ).matches
-                        ? 0
-                        : 300,
+                      timeout: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300,
                       easing: "ease-in-out",
                       style: {
                         transformOrigin: "center 70%",
@@ -164,11 +147,7 @@ const Picker = observer(
                     variant="dialog"
                     currentPage="Gallery"
                     sidebarToggle={
-                      <SidebarToggle
-                        setSidebarOpen={setDrawerOpen}
-                        sidebarOpen={drawerOpen}
-                        sidebarId={sidebarId}
-                      />
+                      <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                     }
                     accessibilityTips={{
                       supportsHighContrastMode: true,
@@ -227,14 +206,8 @@ const Picker = observer(
                         <ValidatingSubmitButton
                           validationResult={
                             selection.size > 0
-                              ? Result.all(
-                                  ...selection.asSet().map(validateSelection),
-                                ).map(() => null)
-                              : Result.Error([
-                                  new Error(
-                                    "Select at least one file to proceed.",
-                                  ),
-                                ])
+                              ? Result.all(...selection.asSet().map(validateSelection)).map(() => null)
+                              : Result.Error([new Error("Select at least one file to proceed.")])
                           }
                           loading={false}
                           onClick={() => {
@@ -278,12 +251,7 @@ export default function Wrapper({
       <FilestoreLoginProvider>
         <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
           <DisableDragAndDropByDefault>
-            <Picker
-              open={open}
-              onClose={onClose}
-              onSubmit={onSubmit}
-              validateSelection={validateSelection}
-            />
+            <Picker open={open} onClose={onClose} onSubmit={onSubmit} validateSelection={validateSelection} />
           </DisableDragAndDropByDefault>
         </GallerySelection>
       </FilestoreLoginProvider>

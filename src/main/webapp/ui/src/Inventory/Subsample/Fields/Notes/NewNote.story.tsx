@@ -1,8 +1,8 @@
-import React from "react";
-import NewNote from "./NewNote";
 import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../theme";
+import type React from "react";
 import Alerts from "@/Inventory/components/Alerts";
+import materialTheme from "../../../../theme";
+import NewNote from "./NewNote";
 
 export function NewNoteStory({
   onErrorStateChange,
@@ -35,10 +35,9 @@ export function NewNoteStory({
       <ThemeProvider theme={materialTheme}>
         <Alerts>
           <NewNote
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
             record={mockSubSample as any}
-            onErrorStateChange={
-              onErrorStateChange ?? ((hasError: boolean) => {})
-            }
+            onErrorStateChange={onErrorStateChange ?? ((_hasError: boolean) => {})}
           />
         </Alerts>
       </ThemeProvider>

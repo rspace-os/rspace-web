@@ -1,6 +1,6 @@
-import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EditableStoichiometryDialogSection from "@/tinyMCE/stoichiometry/dialog/EditableStoichiometryDialogSection";
 import type { RefreshedStoichiometry } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
@@ -33,9 +33,8 @@ type MockUseEditableStoichiometryTableArgs = {
 };
 
 const mockUpdateInventoryStock = vi.fn();
-const mockUseEditableStoichiometryTable = vi.fn<
-  (args: MockUseEditableStoichiometryTableArgs) => MockEditableStoichiometryTableResult
->();
+const mockUseEditableStoichiometryTable =
+  vi.fn<(args: MockUseEditableStoichiometryTableArgs) => MockEditableStoichiometryTableResult>();
 
 function createConsoleErrorSpy() {
   return vi.spyOn(console, "error").mockImplementation(() => {});
@@ -62,15 +61,7 @@ vi.mock("@/components/ConfirmProvider", () => ({
 
 vi.mock("@/components/ValidatingSubmitButton", () => ({
   __esModule: true,
-  default: ({
-    children,
-    onClick,
-    loading,
-  }: {
-    children: React.ReactNode;
-    onClick?: () => void;
-    loading?: boolean;
-  }) => (
+  default: ({ children, onClick, loading }: { children: React.ReactNode; onClick?: () => void; loading?: boolean }) => (
     <button type="button" onClick={onClick} disabled={loading}>
       {children}
     </button>
@@ -184,9 +175,7 @@ describe("EditableStoichiometryDialogSection", () => {
       />,
     );
 
-    await user.click(
-      await screen.findByRole("button", { name: "Trigger Inventory Save" }),
-    );
+    await user.click(await screen.findByRole("button", { name: "Trigger Inventory Save" }));
 
     await waitFor(() => {
       expect(mockUpdateInventoryStock).toHaveBeenCalledWith([1]);
@@ -250,9 +239,7 @@ describe("EditableStoichiometryDialogSection", () => {
 
     await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Save mutation failed",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Save mutation failed");
   });
 
   it("shows an inline error alert when delete fails", async () => {
@@ -310,8 +297,6 @@ describe("EditableStoichiometryDialogSection", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Delete mutation failed",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Delete mutation failed");
   });
 });

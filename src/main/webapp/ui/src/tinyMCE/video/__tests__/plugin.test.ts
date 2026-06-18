@@ -48,9 +48,7 @@ type MenuItemConfig = {
 
 type EditorStub = {
   addCommand: ReturnType<typeof vi.fn<(name: string, command: () => void) => void>>;
-  execCommand: ReturnType<
-    typeof vi.fn<(commandName: string, ui?: boolean, value?: string) => void>
-  >;
+  execCommand: ReturnType<typeof vi.fn<(commandName: string, ui?: boolean, value?: string) => void>>;
   focus: ReturnType<typeof vi.fn>;
   ui: {
     registry: {
@@ -101,10 +99,7 @@ function instantiatePlugin() {
   };
 
   const pluginSource = readFileSync(
-    resolve(
-      __dirname,
-      "../../../../../scripts/externalTinymcePlugins/video/plugin.js",
-    ),
+    resolve(__dirname, "../../../../../scripts/externalTinymcePlugins/video/plugin.js"),
     "utf8",
   );
   runInNewContext(pluginSource, globalThis);
@@ -120,15 +115,13 @@ function createEditor(dialogApi: DialogApiStub) {
   const editor: EditorStub = {
     addCommand: vi.fn((name: string, command: () => void) => {
       if (name === "cmdVideoEmbed") {
-        editor.execCommand.mockImplementation(
-          (commandName: string, _ui?: boolean, value?: string) => {
-            if (commandName === "cmdVideoEmbed") {
-              command();
-              return;
-            }
-            insertions.push({ commandName, value });
-          },
-        );
+        editor.execCommand.mockImplementation((commandName: string, _ui?: boolean, value?: string) => {
+          if (commandName === "cmdVideoEmbed") {
+            command();
+            return;
+          }
+          insertions.push({ commandName, value });
+        });
       }
     }),
     execCommand: vi.fn(),
@@ -242,8 +235,7 @@ describe("TinyMCE video embed plugin", () => {
       ]),
     );
     expect(
-      (globalThis as typeof globalThis & { RS: { trackEvent: ReturnType<typeof vi.fn> } }).RS
-        .trackEvent,
+      (globalThis as typeof globalThis & { RS: { trackEvent: ReturnType<typeof vi.fn> } }).RS.trackEvent,
     ).toHaveBeenCalledWith("VideoEmbedUsed");
   });
 

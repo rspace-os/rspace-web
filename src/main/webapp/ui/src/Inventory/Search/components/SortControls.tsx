@@ -1,15 +1,16 @@
-import React, { useContext, useState } from "react";
 import ListItemText from "@mui/material/ListItemText";
-import { match, toTitleCase } from "../../../util/Util";
-import SvgIcon from "@mui/material/SvgIcon";
-import StyledMenu from "../../../components/StyledMenu";
 import MenuItem from "@mui/material/MenuItem";
+import SvgIcon from "@mui/material/SvgIcon";
 import { observer } from "mobx-react-lite";
-import SearchContext from "../../../stores/contexts/Search";
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
+import type React from "react";
+import { useContext, useState } from "react";
 import DropdownButton from "../../../components/DropdownButton";
-import { type SortProperty } from "../../components/Tables/SortableProperty";
+import StyledMenu from "../../../components/StyledMenu";
+import SearchContext from "../../../stores/contexts/Search";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
+import { match, toTitleCase } from "../../../util/Util";
+import type { SortProperty } from "../../components/Tables/SortableProperty";
 
 const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
   <SvgIcon
@@ -47,9 +48,7 @@ function SortControls(): React.ReactNode {
 
   const setOrder = ({ key, label, adjustColumn }: SortProperty) => {
     search.fetcher.setOrder(
-      search.fetcher.isCurrentSort(key)
-        ? search.fetcher.invertSortOrder()
-        : search.fetcher.defaultSortOrder(key),
+      search.fetcher.isCurrentSort(key) ? search.fetcher.invertSortOrder() : search.fetcher.defaultSortOrder(key),
       key,
     );
     if (adjustColumn) search.setAdjustableColumn(label, 0);
@@ -59,57 +58,39 @@ function SortControls(): React.ReactNode {
   const menuItemLabel = (key: string, label: AdjustableTableRowLabel) =>
     `${label} ${match<string, string>([
       [(k) => !search.fetcher.isCurrentSort(k), ""],
-      [
-        (k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc,
-        "(A-Z)",
-      ],
-      [
-        (k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc,
-        "(Z-A)",
-      ],
+      [(k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc, "(A-Z)"],
+      [(k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc, "(Z-A)"],
     ])(key)}`;
 
-  const disabled =
-    search.searchView === "IMAGE" || search.searchView === "GRID";
+  const disabled = search.searchView === "IMAGE" || search.searchView === "GRID";
   return (
-    <>
-      <DropdownButton
-        name={<SortAZIcon disabled={disabled} />}
-        onClick={handleClick}
-        disabled={disabled}
-        title={
-          disabled
-            ? `Cannot sort ${toTitleCase(search.searchView)} view.`
-            : "Sort by"
-        }
-      >
-        <StyledMenu
-          anchorEl={anchorEl}
-          keepMounted
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-        >
-          {sortProperties.map(({ key, label, adjustColumn }) => {
-            return (
-              <MenuItem
-                key={key}
-                onClick={() =>
-                  setOrder({
-                    key,
-                    label,
-                    adjustColumn,
-                  })
-                }
-                selected={search.fetcher.isCurrentSort(key)}
-                aria-current={search.fetcher.isCurrentSort(key)}
-              >
-                <ListItemText primary={menuItemLabel(key, label)} />
-              </MenuItem>
-            );
-          })}
-        </StyledMenu>
-      </DropdownButton>
-    </>
+    <DropdownButton
+      name={<SortAZIcon disabled={disabled} />}
+      onClick={handleClick}
+      disabled={disabled}
+      title={disabled ? `Cannot sort ${toTitleCase(search.searchView)} view.` : "Sort by"}
+    >
+      <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
+        {sortProperties.map(({ key, label, adjustColumn }) => {
+          return (
+            <MenuItem
+              key={key}
+              onClick={() =>
+                setOrder({
+                  key,
+                  label,
+                  adjustColumn,
+                })
+              }
+              selected={search.fetcher.isCurrentSort(key)}
+              aria-current={search.fetcher.isCurrentSort(key)}
+            >
+              <ListItemText primary={menuItemLabel(key, label)} />
+            </MenuItem>
+          );
+        })}
+      </StyledMenu>
+    </DropdownButton>
   );
 }
 

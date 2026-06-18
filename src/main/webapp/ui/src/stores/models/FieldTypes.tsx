@@ -1,14 +1,14 @@
-import React from "react";
+import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import QueryBuilderOutlinedIcon from "@mui/icons-material/QueryBuilderOutlined";
 import RadioButtonCheckedOutlinedIcon from "@mui/icons-material/RadioButtonCheckedOutlined";
 import ShortTextOutlinedIcon from "@mui/icons-material/ShortTextOutlined";
 import SubjectOutlinedIcon from "@mui/icons-material/SubjectOutlined";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
-import QueryBuilderOutlinedIcon from "@mui/icons-material/QueryBuilderOutlined";
-import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
-import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
-import { listToObject } from "../../util/Util";
+import type React from "react";
 import NumberIcon from "../../components/NumberIcon";
+import { listToObject } from "../../util/Util";
 
 export const FieldTypes: { [fieldName: string]: symbol } = {
   choice: Symbol.for("choice"),
@@ -25,14 +25,9 @@ export const FieldTypes: { [fieldName: string]: symbol } = {
 
 export type FieldType = (typeof FieldTypes)[keyof typeof FieldTypes];
 
-export const compatibleFieldTypes = (
-  fieldType: FieldType
-): Array<FieldType> => {
+export const compatibleFieldTypes = (fieldType: FieldType): Array<FieldType> => {
   const types = new Set([fieldType]);
-  if (
-    fieldType !== FieldTypes.reference &&
-    fieldType !== FieldTypes.attachment
-  ) {
+  if (fieldType !== FieldTypes.reference && fieldType !== FieldTypes.attachment) {
     types.add(FieldTypes.formatted_text);
     types.add(FieldTypes.plain_text);
     types.add(FieldTypes.radio);
@@ -42,8 +37,7 @@ export const compatibleFieldTypes = (
 };
 
 export const fieldTypeToApiString = (fieldType: FieldType): string => {
-  if (!(typeof fieldType === "symbol"))
-    throw new Error("FieldTypes are all Symbols.");
+  if (!(typeof fieldType === "symbol")) throw new Error("FieldTypes are all Symbols.");
   const map = {
     [FieldTypes.choice]: "choice",
     [FieldTypes.date]: "date",
@@ -56,8 +50,7 @@ export const fieldTypeToApiString = (fieldType: FieldType): string => {
     [FieldTypes.reference]: "reference",
     [FieldTypes.attachment]: "attachment",
   };
-  if (!map[fieldType])
-    throw new Error(`Invalid field type: Symbol(${Symbol.keyFor(fieldType)})`);
+  if (!map[fieldType]) throw new Error(`Invalid field type: Symbol(${Symbol.keyFor(fieldType)})`);
   return map[fieldType];
 };
 
@@ -74,10 +67,7 @@ export const apiStringToFieldType = (apiString: string): FieldType => {
     reference: FieldTypes.reference,
     attachment: FieldTypes.attachment,
   };
-  if (!map[apiString])
-    throw new Error(
-      `Invalid api string '${apiString}'; not a valid field type.`
-    );
+  if (!map[apiString]) throw new Error(`Invalid api string '${apiString}'; not a valid field type.`);
   return map[apiString];
 };
 

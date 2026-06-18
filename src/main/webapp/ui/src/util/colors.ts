@@ -8,12 +8,7 @@
  * @arg opacity    - if provided, must be a number between 0 and 1 inclusive.
  * @returns value will be a valid hex string
  */
-export function hslToHex(
-  hue: number,
-  saturation: number,
-  lightness: number,
-  opactity: number = 1
-): string {
+export function hslToHex(hue: number, saturation: number, lightness: number, opactity: number = 1): string {
   const l = lightness / 100;
   const a = (saturation * Math.min(l, 1 - l)) / 100;
   const f = (n: number) => {

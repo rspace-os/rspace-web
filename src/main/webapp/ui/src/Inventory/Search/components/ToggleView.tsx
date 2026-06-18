@@ -1,20 +1,17 @@
-import React from "react";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import AppsOutlinedIcon from "@mui/icons-material/AppsOutlined";
 import DnsOutlinedIcon from "@mui/icons-material/DnsOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import ListOutlinedIcon from "@mui/icons-material/ListOutlined";
 import Box from "@mui/material/Box";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import ListOutlinedIcon from "@mui/icons-material/ListOutlined";
-import StyledMenu from "@/components/StyledMenu";
 import MenuItem from "@mui/material/MenuItem";
-import AppsOutlinedIcon from "@mui/icons-material/AppsOutlined";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import DropdownButton from "../../../components/DropdownButton";
 import type { SxProps, Theme } from "@mui/material/styles";
-import {
-  type SearchView,
-  TYPE_LABEL,
-} from "@/stores/definitions/Search";
+import React from "react";
+import StyledMenu from "@/components/StyledMenu";
+import { type SearchView, TYPE_LABEL } from "@/stores/definitions/Search";
+import DropdownButton from "../../../components/DropdownButton";
 
 const Icon = ({ type, sx }: { type: SearchView; sx?: SxProps<Theme> }) =>
   ({
@@ -31,11 +28,7 @@ type ToggleViewArgs = {
   views: Array<SearchView>;
 };
 
-export default function ToggleView({
-  onChange,
-  currentView,
-  views,
-}: ToggleViewArgs): React.ReactNode {
+export default function ToggleView({ onChange, currentView, views }: ToggleViewArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const handleClick = (event: { currentTarget: HTMLElement }) => {
@@ -66,12 +59,7 @@ export default function ToggleView({
         onClick={handleClick}
         title="Change view"
       >
-        <StyledMenu
-          anchorEl={anchorEl}
-          keepMounted
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-        >
+        <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
           {views.map((type, i) => (
             <MenuItem
               key={i}

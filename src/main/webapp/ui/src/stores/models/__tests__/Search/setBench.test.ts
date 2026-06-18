@@ -1,18 +1,18 @@
-import { test, describe, expect, vi } from 'vitest';
-import Search from "../../Search";
+import { describe, expect, test, vi } from "vitest";
 import ApiServiceBase from "../../../../common/ApiServiceBase";
 import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+import Search from "../../Search";
 import "@/__tests__/assertUrlSearchParams";
 
 vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
-  authStore: {
-    isSynchronizing: false,
-  },
-  uiStore: {
-    addAlert: vi.fn(),
-  },
-})
+    authStore: {
+      isSynchronizing: false,
+    },
+    uiStore: {
+      addAlert: vi.fn(),
+    },
+  }),
 })); // break import cycle
 
 vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break import cycle
@@ -22,32 +22,22 @@ describe("action: setBench", () => {
       const search = new Search({
         factory: mockFactory(),
       });
-      const querySpy = vi
-        .spyOn(ApiServiceBase.prototype, "query")
-        .mockImplementation(() =>
-          Promise.resolve({
-            data: { containers: [] },
-            status: 200,
-            statusText: "OK",
-            headers: {},
-            config: {} as any,
-          })
-
-        );
+      const querySpy = vi.spyOn(ApiServiceBase.prototype, "query").mockImplementation(() =>
+        Promise.resolve({
+          data: { containers: [] },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          config: {} as any,
+        }),
+      );
       void search.setPage(1);
       expect(querySpy).toHaveBeenCalledTimes(1);
-      expect(querySpy).toHaveBeenCalledWith(
-        "containers",
-        expect.urlSearchParamContaining({ pageNumber: "1" })
-
-      );
+      expect(querySpy).toHaveBeenCalledWith("containers", expect.urlSearchParamContaining({ pageNumber: "1" }));
       search.setBench(null);
       expect(querySpy).toHaveBeenCalledTimes(2);
-      expect(querySpy).toHaveBeenCalledWith(
-        "containers",
-        expect.urlSearchParamContaining({ pageNumber: "0" })
-      );
+      expect(querySpy).toHaveBeenCalledWith("containers", expect.urlSearchParamContaining({ pageNumber: "0" }));
     });
   });
 });
-

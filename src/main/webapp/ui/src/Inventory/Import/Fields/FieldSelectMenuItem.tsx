@@ -1,9 +1,9 @@
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
-import useStores from "../../../stores/use-stores";
 import { Fields } from "../../../stores/models/ImportModel";
-import { toTitleCase, match } from "../../../util/Util";
+import useStores from "../../../stores/use-stores";
+import { match, toTitleCase } from "../../../util/Util";
 
 type FieldSelectMenuItemArgs = {
   field: (typeof Fields)[keyof typeof Fields];
@@ -19,29 +19,14 @@ const label = (field: (typeof Fields)[keyof typeof Fields]): string =>
     [() => true, toTitleCase(Symbol.keyFor(field) ?? "")],
   ])(field);
 
-const FieldSelectMenuItem = React.forwardRef<
-  HTMLLIElement,
-  FieldSelectMenuItemArgs
->(
-  (
-    {
-      field,
-      currentField,
-      typeIsCompatibleWithField,
-      onClick,
-    }: FieldSelectMenuItemArgs,
-    ref
-  ) => {
+const FieldSelectMenuItem = React.forwardRef<HTMLLIElement, FieldSelectMenuItemArgs>(
+  ({ field, currentField, typeIsCompatibleWithField, onClick }: FieldSelectMenuItemArgs, ref) => {
     const { importStore } = useStores();
-    const fieldIsChosen =
-      Boolean(importStore.importData?.fieldIsChosen(field)) &&
-      field !== Fields.none;
+    const fieldIsChosen = Boolean(importStore.importData?.fieldIsChosen(field)) && field !== Fields.none;
     const fieldIsChosenHere = field === currentField;
     const customIsChosen = field === Fields.custom;
     const compatibleType = customIsChosen || typeIsCompatibleWithField;
-    const disabled =
-      !customIsChosen &&
-      ((fieldIsChosen && !fieldIsChosenHere) || !compatibleType);
+    const disabled = !customIsChosen && ((fieldIsChosen && !fieldIsChosenHere) || !compatibleType);
     const helpText = match<void, string>([
       [() => fieldIsChosenHere, ""],
       [() => customIsChosen, ""],
@@ -52,14 +37,10 @@ const FieldSelectMenuItem = React.forwardRef<
 
     return (
       <MenuItem disabled={disabled} ref={ref} onClick={onClick}>
-        <ListItemText
-          primary={label(field)}
-          secondary={helpText}
-          sx={{ marginTop: "2px", marginBottom: "2px" }}
-        />
+        <ListItemText primary={label(field)} secondary={helpText} sx={{ marginTop: "2px", marginBottom: "2px" }} />
       </MenuItem>
     );
-  }
+  },
 );
 
 FieldSelectMenuItem.displayName = "FieldSelectMenuItem";

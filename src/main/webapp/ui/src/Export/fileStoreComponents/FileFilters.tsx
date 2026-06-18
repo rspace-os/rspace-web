@@ -1,12 +1,13 @@
-import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
+import type React from "react";
+import { useState } from "react";
 
 type FoundLinksListingArgs = {
   maxFileSizeInMB: number | string;
@@ -34,9 +35,8 @@ export default function FileFilters({
     <Card sx={{ p: 1 }}>
       <h2>File filters</h2>
       <p>
-        Filestore files larger than <strong>{maxFileSizeInMB} MB</strong> will
-        not be included in the export. All types of filestore files will be
-        included
+        Filestore files larger than <strong>{maxFileSizeInMB} MB</strong> will not be included in the export. All types
+        of filestore files will be included
         {excludedFileExtensions === "" ? (
           ""
         ) : (
@@ -72,7 +72,7 @@ export default function FileFilters({
                 slotProps={{
                   inputLabel: {
                     shrink: true,
-                  }
+                  },
                 }}
               />
             </Grid>
@@ -81,26 +81,20 @@ export default function FileFilters({
                 variant="standard"
                 label="File types to exclude (comma-separated list)"
                 value={excludedFileExtensions}
-                onChange={({ target: { value } }) =>
-                  setExcludedFileExtensions(value)
-                }
+                onChange={({ target: { value } }) => setExcludedFileExtensions(value)}
                 margin="normal"
                 data-test-id="types-to-exclude"
                 slotProps={{
                   inputLabel: {
                     shrink: true,
-                  }
+                  },
                 }}
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setOpen(false)}
-            color="primary"
-            data-test-id="button-ok-links"
-          >
+          <Button onClick={() => setOpen(false)} color="primary" data-test-id="button-ok-links">
             OK
           </Button>
         </DialogActions>

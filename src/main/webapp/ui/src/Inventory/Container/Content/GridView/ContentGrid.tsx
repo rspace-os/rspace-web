@@ -1,30 +1,22 @@
-
-import React, {
-  useContext,
-  useRef,
-  useState,
-  useEffect,
-  KeyboardEvent,
-  MouseEvent,
-} from "react";
-import { observer, useLocalObservable } from "mobx-react-lite";
+import Skeleton from "@mui/material/Skeleton";
+import Snackbar from "@mui/material/Snackbar";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import LocationContent from "../LocationContent";
-import GridCell, { GridCellArgs } from "./GridCell";
-import SearchContext from "../../../../stores/contexts/Search";
-import TableContainer from "@mui/material/TableContainer";
-import Dragger from "../Dragger";
-import Skeleton from "@mui/material/Skeleton";
-import { preventEventBubbling } from "../../../../util/Util";
-import ContainerModel from "../../../../stores/models/ContainerModel";
-import { Location } from "../../../../stores/definitions/Container";
-import Snackbar from "@mui/material/Snackbar";
-import * as DragAndDrop from "../DragAndDrop";
 import { runInAction } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import React, { type KeyboardEvent, type MouseEvent, useContext, useEffect, useRef, useState } from "react";
+import SearchContext from "../../../../stores/contexts/Search";
+import type { Location } from "../../../../stores/definitions/Container";
+import ContainerModel from "../../../../stores/models/ContainerModel";
+import { preventEventBubbling } from "../../../../util/Util";
+import * as DragAndDrop from "../DragAndDrop";
+import Dragger from "../Dragger";
+import LocationContent from "../LocationContent";
+import GridCell, { type GridCellArgs } from "./GridCell";
 
 type Coord = {
   x: number;
@@ -134,8 +126,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
    * tapped location should be selected. If they move the cursor without
    * releasing the tap then drag selection should instead start.
    */
-  const [mouseDownPoint, setMouseDownPoint] =
-    useState<MouseDownPointType>(null);
+  const [mouseDownPoint, setMouseDownPoint] = useState<MouseDownPointType>(null);
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -159,13 +150,9 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
    * by "space" and unset by "enter", "return", and "escape"; the default keys)
    * and when set all other keys are prevented from doing anything.
    */
-  const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] =
-    useState(false);
+  const [inKeyboardDragAndDropMode, setInKeyboardDragAndDropMode] = useState(false);
 
-  const findLocation = (
-    col: { value: number },
-    row: { value: number }
-  ): Location => {
+  const findLocation = (col: { value: number }, row: { value: number }): Location => {
     const loc = container.findLocation(col.value, row.value);
     if (!loc) throw new Error("Could not find location");
     return loc;
@@ -180,10 +167,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             clearTimeout(mouseDownPoint.clickTimeout);
             // Use type assertion for DOM MouseEvent compatibility
             // Using any here to work around React and DOM MouseEvent incompatibility
-            container.startSelection(
-              mouseDownPoint.event,
-              mouseDownPoint.offset
-            );
+            container.startSelection(mouseDownPoint.event, mouseDownPoint.offset);
             setMouseDownPoint(null);
           }
           container.stopSelection(search);
@@ -223,10 +207,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             if (!disabled) {
               if (mouseDownPoint) {
                 clearTimeout(mouseDownPoint.clickTimeout);
-                container.startSelection(
-                  mouseDownPoint.event,
-                  mouseDownPoint.offset
-                );
+                container.startSelection(mouseDownPoint.event, mouseDownPoint.offset);
                 setMouseDownPoint(null);
               }
               // Use type assertion for DOM MouseEvent compatibility
@@ -244,24 +225,16 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
               setInKeyboardDragAndDropMode(true);
               return;
             }
-            if (
-              inKeyboardDragAndDropMode &&
-              (e.key === "Enter" || e.key === "Return" || e.key === "Escape")
-            ) {
+            if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {
               setInKeyboardDragAndDropMode(false);
               return;
             }
             if (inKeyboardDragAndDropMode) return;
 
-            if (!focusCoord)
-              throw new Error(
-                "A cell must have focus for key events to be handled"
-              );
+            if (!focusCoord) throw new Error("A cell must have focus for key events to be handled");
             if (e.key === "Escape") {
               container.toggleAllLocations(false);
-              container
-                .findLocation(focusCoord.x, focusCoord.y)
-                ?.toggleSelected(true);
+              container.findLocation(focusCoord.x, focusCoord.y)?.toggleSelected(true);
               e.preventDefault();
             }
 
@@ -289,33 +262,24 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             e.preventDefault();
             const { x, y } = newCoord[e.key](focusCoord);
 
-            const origin = e.shiftKey ? shiftOrigin ?? focusCoord : { x, y };
+            const origin = e.shiftKey ? (shiftOrigin ?? focusCoord) : { x, y };
             const left = Math.min(x, origin.x);
             const right = Math.max(x, origin.x);
             const top = Math.min(y, origin.y);
             const bottom = Math.max(y, origin.y);
 
             container.locations?.forEach((l) => {
-              l.toggleSelected(
-                l.coordX >= left &&
-                  l.coordX <= right &&
-                  l.coordY >= top &&
-                  l.coordY <= bottom
-              );
+              l.toggleSelected(l.coordX >= left && l.coordX <= right && l.coordY >= top && l.coordY <= bottom);
             });
 
-            setShiftOrigin(e.shiftKey ? shiftOrigin ?? focusCoord : null);
+            setShiftOrigin(e.shiftKey ? (shiftOrigin ?? focusCoord) : null);
             setFocusCoord({ x, y });
             setTabIndexCoord({ x, y });
           }}
         >
           <TableHead>
             <TableRow>
-              <TableCell
-                align="center"
-                ref={topLeftCellRef}
-                onMouseDown={preventEventBubbling()}
-              ></TableCell>
+              <TableCell align="center" ref={topLeftCellRef} onMouseDown={preventEventBubbling()}></TableCell>
               {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}
@@ -340,12 +304,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           <TableBody>
             {container.rows.map((row) => (
               <TableRow hover tabIndex={-1} key={`row-${row.value}`}>
-                <TableCell
-                  variant="head"
-                  align="center"
-                  onMouseDown={preventEventBubbling()}
-                  role="rowheader"
-                >
+                <TableCell variant="head" align="center" onMouseDown={preventEventBubbling()} role="rowheader">
                   {row.label}
                 </TableCell>
                 {container.initializedLocations &&
@@ -361,16 +320,8 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       <LocationContent
                         location={findLocation(col, row)}
                         container={container}
-                        tabIndex={
-                          tabIndexCoord.x === col.value &&
-                          tabIndexCoord.y === row.value
-                            ? 0
-                            : -1
-                        }
-                        hasFocus={
-                          focusCoord?.x === col.value &&
-                          focusCoord?.y === row.value
-                        }
+                        tabIndex={tabIndexCoord.x === col.value && tabIndexCoord.y === row.value ? 0 : -1}
+                        hasFocus={focusCoord?.x === col.value && focusCoord?.y === row.value}
                       />
                     </WrappedGridCell>
                   ))}
@@ -402,13 +353,7 @@ const ContentGrid: React.FC = () => {
     <>
       {(!container.initializedLocations || container.loading) && (
         <TableContainer>
-          <Table
-            stickyHeader
-            role="grid"
-            sx={tableSx}
-            padding="normal"
-            size="small"
-          >
+          <Table stickyHeader role="grid" sx={tableSx} padding="normal" size="small">
             <TableHead>
               <TableRow>
                 <TableCell align="center"></TableCell>
@@ -452,11 +397,7 @@ const ContentGrid: React.FC = () => {
         </TableContainer>
       )}
       {container.initializedLocations && !container.loading && (
-        <DragAndDrop.Context
-          container={container}
-          supportKeyboard
-          supportMultiple
-        >
+        <DragAndDrop.Context container={container} supportKeyboard supportMultiple>
           <LoadedContent container={container} />
         </DragAndDrop.Context>
       )}

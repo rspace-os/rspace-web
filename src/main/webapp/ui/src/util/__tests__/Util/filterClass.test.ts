@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 
 import * as ArrayUtils from "../../ArrayUtils";
+
 describe("filterClass", () => {
   test("Simple example", () => {
     class SuperClass {}
@@ -10,12 +11,7 @@ describe("filterClass", () => {
     const a = new SubClassA();
     const b = new SubClassB();
     const list: Array<SuperClass> = [a, b];
-    const filteredList: Array<SubClassA> = ArrayUtils.filterClass(
-      SubClassA,
-      list
-
-    );
+    const filteredList: Array<SubClassA> = ArrayUtils.filterClass(SubClassA, list);
     expect(filteredList).toEqual([a]);
   });
 });
-

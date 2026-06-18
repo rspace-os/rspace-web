@@ -1,13 +1,12 @@
-import React, { forwardRef } from "react";
-import { Observer } from "mobx-react-lite";
-import ContextMenuButton from "./ContextMenuButton";
-import ContextMenuSplitButton, {
-  type SplitButtonOption,
-} from "./ContextMenuSplitButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import { Observer } from "mobx-react-lite";
+import type React from "react";
+import { forwardRef } from "react";
 import EventBoundary from "../../../components/EventBoundary";
+import ContextMenuButton from "./ContextMenuButton";
+import ContextMenuSplitButton, { type SplitButtonOption } from "./ContextMenuSplitButton";
 export type ContextMenuRenderOptions = "button" | "menuitem";
 type CommonArgs = {
   as: ContextMenuRenderOptions;
@@ -23,12 +22,8 @@ type RegularButtonArgs = {
   active?: boolean;
   label: string;
 };
-type ContextMenuActionsArgs = CommonArgs &
-  (SplitButtonArgs | RegularButtonArgs);
-const ContextMenuAction = forwardRef<
-  React.ElementRef<typeof MenuItem>,
-  ContextMenuActionsArgs
->(
+type ContextMenuActionsArgs = CommonArgs & (SplitButtonArgs | RegularButtonArgs);
+const ContextMenuAction = forwardRef<React.ElementRef<typeof MenuItem>, ContextMenuActionsArgs>(
   (
     {
       as,
@@ -52,11 +47,7 @@ const ContextMenuAction = forwardRef<
           as === "button" ? (
             options && options.length > 0 ? (
               <>
-                <ContextMenuSplitButton
-                  options={options}
-                  icon={icon}
-                  disabledHelp={disabledHelp}
-                />
+                <ContextMenuSplitButton options={options} icon={icon} disabledHelp={disabledHelp} />
                 {children}
               </>
             ) : (
@@ -94,9 +85,7 @@ const ContextMenuAction = forwardRef<
                   },
                 }}
               />
-              {Boolean(children) && (
-                <EventBoundary>{children ?? null}</EventBoundary>
-              )}
+              {Boolean(children) && <EventBoundary>{children ?? null}</EventBoundary>}
             </MenuItem>
           )
         }

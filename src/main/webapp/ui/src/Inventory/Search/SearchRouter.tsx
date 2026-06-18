@@ -1,24 +1,22 @@
-import React, { useEffect, useContext } from "react";
-import useStores from "../../stores/use-stores";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
-import Layout from "../components/Layout/Layout2x1";
-import RightPanelView from "./RightPanelView";
+import React, { useContext, useEffect } from "react";
+import { globalId } from "@/stores/definitions/BaseRecord";
+import { UiPreferences } from "../../hooks/api/useUiPreference";
+import { mkAlert } from "../../stores/contexts/Alert";
+import NavigateContext, { type UseLocation } from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
+import type { CoreFetcherArgs } from "../../stores/definitions/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
-import { type CoreFetcherArgs } from "../../stores/definitions/Search";
+import useStores from "../../stores/use-stores";
+import { getErrorMessage, UserCancelledAction } from "../../util/error";
 import Header from "../components/Layout/Header";
+import Layout from "../components/Layout/Layout2x1";
 import Sidebar from "../components/Layout/Sidebar";
 import Main from "../Main";
-import NavigateContext, {
-  type UseLocation,
-} from "../../stores/contexts/Navigate";
-import { mkAlert } from "../../stores/contexts/Alert";
-import { getErrorMessage, UserCancelledAction } from "../../util/error";
-import MainSearchNavigationContext from "./MainSearchNavigationContext";
-import { UiPreferences } from "../../hooks/api/useUiPreference";
 import LeftPanelView from "./LeftPanelView";
-import Box from "@mui/material/Box";
-import { globalId } from "@/stores/definitions/BaseRecord";
+import MainSearchNavigationContext from "./MainSearchNavigationContext";
+import RightPanelView from "./RightPanelView";
 
 type SearchRouterArgs = {
   paramsOverride?: CoreFetcherArgs;
@@ -45,9 +43,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
 
   useEffect(() => {
     void (async () => {
-      const params =
-        paramsOverride ??
-        parseCoreFetcherArgsFromUrl(new URLSearchParams(location.search));
+      const params = paramsOverride ?? parseCoreFetcherArgsFromUrl(new URLSearchParams(location.search));
 
       try {
         await search.setupAndPerformInitialSearch(params);
@@ -78,9 +74,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   useEffect(() => {
     search.overrideSearchOnFilter = (args: CoreFetcherArgs) => {
       // when the main search's parameters change, the URL should be updated
-      navigate(
-        `/inventory/search?${search.fetcher.generateQuery(args).toString()}`,
-      );
+      navigate(`/inventory/search?${search.fetcher.generateQuery(args).toString()}`);
     };
   }, [search]);
 
@@ -105,9 +99,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
  * Search Context and Navigate Context (via MainSearchNavigationContext) in
  * this wrapper component, SearchRouter may use them.
  */
-function SearchRouterWrapper({
-  paramsOverride,
-}: SearchRouterArgs): React.ReactNode {
+function SearchRouterWrapper({ paramsOverride }: SearchRouterArgs): React.ReactNode {
   const { searchStore } = useStores();
   return (
     <UiPreferences>

@@ -1,19 +1,14 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
-import React from "react";
-import { render, screen, waitFor } from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { render, screen, waitFor } from "@/__tests__/customQueries";
+import { stubAppChrome, type VisibleTabs } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import { SimplePageWithAppBar } from "./index.story";
-
-import {
-  stubAppChrome,
-  type VisibleTabs,
-} from "@/__tests__/helpers/appChrome";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -31,9 +26,7 @@ function stubEndpoints(visibleTabs?: Partial<VisibleTabs>) {
  */
 async function waitForLoaded() {
   await waitFor(() => {
-    expect(
-      screen.getByRole("button", { name: "Account Menu" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Account Menu" })).toBeEnabled();
   });
 }
 
@@ -52,17 +45,13 @@ describe("App Bar", () => {
      * screen readers when we don't show the heading to all users.
      */
     test("On Workspace, a hidden heading should be shown", async () => {
-      render(
-        <SimplePageWithAppBar variant="page" currentPage="Workspace" />,
-      );
+      render(<SimplePageWithAppBar variant="page" currentPage="Workspace" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("Workspace");
     });
 
     test("On Inventory, a hidden heading should be shown", async () => {
-      render(
-        <SimplePageWithAppBar variant="page" currentPage="Inventory" />,
-      );
+      render(<SimplePageWithAppBar variant="page" currentPage="Inventory" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("Inventory");
     });
@@ -80,17 +69,13 @@ describe("App Bar", () => {
     });
 
     test("On My RSpace, a hidden heading should be shown", async () => {
-      render(
-        <SimplePageWithAppBar variant="page" currentPage="My RSpace" />,
-      );
+      render(<SimplePageWithAppBar variant="page" currentPage="My RSpace" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("My RSpace");
     });
 
     test("On any other page, a hidden heading should not be shown", async () => {
-      render(
-        <SimplePageWithAppBar variant="page" currentPage="Test Page" />,
-      );
+      render(<SimplePageWithAppBar variant="page" currentPage="Test Page" />);
       await waitForLoaded();
       expect(screen.queryByRole("heading", { level: 1 })).toBe(null);
       /*
@@ -139,9 +124,7 @@ describe("App Bar", () => {
       });
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
-      expect(
-        screen.queryByRole("link", { name: /inventory/i }),
-      ).toBe(null);
+      expect(screen.queryByRole("link", { name: /inventory/i })).toBe(null);
       /*
        * This is when the sysadmin has disallowed Inventory entirely.
        */
@@ -213,9 +196,7 @@ describe("App Bar", () => {
       await waitForLoaded();
       await user.click(screen.getByRole("button", { name: "Account Menu" }));
       await screen.findByRole("menu", { name: /account menu/i });
-      expect(
-        screen.queryByRole("menuitem", { name: /published/i }),
-      ).toBe(null);
+      expect(screen.queryByRole("menuitem", { name: /published/i })).toBe(null);
       /*
        * The published page is another piece of functionality that the sysadmin
        * can disable for all users, so if it has not been enabled then the
@@ -225,12 +206,7 @@ describe("App Bar", () => {
   });
 
   test("On page variant, the icons on the right should be in the correct order", async () => {
-    render(
-      <SimplePageWithAppBar
-        variant="page"
-        accessibilityTips={{ supportsHighContrastMode: true }}
-      />,
-    );
+    render(<SimplePageWithAppBar variant="page" accessibilityTips={{ supportsHighContrastMode: true }} />);
     await waitForLoaded();
 
     const accountMenuButton = screen.getByRole("button", {
@@ -241,13 +217,9 @@ describe("App Bar", () => {
     expect(helpMenuButton).toBeVisible();
 
     const accountBeforeHelp = Boolean(
-      accountMenuButton.compareDocumentPosition(helpMenuButton) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+      accountMenuButton.compareDocumentPosition(helpMenuButton) & Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(
-      accountBeforeHelp,
-      "Account button should be before Help button",
-    ).toBe(true);
+    expect(accountBeforeHelp, "Account button should be before Help button").toBe(true);
     /*
      * This is so that across the different variants the help button remains in a
      * consistent location -- the furthest right -- as having help be in a
@@ -256,12 +228,7 @@ describe("App Bar", () => {
   });
 
   test("On dialog variant, the icons on the right should be in the correct order", async () => {
-    render(
-      <SimplePageWithAppBar
-        variant="dialog"
-        accessibilityTips={{ supportsHighContrastMode: true }}
-      />,
-    );
+    render(<SimplePageWithAppBar variant="dialog" accessibilityTips={{ supportsHighContrastMode: true }} />);
 
     const accessibilityTipsButton = await screen.findByRole("button", {
       name: /accessibility tips/i,
@@ -271,13 +238,9 @@ describe("App Bar", () => {
     expect(helpMenuButton).toBeVisible();
 
     const accessibilityTipsBeforeHelp = Boolean(
-      accessibilityTipsButton.compareDocumentPosition(helpMenuButton) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+      accessibilityTipsButton.compareDocumentPosition(helpMenuButton) & Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(
-      accessibilityTipsBeforeHelp,
-      "Accessibility Tips button should be before Help button",
-    ).toBe(true);
+    expect(accessibilityTipsBeforeHelp, "Accessibility Tips button should be before Help button").toBe(true);
     /*
      * This is so that across the different variants the help button remains in a
      * consistent location -- the furthest right -- as having help be in a

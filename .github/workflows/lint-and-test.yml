@@ -160,10 +160,55 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Biome lint + format check over the changed JS/TS/CSS frontend, run
+      # before tsc. lint:ci uses --error-on-warnings --diagnostic-level=info, so
+      # any Biome info/warning/error fails the run.
+      - name: Biome lint and format check
+        run: pnpm run lint:ci
+
+      # Runs even when the Biome check above failed (`!cancelled()`) so a Biome
+      # failure never hides a TypeScript failure; the job still fails if either
+      # step fails.
       - name: TypeScript check
+        if: ${{ !cancelled() }}
         run: |
           pnpm exec tsc --version
           pnpm run tsc
+
+  backend-checks:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        java-version: [17]
+    if: |
+      github.event_name == 'pull_request' ||
+      inputs.fast_java_tests ||
+      needs.changed-files.outputs.java == 'true'
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      # Fail the build if any Java file is not Spotless-formatted. This is an
+      # independent job from frontend-checks, so it runs in parallel and a
+      # Spotless failure here fails the overall CI run without stopping the
+      # frontend checks (and vice versa).
+      - name: Spotless check
+        run: |
+          ./mvnw -q spotless:check \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
   vitest-tests:
     runs-on: ubuntu-latest

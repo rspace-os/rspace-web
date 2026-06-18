@@ -20,7 +20,7 @@ export function useDmptoolEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from DMPTool.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useDmptoolEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from DMPTool.",
-        })
+        }),
       );
     }
   };

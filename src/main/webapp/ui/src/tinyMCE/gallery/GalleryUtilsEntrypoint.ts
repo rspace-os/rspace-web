@@ -1,7 +1,4 @@
-import {
-  addFromGallery,
-  getFieldIdFromTextFieldId,
-} from "@/tinyMCE/gallery/utils";
+import { addFromGallery, getFieldIdFromTextFieldId } from "@/tinyMCE/gallery/utils";
 
 type AddFromGalleryHandler = typeof addFromGallery;
 type GetFieldIdFromTextFieldIdHandler = typeof getFieldIdFromTextFieldId;
@@ -15,4 +12,3 @@ declare global {
 
 window.addFromGallery = addFromGallery;
 window.getFieldIdFromTextFieldId = getFieldIdFromTextFieldId;
-

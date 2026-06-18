@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 
 import Result from "../../result";
+
 describe("all", () => {
   test("A single OK, should be wrapped in an array.", () => {
     const actual = Result.all(Result.Ok("foo"));
@@ -24,20 +25,14 @@ describe("all", () => {
     });
   });
   test("Multiple Errors, should return Error.", () => {
-    const actual = Result.all(
-      Result.Error<unknown>([new Error("foo")]),
-      Result.Error<unknown>([new Error("bar")])
-    );
+    const actual = Result.all(Result.Error<unknown>([new Error("foo")]), Result.Error<unknown>([new Error("bar")]));
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
       expect(errors.map((e) => e.message)).toEqual(["bar", "foo"]);
     });
   });
   test("Mix of OK and Error, should return Error value.", () => {
-    const actual = Result.all(
-      Result.Ok<string>("foo"),
-      Result.Error<string>([new Error("bar")])
-    );
+    const actual = Result.all(Result.Ok<string>("foo"), Result.Error<string>([new Error("bar")]));
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
       expect(errors.map((e) => e.message)).toEqual(["bar"]);
@@ -47,7 +42,7 @@ describe("all", () => {
     const actual = Result.all(
       Result.Ok<string>("foo"),
       Result.Error<string>([new Error("error1")]),
-      Result.Error<string>([new Error("error2")])
+      Result.Error<string>([new Error("error2")]),
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
@@ -55,10 +50,7 @@ describe("all", () => {
     });
   });
   test("Mix of Error and OK, should return Error value.", () => {
-    const actual = Result.all(
-      Result.Error<string>([new Error("bar")]),
-      Result.Ok<string>("foo")
-    );
+    const actual = Result.all(Result.Error<string>([new Error("bar")]), Result.Ok<string>("foo"));
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
       expect(errors.map((e) => e.message)).toEqual(["bar"]);
@@ -68,7 +60,7 @@ describe("all", () => {
     const actual = Result.all(
       Result.Error<string>([new Error("error1")]),
       Result.Error<string>([new Error("error2")]),
-      Result.Ok<string>("foo")
+      Result.Ok<string>("foo"),
     );
     expect(actual.isError).toBe(true);
     actual.orElseGet((errors) => {
@@ -84,4 +76,3 @@ describe("all", () => {
     });
   });
 });
-

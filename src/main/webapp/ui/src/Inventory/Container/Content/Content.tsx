@@ -1,20 +1,19 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
-import ContentContextMenu from "./ContentContextMenu";
-import useStores from "../../../stores/use-stores";
-import SearchContext from "../../../stores/contexts/Search";
-import SearchViewComponent from "../../Search/SearchView";
-import Search from "../../Search/Search";
-import { menuIDs } from "../../../util/menuIDs";
 import Alert from "@mui/material/Alert";
-import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import ContainerModel from "../../../stores/models/ContainerModel";
-import { isMac } from "../../../util/shortcuts";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
 import docLinks from "../../../assets/DocLinks";
+import SearchContext from "../../../stores/contexts/Search";
+import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import useStores from "../../../stores/use-stores";
+import { menuIDs } from "../../../util/menuIDs";
+import { isMac } from "../../../util/shortcuts";
 import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
+import Search from "../../Search/Search";
+import SearchViewComponent from "../../Search/SearchView";
+import ContentContextMenu from "./ContentContextMenu";
 
 function ImageContainerZoomHelpText() {
   const { uiStore } = useStores();
@@ -34,7 +33,7 @@ function ImageContainerZoomHelpText() {
   } catch (_) {
     return null;
   }
-  zoomText = zoomText + " to zoom the page out to view more of the image.";
+  zoomText = `${zoomText} to zoom the page out to view more of the image.`;
 
   const helpText = isSingleColumnLayout ? (
     zoomText
@@ -54,13 +53,11 @@ function ImageContainerZoomHelpText() {
 function _Content() {
   const { searchStore } = useStores();
   const activeResult = searchStore.activeResult;
-  if (!(activeResult instanceof ContainerModel))
-    throw new Error("ActiveResult must be a Container");
+  if (!(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
   const search = activeResult.contentSearch;
   const fromCType = activeResult.cType.toUpperCase();
   const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
-  if (fromCType === "IMAGE" || fromCType === "GRID")
-    TABS.unshift(fromCType);
+  if (fromCType === "IMAGE" || fromCType === "GRID") TABS.unshift(fromCType);
 
   const handleSearch = (query: string) => {
     const params = {
@@ -96,9 +93,7 @@ function _Content() {
         <InnerSearchNavigationContext>
           <Stack spacing={1}>
             <Search handleSearch={handleSearch} TABS={TABS} size="small" />
-            {["GRID", "IMAGE"].includes(search.searchView) && (
-              <ContentContextMenu />
-            )}
+            {["GRID", "IMAGE"].includes(search.searchView) && <ContentContextMenu />}
             <Box sx={{ overflowX: "auto !important", overflow: "hidden", width: "100%" }}>
               <SearchViewComponent contextMenuId={menuIDs.RESULTS} />
             </Box>

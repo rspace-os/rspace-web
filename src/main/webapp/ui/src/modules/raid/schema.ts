@@ -1,9 +1,5 @@
 import * as v from "valibot";
-import {
-  AjaxOperationFailure,
-  AjaxOperationFailureResponseSchema,
-} from "@/modules/common/api/schema";
-
+import { type AjaxOperationFailure, AjaxOperationFailureResponseSchema } from "@/modules/common/api/schema";
 
 // RAiD Reference DTO Schema
 export const RaidReferenceDTOSchema = v.object({
@@ -23,13 +19,14 @@ export const GetAvailableRaidListResponseSchema = v.variant("success", [
   AjaxOperationFailureResponseSchema,
 ]);
 
-export type GetAvailableRaidListResponse = v.InferOutput<
-  typeof GetAvailableRaidListResponseSchema
->;
+export type GetAvailableRaidListResponse = v.InferOutput<typeof GetAvailableRaidListResponseSchema>;
 
 // Schema for the credentials stored under each options key
 export const RaidOptionValueSchema = v.object({
-  RAID_OAUTH_CONNECTED: v.pipe(v.string(), v.transform((val) => val === "true")),
+  RAID_OAUTH_CONNECTED: v.pipe(
+    v.string(),
+    v.transform((val) => val === "true"),
+  ),
   RAID_URL: v.pipe(v.string(), v.url()),
   RAID_ALIAS: v.string(),
 });
@@ -49,9 +46,7 @@ export const IntegrationRaidInfoDataSchema = v.object({
   oauthConnected: v.boolean(),
   options: v.objectWithRest(
     {
-      RAID_CONFIGURED_SERVERS: v.optional(
-        v.array(RaidConfiguredOptionValueSchema),
-      ),
+      RAID_CONFIGURED_SERVERS: v.optional(v.array(RaidConfiguredOptionValueSchema)),
     },
     RaidOptionValueSchema,
   ),
@@ -66,9 +61,7 @@ export const IntegrationRaidInfoResponseSchema = v.variant("success", [
   AjaxOperationFailureResponseSchema,
 ]);
 
-export type IntegrationRaidInfo = v.InferOutput<
-  typeof IntegrationRaidInfoResponseSchema
->;
+export type IntegrationRaidInfo = v.InferOutput<typeof IntegrationRaidInfoResponseSchema>;
 
 export type AddRaidIdentifierAssociationResponse = true | AjaxOperationFailure;
 export type DeleteRaidIdentifierAssociationResponse = true | AjaxOperationFailure;
@@ -78,9 +71,7 @@ export const AssociateRaidIdentifierRequestBodySchema = v.object({
   raid: v.object({
     raidServerAlias: v.string(),
     raidIdentifier: v.string(),
-  })
+  }),
 });
 
-export type AssociateRaidIdentifierRequestBody = v.InferOutput<
-  typeof AssociateRaidIdentifierRequestBodySchema
->;
+export type AssociateRaidIdentifierRequestBody = v.InferOutput<typeof AssociateRaidIdentifierRequestBodySchema>;

@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import ChemCard from "./ChemCard";
-import { createRoot, type Root } from "react-dom/client";
-import materialTheme from "../theme";
+import { paperClasses } from "@mui/material/Paper";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { paperClasses } from "@mui/material/Paper";
+import React, { useCallback, useEffect } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import materialTheme from "../theme";
+import ChemCard from "./ChemCard";
 
 interface SidebarItem extends Record<string, string | undefined> {
   id: string;
@@ -24,19 +24,11 @@ type TinyMCEEditor = {
 const sidebarRoots = new WeakMap<HTMLElement, Root>();
 
 function isElementNode(node: EventTarget | Node | null): node is Element {
-  return (
-    typeof node === "object" &&
-    node !== null &&
-    "nodeType" in node &&
-    node.nodeType === Node.ELEMENT_NODE
-  );
+  return typeof node === "object" && node !== null && "nodeType" in node && node.nodeType === Node.ELEMENT_NODE;
 }
 
 function isChemImage(element: Element | null): element is HTMLImageElement {
-  return (
-    element?.tagName.toLowerCase() === "img" &&
-    element.classList.contains("chem")
-  );
+  return element?.tagName.toLowerCase() === "img" && element.classList.contains("chem");
 }
 
 function getIframeDocument(iframe: HTMLIFrameElement): Document | null {
@@ -51,9 +43,7 @@ function getRemovedChemElements(node: Node): HTMLImageElement[] {
   }
 
   if (isElementNode(node)) {
-    removedChemElements.push(
-      ...Array.from(node.querySelectorAll<HTMLImageElement>("img.chem")),
-    );
+    removedChemElements.push(...Array.from(node.querySelectorAll<HTMLImageElement>("img.chem")));
   }
 
   return removedChemElements;
@@ -64,8 +54,7 @@ function getCustomEventDetail(event: Event): unknown {
 }
 
 function getActiveEditor(): TinyMCEEditor | undefined {
-  return (globalThis as { tinymce?: { activeEditor?: TinyMCEEditor } }).tinymce
-    ?.activeEditor;
+  return (globalThis as { tinymce?: { activeEditor?: TinyMCEEditor } }).tinymce?.activeEditor;
 }
 
 function findSidebarContainer(iframe: HTMLIFrameElement): HTMLElement | null {
@@ -91,23 +80,17 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
       imageSrc: element.getAttribute("src") ?? undefined,
     };
 
-    setItems((oldItems) => [
-      item,
-      ...oldItems.filter((existingItem) => existingItem.id !== item.id),
-    ]);
+    setItems((oldItems) => [item, ...oldItems.filter((existingItem) => existingItem.id !== item.id)]);
   }, []);
 
   const removeItem = useCallback((id?: string): void => {
     setItems((oldItems) => oldItems.filter((item) => item.id !== id));
   }, []);
 
-  const closeAll = useCallback(
-    (event?: React.MouseEvent<HTMLButtonElement>): void => {
-      event?.preventDefault();
-      setItems([]);
-    },
-    [],
-  );
+  const closeAll = useCallback((event?: React.MouseEvent<HTMLButtonElement>): void => {
+    event?.preventDefault();
+    setItems([]);
+  }, []);
 
   useEffect(() => {
     const iframeDocument = getIframeDocument(iframe);
@@ -116,10 +99,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
     }
 
     const handleChemClick = (event: MouseEvent): void => {
-      const chemElement =
-        isElementNode(event.target)
-          ? event.target.closest("img.chem")
-          : null;
+      const chemElement = isElementNode(event.target) ? event.target.closest("img.chem") : null;
 
       if (isChemImage(chemElement)) {
         addItem(chemElement);
@@ -205,9 +185,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
         </Box>
       )}
       {items.map((item, idx) =>
-        item.id ? (
-          <ChemCard key={item.id} onClose={removeItem} item={item} idx={idx} />
-        ) : null,
+        item.id ? <ChemCard key={item.id} onClose={removeItem} item={item} idx={idx} /> : null,
       )}
     </Box>
   );
@@ -220,8 +198,7 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   }
 
   const iframe = document.querySelector(iframeSelector);
-  const container =
-    iframe instanceof HTMLIFrameElement ? findSidebarContainer(iframe) : null;
+  const container = iframe instanceof HTMLIFrameElement ? findSidebarContainer(iframe) : null;
 
   if (!(iframe instanceof HTMLIFrameElement) || !(container instanceof HTMLElement)) {
     return;
@@ -238,10 +215,7 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   );
 });
 
-function watchEditor(
-  container: Document,
-  callbackRemoved: (element: HTMLImageElement) => void,
-): MutationObserver {
+function watchEditor(container: Document, callbackRemoved: (element: HTMLImageElement) => void): MutationObserver {
   const onMutationsObserved: MutationCallback = (mutations) => {
     mutations.forEach((mutation) => {
       mutation.removedNodes.forEach((removedNode) => {

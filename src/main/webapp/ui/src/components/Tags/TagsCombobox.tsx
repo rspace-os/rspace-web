@@ -1,37 +1,29 @@
-import React, { useEffect, useState, useRef, useMemo, useId } from "react";
-import TextField from "@mui/material/TextField";
-import useAutocomplete, {
-  AutocompleteCloseReason,
-  AutocompleteGroupedOption,
-} from "@mui/material/useAutocomplete";
-import { VariableSizeList as List, VariableSizeList } from "react-window";
-import InfiniteLoader from "react-window-infinite-loader";
-import Popover from "@mui/material/Popover";
-import InputAdornment from "@mui/material/InputAdornment";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FilterIcon from "@mui/icons-material/FilterAlt";
-import ListItemText from "@mui/material/ListItemText";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import {
-  checkUserInputString,
-  checkInternalTag,
-  helpText,
-  isAllowed,
-} from "./TagValidation";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import { useTheme } from "@mui/material/styles";
-import { Optional, lift3 } from "../../util/optional";
-import { stableSort } from "../../util/table";
-import { type Tag } from "../../stores/definitions/Tag";
-import RsSet from "../../util/set";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import Grow from "@mui/material/Grow";
-import {
-  parseEncodedTags,
-  SMALL_DATASET_SIGNAL,
-  FINAL_DATA_SIGNAL,
-} from "./ParseEncodedTagStrings";
+import InputAdornment from "@mui/material/InputAdornment";
+import ListItemText from "@mui/material/ListItemText";
+import Popover from "@mui/material/Popover";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import useAutocomplete, {
+  type AutocompleteCloseReason,
+  type AutocompleteGroupedOption,
+} from "@mui/material/useAutocomplete";
+import type React from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { VariableSizeList as List, type VariableSizeList } from "react-window";
+import InfiniteLoader from "react-window-infinite-loader";
+import type { Tag } from "../../stores/definitions/Tag";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { lift3, Optional } from "../../util/optional";
+import type RsSet from "../../util/set";
+import { stableSort } from "../../util/table";
+import { FINAL_DATA_SIGNAL, parseEncodedTags, SMALL_DATASET_SIGNAL } from "./ParseEncodedTagStrings";
+import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./TagValidation";
 
 /*
  * This component is a general purpose combobox for selecting a tag. The list
@@ -112,41 +104,27 @@ function OptionsListing({
     option: InternalTag;
     index: number;
   }) => React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
-  groupedOptions:
-    | Array<InternalTag>
-    | Array<AutocompleteGroupedOption<InternalTag>>;
+  groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
   listboxProps: object;
   listRef: React.MutableRefObject<VariableSizeList | null>;
   keyboardFocusIndex: number | null;
   filter: string;
   enforceOntologies: boolean;
 }) {
-  const itemCount = hasNextPage
-    ? sortedOptions.length + 1
-    : sortedOptions.length;
+  const itemCount = hasNextPage ? sortedOptions.length + 1 : sortedOptions.length;
   const loadMoreItems = isNextPageLoading ? () => {} : loadNextPage;
-  const isItemLoaded = (index: number) =>
-    !hasNextPage || index < sortedOptions.length;
+  const isItemLoaded = (index: number) => !hasNextPage || index < sortedOptions.length;
 
-  const Item = ({
-    index,
-    style,
-  }: {
-    index: number;
-    style: React.CSSProperties;
-  }) => {
+  const Item = ({ index, style }: { index: number; style: React.CSSProperties }) => {
     const theme = useTheme();
     if (!isItemLoaded(index) && isNextPageLoading) {
       return <li style={style}>Loading...</li>;
     }
-    if (!groupedOptions || index >= groupedOptions.length)
-      return <li style={style} />;
+    if (!groupedOptions || index >= groupedOptions.length) return <li style={style} />;
 
     const option = groupedOptions[index] as InternalTag;
     const name = option.value || "no name";
-    const tagIsAllowed = isAllowed(
-      checkInternalTag(option, { enforceOntologies }),
-    );
+    const tagIsAllowed = isAllowed(checkInternalTag(option, { enforceOntologies }));
 
     const start = name.indexOf(filter);
     const end = start + filter.length;
@@ -169,20 +147,15 @@ function OptionsListing({
     const { key, ...optionProps } = getOptionProps({ option, index });
 
     return (
+      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
       <li
         key={key}
         {...optionProps}
         style={{
           padding: "8px",
           cursor: "default",
-          border:
-            index === keyboardFocusIndex
-              ? `2px solid ${theme.palette.primary.main}`
-              : "none",
-          backgroundColor:
-            index === keyboardFocusIndex
-              ? theme.palette.hover.iconButton
-              : "default",
+          border: index === keyboardFocusIndex ? `2px solid ${theme.palette.primary.main}` : "none",
+          backgroundColor: index === keyboardFocusIndex ? theme.palette.hover.iconButton : "default",
           borderRadius: "4px",
           /*
            * This style object is what positions the MenuItem correctly within
@@ -233,20 +206,13 @@ function OptionsListing({
          * the metadata in the database in everywhere where tags are used then
          * we could look at add checkboxes to the combobox.
          */}
-        <ListItemText
-          primary={label}
-          secondary={helpText(checkInternalTag(option, { enforceOntologies }))}
-        />
+        <ListItemText primary={label} secondary={helpText(checkInternalTag(option, { enforceOntologies }))} />
       </li>
     );
   };
 
   return (
-    <InfiniteLoader
-      isItemLoaded={isItemLoaded}
-      itemCount={itemCount}
-      loadMoreItems={loadMoreItems}
-    >
+    <InfiniteLoader isItemLoaded={isItemLoaded} itemCount={itemCount} loadMoreItems={loadMoreItems}>
       {({ onItemsRendered, ref }) => (
         <List
           {...listboxProps}
@@ -290,9 +256,7 @@ function OptionsListing({
             OPTION_HEIGHT +
             ArrayUtils.getAt(i, sortedOptions)
               .map((tag) => {
-                const tagHasHelpText =
-                  helpText(checkInternalTag(tag, { enforceOntologies })) ===
-                  null;
+                const tagHasHelpText = helpText(checkInternalTag(tag, { enforceOntologies })) === null;
                 return tagHasHelpText ? 0 : 20;
               })
               .orElse(0)
@@ -412,22 +376,14 @@ function TagsComboboxContent<
           version: Optional<string>;
         };
       },
->({
-  onSelection,
-  value,
-  anchorEl,
-  onClose,
-  enforceOntologies,
-}: TagsComboboxArgs<Toggle>): React.ReactNode {
+>({ onSelection, value, anchorEl, onClose, enforceOntologies }: TagsComboboxArgs<Toggle>): React.ReactNode {
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState("");
   const [reachedEnd, setReachedEnd] = useState(false);
   const [error, setError] = useState(false);
-  const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(
-    null,
-  );
+  const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(null);
   const listRef = useRef<VariableSizeList | null>(null);
 
   const loadPage = (): Promise<{
@@ -437,16 +393,12 @@ function TagsComboboxContent<
     if (reachedEnd) return Promise.resolve({ tags: [], lastPage: true });
     setIsNextPageLoading(true);
     setError(false);
-    return fetch(
-      `/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${page}&tagFilter=${filter}`,
-    )
+    return fetch(`/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${page}&tagFilter=${filter}`)
       .then((response) => response.json())
       .then(({ data }: { data: Array<string> }) => {
         const alreadySelectedTagValues = value.map((v) => v.value);
         return {
-          lastPage:
-            data.includes(SMALL_DATASET_SIGNAL) ||
-            data.includes(FINAL_DATA_SIGNAL),
+          lastPage: data.includes(SMALL_DATASET_SIGNAL) || data.includes(FINAL_DATA_SIGNAL),
           tags: parseEncodedTags(data).map(
             (tag: Tag): InternalTag => ({
               ...tag,
@@ -512,13 +464,7 @@ function TagsComboboxContent<
    * StackOverflow post for more info
    * https://stackoverflow.com/questions/59013367/react-window-infinite-loader-material-ui-autocomplete
    */
-  const {
-    getRootProps,
-    getInputProps,
-    getListboxProps,
-    getOptionProps,
-    groupedOptions,
-  } = useAutocomplete({
+  const { getRootProps, getInputProps, getListboxProps, getOptionProps, groupedOptions } = useAutocomplete({
     open: Boolean(anchorEl),
     options: sortedOptions,
     getOptionLabel: (option) => {
@@ -528,7 +474,7 @@ function TagsComboboxContent<
       return option.value;
     },
     filterOptions: (x) => x,
-    onInputChange: (event, newInputValue, reason) => {
+    onInputChange: (_event, newInputValue, reason) => {
       setPage(0);
       setReachedEnd(false);
       if (reason === "input") {
@@ -545,10 +491,7 @@ function TagsComboboxContent<
        * details of the tapped tag.
        */
     },
-    onClose: (
-      event: React.SyntheticEvent<Element, Event>,
-      reason: AutocompleteCloseReason,
-    ) => {
+    onClose: (event: React.SyntheticEvent<Element, Event>, reason: AutocompleteCloseReason) => {
       /*
        * This event is fired whenever the user taps inside the Popover. There
        * are various different parts of the Popover that the user may tap on
@@ -557,10 +500,7 @@ function TagsComboboxContent<
        */
       let li = null;
       const relatedTarget = (event as React.FocusEvent).relatedTarget;
-      if (
-        event.currentTarget.nodeName === "INPUT" &&
-        relatedTarget?.nodeName === "LI"
-      ) {
+      if (event.currentTarget.nodeName === "INPUT" && relatedTarget?.nodeName === "LI") {
         li = relatedTarget;
       }
       if (event.currentTarget.nodeName === "LI") {
@@ -568,9 +508,7 @@ function TagsComboboxContent<
       }
 
       if ((reason === "blur" || reason === "selectOption") && li) {
-        const { tagValue, tagVocabulary, tagUri, tagVersion } = (
-          li as HTMLLIElement
-        ).dataset;
+        const { tagValue, tagVocabulary, tagUri, tagVersion } = (li as HTMLLIElement).dataset;
         if (enforceOntologies) {
           if (tagVocabulary === "") throw new Error("Missing tag's vocabulary");
           if (tagUri === "") throw new Error("Missing tag's vocabulary URI");
@@ -584,18 +522,9 @@ function TagsComboboxContent<
         } else {
           onSelection({
             value: tagValue as string,
-            vocabulary:
-              tagVocabulary === ""
-                ? Optional.empty()
-                : Optional.present(tagVocabulary as string),
-            uri:
-              tagUri === ""
-                ? Optional.empty()
-                : Optional.present(tagUri as string),
-            version:
-              tagVersion === ""
-                ? Optional.empty()
-                : Optional.present(tagVersion as string),
+            vocabulary: tagVocabulary === "" ? Optional.empty() : Optional.present(tagVocabulary as string),
+            uri: tagUri === "" ? Optional.empty() : Optional.present(tagUri as string),
+            version: tagVersion === "" ? Optional.empty() : Optional.present(tagVersion as string),
           });
         }
         onClose();
@@ -629,13 +558,8 @@ function TagsComboboxContent<
     listRef.current?.resetAfterIndex(0);
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
-    null,
-  );
-  function debounce<FuncReturn>(
-    func: () => FuncReturn,
-    timeout: number = 1000,
-  ): () => void {
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 1000): () => void {
     return () => {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout);
@@ -839,12 +763,7 @@ function TagsComboboxContent<
                    */}
                   <Grow in={isNextPageLoading} timeout={300}>
                     <div>
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        spin
-                        size="sm"
-                        style={{ animationDuration: "1.5s" }}
-                      />
+                      <FontAwesomeIcon icon={faSpinner} spin size="sm" style={{ animationDuration: "1.5s" }} />
                     </div>
                   </Grow>
                 </InputAdornment>
@@ -885,10 +804,8 @@ function TagsComboboxContent<
       )}
       {!error && groupedOptions.length === 0 && filter !== "" && (
         <Alert severity="info">
-          <AlertTitle>
-            No matching tag suggestions{" "}
-            {enforceOntologies ? "from ontologies" : ""}.
-          </AlertTitle>
+          <AlertTitle>No matching tag suggestions {enforceOntologies ? "from ontologies" : ""}.</AlertTitle>
+          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
           {enforceOntologies ? <></> : <>To use a new tag, press Enter.</>}
         </Alert>
       )}
@@ -938,9 +855,7 @@ export default function TagsCombobox<
       },
 >(props: TagsComboboxArgs<Toggle>): React.ReactNode {
   const { anchorEl, onClose } = props;
-  const reduceMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <Popover
       onClose={onClose}

@@ -1,34 +1,30 @@
-import React, { useEffect, useState } from "react";
+import Alert from "@mui/material/Alert";
+import type { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormLabel from "@mui/material/FormLabel";
+import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import Grid from "@mui/material/Grid";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
 import Switch from "@mui/material/Switch";
-import Collapse from "@mui/material/Collapse";
+import { observable, runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useState } from "react";
+import axios from "@/common/axios";
+import type { DEFAULT_STATE } from "@/Export/constants";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
+import { mapNullable } from "../util/Util";
+import type { Validator } from "../util/Validator";
+import type { DMPUserInternalId, Person, Repo, RepoDetails } from "./repositories/common";
+import DataverseRepo from "./repositories/DataverseRepo";
+import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import DryadRepo from "./repositories/DryadRepo";
 import FigshareRepo from "./repositories/FigshareRepo";
-import DataverseRepo from "./repositories/DataverseRepo";
+import type { Tag } from "./repositories/Tags";
 import ZenodoRepo from "./repositories/ZenodoRepo";
-import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
-import Alert from "@mui/material/Alert";
-import { type Validator } from "../util/Validator";
-import {
-  type Repo,
-  type Person,
-  type DMPUserInternalId,
-  type RepoDetails,
-} from "./repositories/common";
-import { runInAction, observable } from "mobx";
-import { mapNullable } from "../util/Util";
-import { observer } from "mobx-react-lite";
-import axios from "@/common/axios";
-import Divider from "@mui/material/Divider";
-import { type Tag } from "./repositories/Tags";
-import { AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
-import { DEFAULT_STATE } from "@/Export/constants";
 
 const STANDARD_VALIDATIONS = {
   description: false,
@@ -59,9 +55,7 @@ const DmpSelector = observer(
     repo,
   }: {
     state: { selectedPlans: Array<DMPUserInternalId>; linkDMP: boolean };
-    handleSwitch: (
-      foo: "linkDMP",
-    ) => (event: { target: { checked: boolean } }) => void;
+    handleSwitch: (foo: "linkDMP") => (event: { target: { checked: boolean } }) => void;
     repo: Repo;
   }) => {
     const addSelectedPlan = (id: DMPUserInternalId) => {
@@ -74,9 +68,7 @@ const DmpSelector = observer(
 
     const removeSelectedPlan = (id: DMPUserInternalId) => {
       runInAction(() => {
-        state.selectedPlans = state.selectedPlans.filter(
-          (planId) => planId !== id,
-        );
+        state.selectedPlans = state.selectedPlans.filter((planId) => planId !== id);
       });
     };
 
@@ -100,20 +92,15 @@ const DmpSelector = observer(
           </Grid>
           <Grid size={12}>
             <Collapse in={state.linkDMP} component="div" collapsedSize={0}>
-              <>
-                <DMPTableSmall
-                  plans={dmps}
-                  selectedPlans={state.selectedPlans}
-                  addSelectedPlan={addSelectedPlan}
-                  removeSelectedPlan={removeSelectedPlan}
-                />
-                {repo.repoName === "app.zenodo" &&
-                  state.selectedPlans.length > 1 && (
-                    <Alert severity="error">
-                      Only one DMP can be associated with an export to Zenodo.
-                    </Alert>
-                  )}
-              </>
+              <DMPTableSmall
+                plans={dmps}
+                selectedPlans={state.selectedPlans}
+                addSelectedPlan={addSelectedPlan}
+                removeSelectedPlan={removeSelectedPlan}
+              />
+              {repo.repoName === "app.zenodo" && state.selectedPlans.length > 1 && (
+                <Alert severity="error">Only one DMP can be associated with an export to Zenodo.</Alert>
+              )}
             </Collapse>
           </Grid>
         </Grid>
@@ -188,17 +175,14 @@ function ExportRepo({
       if (state.contacts.length) validations.contact = true;
 
       runInAction(() => {
-        state.inputValidations = validations as
-          | typeof STANDARD_VALIDATIONS
-          | typeof DRYAD_VALIDATIONS;
+        state.inputValidations = validations as typeof STANDARD_VALIDATIONS | typeof DRYAD_VALIDATIONS;
         state.submitAttempt = true;
       });
 
       return Promise.resolve(
-        [
-          ...Object.values(validations),
-          !(repo.repoName === "app.zenodo" && state.selectedPlans.length > 1),
-        ].every((b) => b),
+        [...Object.values(validations), !(repo.repoName === "app.zenodo" && state.selectedPlans.length > 1)].every(
+          (b) => b,
+        ),
       );
     });
   }, []);
@@ -216,8 +200,7 @@ function ExportRepo({
         title: state.title,
         description: state.description,
         subject: state.subject,
-        licenseName:
-          repo.license.licenses[state.license].licenseDefinition.name,
+        licenseName: repo.license.licenses[state.license].licenseDefinition.name,
         licenseUrl: repo.license.licenses[state.license].licenseDefinition.url,
         authors: state.authors,
         contacts: state.contacts,
@@ -243,9 +226,7 @@ function ExportRepo({
     updateRemoteConfig();
   };
 
-  const handleMetadataLanguageChange = (event: {
-    target: { name: string; value: string };
-  }) => {
+  const handleMetadataLanguageChange = (event: { target: { name: string; value: string } }) => {
     runInAction(() => {
       state.otherProperties = { metadataLanguage: event.target.value };
       state.metadataLanguage = event.target.value;
@@ -254,9 +235,7 @@ function ExportRepo({
   };
 
   const handleSwitch =
-    <Key extends keyof typeof state>(
-      name: Key,
-    ): ((event: { target: { checked: boolean } }) => void) =>
+    <Key extends keyof typeof state>(name: Key): ((event: { target: { checked: boolean } }) => void) =>
     (event) => {
       runInAction(() => {
         // @ts-expect-error the type of state[name] might not be a boolean
@@ -302,7 +281,7 @@ function ExportRepo({
   };
 
   const handleFetchCrossrefFunder = (
-    event: React.SyntheticEvent<Element, Event>,
+    _event: React.SyntheticEvent<Element, Event>,
     searchTerm: string,
     reason: AutocompleteInputChangeReason,
   ) => {
@@ -314,16 +293,11 @@ function ExportRepo({
   const repo: Repo = repoList[state.repoChoice];
 
   return (
-    <Grid
-      container
-      sx={{ flexDirection: "column", width: "100%" }}
-      spacing={1}
-    >
+    <Grid container sx={{ flexDirection: "column", width: "100%" }} spacing={1}>
       <Grid size={12}>
         <FormControl component="fieldset">
           <FormLabel component="legend">
-            Please choose one of your configured repositories to submit your
-            export to:
+            Please choose one of your configured repositories to submit your export to:
           </FormLabel>
           <RadioGroup
             aria-label="Repository choice"
@@ -360,11 +334,7 @@ function ExportRepo({
       <Grid>
         {repo.repoName === "app.dryad" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
             <DryadRepo
               repo={repo}
               handleChange={handleChange}
@@ -372,9 +342,7 @@ function ExportRepo({
               handleCrossrefFunderChange={handleCrossrefFunderChange}
               handleFetchCrossrefFunder={handleFetchCrossrefFunder}
               crossrefFunders={state.crossrefFunders}
-              inputValidations={
-                state.inputValidations as typeof DRYAD_VALIDATIONS
-              }
+              inputValidations={state.inputValidations as typeof DRYAD_VALIDATIONS}
               submitAttempt={state.submitAttempt}
               contacts={state.contacts}
               authors={state.authors}
@@ -383,11 +351,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.dataverse" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
             <DataverseRepo
               repo={repo}
               handleChange={handleChange}
@@ -415,11 +379,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.figshare" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
             <FigshareRepo
               repo={repo}
               handleChange={handleChange}
@@ -438,11 +398,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.zenodo" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
             <ZenodoRepo
               handleChange={handleChange}
               updatePeople={updatePeople}

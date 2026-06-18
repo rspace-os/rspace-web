@@ -1,31 +1,27 @@
-
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import ExportDialog, { type ExportType } from "../ExportDialog";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
-import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
-import { storesContext } from "../../../../stores/stores-context";
-
+import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../stores/stores-context";
+import materialTheme from "../../../../theme";
+import ExportDialog, { type ExportType } from "../ExportDialog";
+
 // break import cycles
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("Export Tests", () => {
   let openDialog = true; // if false, then dialog is null
   const setOpenDialog = (bool: boolean) => {
     openDialog = bool;
-
   };
   const mockSample = makeMockSample();
 
@@ -48,7 +44,6 @@ describe("Export Tests", () => {
         />
       </ThemeProvider>
     );
-
   };
   describe("ExportDialog with no selected results (user data)", () => {
     test("renders, has radio options for exportMode and for containers (plus help text)", () => {
@@ -61,8 +56,7 @@ describe("Export Tests", () => {
           })}
         >
           <Dialog exportType="userData" selectedResults={[]} />
-        </storesContext.Provider>
-
+        </storesContext.Provider>,
       );
 
       expect(screen.getAllByRole("radio")).toHaveLength(6); // containers options rendered when no selected results
@@ -80,7 +74,6 @@ describe("Export Tests", () => {
       const defaultContainersHint = "Containers only, without their content.";
       expect(screen.getByText(defaultContainersHint)).toBeInTheDocument();
     });
-
   });
   describe("ExportDialog with selected results", () => {
     test("renders, has radio options (and help text) for samples", () => {
@@ -93,8 +86,7 @@ describe("Export Tests", () => {
           })}
         >
           <Dialog exportType="contextMenu" selectedResults={[mockSample]} />
-        </storesContext.Provider>
-
+        </storesContext.Provider>,
       );
       expect(screen.getAllByRole("radio")).toHaveLength(6);
       const includeOption = screen.getByLabelText("Include Subsamples");
@@ -105,10 +97,8 @@ describe("Export Tests", () => {
 
       expect(excludeOption).not.toBeChecked();
       /* assert help text for default option */
-      const defaultSamplesHint =
-        "All data, including custom and template fields.";
+      const defaultSamplesHint = "All data, including custom and template fields.";
       expect(screen.getByText(defaultSamplesHint)).toBeInTheDocument();
-
     });
     test("renders, has radio options for exportMode, samples and containers", () => {
       render(
@@ -119,14 +109,10 @@ describe("Export Tests", () => {
             },
           })}
         >
-          <Dialog
-            exportType="contextMenu"
-            selectedResults={[mockSample, mockContainer]}
-          />
-        </storesContext.Provider>
+          <Dialog exportType="contextMenu" selectedResults={[mockSample, mockContainer]} />
+        </storesContext.Provider>,
       );
       expect(screen.getAllByRole("radio")).toHaveLength(8);
     });
   });
 });
-

@@ -19,9 +19,7 @@ export const GroupInfoSchema = v.object({
   sharedFolderId: v.number(),
   sharedSnippetFolderId: v.number(),
   members: v.array(UserGroupInfoSchema),
-  raid: v.nullable(
-    RaidReferenceDTOSchema,
-  ),
+  raid: v.nullable(RaidReferenceDTOSchema),
 });
 
 export type GroupInfo = v.InferOutput<typeof GroupInfoSchema>;

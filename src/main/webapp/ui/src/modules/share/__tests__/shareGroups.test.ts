@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getCommonGroupsInShares } from "../services/shareGroups";
+import { getGroupById } from "@/modules/groups/queries";
 import type { GroupInfo } from "@/modules/groups/schema";
+import { getShareListing } from "@/modules/share/queries";
 import type { ShareListingParams } from "../queries";
 import type { ShareSearchResponse } from "../schema";
-import { getGroupById } from "@/modules/groups/queries";
-import { getShareListing } from "@/modules/share/queries";
+import { getCommonGroupsInShares } from "../services/shareGroups";
 
 vi.mock("@/modules/groups/queries", () => ({
   getGroupById: vi.fn(),
@@ -146,9 +146,7 @@ describe("getCommonGroupsInShares", () => {
     ];
     mockedGetShareListing.mockResolvedValue(makeShareResponse(shares));
     const groupA = makeGroup(11);
-    mockedGetGroupById
-      .mockResolvedValueOnce(groupA)
-      .mockResolvedValueOnce(null);
+    mockedGetGroupById.mockResolvedValueOnce(groupA).mockResolvedValueOnce(null);
 
     const result = await getCommonGroupsInShares(params, { token });
 
@@ -183,9 +181,7 @@ describe("getCommonGroupsInShares", () => {
     ];
     const params: ShareListingParams = { sharedItemIds: ["10", "20"] };
 
-    mockedGetShareListing.mockResolvedValue(
-      makeShareResponse(shares, folderShares),
-    );
+    mockedGetShareListing.mockResolvedValue(makeShareResponse(shares, folderShares));
     const group = makeGroup(5);
     mockedGetGroupById.mockResolvedValue(group);
 
@@ -217,9 +213,7 @@ describe("getCommonGroupsInShares", () => {
     ];
     const params: ShareListingParams = { sharedItemIds: ["10", "20"] };
 
-    mockedGetShareListing.mockResolvedValue(
-      makeShareResponse(shares, folderShares),
-    );
+    mockedGetShareListing.mockResolvedValue(makeShareResponse(shares, folderShares));
     const group = makeGroup(15);
     mockedGetGroupById.mockResolvedValue(group);
 

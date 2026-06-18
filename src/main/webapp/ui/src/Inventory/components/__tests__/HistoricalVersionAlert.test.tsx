@@ -1,14 +1,14 @@
 /*
  * @vitest-environment jsdom
  */
-import React from "react";
+
+import { screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "@/__tests__/customQueries";
-import { screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import HistoricalVersionAlert from "../HistoricalVersionAlert";
-import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
+import HistoricalVersionAlert from "../HistoricalVersionAlert";
 
 vi.mock("../../../common/InvApiService", () => ({
   default: {},
@@ -61,9 +61,7 @@ describe("HistoricalVersionAlert", () => {
     const link = screen.getByRole("link", { name: /view the latest version/i });
     expect(link).toHaveAttribute("href", "/inventory/subsample/1");
     // the trailing full stop that orphaned onto its own line is gone (PR #831 review)
-    expect(screen.getByRole("alert")).not.toHaveTextContent(
-      /View the latest version\s*\./,
-    );
+    expect(screen.getByRole("alert")).not.toHaveTextContent(/View the latest version\s*\./);
   });
 
   test("makes only the 'View the latest version' words an obvious underlined link", () => {
@@ -107,9 +105,7 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    expect(
-      screen.queryByText(/contents are not part of/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/contents are not part of/i)).not.toBeInTheDocument();
   });
 
   test("the alert is accessible", async () => {

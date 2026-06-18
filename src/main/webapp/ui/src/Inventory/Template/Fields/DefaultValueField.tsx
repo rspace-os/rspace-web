@@ -1,27 +1,24 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import FieldModel from "../../../stores/models/FieldModel";
-import { hasOptions } from "../../../stores/models/FieldTypes";
-import { match } from "../../../util/Util";
-import * as ArrayUtils from "../../../util/ArrayUtils";
-import CustomField from "../../components/Inputs/CustomField";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
-import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import InputWrapper from "../../../components/Inputs/InputWrapper";
+import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
+import type { Option } from "../../../stores/definitions/Field";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
-import { type Option } from "../../../stores/definitions/Field";
-import { type GalleryFile } from "../../../eln/gallery/useGalleryListing";
+import type FieldModel from "../../../stores/models/FieldModel";
+import { hasOptions } from "../../../stores/models/FieldTypes";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import { match } from "../../../util/Util";
+import CustomField from "../../components/Inputs/CustomField";
 
 type DefaultValueFieldArgs = {
   field: FieldModel;
   editing: boolean;
 };
 
-function DefaultValueField({
-  field,
-  editing,
-}: DefaultValueFieldArgs): React.ReactNode {
+function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.ReactNode {
   const _hasOptions = hasOptions(field.fieldType);
   const isAttachment = field.type === "attachment";
 
@@ -48,8 +45,7 @@ function DefaultValueField({
    * Have to use a variable here to make the suppression work. No idea why; may
    * well be a bug in Flow.
    */
-  const fieldType = (field.type.charAt(0).toUpperCase() +
-    field.type.slice(1)) as
+  const fieldType = (field.type.charAt(0).toUpperCase() + field.type.slice(1)) as
     | "Attachment"
     | "Choice"
     | "Date"
@@ -63,10 +59,7 @@ function DefaultValueField({
     | "Uri";
 
   const fieldValue = match<void, () => unknown>([
-    [
-      () => field.type === "radio",
-      () => ArrayUtils.head(field.selectedOptions ?? []).orElse(null),
-    ],
+    [() => field.type === "radio", () => ArrayUtils.head(field.selectedOptions ?? []).orElse(null)],
     [() => field.type === "choice", () => field.selectedOptions ?? []],
     [() => true, () => field.content],
   ])()();
@@ -112,31 +105,20 @@ function DefaultValueField({
   };
 
   // Common onChange handler
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { value: unknown };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { value: unknown } }) => {
     field.setAttributesDirty(
       match<void, object>([
-        [
-          () => field.type === "radio",
-          { selectedOptions: value ? [value] : [] },
-        ],
+        [() => field.type === "radio", { selectedOptions: value ? [value] : [] }],
         [() => field.type === "choice", { selectedOptions: value }],
         [
           () => field.type === "date",
           {
             content:
-              typeof value === "string" && value
-                ? truncateIsoTimestamp(value, "date").orElse(
-                  "NaN-NaN-NaN"
-                )
-                : null,
+              typeof value === "string" && value ? truncateIsoTimestamp(value, "date").orElse("NaN-NaN-NaN") : null,
           },
         ],
         [() => true, { content: value }],
-      ])()
+      ])(),
     );
   };
 
@@ -170,57 +152,45 @@ function DefaultValueField({
   // Add attachment-specific props
   if (field.type === "attachment") {
     props.attachment = field.attachment;
-    props.onAttachmentChange = (file: File | GalleryFile) =>
-      field.setAttachment(file);
+    props.onAttachmentChange = (file: File | GalleryFile) => field.setAttachment(file);
     props.disableFileUpload = true;
   }
 
-  const custom = React.createElement(
-    CustomField,
-    props as React.ComponentProps<typeof CustomField>
-  );
+  const custom = React.createElement(CustomField, props as React.ComponentProps<typeof CustomField>);
 
   return (
     <InputWrapper
-      label={
-        _hasOptions
-          ? "Values"
-          : isAttachment
-          ? "Default Description"
-          : "Default Value"
-      }
+      label={_hasOptions ? "Values" : isAttachment ? "Default Description" : "Default Value"}
       explanation={
         _hasOptions
           ? "The set of available options. Any selected values will be the default when creating samples."
           : null
       }
     >
-      <>
-        {custom}
-        {hasOptions(field.fieldType) && editing && (
-          <Box sx={{ display: "inline", mt: 1 }}>
-            <Button
-              color="primary"
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                field.setAttributesDirty({
-                  options: [
-                    ...field.options,
-                    {
-                      value: "",
-                      label: "",
-                      editing: true,
-                    },
-                  ],
-                });
-              }}
-            >
-              Add Value
-            </Button>
-          </Box>
-        )}
-      </>
+      {custom}
+      {hasOptions(field.fieldType) && editing && (
+        <Box sx={{ display: "inline", mt: 1 }}>
+          <Button
+            color="primary"
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              field.setAttributesDirty({
+                options: [
+                  ...field.options,
+                  {
+                    value: "",
+                    label: "",
+                    editing: true,
+                  },
+                ],
+              });
+            }}
+          >
+            Add Value
+          </Button>
+        </Box>
+      )}
     </InputWrapper>
   );
 }

@@ -1,16 +1,9 @@
-import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SidebarInfo from "../SidebarInfo";
 
 vi.mock("../ChemCard", () => ({
-  default: ({
-    item,
-    onClose,
-  }: {
-    item: { id: string };
-    onClose: (id?: string) => void;
-  }) => (
+  default: ({ item, onClose }: { item: { id: string }; onClose: (id?: string) => void }) => (
     <section aria-label={`Chemical ${item.id}`}>
       <span>{item.id}</span>
       <button onClick={() => onClose(item.id)} type="button">
@@ -75,9 +68,7 @@ describe("SidebarInfo accessibility", () => {
       chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
     });
 
-    expect(
-      await screen.findByRole("region", { name: "Chemical chem-1" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Chemical chem-1" })).toBeVisible();
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -92,14 +83,10 @@ describe("SidebarInfo accessibility", () => {
     render(<SidebarInfo iframe={iframe} />);
 
     act(() => {
-      document.dispatchEvent(
-        new CustomEvent("tinymce-chem-inserted", { detail: "chem-2" }),
-      );
+      document.dispatchEvent(new CustomEvent("tinymce-chem-inserted", { detail: "chem-2" }));
     });
 
-    expect(
-      await screen.findByRole("region", { name: "Chemical chem-2" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Chemical chem-2" })).toBeVisible();
   });
 
   it("removes cards when chemistry images are removed from the editor document", async () => {
@@ -112,18 +99,14 @@ describe("SidebarInfo accessibility", () => {
       chemicalImage.dispatchEvent(new Event("click", { bubbles: true }));
     });
 
-    expect(
-      await screen.findByRole("region", { name: "Chemical chem-3" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Chemical chem-3" })).toBeVisible();
 
     act(() => {
       chemicalImage.remove();
     });
 
     await waitFor(() => {
-      expect(
-        screen.queryByRole("region", { name: "Chemical chem-3" }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Chemical chem-3" })).not.toBeInTheDocument();
     });
   });
 });

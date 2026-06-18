@@ -1,5 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import React from "react";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { render, screen } from "@/__tests__/customQueries";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import ErrorBoundary from "./ErrorBoundary";
@@ -25,7 +24,7 @@ describe("ErrorBoundary", () => {
     render(
       <ErrorBoundary message="Something went wrong.">
         <ErrorComponent />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText("Something went wrong.")).toBeVisible();
   });

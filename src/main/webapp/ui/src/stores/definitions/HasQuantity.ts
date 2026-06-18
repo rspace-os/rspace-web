@@ -1,5 +1,5 @@
-import { type UnitCategory } from "../stores/UnitStore";
-import { AdjustableTableRowOptions } from "./Tables";
+import type { UnitCategory } from "../stores/UnitStore";
+import type { AdjustableTableRowOptions } from "./Tables";
 
 /**
  * This is used to mark implementations of the HasQuantity interface so that at

@@ -1,12 +1,12 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
-import { useClustermarketEndpoint } from "../useClustermarket";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useEffect, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
+import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useClustermarketEndpoint } from "../useClustermarket";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ClustermarketArgs = {
   integrationState: IntegrationStates["CLUSTERMARKET"];
@@ -37,15 +37,10 @@ type ClustermarketArgs = {
  * The process of disconnecing is via a standard API call made by
  * ../useClustermarket.
  */
-function Clustermarket({
-  integrationState,
-  update,
-}: ClustermarketArgs): React.ReactNode {
+function Clustermarket({ integrationState, update }: ClustermarketArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useClustermarketEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
   useEffect(() => {
     const f = () => {
@@ -54,7 +49,7 @@ function Clustermarket({
         mkAlert({
           variant: "success",
           message: "Successfully connected to Calira.",
-        })
+        }),
       );
     };
     window.addEventListener("CLUSTERMARKET_CONNECTED", f);
@@ -68,17 +63,16 @@ function Clustermarket({
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Calira"
         integrationState={integrationState}
         explanatoryText="Manage schedules of lab equipment, maintenance, and personnel through a web-based platform."
         image={ClustermarketIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText="Calira integration docs"
         website="calira.co"
         docLink="clustermarket"
@@ -87,14 +81,11 @@ function Clustermarket({
           <>
             <ol>
               <li>Register for a Calira account.</li>
-              <li>
-                Click on Connect to authorise RSpace to access your
-                Calira account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your Calira account.</li>
               <li>Enable the integration.</li>
               <li>
-                When editing a document, click on the Calira icon in the
-                text editor toolbar to access and insert equipment data.
+                When editing a document, click on the Calira icon in the text editor toolbar to access and insert
+                equipment data.
               </li>
             </ol>
             {connected ? (
@@ -112,12 +103,7 @@ function Clustermarket({
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/clustermarket/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/clustermarket/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

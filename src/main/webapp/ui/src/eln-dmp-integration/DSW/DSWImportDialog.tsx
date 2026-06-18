@@ -1,33 +1,30 @@
-import React, { useState, useEffect, useContext } from "react";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Box from "@mui/material/Box";
-import { observer } from "mobx-react-lite";
+import Link from "@mui/material/Link";
+import Portal from "@mui/material/Portal";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import type { GridRowId } from "@mui/x-data-grid";
+import DOMPurify from "dompurify";
+import { observer } from "mobx-react-lite";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
+import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/dsw";
+import docLinks from "../../assets/DocLinks";
+import AppBar from "../../components/AppBar";
+import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import Portal from "@mui/material/Portal";
-import createAccentedTheme from "../../accentedTheme";
-import { ThemeProvider } from "@mui/material/styles";
-import ValidatingSubmitButton, {
-  IsInvalid,
-  IsValid,
-} from "../../components/ValidatingSubmitButton";
-import Link from "@mui/material/Link";
-import AppBar from "../../components/AppBar";
-import docLinks from "../../assets/DocLinks";
-import Stack from "@mui/material/Stack";
-import { GridRowId } from "@mui/x-data-grid";
-import { DataGridColumn } from "../../util/table";
-import DOMPurify from "dompurify";
-import { ACCENT_COLOR } from "../../assets/branding/dsw";
-import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
-import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AnalyticsContext from "../../stores/contexts/Analytics";
+import { DataGridColumn } from "../../util/table";
 
 function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
@@ -80,8 +77,7 @@ function DSWImportDialogContent({
   const { trackEvent } = React.useContext(AnalyticsContext);
 
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
-  const [selectedPlan, setSelectedPlan] =
-    useState<DswProjectWithOrigin | null>();
+  const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
 
   const [fetching, setFetching] = useState(false);
 
@@ -90,7 +86,7 @@ function DSWImportDialogContent({
   const getDMPs = async () => {
     setFetching(true);
 
-    let allPlans: Array<DswProjectWithOrigin> = [];
+    const allPlans: Array<DswProjectWithOrigin> = [];
     try {
       const r = await axios.get<{
         success: true;
@@ -99,8 +95,9 @@ function DSWImportDialogContent({
       }>(`/apps/dsw/plans?serverAlias=${connection.DSW_ALIAS}`);
 
       if (r.data.success) {
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         Object.entries(r.data.data).map(([, project]) => {
-          let projectWithAlias: DswProjectWithOrigin = {
+          const projectWithAlias: DswProjectWithOrigin = {
             createdAt: project.createdAt,
             description: project.description,
             id: project.uuid,
@@ -119,10 +116,7 @@ function DSWImportDialogContent({
         setDMPs(allPlans);
       } else {
         setFetching(false);
-        let errorMsg =
-          r.data && r.data.error && r.data.error.errorMessages
-            ? r.data.error.errorMessages[0]
-            : null;
+        const errorMsg = r.data?.error?.errorMessages ? r.data.error.errorMessages[0] : null;
         addAlert(
           mkAlert({
             title: "Unable to load projects.",
@@ -173,10 +167,7 @@ function DSWImportDialogContent({
           .post<{
             success: true;
             error?: { errorMessages: string[] };
-          }>(
-            `/apps/dsw/importPlan?serverAlias=${connection.DSW_ALIAS}&planUuid=${selectedPlan.uuid}`,
-            {},
-          )
+          }>(`/apps/dsw/importPlan?serverAlias=${connection.DSW_ALIAS}&planUuid=${selectedPlan.uuid}`, {})
           .then((r) => {
             addAlert(
               mkAlert(
@@ -188,9 +179,7 @@ function DSWImportDialogContent({
                     }
                   : {
                       title: "Import failed.",
-                      message:
-                        r.data.error?.errorMessages[0] ||
-                        "Could not import DMP",
+                      message: r.data.error?.errorMessages[0] || "Could not import DMP",
                       variant: "error",
                     },
               ),
@@ -234,37 +223,24 @@ function DSWImportDialogContent({
         >
           <Box>
             <Typography variant="body2">
-              Importing a project from <strong>{connection.DSW_ALIAS}</strong>{" "}
-              will make it available to view and reference as a DMP within
-              RSpace.
+              Importing a project from <strong>{connection.DSW_ALIAS}</strong> will make it available to view and
+              reference as a DMP within RSpace.
             </Typography>
             <Typography variant="body2">
-              See{" "}
-              <Link href="https://guide.ds-wizard.org/en/latest/">
-			       https://guide.ds-wizard.org/en/latest
-			  </Link>{" "}
-              and our{" "}
-              <Link href={docLinks.dsw}>
-                DSW / FAIR Wizard integration docs
-              </Link>{" "}
-              for more.
+              See <Link href="https://guide.ds-wizard.org/en/latest/">https://guide.ds-wizard.org/en/latest</Link> and
+              our <Link href={docLinks.dsw}>DSW / FAIR Wizard integration docs</Link> for more.
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             <DataGridWithRadioSelection
               columns={[
-                DataGridColumn.newColumnWithFieldName<
-                  "name",
-                  DswProjectWithOrigin
-                >("name", {
+                DataGridColumn.newColumnWithFieldName<"name", DswProjectWithOrigin>("name", {
                   renderCell: (params: { row: DswProjectWithOrigin }) => {
                     const sanitized = DOMPurify.sanitize(params.row.name);
                     return (
                       <span
                         dangerouslySetInnerHTML={{
-                          __html: `${sanitized.substring(0, 200)} ${
-                            sanitized.length > 200 ? "..." : ""
-                          }`,
+                          __html: `${sanitized.substring(0, 200)} ${sanitized.length > 200 ? "..." : ""}`,
                         }}
                       ></span>
                     );
@@ -273,20 +249,13 @@ function DSWImportDialogContent({
                   flex: 1,
                   sortable: true,
                 }),
-                DataGridColumn.newColumnWithFieldName<
-                  "description",
-                  DswProjectWithOrigin
-                >("description", {
+                DataGridColumn.newColumnWithFieldName<"description", DswProjectWithOrigin>("description", {
                   renderCell: (params: { row: DswProjectWithOrigin }) => {
-                    const sanitized = DOMPurify.sanitize(
-                      params.row.description,
-                    );
+                    const sanitized = DOMPurify.sanitize(params.row.description);
                     return (
                       <span
                         dangerouslySetInnerHTML={{
-                          __html: `${sanitized.substring(0, 200)} ${
-                            sanitized.length > 200 ? "..." : ""
-                          }`,
+                          __html: `${sanitized.substring(0, 200)} ${sanitized.length > 200 ? "..." : ""}`,
                         }}
                       ></span>
                     );
@@ -295,10 +264,7 @@ function DSWImportDialogContent({
                   flex: 1,
                   sortable: true,
                 }),
-                DataGridColumn.newColumnWithValueMapper<
-                  "createdAt",
-                  DswProjectWithOrigin
-                >(
+                DataGridColumn.newColumnWithValueMapper<"createdAt", DswProjectWithOrigin>(
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
@@ -308,10 +274,7 @@ function DSWImportDialogContent({
                     sortable: true,
                   },
                 ),
-                DataGridColumn.newColumnWithValueMapper<
-                  "updatedAt",
-                  DswProjectWithOrigin
-                >(
+                DataGridColumn.newColumnWithValueMapper<"updatedAt", DswProjectWithOrigin>(
                   "updatedAt",
                   (updatedAt) => new Date(updatedAt).toLocaleString(),
                   {
@@ -367,9 +330,7 @@ function DSWImportDialogContent({
             onClick={() => {
               void handleImport();
             }}
-            validationResult={
-              !selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()
-            }
+            validationResult={!selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()}
             loading={importing}
           >
             Import
@@ -394,11 +355,7 @@ type DSWImportDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DSWImportDialog({
-  open,
-  setOpen,
-  connection,
-}: DSWImportDialogArgs): React.ReactNode {
+function DSWImportDialog({ open, setOpen, connection }: DSWImportDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*

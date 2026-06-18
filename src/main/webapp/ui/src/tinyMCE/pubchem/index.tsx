@@ -1,13 +1,13 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import createAccentedTheme from "../../accentedTheme";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { ACCENT_COLOR } from "../../assets/branding/pubchem";
-import ImportDialog from "./ImportDialog";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import type React from "react";
+import { createRoot } from "react-dom/client";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import createAccentedTheme from "../../accentedTheme";
+import { ACCENT_COLOR } from "../../assets/branding/pubchem";
+import ImportDialog from "./ImportDialog";
 
 // Define types for external interfaces
 type ButtonConfig = {
@@ -58,7 +58,7 @@ declare global {
 class PubchemPlugin {
   constructor(editor: Editor) {
     function* renderPubchem(
-      domContainer: HTMLElement
+      domContainer: HTMLElement,
     ): Generator<void, void, React.ComponentProps<typeof ImportDialog>> {
       const root = createRoot(domContainer);
       while (true) {
@@ -74,7 +74,7 @@ class PubchemPlugin {
                 </ErrorBoundary>
               </Analytics>
             </ThemeProvider>
-          </StyledEngineProvider>
+          </StyledEngineProvider>,
         );
       }
     }

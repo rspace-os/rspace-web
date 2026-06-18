@@ -1,36 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../theme";
-import ExportDialogRaid from "../ExportDialogRaid";
-import { DEFAULT_STATE } from "../constants";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
+import materialTheme from "../../theme";
+import { DEFAULT_STATE } from "../constants";
+import ExportDialogRaid from "../ExportDialogRaid";
 
 type CommonGroupsQueryArgs = Parameters<typeof useCommonGroupsShareListingQuery>;
 type CommonGroupsQueryResult = ReturnType<typeof useCommonGroupsShareListingQuery>;
 
-const mockedUseCommonGroupsShareListingQuery = vi.fn<
-  (...args: CommonGroupsQueryArgs) => CommonGroupsQueryResult
->();
+const mockedUseCommonGroupsShareListingQuery = vi.fn<(...args: CommonGroupsQueryArgs) => CommonGroupsQueryResult>();
 
-const makeQueryResult = (
-  overrides: Partial<CommonGroupsQueryResult> = {},
-): CommonGroupsQueryResult =>
-  (({
+const makeQueryResult = (overrides: Partial<CommonGroupsQueryResult> = {}): CommonGroupsQueryResult =>
+  ({
     data: undefined,
     error: null,
-    ...overrides
-  }) as CommonGroupsQueryResult);
+    ...overrides,
+  }) as CommonGroupsQueryResult;
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),
 }));
 
 vi.mock("@/modules/share/queries", () => ({
-  useCommonGroupsShareListingQuery: (...args: CommonGroupsQueryArgs) =>
-    mockedUseCommonGroupsShareListingQuery(...args),
+  useCommonGroupsShareListingQuery: (...args: CommonGroupsQueryArgs) => mockedUseCommonGroupsShareListingQuery(...args),
 }));
 
 const makeState = (overrides: Partial<typeof DEFAULT_STATE> = {}) => ({
@@ -45,23 +40,14 @@ const makeState = (overrides: Partial<typeof DEFAULT_STATE> = {}) => ({
   ...overrides,
 });
 
-const renderExportDialogRaid = (
-  stateOverrides: Partial<typeof DEFAULT_STATE> = {},
-  updateRepoConfig = vi.fn(),
-) =>
+const renderExportDialogRaid = (stateOverrides: Partial<typeof DEFAULT_STATE> = {}, updateRepoConfig = vi.fn()) =>
   render(
     <ThemeProvider theme={materialTheme}>
-      <ExportDialogRaid
-        state={makeState(stateOverrides)}
-        updateRepoConfig={updateRepoConfig}
-      />
+      <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
     </ThemeProvider>,
   );
 
-const makeGroup = (
-  id: number,
-  overrides: Partial<GroupInfo> = {},
-): GroupInfo => ({
+const makeGroup = (id: number, overrides: Partial<GroupInfo> = {}): GroupInfo => ({
   id,
   globalId: `GR${id}`,
   name: `Group ${id}`,
@@ -77,8 +63,7 @@ const makeGroup = (
   ...overrides,
 });
 
-const makeProjectGroup = (id: number): GroupInfo =>
-  makeGroup(id, { name: `Project Group ${id}` });
+const makeProjectGroup = (id: number): GroupInfo => makeGroup(id, { name: `Project Group ${id}` });
 
 describe("ExportDialogRaid", () => {
   beforeEach(() => {
@@ -86,9 +71,7 @@ describe("ExportDialogRaid", () => {
   });
 
   it("renders a spinner when data has not loaded yet", () => {
-    mockedUseCommonGroupsShareListingQuery.mockReturnValue(
-      makeQueryResult({ data: undefined }),
-    );
+    mockedUseCommonGroupsShareListingQuery.mockReturnValue(makeQueryResult({ data: undefined }));
 
     renderExportDialogRaid();
 
@@ -104,16 +87,8 @@ describe("ExportDialogRaid", () => {
     renderExportDialogRaid();
 
     expect(screen.getByText("Error")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /An error occurred while determining RAiD export eligibility: Boom/,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Please press Next to continue without reporting to RAiD\./,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/An error occurred while determining RAiD export eligibility: Boom/)).toBeInTheDocument();
+    expect(screen.getByText(/Please press Next to continue without reporting to RAiD\./)).toBeInTheDocument();
   });
 
   it("renders an ineligible message when groups are missing", () => {
@@ -126,29 +101,21 @@ describe("ExportDialogRaid", () => {
     renderExportDialogRaid();
 
     expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(
-      screen.getByText(/unable to determine whether you have the rights/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/unable to determine whether you have the rights/i)).toBeInTheDocument();
     expect(screen.getByText(/101/)).toBeInTheDocument();
   });
 
   it("renders an ineligible message when no project groups are available", () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
-        data: new Map<number, GroupInfo | null>([
-          [2, makeGroup(2, { name: "Lab Group 2", type: "LAB_GROUP" })],
-        ]),
+        data: new Map<number, GroupInfo | null>([[2, makeGroup(2, { name: "Lab Group 2", type: "LAB_GROUP" })]]),
       }),
     );
 
     renderExportDialogRaid();
 
     expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /No project groups are associated with all shared items selected/i,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/No project groups are associated with all shared items selected/i)).toBeInTheDocument();
   });
 
   it("renders an ineligible message when no RAiD association is found", () => {
@@ -213,8 +180,6 @@ describe("ExportDialogRaid", () => {
     const toggle = screen.getByRole("checkbox", { name: /Report to RAiD/i });
     await user.click(toggle);
 
-    expect(updateRepoConfig).toHaveBeenCalledWith(
-      expect.objectContaining({ exportToRaid: true }),
-    );
+    expect(updateRepoConfig).toHaveBeenCalledWith(expect.objectContaining({ exportToRaid: true }));
   });
 });

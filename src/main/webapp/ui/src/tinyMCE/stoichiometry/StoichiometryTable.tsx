@@ -1,9 +1,8 @@
-import React from "react";
 import { useStoichiometryTableController } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
-import StoichiometryTableGrid from "./table/StoichiometryTableGrid";
-import StaticStoichiometryTable from "./table/StaticStoichiometryTable";
-import type { StoichiometryTableProps } from "./table/types";
 import StoichiometryTableLoadingDialog from "@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog";
+import StaticStoichiometryTable from "./table/StaticStoichiometryTable";
+import StoichiometryTableGrid from "./table/StoichiometryTableGrid";
+import type { StoichiometryTableProps } from "./table/types";
 
 const StoichiometryTable = ({
   stoichiometryId,
@@ -25,9 +24,7 @@ const StoichiometryTable = ({
         allMolecules={tableController.allMolecules}
         hasChanges={hasChanges}
         activeChemId={activeChemId}
-        linkedInventoryQuantityInfoByGlobalId={
-          tableController.linkedInventoryQuantityInfoByGlobalId
-        }
+        linkedInventoryQuantityInfoByGlobalId={tableController.linkedInventoryQuantityInfoByGlobalId}
         onAddReagent={tableController.addReagent}
         onUpdateInventoryStock={tableController.updateInventoryStock}
         onDeleteReagent={tableController.deleteReagent}

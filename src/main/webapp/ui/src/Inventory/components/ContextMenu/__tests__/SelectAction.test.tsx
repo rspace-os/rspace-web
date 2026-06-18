@@ -1,15 +1,11 @@
 import "@/stores/stores/RootStore";
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
+import { ThemeProvider } from "@mui/material/styles";
 import { render } from "@testing-library/react";
 import fc from "fast-check";
-import SelectAction from "../SelectAction";
-import {
-  subSampleAttrsArbitrary,
-  makeMockSubSample,
-} from "../../../../stores/models/__tests__/SubSampleModel/mocking";
-import { ThemeProvider } from "@mui/material/styles";
+import { describe, expect, test, vi } from "vitest";
+import { makeMockSubSample, subSampleAttrsArbitrary } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import materialTheme from "../../../../theme";
+import SelectAction from "../SelectAction";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 describe("SelectAction", () => {
@@ -30,17 +26,12 @@ describe("SelectAction", () => {
           (selectedItems) => {
             const { container } = render(
               <ThemeProvider theme={materialTheme}>
-                <SelectAction
-                  as="button"
-                  disabled=""
-                  selectedResults={selectedItems}
-                  onSelectOptions={[]}
-                />
-              </ThemeProvider>
+                <SelectAction as="button" disabled="" selectedResults={selectedItems} onSelectOptions={[]} />
+              </ThemeProvider>,
             );
             expect(container).toHaveTextContent(String(selectedItems.length));
-          }
-        )
+          },
+        ),
       );
     });
   });

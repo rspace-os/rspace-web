@@ -1,6 +1,6 @@
 import type { ExportSelection } from "@/Export/common";
 import type { ArchiveType } from "@/Export/FormatChoice";
-import { DEFAULT_REPO_CONFIG, Repo } from "@/Export/repositories/common";
+import { DEFAULT_REPO_CONFIG, type Repo } from "@/Export/repositories/common";
 
 export type ExportConfig = {
   archiveType: string;

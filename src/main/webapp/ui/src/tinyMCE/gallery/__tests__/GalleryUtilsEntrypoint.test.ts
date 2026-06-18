@@ -12,9 +12,6 @@ describe("GalleryUtilsEntrypoint", () => {
     await import("@/tinyMCE/gallery/GalleryUtilsEntrypoint");
 
     expect(window.addFromGallery).toBe(utilsModule.addFromGallery);
-    expect(window.getFieldIdFromTextFieldId).toBe(
-      utilsModule.getFieldIdFromTextFieldId,
-    );
+    expect(window.getFieldIdFromTextFieldId).toBe(utilsModule.getFieldIdFromTextFieldId);
   });
 });
-

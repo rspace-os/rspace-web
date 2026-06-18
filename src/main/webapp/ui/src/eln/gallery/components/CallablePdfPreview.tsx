@@ -1,18 +1,18 @@
 import React from "react";
-import { take, incrementForever } from "../../../util/iterators";
 import { Document, Page, pdfjs } from "react-pdf";
+import { incrementForever, take } from "../../../util/iterators";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import ResetZoomIcon from "./ResetZoomIcon";
 
 /**
@@ -26,10 +26,7 @@ import ResetZoomIcon from "./ResetZoomIcon";
  * This snippet is a necessary step in initialising the PDF preview
  * functionality. Taken from the example code for react-pdf.
  */
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
 const PdfPreviewContext = React.createContext((_link: string) => {});
 
@@ -56,14 +53,8 @@ export function usePdfPreview(): {
  *    const { openPdfPreview } = usePdfPreview();
  *    openPdfPreview("http://example.com/document.pdf");
  */
-export function CallablePdfPreview({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
-  const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(
-    null,
-  );
+export function CallablePdfPreview({ children }: { children: React.ReactNode }): React.ReactNode {
+  const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
   const [scale, setScale] = React.useState(1);
 
@@ -77,19 +68,13 @@ export function CallablePdfPreview({
     setScale(1);
   }, [pdfPreviewOpen]);
 
-  function onDocumentLoadSuccess({
-    numPages: nextNumPages,
-  }: {
-    numPages: number;
-  }): void {
+  function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
     setNumPages(nextNumPages);
   }
 
   return (
     <>
-      <PdfPreviewContext.Provider value={setPdfPreviewOpen}>
-        {children}
-      </PdfPreviewContext.Provider>
+      <PdfPreviewContext.Provider value={setPdfPreviewOpen}>{children}</PdfPreviewContext.Provider>
       {pdfPreviewOpen && (
         <Dialog
           open={true}
@@ -106,10 +91,7 @@ export function CallablePdfPreview({
           aria-label="PDF Preview"
         >
           <DialogContent sx={{ overflowY: "auto" }}>
-            <Document
-              file={pdfPreviewOpen}
-              onLoadSuccess={onDocumentLoadSuccess}
-            >
+            <Document file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>
               {[...take(incrementForever(), numPages)].map((index) => (
                 <Box key={`page_${index + 1}`}>
                   <Page pageNumber={index + 1} width={550} scale={scale} />

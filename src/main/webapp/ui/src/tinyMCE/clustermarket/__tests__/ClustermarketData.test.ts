@@ -1,15 +1,15 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
 import {
-  makeBookingAndEquipmentData,
-  makeEquipmentWithBookingData,
-  getMostRecentCompletedBooking,
   type BookingAndEquipmentDetails,
   type EquipmentWithBookingDetails,
+  getMostRecentCompletedBooking,
+  makeBookingAndEquipmentData,
+  makeEquipmentWithBookingData,
 } from "../ClustermarketData";
+import BookingsList from "./allbookings.json";
 import BookingDetails from "./bookingsDetails.json";
 import EquipmentDetails from "./equipmentDetails.json";
 
-import BookingsList from "./allbookings.json";
 const bookingResponses = [
   BookingDetails.COMPLETED_1,
   BookingDetails.CURRENT_2,
@@ -17,11 +17,7 @@ const bookingResponses = [
   BookingDetails.COMPLETED_4,
   BookingDetails.CURRENT_5,
 ];
-const equipmentResponses = [
-  EquipmentDetails["1"],
-  EquipmentDetails["2"],
-  EquipmentDetails["3"],
-];
+const equipmentResponses = [EquipmentDetails["1"], EquipmentDetails["2"], EquipmentDetails["3"]];
 const row1: BookingAndEquipmentDetails = {
   bookingID: "COMPLETED_1",
   start_time: "2022-01-28 07:30:00",
@@ -81,7 +77,6 @@ const row4: BookingAndEquipmentDetails = {
   model: "Mass Spec Model",
   equipmentID: 3,
   labID: 11111,
-
 };
 const equipmentRow1: EquipmentWithBookingDetails = {
   equipmentID: "1",
@@ -94,7 +89,6 @@ const equipmentRow1: EquipmentWithBookingDetails = {
   start_time: "2022-01-28 07:30:00",
   requesterName: "DBD",
   labID: 11111,
-
 };
 const equipmentRow2: EquipmentWithBookingDetails = {
   equipmentID: "2",
@@ -107,7 +101,6 @@ const equipmentRow2: EquipmentWithBookingDetails = {
   start_time: "",
   requesterName: "",
   labID: 11111,
-
 };
 const equipmentRow3: EquipmentWithBookingDetails = {
   equipmentID: "3",
@@ -132,53 +125,31 @@ const equipmentRow3_maintenance: EquipmentWithBookingDetails = {
   start_time: "",
   requesterName: "",
   labID: 11111,
-
 };
 describe("Bookings view: joins the data from an array of booking details responses and an array of equipment details responses into a booking details view", () => {
   test("return an array of structured data", () => {
-    const joinedData = makeBookingAndEquipmentData(
-      BookingsList.data,
-      bookingResponses,
-      equipmentResponses,
-      false
-    );
+    const joinedData = makeBookingAndEquipmentData(BookingsList.data, bookingResponses, equipmentResponses, false);
     expect(joinedData[0]).toStrictEqual(row1);
     expect(joinedData[1]).toStrictEqual(row2);
     expect(joinedData[2]).toStrictEqual(row3);
     expect(joinedData[3]).toStrictEqual(row4);
   });
   test("filters maintenance bookings", () => {
-    const joinedData = makeBookingAndEquipmentData(
-      BookingsList.data,
-      bookingResponses,
-      equipmentResponses,
-      true
-    );
+    const joinedData = makeBookingAndEquipmentData(BookingsList.data, bookingResponses, equipmentResponses, true);
     expect(joinedData[0]).toStrictEqual(row1);
     expect(joinedData.length).toBe(1);
   });
-
 });
 describe("Equipment view: joins the data from an array of booking details responses and an array of equipment details responses into an equipment details view", () => {
   test("return an array of structured data", () => {
-    const joinedData = makeEquipmentWithBookingData(
-      BookingsList.data,
-      bookingResponses,
-      equipmentResponses,
-      false
-    );
+    const joinedData = makeEquipmentWithBookingData(BookingsList.data, bookingResponses, equipmentResponses, false);
     expect(joinedData[0]).toStrictEqual(equipmentRow1);
     expect(joinedData[1]).toStrictEqual(equipmentRow2);
     expect(joinedData[2]).toStrictEqual(equipmentRow3);
   });
 
   test("filters maintenance bookings", () => {
-    const joinedData = makeEquipmentWithBookingData(
-      BookingsList.data,
-      bookingResponses,
-      equipmentResponses,
-      true
-    );
+    const joinedData = makeEquipmentWithBookingData(BookingsList.data, bookingResponses, equipmentResponses, true);
     expect(joinedData[0]).toStrictEqual(equipmentRow1);
     expect(joinedData[1]).toStrictEqual(equipmentRow2);
     expect(joinedData[2]).toStrictEqual(equipmentRow3_maintenance);
@@ -187,20 +158,11 @@ describe("Equipment view: joins the data from an array of booking details respon
 });
 describe("Get most recent booking for equipment", () => {
   test("returns most recent booking when there is one", () => {
-    const booking = getMostRecentCompletedBooking(
-      bookingResponses,
-      BookingsList.data,
-      3
-    );
+    const booking = getMostRecentCompletedBooking(bookingResponses, BookingsList.data, 3);
     expect(booking).toStrictEqual(bookingResponses[3]);
   });
   test("returns null when no booking matches", () => {
-    const booking = getMostRecentCompletedBooking(
-      bookingResponses,
-      BookingsList.data,
-      13
-    );
+    const booking = getMostRecentCompletedBooking(bookingResponses, BookingsList.data, 13);
     expect(booking).toBeNull();
   });
 });
-

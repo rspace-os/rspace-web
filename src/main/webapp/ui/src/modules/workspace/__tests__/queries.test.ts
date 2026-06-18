@@ -77,9 +77,9 @@ describe("getWorkspaceRecordInformationAjax", () => {
       }),
     );
 
-    await expect(
-      getWorkspaceRecordInformationAjax({ recordId: 21 }),
-    ).rejects.toThrow("Could not load record information");
+    await expect(getWorkspaceRecordInformationAjax({ recordId: 21 })).rejects.toThrow(
+      "Could not load record information",
+    );
   });
 
   it("throws endpoint error details for non-OK responses", async () => {
@@ -97,9 +97,6 @@ describe("getWorkspaceRecordInformationAjax", () => {
       },
     );
 
-    await expect(
-      getWorkspaceRecordInformationAjax({ recordId: 99 }),
-    ).rejects.toThrow("Record not found");
+    await expect(getWorkspaceRecordInformationAjax({ recordId: 99 })).rejects.toThrow("Record not found");
   });
 });
-

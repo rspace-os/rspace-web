@@ -1,8 +1,5 @@
+import { type ApiReferenceConfigurationWithMultipleSources, ApiReferenceReact } from "@scalar/api-reference-react";
 import React from "react";
-import {
-  ApiReferenceReact,
-  type ApiReferenceConfigurationWithMultipleSources,
-} from "@scalar/api-reference-react";
 import "@scalar/api-reference-react/style.css";
 
 /**
@@ -51,9 +48,7 @@ const DISABLED_AGENT = { disabled: true };
  */
 const HIDE_POWERED_BY_CSS = ".darklight-reference a { display: none !important; }";
 
-export function createApiDocsConfiguration(
-  baseUrl: string,
-): Partial<ApiReferenceConfigurationWithMultipleSources> {
+export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenceConfigurationWithMultipleSources> {
   return {
     sources: [
       {
@@ -82,9 +77,7 @@ export function createApiDocsConfiguration(
       securitySchemes: {
         OAuth: OAUTH_PASSWORD_FLOW_PREFILL,
         OAuthJWT: OAUTH_PASSWORD_FLOW_PREFILL,
-      } as unknown as NonNullable<
-        ApiReferenceConfigurationWithMultipleSources["authentication"]
-      >["securitySchemes"],
+      } as unknown as NonNullable<ApiReferenceConfigurationWithMultipleSources["authentication"]>["securitySchemes"],
     },
     // Expand all operation tags by default.
     defaultOpenAllTags: true,
@@ -105,9 +98,6 @@ export function createApiDocsConfiguration(
  * page at /public/apiDocs.
  */
 export default function ApiDocsPage(): React.ReactNode {
-  const configuration = React.useMemo(
-    () => createApiDocsConfiguration(getBaseUrl()),
-    [],
-  );
+  const configuration = React.useMemo(() => createApiDocsConfiguration(getBaseUrl()), []);
   return <ApiReferenceReact configuration={configuration} />;
 }

@@ -1,10 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import { render, screen, waitFor, within, expectAccessible} from "@/__tests__/customQueries";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { expectAccessible, render, screen, waitFor, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
 import { DefaultSidebar } from "./Sidebar.story";
 
@@ -18,21 +17,15 @@ const mockAxios = new MockAdapter(axios);
  */
 function mockNetwork() {
   // Analytics provider
-  mockAxios
-    .onGet("/session/ajax/analyticsProperties")
-    .reply(200, { analyticsEnabled: false });
+  mockAxios.onGet("/session/ajax/analyticsProperties").reply(200, { analyticsEnabled: false });
 
   // UiPreferences provider
-  mockAxios
-    .onGet("/userform/ajax/preference")
-    .reply(200, {});
+  mockAxios.onGet("/userform/ajax/preference").reply(200, {});
   mockAxios.onPost("/userform/ajax/preference").reply(200, {});
 
   // Deployment property lookup (netfilestores.enabled), used by Sidebar +
   // AddFilestoreMenuItem
-  mockAxios
-    .onGet("/deploymentproperties/ajax/property")
-    .reply(200, false);
+  mockAxios.onGet("/deploymentproperties/ajax/property").reply(200, false);
 
   // Folder creation endpoint (galleryApi baseURL is /gallery/ajax)
   mockAxios.onPost("/gallery/ajax/createFolder").reply(200, {
@@ -65,20 +58,15 @@ function mockNetwork() {
   });
   mockAxios
     .onGet("/integration/integrationInfo", { params: { name: "DMPTOOL" } })
-    .reply(
-      200,
-      integrationInfo("DMPTOOL", { displayName: "DMPtool", available: true }),
-    );
-  mockAxios
-    .onGet("/integration/integrationInfo", { params: { name: "DMPONLINE" } })
-    .reply(
-      200,
-      integrationInfo("DMPONLINE", {
-        displayName: "DMPonline",
-        available: true,
-        enabled: true,
-      }),
-    );
+    .reply(200, integrationInfo("DMPTOOL", { displayName: "DMPtool", available: true }));
+  mockAxios.onGet("/integration/integrationInfo", { params: { name: "DMPONLINE" } }).reply(
+    200,
+    integrationInfo("DMPONLINE", {
+      displayName: "DMPonline",
+      available: true,
+      enabled: true,
+    }),
+  );
   mockAxios
     .onGet("/integration/integrationInfo", { params: { name: "ARGOS" } })
     .reply(200, integrationInfo("ARGOS", { displayName: "Argos" }));
@@ -137,16 +125,12 @@ describe("Sidebar", () => {
       await user.click(await screen.findByRole("button", { name: "Create" }));
 
       // the user clicks the New Folder menu item
-      await user.click(
-        await screen.findByRole("menuitem", { name: /New Folder/i }),
-      );
+      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
 
       // the New Folder dialog should be visible
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(
-        within(dialog).getByRole("heading", { name: /New Folder/i }),
-      ).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: /New Folder/i })).toBeVisible();
 
       // the user types a folder name
       await user.type(within(dialog).getByRole("textbox"), "test");
@@ -156,11 +140,7 @@ describe("Sidebar", () => {
 
       // a folder creation request should be made
       await waitFor(() => {
-        expect(
-          mockAxios.history.post.some((req) =>
-            req.url?.includes("createFolder"),
-          ),
-        ).toBe(true);
+        expect(mockAxios.history.post.some((req) => req.url?.includes("createFolder"))).toBe(true);
       });
 
       // submission closes the dialog
@@ -177,16 +157,12 @@ describe("Sidebar", () => {
       await user.click(await screen.findByRole("button", { name: "Create" }));
 
       // the user clicks the New Folder menu item
-      await user.click(
-        await screen.findByRole("menuitem", { name: /New Folder/i }),
-      );
+      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
 
       // the New Folder dialog should be visible
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(
-        within(dialog).getByRole("heading", { name: /New Folder/i }),
-      ).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: /New Folder/i })).toBeVisible();
 
       // the user types a folder name and presses Enter
       const textbox = within(dialog).getByRole("textbox");
@@ -194,11 +170,7 @@ describe("Sidebar", () => {
 
       // a folder creation request should be made
       await waitFor(() => {
-        expect(
-          mockAxios.history.post.some((req) =>
-            req.url?.includes("createFolder"),
-          ),
-        ).toBe(true);
+        expect(mockAxios.history.post.some((req) => req.url?.includes("createFolder"))).toBe(true);
       });
 
       // submission closes the dialog

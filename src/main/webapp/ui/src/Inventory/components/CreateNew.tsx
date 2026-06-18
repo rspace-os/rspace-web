@@ -1,22 +1,22 @@
 import AddIcon from "@mui/icons-material/Add";
-import React, { useContext } from "react";
-import useStores from "../../stores/use-stores";
-import NavigateContext from "../../stores/contexts/Navigate";
-import { UserCancelledAction } from "../../util/error";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CardMedia from "@mui/material/CardMedia";
+import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
+import { paperClasses } from "@mui/material/Paper";
+import { observer } from "mobx-react-lite";
+import React, { useContext } from "react";
+import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
+import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
-import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
-import { paperClasses } from "@mui/material/Paper";
-import Box from "@mui/material/Box";
-import { observer } from "mobx-react-lite";
-import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
-import CardMedia from "@mui/material/CardMedia";
-import FieldmarkImportDialog from "./FieldmarkImportDialog";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
+import NavigateContext from "../../stores/contexts/Navigate";
+import useStores from "../../stores/use-stores";
+import { UserCancelledAction } from "../../util/error";
 import * as FetchingData from "../../util/fetchingData";
-import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
+import FieldmarkImportDialog from "./FieldmarkImportDialog";
 
 type CreateNewArgs = {
   /**
@@ -42,21 +42,15 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
-  const showFieldmark = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("FIELDMARK"),
-  ).orElse(false);
-  const handleCreate = async (
-    recordType: "sample" | "container" | "template",
-  ) => {
+  const showFieldmark = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("FIELDMARK")).orElse(false);
+  const handleCreate = async (recordType: "sample" | "container" | "template") => {
     trackingStore.trackEvent("CreateInventoryRecordClicked", {
       type: recordType,
     });
     try {
       const newRecord = await searchStore.createNew(recordType);
       onClick();
-      const params = searchStore.fetcher.generateNewQuery(
-        newRecord.showNewlyCreatedRecordSearchParams,
-      );
+      const params = searchStore.fetcher.generateNewQuery(newRecord.showNewlyCreatedRecordSearchParams);
       navigate(`/inventory/search?${params.toString()}`, {
         modifyVisiblePanel: false,
       });
@@ -66,9 +60,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       throw e;
     }
   };
-  const handleImport = async (
-    recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES",
-  ) => {
+  const handleImport = async (recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES") => {
     if (await uiStore.confirmDiscardAnyChanges()) {
       importStore.initializeNewImport(recordType);
       navigate(`/inventory/import?recordType=${recordType}`);

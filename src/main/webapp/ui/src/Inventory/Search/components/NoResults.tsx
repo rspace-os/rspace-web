@@ -1,11 +1,11 @@
-import React from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import NoResultsSvg from "@/assets/graphics/NoResults.svg";
 import Divider from "@mui/material/Divider";
-import docLinks from "../../../assets/DocLinks";
 import Link from "@mui/material/Link";
 import { darken, useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import type React from "react";
+import NoResultsSvg from "@/assets/graphics/NoResults.svg";
+import docLinks from "../../../assets/DocLinks";
 
 type NoResultsArgs = {
   query: string | null;
@@ -34,11 +34,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
           maxHeight: "200px",
         }}
       />
-      <Typography
-        variant="inherit"
-        component="span"
-        sx={{ color: darken(theme.palette.primary.main, 0.2) }}
-      >
+      <Typography variant="inherit" component="span" sx={{ color: darken(theme.palette.primary.main, 0.2) }}>
         No results.
       </Typography>
       <Typography
@@ -50,8 +46,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
           maxWidth: "20em",
         }}
       >
-        Try searching for a different term, or use the advanced search to change
-        search filters.
+        Try searching for a different term, or use the advanced search to change search filters.
       </Typography>
       {query !== "" && (
         <>
@@ -70,11 +65,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
               advanced search
             </Link>{" "}
             and the related{" "}
-            <Link
-              href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-              rel="noreferrer"
-              target="_blank"
-            >
+            <Link href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html" rel="noreferrer" target="_blank">
               Apache page
             </Link>
             .

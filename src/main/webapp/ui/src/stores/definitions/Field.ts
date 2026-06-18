@@ -1,7 +1,7 @@
-import { type Attachment } from "./Attachment";
-import { type BaseRecord } from "./BaseRecord";
-import { type ValidationResult } from "../../components/ValidatingSubmitButton";
-import { type GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { ValidationResult } from "../../components/ValidatingSubmitButton";
+import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
+import type { Attachment } from "./Attachment";
+import type { BaseRecord } from "./BaseRecord";
 
 export type FieldType =
   | "choice"

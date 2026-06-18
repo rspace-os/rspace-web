@@ -1,14 +1,10 @@
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Search, type SearchView } from "./Search";
-import { type Id } from "./BaseRecord";
-import { type Point } from "../../util/types";
-import { type Permissioned } from "./PermissionedData";
-import { type HasLocation } from "./HasLocation";
-import {
-  ContainerType,
-  ContentSummary,
-  GridLayout,
-} from "@/stores/definitions/container/types";
+import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
+import type { Point } from "../../util/types";
+import type { Id } from "./BaseRecord";
+import type { HasLocation } from "./HasLocation";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { Permissioned } from "./PermissionedData";
+import type { Search, SearchView } from "./Search";
 
 export function cTypeToDefaultSearchView(cType: ContainerType): SearchView {
   if (cType === "GRID") return "GRID";

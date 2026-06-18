@@ -1,6 +1,6 @@
-import React from "react";
 import FormLabel from "@mui/material/FormLabel";
-import { type SxProps, type Theme } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
+import type React from "react";
 import { Heading } from "../DynamicHeadingLevel";
 
 /**
@@ -78,10 +78,7 @@ export default function FieldLabel({
 }: FieldLabelProps): React.ReactNode {
   const component = disabled
     ? (props: { children: React.ReactNode; id?: string }) => (
-        <Heading
-          {...props}
-          sx={{ typography: "subtitle2", textTransform: "uppercase", fontWeight: "bold" }}
-        />
+        <Heading {...props} sx={{ typography: "subtitle2", textTransform: "uppercase", fontWeight: "bold" }} />
       )
     : asFieldset
       ? "legend"
@@ -95,9 +92,7 @@ export default function FieldLabel({
       required={required}
       // reset styles added by the browser when setting the component prop
       sx={[{ mt: 0, textAlign: "left" }, ...(Array.isArray(sx) ? sx : [sx])]}
-      {...(!disabled && !asFieldset && typeof htmlFor === "string"
-        ? { htmlFor }
-        : {})}
+      {...(!disabled && !asFieldset && typeof htmlFor === "string" ? { htmlFor } : {})}
     >
       {children}
     </FormLabel>

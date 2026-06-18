@@ -20,7 +20,7 @@ export function useFigshareEndpoint(): {
         mkAlert({
           variant: "success",
           message: "Successfully disconnected from Figshare.",
-        })
+        }),
       );
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export function useFigshareEndpoint(): {
         mkAlert({
           variant: "error",
           message: "Could not disconnect from Figshare.",
-        })
+        }),
       );
     }
   };

@@ -1,11 +1,9 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import { Download } from "playwright-core";
-import React from "react";
+import fs from "node:fs/promises";
+import { expect, test } from "@playwright/experimental-ct-react";
+import * as Jwt from "jsonwebtoken";
+import type { Download } from "playwright-core";
 import identifiersJson from "../../__tests__/identifiers.json";
 import { SimpleIgsnTable } from "./IgsnTable.story";
-import fs from "fs/promises";
-
-import * as Jwt from "jsonwebtoken";
 
 /*
  * Only the CSV-export cases that assert the CONTENTS of a REAL downloaded file
@@ -25,20 +23,10 @@ const feature = test.extend<{
   };
   When: {
     "a CSV export is downloaded": () => Promise<Download>;
-    "the researcher selects {count} IGSNs": ({
-      count,
-    }: {
-      count: number;
-    }) => Promise<void>;
+    "the researcher selects {count} IGSNs": ({ count }: { count: number }) => Promise<void>;
   };
   Then: {
-    "{CSV} should have {count} rows": ({
-      csv,
-      count,
-    }: {
-      csv: Download;
-      count: number;
-    }) => Promise<void>;
+    "{CSV} should have {count} rows": ({ csv, count }: { csv: Download; count: number }) => Promise<void>;
   };
   networkRequests: Array<URL>;
 }>({
@@ -54,8 +42,7 @@ const feature = test.extend<{
       "the table has loaded": async () => {
         await page.waitForFunction(() => {
           const rows = document.querySelectorAll('[role="row"]').length;
-          const noIgsnMessage =
-            document.body.textContent?.includes("No IGSN IDs");
+          const noIgsnMessage = document.body.textContent?.includes("No IGSN IDs");
           return rows > 1 || noIgsnMessage; // (1 is for the header row) or empty state message
         });
       },
@@ -75,11 +62,7 @@ const feature = test.extend<{
         ]);
         return download;
       },
-      "the researcher selects {count} IGSNs": async ({
-        count,
-      }: {
-        count: number;
-      }) => {
+      "the researcher selects {count} IGSNs": async ({ count }: { count: number }) => {
         for (let i = 0; i < count; i++) {
           await page
             .getByRole("checkbox", { name: /Select row/ })
@@ -89,6 +72,7 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
   Then: async ({}, use) => {
     await use({
       "{CSV} should have {count} rows": async ({ csv, count }) => {
@@ -99,6 +83,7 @@ const feature = test.extend<{
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
   networkRequests: async ({}, use) => {
     await use([]);
   },
@@ -107,10 +92,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -131,30 +115,22 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
 
       let filteredIdentifiers = identifiersJson;
       if (state) {
-        filteredIdentifiers = filteredIdentifiers.filter(
-          (identifier) => identifier.state === state
-        );
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.state === state);
       }
       if (searchTerm) {
-        filteredIdentifiers = filteredIdentifiers.filter((identifier) =>
-          identifier.doi.includes(searchTerm)
-        );
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.doi.includes(searchTerm));
       }
       if (isAssociated === "true") {
-        filteredIdentifiers = filteredIdentifiers.filter(
-          (identifier) => identifier.associatedGlobalId !== null
-        );
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId !== null);
       } else if (isAssociated === "false") {
-        filteredIdentifiers = filteredIdentifiers.filter(
-          (identifier) => identifier.associatedGlobalId === null
-        );
+        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId === null);
       }
       return route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify(filteredIdentifiers),
       });
-    }
+    },
   );
   page.on("request", (request) => {
     networkRequests.push(new URL(request.url()));
@@ -164,15 +140,12 @@ feature.afterEach(({ networkRequests }) => {
   networkRequests.splice(0, networkRequests.length);
 });
 test.describe("IGSN Table", () => {
-  feature(
-    "When there is no selection, all rows should be included in the export.",
-    async ({ Given, When, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      // Note that no selection is made
-      const csv = await When["a CSV export is downloaded"]();
-      await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
-    }
-  );
+  feature("When there is no selection, all rows should be included in the export.", async ({ Given, When, Then }) => {
+    await Given["the researcher is viewing the IGSN table"]();
+    // Note that no selection is made
+    const csv = await When["a CSV export is downloaded"]();
+    await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
+  });
   feature(
     "When some IGSNs are selected, CSV exports should include just those rows",
     async ({ Given, Once, When, Then }) => {
@@ -181,6 +154,6 @@ test.describe("IGSN Table", () => {
       await When["the researcher selects {count} IGSNs"]({ count: 2 });
       const csv = await When["a CSV export is downloaded"]();
       await Then["{CSV} should have {count} rows"]({ csv, count: 2 });
-    }
+    },
   );
 });

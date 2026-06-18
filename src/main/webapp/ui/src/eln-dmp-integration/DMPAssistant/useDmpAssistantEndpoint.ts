@@ -1,9 +1,9 @@
 import React from "react";
 import axios from "@/common/axios";
-import { isoToLocale } from "../../util/Util";
-import AlertContext, { mkAlert, type Alert } from "../../stores/contexts/Alert";
-import * as FetchingData from "../../util/fetchingData";
+import AlertContext, { type Alert, mkAlert } from "../../stores/contexts/Alert";
+import type * as FetchingData from "../../util/fetchingData";
 import { Optional } from "../../util/optional";
+import { isoToLocale } from "../../util/Util";
 
 /**
  * Hook + types for the /apps/dmpassistant/* HTTP surface. Modelled on
@@ -86,7 +86,7 @@ export class DmpSummary {
  */
 export async function importDmpsIntoGallery(
   dmps: ReadonlyArray<DmpSummary>,
-  addAlert: (alert: Alert) => void
+  addAlert: (alert: Alert) => void,
 ): Promise<void> {
   if (dmps.length === 0) return;
   try {
@@ -97,27 +97,23 @@ export async function importDmpsIntoGallery(
       error: null | { errorMessages: Array<string> };
     }>(
       "/apps/dmpassistant/importPlans",
-      dmps.map((d) => ({ id: d.id, filename: d.title }))
+      dmps.map((d) => ({ id: d.id, filename: d.title })),
     );
     if (error !== null) throw new Error(error.errorMessages[0]);
     addAlert(
       mkAlert({
-        message:
-          dmps.length === 1
-            ? "Successfully imported DMP."
-            : `Successfully imported ${dmps.length} DMPs.`,
+        message: dmps.length === 1 ? "Successfully imported DMP." : `Successfully imported ${dmps.length} DMPs.`,
         variant: "success",
-      })
+      }),
     );
   } catch (error) {
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title:
-            dmps.length === 1 ? "Failed to import DMP." : "Failed to import DMPs.",
+          title: dmps.length === 1 ? "Failed to import DMP." : "Failed to import DMPs.",
           message: error.message,
           variant: "error",
-        })
+        }),
       );
     }
   }
@@ -144,19 +140,12 @@ export class DmpListing {
   #idMapping: { [id: string]: DmpSummary | undefined };
   #addAlert: (alert: Alert) => void;
 
-  constructor(
-    data: ListPlansResponse["data"],
-    page: number,
-    pageSize: number,
-    addAlert: (alert: Alert) => void
-  ) {
+  constructor(data: ListPlansResponse["data"], page: number, pageSize: number, addAlert: (alert: Alert) => void) {
     this.dmps = data.items.map(({ dmp }) => new DmpSummary(dmp));
     this.totalCount = data.total_items;
     this.page = page;
     this.pageSize = pageSize;
-    this.#idMapping = Object.fromEntries(
-      this.dmps.map((plan) => [plan.id, plan])
-    );
+    this.#idMapping = Object.fromEntries(this.dmps.map((plan) => [plan.id, plan]));
     this.#addAlert = addAlert;
   }
 
@@ -176,14 +165,12 @@ export class DmpListing {
 async function listPlans(
   addAlert: (alert: Alert) => void,
   page: number = 0,
-  pageSize: number = 20
+  pageSize: number = 20,
 ): Promise<DmpListing> {
   try {
     const {
       data: { data, error },
-    } = await axios.get<ListPlansResponse>(
-      `/apps/dmpassistant/plans?page=${page + 1}&per_page=${pageSize}`
-    );
+    } = await axios.get<ListPlansResponse>(`/apps/dmpassistant/plans?page=${page + 1}&per_page=${pageSize}`);
     if (error !== null) throw new Error(error.errorMessages[0]);
     return new DmpListing(data, page, pageSize, addAlert);
   } catch (error) {
@@ -193,7 +180,7 @@ async function listPlans(
           title: "Failed to get available DMPs.",
           message: error.message,
           variant: "error",
-        })
+        }),
       );
       throw new Error(error.message);
     }
@@ -206,9 +193,7 @@ export function useDmpAssistantEndpoint(): {
 } {
   const { addAlert } = React.useContext(AlertContext);
 
-  const [firstPage, setFirstPage] = React.useState<
-    FetchingData.Fetched<DmpListing>
-  >({ tag: "loading" });
+  const [firstPage, setFirstPage] = React.useState<FetchingData.Fetched<DmpListing>>({ tag: "loading" });
 
   React.useEffect(() => {
     void (async () => {
@@ -216,8 +201,7 @@ export function useDmpAssistantEndpoint(): {
         const newListing = await listPlans(addAlert);
         setFirstPage({ tag: "success", value: newListing });
       } catch (error) {
-        if (error instanceof Error)
-          setFirstPage({ tag: "error", error: error.message });
+        if (error instanceof Error) setFirstPage({ tag: "error", error: error.message });
       }
     })();
   }, []);

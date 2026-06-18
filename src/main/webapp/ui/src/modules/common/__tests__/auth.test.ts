@@ -8,17 +8,10 @@ import {
   secondsToExpiry,
 } from "@/modules/common/utils/auth";
 
-const originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(
-  globalThis,
-  "sessionStorage",
-);
+const originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
 
 function encodeBase64Url(value: string) {
-  return Buffer.from(value)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+  return Buffer.from(value).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function createJwt(exp: number) {
@@ -36,11 +29,7 @@ describe("token storage helpers", () => {
 
   afterEach(() => {
     if (originalSessionStorageDescriptor) {
-      Object.defineProperty(
-        globalThis,
-        "sessionStorage",
-        originalSessionStorageDescriptor,
-      );
+      Object.defineProperty(globalThis, "sessionStorage", originalSessionStorageDescriptor);
     }
   });
 
@@ -122,9 +111,6 @@ describe("resolveToken", () => {
   });
 
   it("throws when neither token nor getToken is provided", async () => {
-    await expect(resolveToken({})).rejects.toThrow(
-      "Token is required to perform this operation",
-    );
+    await expect(resolveToken({})).rejects.toThrow("Token is required to perform this operation");
   });
 });
-

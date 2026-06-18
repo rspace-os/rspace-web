@@ -1,7 +1,7 @@
-import React from "react";
 import WarningIcon from "@mui/icons-material/Warning";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import type React from "react";
 
 /**
  * This component is for showing a warning label just above a dialog's submit

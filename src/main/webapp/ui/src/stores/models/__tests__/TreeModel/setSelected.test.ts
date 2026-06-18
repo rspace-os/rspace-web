@@ -1,8 +1,7 @@
-
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
+import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 import Search from "../../Search";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
-import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../stores/getRootStore", () => ({
@@ -17,7 +16,6 @@ vi.mock("../../../stores/getRootStore", () => ({
       currentUser: { username: "user" },
     },
   }),
-
 }));
 describe("method: setSelected", () => {
   /*
@@ -35,14 +33,11 @@ describe("method: setSelected", () => {
       const subsample = makeMockSubSample();
       const sample = subsample.sample;
       sample.newSampleSubSamplesCount = 1;
-      sample.newSampleSubSampleTargetLocations = [
-        { containerId: 1, location: { id: 1 } },
-      ];
+      sample.newSampleSubSampleTargetLocations = [{ containerId: 1, location: { id: 1 } }];
       search.fetcher.setResults([sample]);
       search.tree.setSelected(sample.globalId);
       expect(setActiveResultSpy).toHaveBeenCalledWith(sample);
     });
-
   });
   /*
    * Leaf nodes are those that don't have child nodes, like SubSamples.

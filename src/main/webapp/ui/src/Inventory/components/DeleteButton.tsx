@@ -1,8 +1,9 @@
-import { match } from "../../util/Util";
 import DeleteIcon from "@mui/icons-material/Delete";
-import React, { useState } from "react";
-import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
 import { useTheme } from "@mui/material/styles";
+import type React from "react";
+import { useState } from "react";
+import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
+import { match } from "../../util/Util";
 
 type DeleteButtonArgs = {
   onClick: () => void;

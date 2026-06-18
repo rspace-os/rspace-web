@@ -1,7 +1,7 @@
-import { ListOfMaterials } from "../../stores/models/MaterialsModel";
-import React from "react";
-import MaterialsTable from "./MaterialsTable";
 import Box from "@mui/material/Box";
+import type React from "react";
+import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
+import MaterialsTable from "./MaterialsTable";
 
 type PrintedMaterialsListingArgs = {
   listsOfMaterials: Array<ListOfMaterials> | null;
@@ -12,9 +12,7 @@ type PrintedMaterialsListingArgs = {
  *  list of materials, as a table, onto the page rather than as it normally
  *  appears in a dialog.
  */
-export default function PrintedMaterialsListing({
-  listsOfMaterials,
-}: PrintedMaterialsListingArgs): React.ReactNode {
+export default function PrintedMaterialsListing({ listsOfMaterials }: PrintedMaterialsListingArgs): React.ReactNode {
   return listsOfMaterials ? (
     <Box sx={{ display: "none", "@media print": { display: "initial" } }}>
       {listsOfMaterials.map((lom) => (

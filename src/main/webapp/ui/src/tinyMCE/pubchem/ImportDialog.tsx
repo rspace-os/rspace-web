@@ -1,9 +1,7 @@
 import React from "react";
-import useChemicalImport, {
-  type ChemicalCompound,
-} from "@/hooks/api/useChemicalImport";
-import { type Editor } from ".";
+import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
 import AnalyticsContext from "@/stores/contexts/Analytics";
+import type { Editor } from ".";
 import CompoundSearchDialog from "./CompoundSearchDialog";
 
 /**
@@ -42,8 +40,8 @@ export default function ImportDialog({
             CAS: compound.cas || "",
             "PubChem URL": compound.pubchemUrl,
           },
-        })
-      )
+        }),
+      ),
     ).then((data) => {
       setIsSubmitting(false);
       data.forEach(({ id, chemFileId }) => {

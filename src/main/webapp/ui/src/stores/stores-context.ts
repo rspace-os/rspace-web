@@ -1,5 +1,5 @@
-import { createContext, type Context } from "react";
-import { type StoreContainer } from "./stores/RootStore";
+import { type Context, createContext } from "react";
+import type { StoreContainer } from "./stores/RootStore";
 
 /**
  * The default is `null` (resolved lazily by `useStores` at render time via
@@ -9,5 +9,4 @@ import { type StoreContainer } from "./stores/RootStore";
  * ordering dependency. Components that are not wrapped in a `storesContext`
  * Provider fall back to the real singleton in `useStores`.
  */
-export const storesContext: Context<StoreContainer | null> =
-  createContext<StoreContainer | null>(null);
+export const storesContext: Context<StoreContainer | null> = createContext<StoreContainer | null>(null);

@@ -1,14 +1,10 @@
 /*
  */
 
-import { type Attachment } from "../../Attachment";
-import { type GlobalId } from "../../BaseRecord";
+import type { Attachment } from "../../Attachment";
+import type { GlobalId } from "../../BaseRecord";
 
-export const mockAttachment = ({
-  setImageLink,
-}: {
-  setImageLink?: () => Promise<void>;
-}): Attachment => {
+export const mockAttachment = ({ setImageLink }: { setImageLink?: () => Promise<void> }): Attachment => {
   return {
     id: 1,
     name: "",

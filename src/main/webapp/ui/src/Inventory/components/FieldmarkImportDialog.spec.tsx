@@ -1,7 +1,6 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
+import { expect, test } from "@playwright/experimental-ct-react";
 import * as Jwt from "jsonwebtoken";
+import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 
 /*
  * The bulk of this component's behaviour (dialog open/close, notebook
@@ -25,15 +24,11 @@ import * as Jwt from "jsonwebtoken";
  * container is anchored to the top of the viewport with a negative offset, so
  * without this its top edge sits above the visible area.
  */
-async function moveToastStackIntoViewport(
-  page: import("@playwright/test").Page,
-) {
-  await page
-    .getByTestId("Toasts")
-    .evaluate((el: HTMLElement) => {
-      el.style.top = "0px";
-      el.scrollIntoView({ block: "start" });
-    });
+async function moveToastStackIntoViewport(page: import("@playwright/test").Page) {
+  await page.getByTestId("Toasts").evaluate((el: HTMLElement) => {
+    el.style.top = "0px";
+    el.scrollIntoView({ block: "start" });
+  });
 }
 
 /**
@@ -41,10 +36,7 @@ async function moveToastStackIntoViewport(
  * scrolling it into view first. Guards against the flakiness of clicking a
  * control whose real geometry places it (partly) outside the viewport.
  */
-async function clickWhenInViewport(
-  locator: import("@playwright/test").Locator,
-  browserName: string,
-) {
+async function clickWhenInViewport(locator: import("@playwright/test").Locator, browserName: string) {
   await expect(locator).toBeVisible();
   if (browserName === "webkit") {
     await clickWithWebKitDomFallback(locator);
@@ -55,19 +47,14 @@ async function clickWhenInViewport(
   await locator.click();
 }
 
-async function clickWithWebKitDomFallback(
-  locator: import("@playwright/test").Locator,
-) {
+async function clickWithWebKitDomFallback(locator: import("@playwright/test").Locator) {
   await locator.evaluate((el: HTMLElement) => {
     el.scrollIntoView({ block: "center", inline: "center" });
     el.click();
   });
 }
 
-async function clickControl(
-  locator: import("@playwright/test").Locator,
-  browserName: string,
-) {
+async function clickControl(locator: import("@playwright/test").Locator, browserName: string) {
   await expect(locator).toBeVisible();
   if (browserName === "webkit") {
     await clickWithWebKitDomFallback(locator);
@@ -76,10 +63,7 @@ async function clickControl(
   await locator.click();
 }
 
-async function checkControl(
-  locator: import("@playwright/test").Locator,
-  browserName: string,
-) {
+async function checkControl(locator: import("@playwright/test").Locator, browserName: string) {
   await expect(locator).toBeVisible();
   if (browserName === "webkit") {
     await clickWithWebKitDomFallback(locator);
@@ -120,73 +104,53 @@ const feature = test.extend<{
         const dataGrid = page.getByRole("grid");
         await expect(dataGrid).toBeVisible();
       },
-      "the user selects a notebook and clicks import for alert testing":
-        async () => {
-          await checkControl(
-            page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }),
-            browserName,
-          );
-          await clickControl(page.getByRole("button", { name: "Import" }), browserName);
-        },
-      "the user selects a notebook that will trigger detailed import error":
-        async () => {
-          await checkControl(
-            page.getByRole("radio", {
-              name: "Select notebook: Notebook Detailed Error",
-            }),
-            browserName,
-          );
-          const identifierSelect = page.getByRole("combobox", {
-            name: "IGSN ID field",
-          });
-          await clickControl(identifierSelect, browserName);
-          if (browserName === "webkit") {
-            await identifierSelect.focus();
-            await page.keyboard.press("ArrowDown");
-            await page.keyboard.press("Enter");
-          } else {
-            await clickControl(
-              page.getByRole("option", { name: "identifier_field" }),
-              browserName,
-            );
-          }
-          await clickControl(page.getByRole("button", { name: "Import" }), browserName);
-        },
+      "the user selects a notebook and clicks import for alert testing": async () => {
+        await checkControl(page.getByRole("radio", { name: "Select notebook: Test Notebook 1" }), browserName);
+        await clickControl(page.getByRole("button", { name: "Import" }), browserName);
+      },
+      "the user selects a notebook that will trigger detailed import error": async () => {
+        await checkControl(
+          page.getByRole("radio", {
+            name: "Select notebook: Notebook Detailed Error",
+          }),
+          browserName,
+        );
+        const identifierSelect = page.getByRole("combobox", {
+          name: "IGSN ID field",
+        });
+        await clickControl(identifierSelect, browserName);
+        if (browserName === "webkit") {
+          await identifierSelect.focus();
+          await page.keyboard.press("ArrowDown");
+          await page.keyboard.press("Enter");
+        } else {
+          await clickControl(page.getByRole("option", { name: "identifier_field" }), browserName);
+        }
+        await clickControl(page.getByRole("button", { name: "Import" }), browserName);
+      },
     });
   },
   Then: async ({ page, browserName }, use) => {
     await use({
       "a success alert should be visible": async () => {
         await moveToastStackIntoViewport(page);
-        const alert = page
-          .getByRole("alert")
-          .filter({ hasText: "Successfully imported notebook" });
+        const alert = page.getByRole("alert").filter({ hasText: "Successfully imported notebook" });
         await expect(alert).toBeVisible();
         await expect(alert).toContainText("Successfully imported notebook");
-        await clickWhenInViewport(
-          alert.getByRole("button", { name: "1 sub-messages. Toggle to show" }),
-          browserName,
-        );
-        const subMessage = alert
-          .getByRole("alert")
-          .filter({ hasText: "Test Container from Test Notebook 1" });
+        await clickWhenInViewport(alert.getByRole("button", { name: "1 sub-messages. Toggle to show" }), browserName);
+        const subMessage = alert.getByRole("alert").filter({ hasText: "Test Container from Test Notebook 1" });
         const link = subMessage.getByRole("link", { name: "IC123456" });
         await expect(link).toBeVisible();
         await expect(link).toHaveAttribute("href", "/globalId/IC123456");
       },
       "a detailed error alert should be visible": async () => {
         await moveToastStackIntoViewport(page);
-        const alert = page
-          .getByRole("alert")
-          .filter({ hasText: "Could not import notebook." });
+        const alert = page.getByRole("alert").filter({ hasText: "Could not import notebook." });
         await expect(alert).toBeVisible();
 
         await expect(alert).toContainText("Could not import notebook.");
         // Click the toggle button to expand the sub-messages with detailed errors
-        await clickWhenInViewport(
-          alert.getByRole("button", { name: "2 sub-messages. Toggle to show" }),
-          browserName,
-        );
+        await clickWhenInViewport(alert.getByRole("button", { name: "2 sub-messages. Toggle to show" }), browserName);
         // Verify each detailed error message is shown in the dropdown
         const firstErrorMessage = alert.getByRole("alert").filter({
           hasText:
@@ -195,13 +159,13 @@ const feature = test.extend<{
 
         await expect(firstErrorMessage).toBeVisible();
         const secondErrorMessage = alert.getByRole("alert").filter({
-          hasText:
-            "Additional validation error: Sample template validation failed",
+          hasText: "Additional validation error: Sample template validation failed",
         });
         await expect(secondErrorMessage).toBeVisible();
       },
     });
   },
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
   networkRequests: async ({}, use) => {
     await use([]);
   },
@@ -216,10 +180,9 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -334,19 +297,16 @@ feature.beforeEach(async ({ router, page, networkRequests }) => {
       ]),
     });
   });
-  await router.route(
-    "/api/inventory/v1/import/fieldmark/notebook",
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          containerName: "Test Container from Test Notebook 1",
-          containerGlobalId: "IC123456",
-        }),
-      });
-    },
-  );
+  await router.route("/api/inventory/v1/import/fieldmark/notebook", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        containerName: "Test Container from Test Notebook 1",
+        containerGlobalId: "IC123456",
+      }),
+    });
+  });
   await router.route(
     "/api/inventory/v1/fieldmark/notebooks/igsnCandidateFields?notebookId=test-project-1",
     async (route) => {
@@ -421,80 +381,67 @@ feature.afterEach(({ networkRequests }) => {
 });
 test.describe("FieldmarkImportDialog", () => {
   test.describe("notebook import", () => {
-    feature(
-      "should show success alert after import completes",
-      async ({ Given, When, Then }) => {
-        await Given["the fieldmark import dialog is mounted"]();
-        await When["the notebooks have been fetched"]();
-        await When[
-          "the user selects a notebook and clicks import for alert testing"
-        ]();
-        await Then["a success alert should be visible"]();
-      },
-    );
+    feature("should show success alert after import completes", async ({ Given, When, Then }) => {
+      await Given["the fieldmark import dialog is mounted"]();
+      await When["the notebooks have been fetched"]();
+      await When["the user selects a notebook and clicks import for alert testing"]();
+      await Then["a success alert should be visible"]();
+    });
     feature(
       "should show detailed error message when import fails with validation errors",
       async ({ Given, When, Then, router }) => {
-        await router.route(
-          "/api/inventory/v1/import/fieldmark/notebook",
-          async (route) => {
-            const request = route.request();
+        await router.route("/api/inventory/v1/import/fieldmark/notebook", async (route) => {
+          const request = route.request();
 
-            const postData = request.postData();
-            if (
-              postData?.includes('"notebookId":"test-project-detailed-error"')
-            ) {
-              await route.fulfill({
-                status: 400,
-                contentType: "application/json",
-                body: JSON.stringify({
-                  status: "BAD_REQUEST",
-                  httpCode: 400,
-                  internalCode: 40002,
-                  message: "Errors detected : 2",
-                  messageCode: null,
-                  errors: [
-                    'fieldmarkApiImportRequest: Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
-                    "fieldmarkApiImportRequest: Additional validation error: Sample template validation failed",
+          const postData = request.postData();
+          if (postData?.includes('"notebookId":"test-project-detailed-error"')) {
+            await route.fulfill({
+              status: 400,
+              contentType: "application/json",
+              body: JSON.stringify({
+                status: "BAD_REQUEST",
+                httpCode: 400,
+                internalCode: 40002,
+                message: "Errors detected : 2",
+                messageCode: null,
+                errors: [
+                  'fieldmarkApiImportRequest: Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
+                  "fieldmarkApiImportRequest: Additional validation error: Sample template validation failed",
+                ],
+                iso8601Timestamp: "2025-08-07T08:40:52.973881769Z",
+                data: {
+                  validationErrors: [
+                    {
+                      field: null,
+                      rejectedValue: null,
+                      objectName: "fieldmarkApiImportRequest",
+                      message:
+                        'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
+                    },
+                    {
+                      field: null,
+                      rejectedValue: null,
+                      objectName: "fieldmarkApiImportRequest",
+                      message: "Additional validation error: Sample template validation failed",
+                    },
                   ],
-                  iso8601Timestamp: "2025-08-07T08:40:52.973881769Z",
-                  data: {
-                    validationErrors: [
-                      {
-                        field: null,
-                        rejectedValue: null,
-                        objectName: "fieldmarkApiImportRequest",
-                        message:
-                          'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
-                      },
-                      {
-                        field: null,
-                        rejectedValue: null,
-                        objectName: "fieldmarkApiImportRequest",
-                        message:
-                          "Additional validation error: Sample template validation failed",
-                      },
-                    ],
-                  },
-                }),
-              });
-            } else {
-              await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify({
-                  containerName: "Test Container from Test Notebook 1",
-                  containerGlobalId: "IC123456",
-                }),
-              });
-            }
-          },
-        );
+                },
+              }),
+            });
+          } else {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                containerName: "Test Container from Test Notebook 1",
+                containerGlobalId: "IC123456",
+              }),
+            });
+          }
+        });
         await Given["the fieldmark import dialog is mounted"]();
         await When["the notebooks have been fetched"]();
-        await When[
-          "the user selects a notebook that will trigger detailed import error"
-        ]();
+        await When["the user selects a notebook that will trigger detailed import error"]();
         await Then["a detailed error alert should be visible"]();
       },
     );

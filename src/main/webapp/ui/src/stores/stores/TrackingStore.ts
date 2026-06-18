@@ -1,5 +1,5 @@
-import { type RootStore } from "./RootStore";
 import { makeObservable, observable } from "mobx";
+import type { RootStore } from "./RootStore";
 
 export default class TrackingStore {
   rootStore: RootStore;

@@ -1,14 +1,13 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { makeMockSample } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("permalinkURL", () => {
   test("When the sample has not yet been saved, the permalinkURL should be null.", () => {
@@ -16,4 +15,3 @@ describe("permalinkURL", () => {
     expect(sample.permalinkURL).toBe(null);
   });
 });
-

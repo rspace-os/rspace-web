@@ -1,30 +1,28 @@
-import React, { Suspense, lazy } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../../stores/use-stores";
-import docLinks from "../../../../assets/DocLinks";
-import HelpLinkIcon from "../../../../components/HelpLinkIcon";
-import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import { dialogClasses } from "@mui/material/Dialog";
+import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
-import { type Identifier } from "../../../../stores/definitions/Identifier";
-import PublishButton from "./PublishButton";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { lazy, Suspense } from "react";
+import docLinks from "../../../../assets/DocLinks";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
+import HelpLinkIcon from "../../../../components/HelpLinkIcon";
+import type { Identifier } from "../../../../stores/definitions/Identifier";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import useStores from "../../../../stores/use-stores";
+import PublishButton from "./PublishButton";
 
-const IdentifierPublicPage = lazy(
-  () => import("../../../../components/PublicPages/IdentifierPublicPage")
-);
+const IdentifierPublicPage = lazy(() => import("../../../../components/PublicPages/IdentifierPublicPage"));
 const IdentifierDataGrid = lazy(() =>
-  import("../../../../components/PublicPages/IdentifierPublicPage").then(
-    ({ IdentifierDataGrid: DataGrid }) => ({ default: DataGrid })
-  )
+  import("../../../../components/PublicPages/IdentifierPublicPage").then(({ IdentifierDataGrid: DataGrid }) => ({
+    default: DataGrid,
+  })),
 );
 
 type PreviewDialogArgs = {
@@ -47,12 +45,7 @@ type PreviewRecordWithOptionalFields = InventoryRecord & {
 /**
  * Dialog to preview public page for an identifier
  */
-const PublicPreviewDialog = ({
-  open,
-  onClose,
-  id,
-  record,
-}: PreviewDialogArgs): React.ReactNode => {
+const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): React.ReactNode => {
   const { uiStore } = useStores();
   if (!id.rsPublicId) return null;
   const publicId: string = id.rsPublicId;
@@ -79,10 +72,7 @@ const PublicPreviewDialog = ({
             </Typography>
           </Grid>
           <Grid>
-            <HelpLinkIcon
-              link={docLinks.IGSNIdentifiers}
-              title="Info on handling Identifiers."
-            />
+            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Info on handling Identifiers." />
           </Grid>
         </Grid>
       </DialogTitle>
@@ -129,8 +119,7 @@ const PublicPreviewDialog = ({
         {!id.isValid && (
           <Box sx={{ flexGrow: 1 }}>
             <Alert severity="warning">
-              Some required details are missing. To enable publishing, please
-              fill them in.
+              Some required details are missing. To enable publishing, please fill them in.
             </Alert>
           </Box>
         )}

@@ -9,30 +9,20 @@ import { render } from "@/__tests__/customQueries";
  */
 vi.mock("@scalar/api-reference-react", () => ({
   ApiReferenceReact: ({ configuration }: { configuration: unknown }) => (
-    <div
-      data-testid="mock-scalar"
-      data-configuration={JSON.stringify(configuration)}
-    />
+    <div data-testid="mock-scalar" data-configuration={JSON.stringify(configuration)} />
   ),
 }));
 vi.mock("@scalar/api-reference-react/style.css", () => ({}));
 
-import ApiDocsPage, {
-  createApiDocsConfiguration,
-  getBaseUrl,
-} from "./ApiDocsPage";
+import ApiDocsPage, { createApiDocsConfiguration, getBaseUrl } from "./ApiDocsPage";
 
 describe("getBaseUrl", () => {
   test("strips the /public/apiDocs suffix for a root deployment", () => {
-    expect(getBaseUrl("https://example.com/public/apiDocs")).toBe(
-      "https://example.com",
-    );
+    expect(getBaseUrl("https://example.com/public/apiDocs")).toBe("https://example.com");
   });
 
   test("preserves a servlet context path", () => {
-    expect(getBaseUrl("https://example.com/rspace/public/apiDocs")).toBe(
-      "https://example.com/rspace",
-    );
+    expect(getBaseUrl("https://example.com/rspace/public/apiDocs")).toBe("https://example.com/rspace");
   });
 
   test("returns an empty base when the suffix is absent", () => {
@@ -66,9 +56,7 @@ describe("createApiDocsConfiguration", () => {
   });
 
   test("prefers API key auth and prefills both OAuth schemes", () => {
-    expect(config.authentication?.preferredSecurityScheme).toBe(
-      "ApiKeySecurity",
-    );
+    expect(config.authentication?.preferredSecurityScheme).toBe("ApiKeySecurity");
     const schemes = config.authentication?.securitySchemes as Record<
       string,
       { flows: { password: Record<string, unknown> } }
@@ -111,12 +99,9 @@ describe("ApiDocsPage", () => {
   test("renders Scalar with a configuration containing both specs", () => {
     render(<ApiDocsPage />);
     const mounted = screen.getByTestId("mock-scalar");
-    const passed = JSON.parse(
-      mounted.getAttribute("data-configuration") ?? "{}",
-    ) as ReturnType<typeof createApiDocsConfiguration>;
-    expect(passed.sources?.map((s) => s.title)).toEqual([
-      "RSpace ELN",
-      "RSpace Inventory",
-    ]);
+    const passed = JSON.parse(mounted.getAttribute("data-configuration") ?? "{}") as ReturnType<
+      typeof createApiDocsConfiguration
+    >;
+    expect(passed.sources?.map((s) => s.title)).toEqual(["RSpace ELN", "RSpace Inventory"]);
   });
 });

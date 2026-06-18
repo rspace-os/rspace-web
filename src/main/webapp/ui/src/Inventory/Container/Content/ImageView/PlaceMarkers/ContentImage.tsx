@@ -1,15 +1,16 @@
-import NumberedLocation from "../NumberedLocation";
-import LocationModel from "../../../../../stores/models/LocationModel";
-import Draggable from "../../../../../components/Draggable";
-import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
-import React, { useLayoutEffect, useState, useRef } from "react";
-import useStores from "../../../../../stores/use-stores";
-import { clamp } from "../../../../../util/Util";
+import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-import { type Point } from "../../../../../util/types";
+import type React from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import Draggable from "../../../../../components/Draggable";
+import type { Location } from "../../../../../stores/definitions/Container";
 import ContainerModel from "../../../../../stores/models/ContainerModel";
-import { type Location } from "../../../../../stores/definitions/Container";
+import LocationModel from "../../../../../stores/models/LocationModel";
+import useStores from "../../../../../stores/use-stores";
+import type { Point } from "../../../../../util/types";
+import { clamp } from "../../../../../util/Util";
+import NumberedLocation from "../NumberedLocation";
 
 export type TappedLocationData = {
   location: Location;
@@ -72,11 +73,7 @@ const LocationMarker = ({
       onDragStart={() => setDragging(true)}
       onDragEnd={() => setDragging(false)}
     >
-      <NumberedLocation
-        number={number}
-        shadow={dragging}
-        selected={selected && editable}
-      />
+      <NumberedLocation number={number} shadow={dragging} selected={selected && editable} />
     </Draggable>
   );
 };
@@ -96,11 +93,9 @@ function ContentImage({
 }: ContentImageArgs): React.ReactNode {
   const { searchStore } = useStores();
   const activeResult = searchStore.activeResult;
-  if (!activeResult || !(activeResult instanceof ContainerModel))
-    throw new Error("ActiveResult must be a Container");
+  if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
   const [img, setImg] = useState<HTMLElement | null>(null);
-  const [tappedLocation, setTappedLocation] =
-    useState<TappedLocationData | null>(null);
+  const [tappedLocation, setTappedLocation] = useState<TappedLocationData | null>(null);
 
   useLayoutEffect(() => {
     setTappedLocation(selected);
@@ -115,8 +110,7 @@ function ContentImage({
   } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
-      const { width, height, left, top } =
-        entries[0].target.getBoundingClientRect();
+      const { width, height, left, top } = entries[0].target.getBoundingClientRect();
       setImageDimensions({ width, height, left, top });
     }),
   );
@@ -153,16 +147,8 @@ function ContentImage({
     if (!imageDimensions) throw new Error("Image dimensions are not known");
     const { width: imageWidth, height: imageHeight } = imageDimensions;
     const newPoint = {
-      x: clamp(
-        tappedLocationRelativeToViewport.x - x,
-        iconDimension / 2,
-        imageWidth - iconDimension / 2,
-      ),
-      y: clamp(
-        tappedLocationRelativeToViewport.y - y,
-        iconDimension,
-        imageHeight,
-      ),
+      x: clamp(tappedLocationRelativeToViewport.x - x, iconDimension / 2, imageWidth - iconDimension / 2),
+      y: clamp(tappedLocationRelativeToViewport.y - y, iconDimension, imageHeight),
     };
     const newLocation = new LocationModel({
       parentContainer: activeResult,
@@ -181,18 +167,13 @@ function ContentImage({
 
   const locationMoved = (indexInSorted: number, { x, y }: Point) => {
     if (editable) {
-      if (activeResult.sortedLocations == null)
-        throw new Error("activeResult does not have locations");
+      if (activeResult.sortedLocations == null) throw new Error("activeResult does not have locations");
       const locations = activeResult.sortedLocations;
       const location = locations[indexInSorted];
       if (!imageDimensions) throw new Error("Image dimensions are not known");
       const { width: imageWidth, height: imageHeight } = imageDimensions;
-      location.coordX = Math.round(
-        ((x + locationMarkerOffset.x) * 1000) / imageWidth,
-      );
-      location.coordY = Math.round(
-        ((y + locationMarkerOffset.y) * 1000) / imageHeight,
-      );
+      location.coordX = Math.round(((x + locationMarkerOffset.x) * 1000) / imageWidth);
+      location.coordY = Math.round(((y + locationMarkerOffset.y) * 1000) / imageHeight);
 
       locations[indexInSorted] = location;
       activeResult.setAttributesDirty({
@@ -202,10 +183,7 @@ function ContentImage({
   };
 
   const normalizeCoords = (
-    {
-      width: imageWidth,
-      height: imageHeight,
-    }: { width: number; height: number },
+    { width: imageWidth, height: imageHeight }: { width: number; height: number },
     location: Location,
   ) => {
     return {

@@ -1,16 +1,16 @@
-import Grid from "@mui/material/Grid";
-import React, { useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import TextField from "@mui/material/TextField";
-import { Optional } from "../../../util/optional";
-import { observer } from "mobx-react-lite";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import React, { useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/zenodo";
+import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
+import { Optional } from "../../../util/optional";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ZenodoArgs = {
   integrationState: IntegrationStates["ZENODO"];
@@ -21,17 +21,16 @@ type ZenodoArgs = {
  * Zenodo uses API-key based authentication, as implemeted by the form below.
  */
 function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
-  const [apiKey, setApiKey] = useState(
-    integrationState.credentials.ZENODO_USER_TOKEN.orElse(""),
-  );
+  const [apiKey, setApiKey] = useState(integrationState.credentials.ZENODO_USER_TOKEN.orElse(""));
 
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Zenodo"
         integrationState={integrationState}
@@ -46,13 +45,10 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
           <>
             <ol>
               <li>
-                Obtain an API Token from Zenodo by going into Settings →
-                Applications, and name the token “RSpace”.
+                Obtain an API Token from Zenodo by going into Settings → Applications, and name the token “RSpace”.
               </li>
               <li>Copy the API Token into the field below, and Save.</li>
-              <li>
-                Zenodo will now be available as an option in the export dialog.
-              </li>
+              <li>Zenodo will now be available as an option in the export dialog.</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form

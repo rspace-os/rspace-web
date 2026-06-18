@@ -1,6 +1,6 @@
-import React from "react";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import type React from "react";
 import { STOICHIOMETRY_ROLES } from "@/modules/stoichiometry/schema";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 
@@ -25,9 +25,7 @@ const STOICHIOMETRY_TYPE_OPTIONS = [
 type StoichiometryTableTypeDropdownProps = {
   rowName?: string | null;
   value?: EditableMolecule["role"] | null;
-  onChangeValue: (
-    nextValue: EditableMolecule["role"],
-  ) => void | Promise<void>;
+  onChangeValue: (nextValue: EditableMolecule["role"]) => void | Promise<void>;
   onClose?: () => void;
 };
 
@@ -64,4 +62,3 @@ export default function StoichiometryTableTypeDropdown({
     </Select>
   );
 }
-

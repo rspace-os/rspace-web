@@ -1,13 +1,7 @@
-import React from "react";
 import SvgIcon from "@mui/material/SvgIcon";
+import type React from "react";
 
-export default function PadlockIcon({
-  color,
-  className,
-}: {
-  color?: string;
-  className?: string;
-}): React.ReactNode {
+export default function PadlockIcon({ color, className }: { color?: string; className?: string }): React.ReactNode {
   return (
     <SvgIcon viewBox="0 0 238.1 317.5" className={className}>
       <g>

@@ -1,14 +1,10 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render } from "@testing-library/react";
-import {
-  CELSIUS,
-  type Temperature,
-} from "../../../../../stores/definitions/Units";
-import StorageTemperature from "../../StorageTemperature";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
+import { render } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import { CELSIUS, type Temperature } from "../../../../../stores/definitions/Units";
 import materialTheme from "../../../../../theme";
+import StorageTemperature from "../../StorageTemperature";
 
 vi.mock("@mui/material/Button", () => ({
   default: vi.fn(() => <></>),
@@ -30,10 +26,8 @@ const mockFieldOwner = (mockedParts: {
       storageTempMin: null,
       storageTempMax: null,
     },
-
   };
   return { ...defaults, ...mockedParts };
-
 };
 describe("StorageTemperature", () => {
   describe("Buttons", () => {
@@ -44,16 +38,11 @@ describe("StorageTemperature", () => {
           storageTempMax: { numericValue: 0, unitId: CELSIUS },
         },
         isFieldEditable: () => true,
-
       });
       render(
         <ThemeProvider theme={materialTheme}>
-          <StorageTemperature
-            fieldOwner={fieldOwner}
-            onErrorStateChange={() => {}}
-          />
-        </ThemeProvider>
-
+          <StorageTemperature fieldOwner={fieldOwner} onErrorStateChange={() => {}} />
+        </ThemeProvider>,
       );
       expect(Button).toHaveBeenCalledTimes(5);
     });

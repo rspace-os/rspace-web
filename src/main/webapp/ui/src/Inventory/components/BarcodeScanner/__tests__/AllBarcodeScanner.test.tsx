@@ -1,31 +1,23 @@
-import React from "react";
-import { render, act, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import "@/__tests__/__mocks__/barcode-detection-api";
-import AllBarcodeScanner from "../AllBarcodeScanner";
-import { sleep } from "../../../../util/Util";
-import { type BarcodeInput } from "../BarcodeScannerSkeleton";
-import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
+import { sleep } from "../../../../util/Util";
+import AllBarcodeScanner from "../AllBarcodeScanner";
+import type { BarcodeInput } from "../BarcodeScannerSkeleton";
 
-import { test, describe, expect, vi } from 'vitest';
 describe("AllBarcodeScanner", () => {
   test("Should scan correctly.", async () => {
     const user = userEvent.setup();
 
-    vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() =>
-      Promise.resolve()
-    );
+    vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() => Promise.resolve());
     const onScan = vi.fn<(input: BarcodeInput) => void>();
     render(
       <ThemeProvider theme={materialTheme}>
-        <AllBarcodeScanner
-          onClose={() => {}}
-          onScan={onScan}
-          buttonPrefix="Scan"
-        />
+        <AllBarcodeScanner onClose={() => {}} onScan={onScan} buttonPrefix="Scan" />
       </ThemeProvider>,
-
     );
     /*
      * Wait a second because the barcode scanner checks for a barcode once per
@@ -34,7 +26,6 @@ describe("AllBarcodeScanner", () => {
      */
     await act(async () => {
       await sleep(1100);
-
     });
 
     await user.click(screen.getByText("Scan"));
@@ -47,4 +38,3 @@ describe("AllBarcodeScanner", () => {
     });
   });
 });
-

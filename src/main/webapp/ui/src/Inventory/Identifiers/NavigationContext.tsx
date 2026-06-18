@@ -1,4 +1,4 @@
-import React, { type ReactNode, useContext } from "react";
+import { type ReactNode, useContext } from "react";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
 
@@ -12,9 +12,7 @@ type NavigationContextArgs = {
  * NavigateContext that wraps this component is used to perform the navigation,
  * thereby composing the logic.
  */
-export default function NavigationContext({
-  children,
-}: NavigationContextArgs): ReactNode {
+export default function NavigationContext({ children }: NavigationContextArgs): ReactNode {
   const { useNavigate, useLocation } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();

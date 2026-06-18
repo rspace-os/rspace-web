@@ -1,11 +1,11 @@
 import Grid from "@mui/material/Grid";
-import React from "react";
-import NoValue from "../../components/NoValue";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { format, isValid, parse } from "date-fns";
 import { enGB } from "date-fns/locale";
+import type React from "react";
+import NoValue from "../../components/NoValue";
 
 const TIME_FORMAT = "HH:mm";
 
@@ -24,12 +24,7 @@ export type TimeFieldArgs = {
   id?: string;
 };
 
-export default function TimeField({
-  disabled,
-  value,
-  onChange,
-  id,
-}: TimeFieldArgs): React.ReactNode {
+export default function TimeField({ disabled, value, onChange, id }: TimeFieldArgs): React.ReactNode {
   const pickerValue = parseTimeFieldValue(value);
 
   return (
@@ -38,10 +33,7 @@ export default function TimeField({
         <NoValue label="None" />
       ) : (
         <Grid size={{ md: 6, xs: 12 }}>
-          <LocalizationProvider
-            dateAdapter={AdapterDateFns}
-            adapterLocale={enGB}
-          >
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
             <TimePicker
               value={pickerValue}
               format={TIME_FORMAT}
@@ -49,10 +41,7 @@ export default function TimeField({
               onChange={(newValue) => {
                 onChange({
                   target: {
-                    value:
-                      newValue && isValid(newValue)
-                        ? format(newValue, TIME_FORMAT)
-                        : null,
+                    value: newValue && isValid(newValue) ? format(newValue, TIME_FORMAT) : null,
                   },
                 });
               }}

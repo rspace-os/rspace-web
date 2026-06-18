@@ -6,9 +6,6 @@ vi.mock("@/hooks/api/useUiPreference", async () => {
   return {
     ...actual,
     UiPreferences: ({ children }: { children: ReactNode }) => children,
-    default: (_preference: unknown, opts: { defaultValue: unknown }) => [
-      opts.defaultValue,
-      vi.fn(),
-    ],
+    default: (_preference: unknown, opts: { defaultValue: unknown }) => [opts.defaultValue, vi.fn()],
   };
 });

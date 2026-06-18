@@ -1,17 +1,13 @@
-import { makeObservable, observable, action } from "mobx";
-import {
-  type Basket,
-  type BasketAttrs,
-  type BasketDetails,
-} from "../definitions/Basket";
-import { type Id, type GlobalId } from "../definitions/BaseRecord";
-import { type InventoryRecord } from "../definitions/InventoryRecord";
+import { action, makeObservable, observable } from "mobx";
 import ApiService from "../../common/InvApiService";
-import { type URL } from "../../util/types";
-import getRootStore from "../stores/getRootStore";
-import { mkAlert } from "../contexts/Alert";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
+import type { URL } from "../../util/types";
+import { mkAlert } from "../contexts/Alert";
+import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { Basket, BasketAttrs, BasketDetails } from "../definitions/Basket";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
+import getRootStore from "../stores/getRootStore";
 
 /**
  * This class models any basket (collection of items)
@@ -67,7 +63,7 @@ export default class BasketModel implements Basket {
         mkAlert({
           message: `Error getting Basket contents.`,
           variant: "error",
-        })
+        }),
       );
     } finally {
       this.setLoading(false);
@@ -80,27 +76,23 @@ export default class BasketModel implements Basket {
       this.setLoading(true);
       if (this.id) {
         const basketItemIds = this.items.map((i) => i.globalId);
-        const itemsToAdd = itemIds.filter(
-          (itemId) => !basketItemIds.includes(itemId)
-        );
+        const itemsToAdd = itemIds.filter((itemId) => !basketItemIds.includes(itemId));
         const itemsCount = itemsToAdd.length;
         if (itemsCount > 0 && typeof this.id === "number") {
           const res = await showToastWhilstPending(
             `Adding item${itemsCount > 1 ? "s" : ""} to Basket...`,
             ApiService.post<void>(`baskets/${this.id}/addItems`, {
               globalIds: itemsToAdd,
-            })
+            }),
           );
           if (res.status === 200) {
             // refetch to update basket items list
             await searchStore.search.fetcher.reperformCurrentSearch();
             uiStore.addAlert(
               mkAlert({
-                message: `Item${
-                  itemsCount > 1 ? "s" : ""
-                } successfully added to ${this.name}.`,
+                message: `Item${itemsCount > 1 ? "s" : ""} successfully added to ${this.name}.`,
                 variant: "success",
-              })
+              }),
             );
             // refetch to update item count(s)
             await searchStore.getBaskets();
@@ -110,7 +102,7 @@ export default class BasketModel implements Basket {
             mkAlert({
               message: `The selected items are in ${this.name} already. No items were added.`,
               variant: "warning",
-            })
+            }),
           );
         }
       } else {
@@ -122,7 +114,7 @@ export default class BasketModel implements Basket {
           title: "Error adding items to Basket.",
           message: getErrorMessage(e, ""),
           variant: "error",
-        })
+        }),
       );
     } finally {
       this.setLoading(false);
@@ -139,18 +131,16 @@ export default class BasketModel implements Basket {
           `Removing item${itemsCount > 1 ? "s" : ""} from Basket...`,
           ApiService.post<void>(`baskets/${this.id}/removeItems`, {
             globalIds: itemIds,
-          })
+          }),
         );
         if (res.status === 200) {
           // refetch to update basket items list
           await searchStore.search.fetcher.reperformCurrentSearch();
           uiStore.addAlert(
             mkAlert({
-              message: `Item${
-                itemsCount > 1 ? "s" : ""
-              } successfully removed from ${this.name}.`,
+              message: `Item${itemsCount > 1 ? "s" : ""} successfully removed from ${this.name}.`,
               variant: "success",
-            })
+            }),
           );
           // refetch to update item count(s)
           await searchStore.getBaskets();
@@ -164,7 +154,7 @@ export default class BasketModel implements Basket {
           title: "Error removing items from Basket.",
           message: (e as Error).message || "",
           variant: "error",
-        })
+        }),
       );
     } finally {
       this.setLoading(false);
@@ -176,15 +166,12 @@ export default class BasketModel implements Basket {
     try {
       this.setLoading(true);
       if (this.id) {
-        await showToastWhilstPending(
-          `Updating Basket details...`,
-          ApiService.put<void>(`baskets/${this.id}`, details)
-        );
+        await showToastWhilstPending(`Updating Basket details...`, ApiService.put<void>(`baskets/${this.id}`, details));
         uiStore.addAlert(
           mkAlert({
             message: `Basket details updated.`,
             variant: "success",
-          })
+          }),
         );
         // refetch to update detail(s)
         await searchStore.getBaskets();
@@ -197,7 +184,7 @@ export default class BasketModel implements Basket {
           title: "Error updating Basket details.",
           message: (e as Error).message || "",
           variant: "error",
-        })
+        }),
       );
     } finally {
       this.setLoading(false);

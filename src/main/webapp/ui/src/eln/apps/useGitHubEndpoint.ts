@@ -26,9 +26,7 @@ export function useGitHubEndpoint(): {
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  const getAllRepositories = async (
-    authToken: string
-  ): Promise<Array<Repository>> => {
+  const getAllRepositories = async (authToken: string): Promise<Array<Repository>> => {
     const response = await api.get<
       | { success: true; data: Array<Repository>; error: null }
       | {
@@ -47,9 +45,7 @@ export function useGitHubEndpoint(): {
         if (typeof errorMsg === "string") {
           throw new Error(errorMsg);
         } else {
-          throw new Error(
-            ArrayUtils.getAt(0, errorMsg.errorMessages).orElse("Unknown reason")
-          );
+          throw new Error(ArrayUtils.getAt(0, errorMsg.errorMessages).orElse("Unknown reason"));
         }
       }
     } else {

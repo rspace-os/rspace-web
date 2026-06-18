@@ -1,73 +1,44 @@
-import { mkAlert } from "../contexts/Alert";
-import { type _LINK } from "../../util/types";
+import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
+import type React from "react";
+import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import ApiService from "../../common/InvApiService";
+import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { getErrorMessage } from "../../util/error";
 import RsSet from "../../util/set";
-import {
-  type HasEditableFields,
-  type HasUneditableFields,
-} from "../definitions/Editable";
-import {
-  type Id,
-  type GlobalId,
-  inventoryRecordTypeLabels,
-} from "../definitions/BaseRecord";
-import { type RecordDetails } from "../definitions/Record";
-import {
-  type RecordType,
-  type Action,
-  type InventoryRecord,
-  type CreateOption,
-} from "../definitions/InventoryRecord";
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
+import type { _LINK } from "../../util/types";
+import { pick } from "../../util/unsafeUtils";
+import { mkAlert } from "../contexts/Alert";
+import type { BarcodeAttrs } from "../definitions/Barcode";
+import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
+import type { HasQuantityEditableFields, HasQuantityUneditableFields, Quantity } from "../definitions/HasQuantity";
+import type { IdentifierAttrs } from "../definitions/Identifier";
+import type { Action, CreateOption, RecordType } from "../definitions/InventoryRecord";
+import type { PersonAttrs, PersonId } from "../definitions/Person";
+import type { RecordDetails } from "../definitions/Record";
+import type { Alias, Sample } from "../definitions/Sample";
+import type { SubSample } from "../definitions/SubSample";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
-import { type AttachmentJson } from "./AttachmentModel";
-import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import { type PersonId, type PersonAttrs } from "../definitions/Person";
-import { type Factory } from "../definitions/Factory";
+import type { AttachmentJson } from "./AttachmentModel";
+import type ContainerModel from "./ContainerModel";
+import type { ContainerAttrs } from "./ContainerModel";
+import { HasLocationMixin } from "./HasLocation";
+import { getUnitId, getValue, HasQuantityMixin } from "./HasQuantity";
+import InventoryBaseRecord, {
+  defaultEditableResultFields,
+  defaultVisibleResultFields,
+  type InventoryBaseRecordEditableFields,
+  type InventoryBaseRecordUneditableFields,
+  RESULT_FIELDS,
+} from "./InventoryBaseRecord";
 import InventoryBaseRecordCollection, {
   type InventoryBaseRecordCollectionEditableFields,
 } from "./InventoryBaseRecordCollection";
 import SampleModel, { type SampleAttrs } from "./SampleModel";
-import {
-  action,
-  computed,
-  observable,
-  override,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import { type Alias, type Sample } from "../definitions/Sample";
-import InventoryBaseRecord, {
-  RESULT_FIELDS,
-  defaultVisibleResultFields,
-  defaultEditableResultFields,
-  InventoryBaseRecordEditableFields,
-  InventoryBaseRecordUneditableFields,
-} from "./InventoryBaseRecord";
-import React from "react";
-import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
-import { type SubSample } from "../definitions/SubSample";
-import { type BarcodeAttrs } from "../definitions/Barcode";
-import type { IdentifierAttrs } from "../definitions/Identifier";
-import { pick } from "../../util/unsafeUtils";
-import {
-  IsInvalid,
-  IsValid,
-  type ValidationResult,
-} from "../../components/ValidatingSubmitButton";
-import { getErrorMessage } from "../../util/error";
-import { HasLocationMixin } from "./HasLocation";
-import {
-  HasLocationEditableFields,
-  HasLocationUneditableFields,
-} from "../definitions/HasLocation";
-import {
-  type HasQuantityEditableFields,
-  type HasQuantityUneditableFields,
-  type Quantity,
-} from "../definitions/HasQuantity";
-import { HasQuantityMixin, getValue, getUnitId } from "./HasQuantity";
 
 type SubSampleEditableFields = HasQuantityEditableFields &
   HasLocationEditableFields &
@@ -121,21 +92,12 @@ export type SubSampleAttrs = {
 } & Record<string, unknown>;
 
 const FIELDS = new Set([...RESULT_FIELDS, "quantity", "notes"]);
-const defaultVisibleFields = new Set([
-  ...FIELDS,
-  ...defaultVisibleResultFields,
-]);
-const defaultEditableFields = new Set([
-  ...defaultEditableResultFields,
-  "notes",
-]);
+const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
+const defaultEditableFields = new Set([...defaultEditableResultFields, "notes"]);
 
 export default class SubSampleModel
   extends HasQuantityMixin(HasLocationMixin(InventoryBaseRecord))
-  implements
-    SubSample,
-    HasEditableFields<SubSampleEditableFields>,
-    HasUneditableFields<SubSampleUneditableFields>
+  implements SubSample, HasEditableFields<SubSampleEditableFields>, HasUneditableFields<SubSampleUneditableFields>
 {
   notes: Array<Note> = [];
   // @ts-expect-error parentContainers is initialised by populateFromJson
@@ -168,17 +130,12 @@ export default class SubSampleModel
       alias: computed,
     });
 
-    if (this.recordType === "subSample")
-      this.populateFromJson(factory, params, {});
+    if (this.recordType === "subSample") this.populateFromJson(factory, params, {});
 
     this.createOptionsParametersState = { split: { key: "split", copies: 2 } };
   }
 
-  populateFromJson(
-    factory: Factory,
-    passedParams: object,
-    defaultParams: object = {},
-  ): void {
+  populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as SubSampleAttrs;
     this.notes = params.notes ?? [];
@@ -219,8 +176,7 @@ export default class SubSampleModel
    */
   get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
-    if (this.currentlyEditableFields.has("quantity"))
-      params.quantity = this.quantity;
+    if (this.currentlyEditableFields.has("quantity")) params.quantity = this.quantity;
     return params;
   }
 
@@ -259,11 +215,7 @@ export default class SubSampleModel
     if (this.state === "edit") {
       const newNote: Note = {
         ...params,
-        createdBy: pick(
-          "firstName",
-          "lastName",
-          "id",
-        )(getRootStore().peopleStore.currentUser),
+        createdBy: pick("firstName", "lastName", "id")(getRootStore().peopleStore.currentUser),
         created: new Date().toISOString(),
       };
       this.setAttributesDirty({
@@ -274,10 +226,7 @@ export default class SubSampleModel
 
     if (!this.id) throw new Error("id is required.");
     try {
-      const { data } = await ApiService.post<{ notes: Array<Note> }>(
-        `subSamples/${this.id}/notes`,
-        params,
-      );
+      const { data } = await ApiService.post<{ notes: Array<Note> }>(`subSamples/${this.id}/notes`, params);
 
       runInAction(() => {
         this.notes = data.notes;
@@ -333,11 +282,10 @@ export default class SubSampleModel
     const id = this.id;
     this.setLoading(true);
 
+    // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
     const [{}, ...noteResults] = await Promise.allSettled([
       super.update(refresh),
-      ...this.notes
-        .filter((n) => !n.id)
-        .map((n) => ApiService.post<void>(`subSamples/${id}/notes`, n)),
+      ...this.notes.filter((n) => !n.id).map((n) => ApiService.post<void>(`subSamples/${id}/notes`, n)),
     ]);
 
     if (noteResults.some(({ status }) => status === "rejected")) {
@@ -442,8 +390,7 @@ export default class SubSampleModel
         parameters: [
           {
             label: "Number of new subsamples",
-            explanation:
-              "The total number of subsamples wanted, including the source (between 2 and 100)",
+            explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
             state: this.createOptionsParametersState.split,
             validState: () =>
               this.createOptionsParametersState.split.copies >= 2 &&
@@ -455,19 +402,15 @@ export default class SubSampleModel
           this.createOptionsParametersState.split.copies = 2;
         },
         onSubmit: () => {
-          return getRootStore().searchStore.search.splitRecord(
-            this.createOptionsParametersState.split.copies,
-            this
-          );
+          return getRootStore().searchStore.search.splitRecord(this.createOptionsParametersState.split.copies, this);
         },
       },
     ];
   }
 }
 
-type BatchSubSampleEditableFields =
-  InventoryBaseRecordCollectionEditableFields &
-    Omit<SubSampleEditableFields, "name" | "identifiers">;
+type BatchSubSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
+  Omit<SubSampleEditableFields, "name" | "identifiers">;
 
 /*
  * This is a wrapper class around a set of SubSamples, making it easier to
@@ -492,9 +435,7 @@ export class SubSampleCollection
   }
 
   get fieldValues(): BatchSubSampleEditableFields {
-    const currentQuanities = new RsSet(
-      this.records.map((r) => getValue(r.quantity)),
-    );
+    const currentQuanities = new RsSet(this.records.map((r) => getValue(r.quantity)));
 
     return {
       ...super.fieldValues,
@@ -513,9 +454,7 @@ export class SubSampleCollection
   get noValueLabel(): {
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {
-    const currentQuanities = new RsSet(
-      this.records.map((r) => getValue(r.quantity)),
-    );
+    const currentQuanities = new RsSet(this.records.map((r) => getValue(r.quantity)));
     return {
       ...super.noValueLabel,
       quantity: currentQuanities.size === 1 ? null : "Varies",

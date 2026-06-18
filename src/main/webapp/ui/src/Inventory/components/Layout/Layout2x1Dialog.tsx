@@ -3,18 +3,16 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
-import React from "react";
-import useStores from "../../../stores/use-stores";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "./Layout2x1";
 
 // Full height and full width
 function AlmostFullscreenDialog({
   children,
   ...props
-}: { children: React.ReactNode } & React.ComponentProps<
-  typeof Dialog
->): React.ReactNode {
+}: { children: React.ReactNode } & React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
     <Dialog
       {...props}
@@ -44,15 +42,10 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
   const rightPaneWidth = `${((isSingleColumnLayout ? 12 : 7) / 12) * 100}%`;
 
   return (
-    <AlmostFullscreenDialog
-      open={props.open}
-      onClose={props.onClose}
-      fullScreen={uiStore.isVerySmall}
-    >
-      {props.dialogTitle !== null &&
-        typeof props.dialogTitle !== "undefined" && (
-          <DialogTitle>{props.dialogTitle}</DialogTitle>
-        )}
+    <AlmostFullscreenDialog open={props.open} onClose={props.onClose} fullScreen={uiStore.isVerySmall}>
+      {props.dialogTitle !== null && typeof props.dialogTitle !== "undefined" && (
+        <DialogTitle>{props.dialogTitle}</DialogTitle>
+      )}
       <DialogContent
         dividers
         sx={{
@@ -79,10 +72,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
             sx={{
               maxWidth: leftPaneWidth,
               flexBasis: leftPaneWidth,
-              ...(isSingleColumnLayout &&
-              !(uiStore.dialogVisiblePanel === "left")
-                ? { display: "none" }
-                : {}),
+              ...(isSingleColumnLayout && !(uiStore.dialogVisiblePanel === "left") ? { display: "none" } : {}),
             }}
           >
             {props.colLeft}
@@ -91,10 +81,7 @@ function Layout2x1Dialog(props: Layout2x1DialogArgs): React.ReactNode {
             sx={{
               maxWidth: rightPaneWidth,
               flexBasis: rightPaneWidth,
-              ...(isSingleColumnLayout &&
-              !(uiStore.dialogVisiblePanel === "right")
-                ? { display: "none" }
-                : {}),
+              ...(isSingleColumnLayout && !(uiStore.dialogVisiblePanel === "right") ? { display: "none" } : {}),
             }}
           >
             {props.colRight}
