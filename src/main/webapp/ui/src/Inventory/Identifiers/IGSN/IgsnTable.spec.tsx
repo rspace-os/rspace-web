@@ -149,7 +149,7 @@ describe("IGSN Table", () => {
     await table.waitForRowCount(4);
     // Select 2 rows
     await table.selectRowByIndex(0);
-    await table.selectRowByIndex(0);
+    await table.selectRowByIndex(1);
     const csv = await table.exportToCsv();
     const lines = csv.split("\n");
     // 2 selected rows + 1 header row
