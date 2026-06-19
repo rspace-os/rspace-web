@@ -90,6 +90,7 @@
           <execution> <!-- default execution skips 'prod'/'prod-test' profile tests -->
             <id>default-test</id>
             <configuration>
+              <skip>${skipUnitTests}</skip>
               <excludes>
                 <exclude>**/EgnyteFileSetupConfigTest.java</exclude>
                 <exclude>**/ProdConfigWiringTest.java</exclude>
@@ -103,6 +104,7 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <skip>${skipUnitTests}</skip>
               <includes>
                 <include>**/EgnyteFileSetupConfigTest.java</include>
               </includes>
@@ -115,6 +117,7 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <skip>${skipUnitTests}</skip>
               <includes>
                 <include>**/ProdConfigWiringTest.java</include>
               </includes>
@@ -2526,7 +2529,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.8</version>
+            <version>0.8.15</version>
             <executions>
               <execution>
                 <id>default-prepare-agent</id>
@@ -2644,6 +2647,7 @@
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
+    <skipUnitTests>false</skipUnitTests>
     <spotless.version>3.5.1</spotless.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
