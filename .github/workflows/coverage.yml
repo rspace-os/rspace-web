@@ -1,12 +1,17 @@
 name: Coverage
 
 # Whole-codebase JaCoCo coverage, run on a nightly schedule (and on manual
-# dispatch). Kept separate from lint-and-test.yml so the fast
-# spring-tests/integration-tests split stays agent-free and there is no
-# cross-shard report merge. `mvn verify -DenableTestCoverage` runs the test
-# phase (unit + Spring) and the integration-test phase, producing both
-# target/site/jacoco/jacoco.xml and target/site/jacoco-it/jacoco.xml, which
-# Codecov merges server-side.
+# dispatch). The work is split across two parallel runners that mirror the
+# spring-tests/integration-tests split in lint-and-test.yml:
+# - unit-spring-coverage: runs the `test` phase (pure-unit + Spring) and emits
+#   target/site/jacoco/jacoco.xml
+# - integration-coverage: runs only the integration-test phase
+#   (-DskipUnitTests=true) and emits target/site/jacoco-it/jacoco.xml
+# Each job uploads only its own report; Codecov merges them server-side. Running
+# them in parallel keeps wall-clock bounded by the slower (integration) shard
+# rather than the sum of both phases.
+# ponytail: this doubles DB schema-init cost (each shard runs drop-recreate-db);
+# a pre-seeded DB image (planned) would remove that overhead.
 
 on:
   schedule:
@@ -26,7 +31,7 @@ env:
   CI: "true"
 
 jobs:
-  coverage:
+  unit-spring-coverage:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -76,9 +81,12 @@ jobs:
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
 
-      - name: Run full suite with coverage
+      - name: Run unit + Spring tests with coverage
+        # The jacoco `report` goal is bound to `verify`, which `mvn test` never
+        # reaches, so invoke it explicitly to emit target/site/jacoco/jacoco.xml.
         run: |
-          ./mvnw clean verify -DenableTestCoverage -Denvironment=drop-recreate-db \
+          ./mvnw clean test org.jacoco:jacoco-maven-plugin:report \
+            -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
@@ -94,4 +102,75 @@ jobs:
         if: always()
         uses: codecov/codecov-action@v7.0.0
         with:
-          files: target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
+          files: target/site/jacoco/jacoco.xml
+
+  integration-coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [17]
+    services:
+      db:
+        image: mariadb:lts-jammy
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+
+      - name: Run integration tests with coverage
+        run: |
+          ./mvnw clean verify -DskipUnitTests=true \
+            -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djavax.xml.accessExternalDTD=all \
+            -Dlog4j2.configurationFile=log4j2-dev.xml \
+            -Dsurefire.rerunFailingTestsCount=1 \
+            -Djdbc.db.maven=rspace \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Dmaven.test.failure.ignore=false \
+            -DRS.devlogLevel=INFO \
+            -DRS_FILE_BASE=${RS_FILE_BASE}
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v7.0.0
+        with:
+          files: target/site/jacoco-it/jacoco.xml
