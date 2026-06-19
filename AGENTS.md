@@ -397,6 +397,10 @@ Currently available:
 - `.agents/skills/rspace-dev-stack/` — boot, drive, and tear down the per-worktree
   Dockerized dev stack (`docker/dev/rspace-dev`) to reproduce bugs, diagnose issues,
   and manually test functionality against a real running RSpace instance.
+- `.agents/skills/rspace-browser-tests/` — write, run, and debug frontend
+  component tests in Vitest Browser Mode (real chromium/firefox/webkit via the
+  Playwright provider + MSW + a Page Object Model; `*.spec.tsx`). Covers the
+  four-artifact pattern, shared infra, and the cross-engine gotchas.
 
 **Discovery:** `.agents/skills/` is the cross-agent convention (used by
 agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md
