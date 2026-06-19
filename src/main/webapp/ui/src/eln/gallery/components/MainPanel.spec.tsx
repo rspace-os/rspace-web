@@ -10,23 +10,13 @@ import { BunchOfImages, NestedFoldersWithImageFile } from "./MainPanel.story";
 import { MainPanelPage } from "./pageObjects/MainPanelPage";
 
 /*
- * Vitest Browser Mode port of MainPanel.spec.tsx (Playwright CT).
+ * CLIPBOARD: Clipboard APIs require a browser permission grant that is not
+ * available in Vitest browser mode. We stub `navigator.clipboard.writeText`
+ * before each test that needs it, capture the written value in a local
+ * variable, and assert on it. The stub is restored in afterEach.
  *
- * Key translation decisions:
- *
- * CLIPBOARD: The original spec used `context.grantPermissions` (Playwright-CT
- * only) plus `page.evaluate(() => navigator.clipboard.readText())` to assert
- * what was copied. In browser mode there is no Playwright context object and
- * clipboard APIs require a browser permission grant that is not available in
- * Vitest browser mode. We stub `navigator.clipboard.writeText` before each
- * test that needs it, capture the written value in a local variable, and assert
- * on it. The stub is restored in afterEach. This works cross-browser (pure JS
- * stub) and removes the chromium-only/webkit-skip restrictions that existed
- * only for permissions.
- *
- * MODIFIER CLICKS: Translated to `locator.click({ modifiers: [...] })` —
- * Playwright's native modifier form — instead of the `userEvent.keyboard`
- * pointer-hold form, which vitest-browser issue #7007 flags as unreliable.
+ * MODIFIER CLICKS: Use `locator.click({ modifiers: [...] })` — the
+ * `userEvent.keyboard` pointer-hold form is unreliable (vitest-browser #7007).
  *
  * ANIMATIONS: `page.evaluate(() => document.getAnimations()...)` becomes a
  * direct `document.getAnimations()` call wrapped in `expect.poll` (tests run
@@ -165,7 +155,7 @@ beforeEach(async () => {
   ]);
 
   /*
-   * Pin the viewport to 1280×720 (Playwright-CT's historical default). The grid
+   * Pin the viewport to 1280×720 for consistent grid column counts. The grid
    * computes its column count from the MUI breakpoint of the window width
    * (`cols = 12 / cardWidth[viewportSize]`): at 1280 the breakpoint is "lg" →
    * 4 columns, which is what the rectangular shift-range selection expectations

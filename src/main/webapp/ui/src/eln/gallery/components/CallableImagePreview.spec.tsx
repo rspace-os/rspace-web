@@ -13,8 +13,6 @@ import {
 import { CallableImagePreviewPage } from "./pageObjects/CallableImagePreviewPage";
 
 /*
- * Vitest Browser Mode port of CallableImagePreview.spec.tsx (Playwright CT).
- *
  * IMAGE MOCKING: PhotoSwipe loads the image URL via a real <img> fetch. We
  * serve every https://via.placeholder.com/** request with a minimal 1×1
  * transparent SVG so the onLoad event fires and PhotoSwipe can open.

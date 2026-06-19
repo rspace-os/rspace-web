@@ -8,20 +8,14 @@ import axios from "@/common/axios";
 import { TestFolderTreeExample } from "./FolderTree.story";
 
 /*
- * Converted from FolderTree.spec.tsx (Playwright CT).
- *
- * Implementation check that drove the split: the "add subfolder" control is
+ * Implementation check: the "add subfolder" control is
  * rendered UNCONDITIONALLY in the DOM for non-notebook folders (see
  * FolderTree.tsx `labelContent`: it is gated only by `folder.type !== "NOTEBOOK"`,
  * never by JS hover state). The only hover styling is an inline
  * `sx={{ opacity: 0.6, "&:hover": { opacity: 1 } }}` (the button is already
  * visible at opacity 0.6), and the `StyledTreeItemContent` `opacity:0 / :hover`
  * styled component is dead code that is never rendered. So the add-folder button
- * is queryable and visible in jsdom regardless of hover - those cases convert.
- *
- * The only genuinely browser-bound case kept in FolderTree.spec.tsx is
- * "Loads additional folders when Load More is clicked" (the Load-More click
- * flow is exercised in a real browser per the conversion brief).
+ * is queryable and visible in jsdom regardless of hover.
  *
  * Note on querying: MUI's TreeItem registers its click handler on the inner
  * `.MuiTreeItem-content` element, not the `<li role="treeitem">` root, so

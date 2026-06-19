@@ -7,8 +7,6 @@ import { TreeViewPage } from "./pageObjects/TreeViewPage";
 import { TreeViewWithFiles } from "./TreeView.story";
 
 /*
- * Vitest Browser Mode port of TreeView.spec.tsx (Playwright CT).
- *
  * The Shift+click case must run in a real browser because MUI's SimpleTreeView
  * shift-range selection relies on the browser focus/selection model and
  * item-ordering computation, which does not run under jsdom.

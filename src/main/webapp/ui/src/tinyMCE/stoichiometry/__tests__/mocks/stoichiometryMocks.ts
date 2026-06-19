@@ -3,10 +3,8 @@ import { HttpResponse, http, type RequestHandler } from "msw";
 export { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 
 /*
- * Shared MSW fixtures + handlers for the stoichiometry browser-mode tests
- * (the successors to the Playwright component tests). The Playwright versions
- * mocked the network with `router.route`/`page.route`; here the same responses
- * are expressed as MSW request handlers, registered per-test via
+ * Shared MSW fixtures + handlers for the stoichiometry browser-mode tests.
+ * Responses are expressed as MSW request handlers, registered per-test via
  * `worker.use(...)`.
  */
 

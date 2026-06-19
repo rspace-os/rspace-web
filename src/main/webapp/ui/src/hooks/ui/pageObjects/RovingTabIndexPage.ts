@@ -5,9 +5,6 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * Page object for the roving tab index stories, as mounted by
  * useOneDimensionalRovingTabIndex.story.tsx. Encapsulates the locators and
  * user interactions; assertions live in the tests themselves.
- *
- * Ported from the Playwright component-test fixtures to the Vitest
- * browser-mode locator API (`vitest/browser`).
  */
 export class RovingTabIndexPage {
   get beforeButton(): Locator {

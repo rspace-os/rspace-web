@@ -4,9 +4,6 @@ import { type Locator, page } from "vitest/browser";
  * Page object for the FieldmarkImportDialog, as mounted by the story in
  * FieldmarkImportDialog.story.tsx. Encapsulates locators and user interactions;
  * assertions live in the tests themselves.
- *
- * Ported from the Playwright component-test page object to the Vitest
- * browser-mode locator API (`vitest/browser`).
  */
 export class FieldmarkImportDialogPage {
   get dialog(): Locator {

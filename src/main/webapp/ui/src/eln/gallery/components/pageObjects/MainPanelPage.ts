@@ -5,9 +5,6 @@ import { type Locator, page } from "vitest/browser";
  * Page object for the gallery MainPanel component as mounted by the stories in
  * MainPanel.story.tsx. Encapsulates locators and user interactions; assertions
  * live in the tests themselves.
- *
- * Ported from the Playwright component-test spec (MainPanel.spec.tsx) to the
- * Vitest browser-mode locator API (`vitest/browser`).
  */
 export class MainPanelPage {
   // ── Breadcrumbs ───────────────────────────────────────────────────────────

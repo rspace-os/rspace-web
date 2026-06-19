@@ -4,9 +4,6 @@ import { DataGridWithFeatures, DataGridWithRadioSelectionExample } from "./DataG
 import { DataGridWithRadioSelectionPage } from "./pageObjects/DataGridWithRadioSelectionPage";
 
 /*
- * Browser-bound cases ported from DataGridWithRadioSelection.spec.tsx
- * (Playwright CT) to Vitest Browser Mode.
- *
  * These tests stay in the browser runner (not jsdom) because they exercise
  * behaviour the vitest MUI DataGrid stub cannot reproduce:
  *   - real Tab focus traversal across the grid (keyboard tests),

@@ -3,9 +3,6 @@ import { type Locator, page, userEvent } from "vitest/browser";
 /**
  * Page object for the PubChem ImportDialog, as mounted by ImportDialogStory.
  * Encapsulates locators and user interactions; assertions live in the tests.
- *
- * Ported from the Playwright component-test page object to the Vitest
- * browser-mode locator API (`vitest/browser`).
  */
 export class PubchemImportDialogPage {
   get searchInput(): Locator {

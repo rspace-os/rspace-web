@@ -5,9 +5,6 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * Page object for the stoichiometry dialog, as mounted by the stories in
  * StoichiometryDialog.story.tsx. Encapsulates the locators and user
  * interactions; assertions live in the tests themselves.
- *
- * Ported from the Playwright component-test page object to the Vitest
- * browser-mode locator API (`vitest/browser`).
  */
 export class StoichiometryDialogPage {
   get calculateButton(): Locator {
