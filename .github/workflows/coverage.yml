@@ -98,6 +98,27 @@ jobs:
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=target/site/jacoco/jacoco.csv
+          [ -f "$csv" ] || { echo "No coverage report ($csv missing)." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          echo "### Unit + Spring coverage" >> "$GITHUB_STEP_SUMMARY"
+          awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
+            printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";
+            printf "| Instructions | %d | %d | %.1f%% |\n", ic, ic+im, (ic+im)?100*ic/(ic+im):0;
+            printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+            printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+          }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit-spring
+          path: target/site/jacoco
+          if-no-files-found: ignore
+
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v7.0.0
@@ -168,6 +189,27 @@ jobs:
             -Dmaven.test.failure.ignore=false \
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=target/site/jacoco-it/jacoco.csv
+          [ -f "$csv" ] || { echo "No coverage report ($csv missing)." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          echo "### Integration coverage" >> "$GITHUB_STEP_SUMMARY"
+          awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
+            printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";
+            printf "| Instructions | %d | %d | %.1f%% |\n", ic, ic+im, (ic+im)?100*ic/(ic+im):0;
+            printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+            printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+          }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: target/site/jacoco-it
+          if-no-files-found: ignore
 
       - name: Upload coverage to Codecov
         if: always()
