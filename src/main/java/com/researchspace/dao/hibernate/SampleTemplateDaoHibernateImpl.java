@@ -133,11 +133,10 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
 
   @Override
   public Long getTemplateCount() {
-    return (long)
-        sessionFactory
-            .getCurrentSession()
-            .createQuery("select count(s) from SampleTemplate s where s.deleted=false")
-            .getSingleResult();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("select count(s) from SampleTemplate s where s.deleted=false", Long.class)
+        .getSingleResult();
   }
 
   @Override

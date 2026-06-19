@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.Valid;
@@ -151,6 +152,23 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     }
   }
 
+  /**
+   * If {@code id} belongs to a SampleTemplate the caller is permitted to access, reject the request
+   * with the documented endpoint-mismatch error. The permission-aware template assert runs first so
+   * template existence is never revealed to callers without access: a non-template id (or one the
+   * caller cannot see) throws NotFoundException and falls through to normal sample handling. {@code
+   * templatePermissionCheck} is the read/edit/delete SampleTemplate assert for the operation.
+   */
+  private void rejectIfSampleTemplate(
+      Long id, User user, BiConsumer<Long, User> templatePermissionCheck) {
+    try {
+      templatePermissionCheck.accept(id, user);
+    } catch (NotFoundException notATemplateOrNoReadAccess) {
+      return;
+    }
+    throw new IllegalArgumentException("Please use /sampleTemplates endpoint for template actions");
+  }
+
   /* errors might already be populated with simple validation errors using javax.validation annotations
    * by Spring's automatic validation */
   public void validateCreateSampleInput(
@@ -258,9 +276,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     validateUpdateSampleInput(incomingSample, errors);
     // update incoming object's id which could be omitted
     incomingSample.setIdIfNotSet(id);
-    // reject a template id with the documented error: assertUserCanEditSample resolves only
-    // Sample rows (DTYPE='Sample') and would otherwise surface a 404 for a template id
-    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
+    rejectIfSampleTemplate(id, user, sampleApiMgr::assertUserCanEditSampleTemplate);
     sampleApiMgr.assertUserCanEditSample(id, user);
 
     // update the sample
@@ -276,7 +292,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @RequestParam(name = "forceDelete", required = false) boolean forceDelete,
       @RequestAttribute(name = "user") User user) {
 
-    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
+    rejectIfSampleTemplate(id, user, sampleApiMgr::assertUserCanDeleteSampleTemplate);
     SampleEntity dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
 
     ApiSample result;
@@ -291,7 +307,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSample restoreDeletedSample(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
+    rejectIfSampleTemplate(id, user, sampleApiMgr::assertUserCanDeleteSampleTemplate);
     sampleApiMgr.assertUserCanDeleteSample(id, user);
     return sampleApiMgr.restoreDeletedSample(id, user, true);
   }
@@ -332,7 +348,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSampleWithFullSubSamples duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
+    rejectIfSampleTemplate(id, user, sampleApiMgr::assertUserCanReadSampleTemplate);
     sampleApiMgr.assertUserCanReadSample(id, user);
 
     ApiSampleWithFullSubSamples copy = sampleApiMgr.duplicate(id, user);

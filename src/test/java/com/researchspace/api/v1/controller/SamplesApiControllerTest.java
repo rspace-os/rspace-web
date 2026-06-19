@@ -691,6 +691,19 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void duplicateDoesNotLeakTemplateExistenceToUnauthorizedUser() {
+    SampleTemplate sampleTemplate =
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
+    User otherUser = createInitAndLoginAnyUser();
+
+    // the template-id guard must enforce permissions before revealing it is a template: a user
+    // without access gets the read-path not-found rather than the 400 endpoint-mismatch leak
+    assertThrows(
+        NotFoundException.class, () -> samplesApi.duplicate(savedTemplate.getId(), otherUser));
+  }
+
+  @Test
   public void checkRevisionHistoryMethods() throws Exception {
     // revisions are only created in real database transaction, this test just runs the code
 
