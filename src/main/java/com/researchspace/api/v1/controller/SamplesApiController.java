@@ -276,6 +276,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @RequestParam(name = "forceDelete", required = false) boolean forceDelete,
       @RequestAttribute(name = "user") User user) {
 
+    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
     SampleEntity dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
 
     ApiSample result;
@@ -290,6 +291,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSample restoreDeletedSample(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
     sampleApiMgr.assertUserCanDeleteSample(id, user);
     return sampleApiMgr.restoreDeletedSample(id, user, true);
   }
@@ -330,6 +332,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSampleWithFullSubSamples duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
     sampleApiMgr.assertUserCanReadSample(id, user);
 
     ApiSampleWithFullSubSamples copy = sampleApiMgr.duplicate(id, user);

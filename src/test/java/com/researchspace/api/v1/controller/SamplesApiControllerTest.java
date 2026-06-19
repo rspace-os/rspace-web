@@ -663,6 +663,34 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void sampleDeleteRestoreDuplicateRejectTemplateIds() {
+    SampleTemplate sampleTemplate =
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
+    Long templateId = savedTemplate.getId();
+
+    IllegalArgumentException deleteError =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> samplesApi.deleteSample(templateId, false, testUser));
+    assertEquals(
+        "Please use /sampleTemplates endpoint for template actions", deleteError.getMessage());
+
+    IllegalArgumentException restoreError =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> samplesApi.restoreDeletedSample(templateId, testUser));
+    assertEquals(
+        "Please use /sampleTemplates endpoint for template actions", restoreError.getMessage());
+
+    IllegalArgumentException duplicateError =
+        assertThrows(
+            IllegalArgumentException.class, () -> samplesApi.duplicate(templateId, testUser));
+    assertEquals(
+        "Please use /sampleTemplates endpoint for template actions", duplicateError.getMessage());
+  }
+
+  @Test
   public void checkRevisionHistoryMethods() throws Exception {
     // revisions are only created in real database transaction, this test just runs the code
 
