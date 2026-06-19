@@ -89,35 +89,11 @@ export class MainPanelPage {
 
   // ── Grid file interactions ────────────────────────────────────────────────
 
-  async clickFile(name: string, options: { modifiers?: Array<"Shift" | "ControlOrMeta"> } = {}): Promise<void> {
-    const modifiers = options.modifiers ?? [];
-    if (modifiers.length === 0) {
-      // Plain click: use the real pointer interaction so focus side effects
-      // (needed by the arrow-key tests) happen.
-      await this.gridCell(name).click();
-      return;
-    }
-    /*
-     * Modified click. Vitest browser mode does not reliably propagate pointer
-     * modifiers — particularly Shift — onto the click event the component
-     * reads (vitest-browser issue #7007); a real `click({ modifiers: ["Shift"] })`
-     * arrives with `event.shiftKey === false`, so the grid's shift-range
-     * selection never fires. We dispatch a native click with the modifier flags
-     * set explicitly; React reads `shiftKey`/`ctrlKey`/`metaKey` from the native
-     * event, so the component's selection handler sees the intended modifiers.
-     */
-    const el = this.gridCell(name).element();
-    el.scrollIntoView({ block: "center" });
-    const init: MouseEventInit = {
-      bubbles: true,
-      cancelable: true,
-      shiftKey: modifiers.includes("Shift"),
-      ctrlKey: modifiers.includes("ControlOrMeta"),
-      metaKey: modifiers.includes("ControlOrMeta"),
-    };
-    el.dispatchEvent(new MouseEvent("mousedown", init));
-    el.dispatchEvent(new MouseEvent("mouseup", init));
-    el.dispatchEvent(new MouseEvent("click", init));
+  async clickFile(
+    name: string,
+    { modifiers = [] }: { modifiers?: Array<"Shift" | "ControlOrMeta"> } = {},
+  ): Promise<void> {
+    await this.gridCell(name).click(modifiers.length ? { modifiers } : undefined);
   }
 
   async dblClickFile(name: string): Promise<void> {
