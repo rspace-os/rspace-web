@@ -255,7 +255,7 @@ export class StoichiometryTablePage {
   }
 
   insufficientStockIcon(container: Locator): Locator {
-    return container.getByCSS('svg[aria-label="Insufficient Stock"]');
+    return container.getByRole("img", { name: "Insufficient Stock" });
   }
 }
 
