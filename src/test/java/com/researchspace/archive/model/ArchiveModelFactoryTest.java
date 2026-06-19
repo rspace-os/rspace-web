@@ -76,7 +76,8 @@ public class ArchiveModelFactoryTest {
     form.addFieldForm(FieldTestUtils.createANumberFieldForm());
     form.addFieldForm(FieldTestUtils.createStringForm());
     form.setId(1L);
-    ArchivalForm arForm = factory.createArchivalForm(form, "form");
+    StructuredDocument doc = createAnySD(form);
+    ArchivalForm arForm = factory.createArchivalFormForDocument(doc, "form");
     assertEquals(4, arForm.getFieldFormList().size());
   }
 
@@ -85,23 +86,57 @@ public class ArchiveModelFactoryTest {
     form.setId(1L);
     NumberFieldForm nff = new NumberFieldForm("number");
     form.addFieldForm(nff);
-    ArchivalForm arForm = factory.createArchivalForm(form, "form");
+    StructuredDocument doc = createAnySD(form);
+    ArchivalForm arForm = factory.createArchivalFormForDocument(doc, "form");
     assertEquals(2, arForm.getFieldFormList().size());
   }
 
+  /**
+   * RSDEV-1202 / RSDEV-1140 (Vienna): a field form that is soft-deleted after a document was
+   * created must still be exported, because the document holds that field's content. The previous
+   * behaviour (sourcing the form copy from the form's field forms and skipping deleted ones)
+   * dropped it and lost the content on import. The exported form is now built from the document's
+   * own fields, so a deleted-but-still-used field form is included.
+   */
   @Test
-  public void deletedFormFieldsAreNotExported_RSPAC_1793() {
+  public void usedButDeletedFieldFormIsStillExported_RSDEV_1140() {
     form.setId(1L);
     NumberFieldForm nff = new NumberFieldForm("number");
     form.addFieldForm(nff);
-    ArchivalForm arForm = factory.createArchivalForm(form, "form");
-    assertEquals(2, arForm.getFieldFormList().size());
+    StructuredDocument doc = createAnySD(form);
+    // the field form is deleted after the document already has a field (and content) for it
     nff.setDeleted(true);
 
-    arForm = factory.createArchivalForm(form, "form");
-    assertEquals(1, arForm.getFieldFormList().size());
+    ArchivalForm arForm = factory.createArchivalFormForDocument(doc, "form");
+
+    assertEquals(doc.getFields().size(), arForm.getFieldFormList().size());
     assertTrue(
-        arForm.getFieldFormList().stream().noneMatch(ff -> NUMBER.getType().equals(ff.getType())));
+        "deleted-but-used field form should still be exported",
+        arForm.getFieldFormList().stream().anyMatch(ff -> NUMBER.getType().equals(ff.getType())));
+  }
+
+  /**
+   * RSPAC-1793 regression guard, restated against the correct discriminator: a deleted "ghost"
+   * field form that no document field references must NOT be exported. The document never
+   * instantiated it, so it is absent from the document's fields and therefore from the exported
+   * form.
+   */
+  @Test
+  public void ghostDeletedFieldFormNotUsedByDocumentIsNotExported_RSPAC_1793() {
+    form.setId(1L);
+    StructuredDocument doc = createAnySD(form);
+    int documentFieldCount = doc.getFields().size();
+    // a deleted field form hangs off the form but no document field references it
+    NumberFieldForm ghost = new NumberFieldForm("ghost-number");
+    ghost.setDeleted(true);
+    form.addFieldForm(ghost);
+
+    ArchivalForm arForm = factory.createArchivalFormForDocument(doc, "form");
+
+    assertEquals(documentFieldCount, arForm.getFieldFormList().size());
+    assertTrue(
+        "ghost field form unused by the document should not be exported",
+        arForm.getFieldFormList().stream().noneMatch(ff -> "ghost-number".equals(ff.getName())));
   }
 
   @Test

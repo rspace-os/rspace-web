@@ -41,9 +41,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 
 /** Factory class that will create Java objects for XML persistence from entity objects. */
+@Slf4j
 public class ArchiveModelFactory {
 
   /**
@@ -142,13 +144,45 @@ public class ArchiveModelFactory {
   }
 
   /**
-   * Creates an ArchivalForm for XML persistence from an {@link RSForm}
+   * Creates an {@link ArchivalForm} for XML persistence describing exactly the field forms used by
+   * the exported document, in the document's field order.
    *
-   * @param rfm
-   * @param code
-   * @return
+   * <p>RSDEV-1202: the field-form set is taken from the document's own fields ({@link
+   * Field#getFieldForm()}), not from {@link RSForm#getFieldForms()}. This keeps the exported form
+   * in step with the document regardless of the form's soft-delete state. A field whose field form
+   * has since been marked deleted is still exported, because the document holds its content
+   * (RSDEV-1140 / Vienna), while a deleted "ghost" field form that no document field references is
+   * naturally excluded, because the document never instantiated it (RSPAC-1793). The exported form
+   * and the exported document therefore correspond one-to-one by construction, so the import does
+   * not have to re-pair them by name or position.
+   *
+   * @param std the document being exported
+   * @param code the form code (filename stem) for this document's form copy
    */
-  public ArchivalForm createArchivalForm(RSForm rfm, String code) {
+  public ArchivalForm createArchivalFormForDocument(StructuredDocument std, String code) {
+    ArchivalForm rc = archivalFormMetadata(std.getForm(), code);
+    int k = 0;
+    for (Field field : std.getFields()) {
+      if (!(field.getFieldForm() instanceof FieldForm fm)) {
+        log.warn(
+            "RSDEV-1202: document field '{}' (id {}) on document {} has no field form; it cannot be"
+                + " described in the exported form. Its content is still exported and the import"
+                + " will hold it in a new field.",
+            field.getName(),
+            field.getId(),
+            std.getId());
+        continue;
+      }
+      ArchivalFieldForm afm = createArchivalFieldForm(fm);
+      afm.setCode(code + "_field_" + k);
+      rc.getFieldFormList().add(afm);
+      k++;
+    }
+    return rc;
+  }
+
+  /** Copies form-level metadata (no field forms) from an {@link RSForm} into a new ArchivalForm. */
+  private ArchivalForm archivalFormMetadata(RSForm rfm, String code) {
     ArchivalForm rc = new ArchivalForm();
     rc.setFormId(rfm.getId());
     rc.setCode(code);
@@ -158,17 +192,6 @@ public class ArchiveModelFactory {
     rc.setModificationDate(rfm.getModificationDate().getTime());
     rc.setPublishingState(rfm.getPublishingState().name());
     rc.setFormVersion(rfm.getVersion().asString());
-    List<FieldForm> frms = rfm.getFieldForms();
-    int k = 0;
-    for (FieldForm fm : frms) {
-      if (fm.isDeleted()) {
-        continue; //
-      }
-      ArchivalFieldForm afm = createArchivalFieldForm(fm);
-      afm.setCode(code + "_field_" + k);
-      rc.getFieldFormList().add(afm);
-      k++;
-    }
     return rc;
   }
 

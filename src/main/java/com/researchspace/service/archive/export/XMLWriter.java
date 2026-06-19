@@ -7,7 +7,6 @@ import com.researchspace.archive.ArchivalGalleryMetadata;
 import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.util.XMLReadWriteUtils;
-import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import java.io.File;
 import java.util.Set;
@@ -24,7 +23,7 @@ class XMLWriter implements ExportObjectWriter {
       if (exported.getExportedRecord().isStructuredDocument()) {
         marshalDocument(outputFile, exported.getArchivedRecord());
         StructuredDocument doc = (StructuredDocument) exported.getExportedRecord();
-        marshalDocumentForm(doc.getForm(), outputFile.getParentFile());
+        marshalDocumentForm(doc, outputFile.getParentFile());
         marshalExternalWorkFlows(exported.getArchivedRecord(), outputFile.getParentFile());
       } else if (exported.getExportedRecord().isMediaRecord()) {
         marshalMediaDoc(outputFile, exported.getArchivedMedia());
@@ -39,9 +38,10 @@ class XMLWriter implements ExportObjectWriter {
     }
   }
 
-  private void marshalDocumentForm(RSForm form, File recordFolder) throws Exception {
+  private void marshalDocumentForm(StructuredDocument doc, File recordFolder) throws Exception {
     String formCode = recordFolder.getName() + "_form";
-    ArchivalForm archiveForm = new ArchiveModelFactory().createArchivalForm(form, formCode);
+    ArchivalForm archiveForm =
+        new ArchiveModelFactory().createArchivalFormForDocument(doc, formCode);
     archiveForm.setCode(formCode);
     File formFile = new File(recordFolder, formCode + ".xml");
     if (!formFile.exists()) {
