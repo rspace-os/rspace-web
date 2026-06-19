@@ -18,8 +18,10 @@ functionality live. The launcher is `docker/dev/rspace-dev`; full reference is
   your own initiative. This mirrors the rule in `CLAUDE.md`.
 - **`nuke` permanently deletes this worktree's DB and local data.** Confirm
   before running it unless the user was explicit. `down` is the reversible stop.
-- Commands are scoped to the **current worktree** and never touch another
-  worktree's instance or the shared Maven/pnpm caches.
+- Commands are scoped to the **current worktree**: they never affect another
+  worktree's instance, and `down`/`nuke` never delete the shared Maven/pnpm
+  caches. (Those caches *are* shared — every worktree reads and writes them — so
+  they're reused across worktrees, just never destroyed by these commands.)
 - Prerequisite: Docker Engine + Compose v2. No local Java/Node/MariaDB needed.
 
 ## When to launch over static analysis
@@ -82,9 +84,9 @@ sysadmin `sysadmin1` / `sysWisc23!`.
 | ------------------------ | ----------------------------------------------- |
 | Frontend `.ts/.tsx/.css` | nothing — Vite HMR auto-reloads                 |
 | JSP                      | nothing — recompiled on next request            |
-| Java code (existing bean)| `rspace-dev reload` (or IDE hot code replace)   |
-| Spring XML / web.xml / new beans / pom | `rspace-dev restart`              |
-| Liquibase / DB schema    | `rspace-dev reset-db` (or `up --fresh`)         |
+| Java code (existing bean)| `./docker/dev/rspace-dev reload` (or IDE hot code replace) |
+| Spring XML / web.xml / new beans / pom | `./docker/dev/rspace-dev restart`     |
+| Liquibase / DB schema    | `./docker/dev/rspace-dev reset-db` (or `up --fresh`) |
 
 See README §"Hot reloading Java" / "What still requires a full restart" for the
 full matrix when behaviour looks stale.

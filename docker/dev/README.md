@@ -398,7 +398,7 @@ is the quick lookup.
 | Backend OOMs / `OutOfMemoryError` in the app log | JVM heap too small for your workload | Raise `MAVEN_OPTS` (default `-Xmx2g`) in `.env` and `rspace-dev restart`; give Docker Desktop a generous memory limit. |
 | App won't start after a schema change; DB looks corrupted or out of sync | Old data/schema left from a previous migration | `rspace-dev reset-db` (or `up --fresh`) to rebuild the DB from scratch. |
 | The `db` container keeps restarting | Corrupt data volume or interrupted init | `rspace-dev reset-db`; if it persists, `rspace-dev nuke` (destroys this worktree's volumes) then `up`. |
-| Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env` and `rspace-dev restart frontend`; on WSL2 keep the repo on the Linux filesystem. |
+| Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env`, then recreate the frontend container so it re-reads the var: `rspace-dev compose up -d --force-recreate frontend` (`rspace-dev restart` only recreates the backend `app`). On WSL2 keep the repo on the Linux filesystem. |
 | Java edits don't take effect after `reload` | Change needs a context rebuild or new JVM (see "What still requires a full restart") | `rspace-dev reload`, and if still stale `rspace-dev restart`. |
 | Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
 
