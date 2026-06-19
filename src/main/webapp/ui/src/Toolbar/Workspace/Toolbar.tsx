@@ -1,3 +1,5 @@
+// @ts-nocheck — legacy class component restored by revert; global JS vars not typed
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
 import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
 import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
 import { faList } from "@fortawesome/free-solid-svg-icons/faList";
@@ -31,33 +33,8 @@ import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import TagDialog from "./TagDialog";
 
-type WorkspaceToolbarContext = React.ContextType<typeof AnalyticsContext>;
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const workspaceSettings: any;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const $: any;
-declare function abandonSearch(): void;
-declare function resetSearch(): void;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare let resetToolbar: any;
-declare function tree_view(): void;
-declare function list_view(): void;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare function doWorkspaceSearch(url: string, settings: any): void;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare function getAndDisplayWorkspaceResults(url: string, settings: any): void;
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-class WorkspaceToolbar extends React.Component<any, any> {
-  declare context: WorkspaceToolbarContext;
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  simpleSearch: any;
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  advancedSearch: any;
-
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  constructor(props: any) {
+class WorkspaceToolbar extends React.Component {
+  constructor(props) {
     super(props);
     this.state = {
       open: [false, false],
@@ -121,20 +98,13 @@ class WorkspaceToolbar extends React.Component<any, any> {
   // When you search => open a document => go back
   // This function repopulates the searches with saved queries
   checkSavedSettings = () => {
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    let localQueries: any[] = [],
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      term: any,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      filter: any,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      from: any,
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      to: any;
+    let localQueries: Array<object> = [],
+      term: string | string[] = "",
+      filter: string = "",
+      from: string | undefined,
+      to: string | undefined;
 
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-    workspaceSettings.options.map((_: any, idx: any) => {
+    workspaceSettings.options.forEach((_, idx) => {
       filter = workspaceSettings.options[idx];
       term = workspaceSettings.terms[idx];
 
@@ -163,8 +133,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleOpen = (idx: any, event: any) => {
+  handleOpen = (idx, event) => {
     // Capture the anchor element synchronously, because by the time the
     // setState updater runs, React may have nulled out `event.currentTarget`
     // (it is only valid during the synchronous event handler). If we read it
@@ -172,37 +141,29 @@ class WorkspaceToolbar extends React.Component<any, any> {
     // Menu to render in the top-left corner of the viewport rather than next
     // to the button that opened it.
     const anchor = event.currentTarget;
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      open: produce(prevState.open, (draft: any) => {
+    this.setState((prevState) => ({
+      open: produce(prevState.open, (draft) => {
         draft[idx] = true;
       }),
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      anchorEl: produce(prevState.anchorEl, (draft: any) => {
+      anchorEl: produce(prevState.anchorEl, (draft) => {
         draft[idx] = anchor;
       }),
     }));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleClose = (idx: any) => {
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    this.setState((prevState: any) => ({
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      open: produce(prevState.open, (draft: any) => {
+  handleClose = (idx) => {
+    this.setState((prevState) => ({
+      open: produce(prevState.open, (draft) => {
         draft[idx] = false;
       }),
     }));
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  toggleAdvanced = (filter: any, term: any, from: any, to: any) => {
+  toggleAdvanced = (filter, term, from, to) => {
     if (this.state.advancedOpen) {
       this.setState({ advancedOpen: false });
     } else {
-      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-      const queries: any[] = [];
+      const queries = [];
 
       if (filter === "global") {
         queries.push({ filter: "fullText", term });
@@ -214,8 +175,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
     }
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleHideIcons = (state: any) => {
+  handleHideIcons = (state) => {
     this.setState({ hideIcons: state });
   };
 
@@ -245,8 +205,7 @@ class WorkspaceToolbar extends React.Component<any, any> {
     this.context.trackEvent("user:view:all:workspace");
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  toggleFilter = (filter: any) => {
+  toggleFilter = (filter) => {
     this.setState(
       {
         [filter]: !this.state[filter],
@@ -334,6 +293,16 @@ class WorkspaceToolbar extends React.Component<any, any> {
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
+            <Tooltip title="Create a calendar entry" enterDelay={300}>
+              <IconButton
+                id="createCalendarEntryDlgLink"
+                color="inherit"
+                data-test-id="toolbar-calendar"
+                aria-label="Create a calendar entry"
+              >
+                <FontAwesomeIcon icon={faCalendarAlt} />
+              </IconButton>
+            </Tooltip>
           </Box>
         )}
         <Box
@@ -561,10 +530,10 @@ class WorkspaceToolbar extends React.Component<any, any> {
 
 WorkspaceToolbar.contextType = AnalyticsContext;
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let rootNode: any;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-let domContainer: any;
+// biome-ignore lint/suspicious/noImplicitAnyLet: globals assigned before use
+let rootNode;
+// biome-ignore lint/suspicious/noImplicitAnyLet: globals assigned before use
+let domContainer;
 
 /*
  * We remember the last props so that renderToolbar only needs to be passed the
@@ -577,8 +546,7 @@ let prevProps = {
   },
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-(window as any).renderToolbar = (newProps: any) => {
+window.renderToolbar = (newProps) => {
   if (!rootNode) {
     domContainer = document.getElementById("toolbar2");
     rootNode = createRoot(domContainer);
@@ -602,6 +570,5 @@ let prevProps = {
  * dispatched above.
  */
 window.addEventListener("load", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  (window as any).renderToolbar();
+  window.renderToolbar();
 });

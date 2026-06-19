@@ -666,7 +666,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       if (!dbTemplate.getVersion().equals(dbInstrument.getTemplateLinkedVersion())) {
         boolean updated = dbInstrument.updateToLatestTemplateVersion();
-        if (updated) {
+        // the model sync above does not copy link-field allowed-relation-types whitelists, so an
+        // existing instrument would otherwise keep its create-time whitelist after a template edit
+        // (RSDEV-1200) — mirror the sample path and re-apply them here.
+        boolean whitelistsChanged =
+            syncLinkFieldWhitelistsFromTemplate(dbInstrument.getActiveFields());
+        if (updated || whitelistsChanged) {
           saveDbInstrumentUpdate(dbInstrument, user);
         }
       }

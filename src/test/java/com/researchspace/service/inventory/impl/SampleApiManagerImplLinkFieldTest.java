@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -14,10 +15,13 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -208,6 +212,62 @@ class SampleApiManagerImplLinkFieldTest {
     assertTrue(changed);
     assertSame(created, dbField.getLink());
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
+  }
+
+  @Test
+  void existingSampleLinkFieldAcquiresTemplatesUpdatedWhitelist() {
+    // RSDEV-1200: when an existing sample is synced to a newer template version, the model's
+    // per-field sync copies name/columnIndex/mandatory/deletion but not the link whitelist, so
+    // the sample kept the whitelist captured at creation. (New samples are fine: they clone the
+    // template field via shallowCopy(), which copies the whitelist.)
+    InventoryLinkField templateField = new InventoryLinkField();
+    templateField.setAllowedRelationTypes("IsCitedBy|Cites");
+    InventoryLinkField sampleField = new InventoryLinkField();
+    sampleField.setAllowedRelationTypes("References");
+    sampleField.setTemplateField(templateField);
+
+    List<InventoryEntityField> sampleFields = List.of(sampleField);
+    assertTrue(InventoryApiManagerImpl.syncLinkFieldWhitelistsFromTemplate(sampleFields));
+    assertEquals("IsCitedBy|Cites", sampleField.getAllowedRelationTypes());
+  }
+
+  @Test
+  void clearingTheTemplateWhitelistClearsItOnExistingSampleLinkField() {
+    // template whitelist removed (back to "all" relation types == null): the sample must follow
+    InventoryLinkField templateField = new InventoryLinkField();
+    templateField.setAllowedRelationTypes(null);
+    InventoryLinkField sampleField = new InventoryLinkField();
+    sampleField.setAllowedRelationTypes("References");
+    sampleField.setTemplateField(templateField);
+
+    List<InventoryEntityField> sampleFields = List.of(sampleField);
+    assertTrue(InventoryApiManagerImpl.syncLinkFieldWhitelistsFromTemplate(sampleFields));
+    assertNull(sampleField.getAllowedRelationTypes());
+  }
+
+  @Test
+  void unchangedTemplateWhitelistIsANoop() {
+    InventoryLinkField templateField = new InventoryLinkField();
+    templateField.setAllowedRelationTypes("References|IsDerivedFrom");
+    InventoryLinkField sampleField = new InventoryLinkField();
+    sampleField.setAllowedRelationTypes("References|IsDerivedFrom");
+    sampleField.setTemplateField(templateField);
+
+    List<InventoryEntityField> sampleFields = List.of(sampleField);
+    assertFalse(InventoryApiManagerImpl.syncLinkFieldWhitelistsFromTemplate(sampleFields));
+    assertEquals("References|IsDerivedFrom", sampleField.getAllowedRelationTypes());
+  }
+
+  @Test
+  void nonLinkAndTemplatelessFieldsAreLeftUntouched() {
+    // a non-link field and a link field with no connected template field must be skipped (no NPE)
+    InventoryTextField textField = new InventoryTextField("notes");
+    InventoryLinkField orphanLinkField = new InventoryLinkField();
+    orphanLinkField.setAllowedRelationTypes("References");
+
+    List<InventoryEntityField> sampleFields = List.of(textField, orphanLinkField);
+    assertFalse(InventoryApiManagerImpl.syncLinkFieldWhitelistsFromTemplate(sampleFields));
+    assertEquals("References", orphanLinkField.getAllowedRelationTypes());
   }
 
   @Test

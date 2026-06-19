@@ -3,6 +3,10 @@ packages: []
 
 overrides:
   react-is: ^18.3.1
+  # ketcher-react and ketcher-standalone declare ketcher-core@3.12 as a peer dep
+  # but work with 3.15.0; the override pins a single version to avoid a tsc
+  # type mismatch from the two-instance `#private` clash.
+  ketcher-core: 3.15.0
   # Pin rolldown to 1.0.1 (bundled in Vite 8.0.13) to avoid
   # https://github.com/rolldown/rolldown/issues/9502 and
   # https://github.com/vitejs/vite/issues/22499, where rolldown 1.0.2+
@@ -36,10 +40,9 @@ peerDependencyRules:
     # Ketcher 3.12.0 brings draft-js@0.11.7 via ketcher-react, while its
     # draft-js-custom-styles dependency declares draft-js@0.10.x.
     'draft-js-custom-styles>draft-js': 0.11.7
-    # This comes from `@playwright/experimental-ct`
-    '@vitejs/plugin-react>vite': 8.0.16
-    # @sa11y/vitest pulls an older vitest, which wants the matching UI package.
-    'vitest>@vitest/ui': 4.1.6
+    # @sa11y/vitest pulls an older vitest, which wants the matching UI+browser packages.
+    'vitest>@vitest/ui': 4.1.8
+    'vitest>@vitest/browser': 4.1.8
     # @scalar/api-reference-react pulls neverpanic, which peer-declares
     # typescript@5 but works with the repo's typescript@6.0.3.
     'neverpanic>typescript': 6.0.3

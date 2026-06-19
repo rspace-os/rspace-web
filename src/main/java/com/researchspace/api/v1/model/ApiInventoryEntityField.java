@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -233,6 +234,20 @@ public class ApiInventoryEntityField extends ApiField {
     if (getMandatory() != null) {
       if (!getMandatory().equals(dbField.isMandatory())) {
         dbField.setMandatory(getMandatory());
+        contentChanged = true;
+      }
+    }
+
+    // a link field's value lives in its InventoryLink, but its allowed-relation-types whitelist
+    // is template meta-data and must be re-applied on edit. Without this an edited whitelist is
+    // dropped and the field keeps the set captured at create time (RSDEV-1200). The frontend
+    // sends the list (empty == "all") for link fields, so a non-null incoming list is
+    // authoritative.
+    if (dbField instanceof InventoryLinkField && getAllowedRelationTypes() != null) {
+      InventoryLinkField dbLinkField = (InventoryLinkField) dbField;
+      String newWhitelist = joinRelationTypes(getAllowedRelationTypes());
+      if (!Objects.equals(newWhitelist, dbLinkField.getAllowedRelationTypes())) {
+        dbLinkField.setAllowedRelationTypes(newWhitelist);
         contentChanged = true;
       }
     }

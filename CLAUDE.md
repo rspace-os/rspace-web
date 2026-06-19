@@ -391,6 +391,12 @@ Currently available:
 - `.agents/skills/rspace-empty-integration/` — scaffolds a new "empty" RSpace
   integration (Liquibase migration, sysadmin/user toggles, Apps-page card,
   TinyMCE toolbar icon opening a dialog whose chrome title is the integration's name).
+- `.agents/skills/rebrand-integration/` — rebrand an existing integration in place
+  when the third-party service renames (swap the two SVG icons, update the brand colour,
+  replace every user-facing occurrence of the old name; code identifiers and URLs untouched).
+- `.agents/skills/rspace-dev-stack/` — boot, drive, and tear down the per-worktree
+  Dockerized dev stack (`docker/dev/rspace-dev`) to reproduce bugs, diagnose issues,
+  and manually test functionality against a real running RSpace instance.
 
 **Discovery:** `.agents/skills/` is the cross-agent convention (used by
 agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md
