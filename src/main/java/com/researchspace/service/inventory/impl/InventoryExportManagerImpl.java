@@ -200,7 +200,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
         subSamplesToExport.addAll(sample.getActiveSubSamples());
       }
     } else if (globalId.getPrefix().equals(GlobalIdPrefix.IT)) {
-      SampleEntity template = sampleManager.assertUserCanReadSample(globalId.getDbId(), user);
+      SampleEntity template =
+          sampleManager.assertUserCanReadSampleTemplate(globalId.getDbId(), user);
       templatesToExport.add(template);
     } else if (globalId.getPrefix().equals(GlobalIdPrefix.IC)) {
       Container container = containerManager.assertUserCanReadContainer(globalId.getDbId(), user);

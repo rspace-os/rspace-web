@@ -54,40 +54,84 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
   boolean exists(long id);
 
   /**
-   * Returns the sample (or sample template), if it exists and user has read permission
+   * Returns the {@link Sample} (not a template) if it exists and user has read permission.
    *
    * @param id
    * @param user
-   * @return the loaded sample (or sample template).
+   * @return the loaded sample
+   * @throws javax.ws.rs.NotFoundException if no sample (as opposed to a template) has that id
    */
-  SampleEntity assertUserCanReadSample(Long id, User user);
+  Sample assertUserCanReadSample(Long id, User user);
 
   /**
-   * Returns sample (or sample template) entity if it exists and user has edit permission
+   * Returns the {@link Sample} (not a template) if it exists and user has edit permission.
    *
    * @param id
    * @param user
-   * @return
+   * @return the loaded sample
+   * @throws javax.ws.rs.NotFoundException if no sample (as opposed to a template) has that id
    */
-  SampleEntity assertUserCanEditSample(Long id, User user);
+  Sample assertUserCanEditSample(Long id, User user);
 
   /**
-   * Returns sample (or sample template) entity if it exists and user can delete/restore it
+   * Returns the {@link Sample} (not a template) if it exists and user can delete/restore it.
    *
    * @param id
    * @param user
-   * @return
+   * @return the loaded sample
+   * @throws javax.ws.rs.NotFoundException if no sample (as opposed to a template) has that id
    */
-  SampleEntity assertUserCanDeleteSample(Long id, User user);
+  Sample assertUserCanDeleteSample(Long id, User user);
 
   /**
-   * Returns sample (or sample template) entity if it exists and user has transfer permission
+   * Returns the {@link Sample} (not a template) if it exists and user has transfer permission.
    *
    * @param id
    * @param user
-   * @return
+   * @return the loaded sample
+   * @throws javax.ws.rs.NotFoundException if no sample (as opposed to a template) has that id
    */
-  SampleEntity assertUserCanTransferSample(Long id, User user);
+  Sample assertUserCanTransferSample(Long id, User user);
+
+  /**
+   * Returns the {@link SampleTemplate} if it exists and user has read permission.
+   *
+   * @param id
+   * @param user
+   * @return the loaded sample template
+   * @throws javax.ws.rs.NotFoundException if no template (as opposed to a sample) has that id
+   */
+  SampleTemplate assertUserCanReadSampleTemplate(Long id, User user);
+
+  /**
+   * Returns the {@link SampleTemplate} if it exists and user has edit permission.
+   *
+   * @param id
+   * @param user
+   * @return the loaded sample template
+   * @throws javax.ws.rs.NotFoundException if no template (as opposed to a sample) has that id
+   */
+  SampleTemplate assertUserCanEditSampleTemplate(Long id, User user);
+
+  /**
+   * Returns the {@link SampleTemplate} if it exists and user can delete/restore it.
+   *
+   * @param id
+   * @param user
+   * @return the loaded sample template
+   * @throws javax.ws.rs.NotFoundException if no template (as opposed to a sample) has that id
+   */
+  SampleTemplate assertUserCanDeleteSampleTemplate(Long id, User user);
+
+  /**
+   * Returns the {@link SampleTemplate} if it exists and user has transfer permission.
+   *
+   * @param id
+   * @param user
+   * @return the loaded sample template
+   * @throws javax.ws.rs.NotFoundException if no template (as opposed to a sample) has that id
+   */
+  SampleTemplate assertUserCanTransferSampleTemplate(Long id, User user);
 
   /** Checks if sample with given name exists for the user */
   boolean nameExistsForUser(String sampleName, User user);

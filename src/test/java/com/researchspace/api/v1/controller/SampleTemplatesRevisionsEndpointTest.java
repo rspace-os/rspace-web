@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
@@ -49,7 +48,7 @@ public class SampleTemplatesRevisionsEndpointTest {
   @Test
   public void templateRevisionsEndpointReturnsRevisionListForTemplate() {
     SampleTemplate template = new SampleTemplate();
-    when(sampleMgr.assertUserCanReadSample(1L, user)).thenReturn(template);
+    when(sampleMgr.assertUserCanReadSampleTemplate(1L, user)).thenReturn(template);
     ApiInventoryRecordRevisionList revisions = new ApiInventoryRecordRevisionList();
     when(auditMgr.getInventoryRecordRevisions(template)).thenReturn(revisions);
 
@@ -58,9 +57,9 @@ public class SampleTemplatesRevisionsEndpointTest {
 
   @Test
   public void templateRevisionsEndpointThrows404ForNonTemplateId() {
-    // a plain sample id must not be readable through the template endpoint
-    Sample sample = TestFactory.createBasicSampleOutsideContainer(user);
-    when(sampleMgr.assertUserCanReadSample(1L, user)).thenReturn(sample);
+    // a plain sample id is not addressable through the template endpoint: the manager 404s
+    when(sampleMgr.assertUserCanReadSampleTemplate(1L, user))
+        .thenThrow(new NotFoundException("No sample template with id: 1"));
 
     assertThrows(NotFoundException.class, () -> controller.getSampleTemplateAllRevisions(1L, user));
   }

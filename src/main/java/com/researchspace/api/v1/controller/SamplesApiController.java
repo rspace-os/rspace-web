@@ -144,10 +144,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     return result;
   }
 
-  private void assertNotSampleTemplate(SampleEntity dbSample) {
-    assertNotSampleTemplate(dbSample.isTemplate());
-  }
-
   private void assertNotSampleTemplate(boolean sampleTemplateFlag) {
     if (sampleTemplateFlag) {
       throw new IllegalArgumentException(
@@ -262,8 +258,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     validateUpdateSampleInput(incomingSample, errors);
     // update incoming object's id which could be omitted
     incomingSample.setIdIfNotSet(id);
-    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(id, user);
-    assertNotSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanEditSample(id, user);
 
     // update the sample
     ApiSample updatedSample = sampleApiMgr.updateApiSample(incomingSample, user);
@@ -279,7 +274,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @RequestAttribute(name = "user") User user) {
 
     SampleEntity dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
-    assertNotSampleTemplate(dbSample);
 
     ApiSample result;
     String sampleLock = dbSample.getGlobalIdentifier().intern();
@@ -293,8 +287,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSample restoreDeletedSample(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    SampleEntity dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
-    assertNotSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanDeleteSample(id, user);
     return sampleApiMgr.restoreDeletedSample(id, user, true);
   }
 
@@ -334,8 +327,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Override
   public ApiSampleWithFullSubSamples duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    SampleEntity dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
-    assertNotSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanReadSample(id, user);
 
     ApiSampleWithFullSubSamples copy = sampleApiMgr.duplicate(id, user);
     buildAndAddInventoryRecordLinks(copy);

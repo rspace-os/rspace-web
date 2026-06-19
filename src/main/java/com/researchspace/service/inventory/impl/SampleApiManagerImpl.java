@@ -137,31 +137,87 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   @Override
-  public SampleEntity assertUserCanReadSample(Long id, User user) {
-    SampleEntity sample = getIfExists(id);
+  public Sample assertUserCanReadSample(Long id, User user) {
+    Sample sample = getSampleOrThrowNotFound(id);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
-  public SampleEntity assertUserCanEditSample(Long id, User user) {
-    SampleEntity sample = getIfExists(id);
+  public Sample assertUserCanEditSample(Long id, User user) {
+    Sample sample = getSampleOrThrowNotFound(id);
     invPermissions.assertUserCanEditInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
-  public SampleEntity assertUserCanDeleteSample(Long id, User user) {
-    SampleEntity sample = getIfExists(id);
+  public Sample assertUserCanDeleteSample(Long id, User user) {
+    Sample sample = getSampleOrThrowNotFound(id);
     invPermissions.assertUserCanDeleteInventoryRecord(sample, user);
     return sample;
   }
 
   @Override
-  public SampleEntity assertUserCanTransferSample(Long id, User user) {
-    SampleEntity sample = getIfExists(id);
+  public Sample assertUserCanTransferSample(Long id, User user) {
+    Sample sample = getSampleOrThrowNotFound(id);
     invPermissions.assertUserCanTransferInventoryRecord(sample, user);
     return sample;
+  }
+
+  @Override
+  public SampleTemplate assertUserCanReadSampleTemplate(Long id, User user) {
+    SampleTemplate template = getSampleTemplateOrThrowNotFound(id);
+    invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(template, user);
+    return template;
+  }
+
+  @Override
+  public SampleTemplate assertUserCanEditSampleTemplate(Long id, User user) {
+    SampleTemplate template = getSampleTemplateOrThrowNotFound(id);
+    invPermissions.assertUserCanEditInventoryRecord(template, user);
+    return template;
+  }
+
+  @Override
+  public SampleTemplate assertUserCanDeleteSampleTemplate(Long id, User user) {
+    SampleTemplate template = getSampleTemplateOrThrowNotFound(id);
+    invPermissions.assertUserCanDeleteInventoryRecord(template, user);
+    return template;
+  }
+
+  @Override
+  public SampleTemplate assertUserCanTransferSampleTemplate(Long id, User user) {
+    SampleTemplate template = getSampleTemplateOrThrowNotFound(id);
+    invPermissions.assertUserCanTransferInventoryRecord(template, user);
+    return template;
+  }
+
+  /**
+   * Returns the {@link Sample} (not a template) with the given id, or throws {@link
+   * NotFoundException} if no sample exists with that id. A {@link SampleTemplate} that shares the
+   * id space is treated as absent: {@code sampleDao} is anchored on {@code DTYPE='Sample'}.
+   */
+  private Sample getSampleOrThrowNotFound(Long id) {
+    if (!sampleDao.exists(id)) {
+      throw new NotFoundException("No sample with id: " + id);
+    }
+    Sample sample = sampleDao.get(id);
+    for (SubSample ss : sample.getSubSamples()) {
+      populateSubSampleParentContainerChain(ss);
+    }
+    return sample;
+  }
+
+  /**
+   * Returns the {@link SampleTemplate} with the given id, or throws {@link NotFoundException} if no
+   * template exists with that id. A plain {@link Sample} that shares the id space is treated as
+   * absent: {@code sampleTemplateDao} is anchored on {@code DTYPE='SampleTemplate'}.
+   */
+  private SampleTemplate getSampleTemplateOrThrowNotFound(Long id) {
+    if (!sampleTemplateDao.exists(id)) {
+      throw new NotFoundException("No sample template with id: " + id);
+    }
+    return sampleTemplateDao.get(id);
   }
 
   @Override
@@ -676,12 +732,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSample updateApiSample(ApiSampleWithoutSubSamples apiSample, User user) {
+    // assertUserCanEditSample returns a Sample (a template id 404s), so ApiSample is safe
     SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
-    if (dbSample.isSampleTemplate()) {
-      throw new IllegalArgumentException(
-          "trying to update sample template through sample update method");
-    }
-    // safe for ApiSample: the SampleTemplate case was rejected above
     ApiSample original = new ApiSample(dbSample);
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
@@ -704,7 +756,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     Validate.notNull(apiSample.getOwner(), "'owner' field not present");
     Validate.notNull(apiSample.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferSample(apiSample.getId(), user);
+    invPermissions.assertUserCanTransferInventoryRecord(getIfExists(apiSample.getId()), user);
 
     SampleEntity dbSample = getIfExists(apiSample.getId());
     boolean temporaryLock = lockItemForEdit(dbSample, user);
@@ -790,7 +842,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSample markSampleAsDeleted(Long sampleId, boolean forceDelete, User user) {
-    SampleEntity dbSample = assertUserCanDeleteSample(sampleId, user);
+    SampleEntity dbSample = getIfExists(sampleId);
+    invPermissions.assertUserCanDeleteInventoryRecord(dbSample, user);
     boolean temporaryLock = lockItemForEdit(dbSample, user);
 
     try {
@@ -826,7 +879,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   @Override
   public ApiSample restoreDeletedSample(
       Long sampleId, User user, boolean includeSubSamplesDeletedOnSampleDeletion) {
-    SampleEntity dbSample = assertUserCanDeleteSample(sampleId, user);
+    SampleEntity dbSample = getIfExists(sampleId);
+    invPermissions.assertUserCanDeleteInventoryRecord(dbSample, user);
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
       dbSample = getIfExists(dbSample.getId());
@@ -898,7 +952,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   private SampleEntity copyDbSample(Long sampleId, User user) {
-    SampleEntity dbSample = assertUserCanReadSample(sampleId, user);
+    SampleEntity dbSample = getIfExists(sampleId);
+    invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(dbSample, user);
     SampleEntity copy;
     if (dbSample.isSample()) {
       Sample sampleCopy = ((Sample) dbSample).copy(user);
@@ -1024,17 +1079,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSampleTemplate updateApiSampleTemplate(ApiSampleTemplate apiSample, User user) {
-    SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
-    if (!dbSample.isSampleTemplate()) {
-      throw new IllegalArgumentException(
-          "trying to update sample through sample template update method");
-    }
-    SampleTemplate dbTemplate = (SampleTemplate) dbSample;
+    SampleTemplate dbTemplate = assertUserCanEditSampleTemplate(apiSample.getId(), user);
 
     boolean temporaryLock = lockItemForEdit(dbTemplate, user);
     try {
-      // cast is safe: re-fetch by id returns the same template row
-      dbTemplate = (SampleTemplate) getIfExists(dbTemplate.getId());
+      // re-fetch by id returns the same template row
+      dbTemplate = getSampleTemplateOrThrowNotFound(dbTemplate.getId());
       boolean contentChanged =
           createDeleteRequestedFieldsInDbSampleTemplate(apiSample, dbTemplate, user);
       contentChanged |= apiSample.applyChangesToDatabaseTemplate(dbTemplate, user);
@@ -1086,7 +1136,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     // templates have no parent template; a null id keeps the legacy not-found behaviour of the
     // assert call below
     Long parentTemplateId = dbSample.isSample() ? ((Sample) dbSample).getParentTemplateId() : null;
-    SampleEntity dbTemplate = assertUserCanReadSample(parentTemplateId, user);
+    SampleEntity dbTemplate = assertUserCanReadSampleTemplate(parentTemplateId, user);
     if (dbTemplate == null) {
       throw new IllegalArgumentException("Sample is not based on any template");
     }
