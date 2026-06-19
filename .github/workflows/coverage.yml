@@ -119,6 +119,14 @@ jobs:
           path: target/site/jacoco
           if-no-files-found: ignore
 
+      - name: Upload exec data for merge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-exec-unit-spring
+          path: target/jacoco.exec
+          if-no-files-found: ignore
+
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v7.0.0
@@ -211,8 +219,99 @@ jobs:
           path: target/site/jacoco-it
           if-no-files-found: ignore
 
+      - name: Upload exec data for merge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-exec-integration
+          path: target/jacoco-it.exec
+          if-no-files-found: ignore
+
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v7.0.0
         with:
           files: target/site/jacoco-it/jacoco.xml
+
+  # Combines the two shards' exec data into one figure. JaCoCo merges at the
+  # instruction level (a line covered by either unit or IT tests counts once),
+  # which summing the per-shard CSVs cannot do. Needs compiled classes, so this
+  # job recompiles (fast: no tests, no DB, no frontend) and uses the JaCoCo CLI
+  # to merge + report. Codecov already merges its two uploads server-side, so
+  # the merged report is NOT re-uploaded there.
+  merge-coverage:
+    runs-on: ubuntu-latest
+    needs: [unit-spring-coverage, integration-coverage]
+    if: always()
+    strategy:
+      matrix:
+        java-version: [17]
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Compile main classes
+        run: |
+          ./mvnw -q compile -Dspotless.apply.skip=true \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+
+      - name: Download unit + Spring exec
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-exec-unit-spring
+          path: target
+
+      - name: Download integration exec
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-exec-integration
+          path: target
+
+      - name: Merge and report
+        run: |
+          execs=""
+          [ -f target/jacoco.exec ] && execs="$execs target/jacoco.exec"
+          [ -f target/jacoco-it.exec ] && execs="$execs target/jacoco-it.exec"
+          if [ -z "$execs" ]; then
+            echo "No coverage exec data to merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          ./mvnw -q org.apache.maven.plugins:maven-dependency-plugin:3.6.1:copy \
+            -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps \
+            -DoutputDirectory=target/jacoco-cli
+          cli=target/jacoco-cli/org.jacoco.cli-0.8.15-nodeps.jar
+          java -jar "$cli" merge $execs --destfile target/merged.exec
+          mkdir -p target/site/jacoco-merged
+          java -jar "$cli" report target/merged.exec \
+            --classfiles target/classes \
+            --sourcefiles src/main/java \
+            --xml target/site/jacoco-merged/jacoco.xml \
+            --csv target/site/jacoco-merged/jacoco.csv \
+            --html target/site/jacoco-merged
+          echo "### Combined coverage (unit + Spring + integration)" >> "$GITHUB_STEP_SUMMARY"
+          awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
+            printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";
+            printf "| Instructions | %d | %d | %.1f%% |\n", ic, ic+im, (ic+im)?100*ic/(ic+im):0;
+            printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+            printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+          }' target/site/jacoco-merged/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload merged HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-merged
+          path: target/site/jacoco-merged
+          if-no-files-found: ignore
