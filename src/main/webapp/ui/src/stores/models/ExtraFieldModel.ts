@@ -84,13 +84,12 @@ export default class ExtraFieldModel implements ExtraField {
   }
 
   get isValid(): ValidationResult {
-    // an open Link editor holds mid-edit values that the model does not have yet;
-    // saving the record now would silently drop them, so Save stays greyed until
-    // the edit is committed or abandoned. This applies to Link fields only: Text and
-    // Number fields edit their content inline (live-synced) and stage only name/type in
-    // the editor, so saving mid-edit just keeps the committed name/type, as it did before
-    // RSDEV-1131 - opening their editor must not block Save (RSDEV-1201).
-    if (this.type === "Link" && this.editing && !this.deleteFieldRequest) {
+    // An open editor holds mid-edit values (name, type, and for Link fields the
+    // link payload) in local editor state that the model does not have yet, until
+    // Apply/Update commits them. Saving the record now would silently discard the
+    // uncommitted edit, so Save stays greyed for ANY open field editor until the
+    // edit is committed or abandoned (RSDEV-1201).
+    if (this.editing && !this.deleteFieldRequest) {
       return IsInvalid(
         this.initial
           ? "A new field is being added. Apply or discard it before saving."
