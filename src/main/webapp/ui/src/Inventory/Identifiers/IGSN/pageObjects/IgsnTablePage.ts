@@ -27,7 +27,7 @@ export class IgsnTablePage {
   }
 
   dataRows(): Locator {
-    return this.table.getByCSS('[role="row"][data-id]');
+    return this.table.getByRole("row").filter({ has: page.getByRole("gridcell") });
   }
 
   get exportButton(): Locator {

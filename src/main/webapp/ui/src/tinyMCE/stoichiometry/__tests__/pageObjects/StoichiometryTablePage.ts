@@ -1,15 +1,26 @@
-import { gridClasses } from "@mui/x-data-grid";
 import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
+
+/**
+ * Retriable locator for a raw CSS selector scoped within `root`. CSS is a
+ * workaround for the third-party MUI DataGrid: a cell's column identity lives
+ * only in its `data-field`/`aria-colindex` attributes (its accessible name is
+ * the cell *value*), which `getByRole` cannot filter on. Vitest has no public
+ * CSS locator, so we call the provider's `css=` engine via `.locator()`
+ * (protected on the type, present at runtime) instead of registering a global one.
+ */
+function cssWithin(root: Locator, selector: string): Locator {
+  return (root as unknown as { locator(selector: string): Locator }).locator(`css=${selector}`);
+}
 
 /**
  * Page object for the stoichiometry table, as mounted by the stories in
  * StoichiometryTable.story.tsx. Encapsulates the locators and user
  * interactions; assertions live in the tests themselves.
  *
- * Dynamic lookups use the DOM directly (the grid is always loaded first via
- * `waitForLoad`) and return stable `getByCSS` locators keyed on data-id /
- * data-field so content assertions remain retriable.
+ * Lookups prefer semantic locators (rows by a contained cell's value, the edit
+ * control by its `spinbutton` role); `cellByField` is the one CSS exception (see
+ * `cssWithin`).
  */
 export class StoichiometryTablePage {
   readonly table: Locator = page.getByRole("grid");
@@ -38,12 +49,19 @@ export class StoichiometryTablePage {
     return page.getByRole("dialog").filter({ hasText: "Loading molecule information..." });
   }
 
+  /**
+   * Data rows of the grid (excluding the column-header row). Data rows contain
+   * `gridcell`s; the header row contains `columnheader`s, so filtering on the
+   * presence of a gridcell selects the data rows without a CSS attribute query.
+   */
   dataRows(): Locator {
-    return this.table.getByCSS('[role="row"][data-id]');
+    return this.table.getByRole("row").filter({ has: page.getByRole("gridcell") });
   }
 
+  // Addressed by `data-field` (readable and robust to column virtualization,
+  // unlike a positional `.nth(colindex)`). See `cssWithin` for why CSS is needed.
   cellByField(row: Locator, field: string): Locator {
-    return row.getByCSS(`[role="gridcell"][data-field="${field}"]`);
+    return cssWithin(row, `[role="gridcell"][data-field="${field}"]`);
   }
 
   columnField(headerText: string): string {
@@ -60,26 +78,20 @@ export class StoichiometryTablePage {
     throw new Error(`Column "${headerText}" not found`);
   }
 
-  /** Returns a stable, retriable locator for the row matching a cell value. */
-  rowByColumnValue(columnHeaderText: string, cellValue: string): Locator {
-    const field = this.columnField(columnHeaderText);
-    const rows = this.dataRows().elements();
-    for (const row of rows) {
-      const cell = row.querySelector(`[role="gridcell"][data-field="${field}"]`);
-      if (cell?.textContent?.includes(cellValue)) {
-        const id = row.getAttribute("data-id");
-        if (!id) {
-          throw new Error(`Row matching "${cellValue}" has no data-id`);
-        }
-        return this.table.getByCSS(`[role="row"][data-id="${id}"]`);
-      }
-    }
-    throw new Error(`Row with value "${cellValue}" in column "${columnHeaderText}" not found`);
+  /**
+   * Returns a stable, retriable locator for the data row containing a cell with
+   * the given (unique) value, e.g. a molecule name. A cell's accessible name is
+   * its rendered value, so we filter the data rows to the one holding a gridcell
+   * with that name. (MUI exposes the row id only via `data-id`, never in the
+   * accessibility tree, so the record-id route would have to be a CSS query.)
+   */
+  rowByCellValue(cellValue: string): Locator {
+    return this.dataRows().filter({ has: page.getByRole("gridcell", { name: cellValue, exact: true }) });
   }
 
   cell(compoundName: string, columnHeaderText: string): Locator {
     const field = this.columnField(columnHeaderText);
-    const row = this.rowByColumnValue("Name", compoundName);
+    const row = this.rowByCellValue(compoundName);
     return this.cellByField(row, field);
   }
 
@@ -95,7 +107,9 @@ export class StoichiometryTablePage {
     await targetCell.click();
     await userEvent.keyboard("{Enter}");
 
-    const input = page.getByCSS(`.${gridClasses["cell--editing"]} input, .${gridClasses["cell--editing"]} textarea`);
+    // The editable stoichiometry columns are numeric, so MUI renders the edit
+    // control as `<input type="number">` (role "spinbutton") inside the cell.
+    const input = targetCell.getByRole("spinbutton");
     await input.fill(value);
     await userEvent.keyboard("{Enter}");
   }
@@ -276,11 +290,32 @@ export class InventoryUpdateDialogPage {
     return this.dialog.getByRole("checkbox", { name: moleculeName });
   }
 
+  /**
+   * The molecule's main row. Each molecule row carries an `<h3>` heading with
+   * the molecule name (the optional helper sub-row does not), so filtering rows
+   * by the presence of that heading selects the molecule row semantically.
+   */
   moleculeRow(moleculeName: string): Locator {
-    return this.dialog.getByCSS(`[data-row-type="molecule"][data-molecule-name="${moleculeName}"]`);
+    return this.dialog.getByRole("row").filter({ has: page.getByRole("heading", { name: moleculeName, exact: true }) });
   }
 
+  /**
+   * A metric cell ("In Stock" / "Will Use" / "Remaining") for a molecule.
+   *
+   * The cells are plain `<td>`s (`role="cell"`) whose column identity is only
+   * conveyed by the table's column headers, not by any per-cell ARIA. We locate
+   * the cell by its position: find the header index for `metricName`, then take
+   * the cell at the same position in the molecule row, accounting for any
+   * leading row cells (e.g. the checkbox column) that have no matching header.
+   */
   metric(moleculeName: string, metricName: string): Locator {
-    return this.moleculeRow(moleculeName).getByCSS(`[data-column="${metricName}"]`);
+    const headers = this.dialog.getByRole("columnheader").elements();
+    const headerIndex = headers.findIndex((h) => h.textContent?.trim() === metricName);
+    if (headerIndex < 0) {
+      throw new Error(`Column header "${metricName}" not found`);
+    }
+    const row = this.moleculeRow(moleculeName);
+    const cellOffset = row.getByRole("cell").elements().length - headers.length;
+    return row.getByRole("cell").nth(headerIndex + cellOffset);
   }
 }
