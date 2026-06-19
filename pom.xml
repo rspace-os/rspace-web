@@ -565,7 +565,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.44.10</version>
+      <version>2.46.11</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -575,7 +575,17 @@
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpcore</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>httpcore5</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!-- apache5-client's tree diverges on httpcore5 (5.4 vs 5.4.2); excluded above and pinned here -->
+    <dependency>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5</artifactId>
+      <version>5.4.2</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
