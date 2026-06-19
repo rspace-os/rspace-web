@@ -386,6 +386,22 @@ wrong, `restart`.
 > a startup issue). JBR + HotswapAgent are pinned third-party components — see
 > `Dockerfile.app` for versions.
 
+## Troubleshooting
+
+Symptom → fix. The remedies are detailed elsewhere in this README; this table
+is the quick lookup.
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| First `up` takes several minutes | Maven + pnpm downloading all deps into cold caches | Normal — watch `rspace-dev logs app`; later boots reuse the caches and are fast. |
+| `java.net.BindException: Address already in use` | A stale process or another tool holds this worktree's port | Ports auto-allocate to free `127.0.0.1` ports stored in `docker/dev/.env`; delete `.env` to re-allocate, then `rspace-dev up`. Confirm with `rspace-dev ps`. |
+| Backend OOMs / `OutOfMemoryError` in the app log | JVM heap too small for your workload | Raise `MAVEN_OPTS` (default `-Xmx2g`) in `.env` and `rspace-dev restart`; give Docker Desktop a generous memory limit. |
+| App won't start after a schema change; DB looks corrupted or out of sync | Old data/schema left from a previous migration | `rspace-dev reset-db` (or `up --fresh`) to rebuild the DB from scratch. |
+| The `db` container keeps restarting | Corrupt data volume or interrupted init | `rspace-dev reset-db`; if it persists, `rspace-dev nuke` (destroys this worktree's volumes) then `up`. |
+| Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env`, then recreate the frontend container so it re-reads the var: `rspace-dev compose up -d --force-recreate frontend` (`rspace-dev restart` only recreates the backend `app`). On WSL2 keep the repo on the Linux filesystem. |
+| Java edits don't take effect after `reload` | Change needs a context rebuild or new JVM (see "What still requires a full restart") | `rspace-dev reload`, and if still stale `rspace-dev restart`. |
+| Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
+
 ## Notes & gotchas
 
 - **Ports**: chosen once per worktree and stored in `docker/dev/.env`. Delete
