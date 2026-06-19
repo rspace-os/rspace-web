@@ -36,8 +36,8 @@ actually happening". Prefer launching the stack (after asking the user) when:
   to the code with a concrete failure in hand.
 - **Behaviour depends on runtime state** the source can't show you: DB contents,
   session/permissions, integration toggles, async timing, rendered DOM, or
-  network responses. Inspect them on a running instance (`db`, browser devtools,
-  `preview_*` tools).
+  network responses. Inspect them on a running instance (`db`, browser
+  devtools).
 - **Verifying a fix end-to-end** — confirm the change actually resolves the
   reported behaviour in the UI, not just that the code looks right.
 - **A regression that static reading can't localise** — bisect or A/B the
@@ -104,9 +104,12 @@ For backend stepping, attach a debugger to this worktree's JDWP port (shown by
 
 ### 5. Test functionality in the browser
 
-Use the app URL from `ps`. For automated UI checks you have `preview_*` tools
-(`preview_navigate`, `preview_snapshot`, `preview_click`, etc.) — point them at
-the running instance's URL to exercise flows and capture state.
+Use the app URL from `ps` and drive the flow with whichever browser-automation
+tooling your runtime has connected — point it at the running instance's URL to
+exercise flows and capture state. See "Browser automation" below for which of
+`preview_*` / Playwright / Chrome DevTools to reach for and the standard loop.
+If none are connected, drive it manually and read state from devtools (console,
+network, DOM).
 
 ### 6. Tear down (always prompt when finished)
 
@@ -121,6 +124,71 @@ destroy it on your own. Offer the two levels:
 
 Recommend `down` by default (fast to resume); reserve `nuke` for when the user
 wants the local data and volumes gone. Only run either after the user confirms.
+
+## Browser automation
+
+Three browser-driving toolsets can target the running instance. None are built
+into a coding agent by default — they come from MCP servers (and matching
+skills) in the runtime, so **check what's actually connected** (your tool list /
+`ToolSearch`)
+before relying on one; in headless/cron runs none may be present, in which case
+drive manually via devtools. They share an accessibility-tree model, so the
+workflow is the same; pick by the job:
+
+| Use when…                                              | Reach for          |
+| ------------------------------------------------------ | ------------------ |
+| UI flows, forms, upload, tabs — and `t3-code` is connected | **t3-code** `preview_*` (preferred) |
+| Same, but no `t3-code` in your runtime (**default fallback**) | **Playwright** |
+| Perf trace / Web Vitals, network or console forensics, throttling, Lighthouse (a11y/SEO) | **Chrome DevTools** |
+
+**Prefer `t3-code` `preview_*` when it's present; otherwise default to
+Playwright.** `t3-code` exists only in some runtimes and most developers won't
+have it, so don't assume it — but when your tool list does show it, it's the
+preferred driver. Playwright is the broadly-available fallback. (Chrome DevTools
+is for diagnosis, per the table, regardless of which driver you use for flows.)
+
+**The loop is always: navigate → snapshot → act on a ref → assert.** Snapshot
+first (it returns element refs/selectors); act using those refs; re-snapshot or
+wait to confirm. Don't act on coordinates from a stale snapshot.
+
+First navigate to the app URL printed by `ps` (e.g. `http://localhost:8080`),
+log in (`user1a` / `user1234`), then:
+
+- **Playwright** (`browser_*`, default fallback): `browser_navigate`, `browser_snapshot`,
+  `browser_click`, `browser_type`, `browser_fill_form`, `browser_select_option`,
+  `browser_press_key`, `browser_file_upload`, `browser_wait_for`, `browser_tabs`,
+  `browser_console_messages`, `browser_network_requests` /
+  `browser_network_request`, `browser_evaluate`, `browser_take_screenshot`.
+- **Chrome DevTools** (`mcp__chrome-devtools__*`): `navigate_page` (url/back/
+  forward/reload), `new_page` / `list_pages` / `select_page`, `take_snapshot`
+  (a11y tree with `uid`s — act on those), `click`, `fill` / `fill_form`,
+  `type_text`, `hover`, `press_key`, `upload_file`, `handle_dialog`, `wait_for`.
+  For diagnosis: `performance_start_trace` (set `reload`, then
+  `navigate_page` first) / `performance_stop_trace` / `performance_analyze_insight`
+  for Web Vitals (LCP/INP/CLS); `list_network_requests` (filter by `resourceTypes`,
+  paginated) / `get_network_request`; `list_console_messages` /
+  `get_console_message`; `evaluate_script`, `take_heapsnapshot`, `take_screenshot`.
+  `emulate` is **one** combined tool — CPU slowdown, network conditions
+  (`Slow 3G`…`Fast 4G`/`Offline`), viewport/mobile/touch, dark/light, geolocation,
+  extra HTTP headers. `lighthouse_audit` covers a11y/SEO/best-practices and
+  **excludes performance** — use `performance_start_trace` for that.
+- **t3-code** (`preview_*`, preferred when connected): `preview_navigate`,
+  `preview_snapshot` (state + console/network failures + screenshot),
+  `preview_click`, `preview_type`, `preview_press`, `preview_scroll`,
+  `preview_wait_for`, `preview_evaluate`, `preview_recording_start` /
+  `preview_recording_stop`.
+
+If a matching **skill** is installed (Playwright / Chrome DevTools), invoking it
+is the higher-level entry point; calling the MCP tools directly (above) is the
+lower-level one. Either works — use whichever is available.
+
+### Debugging recipe
+
+A symptom reported in the UI (step 5 reproduces it), then: capture the failing
+request with `*_network_request*` and the stack via `logs app`; read browser
+errors from the snapshot's console section or `*_console_messages`; for "it's
+slow" use Chrome DevTools `performance_start_trace` around the action and
+`performance_analyze_insight`. Take the concrete trace/request back to the code.
 
 ## Escape hatch
 
