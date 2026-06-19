@@ -126,7 +126,10 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
             Authorization: `Bearer ${await getToken()}`,
           },
         });
-        const response = await api.post<unknown>(`/filestores/${id}/${operation}`, { recordIds });
+        const response = await api.post<unknown>(`/filestores/${id}/uploadFromGallery`, {
+          recordIds,
+          removeOriginalFromRspace: operation === "move",
+        });
         addAlert(
           handleErrors(
             response,
