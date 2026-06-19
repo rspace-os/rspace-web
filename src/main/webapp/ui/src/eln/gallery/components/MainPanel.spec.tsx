@@ -433,21 +433,7 @@ describe("MainPanel", () => {
         await assertSelection(["Image1.jpg"]);
       });
 
-      /*
-       * TODO(browser-migration): the five compound keyboard-navigation tests
-       * below (arrow / shift-arrow AFTER a modifier-click) are skipped in
-       * browser mode. They depend on the grid's internal `tabIndexCoord` +
-       * `gridHasFocus` state settling between the modifier-click and the key
-       * press, and on the Shift modifier propagating through
-       * `userEvent.keyboard("{Shift>}...")` onto the keydown the grid reads.
-       * The original Playwright spec masked the timing with
-       * `keyboard.press(key, { delay: 100 })`, which has no `userEvent`
-       * equivalent; they time out here. The single-click arrow case
-       * ("Pressing an arrow key moves the selection") and all click/shift-click
-       * selection cases DO pass and remain enabled. Re-enable once a reliable
-       * focus/settle strategy for compound key interactions is found.
-       */
-      test.skip("Pressing an arrow key after selecting multiple files with ctrl moves the selection relative to the second selection", async () => {
+      test("Pressing an arrow key after selecting multiple files with ctrl moves the selection relative to the second selection", async () => {
         render(<BunchOfImages />);
         await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
 
@@ -458,7 +444,7 @@ describe("MainPanel", () => {
         await assertSelection(["Image2.jpg"]);
       });
 
-      test.skip("Pressing an arrow key after selecting multiple files with shift moves the selection relative to the second selection", async () => {
+      test("Pressing an arrow key after selecting multiple files with shift moves the selection relative to the second selection", async () => {
         render(<BunchOfImages />);
         await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
 
@@ -469,7 +455,7 @@ describe("MainPanel", () => {
         await assertSelection(["Image2.jpg"]);
       });
 
-      test.skip("Pressing shift-arrow key after selecting multiple files with ctrl expands the selection", async () => {
+      test("Pressing shift-arrow key after selecting multiple files with ctrl expands the selection", async () => {
         render(<BunchOfImages />);
         await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
 
@@ -482,7 +468,7 @@ describe("MainPanel", () => {
         await assertSelection(["Image0.jpg", "Image1.jpg", "Image2.jpg"]);
       });
 
-      test.skip("Pressing shift-arrow key after selecting multiple files with shift expands the selection", async () => {
+      test("Pressing shift-arrow key after selecting multiple files with shift expands the selection", async () => {
         render(<BunchOfImages />);
         await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
 
@@ -495,7 +481,7 @@ describe("MainPanel", () => {
         await assertSelection(["Image0.jpg", "Image1.jpg", "Image2.jpg"]);
       });
 
-      test.skip("Shift-arrowing a second time modifies the selection based on the first click", async () => {
+      test("Shift-arrowing a second time modifies the selection based on the first click", async () => {
         render(<BunchOfImages />);
         await expect.element(panel.gridCell("Image1.jpg")).toBeVisible();
 
