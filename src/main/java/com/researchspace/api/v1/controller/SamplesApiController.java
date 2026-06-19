@@ -258,6 +258,9 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     validateUpdateSampleInput(incomingSample, errors);
     // update incoming object's id which could be omitted
     incomingSample.setIdIfNotSet(id);
+    // reject a template id with the documented error: assertUserCanEditSample resolves only
+    // Sample rows (DTYPE='Sample') and would otherwise surface a 404 for a template id
+    assertNotSampleTemplate(sampleApiMgr.getSampleById(id, user).isSampleTemplate());
     sampleApiMgr.assertUserCanEditSample(id, user);
 
     // update the sample

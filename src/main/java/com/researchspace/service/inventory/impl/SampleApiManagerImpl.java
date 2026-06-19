@@ -1133,13 +1133,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   @Override
   public ApiSample updateSampleToLatestTemplateVersion(Long sampleId, User user) {
     SampleEntity dbSample = assertUserCanEditSample(sampleId, user);
-    // templates have no parent template; a null id keeps the legacy not-found behaviour of the
-    // assert call below
-    Long parentTemplateId = dbSample.isSample() ? ((Sample) dbSample).getParentTemplateId() : null;
-    SampleEntity dbTemplate = assertUserCanReadSampleTemplate(parentTemplateId, user);
-    if (dbTemplate == null) {
+    // assertUserCanEditSample resolves a Sample (a template id 404s), so the cast is safe
+    Long parentTemplateId = ((Sample) dbSample).getParentTemplateId();
+    if (parentTemplateId == null) {
       throw new IllegalArgumentException("Sample is not based on any template");
     }
+    SampleTemplate dbTemplate = assertUserCanReadSampleTemplate(parentTemplateId, user);
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {

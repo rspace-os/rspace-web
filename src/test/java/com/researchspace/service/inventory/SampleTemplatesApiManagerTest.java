@@ -1032,4 +1032,21 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         List.of("c2", "c3", "c4"),
         retrievedSample1.getFields().get(1).getDefinition().getOptions());
   }
+
+  @Test
+  public void updateToLatestTemplateVersionRejectsSampleWithNoTemplate() {
+    // a sample created without a template has a null parent template id; updating it to the latest
+    // template version must surface a clear error rather than a not-found for template id "null"
+    ApiSampleWithFullSubSamples apiSample =
+        new ApiSampleWithFullSubSamples("sample without a template");
+    ApiSampleWithFullSubSamples createdSample =
+        sampleApiMgr.createNewApiSample(apiSample, testUser);
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser));
+    assertEquals("Sample is not based on any template", iae.getMessage());
+  }
 }
