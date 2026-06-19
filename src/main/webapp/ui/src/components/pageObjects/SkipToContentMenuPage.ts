@@ -18,12 +18,12 @@ export class SkipToContentMenuPage {
 
   /**
    * Returns a locator for the focusable content box of the given landmark.
-   * The TestLandmark story component renders a Box with tabIndex=-1 containing
-   * a Typography with text "{name} Content". We use a CSS :has() selector to
-   * find the box and filter by its text content.
+   * The TestLandmark story component renders the box as a labelled region
+   * (`role="region"` + `aria-label="{name} Content"`), which is also the
+   * element that receives focus, so we can locate it semantically by role+name.
    */
   landmarkContent(landmarkName: string): Locator {
-    return page.getByCSS(`[tabindex="-1"]:has(h6)`).filter({ hasText: `${landmarkName} Content` });
+    return page.getByRole("region", { name: `${landmarkName} Content`, exact: true });
   }
 
   /**

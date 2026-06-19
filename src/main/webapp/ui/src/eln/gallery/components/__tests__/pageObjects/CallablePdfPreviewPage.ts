@@ -2,6 +2,17 @@ import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 
 /**
+ * Retriable locator for a raw CSS selector under <body>. CSS is a workaround,
+ * used ONLY because the third-party react-pdf library renders its document and
+ * pages as canvas-wrapping <div>s with no accessible role/name. Vitest exposes
+ * no public CSS locator, so we call the provider's `css=` engine via `.locator()`
+ * (protected on the type, present at runtime) instead of registering a global one.
+ */
+function css(selector: string): Locator {
+  return (page.elementLocator(document.body) as unknown as { locator(s: string): Locator }).locator(`css=${selector}`);
+}
+
+/**
  * Page object for the CallablePdfPreview component as mounted by the stories
  * in CallablePdfPreview.story.tsx. Encapsulates locators and user interactions;
  * assertions live in the tests themselves.
@@ -48,16 +59,16 @@ export class CallablePdfPreviewPage {
   }
 
   get pdfDocument(): Locator {
-    return page.getByCSS(".react-pdf__Document");
+    return css(".react-pdf__Document");
   }
 
   get firstPage(): Locator {
-    return page.getByCSS(".react-pdf__Page");
+    return css(".react-pdf__Page");
   }
 
   /** Locator for the pdf.js load-error text displayed inside the dialog. */
   get loadErrorText(): Locator {
-    return page.getByCSS(".react-pdf__message--error");
+    return page.getByText(/failed to load pdf/i);
   }
 
   // ── Zoom controls ─────────────────────────────────────────────────────────

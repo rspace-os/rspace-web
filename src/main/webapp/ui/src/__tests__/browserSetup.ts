@@ -1,25 +1,7 @@
 import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
-import { cdp, locators, server } from "vitest/browser";
+import { cdp, server } from "vitest/browser";
 import { appShellHandlers } from "./mswAppShellHandlers";
-
-/*
- * Adds a `getByCSS` locator to the Vitest browser `page`/locator selectors.
- * The Playwright provider understands the `css=` selector engine; this
- * surfaces it as a first-class locator for tests that need raw CSS queries
- * (e.g. the MUI DataGrid's `[role="gridcell"][data-field="..."]`).
- */
-locators.extend({
-  getByCSS(css: string) {
-    return `css=${css}`;
-  },
-});
-
-declare module "vitest/browser" {
-  interface LocatorSelectors {
-    getByCSS(css: string): import("vitest/browser").Locator;
-  }
-}
 
 /*
  * A single MSW worker shared by every browser-mode test. Tests register their

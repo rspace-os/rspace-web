@@ -1,6 +1,17 @@
 import { type Locator, page } from "vitest/browser";
 
 /**
+ * Retriable locator for a raw CSS selector under <body>. CSS is a workaround,
+ * used ONLY because the third-party PhotoSwipe library renders these elements
+ * with no accessible role/name to query semantically. Vitest exposes no public
+ * CSS locator, so we call the provider's `css=` engine via `.locator()`
+ * (protected on the type, present at runtime) instead of registering a global one.
+ */
+function css(selector: string): Locator {
+  return (page.elementLocator(document.body) as unknown as { locator(s: string): Locator }).locator(`css=${selector}`);
+}
+
+/**
  * Page object for the CallableImagePreview component as mounted by the stories
  * in CallableImagePreview.story.tsx. Encapsulates locators and user
  * interactions; assertions live in the tests themselves.
@@ -37,33 +48,28 @@ export class CallableImagePreviewPage {
 
   // ── PhotoSwipe modal elements ─────────────────────────────────────────────
 
-  /** The root PhotoSwipe container (present in DOM once the modal is created) */
-  get modal(): Locator {
-    return page.getByCSS(".pswp");
-  }
-
-  /** The open/active PhotoSwipe overlay */
-  get openModal(): Locator {
-    return page.getByCSS(".pswp--open");
-  }
-
-  /** The image element rendered inside the active PhotoSwipe slide */
-  get modalImage(): Locator {
-    return page.getByCSS(".pswp__img");
-  }
-
   /**
-   * The caption container rendered by PhotoSwipe's default caption plugin.
-   * PhotoSwipe uses `.pswp__default-caption` (not `.pswp__caption`) for the
-   * inline caption element it appends to the modal when `withCaption` is true.
+   * The open PhotoSwipe overlay. PhotoSwipe sets `role="dialog"` on its root
+   * (`.pswp`) and removes the whole element from the DOM on close, so the dialog
+   * role is a semantic stand-in for "preview is open".
    */
+  get openModal(): Locator {
+    return page.getByRole("dialog");
+  }
+
+  /** PhotoSwipe marks its `<img>` `role="presentation"`, so it has no a11y name. */
+  get modalImage(): Locator {
+    return css(".pswp__img");
+  }
+
+  /** PhotoSwipe's caption `<div>`; must match even when empty, so `getByText` can't be used. */
   get caption(): Locator {
-    return page.getByCSS(".pswp__default-caption");
+    return css(".pswp__default-caption");
   }
 
   /** The close button inside the PhotoSwipe toolbar */
   get closeButton(): Locator {
-    return page.getByCSS(".pswp__button--close");
+    return page.getByRole("button", { name: "Close" });
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────

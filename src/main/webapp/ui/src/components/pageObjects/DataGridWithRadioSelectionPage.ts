@@ -6,8 +6,6 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * DataGridWithRadioSelection.story.tsx. Encapsulates locators and user
  * interactions; assertions live in the specs themselves.
  *
- * Uses the `getByCSS` locator extension registered in browserSetup.ts for
- * queries that require CSS attribute selectors (e.g. `[role="gridcell"][data-field="..."]`).
  */
 export class DataGridWithRadioSelectionPage {
   readonly grid: Locator = page.getByRole("grid");
@@ -17,9 +15,13 @@ export class DataGridWithRadioSelectionPage {
     return page.getByRole("columnheader").first();
   }
 
-  /** Returns the data rows (rows with a data-id attribute, i.e. not the header). */
+  /**
+   * Returns the data rows (i.e. not the column-header row). Data rows contain
+   * `gridcell`s; the header row contains `columnheader`s, so filtering by the
+   * presence of a gridcell selects the data rows without a CSS attribute query.
+   */
   dataRows(): Locator {
-    return this.grid.getByCSS('[role="row"][data-id]');
+    return this.grid.getByRole("row").filter({ has: page.getByRole("gridcell") });
   }
 
   /** Returns the nth data row (0-indexed). */
@@ -87,7 +89,12 @@ export class DataGridWithRadioSelectionPage {
    * mount and click the matching option.
    */
   async changePageSize(size: number): Promise<void> {
-    const selectEl = page.getByCSS(".MuiTablePagination-select.MuiSelect-select").element();
+    // MUI X's pagination select renders as a `role="combobox"` labelled by the
+    // TablePagination "Rows per page:" label (DataGrid's `labelRowsPerPage`), so
+    // we address it semantically by that accessible name. The display element is
+    // laid out at 0x0 in the DataGrid footer, which the role engine treats as
+    // hidden, so `includeHidden` is required for it to match.
+    const selectEl = page.getByRole("combobox", { name: /rows per page/i, includeHidden: true }).element();
 
     // MUI Select opens on `mousedown` on the control div.
     const fire = (type: string) => selectEl.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true }));

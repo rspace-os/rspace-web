@@ -1,5 +1,17 @@
 import { expect } from "vitest";
-import { type Locator, page, userEvent } from "vitest/browser";
+import { type FrameLocator, type Locator, page, userEvent } from "vitest/browser";
+
+/**
+ * Retriable locator for a raw CSS selector, scoped to `within` (default <body>).
+ * CSS is a workaround for the third-party TinyMCE editor, whose iframe and
+ * contenteditable body expose no cross-browser accessible role/name. Vitest has
+ * no public CSS locator, so we call the provider's `css=` engine via `.locator()`
+ * (protected on the type, present at runtime) instead of registering a global one.
+ */
+function css(selector: string, within?: Locator | FrameLocator): Locator {
+  const root = (within ?? page.elementLocator(document.body)) as unknown as { locator(s: string): Locator };
+  return root.locator(`css=${selector}`);
+}
 
 /**
  * Page object for the NewNote component, as mounted by the story in
@@ -11,13 +23,12 @@ import { type Locator, page, userEvent } from "vitest/browser";
  */
 export class NewNotePage {
   /**
-   * The TinyMCE contenteditable body inside its iframe.
-   * `page.frameLocator` (vitest/browser) takes a Locator, not a string.
-   * Uses the TinyMCE-specific iframe class to be precise (there is always
-   * exactly one `.tox-edit-area__iframe` per editor instance).
+   * The TinyMCE contenteditable body inside its iframe. TinyMCE sets the iframe
+   * `title` only on Firefox and the body `aria-label` only on non-Firefox, so
+   * CSS is the only handle stable across all engines.
    */
   get editorBody(): Locator {
-    return page.frameLocator(page.getByCSS(".tox-edit-area__iframe")).getByCSS('body[contenteditable="true"]');
+    return css('body[contenteditable="true"]', page.frameLocator(css(".tox-edit-area__iframe")));
   }
 
   get createNoteButton(): Locator {
