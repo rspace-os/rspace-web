@@ -117,8 +117,28 @@ function outerFolderListingHandler() {
   });
 }
 
-// Restores the fire-and-forget 404 suppressor installed in beforeEach.
-let restoreFireAndForget404: (() => void) | undefined;
+/*
+ * Install the fire-and-forget 404 suppressor once for the entire file.
+ *
+ * Gallery tests expand folders and select files, which fire fire-and-forget
+ * requests (listing, thumbnail, linked-documents) the component never awaits.
+ * One of these can still be in-flight when a test ends; the `resetHandlers()`
+ * in browserSetup.ts's afterEach drops its MSW mock, the request bypasses MSW
+ * and 404s against the Vite dev server, then surfaces as an unhandled rejection
+ * that fails the run on slow CI runners.
+ *
+ * Using beforeAll/afterAll (rather than beforeEach/afterEach) is essential:
+ * Vitest runs the spec file's afterEach BEFORE the setup file's afterEach, so
+ * a per-test suppressor installed/removed in spec afterEach would be gone by
+ * the time resetHandlers() fires (setup afterEach). With beforeAll/afterAll the
+ * suppressor outlives resetHandlers() — afterAll runs AFTER the setup file's
+ * last afterEach — so late-arriving 404s are still caught.
+ */
+const restoreFireAndForget404 = suppressFireAndForget404([
+  "/gallery/getUploadedFiles",
+  "/gallery/getThumbnail",
+  "/gallery/ajax/getLinkedDocuments",
+]);
 
 /*
  * This suite pins the viewport to 1280×720 (see beforeEach). The viewport is a
@@ -132,28 +152,13 @@ beforeAll(() => {
   originalViewport = { width: window.innerWidth, height: window.innerHeight };
 });
 afterAll(async () => {
+  restoreFireAndForget404();
   if (originalViewport) {
     await page.viewport(originalViewport.width, originalViewport.height);
   }
 });
 
 beforeEach(async () => {
-  /*
-   * The tree-view and clipboard tests expand folders and select files, which
-   * fire folder-listing / thumbnail / linked-document requests the component
-   * does not await. One of these can still be in flight when the test ends; the
-   * `resetHandlers()` in browserSetup then drops its mock, so it 404s against
-   * the real server after teardown and surfaces as an unhandled rejection that
-   * fails the run (seen only under slower CI). Opt this suite into swallowing
-   * exactly those benign gallery 404s; every other unhandled rejection still
-   * fails.
-   */
-  restoreFireAndForget404 = suppressFireAndForget404([
-    "/gallery/getUploadedFiles",
-    "/gallery/getThumbnail",
-    "/gallery/ajax/getLinkedDocuments",
-  ]);
-
   /*
    * Pin the viewport to 1280×720 for consistent grid column counts. The grid
    * computes its column count from the MUI breakpoint of the window width
@@ -175,7 +180,6 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  restoreFireAndForget404?.();
   uninstallClipboardStub();
   cleanup();
 });
