@@ -9,14 +9,18 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequest;
+import com.researchspace.service.impl.ConditionalTestRunner;
+import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 /** Sanity tests to verify connection to PubChem and response format. */
 @WebAppConfiguration
+@RunWith(ConditionalTestRunner.class)
 public class PubchemSearchApiControllerMVCIT extends API_MVC_TestBase {
 
   private User user;
@@ -29,8 +33,8 @@ public class PubchemSearchApiControllerMVCIT extends API_MVC_TestBase {
     apiKey = createNewApiKeyForUser(user);
   }
 
-  //  @RunIfSystemPropertyDefined("nightly")
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testSearchByName() throws Exception {
     ChemicalSearchRequest body =
         new ChemicalSearchRequest(ChemicalImportSearchType.NAME, "aspirin");
