@@ -225,6 +225,7 @@ public class InventoryRecordRetriever {
   }
 
   public boolean userHasCanViewFileProperty(User user, FileProperty fileProperty) {
+    System.out.println("@@@ Blarp");
     List<Sample> templatesUsingImageFile = sampleDao.getAllTemplatesUsingImage(fileProperty);
     if (userHasReadPermissionsForRecord(user, templatesUsingImageFile)) {
       return true;
