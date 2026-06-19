@@ -1,6 +1,6 @@
 import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
-import { locators } from "vitest/browser";
+import { cdp, locators, server } from "vitest/browser";
 import { appShellHandlers } from "./mswAppShellHandlers";
 
 /*
@@ -62,7 +62,16 @@ beforeAll(async () => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Reset any CDP-emulated media features (prefers-contrast, forced-colors)
+  // so they don't bleed into the next file. Files run serially in the same
+  // browser instance (fileParallelism: false), so an unreset CDP override
+  // leaks into subsequent files' theme computations (e.g. createAccentedTheme
+  // reads window.matchMedia("(prefers-contrast: more)") at render time).
+  // CDP is Chromium-only; this is a no-op on Firefox/WebKit.
+  if (server.browser === "chromium") {
+    await cdp().send("Emulation.setEmulatedMedia", { features: [] });
+  }
   worker.resetHandlers();
   // The browser origin — and therefore localStorage/sessionStorage — is shared
   // across every spec file. Clear it after each test so state written by one
