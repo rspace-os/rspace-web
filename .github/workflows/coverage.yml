@@ -54,13 +54,13 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.2.0
+        uses: actions/setup-java@v5.3.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Upload HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-unit-spring
           path: target/site/jacoco
@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload exec data for merge
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-exec-unit-spring
           path: target/jacoco.exec
@@ -156,13 +156,13 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.2.0
+        uses: actions/setup-java@v5.3.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
@@ -213,7 +213,7 @@ jobs:
 
       - name: Upload HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-integration
           path: target/site/jacoco-it
@@ -221,7 +221,7 @@ jobs:
 
       - name: Upload exec data for merge
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-exec-integration
           path: target/jacoco-it.exec
@@ -247,13 +247,13 @@ jobs:
       matrix:
         java-version: [17]
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.2.0
+        uses: actions/setup-java@v5.3.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
@@ -267,14 +267,14 @@ jobs:
 
       - name: Download unit + Spring exec
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: coverage-exec-unit-spring
           path: target
 
       - name: Download integration exec
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: coverage-exec-integration
           path: target
@@ -310,7 +310,7 @@ jobs:
 
       - name: Upload merged HTML coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-merged
           path: target/site/jacoco-merged
