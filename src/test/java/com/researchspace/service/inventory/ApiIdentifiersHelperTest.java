@@ -10,6 +10,7 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.properties.IPropertyHolder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -49,5 +50,32 @@ public class ApiIdentifiersHelperTest {
             .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL)
             .contains("https://localhost:8080/public/inventory/"));
     assertEquals(user, result.getOwner());
+  }
+
+  @Test
+  public void createDoiToSavePersistsPidinstType() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoiType(IdentifierType.PIDINST_DATACITE.name());
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+    assertEquals(IdentifierType.PIDINST_DATACITE, result.getType());
+  }
+
+  @Test
+  public void createDoiToSaveDefaultsToIgsnTypeWhenNoDoiType() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+    assertEquals(IdentifierType.IGSN_DATACITE, result.getType());
+  }
+
+  @Test
+  public void createDoiToSaveIgnoresNonEnumDoiType() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    // "dois" is the JSON:API type literal copied from DataCite responses, not an IdentifierType
+    apiDoi.setDoiType("dois");
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+    assertEquals(IdentifierType.IGSN_DATACITE, result.getType());
   }
 }

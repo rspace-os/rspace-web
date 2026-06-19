@@ -43,6 +43,7 @@ import org.apache.commons.lang3.Validate;
   "revisionId",
   "version",
   "historicalVersion",
+  "samplesToUpdateCount",
   "subSampleAlias",
   "defaultUnitId",
   "subSamplesCount",
@@ -59,6 +60,15 @@ public class ApiSampleTemplate extends ApiSample {
 
   @JsonProperty("defaultUnitId")
   private Integer defaultUnitId;
+
+  /**
+   * Number of the requesting user's samples that were created from an older version of this
+   * template and could be updated to its latest version. Drives whether the UI offers the "Update
+   * Samples" action; 0 means there is nothing to update. Populated on outgoing single-template
+   * responses only (not on the lighter list/search view), and left 0 on limited (no-read) views.
+   */
+  @JsonProperty("samplesToUpdateCount")
+  private int samplesToUpdateCount;
 
   public ApiSampleTemplate() {
     setTemplate(true);

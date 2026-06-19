@@ -2,20 +2,27 @@ import type { ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GlobalId, Id } from "./BaseRecord";
 import type { InventoryRecord } from "./InventoryRecord";
 
-export type ExtraFieldType = "Text" | "Number";
+export type ExtraFieldType = "Text" | "Number" | "Link";
+
+export type ExtraInventoryLink = {
+  relationType: string;
+  targetGlobalId: string;
+  versionPin: number | null;
+};
 
 export type ExtraFieldAttrs = {
   id: Id;
   globalId: GlobalId | null;
   name: string;
   lastModified: string | null;
-  type: "text" | "number";
+  type: "text" | "number" | "link";
   content: string;
   parentGlobalId: GlobalId | null;
   editable?: boolean;
   editing?: boolean;
   initial?: boolean;
   newFieldRequest?: boolean;
+  link?: ExtraInventoryLink | null;
 };
 
 /**
@@ -30,6 +37,12 @@ export interface ExtraField {
   content: string; // the value of the key-value pair
   owner: InventoryRecord;
   initial: boolean;
+
+  /*
+   * For Link-typed fields, the inventory/ELN link payload; null for non-Link
+   * fields (and for a Link field that has not yet been given a target).
+   */
+  readonly link: ExtraInventoryLink | null;
 
   /*
    * When set, subsequent API calls to store modifications MUST ensure that the

@@ -36,4 +36,29 @@ describe("computed: paramsForBackend", () => {
       expect(JSON.stringify(field.paramsForBackend)).toEqual(expect.any(String));
     });
   });
+
+  describe("link fields", () => {
+    test("carry the link payload and relation whitelist but no content", () => {
+      const field = makeMockField({
+        type: "link",
+        allowedRelationTypes: ["References"],
+        link: {
+          relationType: "References",
+          targetGlobalId: "SA2",
+          versionPin: null,
+        },
+      });
+
+      const params = field.paramsForBackend as Record<string, unknown>;
+      expect(params.link).toEqual({
+        relationType: "References",
+        targetGlobalId: "SA2",
+        versionPin: null,
+      });
+      expect(params.allowedRelationTypes).toEqual(["References"]);
+      // a link field's value lives in its link, not the data column; sending
+      // (empty) content trips the backend's mandatory-field content check
+      expect(params).not.toHaveProperty("content");
+    });
+  });
 });

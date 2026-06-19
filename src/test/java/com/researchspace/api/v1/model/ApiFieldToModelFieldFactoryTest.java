@@ -1,10 +1,14 @@
 package com.researchspace.api.v1.model;
 
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
+import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import java.util.Arrays;
 import java.util.EnumSet;
 import org.junit.Test;
@@ -95,6 +99,21 @@ public class ApiFieldToModelFieldFactoryTest {
   @Test
   public void identifierField() {
     assertValues("10.12345/sdfg-kooo", "11.12345/sdfg-kooo", ApiFieldType.IDENTIFIER);
+  }
+
+  @Test
+  public void linkField() {
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("Related items");
+    apiField.setAllowedRelationTypes(Arrays.asList("References", "IsDerivedFrom"));
+
+    InventoryEntityField model = factory.apiInventoryFieldToModelField(apiField);
+
+    assertTrue(model instanceof InventoryLinkField);
+    // the allowed-relation whitelist is stored pipe-delimited on the model field
+    assertEquals(
+        "References|IsDerivedFrom", ((InventoryLinkField) model).getAllowedRelationTypes());
   }
 
   private void assertValues(String valid, String invalid, ApiFieldType type) {

@@ -3,10 +3,13 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.model.units.RSUnitDef;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,6 +150,29 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
     ApiSampleTemplate put = newValidPut();
     put.setDefaultUnitId(null);
     assertNoDefaultUnitError(validate(putValidator, put));
+  }
+
+  // --- link fields: allowed-relation-types must be valid even on a type-less existing-field PUT
+  // ---
+
+  @Test
+  public void putRejectsInvalidRelationTypeOnExistingLinkFieldWithoutType() {
+    // RSDEV-1200: an existing-field PUT may omit `type`, but the whitelist is still persisted by
+    // the
+    // DB field type, so it must be validated whenever present - not only when the DTO says
+    // type==LINK. Otherwise an invalid whitelist bypasses validation and is stored anyway.
+    ApiSampleTemplate put = newValidPut();
+    ApiInventoryEntityField existingLink = new ApiInventoryEntityField();
+    existingLink.setId(123L); // existing field, no type provided
+    existingLink.setAllowedRelationTypes(List.of("NotADataCiteRelationType"));
+    put.setFields(List.of(existingLink));
+
+    Errors errors = validate(putValidator, put);
+
+    assertTrue(
+        errors.getFieldErrors().stream()
+            .anyMatch(fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+        "expected an invalid-relation-type error, got: " + errors.getAllErrors());
   }
 
   // --- helpers --------------------------------------------------------------------------

@@ -1,8 +1,13 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.testutils.TestFactory;
@@ -15,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +40,10 @@ class ApiAvailabilityHandlerImplTest {
     handler = new ApiAvailabilityHandlerImpl();
     handler.setSystemPropertyManager(mockSysPropMgr);
     handler.setDataCiteConnector(new DataCiteConnectorDummy());
+    // resolve messages against the real inventory bundle, so keys are covered too
+    ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+    messageSource.setBasename("bundles/inventory/inventory");
+    handler.setMessages(new MessageSourceUtils(messageSource));
   }
 
   @Test
@@ -80,7 +90,7 @@ class ApiAvailabilityHandlerImplTest {
 
   @Test
   void testInventoryAndDataciteEnabled() {
-    setSystemProperty(SystemPropertyName.DATACITE_ENABLED, Boolean.TRUE);
+    setSystemProperty(SystemPropertyName.IGSN_DATACITE_ENABLED, Boolean.TRUE);
     setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
     assertTrue(handler.isInventoryAndDataciteEnabled(anyUser));
     handler.assertInventoryAndDataciteEnabled(anyUser);
@@ -111,6 +121,41 @@ class ApiAvailabilityHandlerImplTest {
             UnsupportedOperationException.class,
             () -> handler.assertInventoryAndDataciteEnabled(anyUser));
     assertEquals("Inventory is not enabled on this RSpace instance.", exception.getMessage());
+  }
+
+  @Test
+  void testInventoryAndPidinstEnabled() {
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+    assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST));
+    handler.assertInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST);
+  }
+
+  @Test
+  void testPidinstDisabledIgsnUnaffected() {
+    DataCiteConnectorDummy dummyConnector = new DataCiteConnectorDummy();
+    dummyConnector.setEnabled(InventorySettingType.PIDINST, false);
+    handler.setDataCiteConnector(dummyConnector);
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+
+    assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.IGSN));
+    assertFalse(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST));
+
+    Exception exception =
+        assertThrows(
+            UnsupportedOperationException.class,
+            () ->
+                handler.assertInventoryAndIdentifierTypeEnabled(
+                    anyUser, InventorySettingType.PIDINST));
+    assertEquals(
+        "PIDINST integration is not enabled on this RSpace instance.", exception.getMessage());
+  }
+
+  @Test
+  void igsnTypedVariantMatchesDataciteMethods() {
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+    assertEquals(
+        handler.isInventoryAndDataciteEnabled(anyUser),
+        handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.IGSN));
   }
 
   private void assertApiDisabled() {

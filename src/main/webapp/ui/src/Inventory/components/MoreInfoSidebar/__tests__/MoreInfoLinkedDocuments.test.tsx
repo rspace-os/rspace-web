@@ -18,6 +18,39 @@ describe("LinkedDocuments", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
+  test("fetches a template's back-references via the generic referencingItems endpoint", async () => {
+    // there is no typed /sampleTemplates/{id}/referencingItems endpoint, so
+    // IT targets use the generic /referencingItems/{globalId} route
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (String(url).startsWith("referencingItems/")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA1",
+                sourceName: "A sample",
+                sourceType: "SAMPLE",
+                relationType: "References",
+                versionPin: null,
+              },
+            ],
+          },
+        } as AxiosResponse);
+      }
+      return Promise.resolve({ data: [] } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="IT5" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+
+    expect(await screen.findByText("A sample")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IT5");
+    expect(spy).toHaveBeenCalledWith("referencingItems/IT5");
+  });
+
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
@@ -57,14 +90,16 @@ describe("LinkedDocuments", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     expect(within(await screen.findByRole("table")).getAllByRole("row")).toHaveLength(3);
     expect(
-      // @ts-expect-error findTableCell exists in the customized within function
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
     expect(
-      // @ts-expect-error findTableCell exists in the customized within function
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 1,
@@ -99,12 +134,86 @@ describe("LinkedDocuments", () => {
 
     expect(rows).toHaveLength(2);
     expect(
-      // @ts-expect-error findTableCell exists in the customized within function
+      // @ts-expect-error findTableCell exists on the custom within function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
         columnHeading: "Name",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
+  });
+  test.each([
+    ["SS9", "subSamples/9/referencingItems"],
+    ["IC5", "containers/5/referencingItems"],
+    ["IN3", "instruments/3/referencingItems"],
+  ])("Maps Global ID %s to %s for the referencingItems endpoint", async (globalId, expectedUrl) => {
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (typeof url === "string" && url.endsWith("/referencingItems")) {
+        return Promise.resolve({
+          data: { referencingItems: [] },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId={globalId} />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    await screen.findByRole("button", { name: "Close" });
+    expect(spy).toHaveBeenCalledWith(expectedUrl);
+  });
+
+  test("Does not call referencingItems for an unknown Global ID prefix", async () => {
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="ZZ1" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    await screen.findByRole("button", { name: "Close" });
+    const calls = spy.mock.calls.map(([url]) => url);
+    expect(calls.some((url) => typeof url === "string" && url.endsWith("/referencingItems"))).toBe(false);
+  });
+
+  test("When no documents link to the item, the empty-state mentions both List of Materials and inventory links", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() => {
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="IC1" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    expect(await screen.findByText(/List of Materials/i)).toBeVisible();
+    expect(await screen.findByText(/other inventory items? that link/i)).toBeVisible();
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {
@@ -117,6 +226,137 @@ describe("LinkedDocuments", () => {
     await screen.findByRole("button", { name: "Show Linked Documents" });
     fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     expect(await screen.findByText("An error")).toBeVisible();
-    expect(spy).toHaveBeenCalledTimes(2);
+    // 2 opens, each open triggers 2 calls (documents + referencing items)
+    expect(spy).toHaveBeenCalledTimes(4);
+  });
+
+  test("Calls the referencingItems endpoint for the matching item kind", async () => {
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (typeof url === "string" && url.endsWith("/referencingItems")) {
+        return Promise.resolve({
+          data: { referencingItems: [] },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="SA42" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    // wait for the dialog to settle
+    await screen.findByRole("button", { name: "Close" });
+    expect(spy).toHaveBeenCalledWith("samples/42/referencingItems");
+  });
+
+  test("Renders a row per referencing Inventory item", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (typeof url === "string" && url.endsWith("/referencingItems")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA10",
+                sourceName: "Calibrator A",
+                sourceType: "SAMPLE",
+                relationType: "IsCalibratedBy",
+                versionPin: null,
+                modifiedAtMillis: 0,
+              },
+              {
+                sourceGlobalId: "IC5",
+                sourceName: "Box 5",
+                sourceType: "CONTAINER",
+                relationType: "References",
+                versionPin: 3,
+                modifiedAtMillis: 0,
+              },
+            ],
+          },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="IC1" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    expect(await screen.findByText("Calibrator A")).toBeVisible();
+    expect(screen.getByText("Box 5")).toBeVisible();
+    expect(screen.getByText("IsCalibratedBy")).toBeVisible();
+    expect(screen.getByText("References")).toBeVisible();
+  });
+
+  test("shows which version of THIS item each referencing item links to, not as a suffix on the source Global ID", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (typeof url === "string" && url.endsWith("/referencingItems")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA10",
+                sourceName: "Unpinned source",
+                sourceType: "SAMPLE",
+                relationType: "References",
+                versionPin: null,
+              },
+              {
+                sourceGlobalId: "IC5",
+                sourceName: "Pinned source",
+                sourceType: "CONTAINER",
+                relationType: "References",
+                versionPin: 3,
+              },
+            ],
+          },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config: {},
+        } as AxiosResponse);
+      }
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="IC1" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    // The source's Global ID is shown bare: the version pin is NOT a version of the source.
+    expect(await screen.findByText("IC5")).toBeVisible();
+    expect(screen.queryByText("IC5v3")).not.toBeInTheDocument();
+    // Each row shows, separately, which version of THIS item the source links to.
+    expect(screen.getByText("v3")).toBeVisible();
+    expect(screen.getByText("Latest")).toBeVisible();
   });
 });
