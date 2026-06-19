@@ -102,7 +102,7 @@ jobs:
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
           always() &&
           (
@@ -229,7 +229,7 @@ jobs:
         run: pnpm run test
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
           always() &&
           (
@@ -293,7 +293,7 @@ jobs:
         run: pnpm run test-browser
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
           always() &&
           (
