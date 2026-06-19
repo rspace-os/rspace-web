@@ -4,6 +4,7 @@
   "packageManager": "pnpm@11.3.0",
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
+    "postinstall": "node scripts/link-skills.mjs",
     "test": "cd src/main/webapp/ui && cross-env vitest run",
     "test:ui": "cd src/main/webapp/ui && cross-env vitest --ui",
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
