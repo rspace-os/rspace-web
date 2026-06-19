@@ -1,7 +1,11 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.GalleryFilestoresApi;
+import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.DeploymentPropertyType;
@@ -240,7 +244,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   }
 
   @Override
-  public ApiExternalStorageOperationResult moveToFilestore(
+  public ApiExternalStorageOperationResult uploadFromGallery(
       @PathVariable Long filestoreId,
       @RequestBody @Valid ApiGalleryFilestoreOperationRequest request,
       BindingResult errors,
@@ -252,6 +256,12 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     FilestoreWriteManager.UploadOutcome outcome =
         filestoreWriteManager.uploadToFilestore(filestoreId, request, errors, user);
 
+    if (!request.isRemoveOriginalFromRspace()) {
+      // copy: keep the RSpace originals
+      return outcome.getOperationResult();
+    }
+
+    // move: delete the RSpace originals that uploaded successfully
     ApiExternalStorageOperationResult moveResult;
     try {
       moveResult =
@@ -268,18 +278,54 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   }
 
   @Override
-  public ApiExternalStorageOperationResult copyToFilestore(
+  public ApiExternalStorageOperationResult moveWithinFilestore(
       @PathVariable Long filestoreId,
-      @RequestBody @Valid ApiGalleryFilestoreOperationRequest request,
+      @RequestBody @Valid ApiGalleryFilestoreMoveRequest request,
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
 
     assertFilestoresApiEnabled(user);
     throwBindExceptionIfErrors(errors);
-    return filestoreWriteManager
-        .uploadToFilestore(filestoreId, request, errors, user)
-        .getOperationResult();
+    String movedPath =
+        filestoreWriteManager.moveWithinFilestore(
+            filestoreId, request.getSourcePath(), request.getDestPath(), errors, user);
+    return singleSuccess(movedPath);
+  }
+
+  @Override
+  public ApiExternalStorageOperationResult createFolder(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreFolderRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    assertFilestoresApiEnabled(user);
+    throwBindExceptionIfErrors(errors);
+    String folderPath =
+        filestoreWriteManager.createFolderInFilestore(
+            filestoreId, request.getPath(), request.getName(), errors, user);
+    return singleSuccess(folderPath);
+  }
+
+  @Override
+  public void deleteFromFilestore(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreDeleteRequest request,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    assertFilestoresApiEnabled(user);
+    throwBindExceptionIfErrors(errors);
+    filestoreWriteManager.deleteFromFilestore(filestoreId, request.getPath(), errors, user);
+  }
+
+  private static ApiExternalStorageOperationResult singleSuccess(String path) {
+    ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
+    result.add(new ApiExternalStorageOperationInfo(null, null, path, true, null));
+    return result;
   }
 
   @Override

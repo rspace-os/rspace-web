@@ -3,6 +3,8 @@ package com.researchspace.netfiles.s3;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.netfiles.DeletableTarget;
+import com.researchspace.netfiles.FilestoreAuditMetadata;
 import com.researchspace.netfiles.NfsAbstractClient;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
@@ -224,6 +226,79 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
     String folder = getParentPath(path);
     String fileName = getFileNameFromPath(path);
     s3Utilities.deleteFromS3(folder, fileName);
+  }
+
+  @Override
+  public String createFolder(String absolutePath, Map<String, String> metadata) throws IOException {
+    String path = stripStartAndEndSlashFromPath(absolutePath);
+    S3FolderContentItem existing = s3Utilities.getObjectDetails(path);
+    if (existing != null && !existing.isFolder()) {
+      throw new IOException("A file already exists at: " + path);
+    }
+    s3Utilities.createFolder(path, metadata);
+    return path;
+  }
+
+  @Override
+  public String moveWithin(String sourceAbsolutePath, String destFolderAbsolutePath)
+      throws IOException {
+    String sourceKey = stripStartAndEndSlashFromPath(sourceAbsolutePath);
+    String destFolder = stripStartAndEndSlashFromPath(destFolderAbsolutePath);
+    String leafName = getFileNameFromPath(sourceKey);
+
+    S3FolderContentItem sourceDetails = s3Utilities.getObjectDetails(sourceKey);
+    if (sourceDetails == null) {
+      throw new IOException("Source not found: " + sourceKey);
+    }
+
+    if (sourceDetails.isFolder()) {
+      if (!s3Utilities.listFolderContents(sourceKey).isEmpty()) {
+        throw new IOException("Cannot move a non-empty folder: " + sourceKey);
+      }
+      String destBase = joinPath(destFolder, leafName);
+      if (s3Utilities.getObjectDetails(destBase) != null) {
+        throw new IOException("Destination already exists: " + destBase);
+      }
+      // empty metadata => S3 COPY directive, preserving the placeholder's created-by/created-at
+      s3Utilities.copyObjectFromBucket(
+          s3Utilities.getBucketName(),
+          sourceKey + "/",
+          destBase + "/",
+          java.util.Collections.emptyMap());
+      s3Utilities.deleteObject(sourceKey + "/");
+      return destBase;
+    }
+
+    // copyObject (not copyObjectFromBucket) adds the 5 GB limit + destination-collision checks
+    String destKey = joinPath(destFolder, leafName);
+    copyObject(sourceKey, this, destKey, java.util.Collections.emptyMap());
+    s3Utilities.deleteObject(sourceKey);
+    return destKey;
+  }
+
+  @Override
+  public DeletableTarget resolveDeletableTarget(String absolutePath) throws IOException {
+    String key = stripStartAndEndSlashFromPath(absolutePath);
+    S3FolderContentItem details = s3Utilities.getObjectDetails(key);
+    if (details == null) {
+      throw new IOException("Not found: " + key);
+    }
+    if (!details.isFolder()) {
+      return new DeletableTarget(key, FilestoreAuditMetadata.from(details.getUserMetadata()));
+    }
+    if (!s3Utilities.listFolderContents(key).isEmpty()) {
+      throw new IOException("Cannot delete a non-empty folder: " + key);
+    }
+    String placeholderKey = key + "/";
+    S3FolderContentItem placeholder = s3Utilities.getObjectDetails(placeholderKey);
+    return new DeletableTarget(
+        placeholderKey,
+        FilestoreAuditMetadata.from(placeholder == null ? null : placeholder.getUserMetadata()));
+  }
+
+  @Override
+  public void deleteByKey(String objectKey) throws IOException {
+    s3Utilities.deleteObject(objectKey);
   }
 
   static final long S3_SINGLE_OP_COPY_LIMIT_BYTES = 5L * 1024L * 1024L * 1024L;

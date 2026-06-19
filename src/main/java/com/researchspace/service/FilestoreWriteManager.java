@@ -55,4 +55,41 @@ public interface FilestoreWriteManager {
       BindingResult errors,
       User user)
       throws BindException;
+
+  /**
+   * Deletes a file or folder within an S3 filestore, subject to the creator/age gate: every object
+   * removed must carry {@code rspace-created-by} equal to {@code user} and a {@code
+   * rspace-created-at} within the configured window. For a folder this is evaluated atomically over
+   * the placeholder and every descendant — if any object fails, nothing is deleted and an {@link
+   * org.apache.shiro.authz.AuthorizationException} is thrown (mapped to HTTP 403).
+   *
+   * @param filestoreId the filestore containing the item
+   * @param path filestore-relative path of the file or folder to delete
+   */
+  void deleteFromFilestore(Long filestoreId, String path, BindingResult errors, User user)
+      throws BindException;
+
+  /**
+   * Creates a new subfolder within a filestore, stamping the creator/creation-time audit metadata
+   * so it is subject to the same delete gate as files.
+   *
+   * @param parentPath filestore-relative path of the parent folder ({@code ""} for the root)
+   * @param folderName name of the new folder
+   * @return the filestore-relative path of the created folder
+   */
+  String createFolderInFilestore(
+      Long filestoreId, String parentPath, String folderName, BindingResult errors, User user)
+      throws BindException;
+
+  /**
+   * Moves a file or folder to another folder within the same filestore (server-side, preserving the
+   * item's creator/creation-time metadata).
+   *
+   * @param sourcePath filestore-relative path of the item to move
+   * @param destFolderPath filestore-relative path of the destination folder
+   * @return the filestore-relative path of the moved item at its new location
+   */
+  String moveWithinFilestore(
+      Long filestoreId, String sourcePath, String destFolderPath, BindingResult errors, User user)
+      throws BindException;
 }

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.netfiles.NfsFileStore;
+import com.researchspace.netfiles.DeletableTarget;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFolderDetails;
@@ -123,7 +124,8 @@ public class S3NfsClientTest {
     File f1 = new File("file1.png");
     File f2 = new File("file2.png");
     WriteAttribution attribution =
-        new WriteAttribution("alice", Map.of(123L, "file1", 456L, "file2"));
+        new WriteAttribution(
+            "alice", Map.of(123L, "file1", 456L, "file2"), java.time.Instant.now());
 
     client.uploadFilesToNfs("dest", Map.of(123L, f1, 456L, f2), attribution);
 
@@ -136,6 +138,121 @@ public class S3NfsClientTest {
     client.deleteFile("dest/folder/file.txt");
 
     verify(s3Utilities).deleteFromS3("dest/folder", "file.txt");
+  }
+
+  @Test
+  public void createFolder_createsPlaceholderWithMetadataAndReturnsPath() throws IOException {
+    Map<String, String> meta =
+        Map.of("rspace-created-by", "testUser", "rspace-created-at", "2026-06-18T10:00:00Z");
+    when(s3Utilities.getObjectDetails("parent/new")).thenReturn(null);
+
+    String result = client.createFolder("parent/new", meta);
+
+    assertEquals("parent/new", result);
+    verify(s3Utilities).createFolder("parent/new", meta);
+  }
+
+  @Test
+  public void createFolder_whenFileExistsAtPath_throws() {
+    S3FolderContentItem file = new S3FolderContentItem("new", false, 10L, Instant.now());
+    when(s3Utilities.getObjectDetails("parent/new")).thenReturn(file);
+
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+  }
+
+  @Test
+  public void moveWithin_file_copiesPreservingMetadataThenDeletesSource() throws IOException {
+    when(s3Utilities.getBucketName()).thenReturn("bucket");
+    S3FolderContentItem file = new S3FolderContentItem("a.txt", false, 10L, Instant.now());
+    when(s3Utilities.getObjectDetails("src/a.txt")).thenReturn(file);
+    when(s3Utilities.getObjectDetails("dest/a.txt")).thenReturn(null);
+
+    String result = client.moveWithin("src/a.txt", "dest");
+
+    assertEquals("dest/a.txt", result);
+    verify(s3Utilities)
+        .copyObjectFromBucket("bucket", "src/a.txt", "dest/a.txt", Collections.emptyMap());
+    verify(s3Utilities).deleteObject("src/a.txt");
+  }
+
+  @Test
+  public void moveWithin_emptyFolder_movesPlaceholderObject() throws IOException {
+    when(s3Utilities.getBucketName()).thenReturn("bucket");
+    S3FolderContentItem folder = new S3FolderContentItem("myfolder", true, null, null);
+    when(s3Utilities.getObjectDetails("src/myfolder")).thenReturn(folder);
+    when(s3Utilities.listFolderContents("src/myfolder")).thenReturn(List.of()); // empty
+    when(s3Utilities.getObjectDetails("dest/myfolder")).thenReturn(null);
+
+    String result = client.moveWithin("src/myfolder", "dest");
+
+    assertEquals("dest/myfolder", result);
+    verify(s3Utilities)
+        .copyObjectFromBucket("bucket", "src/myfolder/", "dest/myfolder/", Collections.emptyMap());
+    verify(s3Utilities).deleteObject("src/myfolder/");
+  }
+
+  @Test
+  public void moveWithin_nonEmptyFolder_throws() {
+    S3FolderContentItem folder = new S3FolderContentItem("myfolder", true, null, null);
+    when(s3Utilities.getObjectDetails("src/myfolder")).thenReturn(folder);
+    when(s3Utilities.listFolderContents("src/myfolder"))
+        .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 1L, Instant.now())));
+
+    assertThrows(IOException.class, () -> client.moveWithin("src/myfolder", "dest"));
+  }
+
+  @Test
+  public void moveWithin_fileExceedingSingleOpCopyLimit_throws() {
+    long sixGb = 6L * 1024L * 1024L * 1024L;
+    S3FolderContentItem big = new S3FolderContentItem("big.bin", false, sixGb, Instant.now());
+    when(s3Utilities.getObjectDetails("src/big.bin")).thenReturn(big);
+
+    assertThrows(IOException.class, () -> client.moveWithin("src/big.bin", "dest"));
+  }
+
+  @Test
+  public void resolveDeletableTarget_file_returnsFileKeyAndMetadata() throws IOException {
+    S3FolderContentItem file = new S3FolderContentItem("a.txt", false, 10L, Instant.now());
+    file.setUserMetadata(Map.of("rspace-created-by", "alice"));
+    when(s3Utilities.getObjectDetails("dir/a.txt")).thenReturn(file);
+
+    DeletableTarget target = client.resolveDeletableTarget("dir/a.txt");
+
+    assertEquals("dir/a.txt", target.objectKey());
+    assertEquals("alice", target.audit().createdBy());
+  }
+
+  @Test
+  public void resolveDeletableTarget_emptyFolder_returnsPlaceholderKeyAndMetadata()
+      throws IOException {
+    S3FolderContentItem folder = new S3FolderContentItem("d", true, null, null);
+    when(s3Utilities.getObjectDetails("dir/d")).thenReturn(folder);
+    when(s3Utilities.listFolderContents("dir/d")).thenReturn(List.of()); // empty
+    S3FolderContentItem placeholder = new S3FolderContentItem("d", false, 0L, Instant.now());
+    placeholder.setUserMetadata(Map.of("rspace-created-by", "alice"));
+    when(s3Utilities.getObjectDetails("dir/d/")).thenReturn(placeholder);
+
+    DeletableTarget target = client.resolveDeletableTarget("dir/d");
+
+    assertEquals("dir/d/", target.objectKey());
+    assertEquals("alice", target.audit().createdBy());
+  }
+
+  @Test
+  public void resolveDeletableTarget_nonEmptyFolder_throws() {
+    S3FolderContentItem folder = new S3FolderContentItem("d", true, null, null);
+    when(s3Utilities.getObjectDetails("dir/d")).thenReturn(folder);
+    when(s3Utilities.listFolderContents("dir/d"))
+        .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 5L, Instant.now())));
+
+    assertThrows(IOException.class, () -> client.resolveDeletableTarget("dir/d"));
+  }
+
+  @Test
+  public void deleteByKey_deletesExactKey() throws IOException {
+    client.deleteByKey("dir/d/");
+
+    verify(s3Utilities).deleteObject("dir/d/");
   }
 
   @Test
