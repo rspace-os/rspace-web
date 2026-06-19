@@ -4,7 +4,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
 import TextField from "@mui/material/TextField";
 import {
@@ -20,6 +19,7 @@ import {
 } from "@mui/x-data-grid";
 import React from "react";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
+import ExportMenuItem from "@/components/ExportMenuItem";
 import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import GlobalId from "../../../components/GlobalId";
@@ -242,7 +242,7 @@ function Toolbar({
         }}
       />
       <GridToolbarExportContainer>
-        <MenuItem
+        <ExportMenuItem
           onClick={() => {
             apiRef.current?.exportDataAsCsv({
               allColumns: true,
@@ -250,7 +250,7 @@ function Toolbar({
           }}
         >
           Export to CSV
-        </MenuItem>
+        </ExportMenuItem>
       </GridToolbarExportContainer>
     </GridToolbarContainer>
   );

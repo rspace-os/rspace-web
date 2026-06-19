@@ -70,6 +70,7 @@ import Alerts from "../../../components/Alerts/Alerts";
 import Analytics from "../../../components/Analytics";
 import CustomTooltip from "../../../components/CustomTooltip";
 import ErrorBoundary from "../../../components/ErrorBoundary";
+import ExportMenuItem from "../../../components/ExportMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ExportDialog from "../../../Export/ExportDialog";
@@ -1360,34 +1361,20 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         Columns
       </ColumnsPanelTrigger>
       <GridToolbarExportContainer>
-        <MenuItem
-          onClick={(event: React.MouseEvent<HTMLElement>) => {
-            void (async () => {
-              await exportAllRows();
-              event.currentTarget.closest('[role="menu"]')?.dispatchEvent(
-                new KeyboardEvent("keydown", {
-                  bubbles: true,
-                  key: "Escape",
-                }),
-              );
-            })();
+        <ExportMenuItem
+          onClick={async () => {
+            await exportAllRows();
           }}
         >
           Export all rows to CSV
-        </MenuItem>
-        <MenuItem
-          onClick={(event: React.MouseEvent<HTMLElement>) => {
+        </ExportMenuItem>
+        <ExportMenuItem
+          onClick={() => {
             exportVisibleRows();
-            event.currentTarget.closest('[role="menu"]')?.dispatchEvent(
-              new KeyboardEvent("keydown", {
-                bubbles: true,
-                key: "Escape",
-              }),
-            );
           }}
         >
           Export {selectedCount > 0 ? "selected" : "this page of"} rows to CSV
-        </MenuItem>
+        </ExportMenuItem>
       </GridToolbarExportContainer>
     </DataGridToolbar>
   );

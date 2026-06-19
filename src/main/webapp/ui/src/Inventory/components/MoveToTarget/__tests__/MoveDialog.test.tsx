@@ -70,13 +70,13 @@ describe("MoveDialog", () => {
         </storesContext.Provider>
       </ThemeProvider>,
     );
-    expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), expect.anything());
+    expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), undefined);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);
     });
-    expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), expect.anything());
+    expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), undefined);
   });
   test("Table hidden in header should list all selectedResults", () => {
     fc.assert(

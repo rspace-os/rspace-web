@@ -163,11 +163,15 @@ describe("KetcherTinyMce accessibility", () => {
 
     // Extract the onUnmount callback passed to KetcherTinyMce.
     // Tree: ThemeProvider > Analytics > Alerts > KetcherTinyMce
-    const themeProvider = rootRenderCalls[0].node as React.ReactElement;
-    const analytics = themeProvider.props.children as React.ReactElement;
-    const alerts = analytics.props.children as React.ReactElement;
-    const ketcherEl = alerts.props.children as React.ReactElement;
-    const onUnmount = ketcherEl.props.onUnmount as () => void;
+    type ElementWithChildren<C> = React.ReactElement<{ children: C }>;
+    type KetcherTree = ElementWithChildren<
+      ElementWithChildren<ElementWithChildren<React.ReactElement<{ onUnmount: () => void }>>>
+    >;
+    const themeProvider = rootRenderCalls[0].node as KetcherTree;
+    const analytics = themeProvider.props.children;
+    const alerts = analytics.props.children;
+    const ketcherEl = alerts.props.children;
+    const onUnmount = ketcherEl.props.onUnmount;
 
     expect(onUnmount).toBeTypeOf("function");
 

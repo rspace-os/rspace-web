@@ -7,8 +7,8 @@ import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
 
 const calculateLocationGeometry = (
-  tableCellRef: React.RefObject<HTMLTableCellElement>,
-  parentRef: React.RefObject<HTMLElement>,
+  tableCellRef: React.RefObject<HTMLTableCellElement | null>,
+  parentRef: React.RefObject<HTMLElement | null>,
   location: Location,
 ) => {
   const rect = tableCellRef.current?.getBoundingClientRect();
@@ -32,7 +32,7 @@ export type GridCellArgs = {
    * This reference to the parent TableContainer component is used to calculate
    * this new position and dimension.
    */
-  parentRef: React.RefObject<HTMLElement>;
+  parentRef: React.RefObject<HTMLElement | null>;
 
   /**
    * CSS property of the rendered HTMPTableCellElement.

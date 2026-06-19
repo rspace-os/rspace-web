@@ -30,7 +30,7 @@ describe("FileField", () => {
           children: "A warning alert.",
           severity: "warning",
         }),
-        expect.anything(),
+        undefined,
       );
     });
   });

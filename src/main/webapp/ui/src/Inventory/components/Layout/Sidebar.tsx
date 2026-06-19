@@ -109,7 +109,7 @@ const MyBenchNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { peopleStore, searchStore, uiStore } = useStores();
     const { navigateToSearch } = useNavigateHelpers();
@@ -150,7 +150,7 @@ const ContainersNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -193,7 +193,7 @@ const SampleNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -235,7 +235,7 @@ const TemplateNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -278,7 +278,7 @@ const IgsnNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { uiStore } = useStores();
     const { useNavigate } = React.useContext(NavigateContext);
@@ -312,7 +312,7 @@ const SubsampleNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -354,7 +354,7 @@ const ExportNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const {
       peopleStore: { currentUser },
@@ -400,7 +400,7 @@ const SettingsNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { uiStore } = useStores();
     const [openSettingsDialog, setOpenSettingsDialog] = useState(false);

@@ -130,7 +130,7 @@ describe("DMPDialog", () => {
     });
   });
 
-  describe.skip("Pagination should work.", () => {
+  describe("Pagination should work.", () => {
     test(
       "Next and previous page buttons should make the right API calls.",
       async () => {
@@ -245,7 +245,7 @@ describe("DMPDialog", () => {
       10 * 1000,
     );
   });
-  describe.skip("Search filters should work.", () => {
+  describe("Search filters should work.", () => {
     test(
       "Label filter should make the right API call.",
       async () => {

@@ -11,7 +11,7 @@ vi.mock("@mui/material/TextField", () => ({
 }));
 const expectLabel = (text: string) => (container: Element) => expect(container).toHaveTextContent(text);
 const expectTextField = (value: string | number | null) => () =>
-  expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), expect.anything());
+  expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), undefined);
 describe("NumberField", () => {
   describe("Renders correctly", () => {
     test.each`

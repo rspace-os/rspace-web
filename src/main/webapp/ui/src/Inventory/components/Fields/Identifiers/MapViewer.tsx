@@ -111,9 +111,16 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
     longitudeDataPoints++;
   }
   longitudeCenter /= longitudeDataPoints;
+  // React 19 changed ref handling in component generics; these casts silence
+  // the resulting type errors on react-leaflet components at the JSX level.
+  const MapContainerAny = MapContainer as unknown as React.ComponentType<
+    React.PropsWithChildren<Record<string, unknown>>
+  >;
+  const TileLayerAny = TileLayer as unknown as React.ComponentType<Record<string, unknown>>;
+  const CircleAny = Circle as unknown as React.ComponentType<Record<string, unknown>>;
   return (
     <>
-      <MapContainer
+      <MapContainerAny
         center={[latitudeCenter || 0, longitudeCenter || 0]}
         zoom={15}
         scrollWheelZoom={false}
@@ -121,12 +128,12 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
           height: "200px",
         }}
       >
-        <TileLayer
+        <TileLayerAny
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {showPoint && (
-          <Circle
+          <CircleAny
             center={[parseFloat(point.pointLatitude), parseFloat(point.pointLongitude)]}
             pathOptions={{
               fillColor: theme.palette.primary.main,
@@ -165,7 +172,7 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
             ])}
           />
         )}
-      </MapContainer>
+      </MapContainerAny>
       <FormGroup>
         <Grid
           container

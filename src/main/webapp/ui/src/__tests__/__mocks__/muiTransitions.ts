@@ -20,7 +20,7 @@ const TransitionMock = React.forwardRef<unknown, TransitionProps>(({ in: inProp,
     return children("entered", {}) as React.ReactElement | null;
   }
   if (React.isValidElement(children)) {
-    return React.cloneElement(children, { ref });
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, { ref });
   }
   return children ?? null;
 });

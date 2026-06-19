@@ -150,7 +150,7 @@ function RightPanelView(): ReactNode {
     <ErrorBoundary>
       <BorderContainer
         data-testid="MainActiveResult"
-        ref={mainContentRef as React.RefObject<HTMLDivElement>}
+        ref={mainContentRef as React.RefObject<HTMLDivElement | null>}
         recordType={searchStore.activeResult?.recordType ?? searchStore.search.batchEditingRecordsByType?.type ?? null}
       >
         <SynchroniseFormSections>{form()}</SynchroniseFormSections>

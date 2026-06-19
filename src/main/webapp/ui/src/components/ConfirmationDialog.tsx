@@ -9,7 +9,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { type FormEventHandler, useId } from "react";
+import React, { type FormEventHandler, type JSX, useId } from "react";
 import { createRoot } from "react-dom/client";
 import materialTheme from "../theme";
 

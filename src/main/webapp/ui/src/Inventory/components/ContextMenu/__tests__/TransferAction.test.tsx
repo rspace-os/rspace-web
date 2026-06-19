@@ -21,17 +21,17 @@ describe("TransferAction", () => {
       </ThemeProvider>,
     );
     await waitFor(() => {
-      expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), expect.anything());
+      expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), undefined);
     });
 
     await user.click(screen.getAllByText("Transfer")[0]);
     await waitFor(() => {
-      expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), expect.anything());
+      expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), undefined);
     });
 
     await user.click(screen.getByText("Cancel"));
     await waitFor(() => {
-      expect(Dialog).toHaveBeenLastCalledWith(expect.objectContaining({ open: false }), expect.anything());
+      expect(Dialog).toHaveBeenLastCalledWith(expect.objectContaining({ open: false }), undefined);
     });
   });
 });

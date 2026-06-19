@@ -98,7 +98,7 @@ function LeftPanelView(): React.ReactNode {
 
   return (
     <Stack
-      ref={searchNavRef as React.RefObject<HTMLDivElement>}
+      ref={searchNavRef as React.RefObject<HTMLDivElement | null>}
       sx={{
         flexWrap: "nowrap",
         height: "100%",

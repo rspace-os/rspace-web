@@ -93,7 +93,7 @@ describe("ImageField", () => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           submitHandler: expect.any(Function),
         }),
-        {} as never,
+        undefined,
       );
     });
   });

@@ -26,7 +26,7 @@ const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
   ({ in: inProp, children, className, style }, ref) => {
     if (!inProp) return null;
     if (React.isValidElement(children)) {
-      return React.cloneElement(children, {
+      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
         ref,
         className,
         style,

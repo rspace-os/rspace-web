@@ -63,7 +63,7 @@ describe("ContentContextMenu", () => {
           disabledHelp: "Nothing selected.",
           label: "Open",
         }),
-        expect.anything(),
+        undefined,
       );
     });
   });

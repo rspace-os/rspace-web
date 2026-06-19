@@ -241,7 +241,8 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const selectAll = await screen.findByRole("checkbox", {
+      await screen.findByRole("checkbox", { name: "Select Plan One" });
+      const selectAll = screen.getByRole("checkbox", {
         name: "Select all DMPs on this page",
       });
       expect(selectAll).not.toBeChecked();
@@ -258,7 +259,8 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const selectAll = await screen.findByRole("checkbox", {
+      await screen.findByRole("checkbox", { name: "Select Plan One" });
+      const selectAll = screen.getByRole("checkbox", {
         name: "Select all DMPs on this page",
       });
 

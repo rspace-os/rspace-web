@@ -33,7 +33,7 @@ describe("FormControl", () => {
             }),
           }),
         }),
-        expect.anything(),
+        undefined,
       );
     });
     test("FormLabel is not rendered when label is not passed.", () => {

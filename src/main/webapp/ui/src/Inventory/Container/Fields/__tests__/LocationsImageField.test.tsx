@@ -92,7 +92,7 @@ describe("LocationImageField", () => {
           warningAlert:
             "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
         }),
-        expect.anything(),
+        undefined,
       );
     });
     test("be a button labelled 'Edit Locations' that can't be tapped.", () => {
@@ -137,7 +137,7 @@ describe("LocationImageField", () => {
         expect.objectContaining({
           storeImage: expect.any(Function),
         }),
-        expect.anything(),
+        undefined,
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
@@ -237,7 +237,7 @@ describe("LocationImageField", () => {
         expect.objectContaining({
           warningAlert: "Click on 'Edit Locations' to add locations and start using the visual container.",
         }),
-        expect.anything(),
+        undefined,
       );
     });
   });
@@ -262,7 +262,7 @@ describe("LocationImageField", () => {
       await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: true, close: expect.any(Function) },
-        expect.anything(),
+        undefined,
       );
     });
   });
@@ -288,7 +288,7 @@ describe("LocationImageField", () => {
       await user.click(screen.getByText("Close"));
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: false, close: expect.any(Function) },
-        expect.anything(),
+        undefined,
       );
     });
   });

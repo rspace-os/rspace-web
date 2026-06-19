@@ -64,7 +64,7 @@ describe("Node", () => {
           </SearchContext.Provider>
         </ThemeProvider>,
       );
-      expect(NavigateToNode).toHaveBeenCalledWith({ node: container }, expect.anything());
+      expect(NavigateToNode).toHaveBeenCalledWith({ node: container }, undefined);
     });
   });
   test("When the record does not have a preview image, the record's type should be included in the treeitem's accessible name", () => {
