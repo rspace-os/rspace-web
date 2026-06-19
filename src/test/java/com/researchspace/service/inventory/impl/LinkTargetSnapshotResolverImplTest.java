@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
@@ -88,8 +89,8 @@ class LinkTargetSnapshotResolverImplTest {
   }
 
   @Test
-  void resolvesRevisionForSampleTemplateViaSampleClass() {
-    when(auditManager.getRevisionNumberForInventoryRecordVersion(Sample.class, 20L, 2L))
+  void resolvesRevisionForSampleTemplateViaSampleTemplateClass() {
+    when(auditManager.getRevisionNumberForInventoryRecordVersion(SampleTemplate.class, 20L, 2L))
         .thenReturn(33);
 
     Long rev = resolver.resolveRevisionForVersion(GlobalIdPrefix.IT, 20L, 2L);

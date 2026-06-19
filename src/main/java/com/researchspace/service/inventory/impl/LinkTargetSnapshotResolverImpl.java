@@ -9,7 +9,8 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -126,7 +127,7 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
   private Class<?> entityClassFor(GlobalIdPrefix prefix) {
     switch (prefix) {
       case SA:
-        return SampleEntity.class;
+        return Sample.class;
       case SS:
         return SubSample.class;
       case IC:
@@ -134,10 +135,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       case IN:
         return Instrument.class;
       case IT:
-        // Sample templates are now a SampleEntity subtype (DTYPE discriminator) on the shared
-        // Sample table; resolve via SampleEntity so Envers returns the concrete SampleTemplate
-        // revision (querying Sample.class would filter to DTYPE='Sample' and miss templates).
-        return SampleEntity.class;
+        // a template is a distinct SampleTemplate entity (DTYPE='SampleTemplate'); query that
+        // concrete class so Envers resolves the template revision (Sample.class would filter to
+        // DTYPE='Sample' and miss it).
+        return SampleTemplate.class;
       case SD:
         return StructuredDocument.class;
       case NB:
