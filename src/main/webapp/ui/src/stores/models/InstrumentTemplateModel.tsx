@@ -1,39 +1,28 @@
-import { type _LINK } from "@/util/types";
-import {
-  type Id,
-  type GlobalId,
-  inventoryRecordTypeLabels,
-} from "../definitions/BaseRecord";
-import {
-  type RecordType,
-  type Action,
-  type CreateOption,
-} from "../definitions/InventoryRecord";
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import { type PersonAttrs } from "../definitions/Person";
-import { type Factory } from "../definitions/Factory";
-import { type AttachmentJson } from "./AttachmentModel";
-import { type BarcodeAttrs } from "../definitions/Barcode";
+import { action, makeObservable, observable, override } from "mobx";
+import type React from "react";
+import type { _LINK } from "@/util/types";
+import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
+import type { BarcodeAttrs } from "../definitions/Barcode";
+import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { Field } from "../definitions/Field";
 import type { IdentifierAttrs } from "../definitions/Identifier";
+import type { InstrumentTemplate } from "../definitions/InstrumentTemplate";
+import type { Action, CreateOption, RecordType } from "../definitions/InventoryRecord";
+import type { PersonAttrs } from "../definitions/Person";
+import type { CoreFetcherArgs } from "../definitions/Search";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import getRootStore from "../stores/getRootStore";
+import type { AttachmentJson } from "./AttachmentModel";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import InventoryBaseRecord, {
-  RESULT_FIELDS,
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
   type InventoryBaseRecordUneditableFields,
+  RESULT_FIELDS,
 } from "./InventoryBaseRecord";
-import {
-  type HasEditableFields,
-  type HasUneditableFields,
-} from "../definitions/Editable";
-import { type InstrumentTemplate } from "../definitions/InstrumentTemplate";
-import React from "react";
-import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
-import { action, makeObservable, observable, override } from "mobx";
-import getRootStore from "../stores/RootStore";
-import { type CoreFetcherArgs } from "../definitions/Search";
-import FieldModel, { type FieldModelAttrs } from "./FieldModel";
-import { type Field } from "../definitions/Field";
 
 type InstrumentTemplateEditableFields = InventoryBaseRecordEditableFields;
 
@@ -64,9 +53,7 @@ export type InstrumentTemplateAttrs = {
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
-const FIELDS = new Set(
-  [...RESULT_FIELDS].filter((f) => f !== "extraFields").concat(["fields"])
-);
+const FIELDS = new Set([...RESULT_FIELDS].filter((f) => f !== "extraFields").concat(["fields"]));
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
 const defaultEditableFields = new Set<string>();
 
@@ -79,13 +66,12 @@ export default class InstrumentTemplateModel
 {
   fields: Array<Field> = [];
 
-  version: number = 1;
+  declare version: number;
 
   constructor(factory: Factory, params: InstrumentTemplateAttrs) {
     super(factory, params);
     makeObservable(this, {
       fields: observable,
-      version: observable,
       addField: action,
       removeCustomField: action,
       moveField: action,
@@ -103,8 +89,7 @@ export default class InstrumentTemplateModel
       fieldNamesInUse: override,
     });
 
-    if (this.recordType === "instrumentTemplate")
-      this.populateFromJson(factory, params, {});
+    if (this.recordType === "instrumentTemplate") this.populateFromJson(factory, params, {});
   }
 
   get recordType(): RecordType {
@@ -131,11 +116,7 @@ export default class InstrumentTemplateModel
     return { resultType: "INSTRUMENT_TEMPLATE" };
   }
 
-  populateFromJson(
-    factory: Factory,
-    passedParams: object,
-    defaultParams: object = {},
-  ): void {
+  populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as InstrumentTemplateAttrs;
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
@@ -159,21 +140,12 @@ export default class InstrumentTemplateModel
   }
 
   moveField(field: Field, newIndex: number): void {
-    if (newIndex < -1 || newIndex >= this.fields.length)
-      throw new Error(`Invalid new index: ${newIndex}`);
+    if (newIndex < -1 || newIndex >= this.fields.length) throw new Error(`Invalid new index: ${newIndex}`);
     if (newIndex === -1) newIndex = this.fields.length - 1;
     const oldIndex = this.fields.indexOf(field);
-    if (oldIndex === -1)
-      throw new Error("Could not find field in this instrument template.");
-    const without = [
-      ...this.fields.slice(0, oldIndex),
-      ...this.fields.slice(oldIndex + 1),
-    ];
-    const withAgain = [
-      ...without.slice(0, newIndex),
-      field,
-      ...without.slice(newIndex),
-    ];
+    if (oldIndex === -1) throw new Error("Could not find field in this instrument template.");
+    const without = [...this.fields.slice(0, oldIndex), ...this.fields.slice(oldIndex + 1)];
+    const withAgain = [...without.slice(0, newIndex), field, ...without.slice(newIndex)];
     withAgain.forEach((f, i) => {
       (f as FieldModel).columnIndex = i + 1;
     });
@@ -206,10 +178,7 @@ export default class InstrumentTemplateModel
   }
 
   get fieldNamesInUse(): Array<string> {
-    return [
-      ...super.fieldNamesInUse,
-      ...this.fields.filter((f) => f.name).map((f) => f.name),
-    ];
+    return [...super.fieldNamesInUse, ...this.fields.filter((f) => f.name).map((f) => f.name)];
   }
 
   async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
@@ -223,8 +192,7 @@ export default class InstrumentTemplateModel
     return false;
   }
 
-  get fieldValues(): InstrumentTemplateEditableFields &
-    InstrumentTemplateUneditableFields {
+  get fieldValues(): InstrumentTemplateEditableFields & InstrumentTemplateUneditableFields {
     return { ...super.fieldValues };
   }
 
@@ -248,8 +216,7 @@ export default class InstrumentTemplateModel
     return [
       {
         label: "Instrument",
-        explanation:
-          "Create a new instrument based on this template.",
+        explanation: "Create a new instrument based on this template.",
         onReset: () => {},
         onSubmit: async () => {
           void getRootStore().searchStore.createNewInstrument({

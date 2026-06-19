@@ -2,6 +2,7 @@ import { faBox } from "@fortawesome/free-solid-svg-icons/faBox";
 import { faFile } from "@fortawesome/free-solid-svg-icons/faFile";
 import { faFlask } from "@fortawesome/free-solid-svg-icons/faFlask";
 import { faImage } from "@fortawesome/free-solid-svg-icons/faImage";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { faPaperclip } from "@fortawesome/free-solid-svg-icons/faPaperclip";
 import { faVials } from "@fortawesome/free-solid-svg-icons/faVials";
 import { FontAwesomeIcon, type FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
@@ -12,7 +13,6 @@ import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
 import type { RecordIconData } from "../stores/definitions/BaseRecord";
 import { toTitleCase } from "../util/Util";
 import CustomTooltip from "./CustomTooltip";
-import BiotechIcon from "@mui/icons-material/Biotech";
 
 type RecordTypeIconArgs = {
   record: RecordIconData;
@@ -52,7 +52,12 @@ export default function RecordTypeIcon({
       break;
     case "instrument":
       icon = (
-        <FontAwesomeIcon size="1x" icon={faMicroscope} color={color ?? theme.palette.record.instrument.fg} style={style} />
+        <FontAwesomeIcon
+          size="1x"
+          icon={faMicroscope}
+          color={color ?? theme.palette.record.instrument.fg}
+          style={style}
+        />
       );
       break;
     case "template":
@@ -68,8 +73,10 @@ export default function RecordTypeIcon({
     case "instrumentTemplate":
       icon = (
         <TemplateIcon
-          color={color ?? theme.palette.record.instrumentTemplate.fg}
-          style={style}
+          sx={{
+            color: color ?? theme.palette.record.sampleTemplate.fg,
+            ...style,
+          }}
         />
       );
       break;

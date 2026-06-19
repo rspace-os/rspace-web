@@ -53,6 +53,15 @@ type MixedSections = {
   barcodes: boolean;
 };
 
+type InstrumentSections = {
+  overview: boolean;
+  details: boolean;
+  barcodes: boolean;
+  identifiers: boolean;
+  attachments: boolean;
+  customFields: boolean;
+};
+
 type InstrumentTemplateSections = {
   overview: boolean;
   details: boolean;

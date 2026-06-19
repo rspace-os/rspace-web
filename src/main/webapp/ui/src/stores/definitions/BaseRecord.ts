@@ -92,7 +92,10 @@ export const globalIdToInventoryRecordTypeLabel: (
   [(globalId: GlobalId) => globalIdPatterns.bench.test(globalId), inventoryRecordTypeLabels.bench],
   [(globalId: GlobalId) => globalIdPatterns.basket.test(globalId), inventoryRecordTypeLabels.basket],
   [(globalId: GlobalId) => globalIdPatterns.instrument.test(globalId), inventoryRecordTypeLabels.instrument],
-  [(globalId: GlobalId) => globalIdPatterns.instrumentTemplate.test(globalId), inventoryRecordTypeLabels.instrumentTemplate],
+  [
+    (globalId: GlobalId) => globalIdPatterns.instrumentTemplate.test(globalId),
+    inventoryRecordTypeLabels.instrumentTemplate,
+  ],
 ]);
 
 /**

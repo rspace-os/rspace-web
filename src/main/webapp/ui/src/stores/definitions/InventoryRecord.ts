@@ -30,13 +30,19 @@ export type LockStatus = "LOCKED_OK" | "WAS_ALREADY_LOCKED" | "UNLOCKED_OK" | "C
  * other means, these strings provide a simple enum for switching over
  * instances of their respective classes.
  */
-export type RecordType = "sample" | "container" | "subSample" | "sampleTemplate" | "instrument" | "instrumentTemplate";;
+export type RecordType = "sample" | "container" | "subSample" | "sampleTemplate" | "instrument" | "instrumentTemplate";
 
 /**
  * The API encodes the type of the various Inventory records using an all-caps
  * snake-case encoding.
  */
-export type ApiRecordType = "SAMPLE" | "CONTAINER" | "SUBSAMPLE" | "SAMPLE_TEMPLATE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
+export type ApiRecordType =
+  | "SAMPLE"
+  | "CONTAINER"
+  | "SUBSAMPLE"
+  | "SAMPLE_TEMPLATE"
+  | "INSTRUMENT"
+  | "INSTRUMENT_TEMPLATE";
 
 export function recordTypeToApiRecordType(rt: RecordType): ApiRecordType {
   if (rt === "sample") return "SAMPLE";

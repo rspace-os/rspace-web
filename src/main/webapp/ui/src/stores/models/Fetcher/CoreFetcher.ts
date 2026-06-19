@@ -373,15 +373,11 @@ export default class CoreFetcher {
           ],
           [
             () => endpoint === "instruments",
-            data.instruments as Array<
-                Record<string, unknown> & { globalId: GlobalId }
-            >,
+            data.instruments as Array<Record<string, unknown> & { globalId: GlobalId }>,
           ],
           [
             () => endpoint === "instrumentTemplates",
-            data.templates as Array<
-              Record<string, unknown> & { globalId: GlobalId }
-            >,
+            data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
           ],
         ])();
         runInAction(() => {
@@ -516,9 +512,7 @@ export default class CoreFetcher {
 
     params.pageNumber = 0;
 
-    return new URLSearchParams(
-      omitDefault(omitNull(params)) as Record<string, string>,
-    );
+    return new URLSearchParams(omitDefault(omitNull(params)) as Record<string, string>);
   }
 
   /*

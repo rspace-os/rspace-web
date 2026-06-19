@@ -43,7 +43,9 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
   const showFieldmark = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("FIELDMARK")).orElse(false);
-  const handleCreate = async (recordType: "sample" | "container" | "instrument" | "template" | "instrumentTemplate") => {
+  const handleCreate = async (
+    recordType: "sample" | "container" | "instrument" | "template" | "instrumentTemplate",
+  ) => {
     trackingStore.trackEvent("CreateInventoryRecordClicked", {
       type: recordType,
     });

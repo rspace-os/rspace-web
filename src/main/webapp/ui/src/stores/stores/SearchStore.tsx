@@ -14,12 +14,12 @@ import type { CoreFetcher, CoreFetcherArgs, ResultType } from "../definitions/Se
 import BasketModel from "../models/Basket";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
+import InstrumentModel, { type InstrumentAttrs } from "../models/InstrumentModel";
+import InstrumentTemplateModel from "../models/InstrumentTemplateModel";
 import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import TemplateModel, { type TemplateAttrs } from "../models/TemplateModel";
-import InstrumentTemplateModel from "../models/InstrumentTemplateModel";
-import InstrumentModel, { type InstrumentAttrs } from "../models/InstrumentModel";
 import type { RootStore } from "./RootStore";
 
 export type SavedSearch = CoreFetcherArgs & {
@@ -349,8 +349,7 @@ export default class SearchStore {
         ? this.activeResult
         : null;
 
-    const currentUsersGroups =
-      await this.rootStore.peopleStore.fetchCurrentUsersGroups();
+    const currentUsersGroups = await this.rootStore.peopleStore.fetchCurrentUsersGroups();
 
     const instrumentAttrs: InstrumentAttrs = {
       id: null,
@@ -390,8 +389,7 @@ export default class SearchStore {
   }
 
   async createNewInstrumentTemplate(): Promise<InstrumentTemplateModel> {
-    const currentUsersGroups =
-      await this.rootStore.peopleStore.fetchCurrentUsersGroups();
+    const currentUsersGroups = await this.rootStore.peopleStore.fetchCurrentUsersGroups();
     const instrumentTemplate = new InstrumentTemplateModel(new MemoisedFactory(), {
       id: null,
       type: "INSTRUMENT_TEMPLATE",
@@ -422,7 +420,7 @@ export default class SearchStore {
   }
 
   createNew(
-    type: "sample" | "container" | "template" | "instrumentTemplate",
+    type: "sample" | "container" | "template" | "instrument" | "instrumentTemplate",
   ): Promise<InventoryBaseRecord> {
     if (type === "sample") return this.createNewSample();
     if (type === "container") return this.createNewContainer();

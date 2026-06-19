@@ -1,24 +1,21 @@
+import { observer } from "mobx-react-lite";
+import type { ReactNode } from "react";
+import type { Person } from "../../stores/definitions/Person";
+import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import useStores from "../../stores/use-stores";
+import AccessPermissions from "../components/Fields/AccessPermissions";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
+import BarcodesField from "../components/Fields/Barcodes/FormField";
 import DescriptionField from "../components/Fields/Description";
-import CustomFields from "./Fields/CustomFields";
 import ImageField from "../components/Fields/Image";
 import NameField from "../components/Fields/Name";
+import OwnerField from "../components/Fields/Owner";
 import TagsField from "../components/Fields/Tags";
+import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { observer } from "mobx-react-lite";
-import React, { type ReactNode } from "react";
-import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
-import BarcodesField from "../components/Fields/Barcodes/FormField";
-import OwnerField from "../components/Fields/Owner";
-import {
-  useFormSectionError,
-  setFormSectionError,
-} from "../components/Stepper/StepperPanelHeader";
-import LimitedAccessAlert from "../components/LimitedAccessAlert";
-import AccessPermissions from "../components/Fields/AccessPermissions";
-import { type Person } from "../../stores/definitions/Person";
+import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
+import CustomFields from "./Fields/CustomFields";
 
 type OverviewSectionArgs = {
   activeResult: InstrumentTemplateModel;
@@ -47,10 +44,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
       />
       <OwnerField fieldOwner={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
-        <ImageField
-          fieldOwner={activeResult}
-          alt="What the instrument template looks like"
-        />
+        <ImageField fieldOwner={activeResult} alt="What the instrument template looks like" />
       )}
     </StepperPanel>
   );
@@ -76,9 +70,7 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
     >
       <DescriptionField
         fieldOwner={activeResult}
-        onErrorStateChange={(e) =>
-          setFormSectionError(formSectionError, "description", e)
-        }
+        onErrorStateChange={(e) => setFormSectionError(formSectionError, "description", e)}
       />
       <TagsField fieldOwner={activeResult} />
     </StepperPanel>
@@ -89,30 +81,24 @@ type ExtraFieldSectionArgs = {
   activeResult: InstrumentTemplateModel;
 };
 
-const CustomFieldSection = observer(
-  ({ activeResult }: ExtraFieldSectionArgs) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
-    return (
-      <StepperPanel
-        icon="instrumentTemplate"
-        title="Custom Fields"
-        sectionName="customFields"
-        formSectionError={formSectionError}
-        recordType="instrumentTemplate"
-      >
-        <CustomFields
-          onErrorStateChange={(field, value) =>
-            setFormSectionError(formSectionError, field, value)
-          }
-        />
-      </StepperPanel>
-    );
-  }
-);
+  return (
+    <StepperPanel
+      icon="instrumentTemplate"
+      title="Custom Fields"
+      sectionName="customFields"
+      formSectionError={formSectionError}
+      recordType="instrumentTemplate"
+    >
+      <CustomFields onErrorStateChange={(field, value) => setFormSectionError(formSectionError, field, value)} />
+    </StepperPanel>
+  );
+});
 
 function InstrumentTemplateForm(): ReactNode {
   const {
@@ -120,16 +106,11 @@ function InstrumentTemplateForm(): ReactNode {
   } = useStores();
   if (!activeResult || !(activeResult instanceof InstrumentTemplateModel))
     throw new Error("ActiveResult must be an Instrument Template");
-  if (!activeResult.owner)
-    throw new Error("Instrument Template does not have an owner");
+  if (!activeResult.owner) throw new Error("Instrument Template does not have an owner");
   const owner: Person = activeResult.owner;
 
   return (
-    <Stepper
-      titleText={activeResult.name}
-      resetScrollPosition={activeResult}
-      factory={activeResult.factory}
-    >
+    <Stepper titleText={activeResult.name} resetScrollPosition={activeResult} factory={activeResult.factory}>
       <LimitedAccessAlert
         readAccessLevel={activeResult.readAccessLevel}
         whatLabel="instrument template"
@@ -145,11 +126,7 @@ function InstrumentTemplateForm(): ReactNode {
             sectionName="barcodes"
             recordType="instrumentTemplate"
           >
-            <BarcodesField
-              fieldOwner={activeResult}
-              factory={activeResult.factory}
-              connectedItem={activeResult}
-            />
+            <BarcodesField fieldOwner={activeResult} factory={activeResult.factory} connectedItem={activeResult} />
           </StepperPanel>
         </>
       )}

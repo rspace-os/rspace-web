@@ -1,22 +1,8 @@
+import InstrumentModel, { type InstrumentAttrs } from "@/stores/models/InstrumentModel";
+import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import type InvApiService from "../../../common/InvApiService";
 import type { BarcodeRecord, PersistedBarcodeAttrs } from "../../definitions/Barcode";
 import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
-import ContainerModel, { ContainerAttrs } from "../ContainerModel";
-import PersonModel from "../PersonModel";
-import { type PersonAttrs } from "../../definitions/Person";
-import InventoryBaseRecord from "../InventoryBaseRecord";
-import SampleModel, { SampleAttrs } from "../SampleModel";
-import SubSampleModel, { SubSampleAttrs } from "../SubSampleModel";
-import TemplateModel, { TemplateAttrs } from "../TemplateModel";
-import InstrumentModel, { InstrumentAttrs } from "../InstrumentModel";
-import InstrumentTemplateModel, {
-  InstrumentTemplateAttrs,
-} from "../InstrumentTemplateModel";
-import { type Factory } from "../../definitions/Factory";
-import {
-  type PersistedBarcodeAttrs,
-  type BarcodeRecord,
-} from "../../definitions/Barcode";
 import type { Document, DocumentAttrs } from "../../definitions/Document";
 import type { Factory } from "../../definitions/Factory";
 import type { Identifier, IdentifierAttrs } from "../../definitions/Identifier";
@@ -55,7 +41,7 @@ export default class AlwaysNewFactory implements Factory {
             : patterns.bench.test(g)
               ? new ContainerModel(this, params as ContainerAttrs)
               : patterns.instrument.test(g)
-                ? new InstrumentModel  (this, params as InstrumentAttrs)
+                ? new InstrumentModel(this, params as InstrumentAttrs)
                 : patterns.instrumentTemplate.test(g)
                   ? new InstrumentTemplateModel(this, params as InstrumentTemplateAttrs)
                   : /* otherwise */ null;

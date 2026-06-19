@@ -1,4 +1,5 @@
 import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -11,7 +12,6 @@ import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
 import type { ResultType } from "../../../stores/definitions/Search";
 import { match } from "../../../util/Util";
-import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 
 type TypeFilterArgs = {
   anchorEl: HTMLElement | null;
@@ -117,20 +117,16 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemText primary="Subsamples" />
         </MenuItem>
         <MenuItem
-            selected={current === "INSTRUMENT"}
-            aria-current={current === "INSTRUMENT"}
-            onClick={() => {
-              onClose("INSTRUMENT");
-            }}
-            disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
-            data-test-id="instrumentType"
+          selected={current === "INSTRUMENT"}
+          aria-current={current === "INSTRUMENT"}
+          onClick={() => {
+            onClose("INSTRUMENT");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
+          data-test-id="instrumentType"
         >
           <ListItemIcon>
-            <FontAwesomeIcon
-              icon={faMicroscope}
-              color={theme.palette.standardIcon.main}
-              sx={{ fontSize: "1em" }}
-            />
+            <FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} style={{ fontSize: "1em" }} />
           </ListItemIcon>
           <ListItemText primary="Instruments" />
         </MenuItem>
@@ -166,25 +162,25 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           />
         </MenuItem>
         <MenuItem
-            selected={current === "INSTRUMENT_TEMPLATE"}
-            aria-current={current === "INSTRUMENT_TEMPLATE"}
-            onClick={() => {
-              onClose("INSTRUMENT_TEMPLATE");
-            }}
-            disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
-            data-test-id="instrumentTemplateType"
+          selected={current === "INSTRUMENT_TEMPLATE"}
+          aria-current={current === "INSTRUMENT_TEMPLATE"}
+          onClick={() => {
+            onClose("INSTRUMENT_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
+          data-test-id="instrumentTemplateType"
         >
           <ListItemIcon>
             <RecordTypeIcon
-                record={{
-                  recordTypeLabel: "Instrument Template",
-                  iconName: "instrumentTemplate",
-                }}
-                color={theme.palette.standardIcon.main}
-                style={{
-                  height: 18,
-                  width: 18,
-                }}
+              record={{
+                recordTypeLabel: "Instrument Template",
+                iconName: "instrumentTemplate",
+              }}
+              color={theme.palette.standardIcon.main}
+              style={{
+                height: 18,
+                width: 18,
+              }}
             />
           </ListItemIcon>
           <ListItemText primary="Instrument Templates" />

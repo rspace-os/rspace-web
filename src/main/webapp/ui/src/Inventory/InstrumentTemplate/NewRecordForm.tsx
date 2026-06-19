@@ -1,108 +1,86 @@
+import { observer } from "mobx-react-lite";
 import React from "react";
+import docLinks from "../../assets/DocLinks";
+import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
+import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import useStores from "../../stores/use-stores";
+import AccessPermissions from "../components/Fields/AccessPermissions";
+import DescriptionField from "../components/Fields/Description";
+import ImageField from "../components/Fields/Image";
+import NameField from "../components/Fields/Name";
+import TagsField from "../components/Fields/Tags";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
-import NameField from "../components/Fields/Name";
-import DescriptionField from "../components/Fields/Description";
-import TagsField from "../components/Fields/Tags";
-import ImageField from "../components/Fields/Image";
+import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
+import SynchroniseFormSections, { UnsynchroniseFormSections } from "../components/Stepper/SynchroniseFormSections";
 import CustomFields from "./Fields/CustomFields";
-import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
-import docLinks from "../../assets/DocLinks";
-import { observer } from "mobx-react-lite";
-import {
-  useFormSectionError,
-  setFormSectionError,
-} from "../components/Stepper/StepperPanelHeader";
-import SynchroniseFormSections, {
-  UnsynchroniseFormSections,
-} from "../components/Stepper/SynchroniseFormSections";
-import AccessPermissions from "../components/Fields/AccessPermissions";
 
-const OverviewSection = observer(
-  ({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
-    React.useEffect(() => {
-      setFormSectionError(formSectionError, "name", true);
-    }, []);
+  React.useEffect(() => {
+    setFormSectionError(formSectionError, "name", true);
+  }, []);
 
-    return (
-      <StepperPanel
-        title="Overview"
-        sectionName="overview"
-        formSectionError={formSectionError}
-        recordType="instrumentTemplate"
-      >
-        <NameField
-          fieldOwner={activeResult}
-          record={activeResult}
-          onErrorStateChange={(e) =>
-            setFormSectionError(formSectionError, "name", e)
-          }
-        />
-        <ImageField
-          fieldOwner={activeResult}
-          alt="A visual representation of the instrument template"
-        />
-      </StepperPanel>
-    );
-  }
-);
+  return (
+    <StepperPanel
+      title="Overview"
+      sectionName="overview"
+      formSectionError={formSectionError}
+      recordType="instrumentTemplate"
+    >
+      <NameField
+        fieldOwner={activeResult}
+        record={activeResult}
+        onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
+      />
+      <ImageField fieldOwner={activeResult} alt="A visual representation of the instrument template" />
+    </StepperPanel>
+  );
+});
 
-const DetailsSection = observer(
-  ({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+const DetailsSection = observer(({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
-    return (
-      <StepperPanel
-        title="Details"
-        sectionName="details"
-        formSectionError={formSectionError}
-        recordType="instrumentTemplate"
-      >
-        <DescriptionField
-          fieldOwner={activeResult}
-          onErrorStateChange={(e) =>
-            setFormSectionError(formSectionError, "description", e)
-          }
-        />
-        <TagsField fieldOwner={activeResult} />
-      </StepperPanel>
-    );
-  }
-);
+  return (
+    <StepperPanel
+      title="Details"
+      sectionName="details"
+      formSectionError={formSectionError}
+      recordType="instrumentTemplate"
+    >
+      <DescriptionField
+        fieldOwner={activeResult}
+        onErrorStateChange={(e) => setFormSectionError(formSectionError, "description", e)}
+      />
+      <TagsField fieldOwner={activeResult} />
+    </StepperPanel>
+  );
+});
 
-const CustomFieldsSection = observer(
-  ({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
-    const formSectionError = useFormSectionError({
-      editing: activeResult.editing,
-      globalId: activeResult.globalId,
-    });
+const CustomFieldsSection = observer(({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
+  const formSectionError = useFormSectionError({
+    editing: activeResult.editing,
+    globalId: activeResult.globalId,
+  });
 
-    return (
-      <StepperPanel
-        title="Custom Fields"
-        sectionName="customFields"
-        formSectionError={formSectionError}
-        recordType="instrumentTemplate"
-      >
-        <CustomFields
-          onErrorStateChange={(field, value) =>
-            setFormSectionError(formSectionError, field, value)
-          }
-        />
-      </StepperPanel>
-    );
-  }
-);
+  return (
+    <StepperPanel
+      title="Custom Fields"
+      sectionName="customFields"
+      formSectionError={formSectionError}
+      recordType="instrumentTemplate"
+    >
+      <CustomFields onErrorStateChange={(field, value) => setFormSectionError(formSectionError, field, value)} />
+    </StepperPanel>
+  );
+});
 
 export default function NewRecordForm(): React.ReactNode {
   const {
@@ -125,11 +103,7 @@ export default function NewRecordForm(): React.ReactNode {
           <OverviewSection activeResult={activeResult} />
         </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
-        <StepperPanel
-          title="Access Permissions"
-          sectionName="permissions"
-          recordType="instrumentTemplate"
-        >
+        <StepperPanel title="Access Permissions" sectionName="permissions" recordType="instrumentTemplate">
           <AccessPermissions fieldOwner={activeResult} />
         </StepperPanel>
         <CustomFieldsSection activeResult={activeResult} />

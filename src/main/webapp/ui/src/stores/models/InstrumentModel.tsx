@@ -1,55 +1,39 @@
-import { type _LINK } from "@/util/types";
-import {
-  type Id,
-  type GlobalId,
-  inventoryRecordTypeLabels,
-} from "../definitions/BaseRecord";
-import { type RecordDetails } from "../definitions/Record";
-import {
-  type RecordType,
-  type Action,
-  type CreateOption,
-} from "../definitions/InventoryRecord";
-import { type AdjustableTableRowOptions } from "../definitions/Tables";
-import { type ExtraFieldAttrs } from "../definitions/ExtraField";
-import { type PersonAttrs } from "../definitions/Person";
-import FieldModel, { type FieldModelAttrs } from "./FieldModel";
-import { type Field } from "../definitions/Field";
-import { type Factory } from "../definitions/Factory";
-import { type AttachmentJson } from "./AttachmentModel";
-import { type BarcodeAttrs } from "../definitions/Barcode";
+import { action, makeObservable, observable, override } from "mobx";
+import type React from "react";
+import type { _LINK } from "@/util/types";
+import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
+import RsSet from "../../util/set";
+import type { BarcodeAttrs } from "../definitions/Barcode";
+import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
+import type { Container } from "../definitions/Container";
+import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
+import type { ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { Factory } from "../definitions/Factory";
+import type { Field } from "../definitions/Field";
+import type { HasLocationEditableFields, HasLocationUneditableFields } from "../definitions/HasLocation";
 import type { IdentifierAttrs } from "../definitions/Identifier";
+import type { Instrument } from "../definitions/Instrument";
+import type { Action, CreateOption, RecordType } from "../definitions/InventoryRecord";
+import type { PersonAttrs } from "../definitions/Person";
+import type { RecordDetails } from "../definitions/Record";
+import type { CoreFetcherArgs } from "../definitions/Search";
+import type { AdjustableTableRowOptions } from "../definitions/Tables";
+import getRootStore from "../stores/getRootStore";
+import type { AttachmentJson } from "./AttachmentModel";
+import type { ContainerAttrs } from "./ContainerModel";
+import FieldModel, { type FieldModelAttrs } from "./FieldModel";
+import { HasLocationMixin } from "./HasLocation";
+import type InstrumentTemplateModel from "./InstrumentTemplateModel";
 import InventoryBaseRecord, {
-  RESULT_FIELDS,
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
   type InventoryBaseRecordUneditableFields,
+  RESULT_FIELDS,
 } from "./InventoryBaseRecord";
-import {
-  type HasEditableFields,
-  type HasUneditableFields,
-} from "../definitions/Editable";
-import { HasLocationMixin } from "./HasLocation";
-import {
-  type HasLocationEditableFields,
-  type HasLocationUneditableFields,
-} from "../definitions/HasLocation";
-import { type ContainerAttrs } from "./ContainerModel";
-import { type Container } from "../definitions/Container";
-import React from "react";
-import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
-import { action, computed, makeObservable, observable, override } from "mobx";
-import { type Instrument } from "../definitions/Instrument";
-import getRootStore from "../stores/RootStore";
-import { type CoreFetcherArgs } from "../definitions/Search";
-import RsSet from "../../util/set";
-import InstrumentTemplateModel from "./InstrumentTemplateModel";
 
-type InstrumentEditableFields = HasLocationEditableFields &
-  InventoryBaseRecordEditableFields;
+type InstrumentEditableFields = HasLocationEditableFields & InventoryBaseRecordEditableFields;
 
-type InstrumentUneditableFields = HasLocationUneditableFields &
-  InventoryBaseRecordUneditableFields;
+type InstrumentUneditableFields = HasLocationUneditableFields & InventoryBaseRecordUneditableFields;
 
 export type InstrumentAttrs = {
   id: Id;
@@ -81,18 +65,13 @@ export type InstrumentAttrs = {
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
-const FIELDS = new Set(
-  [...RESULT_FIELDS].concat(["fields", "template"])
-);
+const FIELDS = new Set([...RESULT_FIELDS].concat(["fields", "template"]));
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
 const defaultEditableFields = new Set<string>();
 
 export default class InstrumentModel
   extends HasLocationMixin(InventoryBaseRecord)
-  implements
-    Instrument,
-    HasEditableFields<InstrumentEditableFields>,
-    HasUneditableFields<InstrumentUneditableFields>
+  implements Instrument, HasEditableFields<InstrumentEditableFields>, HasUneditableFields<InstrumentUneditableFields>
 {
   // @ts-expect-error parentContainers is initialised by populateFromJson
   parentContainers: Array<import("./ContainerModel").default>;
@@ -192,7 +171,7 @@ export default class InstrumentModel
   }
 
   get illustration(): React.ReactNode {
-    return <InstrumentHeader/>;
+    return <InstrumentHeader />;
   }
 
   get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs {
@@ -200,23 +179,20 @@ export default class InstrumentModel
   }
 
   get recordDetails(): RecordDetails {
-    return Object.assign({ ...super.recordDetails }, {
-      location: this,
-    });
+    return Object.assign(
+      { ...super.recordDetails },
+      {
+        location: this,
+      },
+    );
   }
 
-  populateFromJson(
-    factory: Factory,
-    passedParams: object,
-    defaultParams: object = {},
-  ): void {
+  populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as InstrumentAttrs;
     const [firstParent] = params.parentContainers ?? [];
     this.immediateParentContainer = firstParent
-      ? (factory.newRecord(
-          firstParent as Record<string, unknown> & { globalId: GlobalId },
-        ) as Container)
+      ? (factory.newRecord(firstParent as Record<string, unknown> & { globalId: GlobalId }) as Container)
       : null;
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
     this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
@@ -264,10 +240,7 @@ export default class InstrumentModel
   }
 
   get fieldNamesInUse(): Array<string> {
-    return [
-      ...super.fieldNamesInUse,
-      ...this.fields.filter((f) => f.name).map((f) => f.name),
-    ];
+    return [...super.fieldNamesInUse, ...this.fields.filter((f) => f.name).map((f) => f.name)];
   }
 
   overrideFields(fields: Array<Field>): void {
@@ -289,10 +262,7 @@ export default class InstrumentModel
                   ? String(fm.content)
                   : null,
             selectedOptions: [...(fm.selectedOptions ?? [])],
-            definition:
-              fm.options.length > 0
-                ? { options: fm.options.map((o) => o.value) }
-                : null,
+            definition: fm.options.length > 0 ? { options: fm.options.map((o) => o.value) } : null,
             columnIndex: fm.columnIndex,
             attachment: null,
             mandatory: fm.mandatory,
@@ -353,15 +323,13 @@ export default class InstrumentModel
     return [
       {
         label: "Instrument Template",
-        explanation:
-          "Create an instrument template from this instrument, to easily create similar instruments.",
+        explanation: "Create an instrument template from this instrument, to easily create similar instruments.",
         parameters: [
           {
             label: "Name",
             explanation: "A name for the new template. At least two characters.",
             state: this.createOptionsParametersState.name,
-            validState: () =>
-              this.createOptionsParametersState.name.value.length >= 2,
+            validState: () => this.createOptionsParametersState.name.value.length >= 2,
           },
           {
             label: "Field default values",

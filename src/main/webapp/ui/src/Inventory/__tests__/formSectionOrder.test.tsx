@@ -7,6 +7,8 @@ import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderO
 import { IsValid } from "../../components/ValidatingSubmitButton";
 import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../stores/models/__tests__/InstrumentModel/mocking";
+import { makeMockInstrumentTemplate } from "../../stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockSubSample } from "../../stores/models/__tests__/SubSampleModel/mocking";
@@ -19,6 +21,10 @@ import ContainerBatchForm from "../Container/BatchForm";
 import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 import MixedBatchForm from "../Mixed/BatchForm";
 import SampleBatchForm from "../Sample/BatchForm";
 import SampleForm from "../Sample/Form";
@@ -27,10 +33,6 @@ import SubSampleBatchForm from "../Subsample/BatchForm";
 import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
-import InstrumentForm from "../Instrument/Form";
-import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
-import InstrumentTemplateForm from "../InstrumentTemplate/Form";
-import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 
 class ResizeObserver {
   observe(): void {}

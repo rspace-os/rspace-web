@@ -1,3 +1,13 @@
+import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
+import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Drawer, { drawerClasses } from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { InvalidState } from "@/util/error";
 import { mapNullable } from "@/util/Util";
@@ -14,7 +24,6 @@ import useNavigateHelpers from "../../useNavigateHelpers";
 import CreateNew from "../CreateNew";
 import ExportDialog from "../Export/ExportDialog";
 import SettingsDialog from "../Settings/SettingsDialog";
-import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -237,19 +246,8 @@ const InstrumentNavItem = observer(
     return (
       <DrawerTab
         label="Instruments"
-        selected={
-          !benchSearch &&
-          isSearchListing() &&
-          searchStore.isTypeSelected("INSTRUMENT")
-        }
-        icon={
-          <BiotechIcon
-            sx={{
-              fontSize: "1.2em",
-              color: theme.palette.standardIcon.main,
-            }}
-          />
-        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT")}
+        icon={<FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} />}
         index={index}
         tabIndex={tabIndex}
         ref={getRef(index)}
@@ -325,11 +323,7 @@ const InstrumentTemplateNavItem = observer(
     return (
       <DrawerTab
         label="Instrument Templates"
-        selected={
-          !benchSearch &&
-          isSearchListing() &&
-          searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")
-        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")}
         icon={
           <RecordTypeIcon
             record={{

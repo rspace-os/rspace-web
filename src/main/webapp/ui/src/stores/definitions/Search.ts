@@ -4,6 +4,7 @@ import type RsSet from "../../util/set";
 import type { Order } from "../../util/types";
 import type { GlobalId, Id } from "./BaseRecord";
 import type { Basket } from "./Basket";
+import type { Instrument } from "./Instrument";
 import type { Action, InventoryRecord } from "./InventoryRecord";
 import type { Person, Username } from "./Person";
 import type { Sample } from "./Sample";
@@ -33,7 +34,14 @@ export function parseDeletedItems(str: string): Result<DeletedItems> {
   return Result.first(parseString("EXCLUDE", str), parseString("INCLUDE", str), parseString("DELETED_ONLY", str));
 }
 
-export type ResultType = "ALL" | "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "TEMPLATE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
+export type ResultType =
+  | "ALL"
+  | "CONTAINER"
+  | "SAMPLE"
+  | "SUBSAMPLE"
+  | "TEMPLATE"
+  | "INSTRUMENT"
+  | "INSTRUMENT_TEMPLATE";
 
 export function parseResultType(str: string): Result<ResultType> {
   return Result.first(
@@ -127,7 +135,13 @@ export type UiConfig = {
   onlyAllowSelectingEmptyLocations: boolean;
 };
 
-export type PermalinkType = "sample" | "container" | "subsample" | "sampletemplate" | "instrument" | "instrumenttemplate";
+export type PermalinkType =
+  | "sample"
+  | "container"
+  | "subsample"
+  | "sampletemplate"
+  | "instrument"
+  | "instrumenttemplate";
 export type Permalink = {
   type: PermalinkType;
   id: number;
@@ -401,7 +415,11 @@ export interface Search {
    * These methods SHOULD perform the associated contextual action.
    */
   createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void>;
-  createInstrumentTemplateFromInstrument(name: string, instrument: Instrument, includeContentForFields: Set<Id>): Promise<void>;
+  createInstrumentTemplateFromInstrument(
+    name: string,
+    instrument: Instrument,
+    includeContentForFields: Set<Id>,
+  ): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;

@@ -566,9 +566,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
-  const isInstrument =
-    activeResult.recordType === "instrument" ||
-    activeResult.recordType === "instrumentTemplate";
+  const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? "PIDINST" : "IGSN ID";
 
   return (
@@ -578,7 +576,12 @@ const IdentifiersCard = observer((): ReactNode => {
       )}
       {activeResult.state !== "create" && identifiers.length === 0 && !activeResult.historicalVersion && (
         <Stack direction="row" spacing={1}>
-          <Button color="primary" variant="outlined" disabled={isInstrument} onClick={() => void activeResult.addIdentifier()}>
+          <Button
+            color="primary"
+            variant="outlined"
+            disabled={isInstrument}
+            onClick={() => void activeResult.addIdentifier()}
+          >
             {`Create new ${identifierLabel}`}
           </Button>
           <Button

@@ -1,4 +1,6 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import type { Instrument } from "@/stores/definitions/Instrument";
+import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
 import { allAreValid, IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -81,7 +83,15 @@ type SearchArgs = {
 
 const DEFAULT_UI_CONFIG: UiConfig = {
   allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
-  allowedTypeFilters: new Set(["ALL", "CONTAINER", "SAMPLE", "SUBSAMPLE", "INSTRUMENT", "TEMPLATE", "INSTRUMENT_TEMPLATE"]),
+  allowedTypeFilters: new Set([
+    "ALL",
+    "CONTAINER",
+    "SAMPLE",
+    "SUBSAMPLE",
+    "INSTRUMENT",
+    "TEMPLATE",
+    "INSTRUMENT_TEMPLATE",
+  ]),
   mainColumn: "Name",
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
   adjustableColumns: ["Global ID", "Owner", "Last Modified"],
@@ -966,10 +976,7 @@ export default class Search implements SearchInterface {
           definition: null,
         })),
       };
-      const { data } = await ApiService.post<InstrumentTemplateAttrs>(
-        "instrumentTemplates",
-        args,
-      );
+      const { data } = await ApiService.post<InstrumentTemplateAttrs>("instrumentTemplates", args);
       const factory = this.factory.newFactory();
       const template = factory.newRecord(data);
       uiStore.addAlert(

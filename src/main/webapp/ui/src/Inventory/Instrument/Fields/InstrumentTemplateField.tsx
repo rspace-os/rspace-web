@@ -1,22 +1,22 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
-import InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
-import InstrumentModel from "../../../stores/models/InstrumentModel";
-import { mkAlert } from "../../../stores/contexts/Alert";
-import { getErrorMessage } from "../../../util/error";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
-import { Stack } from "@mui/material";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
-import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
-import GlobalId from "../../../components/GlobalId";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
+import ListItemText from "@mui/material/ListItemText";
+import Radio from "@mui/material/Radio";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import GlobalId from "../../../components/GlobalId";
+import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import { mkAlert } from "../../../stores/contexts/Alert";
+import InstrumentModel from "../../../stores/models/InstrumentModel";
+import type InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
+import useStores from "../../../stores/use-stores";
+import { getErrorMessage } from "../../../util/error";
+import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
 
 function InstrumentTemplateField(): React.ReactNode {
   const {
@@ -48,17 +48,17 @@ function InstrumentTemplateField(): React.ReactNode {
     return (
       <InputWrapper
         label="Instrument Template"
-        dataTestId="ChooseInstrumentTemplate"
+        data-test-id="ChooseInstrumentTemplate"
         explanation={
           activeResult.isFieldEditable("template") ? (
             <>
-              If you select an instrument template below, initial metadata and
-              custom fields will be automatically generated.
+              If you select an instrument template below, initial metadata and custom fields will be automatically
+              generated.
             </>
           ) : null
         }
       >
-        <Stack flexWrap="nowrap">
+        <Stack sx={{ flexWrap: "nowrap" }}>
           <FormControlLabel
             value="no-template"
             control={<Radio checked={template === null} />}

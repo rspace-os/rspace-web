@@ -1,10 +1,8 @@
-import InstrumentTemplateModel, {
-  type InstrumentTemplateAttrs,
-} from "../../InstrumentTemplateModel";
 import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
+import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "../../InstrumentTemplateModel";
 
 export const instrumentTemplateAttrs = (
-  attrs?: Readonly<Partial<InstrumentTemplateAttrs>>
+  attrs?: Readonly<Partial<InstrumentTemplateAttrs>>,
 ): InstrumentTemplateAttrs => ({
   id: 1,
   type: "INSTRUMENT_TEMPLATE",
@@ -27,9 +25,5 @@ export const instrumentTemplateAttrs = (
 });
 
 export const makeMockInstrumentTemplate = (
-  attrs?: Readonly<Partial<InstrumentTemplateAttrs>>
-): InstrumentTemplateModel =>
-  new InstrumentTemplateModel(
-    new AlwaysNewFactory(),
-    instrumentTemplateAttrs(attrs)
-  );
+  attrs?: Readonly<Partial<InstrumentTemplateAttrs>>,
+): InstrumentTemplateModel => new InstrumentTemplateModel(new AlwaysNewFactory(), instrumentTemplateAttrs(attrs));

@@ -107,7 +107,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
 
     if (field.type === "date") {
       if (typeof field.content === "number") throw new Error("Invalid content type");
-      const value = String(field.content);
+      const value = field.content as string | Date | null;
       return (
         <FormField
           {...commonProps}
