@@ -704,6 +704,23 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void createSampleFromInaccessibleTemplateIsRejected() {
+    SampleTemplate sampleTemplate =
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
+    User otherUser = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples newSample =
+        new ApiSampleWithFullSubSamples("from inaccessible template");
+    newSample.setTemplateId(savedTemplate.getId());
+
+    // a user without read access to the template must not be able to create a sample from it
+    // (would otherwise be a permission bypass and a template-existence oracle)
+    assertThrows(
+        NotFoundException.class,
+        () -> samplesApi.createNewSample(newSample, mockBindingResult, otherUser));
+  }
+
+  @Test
   public void checkRevisionHistoryMethods() throws Exception {
     // revisions are only created in real database transaction, this test just runs the code
 

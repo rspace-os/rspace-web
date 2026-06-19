@@ -229,21 +229,21 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   public ApiSampleWithFullSubSamples createNewApiSample(
       ApiSampleWithFullSubSamples apiSample, User user) {
 
-    SampleTemplate template = getSampleTemplateIfExists(apiSample);
+    SampleTemplate template = getSampleTemplateIfExists(apiSample, user);
 
     String sampleName = getNameForIncomingApiSample(apiSample);
     return createSample(sampleName, apiSample, template, user);
   }
 
-  private SampleTemplate getSampleTemplateIfExists(ApiSampleWithFullSubSamples apiSample) {
-    SampleTemplate template = null;
+  private SampleTemplate getSampleTemplateIfExists(
+      ApiSampleWithFullSubSamples apiSample, User user) {
     Long templateId = apiSample.getTemplateId();
-    // if templateId is null(we're creating a new sample), that's ok, but if not null, we expect it
-    // to exist
-    if (templateId != null) {
-      template = sampleTemplateDao.get(templateId);
+    // templateId is null when creating a sample with no template; when provided, the caller must
+    // have read access to it (enforced, not just existence-checked)
+    if (templateId == null) {
+      return null;
     }
-    return template;
+    return assertUserCanReadSampleTemplate(templateId, user);
   }
 
   private String getNameForIncomingApiSample(ApiSampleInfo prototypeSample) {
@@ -985,8 +985,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public SampleTemplate getSampleTemplateByIdWithPopulatedFields(Long id, User user) {
-    // cast is safe: getIfExists(id, true) throws NotFoundException unless the entity is a template
-    SampleTemplate template = (SampleTemplate) getIfExists(id, true);
+    // enforce read/limited-read permission (not just existence) before returning the template
+    SampleTemplate template = assertUserCanReadSampleTemplate(id, user);
     template.getActiveFields().size(); // initialize lazy-loaded collection
     return template;
   }

@@ -1489,7 +1489,7 @@
            Pinned to the jitpack commit build of the RSDEV-1065-model tip, which integrates the
            RSDEV-1131 link fields. A branch -SNAPSHOT alias here served a stale pre-1131 build
            (jitpack caches the branch HEAD), so use the immutable commit hash. -->
-      <version>e25bb4393e</version>
+      <version>RSDEV-1065-model-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
