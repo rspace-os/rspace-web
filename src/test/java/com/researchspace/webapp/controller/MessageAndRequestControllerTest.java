@@ -20,6 +20,7 @@ import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.MessageOrRequestCreatorManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.PermissionsUtilsStub;
 import com.researchspace.testutils.TestFactory;
@@ -52,6 +53,7 @@ public class MessageAndRequestControllerTest {
   @Mock IControllerInputValidator validator;
   @Mock ApplicationContext context;
   @Mock MessageOrRequestCreatorManager reqCreateMgr;
+  @Mock MessageSourceUtils messages;
   MockHttpServletRequest request;
   IPermissionUtils permUtilsStub;
 

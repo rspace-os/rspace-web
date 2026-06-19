@@ -1,39 +1,37 @@
-"use strict";
-import React from "react";
-import { createRoot } from "react-dom/client";
-import { produce } from "immer";
-import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../../theme";
+// @ts-nocheck — legacy class component restored by revert; global JS vars not typed
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
+import { faList } from "@fortawesome/free-solid-svg-icons/faList";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
+import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
+import { faStream } from "@fortawesome/free-solid-svg-icons/faStream";
+import { faThList } from "@fortawesome/free-solid-svg-icons/faThList";
+import { faUsers } from "@fortawesome/free-solid-svg-icons/faUsers";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons/faCalendarAlt";
-import { faList } from "@fortawesome/free-solid-svg-icons/faList";
-import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
-import { faStar } from "@fortawesome/free-solid-svg-icons/faStar";
-import { faShareAlt } from "@fortawesome/free-solid-svg-icons/faShareAlt";
-import { faUsers } from "@fortawesome/free-solid-svg-icons/faUsers";
-import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
-import { faThList } from "@fortawesome/free-solid-svg-icons/faThList";
-import { faStream } from "@fortawesome/free-solid-svg-icons/faStream";
-
-import TagDialog from "./TagDialog";
-import CompareDialog from "./CompareDialog";
-import RenameDialog from "./RenameDialog";
-import ShareDialog from "../../components/ShareDialog";
-
+import MenuItem from "@mui/material/MenuItem";
+import { ThemeProvider } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { produce } from "immer";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
+import ShareDialog from "../../components/ShareDialog";
 import TreeSort from "../../components/TreeSort";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+import materialTheme from "../../theme";
 import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
+import CompareDialog from "./CompareDialog";
+import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
-import Analytics from "../../components/Analytics";
-import AnalyticsContext from "../../stores/contexts/Analytics";
+import TagDialog from "./TagDialog";
 
 class WorkspaceToolbar extends React.Component {
   constructor(props) {
@@ -43,21 +41,16 @@ class WorkspaceToolbar extends React.Component {
       anchorEl: [null, null],
       advancedOpen: false,
       hideIcons: false,
-      treeView: workspaceSettings.currentViewMode == "TREE_VIEW",
+      treeView: workspaceSettings.currentViewMode === "TREE_VIEW",
       sharedFilter: workspaceSettings.sharedFilter,
       favoritesFilter: workspaceSettings.favoritesFilter,
       templatesFilter: workspaceSettings.templatesFilter,
       viewableItemsFilter: workspaceSettings.viewableItemsFilter,
-      pioEnabled:
-        props.domContainer.getAttribute("data-pio-enabled") === "true",
+      pioEnabled: props.domContainer.getAttribute("data-pio-enabled") === "true",
       ontologiesFilter: workspaceSettings.ontologiesFilter,
-      evernoteEnabled:
-        props.domContainer.getAttribute("data-evernote-enabled") === "true",
-      asposeEnabled:
-        props.domContainer.getAttribute("data-aspose-enabled") === "true",
-      labgroupsFolderId: props.domContainer.getAttribute(
-        "data-labgroups-folder-id",
-      ),
+      evernoteEnabled: props.domContainer.getAttribute("data-evernote-enabled") === "true",
+      asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
+      labgroupsFolderId: props.domContainer.getAttribute("data-labgroups-folder-id"),
     };
 
     this.simpleSearch = React.createRef();
@@ -67,11 +60,9 @@ class WorkspaceToolbar extends React.Component {
   componentDidMount() {
     this.checkSavedSettings();
 
-    // Bad practise. Change when the reset button is in React
-    const toolbar = this;
     $(document).on("click", "#resetSearch", () => {
       abandonSearch();
-      toolbar.setState({
+      this.setState({
         sharedFilter: workspaceSettings.sharedFilter,
         favoritesFilter: workspaceSettings.favoritesFilter,
         templatesFilter: workspaceSettings.templatesFilter,
@@ -81,12 +72,12 @@ class WorkspaceToolbar extends React.Component {
     });
 
     // Sets up callback function so that regular JS listeners can reset the toolbar after navigating to a folder for e.g.
-    resetToolbar = function () {
+    resetToolbar = () => {
       workspaceSettings.sharedFilter = false;
       workspaceSettings.favoritesFilter = false;
       workspaceSettings.templatesFilter = false;
       resetSearch();
-      toolbar.setState({
+      this.setState({
         sharedFilter: workspaceSettings.sharedFilter,
         favoritesFilter: workspaceSettings.favoritesFilter,
         templatesFilter: workspaceSettings.templatesFilter,
@@ -107,13 +98,13 @@ class WorkspaceToolbar extends React.Component {
   // When you search => open a document => go back
   // This function repopulates the searches with saved queries
   checkSavedSettings = () => {
-    let localQueries = [],
-      term,
-      filter,
-      from,
-      to;
+    let localQueries: Array<object> = [],
+      term: string | string[] = "",
+      filter: string = "",
+      from: string | undefined,
+      to: string | undefined;
 
-    workspaceSettings.options.map((_, idx) => {
+    workspaceSettings.options.forEach((_, idx) => {
       filter = workspaceSettings.options[idx];
       term = workspaceSettings.terms[idx];
 
@@ -124,10 +115,7 @@ class WorkspaceToolbar extends React.Component {
       }
 
       localQueries.push({
-        filter:
-          filter === "global" && workspaceSettings.options.length > 1
-            ? "fullText"
-            : filter,
+        filter: filter === "global" && workspaceSettings.options.length > 1 ? "fullText" : filter,
         term,
         from: from === "null" ? null : from,
         to: to === "null" ? null : to,
@@ -135,9 +123,7 @@ class WorkspaceToolbar extends React.Component {
     });
 
     if (localQueries.length > 1) {
-      this.setState({ advancedOpen: true }, () =>
-        this.advancedSearch.current.setQueries(localQueries),
-      );
+      this.setState({ advancedOpen: true }, () => this.advancedSearch.current.setQueries(localQueries));
     } else if (localQueries.length === 1) {
       this.simpleSearch.current.setQueries(localQueries);
 
@@ -179,15 +165,13 @@ class WorkspaceToolbar extends React.Component {
     } else {
       const queries = [];
 
-      if (filter == "global") {
+      if (filter === "global") {
         queries.push({ filter: "fullText", term });
       } else {
         queries.push({ filter, term, from, to });
       }
 
-      this.setState({ advancedOpen: true }, () =>
-        this.advancedSearch.current.setQueries(queries),
-      );
+      this.setState({ advancedOpen: true }, () => this.advancedSearch.current.setQueries(queries));
     }
   };
 
@@ -265,7 +249,7 @@ class WorkspaceToolbar extends React.Component {
 
   displayWorkspace = () => {
     this.setWorkspaceSettings();
-    const url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
+    const url = `/workspace/ajax/view/${workspaceSettings.parentFolderId}`;
 
     if (workspaceSettings.searchMode) {
       doWorkspaceSearch(workspaceSettings.url, workspaceSettings);
@@ -277,14 +261,11 @@ class WorkspaceToolbar extends React.Component {
   setWorkspaceSettingsUrl = () => {
     workspaceSettings.parentFolderId = this.state.labgroupsFolderId;
     workspaceSettings.grandparentFolderId = null;
-    workspaceSettings.url =
-      "/workspace/ajax/view/" + this.state.labgroupsFolderId;
+    workspaceSettings.url = `/workspace/ajax/view/${this.state.labgroupsFolderId}`;
   };
 
   setWorkspaceSettings = () => {
-    workspaceSettings.currentViewMode = this.state.treeView
-      ? "TREE_VIEW"
-      : "LIST_VIEW";
+    workspaceSettings.currentViewMode = this.state.treeView ? "TREE_VIEW" : "LIST_VIEW";
     workspaceSettings.sharedFilter = this.state.sharedFilter;
     workspaceSettings.favoritesFilter = this.state.favoritesFilter;
     workspaceSettings.templatesFilter = this.state.templatesFilter;
@@ -311,9 +292,7 @@ class WorkspaceToolbar extends React.Component {
         />
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
-            <SocialActions
-              onCreateRequest={this.props.eventHandlers.onCreateRequest}
-            />
+            <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
             <Tooltip title="Create a calendar entry" enterDelay={300}>
               <IconButton
                 id="createCalendarEntryDlgLink"
@@ -342,11 +321,7 @@ class WorkspaceToolbar extends React.Component {
             color="inherit"
             aria-label="View mode"
           >
-            {this.state.treeView ? (
-              <FontAwesomeIcon icon={faStream} />
-            ) : (
-              <FontAwesomeIcon icon={faList} />
-            )}
+            {this.state.treeView ? <FontAwesomeIcon icon={faStream} /> : <FontAwesomeIcon icon={faList} />}
           </IconButton>
         </Tooltip>
         <Menu
@@ -360,11 +335,7 @@ class WorkspaceToolbar extends React.Component {
           open={this.state.open[0]}
           onClose={() => this.handleClose(0)}
         >
-          <MenuItem
-            onClick={this.openTreeView}
-            data-test-id="toolbar-view-tree"
-            aria-label="Tree view"
-          >
+          <MenuItem onClick={this.openTreeView} data-test-id="toolbar-view-tree" aria-label="Tree view">
             <FontAwesomeIcon icon={faStream} style={{ paddingRight: "10px" }} />
             Tree view
           </MenuItem>
@@ -408,26 +379,12 @@ class WorkspaceToolbar extends React.Component {
               open={this.state.open[1]}
               onClose={() => this.handleClose(1)}
             >
-              <MenuItem
-                onClick={this.openFolderView}
-                id="folderView_1"
-                data-test-id="toolbar-view-folders"
-              >
-                <FontAwesomeIcon
-                  icon={faFolderOpen}
-                  style={{ paddingRight: "10px" }}
-                />
+              <MenuItem onClick={this.openFolderView} id="folderView_1" data-test-id="toolbar-view-folders">
+                <FontAwesomeIcon icon={faFolderOpen} style={{ paddingRight: "10px" }} />
                 Folder view
               </MenuItem>
-              <MenuItem
-                onClick={this.openViewAll}
-                id="viewableItemsView_1"
-                data-test-id="toolbar-view-all"
-              >
-                <FontAwesomeIcon
-                  icon={faThList}
-                  style={{ paddingRight: "10px" }}
-                />
+              <MenuItem onClick={this.openViewAll} id="viewableItemsView_1" data-test-id="toolbar-view-all">
+                <FontAwesomeIcon icon={faThList} style={{ paddingRight: "10px" }} />
                 View all
               </MenuItem>
             </Menu>
@@ -468,9 +425,7 @@ class WorkspaceToolbar extends React.Component {
               <IconButton
                 onClick={() => {
                   this.toggleFilter("sharedFilter");
-                  this.context.trackEvent(
-                    "user:filter:shared_with_me:workspace",
-                  );
+                  this.context.trackEvent("user:filter:shared_with_me:workspace");
                 }}
                 id="sharedFilter_1"
                 color={this.state.sharedFilter ? "default" : "inherit"}
@@ -561,9 +516,7 @@ class WorkspaceToolbar extends React.Component {
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />
-            {this.state.advancedOpen && (
-              <AdvancedSearch ref={this.advancedSearch} />
-            )}
+            {this.state.advancedOpen && <AdvancedSearch ref={this.advancedSearch} />}
             <TagDialog />
             <CompareDialog />
             <RenameDialog />
@@ -577,7 +530,9 @@ class WorkspaceToolbar extends React.Component {
 
 WorkspaceToolbar.contextType = AnalyticsContext;
 
+// biome-ignore lint/suspicious/noImplicitAnyLet: globals assigned before use
 let rootNode;
+// biome-ignore lint/suspicious/noImplicitAnyLet: globals assigned before use
 let domContainer;
 
 /*
@@ -606,9 +561,7 @@ window.renderToolbar = (newProps) => {
       ...(newProps?.eventHandlers ?? {}),
     },
   };
-  rootNode.render(
-    <WorkspaceToolbar domContainer={domContainer} {...prevProps} />,
-  );
+  rootNode.render(<WorkspaceToolbar domContainer={domContainer} {...prevProps} />);
 };
 
 /*
