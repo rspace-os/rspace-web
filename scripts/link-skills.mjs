@@ -5,23 +5,23 @@
 // `.claude/` is gitignored, so this link is per-checkout and never committed.
 // Pure Node (no extra dependencies) so it behaves the same on macOS, Linux, and
 // Windows. Exits 0 on any problem so the install never fails over a dev convenience.
-import { mkdirSync, symlinkSync, lstatSync, readlinkSync, rmSync } from "node:fs";
+import { mkdirSync, symlinkSync, lstatSync } from "node:fs";
 
 const link = ".claude/skills";
 const target = "../.agents/skills"; // relative to .claude/
 
 try {
-  // Already correct? (lstat to inspect the link itself, not its target)
-  try {
-    if (lstatSync(link).isSymbolicLink() && readlinkSync(link) === target) {
-      process.exit(0);
-    }
-    // Path exists but isn't our link — leave it alone rather than clobber.
-    rmSync(link, { recursive: false });
-  } catch {
-    // Nothing at the path yet — fall through and create it.
-  }
+  // If anything already exists at `link` — a symlink or a real file/dir — leave
+  // it alone (never delete; it may be the user's own link or skills) and warn.
+  // lstat sees the path itself, not a symlink's target; it throws when absent.
+  lstatSync(link);
+  console.warn(`[postinstall] ${link} already exists; leaving it untouched.`);
+  process.exit(0);
+} catch {
+  // Nothing there yet — fall through and create the link.
+}
 
+try {
   mkdirSync(".claude", { recursive: true });
   // "junction" is ignored on POSIX and avoids needing admin rights on Windows.
   symlinkSync(target, link, "junction");
