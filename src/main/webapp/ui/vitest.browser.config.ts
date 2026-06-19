@@ -62,9 +62,9 @@ function tinymceAssetsPlugin(): Plugin {
 }
 
 /*
- * Browser-mode test config for the component tests (`*.spec.tsx`). These are
- * the Playwright-CT successors; future Playwright e2e tests use the `*.e2e.*`
- * suffix so the two runners never collide.
+ * Browser-mode test config for the component tests (`*.spec.tsx`). Future
+ * Playwright e2e tests use the `*.e2e.*` suffix so the two runners never
+ * collide.
  *
  * Unlike the jsdom unit-test config in vite.config.ts, this one deliberately
  * does NOT stub the MUI DataGrid, CSS, images or SVGs: the tests run in a real
@@ -161,10 +161,9 @@ export default defineConfig({
     setupFiles: ["./src/__tests__/browserSetup.ts"],
     testTimeout: 20000,
     // Real-browser component tests carry inherent timing flakiness, especially
-    // on Firefox/WebKit under full-suite load. The Playwright-CT config this
-    // replaces used `retries: 2`; match that so an occasional first-attempt miss
-    // is retried rather than failing the run. A test that fails every attempt is
-    // a real failure.
+    // on Firefox/WebKit under full-suite load. Retries mean an occasional
+    // first-attempt timing miss does not fail the run; a test that fails every
+    // attempt is a real failure.
     retry: 2,
     // Run spec files SERIALLY within a browser instance. All files share one
     // origin-level MSW service worker (browserSetup starts it once and never

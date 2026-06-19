@@ -18,8 +18,7 @@ describe("ValidatingSubmitButton", () => {
     test("When user prefers more contrast, button should meet WCAG AAA contrast requirements", async () => {
       /*
        * Patch window.matchMedia before render so the component sees
-       * `(prefers-contrast: more)` as matching. Mirrors the original
-       * page.addInitScript stub from the Playwright-CT test.
+       * `(prefers-contrast: more)` as matching.
        */
       originalMatchMedia = window.matchMedia;
       window.matchMedia = (query: string) => {
@@ -47,8 +46,7 @@ describe("ValidatingSubmitButton", () => {
 
       /*
        * The MUI Button ripple disrupts Axe from being able to properly
-       * determine the contrast of the button text. Remove it before the scan,
-       * mirroring the page.evaluate() call in the original Playwright-CT test.
+       * determine the contrast of the button text; remove it before the scan.
        */
       const button = Array.from(document.querySelectorAll("button")).find((btn) => btn.textContent === "Submit");
       if (button) {

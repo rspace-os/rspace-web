@@ -7,9 +7,7 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * assertions live in the tests themselves.
  *
  * TinyMCE renders its editable area inside an iframe; `editorBody` uses
- * `page.frameLocator(locator)` to pierce the iframe boundary. In Vitest
- * browser mode (Playwright provider), `page.frameLocator` takes a `Locator`
- * (not a string), unlike the raw Playwright CT API.
+ * `page.frameLocator(locator)` to pierce the iframe boundary.
  */
 export class NewNotePage {
   /**
@@ -83,7 +81,7 @@ export class NewNotePage {
    * to dismiss any residual focus traps.
    * Uses `not.toBeInTheDocument()` because after a successful creation the
    * Popover is never mounted; `not.toBeVisible()` would throw if the element
-   * does not exist at all (unlike Playwright-CT's laxer behaviour).
+   * does not exist at all.
    */
   async expectNoErrorOnSubmit(): Promise<void> {
     await this.clickCreateNote();

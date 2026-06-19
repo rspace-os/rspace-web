@@ -22,8 +22,7 @@ declare global {
 
   /**
    * The full directory URL the self-hosted TinyMCE assets are served from,
-   * injected at build time (the app build uses "/ui/dist/tinymce/", the
-   * Playwright component-test build uses "/"). Always ends in a slash.
+   * injected at build time. Always ends in a slash.
    */
   const __TINYMCE_BASE__: string;
 }

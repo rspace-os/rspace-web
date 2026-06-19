@@ -121,8 +121,7 @@ describe("NewNote", () => {
   describe("Validates notes that exceed character limit", () => {
     /*
      * Skip on Firefox: TinyMCE times out during fill+pressSequentially with
-     * 2000+ characters. The other browsers handle it fine. This matches the
-     * original Playwright component test's skip condition.
+     * 2000+ characters. The other browsers handle it fine.
      */
     test.skipIf(server.browser === "firefox")("shows error for notes exceeding character limit", async () => {
       await mountDefaultStory();

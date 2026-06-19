@@ -7,11 +7,8 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * StoichiometryTable.story.tsx. Encapsulates the locators and user
  * interactions; assertions live in the tests themselves.
  *
- * Ported from the Playwright component-test page object to the Vitest
- * browser-mode locator API (`vitest/browser`). Dynamic lookups that the
- * Playwright version performed with async `textContent()`/`getAttribute()`
- * read the DOM synchronously here (the grid is always loaded first via
- * `waitForLoad`), then return stable `getByCSS` locators keyed on data-id /
+ * Dynamic lookups use the DOM directly (the grid is always loaded first via
+ * `waitForLoad`) and return stable `getByCSS` locators keyed on data-id /
  * data-field so content assertions remain retriable.
  */
 export class StoichiometryTablePage {

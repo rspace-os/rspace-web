@@ -27,8 +27,6 @@ import { CallablePdfPreviewPage } from "./pageObjects/CallablePdfPreviewPage";
 const isFirefox = server.browser === "firefox";
 
 /*
- * Vitest Browser Mode port of CallablePdfPreview.spec.tsx (Playwright CT).
- *
  * PDF MOCKING: react-pdf (pdf.js) loads the PDF URL via a real fetch. We serve
  * each test-document URL with the bytes of a real sample PDF file (imported via
  * Vite `?url` from ./fixtures): a 1-page sample for the single-page cases and a

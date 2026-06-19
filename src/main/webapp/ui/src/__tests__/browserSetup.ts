@@ -5,10 +5,9 @@ import { appShellHandlers } from "./mswAppShellHandlers";
 
 /*
  * Adds a `getByCSS` locator to the Vitest browser `page`/locator selectors.
- * The Playwright-CT tests relied on raw CSS sub-locators (e.g. the MUI
- * DataGrid's `[role="gridcell"][data-field="..."]`), which Vitest's locator
- * API does not expose out of the box. The Playwright provider understands the
- * `css=` selector engine, so we surface it as a first-class locator.
+ * The Playwright provider understands the `css=` selector engine; this
+ * surfaces it as a first-class locator for tests that need raw CSS queries
+ * (e.g. the MUI DataGrid's `[role="gridcell"][data-field="..."]`).
  */
 locators.extend({
   getByCSS(css: string) {

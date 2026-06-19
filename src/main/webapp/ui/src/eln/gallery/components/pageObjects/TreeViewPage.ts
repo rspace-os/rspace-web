@@ -4,9 +4,6 @@ import { type Locator, page } from "vitest/browser";
  * Page object for the gallery TreeView component as mounted by the stories in
  * TreeView.story.tsx. Encapsulates locators and user interactions; assertions
  * live in the tests themselves.
- *
- * Ported from the Playwright component-test spec to the Vitest browser-mode
- * locator API (`vitest/browser`).
  */
 export class TreeViewPage {
   /**
