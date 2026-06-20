@@ -23,6 +23,10 @@ public class NfsFileTreeNode {
   @Getter @Setter private Long fileSizeBytes = 0L;
   @Getter @Setter private Long nfsId;
 
+  /* S3 audit metadata (rspace-created-by / rspace-created-at); null for backends/objects lacking it */
+  @Getter @Setter private String createdBy;
+  @Getter @Setter private Long createdAtMillis;
+
   /** file of folder name */
   public String getFileName() {
     return name;

@@ -25,7 +25,7 @@ import { Optional } from "../../../util/optional";
 import Result from "../../../util/result";
 import usePrimaryAction from "../primaryActionHooks";
 import { useGalleryActions } from "../useGalleryActions";
-import { Description, type GalleryFile } from "../useGalleryListing";
+import { Description, type GalleryFile, RemoteFile } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
@@ -568,6 +568,25 @@ const InfoPanelContent = observer(
                     {
                       label: "Original Image ID",
                       value: file.originalImageId,
+                    },
+                  ]
+                : []),
+              // S3 filestore write-provenance (rspace-created-by / -at): the RSpace user who wrote
+              // the object via RSpace and when. Kept distinct from Owner/Created because it is
+              // RSpace-stamped, not the object's real ownership/creation metadata.
+              ...(file instanceof RemoteFile && file.createdBy
+                ? [
+                    {
+                      label: "Added to S3 by",
+                      value: file.createdBy,
+                    },
+                  ]
+                : []),
+              ...(file instanceof RemoteFile && file.createdAt
+                ? [
+                    {
+                      label: "Added to S3 on",
+                      value: file.createdAt.toLocaleString(),
                     },
                   ]
                 : []),

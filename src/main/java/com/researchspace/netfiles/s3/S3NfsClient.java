@@ -105,6 +105,22 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
     node.setNodePath(fullPathToTarget);
     node.calculateLogicPath("/" + fullPathToTarget, activeFilestore);
 
+    // ListObjectsV2 omits user metadata, so HeadObject each item for its created-by/-at. This is
+    // supplementary, so a per-item lookup failure must not break the whole listing.
+    try {
+      String objectKey = item.isFolder() ? fullPathToTarget + "/" : fullPathToTarget;
+      S3FolderContentItem details = s3Utilities.getObjectDetails(objectKey);
+      if (details != null) {
+        FilestoreAuditMetadata audit = FilestoreAuditMetadata.from(details.getUserMetadata());
+        node.setCreatedBy(audit.createdBy());
+        if (audit.createdAt() != null) {
+          node.setCreatedAtMillis(audit.createdAt().toEpochMilli());
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Could not read audit metadata for {}", fullPathToTarget, e);
+    }
+
     return node;
   }
 

@@ -161,6 +161,36 @@ public class S3NfsClientTest {
   }
 
   @Test
+  public void createFileTree_populatesCreatedByAndCreatedAtFromObjectMetadata() throws IOException {
+    when(s3Utilities.listFolderContents("dir"))
+        .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 10L, Instant.now())));
+    S3FolderContentItem withMeta = new S3FolderContentItem("a.txt", false, 10L, Instant.now());
+    withMeta.setUserMetadata(
+        Map.of("rspace-created-by", "alice", "rspace-created-at", "2026-06-18T10:00:00Z"));
+    when(s3Utilities.getObjectDetails("dir/a.txt")).thenReturn(withMeta);
+
+    NfsFileTreeNode node = client.createFileTree("dir", null, null).getNodes().get(0);
+
+    assertEquals("alice", node.getCreatedBy());
+    assertEquals(
+        Instant.parse("2026-06-18T10:00:00Z").toEpochMilli(),
+        node.getCreatedAtMillis().longValue());
+  }
+
+  @Test
+  public void createFileTree_metadataLookupFailure_stillReturnsListing() throws IOException {
+    when(s3Utilities.listFolderContents("dir"))
+        .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 10L, Instant.now())));
+    when(s3Utilities.getObjectDetails("dir/a.txt"))
+        .thenThrow(new RuntimeException("S3 unavailable"));
+
+    NfsFileTreeNode node = client.createFileTree("dir", null, null).getNodes().get(0);
+
+    assertEquals("a.txt", node.getFileName());
+    assertNull(node.getCreatedBy());
+  }
+
+  @Test
   public void moveWithin_file_copiesPreservingMetadataThenDeletesSource() throws IOException {
     when(s3Utilities.getBucketName()).thenReturn("bucket");
     S3FolderContentItem file = new S3FolderContentItem("a.txt", false, 10L, Instant.now());

@@ -13,7 +13,16 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonPropertyOrder(
-    value = {"name", "isFolder", "logicPath", "modificationDate", "fileSize", "nfsId"})
+    value = {
+      "name",
+      "isFolder",
+      "logicPath",
+      "modificationDate",
+      "fileSize",
+      "nfsId",
+      "createdBy",
+      "createdAt"
+    })
 public class ApiNfsRemoteResource {
 
   private String name; /* a node name, displayed as a label and used in links for opening subtree */
@@ -28,6 +37,14 @@ public class ApiNfsRemoteResource {
   private Long fileSize = 0L;
   private Long nfsId;
 
+  /* RSpace user who uploaded/created the object, and when (S3 filestores only; null otherwise) */
+  private String createdBy;
+
+  @JsonProperty("createdAt")
+  @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
+  @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
+  private Long createdAtMillis;
+
   public ApiNfsRemoteResource(NfsFileTreeNode treeNode) {
     name = treeNode.getFileName();
     isFolder = treeNode.getIsFolder();
@@ -35,5 +52,7 @@ public class ApiNfsRemoteResource {
     modificationDateMillis = treeNode.getModificationDateMillis();
     fileSize = treeNode.getFileSizeBytes();
     nfsId = treeNode.getNfsId();
+    createdBy = treeNode.getCreatedBy();
+    createdAtMillis = treeNode.getCreatedAtMillis();
   }
 }
