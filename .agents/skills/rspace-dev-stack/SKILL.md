@@ -78,6 +78,48 @@ The app URL and ports are printed by `up` and by `ps` (e.g.
 `http://localhost:8080`). Logins: `user1a` / `user1234`,
 sysadmin `sysadmin1` / `sysWisc23!`.
 
+### 2a. Enable chemistry (Ketcher structure editing)
+
+`up --chemistry` only starts the chemistry microservice and sets
+`chemistry.provider=indigo` — necessary but **not** sufficient. The in-editor
+chemical-structure tool is gated by three layers that must all be satisfied, in
+order:
+
+1. **Deployment (the `--chemistry` flag):** sets `chemistry.provider=indigo`
+   and points the app at the microservice. Verify with
+   `docker exec <project>-app sh -c 'ps aux | grep -o "chemistry.provider=[a-z]*"'`
+   or `RS.chemistryProvider` in the browser console.
+
+2. **System setting (sysadmin, persisted in the DB) — the easy one to miss.**
+   Log in as `sysadmin1` → **System → Configuration → System Settings** (the
+   `#systemSettingsLink` on `/system/config`; it is under *Configuration*, not
+   *Maintenance*). Find **`chemistry.available`** and set it to **`ALLOWED`**
+   (options: `ALLOWED` / `DENIED_BY_DEFAULT` / `DENIED`). It is **`DENIED` by
+   default.**
+   - **Gotcha:** the row shows the *saved* value as text, with a separate edit
+     dropdown that **always defaults to "Allowed"** even when the saved value is
+     `DENIED`. Don't trust the dropdown's default — click the value to enter
+     edit mode, pick **Allowed**, and click **Save**, then confirm the row's
+     displayed value now reads `ALLOWED`.
+   - Authoritative check (bypasses the UI):
+     ```bash
+     docker exec <project>-db mysql -urspacedbuser -prspacedbpwd rspace -e \
+       "SELECT pd.name, spv.value FROM PropertyDescriptor pd \
+        JOIN SystemPropertyValue spv ON spv.property_id = pd.id \
+        WHERE pd.name='chemistry.available';"
+     ```
+
+3. **Per-user integration (Apps page).** As the working user, open **Apps**
+   (top-right profile menu → Apps). The **Chemistry** card is greyed/disabled
+   until step 2 is `ALLOWED`; once it is, open the card and click **ENABLE**.
+
+With all three in place, the document editor's rich-text toolbar gains
+**"Ketcher Insert chemical structure"** (plus "Insert reaction table" and
+"Insert PubChem Compound"). That button opens the Ketcher editor; drawing a
+structure enables Ketcher's **3D Viewer** button, which loads the Miew viewer
+(`miew-react`). A fresh login / editor reload may be needed for a
+just-enabled integration to appear.
+
 ### 3. Apply changes while running
 
 | You changed…             | Command                                         |
