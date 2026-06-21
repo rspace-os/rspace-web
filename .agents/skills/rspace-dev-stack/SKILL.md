@@ -93,17 +93,23 @@ order:
 2. **System setting (sysadmin, persisted in the DB) — the easy one to miss.**
    Log in as `sysadmin1` → **System → Configuration → System Settings** (the
    `#systemSettingsLink` on `/system/config`; it is under *Configuration*, not
-   *Maintenance*). Find **`chemistry.available`** and set it to **`ALLOWED`**
-   (options: `ALLOWED` / `DENIED_BY_DEFAULT` / `DENIED`). It is **`DENIED` by
-   default.**
+   *Maintenance*). Confirm **`chemistry.available`** is **`ALLOWED`** (options:
+   `ALLOWED` / `DENIED_BY_DEFAULT` / `DENIED`). **Check it rather than assume:**
+   the seeded value is `ALLOWED`, but startup forces it to `DENIED` whenever the
+   chemistry provider / service URL is missing (any boot without `--chemistry`)
+   and never restores it afterwards. So a stack first booted with `--chemistry`
+   is usually already `ALLOWED` (no change needed); but if it was ever started
+   without chemistry, the setting is left at `DENIED` and you must set it back.
    - **Gotcha:** the row shows the *saved* value as text, with a separate edit
      dropdown that **always defaults to "Allowed"** even when the saved value is
      `DENIED`. Don't trust the dropdown's default — click the value to enter
      edit mode, pick **Allowed**, and click **Save**, then confirm the row's
      displayed value now reads `ALLOWED`.
-   - Authoritative check (bypasses the UI):
+   - Authoritative check (bypasses the UI). Use the `mariadb` client — the dev
+     DB is MariaDB and the image has no `mysql` symlink (the launcher's own `db`
+     command uses `mariadb`):
      ```bash
-     docker exec <project>-db mysql -urspacedbuser -prspacedbpwd rspace -e \
+     docker exec <project>-db mariadb -urspacedbuser -prspacedbpwd rspace -e \
        "SELECT pd.name, spv.value FROM PropertyDescriptor pd \
         JOIN SystemPropertyValue spv ON spv.property_id = pd.id \
         WHERE pd.name='chemistry.available';"
