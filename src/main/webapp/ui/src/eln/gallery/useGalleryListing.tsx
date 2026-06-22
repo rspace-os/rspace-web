@@ -818,8 +818,29 @@ export class RemoteFile implements GalleryFile {
     return Result.Error([new Error(`Cannot duplicate ${this.isFolder ? "folders" : "files"} stored in filestores.`)]);
   }
 
+  /**
+   * Gate for write operations (delete, move-within) on this item. Ok only when the parent filestore
+   * is a writable S3 filestore; those are the only filestores whose contents RSpace can mutate. The
+   * backend additionally enforces a per-object creator/age gate on delete, so a permitted action here
+   * may still be rejected server-side and surfaced as an alert.
+   */
+  private get s3WriteGate(): Result<null> {
+    const parentFilestore = this.path[0];
+    if (
+      !(parentFilestore instanceof Filestore) ||
+      parentFilestore.filesystemType !== "S3" ||
+      parentFilestore.id === null
+    ) {
+      return Result.Error([new Error("Only items stored in an S3 filestore can be changed from RSpace.")]);
+    }
+    if (!parentFilestore.canWrite) {
+      return Result.Error([new Error("You do not have write access to this filestore.")]);
+    }
+    return Result.Ok(null);
+  }
+
   get canDelete(): Result<null> {
-    return Result.Error([new Error(`Cannot delete ${this.isFolder ? "folders" : "files"} stored in filestores.`)]);
+    return this.s3WriteGate;
   }
 
   get canRename(): Result<null> {

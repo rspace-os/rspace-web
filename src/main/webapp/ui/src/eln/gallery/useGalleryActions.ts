@@ -17,6 +17,7 @@ import {
   type Id,
   idToString,
   LocalGalleryFile,
+  RemoteFile,
 } from "./useGalleryListing";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
@@ -423,6 +424,61 @@ export function useGalleryActions(): {
     }
   }
 
+  /**
+   * Delete files/folders inside an S3 filestore. Each item is a separate filestore-API call
+   * (POST /filestores/{id}/delete), subject to the backend creator/age gate, so per-item failures
+   * are collected and reported together rather than aborting the whole batch.
+   */
+  async function deleteRemoteFiles(files: RsSet<RemoteFile>) {
+    const deletingAlert = mkAlert({
+      message: "Deleting...",
+      variant: "notice",
+      isInfinite: true,
+    });
+    try {
+      addAlert(deletingAlert);
+      const api = axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+      const failures: Array<string> = [];
+      for (const file of files) {
+        try {
+          await api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, {
+            path: file.remotePath,
+          });
+        } catch (e) {
+          const message = Parsers.objectPath(["response", "data", "errors"], e)
+            .flatMap(Parsers.isArray)
+            .flatMap(ArrayUtils.head)
+            .flatMap(Parsers.isString)
+            .orElse(getErrorMessage(e, "Unknown error"));
+          failures.push(`${file.name}: ${message}`);
+        }
+      }
+      if (failures.length === 0) {
+        addAlert(
+          mkAlert({
+            message: `Successfully deleted item${files.size > 1 ? "s" : ""}.`,
+            variant: "success",
+          }),
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: `Failed to delete ${failures.length} item${failures.length > 1 ? "s" : ""}.`,
+            message: failures.join("; "),
+          }),
+        );
+      }
+    } finally {
+      removeAlert(deletingAlert);
+    }
+  }
+
   async function deleteFilestore(filestore: Filestore) {
     const api = axios.create({
       baseURL: "/api/v1/gallery",
@@ -464,6 +520,10 @@ export function useGalleryActions(): {
     }
     if (files.every((f) => f instanceof Filestore)) {
       await Promise.all(files.filterClass(Filestore).map(deleteFilestore));
+      return;
+    }
+    if (files.every((f) => f instanceof RemoteFile)) {
+      await deleteRemoteFiles(files.filterClass(RemoteFile));
       return;
     }
     try {
