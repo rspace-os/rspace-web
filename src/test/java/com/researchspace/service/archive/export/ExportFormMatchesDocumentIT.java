@@ -98,7 +98,12 @@ public class ExportFormMatchesDocumentIT extends RealTransactionSpringTestBase {
     StructuredDocument doc =
         recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
     String marker = "PUBLICATIONS_MARKER_" + getRandomName(8);
-    Field lastField = doc.getFields().get(doc.getFields().size() - 1);
+    Field lastField =
+        doc.getFields().stream()
+            .filter(f -> LAST_FIELD.equals(f.getName()))
+            .findFirst()
+            .orElseThrow(
+                () -> new IllegalStateException("document has no " + LAST_FIELD + " field"));
     lastField.setFieldData("Publications and released datasets " + marker);
     fieldMgr.save(lastField, user);
     recordMgr.save(doc, user);
@@ -194,6 +199,8 @@ public class ExportFormMatchesDocumentIT extends RealTransactionSpringTestBase {
         FileUtils.listFiles(root, new String[] {"xml"}, true).stream()
             // the document xml lives under doc_* folders; exclude top-level manifest/link files
             .filter(f -> f.getParentFile().getName().startsWith("doc_"))
+            // a doc_* folder can also hold _externalWorkflows.xml; keep the selector unambiguous
+            .filter(f -> !f.getName().endsWith("_externalWorkflows.xml"))
             .filter(filter)
             .collect(Collectors.toList());
     assertEquals(
