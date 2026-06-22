@@ -2,6 +2,18 @@
 packages: []
 
 overrides:
+  # Pin the MUI core packages to 9.0.x. 9.1.x ships an ESM build whose
+  # @mui/material/internal/Transition.mjs does a bare directory import of
+  # `react-transition-group/TransitionGroupContext`, which Node's native ESM
+  # resolver rejects with ERR_UNSUPPORTED_DIR_IMPORT under Vitest, failing the
+  # whole frontend test suite. See
+  # https://github.com/mui/material-ui/issues/48644.
+  # MUI X (@mui/x-*) is intentionally left on its newer versions.
+  # Remove these pins once the upstream issue is resolved.
+  '@mui/material': 9.0.1
+  '@mui/icons-material': 9.0.1
+  '@mui/system': 9.0.1
+  '@mui/styled-engine': 9.0.0
   # ketcher-react and ketcher-standalone declare ketcher-core@3.12 as a peer dep
   # but work with 3.15.0; the override pins a single version to avoid a tsc
   # type mismatch from the two-instance `#private` clash.
