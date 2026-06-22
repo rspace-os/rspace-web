@@ -290,6 +290,26 @@ describe("RemoteFile.canDelete", () => {
   });
 });
 
+describe("RemoteFile.canBeMoved", () => {
+  test("returns Ok for an item in a writable S3 filestore", () => {
+    const file = makeRemoteFile({ folder: false, path: [makeFilestore("S3")] });
+    expect(file.canBeMoved.isOk).toBe(true);
+  });
+
+  test("returns Error for a read-only S3 filestore", () => {
+    const file = makeRemoteFile({ folder: false, path: [makeFilestore("S3", false)] });
+    expect(file.canBeMoved.isOk).toBe(false);
+    expect(file.canBeMoved.orElseGet(([e]) => e)).toMatchObject({
+      message: expect.stringContaining("write access"),
+    });
+  });
+
+  test("returns Error for a non-S3 filestore", () => {
+    const file = makeRemoteFile({ folder: false, path: [makeFilestore("IRODS")] });
+    expect(file.canBeMoved.isOk).toBe(false);
+  });
+});
+
 function makeLocalGalleryFile({ type = "image" }: { type?: string } = {}): LocalGalleryFile {
   return new LocalGalleryFile({
     id: dummyId(),

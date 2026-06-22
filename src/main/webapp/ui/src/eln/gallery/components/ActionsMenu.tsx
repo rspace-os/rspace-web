@@ -43,6 +43,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
+import type RsSet from "../../../util/set";
 import type { URL } from "../../../util/types";
 import type { GallerySection } from "../common";
 import {
@@ -67,6 +68,7 @@ import IrodsLogo from "./IrodsLogo.svg";
 import MoveDialog from "./MoveDialog";
 import MoveToIrods from "./MoveToIrods";
 import MoveToS3, { type S3TransferSource } from "./MoveToS3";
+import MoveWithinFilestoreDialog from "./MoveWithinFilestoreDialog";
 import { useFolderOpen } from "./OpenFolderProvider";
 import S3Logo from "./S3Logo.svg";
 
@@ -457,6 +459,27 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     return sources.length === files.length ? sources : null;
   });
 
+  // When the whole selection lives in one writable S3 filestore, "Move" opens the filestore move
+  // dialog (move within that filestore) rather than the local Gallery move dialog.
+  const s3MoveTarget = computed((): { filestore: Filestore; sources: RsSet<RemoteFile> } | null => {
+    const files = selection.asSet();
+    if (files.isEmpty) return null;
+    if (files.some((f) => !(f instanceof RemoteFile))) return null;
+    const sources = files.filterClass(RemoteFile);
+    const parents = sources.toArray().map((f) => f.path[0]);
+    const filestore = parents[0];
+    if (
+      !(filestore instanceof Filestore) ||
+      filestore.filesystemType !== "S3" ||
+      filestore.id === null ||
+      !filestore.canWrite
+    ) {
+      return null;
+    }
+    if (parents.some((p) => p !== filestore)) return null;
+    return { filestore, sources };
+  });
+
   const exportAllowed = computed((): Result<null> => {
     if (selection.size > 100) return Result.Error([new Error("Cannot export more than 100 itemes at once.")]);
     return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
@@ -705,20 +728,38 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={moveAllowed.get().isError}
             aria-haspopup="dialog"
           />
-          {Optional.fromNullable(section)
-            .map((s) => (
-              <MoveDialog
-                key="move dialog"
-                open={moveOpen}
-                onClose={() => {
-                  setMoveOpen(false);
-                  setActionsMenuAnchorEl(null);
-                }}
-                section={s}
-                refreshListing={refreshListing}
-              />
-            ))
-            .orElse(null)}
+          {(() => {
+            const s3Move = s3MoveTarget.get();
+            if (s3Move) {
+              return (
+                <MoveWithinFilestoreDialog
+                  key="move within filestore dialog"
+                  open={moveOpen}
+                  onClose={() => {
+                    setMoveOpen(false);
+                    setActionsMenuAnchorEl(null);
+                  }}
+                  filestore={s3Move.filestore}
+                  sources={s3Move.sources}
+                  refreshListing={refreshListing}
+                />
+              );
+            }
+            return Optional.fromNullable(section)
+              .map((s) => (
+                <MoveDialog
+                  key="move dialog"
+                  open={moveOpen}
+                  onClose={() => {
+                    setMoveOpen(false);
+                    setActionsMenuAnchorEl(null);
+                  }}
+                  section={s}
+                  refreshListing={refreshListing}
+                />
+              ))
+              .orElse(null);
+          })()}
           <AccentMenuItem
             title="Rename"
             subheader={renameAllowed

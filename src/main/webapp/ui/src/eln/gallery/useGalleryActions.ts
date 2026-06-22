@@ -83,6 +83,15 @@ export function useGalleryActions(): {
   createRemoteFolder: (filestoreId: number, path: string, name: string) => Promise<void>;
 
   /**
+   * Move files/folders to another folder within the same S3 filestore.
+   *
+   * @arg filestoreId The id of the S3 filestore.
+   * @arg sources     The items to move (each carries its own filestore-relative remotePath).
+   * @arg destPath    The destination folder relative to the filestore root ("" for the root).
+   */
+  moveRemoteFiles: (filestoreId: number, sources: ReadonlyArray<RemoteFile>, destPath: string) => Promise<void>;
+
+  /**
    * Move files to a different folder.
    *
    * @arg section     The relevant gallery section for the files being operated
@@ -479,6 +488,62 @@ export function useGalleryActions(): {
     }
   }
 
+  /**
+   * Move files/folders within an S3 filestore. Each item is a separate filestore-API call
+   * (POST /filestores/{id}/move) that keeps the item's leaf name under destPath, so per-item
+   * failures are collected and reported together rather than aborting the whole batch.
+   */
+  async function moveRemoteFiles(filestoreId: number, sources: ReadonlyArray<RemoteFile>, destPath: string) {
+    const movingAlert = mkAlert({
+      message: "Moving...",
+      variant: "notice",
+      isInfinite: true,
+    });
+    try {
+      addAlert(movingAlert);
+      const api = axios.create({
+        baseURL: "/api/v1/gallery",
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+      const failures: Array<string> = [];
+      for (const file of sources) {
+        try {
+          await api.post<unknown>(`filestores/${idToString(filestoreId).elseThrow()}/move`, {
+            sourcePath: file.remotePath,
+            destPath,
+          });
+        } catch (e) {
+          const message = Parsers.objectPath(["response", "data", "errors"], e)
+            .flatMap(Parsers.isArray)
+            .flatMap(ArrayUtils.head)
+            .flatMap(Parsers.isString)
+            .orElse(getErrorMessage(e, "Unknown error"));
+          failures.push(`${file.name}: ${message}`);
+        }
+      }
+      if (failures.length === 0) {
+        addAlert(
+          mkAlert({
+            message: `Successfully moved item${sources.length > 1 ? "s" : ""}.`,
+            variant: "success",
+          }),
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: `Failed to move ${failures.length} item${failures.length > 1 ? "s" : ""}.`,
+            message: failures.join("; "),
+          }),
+        );
+      }
+    } finally {
+      removeAlert(movingAlert);
+    }
+  }
+
   async function deleteFilestore(filestore: Filestore) {
     const api = axios.create({
       baseURL: "/api/v1/gallery",
@@ -871,6 +936,7 @@ export function useGalleryActions(): {
     uploadFiles,
     createFolder,
     createRemoteFolder,
+    moveRemoteFiles,
     moveFiles,
     deleteFiles,
     duplicateFiles,

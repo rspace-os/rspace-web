@@ -873,7 +873,7 @@ export class RemoteFile implements GalleryFile {
   }
 
   get canBeMoved(): Result<null> {
-    return Result.Error([new Error("Contents of filestores cannot be moved from within RSpace.")]);
+    return this.s3WriteGate;
   }
 
   get canUploadNewVersion(): Result<null> {
