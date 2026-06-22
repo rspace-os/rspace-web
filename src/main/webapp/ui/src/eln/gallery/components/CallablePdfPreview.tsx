@@ -1,8 +1,8 @@
 import React from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { incrementForever, take } from "../../../util/iterators";
-import "react-pdf/dist/esm/Page/TextLayer.css";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import Box from "@mui/material/Box";
