@@ -71,6 +71,7 @@ export default class FieldModel implements Field {
   // @ts-expect-error Initialised by setAttributes
   mandatory: boolean;
   error: boolean;
+  linkEditInProgress: boolean = false;
   /** Link template fields: permitted DataCite relation types; empty = all allowed. */
   allowedRelationTypes: Array<string> = [];
   /** Link fields: the single link value, or null when unset. */
@@ -95,12 +96,14 @@ export default class FieldModel implements Field {
       attachment: observable,
       mandatory: observable,
       error: observable,
+      linkEditInProgress: observable,
       allowedRelationTypes: observable,
       link: observable,
       setAttributesDirty: action,
       setAttributes: action,
       setEditing: action,
       setError: action,
+      setLinkEditInProgress: action,
       fieldType: computed,
       optionsAreUnique: computed,
       hasContent: computed,
@@ -213,6 +216,10 @@ export default class FieldModel implements Field {
     this.error = error;
   }
 
+  setLinkEditInProgress(value: boolean) {
+    this.linkEditInProgress = value;
+  }
+
   get fieldType(): FieldTypeSymbol {
     return apiStringToFieldType(this.type);
   }
@@ -237,7 +244,7 @@ export default class FieldModel implements Field {
     }
     if (this.mandatory && this.owner.enforceMandatoryFields && !this.hasContent)
       return IsInvalid(`The mandatory custom field "${this.name}" must have a valid value.`);
-    if (this.type === "link" && this.error)
+    if (this.type === "link" && this.linkEditInProgress)
       return IsInvalid(`Apply or discard the link changes in "${this.name}" before saving.`);
     if (this.error) return IsInvalid(`There is an error with the custom field, "${this.name}".`);
     return IsValid();

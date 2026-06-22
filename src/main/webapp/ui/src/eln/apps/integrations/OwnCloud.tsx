@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/owncloud";
 import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -12,6 +13,12 @@ type OwnCloudArgs = {
   integrationState: IntegrationStates["OWNCLOUD"];
   update: (newIntegrationState: IntegrationStates["OWNCLOUD"]) => void;
 };
+
+export interface OwnCloudConnectedMessage extends Record<string, unknown> {
+  type: "OWNCLOUD_CONNECTED";
+  error?: string;
+}
+export const OWNCLOUD_CONNECTION_CHANNEL = "rspace.apps.owncloud.connection";
 
 /*
  * OwnCloud uses OAuth based authentication, as implemented by this form.
@@ -42,8 +49,20 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
   const { disconnect } = useOwncloudEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<OwnCloudConnectedMessage>(
+    OWNCLOUD_CONNECTION_CHANNEL,
+    (e: MessageEvent<OwnCloudConnectedMessage>) => {
+      if (e.data?.type !== "OWNCLOUD_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to OwnCloud",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -51,12 +70,8 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
           message: "Successfully connected to OwnCloud.",
         }),
       );
-    };
-    window.addEventListener("OWNCLOUD_CONNECTED", f);
-    return () => {
-      window.removeEventListener("OWNCLOUD_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

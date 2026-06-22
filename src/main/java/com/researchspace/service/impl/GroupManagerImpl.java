@@ -1224,6 +1224,10 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Group enableAutoshareForUser(User user, Long groupId) {
+    // Reattach the user to the current session: callers may pass a detached User
+    // (e.g. members iterated from a Group loaded in another transaction), and
+    // validateUserInGroup -> user.hasGroup() lazily reads user.getUserGroups().
+    user = userDao.get(user.getId());
     Group group = groupDao.get(groupId);
 
     if (!group.isLabGroup()) {
@@ -1252,6 +1256,8 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Folder createAutoshareFolder(User user, Group group, String folderName) {
+    // Reattach the user to the current session (see enableAutoshareForUser).
+    user = userDao.get(user.getId());
     validateUserInGroup(user, group);
 
     if (folderName == null) {
@@ -1312,6 +1318,8 @@ public class GroupManagerImpl implements GroupManager {
 
   @Override
   public Group disableAutoshareForUser(User user, Long groupId) {
+    // Reattach the user to the current session (see enableAutoshareForUser).
+    user = userDao.get(user.getId());
     Group group = groupDao.get(groupId);
 
     validateUserInGroup(user, group);

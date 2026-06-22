@@ -15,7 +15,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 
-const isTestEnv = typeof process !== "undefined" && process.env.NODE_ENV === "test";
+const isTestEnv = import.meta.env.MODE === "test";
 type NoopTransitionProps = {
   in?: boolean;
   children?: React.ReactNode;

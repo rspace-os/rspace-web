@@ -46,6 +46,12 @@ export interface Field extends BaseRecord {
   columnIndex: number;
   type: FieldType;
   error: boolean;
+  /**
+   * Link fields only: set while the link editor is open/unapplied. Blocks the record-level Save
+   * via {@link validate} without being an `error`, so opening the editor does not trip the inline
+   * "Invalid value" message or the section-header error.
+   */
+  linkEditInProgress: boolean;
   content: string | number | Date;
   selectedOptions: Array<string> | null;
   options: Array<Option>;
@@ -67,4 +73,5 @@ export interface Field extends BaseRecord {
   setAttributesDirty(attributes: Record<string, unknown>): void;
   setAttachment(file: File | GalleryFile): void;
   setError(error: boolean): void;
+  setLinkEditInProgress(value: boolean): void;
 }

@@ -1,7 +1,8 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/dryad";
 import DryadIcon from "../../../assets/branding/dryad/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -13,6 +14,12 @@ type DryadArgs = {
   integrationState: IntegrationStates["DRYAD"];
   update: (newIntegrationState: IntegrationStates["DRYAD"]) => void;
 };
+
+export interface DryadConnectedMessage extends Record<string, unknown> {
+  type: "DRYAD_CONNECTED";
+  error?: string;
+}
+export const DRYAD_CONNECTION_CHANNEL = "rspace.apps.dryad.connection";
 
 /*
  * Dryad uses OAuth based authentication, as implemented by this form.
@@ -43,21 +50,26 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
   const { disconnect } = useDryadEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
-      setConnected(true);
+  useBroadcastChannel<DryadConnectedMessage>(DRYAD_CONNECTION_CHANNEL, (e: MessageEvent<DryadConnectedMessage>) => {
+    if (e.data?.type !== "DRYAD_CONNECTED") return;
+    if (e.data.error) {
       addAlert(
         mkAlert({
-          variant: "success",
-          message: "Successfully connected to Dryad.",
+          variant: "error",
+          title: "Could not connect to Dryad",
+          message: e.data.error,
         }),
       );
-    };
-    window.addEventListener("DRYAD_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DRYAD_CONNECTED", f);
-    };
-  }, []);
+      return;
+    }
+    setConnected(true);
+    addAlert(
+      mkAlert({
+        variant: "success",
+        message: "Successfully connected to Dryad.",
+      }),
+    );
+  });
 
   return (
     <Grid

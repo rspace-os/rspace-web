@@ -80,12 +80,16 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
     stagedTargetGlobalId !== committedTargetGlobalId ||
     stagedVersionPin !== committedVersionPin;
 
-  // surface unapplied editor state on the field model so the record-level Save
-  // is blocked (with a clear message) instead of silently dropping the staged
-  // edit and saving the previous link
+  // Block record Save while the link editor is open or holds unapplied changes; the
+  // `hasLink` guard keeps an empty optional field saveable. A dedicated flag, not
+  // field.error (see Field.linkEditInProgress), so an open editor reads as in-progress.
+  // In view mode (`disabled`) the editor - and its Apply/Discard buttons - is never shown, so a
+  // left-open editor must not keep the field flagged: that would block save with an "Apply or
+  // discard" message the user has no way to act on. A record Save happens while still editable
+  // (`disabled` is false), so gating on `!disabled` does not weaken the guard.
   useEffect(() => {
-    field.setError(changed);
-  }, [changed, field]);
+    field.setLinkEditInProgress(!disabled && (changed || (editing && hasLink)));
+  }, [changed, editing, hasLink, disabled, field]);
 
   const relationOptions =
     field.allowedRelationTypes.length > 0 ? field.allowedRelationTypes : [...DATACITE_RELATION_TYPES];
@@ -122,7 +126,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
       }
     }
     field.setAttributesDirty({ link: nextLink });
-    field.setError(false);
+    field.setLinkEditInProgress(false);
     setEditing(false);
     onChange();
   };
@@ -138,7 +142,10 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   };
 
   const committedLink = field.link;
-  if (committedLink && committedTargetGlobalId !== "" && !editing) {
+  // Show the committed link card whenever there is a committed link and we are not actively
+  // editing it - or, in view mode (disabled), always: the editor is never shown when disabled, so
+  // a transient `editing` flag left set must not collapse an existing link to the "None" placeholder.
+  if (committedLink && committedTargetGlobalId !== "" && (!editing || disabled)) {
     return (
       <Box sx={{ position: "relative" }}>
         {!disabled && (

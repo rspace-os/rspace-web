@@ -148,6 +148,93 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(target.getGlobalId(), updatedField.getLink().getTargetGlobalId());
   }
 
+  @Test
+  public void editedAllowedRelationTypesWhitelistIsPersistedOnTemplateUpdate() throws Exception {
+    // RSDEV-1200: the whitelist was captured at create time but the template-update path
+    // dropped it, so editing the allowed relation types and saving left the field at the
+    // initially saved set. This drives the change through the full HTTP -> controller ->
+    // manager -> DTO path and reloads the template to prove the new set persists.
+    ApiSampleTemplate savedTemplate = createTemplateWithLinkField();
+    Long linkFieldId = findLinkField(savedTemplate.getFields()).getId();
+    assertEquals(
+        List.of("References", "IsDerivedFrom"),
+        findLinkField(savedTemplate.getFields()).getAllowedRelationTypes());
+
+    // edit the whitelist to a different (still valid DataCite) set and save the template
+    String updateJson =
+        "{\"fields\":[{"
+            + "\"id\":"
+            + linkFieldId
+            + ","
+            + "\"type\":\"link\","
+            + "\"allowedRelationTypes\":[\"IsCitedBy\",\"Cites\"]"
+            + "}]}";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/sampleTemplates/" + savedTemplate.getId(), anyUser, updateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiSampleTemplate updated = getFromJsonResponseBody(result, ApiSampleTemplate.class);
+    assertEquals(
+        List.of("IsCitedBy", "Cites"),
+        findLinkField(updated.getFields()).getAllowedRelationTypes(),
+        "the edited whitelist should be returned by the update");
+
+    // reload the template (the "subsequent edit" the user saw stuck at the old set)
+    ApiSampleTemplate reloaded =
+        sampleApiManager.getApiSampleTemplateById(savedTemplate.getId(), anyUser);
+    assertEquals(
+        List.of("IsCitedBy", "Cites"),
+        findLinkField(reloaded.getFields()).getAllowedRelationTypes(),
+        "the edited whitelist should persist across reload");
+  }
+
+  @Test
+  public void editedWhitelistPropagatesToExistingSamplesOnUpdateToLatestTemplateVersion()
+      throws Exception {
+    // RSDEV-1200 follow-on: editing the template whitelist must reach pre-existing samples when
+    // they are synced to the latest template version, not only samples created after the edit.
+    ApiSampleTemplate savedTemplate = createTemplateWithLinkField();
+    Long templateLinkFieldId = findLinkField(savedTemplate.getFields()).getId();
+
+    // a sample created before the edit inherits the original whitelist
+    ApiSampleWithFullSubSamples apiSample =
+        new ApiSampleWithFullSubSamples("existing sample from link template");
+    apiSample.setTemplateId(savedTemplate.getId());
+    ApiSampleWithFullSubSamples created = sampleApiManager.createNewApiSample(apiSample, anyUser);
+    assertEquals(
+        List.of("References", "IsDerivedFrom"),
+        findLinkField(sampleApiManager.getApiSampleById(created.getId(), anyUser).getFields())
+            .getAllowedRelationTypes());
+
+    // edit the template's link-field whitelist (bumps the template version)
+    String updateJson =
+        "{\"fields\":[{"
+            + "\"id\":"
+            + templateLinkFieldId
+            + ","
+            + "\"type\":\"link\","
+            + "\"allowedRelationTypes\":[\"IsCitedBy\",\"Cites\"]"
+            + "}]}";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, "/sampleTemplates/" + savedTemplate.getId(), anyUser, updateJson))
+        .andExpect(status().isOk());
+
+    // sync the existing sample to the latest template version
+    sampleApiManager.updateSampleToLatestTemplateVersion(created.getId(), anyUser);
+
+    ApiSample synced = sampleApiManager.getApiSampleById(created.getId(), anyUser);
+    assertEquals(
+        List.of("IsCitedBy", "Cites"),
+        findLinkField(synced.getFields()).getAllowedRelationTypes(),
+        "the existing sample should acquire the template's edited whitelist after the sync");
+  }
+
   private ApiSampleTemplate createTemplateWithLinkField() throws Exception {
     return createTemplateWithLinkField(false);
   }

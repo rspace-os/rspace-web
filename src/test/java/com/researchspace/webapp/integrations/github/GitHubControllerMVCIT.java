@@ -16,7 +16,6 @@ import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.webapp.controller.MVCTestBase;
-import com.researchspace.webapp.integrations.github.GitHubController.Repository;
 import com.researchspace.webapp.integrations.github.GitHubController.TreeNode;
 import java.util.HashMap;
 import java.util.List;
@@ -102,21 +101,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
                     .param("code", authorizationCode)
                     .principal(user::getUsername))
             .andExpect(status().isOk())
-            .andExpect(view().name("connect/github/connected"))
+            .andExpect(view().name("connect/connected"))
             .andReturn();
-    assertThat(
-        result.getModelAndView().getModel().get("gitHubAccessToken"), is(GITHUB_ACCESS_TOKEN));
-
-    @SuppressWarnings("unchecked")
-    List<GitHubController.Repository> repositories =
-        (List<Repository>) result.getModelAndView().getModel().get("gitHubRepositories");
-    assertThat(
-        repositories,
-        hasItems(
-            new GitHubController.Repository(
-                "rspace-integration-test-user/test1", "First Test Repository"),
-            new GitHubController.Repository(
-                "rspace-integration-test-user/test2", "Second Test Repository")));
+    assertThat(result.getModelAndView().getModel().get("connectionToken"), is(GITHUB_ACCESS_TOKEN));
   }
 
   private void addExampleRepositories(User user) {

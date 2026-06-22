@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
@@ -40,14 +41,24 @@ function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
       >
         Cancel
       </Button>
-      <ValidatingSubmitButton
-        onClick={() => void editableObject.update()}
-        validationResult={editableObject.submittable}
-        loading={editableObject.loading}
-        progress={editableObject.uploadProgress}
-      >
-        Save
-      </ValidatingSubmitButton>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {editableObject.submittable.orElseGet((errors) =>
+          errors.map((error, i) => (
+            <Typography key={i} variant="body2" color="warning.main" role="alert">
+              {error.message}
+            </Typography>
+          )),
+        )}
+        <ValidatingSubmitButton
+          onClick={() => void editableObject.update()}
+          validationResult={editableObject.submittable}
+          loading={editableObject.loading}
+          progress={editableObject.uploadProgress}
+          disabled={!editableObject.submittable.isOk}
+        >
+          Save
+        </ValidatingSubmitButton>
+      </Box>
     </Box>
   );
 }

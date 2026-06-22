@@ -26,7 +26,7 @@ describe("method: validState", () => {
     expect(field.validate().isOk).toBe(false);
   });
 
-  test("A link field with unapplied editor changes reports a link-specific reason.", () => {
+  test("A link field with an open/unapplied editor blocks save with a link-specific reason, without flagging an error.", () => {
     const field = new FieldModel(
       {
         attachment: null,
@@ -48,8 +48,12 @@ describe("method: validState", () => {
       makeMockSample(),
     );
 
-    // the link editor flags the model while its staged state is unapplied
-    field.setError(true);
+    // the link editor flags the model while its editor is open / staged state is unapplied,
+    // via a dedicated flag - NOT field.error - so the inline "Invalid value" message and the
+    // section-header error are not tripped just by opening the editor
+    field.setLinkEditInProgress(true);
+
+    expect(field.error).toBe(false);
 
     const result = field.validate();
     expect(result.isOk).toBe(false);
