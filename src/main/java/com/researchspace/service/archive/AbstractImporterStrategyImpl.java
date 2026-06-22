@@ -525,6 +525,10 @@ abstract class AbstractImporterStrategyImpl {
     String fieldName = archivalField.getFieldName();
     if (StringUtils.isBlank(fieldName)) {
       fieldName = "Imported field " + archivalField.getFieldId();
+      // Write the fallback back so downstream code that re-reads the name (e.g.
+      // convertStructuredDocumentField, which calls Field.setName and would otherwise throw on a
+      // blank name and skip saving the content) sees the same non-blank value.
+      archivalField.setFieldName(fieldName);
     }
     TextFieldForm fieldForm = new TextFieldForm(fieldName);
     strucDoc.getForm().addFieldForm(fieldForm);

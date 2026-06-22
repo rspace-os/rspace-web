@@ -140,7 +140,7 @@ public class ImportFieldCountMismatchIT extends RealTransactionSpringTestBase {
     assertTrue("import reported failure", report.isSuccessful());
 
     // 6. The content of the field removed from the form copy must survive the round trip.
-    StructuredDocument imported = findImportedStructuredDocument(report, doc.getName());
+    StructuredDocument imported = findImportedStructuredDocument(report, doc.getName(), user);
     String allFieldData =
         imported.getFields().stream().map(Field::getFieldData).reduce("", (a, b) -> a + "\n" + b);
     String diagnostics =
@@ -309,10 +309,13 @@ public class ImportFieldCountMismatchIT extends RealTransactionSpringTestBase {
   }
 
   private StructuredDocument findImportedStructuredDocument(
-      ImportArchiveReport report, String name) {
+      ImportArchiveReport report, String name, User user) {
     for (BaseRecord rec : report.getImportedRecords()) {
       if (rec.isStructuredDocument() && name.equals(rec.getName())) {
-        StructuredDocument sd = (StructuredDocument) recordMgr.get(rec.getId());
+        // getRecordWithFields eagerly initialises the fields collection, so it can be read outside
+        // the import transaction (plain get() leaves it as a lazy proxy).
+        StructuredDocument sd =
+            (StructuredDocument) recordMgr.getRecordWithFields(rec.getId(), user);
         assertNotNull(sd);
         return sd;
       }
