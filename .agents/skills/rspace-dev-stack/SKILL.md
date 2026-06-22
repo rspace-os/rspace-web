@@ -112,7 +112,8 @@ order:
      ```bash
      docker exec <project>-db mariadb -urspacedbuser -prspacedbpwd rspace -e \
        "SELECT pd.name, spv.value FROM PropertyDescriptor pd \
-        JOIN SystemPropertyValue spv ON spv.property_id = pd.id \
+        JOIN SystemProperty sp ON sp.descriptor_id = pd.id \
+        JOIN SystemPropertyValue spv ON spv.property_id = sp.id \
         WHERE pd.name='chemistry.available';"
      ```
 
