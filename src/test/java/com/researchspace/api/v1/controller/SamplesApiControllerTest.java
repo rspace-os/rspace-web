@@ -692,8 +692,12 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void duplicateDoesNotLeakTemplateExistenceToUnauthorizedUser() {
+    // The template must be genuinely private. testUser (created first in setUp) owns the lowest-id
+    // sample templates and is therefore the default-templates-owner, whose templates are
+    // world-readable; own this one with a later-created user so it is not a "default" template.
+    User templateOwner = createInitAndLoginAnyUser();
     SampleTemplate sampleTemplate =
-        recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", templateOwner);
     SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     User otherUser = createInitAndLoginAnyUser();
 
@@ -705,8 +709,11 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void createSampleFromInaccessibleTemplateIsRejected() {
+    // owner must not be the default-templates-owner (testUser, created first in setUp), otherwise
+    // the template is a world-readable "default" template and is not actually inaccessible
+    User templateOwner = createInitAndLoginAnyUser();
     SampleTemplate sampleTemplate =
-        recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", templateOwner);
     SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     User otherUser = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples newSample =
