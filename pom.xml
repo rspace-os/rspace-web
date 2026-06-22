@@ -87,6 +87,12 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <executions>
+          <execution> <!-- honour -DskipUnitTests so the integration-test CI shard skips the test phase -->
+            <id>default-test</id>
+            <configuration>
+              <skip>${skipUnitTests}</skip>
+            </configuration>
+          </execution>
           <execution> <!-- for 'dev' profile IT tests -->
             <id>integration-tests</id>
             <phase>integration-test</phase>
