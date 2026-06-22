@@ -1,5 +1,5 @@
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { getTreeItemUtilityClass, treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { observer } from "mobx-react-lite";
 import React, { type SyntheticEvent, useContext } from "react";
 import SearchContext from "../../../stores/contexts/Search";
@@ -27,9 +27,9 @@ function RecordTree(): React.ReactNode {
       sx={{
         pt: 1,
         flexGrow: 1,
-        // Tree View exposes no state-class constant; getTreeItemUtilityClass
-        // resolves the global Mui-selected class.
-        [`& .${getTreeItemUtilityClass("selected")} > .${treeItemClasses.content} .${treeItemClasses.label}`]: {
+        // x-tree-view v9 marks the selected content element with data-selected, not the legacy
+        // Mui-selected class.
+        [`& .${treeItemClasses.content}[data-selected] .${treeItemClasses.label}`]: {
           backgroundColor: "rgba(0, 173, 239, 0.08) !important",
         },
       }}
