@@ -15,8 +15,7 @@ import useAutocomplete, {
 } from "@mui/material/useAutocomplete";
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { VariableSizeList } from "react-window";
-import InfiniteLoader from "react-window-infinite-loader";
+import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
 import axios from "@/common/axios";
 import { checkUserInputString, helpText, isAllowed } from "../../../components/Tags/TagValidation";
 import type RsSet from "../../../util/set";
@@ -77,6 +76,74 @@ type InternalTag = {
   selected: boolean;
 };
 
+type UserTagRowProps = {
+  groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
+  filter: string;
+  keyboardFocusIndex: number | null;
+  getOptionProps: (optionAndIndex: { option: InternalTag; index: number }) => object;
+};
+
+/*
+ * Row renderer for the virtualised options list. react-window v2 takes the row
+ * as a `rowComponent` (receiving `index`/`style` plus the List's `rowProps`);
+ * defined at module scope so its identity stays stable across renders.
+ */
+function UserTagRow({
+  index,
+  style,
+  groupedOptions,
+  filter,
+  keyboardFocusIndex,
+  getOptionProps,
+}: RowComponentProps<UserTagRowProps>) {
+  const theme = useTheme();
+  if (!groupedOptions || index >= groupedOptions.length) return <li style={style} />;
+
+  const option = groupedOptions[index] as InternalTag;
+  const name = option.value || "no name";
+  const tagIsAllowed = !option.selected;
+
+  const start = name.indexOf(filter);
+  const end = start + filter.length;
+  const label =
+    start > -1 ? (
+      <>
+        {name.substring(0, start)}
+        <strong>{filter}</strong>
+        {name.substring(end)}
+      </>
+    ) : (
+      name
+    );
+
+  return (
+    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
+    <li
+      {...getOptionProps({ option, index })}
+      style={{
+        padding: "8px",
+        cursor: "default",
+        border: index === keyboardFocusIndex ? `2px solid ${theme.palette.primary.main}` : "none",
+        backgroundColor: index === keyboardFocusIndex ? theme.palette.hover.iconButton : "transparent",
+        borderRadius: "4px",
+        // `style` positions the row within the virtualised list (absolute, with
+        // top/left/height/width). Keep it after the static styles so it wins.
+        ...style,
+        // These depend on `option`, so must stay inline.
+        filter: tagIsAllowed ? "" : "opacity(0.2)",
+        pointerEvents: tagIsAllowed ? "auto" : "none",
+        whiteSpace: "nowrap",
+        width: "unset",
+      }}
+      data-tag-value={option.value}
+      aria-selected={index === keyboardFocusIndex}
+      aria-disabled={!tagIsAllowed}
+    >
+      <ListItemText primary={label} secondary={""} />
+    </li>
+  );
+}
+
 function OptionsListing({
   sortedOptions,
   getOptionProps,
@@ -90,103 +157,25 @@ function OptionsListing({
   getOptionProps: (optionAndIndex: { option: InternalTag; index: number }) => object;
   groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
   listboxProps: object;
-  listRef: React.MutableRefObject<VariableSizeList | null>;
+  listRef: React.MutableRefObject<ListImperativeAPI | null>;
   keyboardFocusIndex: number | null;
   filter: string;
 }) {
-  const theme = useTheme();
-
-  const Item = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-    if (!groupedOptions || index >= groupedOptions.length) return <li style={style} />;
-
-    const option = groupedOptions[index] as InternalTag;
-    const name = option.value || "no name";
-    const tagIsAllowed = !option.selected;
-
-    const start = name.indexOf(filter);
-    const end = start + filter.length;
-    const label =
-      start > -1 ? (
-        <>
-          {name.substring(0, start)}
-          <strong>{filter}</strong>
-          {name.substring(end)}
-        </>
-      ) : (
-        name
-      );
-
-    return (
-      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
-      <li
-        {...getOptionProps({ option, index })}
-        style={{
-          padding: "8px",
-          cursor: "default",
-          border: index === keyboardFocusIndex ? `2px solid ${theme.palette.primary.main}` : "none",
-          backgroundColor: index === keyboardFocusIndex ? theme.palette.hover.iconButton : "transparent",
-          borderRadius: "4px",
-
-          /*
-           * This style object is what positions the MenuItem correctly within
-           * the virtualised list; it gives it `position: absolute` with a top,
-           * left, height (as specified by `itemSize`), and width
-           */
-          ...style,
-
-          /*
-           * These styles, which use `option` to conditionally determine the
-           * style value, must stay inline because otherwise an indexing error
-           * occurs when the user presses backspace inside the filter text
-           * field.
-           */
-          filter: tagIsAllowed ? "" : "opacity(0.2)",
-          pointerEvents: tagIsAllowed ? "auto" : "none",
-
-          /*
-           * Scroll horizontally rather than wrap. The styles are inline here
-           * because the width will be overriden by the `style` variable coming
-           * from `InfiniteLoader` if it is specified in a class.
-           */
-          whiteSpace: "nowrap",
-          width: "unset",
-        }}
-        data-tag-value={option.value}
-        aria-selected={index === keyboardFocusIndex}
-        aria-disabled={!tagIsAllowed}
-      >
-        <ListItemText primary={label} secondary={""} />
-      </li>
-    );
-  };
-
+  // The endpoint returns all tags at once, so there is no infinite loading here;
+  // a plain virtualised List with fixed-height rows suffices.
   return (
-    <InfiniteLoader isItemLoaded={() => true} itemCount={sortedOptions.length} loadMoreItems={() => {}}>
-      {({ onItemsRendered, ref }) => (
-        <VariableSizeList
-          {...listboxProps}
-          height={300}
-          itemCount={sortedOptions.length}
-          onItemsRendered={onItemsRendered}
-          width={POPOVER_WIDTH}
-          innerElementType="ul"
-          /*
-           * Here, we're merging the two refs. `ref` comes from InfiniteLoader,
-           * and `listRef` comes from the parent component where it is used to
-           * call `resetAfterIndex` when `itemSize` should be recalculated. For
-           * more information on exactly how this works see this StackOverflow
-           * answer https://stackoverflow.com/a/70284705
-           */
-          ref={(node: VariableSizeList) => {
-            ref(node);
-            listRef.current = node;
-          }}
-          itemSize={() => OPTION_HEIGHT}
-        >
-          {Item}
-        </VariableSizeList>
-      )}
-    </InfiniteLoader>
+    <List
+      {...listboxProps}
+      // tagName makes the scroll container a <ul> so the <li> rows are valid
+      // (react-window v2 dropped innerElementType in favour of tagName).
+      tagName="ul"
+      style={{ height: 300, width: POPOVER_WIDTH }}
+      rowCount={sortedOptions.length}
+      listRef={listRef}
+      rowComponent={UserTagRow}
+      rowProps={{ groupedOptions, filter, keyboardFocusIndex, getOptionProps }}
+      rowHeight={OPTION_HEIGHT}
+    />
   );
 }
 
@@ -245,7 +234,7 @@ function TagsComboboxContent({
   const [filter, setFilter] = useState("");
   const [error, setError] = useState(false);
   const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(null);
-  const listRef = useRef<VariableSizeList | null>(null);
+  const listRef = useRef<ListImperativeAPI | null>(null);
 
   const loadPage = async (): Promise<{
     tags: Array<InternalTag>;
@@ -365,7 +354,6 @@ function TagsComboboxContent({
         selected: alreadySelectedTagStrings.has(tag.value),
       })),
     );
-    listRef.current?.resetAfterIndex(0);
   }, [value]);
 
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -383,7 +371,6 @@ function TagsComboboxContent({
       // this assumes that the code that called `setFilter` also reset `page` to 0
       void loadPage().then(({ tags: newPageOfTags }) => {
         setTags(newPageOfTags);
-        listRef.current?.resetAfterIndex(0);
       });
     })();
   }, [filter]);
@@ -473,7 +460,7 @@ function TagsComboboxContent({
                 }
               } while (sortedOptions[newIndex].selected);
               setKeyboardFocusIndex(newIndex);
-              listRef.current?.scrollToItem(newIndex);
+              listRef.current?.scrollToRow({ index: newIndex });
               return;
             }
 
@@ -488,7 +475,7 @@ function TagsComboboxContent({
                 }
               } while (sortedOptions[newIndex].selected);
               setKeyboardFocusIndex(newIndex);
-              listRef.current?.scrollToItem(newIndex);
+              listRef.current?.scrollToRow({ index: newIndex });
               return;
             }
 
