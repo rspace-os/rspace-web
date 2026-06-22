@@ -180,8 +180,8 @@ importers:
         specifier: 9.2.1
         version: 9.2.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-photoswipe-gallery:
-        specifier: 3.1.1
-        version: 3.1.1(photoswipe@5.4.4)(prop-types@15.8.1)(react@19.2.7)
+        specifier: 4.1.2
+        version: 4.1.2(photoswipe@5.4.4)(react@19.2.7)
       react-router:
         specifier: 7.17.0
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -204,8 +204,8 @@ importers:
         specifier: 1.0.10
         version: 1.0.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-zoom-pan-pinch:
-        specifier: 3.7.0
-        version: 3.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 4.0.3
+        version: 4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       sockjs-client:
         specifier: 1.6.1
         version: 1.6.1
@@ -4831,11 +4831,10 @@ packages:
       '@types/react':
         optional: true
 
-  react-photoswipe-gallery@3.1.1:
-    resolution: {integrity: sha512-2hQkUkELwGDSnxdXeOGCySOLiK5vlUFZn9HhwmCXZz0jTqQwG6zy09M6M/JypYFa3md9zd/XW0aUD39dqltzsw==}
+  react-photoswipe-gallery@4.1.2:
+    resolution: {integrity: sha512-QfohXZVY3pXe0q5/+iH1G6Yx2xr5GsBxALT5S3c9GP1HLCechG4MG3IMXaoujatn/trG5CIlY44fmiuzW1vjjA==}
     peerDependencies:
       photoswipe: '>= 5.2.2'
-      prop-types: '>= 15.7.0'
       react: '>= 16.8.0'
 
   react-redux@9.3.0:
@@ -4909,8 +4908,8 @@ packages:
       react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  react-zoom-pan-pinch@3.7.0:
-    resolution: {integrity: sha512-UmReVZ0TxlKzxSbYiAj+LeGRW8s8LraAFTXRAxzMYnNRgGPsxCudwZKVkjvGmjtx7SW/hZamt69NUmGf4xrkXA==}
+  react-zoom-pan-pinch@4.0.3:
+    resolution: {integrity: sha512-N2Hi6L78fFmhRra+ORpFSW7WST5x6kxpOPplIvtB0b7b+U2anpo1z1wLgaWRPS2kUSqcraRG+JgBCIlDJnqqAg==}
     engines: {node: '>=8', npm: '>=5'}
     peerDependencies:
       react: '*'
@@ -11149,10 +11148,9 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
-  react-photoswipe-gallery@3.1.1(photoswipe@5.4.4)(prop-types@15.8.1)(react@19.2.7):
+  react-photoswipe-gallery@4.1.2(photoswipe@5.4.4)(react@19.2.7):
     dependencies:
       photoswipe: 5.4.4
-      prop-types: 15.8.1
       react: 19.2.7
 
   react-redux@9.3.0(@types/react@19.2.17)(react@19.2.7)(redux@5.0.1):
@@ -11235,7 +11233,7 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
-  react-zoom-pan-pinch@3.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  react-zoom-pan-pinch@4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
