@@ -294,7 +294,7 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
     redirectUrlString = result.getResponse().getForwardedUrl();
 
     // since there is no user login, the Mendeley end point returns an internal server error
-    assertTrue(redirectUrlString.contains("authorizationError"));
+    assertTrue(redirectUrlString.contains("connect/connected"));
 
     optUserConn =
         userConnectionManager.findByUserNameProviderName(

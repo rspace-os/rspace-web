@@ -2,6 +2,7 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/dmpassistant";
 import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -14,13 +15,31 @@ type DMPAssistantArgs = {
   update: (newIntegrationState: IntegrationStates["DMPASSISTANT"]) => void;
 };
 
+export interface DMPAssistantConnectedMessage extends Record<string, unknown> {
+  type: "DMPASSISTANT_CONNECTED";
+  error?: string;
+}
+export const DMPASSISTANT_CONNECTION_CHANNEL = "rspace.apps.dmpassistant.connection";
+
 function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.ReactNode {
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpAssistantEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  React.useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<DMPAssistantConnectedMessage>(
+    DMPASSISTANT_CONNECTION_CHANNEL,
+    (e: MessageEvent<DMPAssistantConnectedMessage>) => {
+      if (e.data?.type !== "DMPASSISTANT_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to DMP Assistant",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -28,12 +47,8 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
           message: "Successfully connected to DMP Assistant.",
         }),
       );
-    };
-    window.addEventListener("DMPASSISTANT_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DMPASSISTANT_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

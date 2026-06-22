@@ -29,6 +29,7 @@ type RaidArgs = {
 export interface RaidConnectedMessage extends Record<string, unknown> {
   type: "RAID_CONNECTED";
   alias: string;
+  error?: string;
 }
 
 export const RAID_CONNECTION_CHANNEL = "rspace.apps.raid.connection";
@@ -40,6 +41,16 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   useBroadcastChannel<RaidConnectedMessage>(RAID_CONNECTION_CHANNEL, (e: MessageEvent<RaidConnectedMessage>) => {
+    if (e.data?.type === "RAID_CONNECTED" && e.data.error) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: e.data.alias ? `Could not connect to ${e.data.alias} RAiD server` : "Could not connect to RAiD server",
+          message: e.data.error,
+        }),
+      );
+      return;
+    }
     if (e.data?.type !== "RAID_CONNECTED" || !e.data.alias) {
       console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
       return;

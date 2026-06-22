@@ -9,6 +9,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.protocolsio.PIOUser;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.time.Instant;
@@ -138,8 +139,9 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
       conn.setRank(1);
       conn.setRefreshToken(accessToken.getBody().getRefreshToken());
       userConnectionManager.save(conn);
-      model.addAttribute("pioAccessToken", conn.getAccessToken());
-      return "connect/protocolsio/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model, "Protocols.io", "rspace.apps.protocolsio.connection", "PROTOCOLS_IO_CONNECTED");
+      return ConnectionResultPage.VIEW;
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -147,8 +149,13 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model,
+          "Protocols.io",
+          "rspace.apps.protocolsio.connection",
+          "PROTOCOLS_IO_CONNECTED",
+          error);
+      return ConnectionResultPage.VIEW;
     }
   }
 

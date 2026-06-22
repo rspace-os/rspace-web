@@ -134,7 +134,7 @@ class FigshareOAuthControllerTest {
         };
     String viewName =
         figOauthCtrllerTSS.onAuthorization(params, new ExtendedModelMap(), mockRequest);
-    assertEquals(viewName, "connect/authorizationError");
+    assertEquals(viewName, "connect/connected");
     verify(userConnectionManager, never()).save(Mockito.any(UserConnection.class));
   }
 }

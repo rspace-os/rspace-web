@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -12,6 +13,12 @@ type ProtocolsIOArgs = {
   integrationState: IntegrationStates["PROTOCOLS_IO"];
   update: (newIntegrationState: IntegrationStates["PROTOCOLS_IO"]) => void;
 };
+
+export interface ProtocolsIOConnectedMessage extends Record<string, unknown> {
+  type: "PROTOCOLS_IO_CONNECTED";
+  error?: string;
+}
+export const PROTOCOLS_IO_CONNECTION_CHANNEL = "rspace.apps.protocolsio.connection";
 
 /*
  * ProtocolsIO uses OAuth based authentication, as implemented by this form.
@@ -42,8 +49,20 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
   const { disconnect } = useProtocolsioEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<ProtocolsIOConnectedMessage>(
+    PROTOCOLS_IO_CONNECTION_CHANNEL,
+    (e: MessageEvent<ProtocolsIOConnectedMessage>) => {
+      if (e.data?.type !== "PROTOCOLS_IO_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to Protocols IO",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -51,12 +70,8 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
           message: "Successfully connected to Protocols IO.",
         }),
       );
-    };
-    window.addEventListener("PROTOCOLS_IO_CONNECTED", f);
-    return () => {
-      window.removeEventListener("PROTOCOLS_IO_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid
