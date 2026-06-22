@@ -31,6 +31,7 @@ import useWhoAmI from "@/hooks/api/useWhoAmI";
 import { ACCENT_COLOR as IRODS_COLOR } from "../../../assets/branding/irods";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import AccentMenuItem from "../../../components/AccentMenuItem";
+import { ConfirmationDialog } from "../../../components/ConfirmationDialog";
 import EventBoundary from "../../../components/EventBoundary";
 import ImageEditingDialog from "../../../components/ImageEditingDialog";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
@@ -301,6 +302,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [irodsOpen, setIrodsOpen] = React.useState(false);
   const [s3Open, setS3Open] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
@@ -1033,7 +1035,16 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             foregroundColor={darken(theme.palette.error.dark, 0.3)}
             avatar={<DeleteOutlineOutlinedIcon />}
             onClick={() => {
-              void deleteFiles(selection.asSet()).then(() => {
+              const files = selection.asSet();
+              // S3 filestore deletes are permanent, so require a typed "permanently delete"
+              // confirmation (RSDEV-1110). Local Gallery deletes are soft-deletes and keep their
+              // existing one-tap behaviour.
+              if (!files.isEmpty && files.every((f) => f instanceof RemoteFile)) {
+                setActionsMenuAnchorEl(null);
+                setDeleteConfirmOpen(true);
+                return;
+              }
+              void deleteFiles(files).then(() => {
                 void refreshListing();
                 setActionsMenuAnchorEl(null);
               });
@@ -1042,6 +1053,28 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={deleteAllowed.get().isError}
           />
         </Menu>
+      )}
+      {deleteConfirmOpen && (
+        <ConfirmationDialog
+          title="Permanently delete?"
+          consequences={
+            <Typography variant="body1">
+              This permanently deletes {selection.size} item{selection.size > 1 ? "s" : ""} from the S3 filestore. This
+              cannot be undone.
+            </Typography>
+          }
+          variant="warning"
+          confirmText="permanently delete"
+          confirmTextLabel="Type 'permanently delete' to confirm"
+          callback={() => {
+            void deleteFiles(selection.asSet()).then(() => {
+              void refreshListing();
+            });
+          }}
+          handleCloseDialog={() => {
+            setDeleteConfirmOpen(false);
+          }}
+        />
       )}
       <ImageEditingDialog
         imageFile={imageEditorBlob}
