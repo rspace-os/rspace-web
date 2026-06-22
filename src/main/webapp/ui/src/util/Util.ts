@@ -120,16 +120,11 @@ export const partitionAllSettled = <A>(
 export const isValidDate = (str: string): boolean => new Date(str).toString() !== "Invalid Date";
 
 /**
- * Checks if a string is a valid URL.
- */
-export const isUrl = (str: string): boolean => URL.canParse(str);
-
-/**
  * Checks if a string is a valid Inventory URL to a container, sample,
  * template, or subsample.
  */
 export const isInventoryPermalink = (str: string): boolean => {
-  return isUrl(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str);
+  return URL.canParse(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str);
 };
 
 /**
