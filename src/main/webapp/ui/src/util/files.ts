@@ -7,11 +7,13 @@ import prettyBytes from "pretty-bytes";
 /**
  * Given the number of bytes, return a human-readable string using SI units
  * (decimal, e.g. "1.02 kB"). Returns "" for null/undefined so callers can pass
- * an optional size straight through.
+ * an optional size straight through. `locale: false` keeps the output
+ * locale-invariant (always a "." decimal separator), matching the previous
+ * hand-rolled implementation regardless of the host locale.
  */
 export function formatFileSize(bytes: number | null | undefined, decimalPlaces: number = 2): string {
   if (bytes === null || typeof bytes === "undefined") return "";
-  return prettyBytes(bytes, { maximumFractionDigits: decimalPlaces });
+  return prettyBytes(bytes, { maximumFractionDigits: decimalPlaces, locale: false });
 }
 
 /**

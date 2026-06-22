@@ -20,6 +20,7 @@ export function capImageAt1MB(file: Blob, dataURL: string): Promise<string> {
       ctx.drawImage(image, 0, 0, image.width, image.height);
       resolve(canvas.toDataURL(file.type));
     };
+    image.onerror = () => reject(new Error("Could not decode image"));
     image.src = dataURL;
   });
 }

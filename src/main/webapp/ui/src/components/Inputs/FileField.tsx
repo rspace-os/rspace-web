@@ -145,7 +145,17 @@ function FileField({
     if (!file) return;
 
     Promise.resolve(file.arrayBuffer())
-      .then((buf) => Array.from(new Uint8Array(buf), (b) => String.fromCharCode(b)).join(""))
+      // Build a Latin1 "binary string" (1:1 byte -> code unit) as btoa() expects
+      // downstream. TextDecoder can't do this faithfully (its "iso-8859-1" label
+      // decodes as windows-1252). Chunked fromCharCode avoids a large intermediate.
+      .then((buf) => {
+        const bytes = new Uint8Array(buf);
+        let binaryString = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) {
+          binaryString += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        }
+        return binaryString;
+      })
       .then((binaryString) => {
         setFailedToLoad(false);
         setSelectedFilename(file.name);
