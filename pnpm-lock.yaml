@@ -253,8 +253,8 @@ importers:
         specifier: 14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@types/jquery':
-        specifier: 3.5.34
-        version: 3.5.34
+        specifier: 4.0.1
+        version: 4.0.1
       '@types/jsonwebtoken':
         specifier: 9.0.10
         version: 9.0.10
@@ -2511,8 +2511,8 @@ packages:
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
-  '@types/jquery@3.5.34':
-    resolution: {integrity: sha512-3m3939S3erqmTLJANS/uy0B6V7BorKx7RorcGZVjZ62dF5PAGbKEDZK1CuLtKombJkFA2T1jl8LAIIs7IV6gBQ==}
+  '@types/jquery@4.0.1':
+    resolution: {integrity: sha512-9a59A/tycXgYuPABcp6/3spSShn0NT2UOM4EfHvMumjYi4lJWTsK5SZWjhx3yRm9IHGCeWXdV2YfNsrWrft/CA==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -2568,9 +2568,6 @@ packages:
 
   '@types/set-cookie-parser@2.4.10':
     resolution: {integrity: sha512-GGmQVGpQWUe5qglJozEjZV/5dyxbOOZ0LHe/lqyWssB88Y4svNfst0uqBVscdDeIKl5Jy5+aPSvy7mI9tYRguw==}
-
-  '@types/sizzle@2.3.10':
-    resolution: {integrity: sha512-TC0dmN0K8YcWEAEfiPi5gJP14eJe30TTGjkvek3iM/1NdHHsdCA/Td6GvNndMOo/iSnIsZ4HuuhrYPDAmbxzww==}
 
   '@types/sockjs-client@1.5.4':
     resolution: {integrity: sha512-zk+uFZeWyvJ5ZFkLIwoGA/DfJ+pYzcZ8eH4H/EILCm2OBZyHH6Hkdna1/UWL/CFruh5wj6ES7g75SvUB0VsH5w==}
@@ -8455,9 +8452,7 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
-  '@types/jquery@3.5.34':
-    dependencies:
-      '@types/sizzle': 2.3.10
+  '@types/jquery@4.0.1': {}
 
   '@types/json-schema@7.0.15': {}
 
@@ -8517,8 +8512,6 @@ snapshots:
   '@types/set-cookie-parser@2.4.10':
     dependencies:
       '@types/node': 24.12.4
-
-  '@types/sizzle@2.3.10': {}
 
   '@types/sockjs-client@1.5.4': {}
 
