@@ -121,6 +121,20 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
+  public void testTopLevelRootFilestoreAWS() throws IOException {
+    initializeS3UtilitiesWithAWS();
+    topLevelRootScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testTopLevelRootFilestoreCloudflare() throws IOException {
+    initializeS3UtilitiesWithCloudflare();
+    topLevelRootScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCopyObjectFromBucketAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     copyObjectFromBucketScenario();
@@ -449,6 +463,38 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     } finally {
       safeDeleteObject(placeholderKey);
     }
+  }
+
+  /**
+   * Exercises a filestore rooted at the bucket top level (empty base path): a folder created with
+   * no parent prefix lands at the bucket root, is discoverable when listing "", and can be deleted.
+   */
+  private void topLevelRootScenario() throws IOException {
+    String folderName = "rootleveltest-" + System.currentTimeMillis();
+    String placeholderKey = folderName + "/";
+    Map<String, String> metadata =
+        Map.of(
+            WriteAttribution.META_CREATED_BY,
+            "realConnTestUser",
+            WriteAttribution.META_CREATED_AT,
+            Instant.now().toString());
+    try {
+      // no parent prefix -> created at the bucket root
+      s3Utilities.createFolder(folderName, metadata);
+
+      S3FolderContentItem folder = s3Utilities.getObjectDetails(folderName);
+      assertTrue("top-level folder should be detected", folder != null && folder.isFolder());
+
+      boolean inRoot =
+          s3Utilities.listFolderContents("").stream()
+              .anyMatch(item -> item.getName().equals(folderName) && item.isFolder());
+      assertTrue("created folder should appear in the bucket-root listing", inRoot);
+    } finally {
+      safeDeleteObject(placeholderKey);
+    }
+    assertTrue(
+        "top-level folder should be gone after delete",
+        s3Utilities.getObjectDetails(folderName) == null);
   }
 
   /** Best-effort delete by exact key used in test cleanup; never throws (safe in a finally). */

@@ -39,11 +39,22 @@ type AddFilestoreDialogArgs = {
 };
 
 function FilesystemSelectionStep(props: {
-  setSelectedFilesystem: ({ id, name, url }: { id: number; name: string; url: string }) => void;
+  setSelectedFilesystem: ({
+    id,
+    name,
+    url,
+    clientType,
+  }: {
+    id: number;
+    name: string;
+    url: string;
+    clientType: string;
+  }) => void;
   selectedFilesystem: Optional<{
     id: number;
     name: string;
     url: string;
+    clientType: string;
   }>;
 }) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
@@ -51,12 +62,14 @@ function FilesystemSelectionStep(props: {
     id: number;
     name: string;
     url: string;
+    clientType: string;
   } | null>(null);
   const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
     id: number;
     name: string;
     url: string;
     canRead: boolean;
+    clientType: string;
   }>>(null);
   const { getToken } = useOauthToken();
   const api = React.useRef(
@@ -90,13 +103,15 @@ function FilesystemSelectionStep(props: {
                       .flatMap(Parsers.getValueWithKey("canRead"))
                       .flatMap(Parsers.isBoolean)
                       .orElse(true);
-                    return Result.Ok({ id, name, url, canRead });
+                    const clientType = Parsers.getValueWithKey("clientType")(obj).flatMap(Parsers.isString).orElse("");
+                    return Result.Ok({ id, name, url, canRead, clientType });
                   } catch (e) {
                     return Result.Error<{
                       id: number;
                       name: string;
                       url: string;
                       canRead: boolean;
+                      clientType: string;
                     }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
                 }),
@@ -265,14 +280,21 @@ function TreeListing({
   );
 }
 
+// Sentinel tree-item id for "the bucket top level" (an empty filestore path). Distinct from any
+// real folder id, which always ends in "/".
+const TOP_LEVEL_ITEM_ID = "__top_level__";
+
 function FolderSelectionStep(props: {
-  selectedFilesystem: Optional<{ id: number; name: string; url: string }>;
+  selectedFilesystem: Optional<{ id: number; name: string; url: string; clientType: string }>;
   onConfirm: (folderPath: string) => void;
   onCancel: () => void;
 }) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
-  const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
+  // null = nothing chosen yet; "" = the bucket top level (S3); otherwise a subfolder path.
+  const [selectedFolderPath, setSelectedFolderPath] = React.useState<string | null>(null);
+  // S3 folders are virtual, so an S3 filestore may be rooted at the bucket top level (empty path).
+  const isS3 = selectedFilesystem.map(({ clientType }) => clientType === "S3").orElse(false);
 
   return (
     <Step key="folderSelection" component="div" {...rest}>
@@ -294,11 +316,11 @@ function FolderSelectionStep(props: {
           }}
           onItemSelectionToggle={(_event, itemId: string | ReadonlyArray<string>, selected) => {
             if (!(typeof itemId === "string")) return;
-            const selectedFolder: string = itemId;
             if (!selected) return;
-            setSelectedFolderPath(decodeURIComponent(selectedFolder));
+            setSelectedFolderPath(itemId === TOP_LEVEL_ITEM_ID ? "" : decodeURIComponent(itemId));
           }}
         >
+          {isS3 && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" key={TOP_LEVEL_ITEM_ID} />}
           {selectedFilesystem
             .map(({ id, name }) => (
               <TreeListing
@@ -315,11 +337,11 @@ function FolderSelectionStep(props: {
         </SimpleTreeView>
         <Box sx={{ mb: 2 }}>
           <Button
-            disabled={!selectedFolderPath}
+            disabled={selectedFolderPath === null}
             variant="contained"
             color="primary"
             onClick={() => {
-              onConfirm(selectedFolderPath);
+              if (selectedFolderPath !== null) onConfirm(selectedFolderPath);
             }}
             sx={{ mt: 1, mr: 1 }}
           >
@@ -401,6 +423,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
       id: number;
       name: string;
       url: string;
+      clientType: string;
     }>
   >(Optional.empty());
 

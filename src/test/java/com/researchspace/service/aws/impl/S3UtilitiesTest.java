@@ -135,6 +135,49 @@ public class S3UtilitiesTest {
   }
 
   @Test
+  public void listFolderContents_emptyPath_listsBucketRootWithEmptyPrefix() {
+    // A filestore rooted at the bucket top level has an empty path; listing it must query S3 with
+    // an empty prefix (the bucket root) and surface top-level files and folders.
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+
+    S3Object rootFile =
+        S3Object.builder().key("file-at-root.txt").size(10L).lastModified(Instant.now()).build();
+    CommonPrefix topFolder = CommonPrefix.builder().prefix("topfolder/").build();
+    ListObjectsV2Response response =
+        ListObjectsV2Response.builder()
+            .contents(rootFile)
+            .commonPrefixes(topFolder)
+            .isTruncated(false)
+            .build();
+    when(mockS3Client.listObjectsV2(
+            argThat(
+                (ListObjectsV2Request r) ->
+                    r != null && "".equals(r.prefix()) && "/".equals(r.delimiter()))))
+        .thenReturn(response);
+
+    List<S3FolderContentItem> items = impl.listFolderContents("");
+
+    assertEquals(2, items.size());
+    // common prefixes (folders) come before files, per implementation order
+    assertEquals("topfolder", items.get(0).getName());
+    assertTrue(items.get(0).isFolder());
+    assertEquals("file-at-root.txt", items.get(1).getName());
+    assertFalse(items.get(1).isFolder());
+  }
+
+  @Test
+  public void getObjectDetails_blankPath_returnsBucketRootAsFolder() {
+    // The bucket root (empty path) is a valid folder target, without an S3 call.
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mock(S3Client.class), "test-bucket");
+
+    S3FolderContentItem root = impl.getObjectDetails("");
+
+    assertTrue(root.isFolder());
+    assertEquals("", root.getName());
+  }
+
+  @Test
   public void copyObjectFromBucket_issuesS3CopyObjectRequest() {
     S3Client mockS3Client = mock(S3Client.class);
     S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "dest-bucket");

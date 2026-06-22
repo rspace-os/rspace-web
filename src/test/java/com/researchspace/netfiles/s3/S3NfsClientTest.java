@@ -161,6 +161,19 @@ public class S3NfsClientTest {
   }
 
   @Test
+  public void createFileTree_emptyPath_browsesBucketRoot() throws IOException {
+    // A filestore rooted at the bucket top level has an empty path; browsing it must list the
+    // bucket root rather than require a subfolder.
+    when(s3Utilities.listFolderContents(""))
+        .thenReturn(List.of(new S3FolderContentItem("topfolder", true, 0L, null)));
+
+    NfsFileTreeNode root = client.createFileTree("", null, null);
+
+    verify(s3Utilities).listFolderContents("");
+    assertEquals(1, root.getNodes().size());
+  }
+
+  @Test
   public void createFileTree_populatesCreatedByAndCreatedAtFromObjectMetadata() throws IOException {
     when(s3Utilities.listFolderContents("dir"))
         .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 10L, Instant.now())));
