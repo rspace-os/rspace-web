@@ -10,6 +10,7 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import MSTeams from "../MSTeams";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
     test("Channel names should be shown in a table.", async () => {

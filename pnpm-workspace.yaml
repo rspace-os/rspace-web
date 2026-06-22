@@ -36,7 +36,7 @@ peerDependencyRules:
     # This comes from `@playwright/experimental-ct`
     '@vitejs/plugin-react>vite': 8.0.16
     # @sa11y/vitest pulls an older vitest, which wants the matching UI package.
-    'vitest>@vitest/ui': 4.1.6
+    'vitest>@vitest/ui': 4.1.9
     # @scalar/api-reference-react pulls neverpanic, which peer-declares
     # typescript@5 but works with the repo's typescript@6.0.3.
     'neverpanic>typescript': 6.0.3

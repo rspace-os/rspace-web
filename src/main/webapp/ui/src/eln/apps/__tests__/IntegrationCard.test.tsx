@@ -5,6 +5,7 @@ import materialTheme from "../../../theme";
 import IntegrationCard from "../IntegrationCard";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("IntegrationCard", () => {
   test("Name should be shown.", () => {
     render(

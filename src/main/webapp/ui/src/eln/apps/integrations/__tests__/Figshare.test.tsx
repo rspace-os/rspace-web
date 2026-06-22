@@ -4,6 +4,7 @@ import { Optional } from "../../../../util/optional";
 import Figshare from "../Figshare";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("Figshare", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
