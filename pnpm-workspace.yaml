@@ -3,6 +3,18 @@ packages: []
 
 overrides:
   react-is: ^18.3.1
+  # Pin the MUI core packages to 9.0.x. 9.1.x ships an ESM build whose
+  # @mui/material/internal/Transition.mjs does a bare directory import of
+  # `react-transition-group/TransitionGroupContext`, which Node's native ESM
+  # resolver rejects with ERR_UNSUPPORTED_DIR_IMPORT under Vitest, failing the
+  # whole frontend test suite. See
+  # https://github.com/mui/material-ui/issues/48644.
+  # MUI X (@mui/x-*) is intentionally left on its newer versions.
+  # Remove these pins once the upstream issue is resolved.
+  '@mui/material': 9.0.1
+  '@mui/icons-material': 9.0.1
+  '@mui/system': 9.0.1
+  '@mui/styled-engine': 9.0.0
   # Pin rolldown to 1.0.1 (bundled in Vite 8.0.13) to avoid
   # https://github.com/rolldown/rolldown/issues/9502 and
   # https://github.com/vitejs/vite/issues/22499, where rolldown 1.0.2+
