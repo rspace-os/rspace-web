@@ -201,6 +201,7 @@ function makeFilestore(filesystemType: string): Filestore {
     filesystemId: 10,
     filesystemName: "My S3 Filesystem",
     filesystemType,
+    canWrite: true,
   });
 }
 

@@ -337,7 +337,17 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
   private String resolveAbsolute(NfsFileStore filestore, String relativePath) {
     String root = resolveAbsoluteFilestorePath(filestore);
     String rel = relativePath == null ? "" : StringUtils.stripStart(relativePath, "/");
-    return StringUtils.isBlank(root) ? rel : root + "/" + rel;
+    if (StringUtils.isBlank(root)) {
+      return rel;
+    }
+    // When rel is empty (the filestore root), return root as-is. Appending "/" + rel here would
+    // leave a trailing slash, and a caller that then joins a leaf with another "/" (e.g.
+    // createFolderInFilestore) would produce a "root//leaf" double slash -> an empty-named S3
+    // folder.
+    if (StringUtils.isBlank(rel)) {
+      return root;
+    }
+    return root + "/" + rel;
   }
 
   private NfsFileStore validateInputAndGetFilestore(

@@ -516,6 +516,9 @@ export class Filestore implements GalleryFile {
   readonly size: number;
   readonly path: ReadonlyArray<GalleryFile>;
   readonly metadata: Record<string, string>;
+  // Per-user write permission from the filestore's userPermissions snapshot.
+  // Defaults to true when the backend supplies no snapshot (see Filestore parsing).
+  readonly canWrite: boolean;
 
   constructor({
     id,
@@ -523,12 +526,14 @@ export class Filestore implements GalleryFile {
     filesystemId,
     filesystemName,
     filesystemType,
+    canWrite,
   }: {
     id: Id;
     name: string;
     filesystemId: number;
     filesystemName: string;
     filesystemType: string;
+    canWrite: boolean;
   }) {
     this.id = id;
     this.name = name;
@@ -538,6 +543,7 @@ export class Filestore implements GalleryFile {
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
     this.filesystemType = filesystemType;
+    this.canWrite = canWrite;
     this.path = [];
     this.metadata = {};
   }
@@ -1318,6 +1324,15 @@ export function useGalleryListing({
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
+                    // userPermissions may be absent (older backend, or non-NONE auth) —
+                    // default canWrite to true so the UI stays permissive, matching useS3Filestores.
+                    const canWrite = Parsers.getValueWithKey("userPermissions")(obj)
+                      .flatMap(Parsers.isObject)
+                      .flatMap(Parsers.isNotNull)
+                      .flatMap(Parsers.getValueWithKey("canWrite"))
+                      .flatMap(Parsers.isBoolean)
+                      .orElse(true);
+
                     return Result.Ok<GalleryFile>(
                       new Filestore({
                         id,
@@ -1325,6 +1340,7 @@ export function useGalleryListing({
                         filesystemId,
                         filesystemName,
                         filesystemType,
+                        canWrite,
                       }),
                     );
                   } catch (e) {
@@ -1358,10 +1374,19 @@ export function useGalleryListing({
     }
   }
 
-  async function getRemoteFiles(pa: ReadonlyArray<GalleryFile>): Promise<void> {
-    selection.clear();
-    clearAndSetGalleryListing([]);
-    setLoading(true);
+  async function getRemoteFiles(
+    pa: ReadonlyArray<GalleryFile>,
+    { isRefresh = false }: { isRefresh?: boolean } = {},
+  ): Promise<void> {
+    // On a refresh we keep the current listing and selection visible and use the soft `refreshing`
+    // flag, matching the local-files refresh. A fresh navigation blanks the grid and shows loading.
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      selection.clear();
+      clearAndSetGalleryListing([]);
+      setLoading(true);
+    }
     const filestore = ArrayUtils.getAt(0, pa)
       .toResult(() => new Error("Remote files path should never be empty. Where is the filestore?"))
       .flatMap<Filestore>((p) =>
@@ -1372,9 +1397,11 @@ export function useGalleryListing({
     try {
       const token = await getToken();
       const { data } = await (await api).get<unknown>(
-        `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${ArrayUtils.last(pa)
-          .map((file) => file.pathAsString())
-          .orElse("/")}`,
+        `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${encodeURIComponent(
+          ArrayUtils.last(pa)
+            .map((file) => file.pathAsString())
+            .orElse("/"),
+        )}`,
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -1466,7 +1493,7 @@ export function useGalleryListing({
             filesystemId: filestore.filesystemId,
           })
         ) {
-          await getRemoteFiles(pa);
+          await getRemoteFiles(pa, { isRefresh });
         } else {
           setErrorState(true);
         }
@@ -1479,13 +1506,23 @@ export function useGalleryListing({
               message: e.message,
             }),
           );
-          setErrorState(true);
-          throw e;
+          // On a refresh, keep the current listing visible (the user already saw it) rather than
+          // replacing it with an error view, and don't reject — the alert is enough, and the caller
+          // fires this as `void refreshListing()` so a throw would surface as an unhandled rejection.
+          if (!isRefresh) {
+            setErrorState(true);
+            throw e;
+          }
+        } else if (!isRefresh) {
+          throw new Error("Unexpected error");
         }
-        throw new Error("Unexpected error");
       }
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }
 
@@ -1621,7 +1658,9 @@ export function useGalleryListing({
         if (pa.length === 0) {
           return getFilestores();
         }
-        throw new Error("refreshListing is not implemented for filestore contents");
+        // Browsing inside a filestore: re-fetch the current folder's contents so newly created
+        // (or moved/deleted) items appear without the user navigating away and back.
+        return getRemoteFiles(pa, { isRefresh: true });
       }
       try {
         const token = await getToken();

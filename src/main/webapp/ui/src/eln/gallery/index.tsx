@@ -212,6 +212,7 @@ const WholePage = ({
                         drawerOpen={drawerOpen}
                         setDrawerOpen={setDrawerOpen}
                         folderId={folderId}
+                        path={FetchingData.getSuccessValue(path).orElse(null)}
                         refreshListing={refreshListing}
                         id={sidebarId}
                       />

@@ -122,6 +122,25 @@ class FilestoreWriteManagerImplTest {
   }
 
   @Test
+  void createFolderInFilestore_atRootOfFilestoreWithConfiguredRootPrefix_noDoubleSlash()
+      throws Exception {
+    // Regression: when the filestore has a non-empty configured root and a folder is created at the
+    // filestore root (empty parentPath), the key must be "root/newfolder", not "root//newfolder".
+    // A double slash lists as an empty-named folder in S3.
+    var filestore = GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(FS_ID, "fs", user);
+    filestore.setPath("bucket-prefix");
+    when(nfsManager.getNfsFileStore(FS_ID)).thenReturn(filestore);
+
+    String result = manager.createFolderInFilestore(FS_ID, "", "newfolder", errors(), user);
+
+    verify(client)
+        .createFolder(
+            "bucket-prefix/newfolder",
+            Map.of("rspace-created-by", "alice", "rspace-created-at", "2026-06-18T12:00:00Z"));
+    assertEquals("newfolder", result);
+  }
+
+  @Test
   void moveWithinFilestore_delegatesAndReturnsDestKey() throws Exception {
     when(client.moveWithin("src/a.txt", "destFolder")).thenReturn("destFolder/a.txt");
 

@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DnsIcon from "@mui/icons-material/Dns";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -40,7 +41,7 @@ import Result from "../../../util/result";
 import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
 import { type GallerySection, gallerySectionIcon, gallerySectionLabel } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
-import type { Id } from "../useGalleryListing";
+import { Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 
 const UploadMenuItem = ({
@@ -114,11 +115,14 @@ const UploadMenuItem = ({
 };
 const NewFolderMenuItem = ({
   folderId,
+  path,
   onDialogClose,
   autoFocus,
   tabIndex,
 }: {
   folderId: Result<Id>;
+  /** The current breadcrumb path; path[0] is the filestore when browsing one. */
+  path: ReadonlyArray<GalleryFile> | null;
   onDialogClose: (success: boolean) => void;
 
   /*
@@ -129,7 +133,21 @@ const NewFolderMenuItem = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
-  const { createFolder } = useGalleryActions();
+  const { createFolder, createRemoteFolder } = useGalleryActions();
+
+  /*
+   * When browsing inside an S3 filestore, folders are created through the
+   * filestore API (path-based) rather than the local Gallery endpoint.
+   */
+  const s3Target = React.useMemo((): { filestoreId: number; parentPath: string } | null => {
+    if (!path || path.length === 0) return null;
+    const filestore = path[0];
+    if (!(filestore instanceof Filestore) || filestore.filesystemType !== "S3" || filestore.id === null) return null;
+    if (!filestore.canWrite) return null;
+    const openFolder = path[path.length - 1];
+    const parentPath = openFolder instanceof RemoteFile ? openFolder.remotePath : "";
+    return { filestoreId: filestore.id, parentPath };
+  }, [path]);
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -149,8 +167,15 @@ const NewFolderMenuItem = ({
           }}
         >
           <form /* onSubmit is handled by ValidatingSubmitButton */>
-            <DialogTitle>New Folder</DialogTitle>
+            <DialogTitle>{s3Target ? "New Filestore Folder" : "New Folder"}</DialogTitle>
             <DialogContent>
+              {s3Target && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object,
+                  and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of
+                  files will be easier to manage than a folder structure.
+                </Alert>
+              )}
               <DialogContentText
                 variant="body2"
                 sx={{
@@ -161,6 +186,7 @@ const NewFolderMenuItem = ({
               </DialogContentText>
               <TextField
                 size="small"
+                fullWidth
                 label="Name"
                 onChange={({ target: { value } }) => setName(value)}
                 slotProps={{
@@ -182,11 +208,13 @@ const NewFolderMenuItem = ({
               </Button>
               <ValidatingSubmitButton
                 loading={submitting}
-                validationResult={name.length > 0 ? IsValid() : IsInvalid("A name is required.")}
+                validationResult={name.trim().length > 0 ? IsValid() : IsInvalid("A name is required.")}
                 onClick={() => {
                   setSubmitting(true);
-                  const fId = folderId.elseThrow();
-                  void createFolder(fId, name)
+                  const create = s3Target
+                    ? createRemoteFolder(s3Target.filestoreId, s3Target.parentPath, name)
+                    : createFolder(folderId.elseThrow(), name);
+                  void create
                     .then(() => {
                       onDialogClose(true);
                       trackEvent("user:create:folder:gallery");
@@ -212,7 +240,7 @@ const NewFolderMenuItem = ({
         tabIndex={tabIndex}
         aria-haspopup="dialog"
         compact
-        disabled={folderId.isError}
+        disabled={folderId.isError && !s3Target}
       />
     </>
   );
@@ -394,6 +422,7 @@ type SidebarArgs = {
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
   folderId: FetchingData.Fetched<Id>;
+  path: ReadonlyArray<GalleryFile> | null;
   refreshListing: () => Promise<void>;
   id: string;
 };
@@ -403,6 +432,7 @@ const Sidebar = ({
   drawerOpen,
   setDrawerOpen,
   folderId,
+  path,
   refreshListing,
   id,
 }: SidebarArgs): React.ReactNode => {
@@ -503,6 +533,7 @@ const Sidebar = ({
           <NewFolderMenuItem
             key={"newFolder"}
             folderId={FetchingData.getSuccessValue(folderId)}
+            path={path}
             onDialogClose={(success) => {
               if (success) void refreshListing();
               setNewMenuAnchorEl(null);

@@ -73,6 +73,15 @@ export function useGalleryActions(): {
   createFolder: (parentId: Id, name: string) => Promise<void>;
 
   /**
+   * Create a new folder inside an S3 filestore.
+   *
+   * @arg filestoreId The id of the S3 filestore.
+   * @arg path        The parent folder relative to the filestore root ("" for the root).
+   * @arg name        The name of the new folder.
+   */
+  createRemoteFolder: (filestoreId: number, path: string, name: string) => Promise<void>;
+
+  /**
    * Move files to a different folder.
    *
    * @arg section     The relevant gallery section for the files being operated
@@ -255,6 +264,38 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to create new folder.`,
           message: e.message,
+        }),
+      );
+      throw e;
+    }
+  }
+
+  async function createRemoteFolder(filestoreId: number, path: string, name: string) {
+    const api = axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: {
+        Authorization: `Bearer ${await getToken()}`,
+      },
+    });
+    try {
+      await api.post<unknown>(`filestores/${filestoreId}/folder`, { path, name });
+      addAlert(
+        mkAlert({
+          message: "Successfully created new folder.",
+          variant: "success",
+        }),
+      );
+    } catch (e) {
+      const message = Parsers.objectPath(["response", "data", "errors"], e)
+        .flatMap(Parsers.isArray)
+        .flatMap(ArrayUtils.head)
+        .flatMap(Parsers.isString)
+        .orElse(getErrorMessage(e, "Unknown error"));
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to create new folder.",
+          message,
         }),
       );
       throw e;
@@ -769,6 +810,7 @@ export function useGalleryActions(): {
   return {
     uploadFiles,
     createFolder,
+    createRemoteFolder,
     moveFiles,
     deleteFiles,
     duplicateFiles,
