@@ -95,17 +95,18 @@ order:
    `#systemSettingsLink` on `/system/config`; it is under *Configuration*, not
    *Maintenance*). Confirm **`chemistry.available`** is **`ALLOWED`** (options:
    `ALLOWED` / `DENIED_BY_DEFAULT` / `DENIED`). **Check it rather than assume:**
-   the seeded value is `ALLOWED`, but startup forces it to `DENIED` whenever the
-   chemistry provider / service URL is missing (any boot without `--chemistry`)
-   and never restores it afterwards. So a stack first booted with `--chemistry`
-   is usually already `ALLOWED` (no change needed); but if it was ever started
-   without chemistry, the setting is left at `DENIED` and you must set it back.
+   the seeded value is `ALLOWED` by default. Startup forces it to `DENIED` only
+   when the chemistry provider or service URL is missing (any boot without
+   `--chemistry`), but does not restore it afterwards. So a stack first booted
+   with `--chemistry` is usually already `ALLOWED` (no change needed); but if it
+   was ever started without chemistry, the setting stays at `DENIED` and you
+   must set it back to `ALLOWED`.
    - **Gotcha:** the row shows the *saved* value as text, with a separate edit
      dropdown that **always defaults to "Allowed"** even when the saved value is
      `DENIED`. Don't trust the dropdown's default — click the value to enter
      edit mode, pick **Allowed**, and click **Save**, then confirm the row's
      displayed value now reads `ALLOWED`.
-   - Authoritative check (bypasses the UI). Use the `mariadb` client — the dev
+   - **Authoritative check** (bypasses the UI). Use the `mariadb` client — the dev
      DB is MariaDB and the image has no `mysql` symlink (the launcher's own `db`
      command uses `mariadb`):
      ```bash
