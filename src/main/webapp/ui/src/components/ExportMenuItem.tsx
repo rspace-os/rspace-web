@@ -13,6 +13,9 @@ import type React from "react";
  *
  * This wrapper keeps `hideMenu` off the DOM and invokes it after the
  * (optionally async) click handler so the menu closes as intended.
+ *
+ * This component can be removed once
+ * https://github.com/mui/mui-x/issues/22909 is resolved.
  */
 const ExportMenuItem = ({
   onClick,
