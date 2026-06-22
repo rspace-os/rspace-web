@@ -163,17 +163,27 @@ public class ArchiveModelFactory {
     ArchivalForm rc = archivalFormMetadata(std.getForm(), code);
     int k = 0;
     for (Field field : std.getFields()) {
-      if (!(field.getFieldForm() instanceof FieldForm fm)) {
+      ArchivalFieldForm afm;
+      if (field.getFieldForm() instanceof FieldForm fm) {
+        afm = createArchivalFieldForm(fm);
+      } else {
+        // RSDEV-1202: a document field with no field-form linkage is abnormal (every field is
+        // created from a field form), but if it ever occurs we must still emit a slot so the form
+        // copy stays one-to-one with the exported document. createArchivalDocument writes this
+        // field regardless, so skipping it here would leave the copy one short and misalign every
+        // later field on import. Emit a minimal text placeholder carrying the field's own name so
+        // import can rebuild and pair it by name.
         log.warn(
-            "RSDEV-1202: document field '{}' (id {}) on document {} has no field form; it cannot be"
-                + " described in the exported form. Its content is still exported and the import"
-                + " will hold it in a new field.",
+            "RSDEV-1202: document field '{}' (id {}) on document {} has no field form; exporting a"
+                + " text placeholder so the form copy stays consistent with the document.",
             field.getName(),
             field.getId(),
             std.getId());
-        continue;
+        afm = new ArchivalFieldForm();
+        afm.setName(field.getName());
+        afm.setType(FieldType.TEXT_TYPE);
+        afm.setColumnIndex(k);
       }
-      ArchivalFieldForm afm = createArchivalFieldForm(fm);
       afm.setCode(code + "_field_" + k);
       rc.getFieldFormList().add(afm);
       k++;

@@ -209,7 +209,15 @@ public class ExportFormMatchesDocumentIT extends RealTransactionSpringTestBase {
   }
 
   private org.w3c.dom.Document parse(File xml) throws Exception {
-    return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xml);
+    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    // defensively disable DTDs/external entities (XXE) even though the input is the archive this
+    // test just generated; these files come out of a zip, so harden the reader regardless.
+    dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+    dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    dbf.setXIncludeAware(false);
+    dbf.setExpandEntityReferences(false);
+    return dbf.newDocumentBuilder().parse(xml);
   }
 
   /** Text of each {@code <child>} that is the first such descendant of each {@code <parent>}. */
