@@ -2,6 +2,7 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -17,6 +18,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.RSForm;
@@ -155,6 +157,96 @@ public class ImportFieldCountMismatchIT extends RealTransactionSpringTestBase {
   }
 
   /**
+   * RSDEV-1140 multi-document regression: when one document in a batch needs a holder field, the
+   * holder is added to that document's form. Because the importer deduplicates forms across
+   * documents from the same archived form, a naive implementation would persist the holder onto the
+   * shared form and a sibling document built from it would inherit a spurious empty field. The fix
+   * stops sharing the mutated form (evicts it from the dedup map), so the sibling is unaffected.
+   */
+  @Test
+  public void siblingDocumentNotCorruptedWhenAnotherDocNeedsHolder() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("multi"));
+    initUser(user);
+    logoutAndLoginAs(user);
+
+    // Form with two text fields, published.
+    RSForm form = formMgr.create(user);
+    formMgr.createFieldForm(
+        new TextFieldDTO<TextFieldForm>(FIRST_FIELD, "first"), form.getId(), user);
+    formMgr.createFieldForm(
+        new TextFieldDTO<TextFieldForm>(LAST_FIELD, "last"), form.getId(), user);
+    formMgr.publish(form.getId(), true, null, user);
+
+    // Doc A created BEFORE deletion: has both fields, with content in the field about to be
+    // deleted.
+    StructuredDocument docA =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    String markerA = "MARKER_A_" + getRandomName(8);
+    Field aLast = docA.getFields().get(docA.getFields().size() - 1);
+    aLast.setFieldData("A last field " + markerA);
+    fieldMgr.save(aLast, user);
+    recordMgr.save(docA, user);
+
+    // Delete the LAST field form in place, then create Doc B AFTER deletion: it has only FIRST.
+    Long lastFieldFormId = ((FieldForm) aLast.getFieldForm()).getId();
+    formMgr.deleteFieldFromForm(lastFieldFormId, user);
+
+    StructuredDocument docB =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    String markerB = "MARKER_B_" + getRandomName(8);
+    docB.getFields().get(0).setFieldData("B first field " + markerB);
+    fieldMgr.save(docB.getFields().get(0), user);
+    recordMgr.save(docB, user);
+    int docBFieldCount = docB.getFields().size();
+
+    // Export both documents in one archive (both originate from the same archived form).
+    ArchiveManifest manifest = new ArchiveManifest();
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    expCfg.setExportScope(ExportScope.SELECTION);
+    ExportRecordList list = new ExportRecordList();
+    list.add(docA.getOid());
+    list.add(docB.getOid());
+    archivePlanner.updateExportListWithLinkedRecords(list, expCfg);
+    String zipName = archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
+    File zipFile = new File(tempExportFolder.getRoot(), zipName);
+
+    ArchivalImportConfig iconfig =
+        createDefaultArchiveImportConfig(user, tempImportFolder.getRoot());
+    ImportArchiveReport report =
+        importer.importArchive(zipFile, iconfig, NULL_MONITOR, importStrategy::doImport);
+    assertTrue("import reported failure", report.isSuccessful());
+
+    // Doc A's orphaned content is preserved (the holder did its job).
+    StructuredDocument importedA = findImportedDocContaining(report, markerA, user);
+    assertNotNull(importedA);
+
+    // Doc B (post-deletion sibling) must NOT have inherited a holder field from doc A's form.
+    StructuredDocument importedB = findImportedDocContaining(report, markerB, user);
+    assertEquals(
+        "sibling document B gained an unexpected field from doc A's holder. fields="
+            + importedB.getFields().stream().map(Field::getName).collect(Collectors.toList()),
+        docBFieldCount,
+        importedB.getFields().size());
+  }
+
+  private StructuredDocument findImportedDocContaining(
+      ImportArchiveReport report, String marker, User user) {
+    for (BaseRecord rec : report.getImportedRecords()) {
+      if (rec.isStructuredDocument()) {
+        // getRecordWithFields eagerly initialises the fields collection, so it can be read here
+        // outside the import transaction (plain get() leaves it as a lazy proxy).
+        StructuredDocument sd =
+            (StructuredDocument) recordMgr.getRecordWithFields(rec.getId(), user);
+        String data = sd.getFields().stream().map(Field::getFieldData).reduce("", (a, b) -> a + b);
+        if (data.contains(marker)) {
+          return sd;
+        }
+      }
+    }
+    throw new IllegalStateException("no imported document contains marker '" + marker + "'");
+  }
+
+  /**
    * Expands the archive, removes the {@code <fieldForm>} element whose {@code <name>} matches
    * {@code fieldName} from every {@code _form.xml}, and re-zips. Mimics an exported archive whose
    * form had a field deleted while documents retained that field's content.
@@ -184,6 +276,12 @@ public class ImportFieldCountMismatchIT extends RealTransactionSpringTestBase {
 
   private boolean removeFieldFormElement(File formXml, String fieldName) throws Exception {
     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    // Harden against XXE even though the input is a file this test just wrote.
+    dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+    dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    dbf.setXIncludeAware(false);
+    dbf.setExpandEntityReferences(false);
     org.w3c.dom.Document xml = dbf.newDocumentBuilder().parse(formXml);
     NodeList fieldForms = xml.getElementsByTagName("fieldForm");
     boolean removed = false;

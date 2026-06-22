@@ -337,8 +337,15 @@ abstract class AbstractImporterStrategyImpl {
 
     if (newDoc != null) {
       linkRecord.addOldIdToNewIdMapping(archivalDoc.getDocId(), newDoc.getId());
-      convertStructureDocument(
-          archivalDoc, newDoc, importingUser, ref.getPath(), linkRecord, oldIdToNewGalleryItem);
+      boolean holderFieldAdded =
+          convertStructureDocument(
+              archivalDoc, newDoc, importingUser, ref.getPath(), linkRecord, oldIdToNewGalleryItem);
+      if (holderFieldAdded) {
+        // The document's form was mutated to hold orphaned content. Stop sharing it with later
+        // documents from the same archived form (formMap dedup) so they do not inherit the holder
+        // field; they will rebuild a fresh form instead. See RSDEV-1140.
+        formMap.remove(olderId);
+      }
       if (isTemplate(archivalDoc)) {
         newDoc.addType(RecordType.TEMPLATE);
       }
@@ -392,8 +399,10 @@ abstract class AbstractImporterStrategyImpl {
     return formImporter.makeRSForm(parserRef, user);
   }
 
-  // the sdc created and set Form
-  private void convertStructureDocument(
+  // the sdc created and set Form. Returns true if a holder field had to be added to the document's
+  // form to preserve orphaned content (see addFieldToHoldOrphanedContent), so the caller can stop
+  // sharing this now-mutated form with sibling documents.
+  private boolean convertStructureDocument(
       ArchivalDocument archivalDoc,
       StructuredDocument strucDoc,
       User user,
@@ -444,15 +453,19 @@ abstract class AbstractImporterStrategyImpl {
         unpairedByName.add(afd);
       }
     }
+    boolean holderFieldAdded = false;
     for (ArchivalField afd : unpairedByName) {
       // Fall back to the next unused field in document order, or - once the rebuilt document has
       // fewer fields than the archive (a form field deleted after the document was created, so the
       // exported form excludes it - RSPAC-1793 - while the document still carries its content) -
       // add a field to hold the orphaned content so it is preserved instead of dropped.
-      Field fld =
-          unmatchedFields.isEmpty()
-              ? addFieldToHoldOrphanedContent(strucDoc, afd, user)
-              : unmatchedFields.remove(0);
+      Field fld;
+      if (unmatchedFields.isEmpty()) {
+        fld = addFieldToHoldOrphanedContent(strucDoc, afd, user);
+        holderFieldAdded = true;
+      } else {
+        fld = unmatchedFields.remove(0);
+      }
       fieldByArchivalField.put(afd, fld);
     }
     for (ArchivalField afd : archivalFlds) {
@@ -477,6 +490,7 @@ abstract class AbstractImporterStrategyImpl {
     // RSPAC-2761 - field data modifications push modification date of a doc to current date, so
     // resetting here
     strucDoc.setModificationDate(archivalDoc.getLastModifiedDate());
+    return holderFieldAdded;
   }
 
   /**
@@ -506,7 +520,13 @@ abstract class AbstractImporterStrategyImpl {
    */
   private Field addFieldToHoldOrphanedContent(
       StructuredDocument strucDoc, ArchivalField archivalField, User user) {
-    TextFieldForm fieldForm = new TextFieldForm(archivalField.getFieldName());
+    // ArchivalField.fieldName is not required in the archive schema, so fall back to a stable
+    // name derived from the archived field id rather than passing null/blank to the field form.
+    String fieldName = archivalField.getFieldName();
+    if (StringUtils.isBlank(fieldName)) {
+      fieldName = "Imported field " + archivalField.getFieldId();
+    }
+    TextFieldForm fieldForm = new TextFieldForm(fieldName);
     strucDoc.getForm().addFieldForm(fieldForm);
     formManager.save(strucDoc.getForm(), user);
     Field newField = fieldForm.createNewFieldFromForm();
@@ -514,7 +534,7 @@ abstract class AbstractImporterStrategyImpl {
     log.warn(
         "RSDEV-1140: archived field '{}' had no field in the rebuilt document; added a text field"
             + " to preserve its content (the form had fewer fields than the document).",
-        archivalField.getFieldName());
+        fieldName);
     return newField;
   }
 
