@@ -21,12 +21,6 @@
     "biome": "cd src/main/webapp/ui && biome"
   },
   "devDependencies": {
-    "@babel/cli": "7.29.7",
-    "@babel/core": "7.29.7",
-    "@babel/plugin-transform-runtime": "7.29.7",
-    "@babel/preset-env": "7.29.7",
-    "@babel/preset-react": "7.29.7",
-    "@babel/runtime": "7.29.7",
     "@biomejs/biome": "2.5.0",
     "@playwright/test": "1.61.0",
     "@sa11y/vitest": "8.0.27",
