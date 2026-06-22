@@ -154,18 +154,27 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
   /**
    * If {@code id} belongs to a SampleTemplate the caller is permitted to access, reject the request
-   * with the documented endpoint-mismatch error. The permission-aware template assert runs first so
-   * template existence is never revealed to callers without access: a non-template id (or one the
-   * caller cannot see) throws NotFoundException and falls through to normal sample handling. {@code
-   * templatePermissionCheck} is the read/edit/delete SampleTemplate assert for the operation.
+   * with the documented endpoint-mismatch error.
+   *
+   * <p>Template-ness is resolved with the non-throwing {@code getIfExists} rather than by catching
+   * the kind-typed template assert. That assert participates in any enclosing transaction (e.g. the
+   * single transaction wrapping a bulk operation), so throwing-and-swallowing it for the common
+   * plain-sample id would mark that transaction rollback-only and surface as an {@link
+   * org.springframework.transaction.UnexpectedRollbackException} at commit, even though the request
+   * is valid.
+   *
+   * <p>Only once the id is known to be a template is the permission-aware {@code
+   * templatePermissionCheck} (the read/edit/delete SampleTemplate assert for the operation) run, so
+   * a caller without access still falls through to normal not-found sample handling and template
+   * existence is never revealed. Throwing on that branch is harmless: it is a reject/error path
+   * that rolls the transaction back anyway.
    */
   private void rejectIfSampleTemplate(
       Long id, User user, BiConsumer<Long, User> templatePermissionCheck) {
-    try {
-      templatePermissionCheck.accept(id, user);
-    } catch (NotFoundException notATemplateOrNoReadAccess) {
-      return;
+    if (!sampleApiMgr.getIfExists(id).isSampleTemplate()) {
+      return; // a plain sample (non-template) id: let normal sample handling proceed
     }
+    templatePermissionCheck.accept(id, user);
     throw new IllegalArgumentException("Please use /sampleTemplates endpoint for template actions");
   }
 
