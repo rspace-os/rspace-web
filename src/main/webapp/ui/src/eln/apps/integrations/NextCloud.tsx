@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -12,6 +13,12 @@ type NextCloudArgs = {
   integrationState: IntegrationStates["NEXTCLOUD"];
   update: (newIntegrationState: IntegrationStates["NEXTCLOUD"]) => void;
 };
+
+export interface NextCloudConnectedMessage extends Record<string, unknown> {
+  type: "NEXTCLOUD_CONNECTED";
+  error?: string;
+}
+export const NEXTCLOUD_CONNECTION_CHANNEL = "rspace.apps.nextcloud.connection";
 
 /*
  * NextCloud uses OAuth based authentication, as implemented by this form.
@@ -42,8 +49,20 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
   const { disconnect } = useNextcloudEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<NextCloudConnectedMessage>(
+    NEXTCLOUD_CONNECTION_CHANNEL,
+    (e: MessageEvent<NextCloudConnectedMessage>) => {
+      if (e.data?.type !== "NEXTCLOUD_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to NextCloud",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -51,12 +70,8 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
           message: "Successfully connected to NextCloud.",
         }),
       );
-    };
-    window.addEventListener("NEXTCLOUD_CONNECTED", f);
-    return () => {
-      window.removeEventListener("NEXTCLOUD_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

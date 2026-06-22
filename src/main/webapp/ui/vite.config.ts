@@ -7,7 +7,6 @@ import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
 
@@ -138,13 +137,7 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [
-    react(),
-    nodePolyfills({
-      globals: { process: true, Buffer: true, global: true },
-      protocolImports: false,
-    }),
-  ];
+  const plugins: PluginOption[] = [react()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));

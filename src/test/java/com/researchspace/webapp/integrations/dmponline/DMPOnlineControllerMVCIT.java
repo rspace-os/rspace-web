@@ -59,8 +59,8 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    // assert is redirected to the error page
-    assertTrue(result.getResponse().getForwardedUrl().contains("authorizationError"));
+    // assert is forwarded to the shared connection-result page (error variant)
+    assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
   }
 
   @Test
@@ -71,8 +71,8 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    // assert is redirected to the error page
-    assertTrue(result.getResponse().getForwardedUrl().contains("error"));
+    // assert is forwarded to the shared connection-result page (error variant)
+    assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
   }
 
   @Test

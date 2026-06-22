@@ -6,7 +6,7 @@ import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { Optional } from "../../../../util/optional";
 import type { IntegrationStates } from "../../useIntegrationsEndpoint";
-import Slack from "../Slack";
+import Slack, { SLACK_CONNECTION_CHANNEL } from "../Slack";
 
 import "@/__tests__/__mocks__/matchMedia";
 describe("Slack", () => {
@@ -56,6 +56,11 @@ describe("Slack", () => {
         },
       },
     });
+    vi.spyOn(window, "open").mockReturnValue({
+      close: () => {},
+    } as unknown as Window);
+  });
+  test("When the add flow is triggered, the channel details should be shown.", async () => {
     const channelDetails = {
       ok: true,
       access_token: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
@@ -78,23 +83,6 @@ describe("Slack", () => {
         ],
       },
     };
-    vi.spyOn(window, "open").mockImplementation(
-      () =>
-        ({
-          document: {
-            URL: "https://it.researchspace.com/slack/redirect_uri",
-            getElementById: () => ({ value: JSON.stringify(channelDetails) }),
-          },
-          addEventListener: (_: unknown, f: () => void) => {
-            f();
-          },
-          removeEventListener: () => {},
-          close: () => {},
-        }) as unknown as Window,
-    );
-    vi.spyOn(window, "setInterval").mockImplementation((f) => f() as unknown as NodeJS.Timeout);
-  });
-  test("When the add flow is triggered, the channel details should be shown.", async () => {
     const integrationState = observable<IntegrationStates["SLACK"]>({
       mode: "DISABLED",
       credentials: [],
@@ -106,8 +94,13 @@ describe("Slack", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-
     fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+    // Simulate BroadcastChannel message from the OAuth redirect page
+    const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
+    bc.postMessage({ type: "SLACK_CONNECTED", response: JSON.stringify(channelDetails) });
+    bc.close();
+
     await waitFor(() => {
       expect(screen.getByText(/RSpace Dev/)).toBeVisible();
     });
@@ -120,6 +113,21 @@ describe("Slack", () => {
     expect(integrationState.credentials.length).toBe(1);
   });
   test("When the add flow is triggered, there should be a cancel button.", async () => {
+    const channelDetails = {
+      ok: true,
+      access_token: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
+      scope: "identify,commands,incoming-webhook",
+      user_id: "U01A48677SP",
+      team_id: "T1R89S3MG",
+      enterprise_id: null,
+      team_name: "RSpace Dev",
+      incoming_webhook: {
+        channel: "#rspace-slackpost-test",
+        channel_id: "CQ391L249",
+        configuration_url: "https://rspacedev.slack.com/services/B064623LHHD",
+        url: "https://hooks.slack.com/services/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",
+      },
+    };
     render(
       <Alerts>
         <Slack
@@ -133,8 +141,13 @@ describe("Slack", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-
     fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+    // Simulate BroadcastChannel message from the OAuth redirect page
+    const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
+    bc.postMessage({ type: "SLACK_CONNECTED", response: JSON.stringify(channelDetails) });
+    bc.close();
+
     await waitFor(() => {
       expect(screen.getByText(/RSpace Dev/)).toBeVisible();
     });

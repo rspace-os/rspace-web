@@ -6,9 +6,13 @@ description: Boot, drive, and tear down the per-worktree Dockerized RSpace dev s
 # RSpace Dev Stack Skill
 
 Drive the experimental per-worktree Docker dev stack to get a full RSpace
-instance (DB + backend + frontend) running so you can reproduce issues and test
-functionality live. The launcher is `docker/dev/rspace-dev`; full reference is
-`docker/dev/README.md` — read it for ports, debugging, and hot-reload details.
+instance (MariaDB + Jetty backend + Vite frontend) running so you can reproduce
+issues and test functionality live. **RSpace is a SPA (single-page
+application):** both frontend and backend must run together. Even for
+frontend-only changes, boot the entire stack to verify the UI works against the
+real API and database. The launcher is `docker/dev/rspace-dev`; full reference
+is `docker/dev/README.md` — read it for ports, debugging, and hot-reload
+details.
 
 ## Guardrails (read first)
 
@@ -16,6 +20,11 @@ functionality live. The launcher is `docker/dev/rspace-dev`; full reference is
   asks.** It is resource-heavy (full JVM + DB + Node per worktree). If a task
   would benefit from a running instance, say so and ask — do not start it on
   your own initiative. This mirrors the rule in `CLAUDE.md`.
+- **Always boot the entire stack together: `./docker/dev/rspace-dev up`.**
+  RSpace is a SPA; the frontend cannot work without the backend API and
+  database. Do not try to run just the frontend (Vite) or just the backend
+  (Jetty) in isolation — always use the full stack command to verify changes
+  end-to-end.
 - **`nuke` permanently deletes this worktree's DB and local data.** Confirm
   before running it unless the user was explicit. `down` is the reversible stop.
 - Commands are scoped to the **current worktree**: they never affect another
@@ -67,6 +76,12 @@ reuse the running instance.
 ./docker/dev/rspace-dev up --fresh        # rebuild DB from scratch
 ./docker/dev/rspace-dev up --chemistry    # also start the chemistry microservice
 ```
+
+**Always boot the full stack — never the frontend alone.** RSpace is a SPA: the
+React UI is useless without the Java backend and database serving its API,
+session, and integration data. Even for a pure frontend change, `up` (which
+starts db + backend + frontend together) is required — do not stand up only the
+Vite server (e.g. host `pnpm run serve`) to test a UI change.
 
 First boot takes several minutes (Maven + pnpm downloads). Watch readiness:
 

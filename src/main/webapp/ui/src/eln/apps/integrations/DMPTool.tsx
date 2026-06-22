@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/dmptool";
 import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -13,6 +14,12 @@ type DMPToolArgs = {
   update: (newIntegrationState: IntegrationStates["DMPTOOL"]) => void;
 };
 
+export interface DMPToolConnectedMessage extends Record<string, unknown> {
+  type: "DMPTOOL_CONNECTED";
+  error?: string;
+}
+export const DMPTOOL_CONNECTION_CHANNEL = "rspace.apps.dmptool.connection";
+
 /*
  * DMPTool uses OAuth based authentication, as implemeted by the form below.
  */
@@ -21,8 +28,20 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
   const { disconnect } = useDmptoolEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  React.useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<DMPToolConnectedMessage>(
+    DMPTOOL_CONNECTION_CHANNEL,
+    (e: MessageEvent<DMPToolConnectedMessage>) => {
+      if (e.data?.type !== "DMPTOOL_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to DMPTool",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -30,12 +49,8 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
           message: "Successfully connected to DMPTool.",
         }),
       );
-    };
-    window.addEventListener("DMPTOOL_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DMPTOOL_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

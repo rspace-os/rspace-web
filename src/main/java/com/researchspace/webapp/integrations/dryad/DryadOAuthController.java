@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -126,10 +127,13 @@ public class DryadOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "Dryad", "rspace.apps.dryad.connection", "DRYAD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
-    return "connect/dryad/connected";
+    ConnectionResultPage.addConnectionAttributes(
+        model, "Dryad", "rspace.apps.dryad.connection", "DRYAD_CONNECTED");
+    return ConnectionResultPage.VIEW;
   }
 
   private long getDryadUserId(String accessTokenStr) {

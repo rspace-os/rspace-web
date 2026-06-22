@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.owncloud;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -19,7 +20,6 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.MVCTestBase;
-import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -233,10 +233,10 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
                     .param("error", "Error connecting to ownCloud")
                     .session(mockSession))
             .andExpect(status().isOk())
-            .andExpect(view().name("connect/authorizationError"))
+            .andExpect(view().name("connect/connected"))
             .andReturn();
 
-    assertEquals("Error connecting to ownCloud", getAuthError(authErrorResult).getErrorMsg());
+    assertTrue(getConnectionError(authErrorResult).contains("Error connecting to ownCloud"));
 
     /* OAuth authorization without security token in session */
     MvcResult noTokenInSessionResult =
@@ -244,11 +244,10 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
             .perform(
                 get("/apps/owncloud/redirect_uri").param("code", "code1234").session(mockSession))
             .andExpect(status().isOk())
-            .andExpect(view().name("connect/authorizationError"))
+            .andExpect(view().name("connect/connected"))
             .andReturn();
 
-    assertEquals(
-        "Error connecting to ownCloud", getAuthError(noTokenInSessionResult).getErrorMsg());
+    assertTrue(getConnectionError(noTokenInSessionResult).contains("Error connecting to ownCloud"));
 
     //		/* requesting security token for session without user */
     MvcResult unauthorizedTokenResult =
@@ -289,13 +288,13 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
                 .session(mockSession)
                 .principal(new MockPrincipal("my_user")))
         .andExpect(status().isOk())
-        .andExpect(view().name("connect/owncloud/connected"))
-        .andExpect(model().attribute("ownCloudUsername", "my_user_id"))
-        .andExpect(model().attribute("ownCloudAccessToken", "my_token"))
+        .andExpect(view().name("connect/connected"))
+        .andExpect(model().attribute("connectionType", "OWNCLOUD_CONNECTED"))
+        .andExpect(model().attributeDoesNotExist("connectionError"))
         .andReturn();
   }
 
-  private OauthAuthorizationError getAuthError(MvcResult otherErrorResult) {
-    return (OauthAuthorizationError) otherErrorResult.getModelAndView().getModel().get("error");
+  private String getConnectionError(MvcResult otherErrorResult) {
+    return (String) otherErrorResult.getModelAndView().getModel().get("connectionError");
   }
 }
