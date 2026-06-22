@@ -1,14 +1,12 @@
-import React from "react";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
+import type React from "react";
 
 type LoaderCircularArgs = {
   message?: string;
 };
 
-export default function LoaderCircular(
-  props: LoaderCircularArgs
-): React.ReactNode {
+export default function LoaderCircular(props: LoaderCircularArgs): React.ReactNode {
   return (
     <Box sx={{ width: "100%" }}>
       <CircularProgress

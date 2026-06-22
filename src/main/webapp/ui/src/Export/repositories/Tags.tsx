@@ -1,20 +1,21 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { type HasEditableFields } from "../../stores/definitions/Editable";
-import InputWrapper from "../../components/Inputs/InputWrapper";
-import AddTag from "../../components/Tags/AddTag";
-import Grid from "@mui/material/Grid";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import NoValue from "../../components/NoValue";
-import FormHelperText from "@mui/material/FormHelperText";
-import docLinks from "../../assets/DocLinks";
-import Button from "@mui/material/Button";
-import TagListing from "../../components/Tags/TagListing";
-import { Optional } from "../../util/optional";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { ThemeProvider } from "@mui/material";
+import Button from "@mui/material/Button";
+import FormHelperText from "@mui/material/FormHelperText";
+import Grid from "@mui/material/Grid";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import { color, currentPage } from "@/util/pageBranding";
+import docLinks from "../../assets/DocLinks";
+import InputWrapper from "../../components/Inputs/InputWrapper";
+import NoValue from "../../components/NoValue";
+import AddTag from "../../components/Tags/AddTag";
+import TagListing from "../../components/Tags/TagListing";
+import type { HasEditableFields } from "../../stores/definitions/Editable";
+import * as ArrayUtils from "../../util/ArrayUtils";
+import { Optional } from "../../util/optional";
 
 /**
  * The definition of a tag as used in the export flow.
@@ -26,10 +27,7 @@ export type Tag = {
   version: string;
 };
 
-function Tags<
-  Fields extends { tags: Array<Tag> },
-  FieldOwner extends HasEditableFields<Fields>,
->({
+function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditableFields<Fields>>({
   fieldOwner,
   loading,
 }: {
@@ -67,22 +65,16 @@ function Tags<
           }
         >
           <FormHelperText sx={{ ml: 0, mb: 2 }}>
-            Add tags from controlled vocabularies to this export. The
-            term&apos;s value and URI will be included in the deposit&apos;s
-            metadata. For more info see{" "}
-            <a
-              href={docLinks.controlledVocabularies}
-              target="_blank"
-              rel="noreferrer"
-            >
+            Add tags from controlled vocabularies to this export. The term&apos;s value and URI will be included in the
+            deposit&apos;s metadata. For more info see{" "}
+            <a href={docLinks.controlledVocabularies} target="_blank" rel="noreferrer">
               Tagging Documents and using Controlled Vocabularies
             </a>
             .
           </FormHelperText>
-          {fieldOwner.fieldValues.tags.length === 0 &&
-            !fieldOwner.isFieldEditable("tags") && (
-              <NoValue label={fieldOwner.noValueLabel.tags ?? "None"} />
-            )}
+          {fieldOwner.fieldValues.tags.length === 0 && !fieldOwner.isFieldEditable("tags") && (
+            <NoValue label={fieldOwner.noValueLabel.tags ?? "None"} />
+          )}
           <TagListing
             tags={fieldOwner.fieldValues.tags.map((tag) => ({
               value: tag.value,
@@ -94,11 +86,7 @@ function Tags<
               ? {
                   onDelete: (index) => {
                     fieldOwner.setFieldsDirty({
-                      tags: ArrayUtils.splice(
-                        fieldOwner.fieldValues.tags,
-                        index,
-                        1,
-                      ),
+                      tags: ArrayUtils.splice(fieldOwner.fieldValues.tags, index, 1),
                     });
                   },
                 }
@@ -118,9 +106,7 @@ function Tags<
                     enforceOntologies={true}
                     onSelection={(tag: Tag) => {
                       if (fieldOwner.fieldValues.tags.includes(tag)) {
-                        console.warn(
-                          "Preventing the same tag from being added twice",
-                        );
+                        console.warn("Preventing the same tag from being added twice");
                         return;
                       }
                       fieldOwner.setFieldsDirty({

@@ -1,45 +1,41 @@
-import React, { useState, useEffect, type ReactNode } from "react";
-import { observer } from "mobx-react-lite";
-import FileField from "../../../../components/Inputs/FileField";
-import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import docLinks from "../../../../assets/DocLinks";
-import CustomTooltip from "../../../../components/CustomTooltip";
-import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
-import {
-  newAttachment,
-  newGalleryAttachment,
-} from "../../../../stores/models/AttachmentModel";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
-import useStores from "../../../../stores/use-stores";
-import { match } from "../../../../util/Util";
-import { justFilenameExtension } from "../../../../util/files";
-import AttachmentTableRow from "./AttachmentTableRow";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import UploadIcon from "@mui/icons-material/Publish";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import { type Attachment } from "../../../../stores/definitions/Attachment";
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-import { type BlobUrl } from "../../../../util/types";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode, useEffect, useState } from "react";
+import docLinks from "../../../../assets/DocLinks";
 import BigIconButton from "../../../../components/BigIconButton";
-import CardContent from "@mui/material/CardContent";
-import UploadIcon from "@mui/icons-material/Publish";
-import Result from "../../../../util/result";
+import CustomTooltip from "../../../../components/CustomTooltip";
+import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
+import FileField from "../../../../components/Inputs/FileField";
+import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import { useDeploymentProperty } from "../../../../hooks/api/useDeploymentProperty";
+import type { Attachment } from "../../../../stores/definitions/Attachment";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import { newAttachment, newGalleryAttachment } from "../../../../stores/models/AttachmentModel";
+import useStores from "../../../../stores/use-stores";
 import * as FetchingData from "../../../../util/fetchingData";
+import { justFilenameExtension } from "../../../../util/files";
 import * as Parser from "../../../../util/parsers";
-const GalleryPicker = React.lazy(
-  () => import("../../../../eln/gallery/picker"),
-);
+import Result from "../../../../util/result";
+import type { BlobUrl } from "../../../../util/types";
+import { match } from "../../../../util/Util";
+import AttachmentTableRow from "./AttachmentTableRow";
+
+const GalleryPicker = React.lazy(() => import("../../../../eln/gallery/picker"));
 const CollapseContents = <
   Fields extends {
     image: BlobUrl | null;
@@ -55,9 +51,7 @@ const CollapseContents = <
   fieldOwner?: FieldOwner;
   editable: boolean;
 }): ReactNode => {
-  const chemistryProvider = FetchingData.getSuccessValue(
-    useDeploymentProperty("chemistry.provider"),
-  )
+  const chemistryProvider = FetchingData.getSuccessValue(useDeploymentProperty("chemistry.provider"))
     .flatMap(Parser.isString)
     .orElse("");
   return (
@@ -105,9 +99,7 @@ const FileSelector = ({
     activeResult.setAttributesDirty({
       attachments: [
         ...activeResult.attachments,
-        newAttachment(file, activeResult.permalinkURL, () =>
-          activeResult.setAttributesDirty({}),
-        ),
+        newAttachment(file, activeResult.permalinkURL, () => activeResult.setAttributesDirty({})),
       ],
     });
     setOpen(true);
@@ -150,6 +142,7 @@ const FileSelector = ({
         }}
       />
       {galleryDialogOpen && (
+        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
         <React.Suspense fallback={<></>}>
           <GalleryPicker
             open={true}
@@ -160,26 +153,14 @@ const FileSelector = ({
               activeResult.setAttributesDirty({
                 attachments: [
                   ...activeResult.attachments,
-                  ...files.map((f) =>
-                    newGalleryAttachment(f, () =>
-                      activeResult.setAttributesDirty({}),
-                    ),
-                  ),
+                  ...files.map((f) => newGalleryAttachment(f, () => activeResult.setAttributesDirty({}))),
                 ],
               });
               setGalleryDialogOpen(false);
             }}
             validateSelection={(file) => {
-              if (file.isSnippet)
-                return Result.Error([
-                  new Error(
-                    "Snippets cannot be attached to Inventory records.",
-                  ),
-                ]);
-              if (file.isFolder)
-                return Result.Error([
-                  new Error("Folders cannot be attached to Inventory records."),
-                ]);
+              if (file.isSnippet) return Result.Error([new Error("Snippets cannot be attached to Inventory records.")]);
+              if (file.isFolder) return Result.Error([new Error("Folders cannot be attached to Inventory records.")]);
               if (!file.globalId)
                 return Result.Error([
                   // some of the files will be from filestores
@@ -227,24 +208,19 @@ const FilesCard = observer(
           }}
           subheader="Attach files of any type, e.g. images, documents, or chemistry files."
           action={
-            <>
-              <CustomTooltip
-                title={match<void, string>([
-                  [() => attachments.length === 0, "No current attachments"],
-                  [() => open, "Hide attachment listing"],
-                  [() => true, "Show attachment listing"],
-                ])()}
-              >
-                <IconButton
-                  onClick={() => setOpen(!open)}
-                  disabled={attachments.length === 0}
-                >
-                  <Badge color="primary" badgeContent={attachments.length}>
-                    <ExpandCollapseIcon open={open} />
-                  </Badge>
-                </IconButton>
-              </CustomTooltip>
-            </>
+            <CustomTooltip
+              title={match<void, string>([
+                [() => attachments.length === 0, "No current attachments"],
+                [() => open, "Hide attachment listing"],
+                [() => true, "Show attachment listing"],
+              ])()}
+            >
+              <IconButton onClick={() => setOpen(!open)} disabled={attachments.length === 0}>
+                <Badge color="primary" badgeContent={attachments.length}>
+                  <ExpandCollapseIcon open={open} />
+                </Badge>
+              </IconButton>
+            </CustomTooltip>
           }
         />
         {editable && (
@@ -253,19 +229,11 @@ const FilesCard = observer(
               pt: 0.5,
             }}
           >
-            <FileSelector
-              activeResult={activeResult}
-              setOpen={setOpen}
-              editable={editable}
-            />
+            <FileSelector activeResult={activeResult} setOpen={setOpen} editable={editable} />
           </CardContent>
         )}
         <Collapse in={open}>
-          <CollapseContents
-            attachments={attachments}
-            fieldOwner={fieldOwner}
-            editable={editable}
-          />
+          <CollapseContents attachments={attachments} fieldOwner={fieldOwner} editable={editable} />
         </Collapse>
       </Card>
     );

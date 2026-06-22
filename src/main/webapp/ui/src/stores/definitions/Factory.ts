@@ -1,10 +1,10 @@
-import { type PersonAttrs, type Person } from "./Person";
-import { type PersistedBarcodeAttrs, type BarcodeRecord } from "./Barcode";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type DocumentAttrs, type Document } from "./Document";
-import { type IdentifierAttrs, type Identifier } from "./Identifier";
-import { type GlobalId } from "./BaseRecord";
-import InvApiService from "../../common/InvApiService";
+import type InvApiService from "../../common/InvApiService";
+import type { BarcodeRecord, PersistedBarcodeAttrs } from "./Barcode";
+import type { GlobalId } from "./BaseRecord";
+import type { Document, DocumentAttrs } from "./Document";
+import type { Identifier, IdentifierAttrs } from "./Identifier";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { Person, PersonAttrs } from "./Person";
 
 /**
  * Objects which implement this interface provide an abstraction layer over the
@@ -20,17 +20,11 @@ export interface Factory {
    * `Record<string, unknown>` is the type of the argument as it cannot be
    * determined before runtime what the attributes must be.
    */
-  newRecord(
-    params: Record<string, unknown> & { globalId: GlobalId | null },
-  ): InventoryRecord;
+  newRecord(params: Record<string, unknown> & { globalId: GlobalId | null }): InventoryRecord;
 
   newPerson(attrs: PersonAttrs): Person;
   newBarcode(attrs: PersistedBarcodeAttrs): BarcodeRecord;
-  newIdentifier(
-    attrs: IdentifierAttrs,
-    parentGlobalId: GlobalId,
-    ApiService: typeof InvApiService,
-  ): Identifier;
+  newIdentifier(attrs: IdentifierAttrs, parentGlobalId: GlobalId, ApiService: typeof InvApiService): Identifier;
   newDocument(attrs: DocumentAttrs): Document;
 
   /*

@@ -20,7 +20,7 @@ export function useDSWTestEndpoint(): {
   });
 
   const test = async (serverAlias: string): Promise<void> => {
-    const response = await api.get<JSON>("/currentUser?serverAlias=" + serverAlias);
+    const response = await api.get<JSON>(`/currentUser?serverAlias=${serverAlias}`);
 
     if (null == response.data) {
       throw new Error("Response data was empty");

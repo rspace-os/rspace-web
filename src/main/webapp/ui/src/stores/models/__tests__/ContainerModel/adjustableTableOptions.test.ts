@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from "vitest";
+import { personAttrs } from "../PersonModel/mocking";
 import { makeMockContainer } from "./mocking";
 
-import { personAttrs } from "../PersonModel/mocking";
 describe("adjustableTableOptions", () => {
   describe("Number of Empty Locations", () => {
     test("List containers should have unlimited empty locations.", () => {
@@ -10,13 +10,11 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const optionValue = container
-        .adjustableTableOptions()
-        .get("Number of Empty Locations");
+      const optionValue = container.adjustableTableOptions().get("Number of Empty Locations");
       expect(optionValue).not.toBeNull();
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;
       expect(cellContent().data).toEqual("Unlimited");
-
     });
     test("Empty grid containers should render the number of locations.", () => {
       const container = makeMockContainer({
@@ -31,13 +29,11 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const optionValue = container
-        .adjustableTableOptions()
-        .get("Number of Empty Locations");
+      const optionValue = container.adjustableTableOptions().get("Number of Empty Locations");
       expect(optionValue).not.toBeNull();
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;
       expect(cellContent().data).toEqual("6");
-
     });
     test("If contentSummary is null, then nothing should be shown.", () => {
       const container = makeMockContainer({
@@ -53,10 +49,9 @@ describe("adjustableTableOptions", () => {
         contentSummary: null,
       });
 
-      const optionValue = container
-        .adjustableTableOptions()
-        .get("Number of Empty Locations");
+      const optionValue = container.adjustableTableOptions().get("Number of Empty Locations");
       expect(optionValue).not.toBeNull();
+      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;
       expect(cellContent().data).toBe(null);
     });

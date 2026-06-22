@@ -1,4 +1,5 @@
-import { describe, expect, test, vi } from 'vitest';
+import "@/stores/stores/RootStore";
+import { describe, expect, test, vi } from "vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
@@ -6,33 +7,23 @@ vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break i
 describe("hasContent", () => {
   describe('type = "Number"', () => {
     test.each`
-    value | boolValue
-    ${0}  | ${true}
-    ${4}  | ${true}
-    ${""} | ${false}
-  `(
-      "{value = $value}",
-      ({
-        value,
-        boolValue,
-      }: {
-        value: string | number;
-        boolValue: boolean;
-      }) => {
-        const field = new FieldModel(
-          {
-            type: "number",
-            content: value.toString(),
-            selectedOptions: [],
-            columnIndex: null,
-            attachment: null,
-            mandatory: false,
-          },
-          makeMockSample()
-        );
-        expect(field.hasContent).toBe(boolValue);
-      }
-    );
+      value | boolValue
+      ${0}  | ${true}
+      ${4}  | ${true}
+      ${""} | ${false}
+    `("{value = $value}", ({ value, boolValue }: { value: string | number; boolValue: boolean }) => {
+      const field = new FieldModel(
+        {
+          type: "number",
+          content: value.toString(),
+          selectedOptions: [],
+          columnIndex: null,
+          attachment: null,
+          mandatory: false,
+        },
+        makeMockSample(),
+      );
+      expect(field.hasContent).toBe(boolValue);
+    });
   });
 });
-

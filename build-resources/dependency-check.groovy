@@ -56,6 +56,8 @@ pipeline {
                          production, mirroring how the WAR excludes test-scope Java deps. */
                     dependencyCheck additionalArguments: '''
                     --nvdApiKey ${NVD_API_KEY}
+                    --nvdApiDelay 2000
+                    --nvdMaxRetryCount 10                    
                     -o './'
                     -s './target/*.war'
                     -s './pnpm-lock.yaml'

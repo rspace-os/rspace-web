@@ -1,12 +1,13 @@
 import Alert, { alertClasses } from "@mui/material/Alert";
 import LinearProgress from "@mui/material/LinearProgress";
-import React, { useContext } from "react";
-import useStores from "../../../stores/use-stores";
-import { match } from "@/util/Util";
 import { observer } from "mobx-react-lite";
-import SearchContext from "../../../stores/contexts/Search";
-import SaveSearch from "./SaveSearch";
+import type React from "react";
+import { useContext } from "react";
+import { match } from "@/util/Util";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import SearchContext from "../../../stores/contexts/Search";
+import useStores from "../../../stores/use-stores";
+import SaveSearch from "./SaveSearch";
 
 function SearchFeedback(): React.ReactNode {
   const { searchStore } = useStores();
@@ -17,9 +18,7 @@ function SearchFeedback(): React.ReactNode {
     return new URLSearchParams(useLocation().search);
   }
   const searchParams = useSearchParams();
-  const currentBasket = searchStore.savedBaskets.find(
-    (b) => b.globalId === searchParams.get("parentGlobalId"),
-  );
+  const currentBasket = searchStore.savedBaskets.find((b) => b.globalId === searchParams.get("parentGlobalId"));
 
   const resultsStatusText = (what: string) => `${search.count} ${what} found.`;
 
@@ -27,47 +26,21 @@ function SearchFeedback(): React.ReactNode {
     [() => search.loading, "Loading..."],
     [() => Boolean(search.fetcher.error), search.fetcher.error],
     [() => Boolean(search.fetcher.query), resultsStatusText("search results")],
-    [
-      () => search.fetcher.resultType === "CONTAINER",
-      resultsStatusText("top-level containers"),
-    ],
-    [
-      () => search.fetcher.resultType === "SAMPLE",
-      resultsStatusText("samples"),
-    ],
-    [
-      () => search.fetcher.resultType === "SUBSAMPLE",
-      resultsStatusText("subsamples"),
-    ],
-    [
-      () => search.fetcher.resultType === "TEMPLATE",
-      resultsStatusText("templates"),
-    ],
-    [
-      () => search.fetcher.parentGlobalIdType === "SAMPLE",
-      resultsStatusText("subsamples"),
-    ],
-    [
-      () => search.fetcher.parentGlobalIdType === "CONTAINER",
-      resultsStatusText("container contents"),
-    ],
-    [
-      () => search.fetcher.parentGlobalIdType === "TEMPLATE",
-      resultsStatusText("samples of the template"),
-    ],
-    [
-      () => search.fetcher.parentGlobalIdType === "BENCH",
-      `${search.count} items found on this bench.`,
-    ],
+    [() => search.fetcher.resultType === "CONTAINER", resultsStatusText("top-level containers")],
+    [() => search.fetcher.resultType === "SAMPLE", resultsStatusText("samples")],
+    [() => search.fetcher.resultType === "SUBSAMPLE", resultsStatusText("subsamples")],
+    [() => search.fetcher.resultType === "TEMPLATE", resultsStatusText("templates")],
+    [() => search.fetcher.parentGlobalIdType === "SAMPLE", resultsStatusText("subsamples")],
+    [() => search.fetcher.parentGlobalIdType === "CONTAINER", resultsStatusText("container contents")],
+    [() => search.fetcher.parentGlobalIdType === "TEMPLATE", resultsStatusText("samples of the template")],
+    [() => search.fetcher.parentGlobalIdType === "BENCH", `${search.count} items found on this bench.`],
     [
       () => search.fetcher.parentGlobalIdType === "BASKET",
       `${search.count} items found in ${currentBasket?.name || "this basket"}.`,
     ],
     [
       () => Boolean(search.fetcher.permalink),
-      search.filteredResults.length > 0
-        ? `Found ${search.filteredResults[0].globalId ?? "ERROR"}.`
-        : "",
+      search.filteredResults.length > 0 ? `Found ${search.filteredResults[0].globalId ?? "ERROR"}.` : "",
     ],
     [() => true, "Results cannot be fully determined."],
   ]);

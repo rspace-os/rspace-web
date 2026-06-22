@@ -1,15 +1,15 @@
-import React, { useContext, useRef, useState, useLayoutEffect } from "react";
+import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
+import React, { useContext, useLayoutEffect, useRef, useState } from "react";
 import SearchContext from "../../../../stores/contexts/Search";
-import Dragger from "../Dragger";
+import ContainerModel from "../../../../stores/models/ContainerModel";
+import { pick } from "../../../../util/unsafeUtils";
 import OverlayLoadingSpinner from "../../../components/OverlayLoadingSpinner";
 import EmptyListing from "../../../Search/components/EmptyListing";
-import ContainerModel from "../../../../stores/models/ContainerModel";
-import LocationWrapper from "./LocationWrapper";
-import LocationContent from "../LocationContent";
-import { pick } from "../../../../util/unsafeUtils";
 import * as DragAndDrop from "../DragAndDrop";
-import Box from "@mui/material/Box";
+import Dragger from "../Dragger";
+import LocationContent from "../LocationContent";
+import LocationWrapper from "./LocationWrapper";
 
 function PreviewImage(): React.ReactNode {
   const { scopedResult, search } = useContext(SearchContext);
@@ -18,8 +18,7 @@ function PreviewImage(): React.ReactNode {
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
   const container: ContainerModel = scopedResult;
-  if (!container.locations)
-    throw new Error("Container locations must be known.");
+  if (!container.locations) throw new Error("Container locations must be known.");
 
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   // Observe changes to the size of the image
@@ -29,9 +28,7 @@ function PreviewImage(): React.ReactNode {
   } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
-      setImageDimensions(
-        pick("width", "height")(entries[0].target.getBoundingClientRect()),
-      );
+      setImageDimensions(pick("width", "height")(entries[0].target.getBoundingClientRect()));
     }),
   );
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -116,38 +113,30 @@ function PreviewImage(): React.ReactNode {
         />
         {container.initializedLocations && !container.loading && (
           <>
-            {img && imageDimensions ? (
-              container.locations?.map((location) => (
-                <LocationWrapper
-                  key={`${location.coordX}-${location.coordY}`}
-                  location={location}
-                  parentRect={imageDimensions}
-                >
-                  <LocationContent
+            {img && imageDimensions
+              ? container.locations?.map((location) => (
+                  <LocationWrapper
+                    key={`${location.coordX}-${location.coordY}`}
                     location={location}
-                    container={container}
-                    /*
-                     * PreviewImage is not keyboard accessible (although it ought
-                     * to be to be compliant with the WCAG standard. As such,
-                     * there is never a time when the locations have focus.
-                     */
-                    hasFocus={false}
-                  />
-                </LocationWrapper>
-              ))
-            ) : (
-              <>
-                {container.globalId && (
-                  <EmptyListing parentGlobalId={container.globalId} />
-                )}
-              </>
-            )}
+                    parentRect={imageDimensions}
+                  >
+                    <LocationContent
+                      location={location}
+                      container={container}
+                      /*
+                       * PreviewImage is not keyboard accessible (although it ought
+                       * to be to be compliant with the WCAG standard. As such,
+                       * there is never a time when the locations have focus.
+                       */
+                      hasFocus={false}
+                    />
+                  </LocationWrapper>
+                ))
+              : container.globalId && <EmptyListing parentGlobalId={container.globalId} />}
             <Dragger container={container} parentRef={imgRef} />
           </>
         )}
-        {container.locationsImage && container.loading && (
-          <OverlayLoadingSpinner />
-        )}
+        {container.locationsImage && container.loading && <OverlayLoadingSpinner />}
       </Box>
     </DragAndDrop.Context>
   );

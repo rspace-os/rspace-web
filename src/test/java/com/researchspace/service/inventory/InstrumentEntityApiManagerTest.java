@@ -422,6 +422,58 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateInstrumentToLatestTemplateVersion_propagatesEditedLinkWhitelist() {
+    // RSDEV-1200: an existing instrument synced to a newer template version must pick up the
+    // template's edited link-field allowed-relation-types whitelist, mirroring the sample path.
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("instr-link-tmpl-" + getRandomAlphabeticString("n"));
+    ApiInventoryEntityField linkField = new ApiInventoryEntityField();
+    linkField.setName("related");
+    linkField.setType(ApiFieldType.LINK);
+    linkField.setAllowedRelationTypes(List.of("References", "IsDerivedFrom"));
+    templatePost.getFields().add(linkField);
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+    Long templateLinkFieldId = findInstrumentLinkField(template.getFields()).getId();
+
+    // an instrument created before the edit inherits the original whitelist
+    ApiInstrument instrumentReq = new ApiInstrument();
+    instrumentReq.setName("existing-instrument");
+    instrumentReq.setTemplateId(template.getId());
+    ApiInstrument instrument = instrumentApiMgr.createNewApiInstrument(instrumentReq, testUser);
+    assertEquals(
+        List.of("References", "IsDerivedFrom"),
+        findInstrumentLinkField(
+                instrumentApiMgr.getApiInstrumentById(instrument.getId(), testUser).getFields())
+            .getAllowedRelationTypes());
+
+    // edit the template link-field whitelist (bumps the template version)
+    ApiInventoryEntityField editField = new ApiInventoryEntityField();
+    editField.setId(templateLinkFieldId);
+    editField.setType(ApiFieldType.LINK);
+    editField.setAllowedRelationTypes(List.of("IsCitedBy", "Cites"));
+    ApiInstrumentTemplate edit = new ApiInstrumentTemplate();
+    edit.setId(template.getId());
+    edit.setFields(List.of(editField));
+    instrumentApiMgr.updateApiInstrumentTemplate(edit, testUser);
+
+    // sync the existing instrument and assert it acquired the edited whitelist
+    instrumentApiMgr.updateInstrumentToLatestTemplateVersion(instrument.getId(), testUser);
+    ApiInstrument synced = instrumentApiMgr.getApiInstrumentById(instrument.getId(), testUser);
+    assertEquals(
+        List.of("IsCitedBy", "Cites"),
+        findInstrumentLinkField(synced.getFields()).getAllowedRelationTypes(),
+        "existing instrument should acquire the template's edited whitelist after sync");
+  }
+
+  private ApiInventoryEntityField findInstrumentLinkField(List<ApiInventoryEntityField> fields) {
+    return fields.stream()
+        .filter(f -> ApiFieldType.LINK.equals(f.getType()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("expected a link field in the instrument fields"));
+  }
+
+  @Test
   public void getInstrumentsLinkingOldTemplateVersion_returnsLaggingInstruments() {
     // Create a template + an instrument from it (linked at version 1)
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);

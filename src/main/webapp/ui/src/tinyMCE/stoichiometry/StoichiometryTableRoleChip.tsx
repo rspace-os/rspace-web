@@ -1,4 +1,3 @@
-import React from "react";
 import Chip, { chipClasses } from "@mui/material/Chip";
 
 const StoichiometryTableRoleChip = ({ role }: { role: string }) => {

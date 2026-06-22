@@ -1,26 +1,21 @@
-import { describe, expect, test, vi } from "vitest";
-import React,
-  { useContext } from "react";
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import NavigationContext from "../NavigationContext";
-import { storesContext } from "../../../stores/stores-context";
-import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
-
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useContext } from "react";
 import type { Location } from "react-router-dom";
+import { describe, expect, test, vi } from "vitest";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../stores/stores-context";
+import NavigationContext from "../NavigationContext";
+
 type NavigateToProps = {
   url: string;
-
 };
 const NavigateTo = ({ url }: NavigateToProps) => {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   return (
+    // biome-ignore lint/a11y/useButtonType: initial biome migration
     <button
       onClick={() => {
         navigate(url);
@@ -29,7 +24,6 @@ const NavigateTo = ({ url }: NavigateToProps) => {
       Click me
     </button>
   );
-
 };
 describe("NavigationContext", () => {
   describe("Performs correctly", () => {
@@ -70,8 +64,7 @@ describe("NavigationContext", () => {
             value={makeMockRootStore({
               uiStore: {
                 dirty: areChanges,
-                confirmDiscardAnyChanges: () =>
-                  Promise.resolve(!areChanges || userDiscards),
+                confirmDiscardAnyChanges: () => Promise.resolve(!areChanges || userDiscards),
               },
             })}
           >
@@ -85,7 +78,7 @@ describe("NavigationContext", () => {
                 <NavigateTo url={url} />
               </NavigationContext>
             </NavigateContext.Provider>
-          </storesContext.Provider>
+          </storesContext.Provider>,
         );
         await user.click(screen.getByText("Click me"));
         await waitFor(() => {
@@ -95,8 +88,7 @@ describe("NavigationContext", () => {
             expect(navFn).not.toHaveBeenCalled();
           }
         });
-      }
+      },
     );
   });
 });
-

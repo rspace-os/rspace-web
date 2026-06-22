@@ -1,15 +1,15 @@
-import React, { useState, useEffect, forwardRef } from "react";
+import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
-import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
-import { observer } from "mobx-react-lite";
-import SelectedFileInfo from "./SelectedFileInfo";
-import { readFileAsBinaryString } from "../../util/Util";
-import InputBase from "@mui/material/InputBase";
-import BigIconButton from "../BigIconButton";
 import Grid from "@mui/material/Grid";
+import InputBase from "@mui/material/InputBase";
+import { observer } from "mobx-react-lite";
+import React, { forwardRef, useEffect, useState } from "react";
+import { readFileAsBinaryString } from "../../util/Util";
+import BigIconButton from "../BigIconButton";
+import SelectedFileInfo from "./SelectedFileInfo";
 
 type FileFieldSlotProps = {
   input?: {
@@ -28,10 +28,7 @@ type ButtonThatTriggersInvisibleInputArgs = {
   containerProps?: React.ComponentProps<typeof Grid>;
 };
 
-const ButtonThatTriggersInvisibleInput = forwardRef<
-  React.ElementRef<"label">,
-  ButtonThatTriggersInvisibleInputArgs
->(
+const ButtonThatTriggersInvisibleInput = forwardRef<React.ElementRef<"label">, ButtonThatTriggersInvisibleInputArgs>(
   (
     {
       buttonLabel,
@@ -55,12 +52,7 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
            * file, below.
            */}
           {explanatoryText ? (
-            <BigIconButton
-              icon={icon}
-              label={buttonLabel}
-              explanatoryText={explanatoryText}
-              component="span"
-            />
+            <BigIconButton icon={icon} label={buttonLabel} explanatoryText={explanatoryText} component="span" />
           ) : (
             <Button
               size="large"
@@ -81,8 +73,7 @@ const ButtonThatTriggersInvisibleInput = forwardRef<
   ),
 );
 
-ButtonThatTriggersInvisibleInput.displayName =
-  "ButtonThatTriggersInvisibleInput";
+ButtonThatTriggersInvisibleInput.displayName = "ButtonThatTriggersInvisibleInput";
 
 export type FileFieldArgs = {
   // required
@@ -169,9 +160,7 @@ function FileField({
       });
   };
 
-  const helperText = failedToLoad
-    ? "Failed to load file. Please try again."
-    : "";
+  const helperText = failedToLoad ? "Failed to load file. Please try again." : "";
   return (
     <>
       <input
@@ -194,10 +183,7 @@ function FileField({
                 accept,
               },
             }}
-            inputComponent={forwardRef(function FileInputTrigger(
-              _,
-              ref: React.ForwardedRef<HTMLLabelElement>,
-            ) {
+            inputComponent={forwardRef(function FileInputTrigger(_, ref: React.ForwardedRef<HTMLLabelElement>) {
               return (
                 <ButtonThatTriggersInvisibleInput
                   disabled={disabled}
@@ -218,9 +204,7 @@ function FileField({
               justifyContent: "center",
             }}
           />
-          {failedToLoad && (
-            <FormHelperText error={failedToLoad}>{helperText}</FormHelperText>
-          )}
+          {failedToLoad && <FormHelperText error={failedToLoad}>{helperText}</FormHelperText>}
           {warningAlert && (
             <Alert severity="warning" sx={{ mt: 1 }}>
               {warningAlert}
@@ -228,13 +212,7 @@ function FileField({
           )}
         </FormControl>
       )}
-      {showSelectedFilename && (
-        <SelectedFileInfo
-          error={error}
-          loading={loading}
-          selectedFilename={selectedFilename}
-        />
-      )}
+      {showSelectedFilename && <SelectedFileInfo error={error} loading={loading} selectedFilename={selectedFilename} />}
     </>
   );
 }

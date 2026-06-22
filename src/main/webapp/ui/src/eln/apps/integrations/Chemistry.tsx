@@ -1,9 +1,9 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import ChemistryIcon from "../../../assets/branding/chemistry/logo.svg";
 import { LOGO_COLOR } from "../../../assets/branding/chemistry";
+import ChemistryIcon from "../../../assets/branding/chemistry/logo.svg";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ChemistryArgs = {
   integrationState: IntegrationStates["CHEMISTRY"];
@@ -14,17 +14,15 @@ type ChemistryArgs = {
  * There is no authentication mechanism with Chemistry. All users can
  * enable the integration to be able to use it when editing a document.
  */
-function Chemistry({
-  integrationState,
-  update,
-}: ChemistryArgs): React.ReactNode {
+function Chemistry({ integrationState, update }: ChemistryArgs): React.ReactNode {
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Chemistry"
         integrationState={integrationState}
@@ -39,12 +37,11 @@ function Chemistry({
           <ol>
             <li>Enable the integration.</li>
             <li>
-              When editing a document, click on the integration’s icon in the
-              text editor toolbar to open the chemical sketcher.
+              When editing a document, click on the integration’s icon in the text editor toolbar to open the chemical
+              sketcher.
             </li>
             <li>
-              You can also drag and drop existing chemical structure files into
-              a document text field, and edit them.
+              You can also drag and drop existing chemical structure files into a document text field, and edit them.
             </li>
           </ol>
         }

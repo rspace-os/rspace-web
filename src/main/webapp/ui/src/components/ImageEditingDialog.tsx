@@ -1,22 +1,21 @@
-import React from "react";
 import Button from "@mui/material/Button";
 import Dialog, { dialogClasses } from "@mui/material/Dialog";
-import { paperClasses } from "@mui/material/Paper";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import { paperClasses } from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
+import React from "react";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import RotateLeftIcon from "@mui/icons-material/RotateLeft";
 import RotateRightIcon from "@mui/icons-material/RotateRight";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 
-const isTestEnv =
-  typeof process !== "undefined" && process.env.NODE_ENV === "test";
+const isTestEnv = import.meta.env.MODE === "test";
 type NoopTransitionProps = {
   in?: boolean;
   children?: React.ReactNode;
@@ -88,8 +87,7 @@ function ImageEditingDialog({
     if (imageFile) {
       setImageType(imageTypeFromFile(imageFile));
       void readAsBinaryString(imageFile).then((binaryString: string) => {
-        if (settable)
-          setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
+        if (settable) setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
       });
     }
     return () => {

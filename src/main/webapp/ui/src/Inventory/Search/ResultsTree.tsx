@@ -1,23 +1,21 @@
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import SearchContext from "../../stores/contexts/Search";
 import { DEFAULT_SEARCH } from "../../stores/models/Fetcher/CoreFetcher";
 import LoadingList from "../components/FetchOnScroll/LoadingList";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import LoadingNode from "../components/RecordTree/LoadingNode";
 import RecordTree from "../components/RecordTree/RecordTree";
 import ScrollBox from "./ScrollBox";
-import { observer } from "mobx-react-lite";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import React, { useContext } from "react";
-import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 
 function ResultsTree(): React.ReactNode {
   const { search } = useContext(SearchContext);
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
-    <ScrollBox
-      overflowY={isSingleColumnLayout ? "unset" : "auto"}
-      overflowX="hidden"
-    >
+    <ScrollBox overflowY={isSingleColumnLayout ? "unset" : "auto"} overflowX="hidden">
       <RecordTree />
       {search.filteredResults.length < search.count && (
         <SimpleTreeView>

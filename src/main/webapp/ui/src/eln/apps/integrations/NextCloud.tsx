@@ -1,17 +1,24 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import Button from "@mui/material/Button";
-import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
-import { useNextcloudEndpoint } from "../useNextcloud";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
+import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useNextcloudEndpoint } from "../useNextcloud";
 
 type NextCloudArgs = {
   integrationState: IntegrationStates["NEXTCLOUD"];
   update: (newIntegrationState: IntegrationStates["NEXTCLOUD"]) => void;
 };
+
+export interface NextCloudConnectedMessage extends Record<string, unknown> {
+  type: "NEXTCLOUD_CONNECTED";
+  error?: string;
+}
+export const NEXTCLOUD_CONNECTION_CHANNEL = "rspace.apps.nextcloud.connection";
 
 /*
  * NextCloud uses OAuth based authentication, as implemented by this form.
@@ -37,48 +44,50 @@ type NextCloudArgs = {
  * The process of disconnecing is via a standard API call made by
  * ../useNextcloud.
  */
-function NextCloud({
-  integrationState,
-  update,
-}: NextCloudArgs): React.ReactNode {
+function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useNextcloudEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<NextCloudConnectedMessage>(
+    NEXTCLOUD_CONNECTION_CHANNEL,
+    (e: MessageEvent<NextCloudConnectedMessage>) => {
+      if (e.data?.type !== "NEXTCLOUD_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to NextCloud",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
           variant: "success",
           message: "Successfully connected to NextCloud.",
-        })
+        }),
       );
-    };
-    window.addEventListener("NEXTCLOUD_CONNECTED", f);
-    return () => {
-      window.removeEventListener("NEXTCLOUD_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Nextcloud"
         integrationState={integrationState}
         explanatoryText="Create, organise, and share your files through an open-source file hosting system."
         image={NextCloudIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText="You can make links to Nextcloud documents directly from RSpace."
         helpLinkText="NextCloud integration docs"
         website="nextcloud.com"
@@ -86,15 +95,9 @@ function NextCloud({
         setupSection={
           <>
             <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your Nextcloud
-                account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your Nextcloud account.</li>
               <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the Nextcloud icon in the text
-                editor toolbar.
-              </li>
+              <li>When editing a document, click on the Nextcloud icon in the text editor toolbar.</li>
             </ol>
             {connected ? (
               <form
@@ -111,12 +114,7 @@ function NextCloud({
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/nextcloud/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/nextcloud/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

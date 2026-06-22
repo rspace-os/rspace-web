@@ -13,31 +13,22 @@
   "established": 1948,
   "external_ids": [
     {
-      "all": [
-        "0000 0004 1937 0714"
-      ],
+      "all": ["0000 0004 1937 0714"],
       "preferred": null,
       "type": "isni"
     },
     {
-      "all": [
-        "501100006070",
-        "501100006071"
-      ],
+      "all": ["501100006070", "501100006071"],
       "preferred": "501100006070",
       "type": "fundref"
     },
     {
-      "all": [
-        "Q1569421"
-      ],
+      "all": ["Q1569421"],
       "preferred": null,
       "type": "wikidata"
     },
     {
-      "all": [
-        "grid.7247.6"
-      ],
+      "all": ["grid.7247.6"],
       "preferred": "grid.7247.6",
       "type": "grid"
     }
@@ -68,31 +59,22 @@
   "names": [
     {
       "lang": null,
-      "types": [
-        "ror_display",
-        "label"
-      ],
+      "types": ["ror_display", "label"],
       "value": "Universidad de Los Andes"
     },
     {
       "lang": null,
-      "types": [
-        "alias"
-      ],
+      "types": ["alias"],
       "value": "University of los Andes"
     },
     {
       "lang": null,
-      "types": [
-        "alias"
-      ],
+      "types": ["alias"],
       "value": "Uniandes"
     },
     {
       "lang": "en",
-      "types": [
-        "label"
-      ],
+      "types": ["label"],
       "value": "University of Los Andes"
     }
   ],
@@ -104,7 +86,5 @@
     }
   ],
   "status": "active",
-  "types": [
-    "education"
-  ]
+  "types": ["education"]
 }

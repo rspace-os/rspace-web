@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.IOException;
@@ -45,21 +46,23 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException, HttpClientErrorException {
     String redirectResult;
-    OauthAuthorizationErrorBuilder error = OauthAuthorizationError.builder().appName("RaID");
+    OauthAuthorizationErrorBuilder error = OauthAuthorizationError.builder().appName("RAiD");
+    String serverAlias = params.get("state");
+    ConnectionResultPage.addConnectionAttributes(
+        model, "RAiD", "rspace.apps.raid.connection", "RAID_CONNECTED");
+    model.addAttribute("connectionAlias", serverAlias);
     try {
-      String serverAlias = params.get("state");
       raidServiceClientAdapter.performCreateAccessToken(
           principal.getName(), serverAlias, params.get("code"));
 
       log.info("Connected to {} RAiD server for user {}", serverAlias, principal.getName());
-      model.addAttribute("serverAlias", serverAlias);
-      redirectResult = "connect/raid/connected";
+      redirectResult = ConnectionResultPage.VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on RAiD", ex);
       error.errorMsg("Error during token creation: " + ex.getMessage());
       error.errorDetails(ex.getMessage());
-      model.addAttribute("error", error.build());
-      redirectResult = "connect/authorizationError";
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error.build()));
+      redirectResult = ConnectionResultPage.VIEW;
     }
     return redirectResult;
   }
@@ -91,17 +94,20 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
 
   @PostMapping("/refresh_token/{serverAlias}")
   public String refreshToken(@PathVariable String serverAlias, Model model, Principal principal) {
-    OauthAuthorizationErrorBuilder error = OauthAuthorizationError.builder().appName("RaID");
+    OauthAuthorizationErrorBuilder error = OauthAuthorizationError.builder().appName("RAiD");
     String redirectResult = "";
+    ConnectionResultPage.addConnectionAttributes(
+        model, "RAiD", "rspace.apps.raid.connection", "RAID_CONNECTED");
+    model.addAttribute("connectionAlias", serverAlias);
     try {
       raidServiceClientAdapter.performRefreshToken(principal.getName(), serverAlias);
-      redirectResult = "connect/raid/connected";
+      redirectResult = ConnectionResultPage.VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing token on RAiD: {}", e.getMessage());
       error.errorMsg("Error during token refresh" + e.getMessage());
       error.errorDetails(e.getMessage());
-      model.addAttribute("error", error.build());
-      redirectResult = "connect/authorizationError";
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error.build()));
+      redirectResult = ConnectionResultPage.VIEW;
     }
 
     return redirectResult;

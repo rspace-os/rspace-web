@@ -1,8 +1,8 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
-import React from "react";
+import type React from "react";
 
 function OverlayLoadingSpinner(): React.ReactNode {
   const theme = useTheme();

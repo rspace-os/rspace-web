@@ -1,16 +1,16 @@
-import { describe, expect, test, vi } from "vitest";
 import type { MockInstance } from "@vitest/spy";
+import { describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
-import { makeMockSubSample, subsampleAttrs } from "../SubSampleModel/mocking";
-import { sampleAttrs } from "../SampleModel/mocking";
 import { GeneratedBarcode } from "../../Barcode";
+import { sampleAttrs } from "../SampleModel/mocking";
+import { makeMockSubSample, subsampleAttrs } from "../SubSampleModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
     query: vi.fn(() => ({})),
   },
 }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     uiStore: {
       addAlert: () => {},
@@ -72,9 +72,7 @@ describe("historical version handling", () => {
       version: 2,
       historicalVersion: true,
     });
-    const querySpy = (
-      vi.spyOn(InvApiService, "query") as MockInstance
-    ).mockImplementation(() =>
+    const querySpy = (vi.spyOn(InvApiService, "query") as MockInstance).mockImplementation(() =>
       Promise.resolve({
         data: {
           sample: sampleAttrs(),
@@ -85,10 +83,7 @@ describe("historical version handling", () => {
 
     await subsample.fetchAdditionalInfo();
 
-    expect(querySpy).toHaveBeenCalledWith(
-      "subSamples/1/versions/2",
-      expect.anything(),
-    );
+    expect(querySpy).toHaveBeenCalledWith("subSamples/1/versions/2", expect.anything());
   });
 
   test("setEditing(true) is refused for a historical record", async () => {
@@ -124,8 +119,7 @@ describe("historical version handling", () => {
     });
 
     const generated = subsample.barcodes[0];
-    if (!(generated instanceof GeneratedBarcode))
-      throw new Error("expected a generated barcode");
+    if (!(generated instanceof GeneratedBarcode)) throw new Error("expected a generated barcode");
 
     // a barcode is a durable physical artefact: live URL only
     expect(generated.data).toMatch(/\/inventory\/subsample\/1$/);
@@ -151,9 +145,7 @@ describe("historical version handling", () => {
 
   test("fetchAdditionalInfo fetches the live record when not historical", async () => {
     const subsample = makeMockSubSample();
-    const querySpy = (
-      vi.spyOn(InvApiService, "query") as MockInstance
-    ).mockImplementation(() =>
+    const querySpy = (vi.spyOn(InvApiService, "query") as MockInstance).mockImplementation(() =>
       Promise.resolve({
         data: {
           sample: sampleAttrs(),

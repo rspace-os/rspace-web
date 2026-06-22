@@ -13,6 +13,7 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -49,6 +50,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @Controller
 @RequestMapping("/apps/dmptool")
 public class DMPToolOAuthController extends BaseOAuth2Controller {
+
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "DMPTool";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.dmptool.connection";
+  private static final String CONNECTION_TYPE = "DMPTOOL_CONNECTED";
 
   @Value("${dmptool.client.id}")
   private String clientId;
@@ -102,9 +108,10 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
-      return "connect/authorizationError";
+      return CONNECTED_VIEW;
     }
 
     UserConnection conn = new UserConnection();
@@ -115,7 +122,9 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     userConnectionManager.save(conn);
     log.info("Connected DMPTool for user {}", principal.getName());
 
-    return "connect/dmptool/connected";
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+    return CONNECTED_VIEW;
   }
 
   private URL getServerUrl() throws MalformedURLException {

@@ -1,21 +1,17 @@
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import React from "react";
-import Sidebar from "./Sidebar";
-import { Optional } from "@/util/optional";
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-} from "@mui/material";
-import createAccentedTheme from "@/accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
-import Analytics from "@/components/Analytics";
-import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { BrowserRouter } from "react-router-dom";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import { dummyId } from "../useGalleryListing";
+import createAccentedTheme from "@/accentedTheme";
 import Alerts from "@/components/Alerts/Alerts";
+import Analytics from "@/components/Analytics";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
+import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import { dummyId } from "../useGalleryListing";
+import Sidebar from "./Sidebar";
 
 export function DefaultSidebar(): React.ReactNode {
   return (

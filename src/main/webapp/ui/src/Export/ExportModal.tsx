@@ -1,10 +1,9 @@
-import ExportDialog from "./ExportDialog";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
-import React from "react";
+import type { ExportSelection } from "@/Export/common";
 import Alerts from "../components/Alerts/Alerts";
 import Analytics from "../components/Analytics";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ExportSelection } from "@/Export/common";
+import ExportDialog from "./ExportDialog";
 
 /*
  * This module initialises the ExportDialog react component within the
@@ -72,10 +71,10 @@ RS.exportModal = {
       <QueryClientProvider client={queryClient}>
         <Alerts>
           <Analytics>
-              {/*
-               * TODO 07022026: As we're introducing Suspense into ExportDialog itself, we need to design a Suspense
-               * boundary by moving the Dialog components up a level.
-                */}
+            {/*
+             * TODO 07022026: As we're introducing Suspense into ExportDialog itself, we need to design a Suspense
+             * boundary by moving the Dialog components up a level.
+             */}
             <ExportDialog
               // @ts-expect-error RS is legacy
               exportSelection={adjustedSelection}

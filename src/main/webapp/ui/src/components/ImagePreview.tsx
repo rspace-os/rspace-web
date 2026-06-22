@@ -1,9 +1,9 @@
-import React from "react";
+import type React from "react";
 import "photoswipe/dist/photoswipe.css";
-import { Gallery, Item } from "react-photoswipe-gallery";
-import { type URL } from "../util/types";
 import { Global } from "@emotion/react";
 import Box from "@mui/material/Box";
+import { Gallery, Item } from "react-photoswipe-gallery";
+import type { URL } from "../util/types";
 
 function escapeHtml(unsafe: string) {
   return unsafe
@@ -110,8 +110,7 @@ export default function ImagePreview({
                 component="img"
                 sx={{ height: 0, width: 0 }}
                 ref={(node) => {
-                  const imageNode =
-                    node instanceof HTMLImageElement ? node : null;
+                  const imageNode = node instanceof HTMLImageElement ? node : null;
                   if (typeof ref === "function") {
                     ref(imageNode);
                   }

@@ -2,7 +2,7 @@ import FieldModel, { type FieldModelAttrs } from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
 export const fieldAttrs = (
-  attrs: Readonly<Partial<FieldModelAttrs> & { type: FieldModelAttrs["type"] }>
+  attrs: Readonly<Partial<FieldModelAttrs> & { type: FieldModelAttrs["type"] }>,
 ): FieldModelAttrs => ({
   id: 1,
   globalId: "SF1",
@@ -17,5 +17,5 @@ export const fieldAttrs = (
 });
 
 export const makeMockField = (
-  attrs: Readonly<Partial<FieldModelAttrs> & { type: FieldModelAttrs["type"] }>
+  attrs: Readonly<Partial<FieldModelAttrs> & { type: FieldModelAttrs["type"] }>,
 ): FieldModel => new FieldModel(fieldAttrs(attrs), makeMockSample());

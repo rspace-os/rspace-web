@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { RestApiError } from "@/modules/common/api/schema";
 import { getGroupById } from "../queries";
 import type { GroupInfo } from "../schema";
-import type { RestApiError } from "@/modules/common/api/schema";
 
 const API_BASE_URL = "/api/v1";
 
@@ -74,7 +74,7 @@ describe("getGroupById", () => {
       `${API_BASE_URL}/groups/32768`,
       expect.objectContaining({
         method: "GET",
-      })
+      }),
     );
   });
 
@@ -99,7 +99,7 @@ describe("getGroupById", () => {
         headers: expect.objectContaining({
           Authorization: `Bearer ${token}`,
         }) as Record<string, string>,
-      })
+      }),
     );
   });
 
@@ -147,9 +147,7 @@ describe("getGroupById", () => {
       statusText: "Bad Request",
     });
 
-    await expect(getGroupById("32768", { token })).rejects.toThrow(
-      "Bad request"
-    );
+    await expect(getGroupById("32768", { token })).rejects.toThrow("Bad request");
   });
 
   test("should throw error when server returns 503", async () => {
@@ -169,9 +167,7 @@ describe("getGroupById", () => {
       statusText: "Service Unavailable",
     });
 
-    await expect(getGroupById("32768", { token })).rejects.toThrow(
-      "Service unavailable"
-    );
+    await expect(getGroupById("32768", { token })).rejects.toThrow("Service unavailable");
   });
 
   test("should throw error when server returns 500", async () => {
@@ -191,23 +187,16 @@ describe("getGroupById", () => {
       statusText: "Internal Server Error",
     });
 
-    await expect(getGroupById("32768", { token })).rejects.toThrow(
-      "Internal server error occurred"
-    );
+    await expect(getGroupById("32768", { token })).rejects.toThrow("Internal server error occurred");
   });
 
   test("should throw generic error when response is not ok and error parsing fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ invalidFormat: "not a valid error" }),
-      {
-        status: 500,
-        statusText: "Internal Server Error",
-      }
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ invalidFormat: "not a valid error" }), {
+      status: 500,
+      statusText: "Internal Server Error",
+    });
 
-    await expect(getGroupById("32768", { token })).rejects.toThrow(
-      "Failed to fetch group: Internal Server Error"
-    );
+    await expect(getGroupById("32768", { token })).rejects.toThrow("Failed to fetch group: Internal Server Error");
   });
 
   test("should throw error when response data does not match schema", async () => {
@@ -217,7 +206,7 @@ describe("getGroupById", () => {
         id: 32768,
         name: "Incomplete Group",
         // Missing required fields like globalId, type, etc.
-      })
+      }),
     );
 
     await expect(getGroupById("32768", { token })).rejects.toThrow();
@@ -226,9 +215,7 @@ describe("getGroupById", () => {
   test("should handle network errors", async () => {
     fetchMock.mockRejectOnce(new Error("Network request failed"));
 
-    await expect(getGroupById("32768", { token })).rejects.toThrow(
-      "Network request failed"
-    );
+    await expect(getGroupById("32768", { token })).rejects.toThrow("Network request failed");
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -244,16 +231,11 @@ describe("getGroupById", () => {
 
   test("should fetch different group IDs correctly", async () => {
     const groupId = "12345";
-    fetchMock.mockResponseOnce(
-      JSON.stringify({ ...mockGroupInfo, id: 12345, globalId: "GR12345" })
-    );
+    fetchMock.mockResponseOnce(JSON.stringify({ ...mockGroupInfo, id: 12345, globalId: "GR12345" }));
 
     await getGroupById(groupId, { token });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/groups/${groupId}`,
-      expect.any(Object)
-    );
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/groups/${groupId}`, expect.any(Object));
   });
 
   test("should handle empty string in error message", async () => {

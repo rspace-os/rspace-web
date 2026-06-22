@@ -1,15 +1,11 @@
 import fc, { type Arbitrary } from "fast-check";
-import { type Id, type GlobalId, type GlobalIdPrefix } from "../../BaseRecord";
-import { type Record as Foo } from "../../Record";
+import type { GlobalId, GlobalIdPrefix, Id } from "../../BaseRecord";
+import type { Record as Foo } from "../../Record";
 import { arbitraryPerson } from "../Person/helper";
 
-export const arbitraryId: Arbitrary<Id> = fc
-  .integer({ min: 1 })
-  .map((n) => n as number | null);
+export const arbitraryId: Arbitrary<Id> = fc.integer({ min: 1 }).map((n) => n as number | null);
 
-export const arbitraryGlobalId = (
-  prefix: GlobalIdPrefix,
-): Arbitrary<GlobalId> =>
+export const arbitraryGlobalId = (prefix: GlobalIdPrefix): Arbitrary<GlobalId> =>
   arbitraryId.map((id) => {
     if (!id) throw new Error("id must not be null");
     return `${prefix}${id}`;

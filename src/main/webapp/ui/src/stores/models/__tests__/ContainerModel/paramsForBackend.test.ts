@@ -1,11 +1,11 @@
-import { describe, expect, test, vi } from 'vitest';
-import { makeMockContainer, containerAttrs } from "./mocking";
+import { describe, expect, test, vi } from "vitest";
+import type { ContainerAttrs } from "../../ContainerModel";
 import LocationModel from "../../LocationModel";
-import { type ContainerAttrs } from "../../ContainerModel";
+import { containerAttrs, makeMockContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
-  default: () => ({})
+vi.mock("../../../stores/getRootStore", () => ({
+  default: () => ({}),
 }));
 describe("computed: paramsForBackend", () => {
   /*
@@ -18,10 +18,7 @@ describe("computed: paramsForBackend", () => {
   describe("paramsForBackend should be JSON serialisable when", () => {
     test("the container is a list container.", () => {
       const container = makeMockContainer();
-      expect(JSON.stringify(container.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
-
+      expect(JSON.stringify(container.paramsForBackend)).toEqual(expect.any(String));
     });
     test("the container is a visual container with a locations image.", () => {
       const container = makeMockContainer({
@@ -62,10 +59,7 @@ describe("computed: paramsForBackend", () => {
         }),
       ];
       container.locationsImage = "a blob url";
-      expect(JSON.stringify(container.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
-
+      expect(JSON.stringify(container.paramsForBackend)).toEqual(expect.any(String));
     });
     test("the container is a grid container.", () => {
       const container = makeMockContainer({
@@ -78,10 +72,7 @@ describe("computed: paramsForBackend", () => {
         },
         locationsCount: 6,
       });
-      expect(JSON.stringify(container.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
-
+      expect(JSON.stringify(container.paramsForBackend)).toEqual(expect.any(String));
     });
     test("the container has a parent container.", () => {
       const parent = makeMockContainer({
@@ -95,10 +86,7 @@ describe("computed: paramsForBackend", () => {
         parentContainers: [parent],
         parentLocation: null,
       });
-      expect(JSON.stringify(container.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
+      expect(JSON.stringify(container.paramsForBackend)).toEqual(expect.any(String));
     });
   });
 });
-

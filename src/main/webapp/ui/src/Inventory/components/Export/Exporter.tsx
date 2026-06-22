@@ -1,14 +1,14 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
-import Box from "@mui/material/Box";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import { type ExportOptions } from "../../../stores/definitions/Search";
-import Alert from "@mui/material/Alert";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import type { ExportOptions } from "../../../stores/definitions/Search";
 import { ExportOptionsWrapper } from "./ExportDialog";
 
 type ExporterArgs = {
@@ -72,26 +72,24 @@ function Exporter({
       </CardContent>
       {showActions && (
         <CardActions>
-          <>
-            <Button
-              variant="contained"
-              color="callToAction"
-              disableElevation
-              onClick={() => {
-                void onExport();
-              }}
-              disabled={selectedResults.length === 0}
-            >
-              DOWNLOAD {exportOptions.resultFileType === "ZIP" ? "ZIP" : "CSV"}
-            </Button>
-            <Button
-              onClick={() => {
-                setOpenExporter(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </>
+          <Button
+            variant="contained"
+            color="callToAction"
+            disableElevation
+            onClick={() => {
+              void onExport();
+            }}
+            disabled={selectedResults.length === 0}
+          >
+            DOWNLOAD {exportOptions.resultFileType === "ZIP" ? "ZIP" : "CSV"}
+          </Button>
+          <Button
+            onClick={() => {
+              setOpenExporter(false);
+            }}
+          >
+            Cancel
+          </Button>
         </CardActions>
       )}
     </Card>

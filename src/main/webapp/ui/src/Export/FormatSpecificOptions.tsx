@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import type { Validator } from "../util/Validator";
 import HtmlXmlExport, { type HtmlXmlExportDetailsArgs } from "./HtmlXmlExport";
-import PdfExport, {
-  type PdfExportDetailsArgs,
-  type PdfExportDetails,
-} from "./PdfExport";
-import WordExport, {
-  type WordExportDetailsArgs,
-  type WordExportDetails,
-} from "./WordExport";
-import { type Validator } from "../util/Validator";
+import PdfExport, { type PdfExportDetails, type PdfExportDetailsArgs } from "./PdfExport";
+import WordExport, { type WordExportDetails, type WordExportDetailsArgs } from "./WordExport";
 
 type FormatSpecificArgs =
   | ({
@@ -32,7 +27,7 @@ export default function FormatSpecificOptions(
    * refinements on the `exportType` property of `props` can be used to infer
    * information about the types of the other props.
    */
-  props: FormatSpecificOptionsArgs
+  props: FormatSpecificOptionsArgs,
 ): React.ReactNode {
   const [inputValidations, setInputValidations] = useState({
     exportName: false,
@@ -42,9 +37,8 @@ export default function FormatSpecificOptions(
   useEffect(() => {
     props.validator.setValidFunc(() =>
       Promise.resolve(
-        (props.exportType !== "pdf" && props.exportType !== "doc") ||
-          props.exportDetails.exportName.length > 2
-      )
+        (props.exportType !== "pdf" && props.exportType !== "doc") || props.exportDetails.exportName.length > 2,
+      ),
     );
   }, []);
 
@@ -54,15 +48,10 @@ export default function FormatSpecificOptions(
         <PdfExport
           validations={{ inputValidations, submitAttempt }}
           exportDetails={props.exportDetails}
-          updateExportDetails={<T extends keyof PdfExportDetails>(
-            key: T,
-            value: PdfExportDetails[T]
-          ) => {
+          updateExportDetails={<T extends keyof PdfExportDetails>(key: T, value: PdfExportDetails[T]) => {
             props.updateExportDetails(key, value);
             const newExportName =
-              key === "exportName" && typeof value === "string"
-                ? value
-                : props.exportDetails.exportName;
+              key === "exportName" && typeof value === "string" ? value : props.exportDetails.exportName;
             setInputValidations({
               exportName: newExportName.length > 2,
             });
@@ -74,15 +63,10 @@ export default function FormatSpecificOptions(
         <WordExport
           validations={{ inputValidations, submitAttempt }}
           exportDetails={props.exportDetails}
-          updateExportDetails={<T extends keyof WordExportDetails>(
-            key: T,
-            value: WordExportDetails[T]
-          ) => {
+          updateExportDetails={<T extends keyof WordExportDetails>(key: T, value: WordExportDetails[T]) => {
             props.updateExportDetails(key, value);
             const newExportName =
-              key === "exportName" && typeof value === "string"
-                ? value
-                : props.exportDetails.exportName;
+              key === "exportName" && typeof value === "string" ? value : props.exportDetails.exportName;
             setInputValidations({
               exportName: newExportName.length > 2,
             });

@@ -7,9 +7,7 @@ describe("TimeField", () => {
     // Regression: complex templates feed a Date here; date-fns parse threw on
     // it after the MUI v9 upgrade ("dateString.match is not a function"),
     // crashing the whole template form. Rendering at all is the key assertion.
-    render(
-      <TimeField value={new Date(2026, 0, 1, 12, 30)} onChange={() => {}} />,
-    );
+    render(<TimeField value={new Date(2026, 0, 1, 12, 30)} onChange={() => {}} />);
     expect(screen.getByDisplayValue("12:30")).toBeInTheDocument();
   });
 

@@ -1,13 +1,11 @@
-import { useForm } from "@tanstack/react-form";
-import * as v from "valibot";
-import { Box, Button, Stack, TextField as MuiTextField } from "@mui/material";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { Box, Button, TextField as MuiTextField, Stack } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
-import {
-  raidQueryKeys,
-  useGetAvailableRaidIdentifiersAjaxQuery,
-} from "@/modules/raid/queries";
-import { useAddRaidIdentifierMutation } from "@/modules/raid/mutations";
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
+import * as v from "valibot";
+import { useAddRaidIdentifierMutation } from "@/modules/raid/mutations";
+import { raidQueryKeys, useGetAvailableRaidIdentifiersAjaxQuery } from "@/modules/raid/queries";
 
 // Schema for a RAiD option
 const RaidOptionSchema = v.object({
@@ -16,14 +14,14 @@ const RaidOptionSchema = v.object({
   raidIdentifier: v.pipe(
     v.string(),
     v.nonEmpty("RAiD identifier is required"),
-    v.minLength(3, "RAiD identifier must be at least 3 characters")
+    v.minLength(3, "RAiD identifier must be at least 3 characters"),
   ),
 });
 
 const RaidConnectionsFormSchema = v.object({
   raidOption: v.pipe(
     v.nullable(RaidOptionSchema),
-    v.check((val) => val !== null, "RAiD identifier is required")
+    v.check((val) => val !== null, "RAiD identifier is required"),
   ),
 });
 
@@ -99,8 +97,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
                 field.handleChange(newValue);
               }}
               isOptionEqualToValue={(option, value) =>
-                option.raidIdentifier === value.raidIdentifier &&
-                option.raidServerAlias === value.raidServerAlias
+                option.raidIdentifier === value.raidIdentifier && option.raidServerAlias === value.raidServerAlias
               }
               noOptionsText="No valid available RAiD found, or the RAiD has been used by another project group."
               renderInput={(params) => (
@@ -109,32 +106,17 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
                   label="RAiD Identifier"
                   required
                   error={field.state.meta.errors.length > 0 || mutation.isError}
-                  helperText={
-                    field.state.meta.errors.map(String).join(", ") ||
-                    mutation.error?.message
-                  }
+                  helperText={field.state.meta.errors.map(String).join(", ") || mutation.error?.message}
                 />
               )}
             />
           )}
         </form.Field>
 
-        <form.Subscribe
-          selector={(state) => [
-            state.canSubmit,
-            state.isPristine,
-            state.isSubmitting,
-          ]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isPristine, state.isSubmitting]}>
           {([canSubmit, isPristine, isSubmitting]) => (
             <>
-              <Button
-                type="submit"
-                variant="outlined"
-                color="primary"
-                size="small"
-                disabled={!canSubmit || isPristine}
-              >
+              <Button type="submit" variant="outlined" color="primary" size="small" disabled={!canSubmit || isPristine}>
                 {isSubmitting ? "Adding..." : "Add"}
               </Button>
               <Button

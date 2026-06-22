@@ -80,7 +80,7 @@ class DryadOAuthControllerTest {
     Map<String, String> params = Map.of("code", "my-auth-code", "state", "a-state");
     String result = dryadOAuthController.callback(params, new ExtendedModelMap(), () -> "auser");
     verify(userConnectionManager).save(any(UserConnection.class));
-    assertEquals("connect/dryad/connected", result);
+    assertEquals("connect/connected", result);
   }
 
   @Test

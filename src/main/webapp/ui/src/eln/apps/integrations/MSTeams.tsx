@@ -1,34 +1,29 @@
-//@flow strict
-
-import Grid from "@mui/material/Grid";
-import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import React, { useContext, useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import {
-  type IntegrationStates,
-  useIntegrationsEndpoint,
-} from "../useIntegrationsEndpoint";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
-import TableRow from "@mui/material/TableRow";
+import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
-import TableBody from "@mui/material/TableBody";
-import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { runInAction } from "mobx";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
+import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
-import { Optional } from "../../../util/optional";
-import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
-import Link from "@mui/material/Link";
-import docLinks from "../../../assets/DocLinks";
 import Typography from "@mui/material/Typography";
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import * as ArrayUtils from "../../../util/ArrayUtils";
+import React, { useContext, useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
+import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
+import docLinks from "../../../assets/DocLinks";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import * as ArrayUtils from "../../../util/ArrayUtils";
+import { Optional } from "../../../util/optional";
+import IntegrationCard from "../IntegrationCard";
+import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 
 type MSTeamsArgs = {
   integrationState: IntegrationStates["MSTEAMS"];
@@ -60,9 +55,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
         explanatoryText="Message and video call your colleagues through a workspace platform with file storage."
         image={TeamsIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText="You can post messages about a specific RSpace document to a Teams channel directly from RSpace."
         helpLinkText="Microsoft Teams integration docs"
         website="teams.microsoft.com"
@@ -82,41 +75,29 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell colSpan={2}>
-                            Channel Connector Name
-                          </TableCell>
+                          <TableCell colSpan={2}>Channel Connector Name</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {channels.map((channel) => (
                           <TableRow key={channel.optionsId}>
-                            <TableCell>
-                              {channel.MSTEAMS_CHANNEL_LABEL}
-                            </TableCell>
+                            <TableCell>{channel.MSTEAMS_CHANNEL_LABEL}</TableCell>
                             <TableCell>
                               <Button
                                 onClick={() => {
                                   void (async () => {
                                     try {
-                                      await deleteAppOptions(
-                                        "MSTEAMS",
-                                        channel.optionsId,
-                                      );
+                                      await deleteAppOptions("MSTEAMS", channel.optionsId);
                                       const indexOfDeleted = channels.findIndex(
-                                        (c) =>
-                                          c.optionsId === channel.optionsId,
+                                        (c) => c.optionsId === channel.optionsId,
                                       );
                                       runInAction(() => {
-                                        integrationState.credentials.splice(
-                                          indexOfDeleted,
-                                          1,
-                                        );
+                                        integrationState.credentials.splice(indexOfDeleted, 1);
                                       });
                                       addAlert(
                                         mkAlert({
                                           variant: "success",
-                                          message:
-                                            "Successfully removed channel.",
+                                          message: "Successfully removed channel.",
                                         }),
                                       );
                                     } catch (e) {
@@ -158,17 +139,12 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                             void (async () => {
                               event.preventDefault();
                               try {
-                                const newState = await saveAppOptions(
-                                  "MSTEAMS",
-                                  Optional.empty(),
-                                  {
-                                    MSTEAMS_CHANNEL_LABEL: newChannelName,
-                                    MSTEAMS_WEBHOOK_URL: newWebhook,
-                                  },
-                                );
+                                const newState = await saveAppOptions("MSTEAMS", Optional.empty(), {
+                                  MSTEAMS_CHANNEL_LABEL: newChannelName,
+                                  MSTEAMS_WEBHOOK_URL: newWebhook,
+                                });
                                 runInAction(() => {
-                                  integrationState.credentials =
-                                    newState.credentials;
+                                  integrationState.credentials = newState.credentials;
                                 });
                                 setNewChannelName(null);
                                 setNewWebhook(null);

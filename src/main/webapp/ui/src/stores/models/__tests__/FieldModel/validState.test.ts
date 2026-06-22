@@ -1,4 +1,5 @@
-import { test, describe, expect, vi } from 'vitest';
+import "@/stores/stores/RootStore";
+import { describe, expect, test, vi } from "vitest";
 import FieldModel from "../../FieldModel";
 import { makeMockSample } from "../SampleModel/mocking";
 
@@ -17,19 +18,14 @@ describe("method: validate", () => {
         attachment: null,
         mandatory: true,
       },
-      makeMockSample()
-
+      makeMockSample(),
     );
     expect(field.validate().isError).toBe(true);
     field.validate().do((errorMsg) => {
-      expect(errorMsg).toEqual(
-        `The mandatory custom field "foo" must have a valid value.`
-      );
-
+      expect(errorMsg).toEqual(`The mandatory custom field "foo" must have a valid value.`);
     });
     field.setAttributesDirty({
       selectedOptions: ["option1"],
-
     });
     expect(field.validate().isError).toBe(false);
   });
@@ -46,21 +42,15 @@ describe("method: validate", () => {
         attachment: null,
         mandatory: true,
       },
-      makeMockSample()
-
+      makeMockSample(),
     );
     expect(field.validate().isError).toBe(true);
     field.validate().do((errorMsg) => {
-      expect(errorMsg).toEqual(
-        `The mandatory custom field "foo" must have a valid value.`
-      );
-
+      expect(errorMsg).toEqual(`The mandatory custom field "foo" must have a valid value.`);
     });
     field.setAttributesDirty({
       selectedOptions: "option1",
-
     });
     expect(field.validate().isError).toBe(false);
   });
 });
-

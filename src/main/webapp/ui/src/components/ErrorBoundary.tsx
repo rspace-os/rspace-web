@@ -8,8 +8,7 @@ import AnalyticsContext from "@/stores/contexts/Analytics";
  */
 export const ERROR_MSG: React.ReactNode = (
   <>
-    Something went wrong! Please refresh the page. If this error persists,
-    please contact{" "}
+    Something went wrong! Please refresh the page. If this error persists, please contact{" "}
     <a href="mailto:support@researchspace.com" rel="noreferrer" target="_blank">
       support@researchspace.com
     </a>{" "}
@@ -24,8 +23,7 @@ function Container({
   topOfViewport?: boolean;
   children: React.ReactNode;
 }): React.ReactNode {
-  const applyTopOfViewport =
-    topOfViewport === false || topOfViewport === null;
+  const applyTopOfViewport = topOfViewport === false || topOfViewport === null;
   return (
     <Box
       sx={{
@@ -70,10 +68,7 @@ type ErrorBoundaryState = {
  * also report the error to the analytics service, allowing us to track errors
  * that occur in production.
  */
-export default class ErrorBoundary extends React.Component<
-  ErrorBoundaryArgs,
-  ErrorBoundaryState
-> {
+export default class ErrorBoundary extends React.Component<ErrorBoundaryArgs, ErrorBoundaryState> {
   declare context: React.ContextType<typeof AnalyticsContext>;
 
   message: React.ReactNode;
@@ -94,9 +89,7 @@ export default class ErrorBoundary extends React.Component<
 
   componentDidMount(): void {
     if (!this.context) {
-      throw new Error(
-        "ErrorBoundary must be used within an AnalyticsContext provider",
-      );
+      throw new Error("ErrorBoundary must be used within an AnalyticsContext provider");
     }
   }
 

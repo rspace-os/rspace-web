@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { findCommonGroups } from "../utils";
 import type { SharedFolderList, SharedList } from "../schema";
+import { findCommonGroups } from "../utils";
 
 const shareList: SharedList = [
   {
@@ -79,9 +79,7 @@ describe("findCommonGroups", () => {
 
     expect(result).toHaveLength(1);
     expect(result).toEqual(
-      expect.arrayContaining([
-        { sharedTargetType: "GROUP", sharedTargetId: 100, permission: "READ" },
-      ]),
+      expect.arrayContaining([{ sharedTargetType: "GROUP", sharedTargetId: 100, permission: "READ" }]),
     );
   });
 
@@ -92,11 +90,7 @@ describe("findCommonGroups", () => {
     });
 
     expect(result).toHaveLength(1);
-    expect(result).toEqual(
-      expect.arrayContaining([
-        { sharedTargetType: "GROUP", sharedTargetId: 300 },
-      ]),
-    );
+    expect(result).toEqual(expect.arrayContaining([{ sharedTargetType: "GROUP", sharedTargetId: 300 }]));
   });
 
   test("return empty array if shareItemIds have no common shares", () => {
@@ -192,11 +186,7 @@ describe("findCommonGroups", () => {
     });
 
     expect(result).toHaveLength(1);
-    expect(result).toEqual(
-      expect.arrayContaining([
-        { sharedTargetType: "GROUP", sharedTargetId: 400 },
-      ]),
-    );
+    expect(result).toEqual(expect.arrayContaining([{ sharedTargetType: "GROUP", sharedTargetId: 400 }]));
   });
 
   test("respects permission filters for folder shares", () => {
@@ -245,9 +235,7 @@ describe("findCommonGroups", () => {
 
     expect(result).toHaveLength(1);
     expect(result).toEqual(
-      expect.arrayContaining([
-        { sharedTargetType: "GROUP", sharedTargetId: 500, permission: "EDIT" },
-      ]),
+      expect.arrayContaining([{ sharedTargetType: "GROUP", sharedTargetId: 500, permission: "EDIT" }]),
     );
   });
 });

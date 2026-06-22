@@ -1,9 +1,7 @@
-import TemplateModel, { type TemplateAttrs } from "../../TemplateModel";
 import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
+import TemplateModel, { type TemplateAttrs } from "../../TemplateModel";
 
-export const templateAttrs = (
-  attrs?: Partial<TemplateAttrs>
-): TemplateAttrs => ({
+export const templateAttrs = (attrs?: Partial<TemplateAttrs>): TemplateAttrs => ({
   id: 1,
   type: "SAMPLE_TEMPLATE",
   globalId: "IT1",
@@ -44,6 +42,7 @@ export const templateAttrs = (
   defaultUnitId: 3,
   historicalVersion: false,
   version: 1,
+  samplesToUpdateCount: 0,
   barcodes: [],
   identifiers: [],
   sharingMode: "OWNER_GROUPS",
@@ -51,7 +50,5 @@ export const templateAttrs = (
   ...attrs,
 });
 
-export const makeMockTemplate = (
-  attrs?: Partial<TemplateAttrs>
-): TemplateModel =>
+export const makeMockTemplate = (attrs?: Partial<TemplateAttrs>): TemplateModel =>
   new TemplateModel(new AlwaysNewFactory(), templateAttrs(attrs));

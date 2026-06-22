@@ -1,17 +1,18 @@
-import React, { useContext, useEffect, useState } from "react";
-import { observer } from "mobx-react-lite";
-import { type SearchView as SearchViewType } from "../../../stores/definitions/Search";
-import SearchContext from "../../../stores/contexts/Search";
-import SearchViewComponent from "../../Search/SearchView";
-import Search from "../../Search/Search";
-import { menuIDs } from "../../../util/menuIDs";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import SampleModel from "../../../stores/models/SampleModel";
-import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
 import Collapse from "@mui/material/Collapse";
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect, useState } from "react";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import SearchContext from "../../../stores/contexts/Search";
+import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
+import type SampleModel from "../../../stores/models/SampleModel";
+import { menuIDs } from "../../../util/menuIDs";
+import InnerSearchNavigationContext from "../../components/InnerSearchNavigationContext";
+import Search from "../../Search/Search";
+import SearchViewComponent from "../../Search/SearchView";
 
 const TABS: SearchViewType[] = ["LIST", "TREE", "CARD"];
 
@@ -35,8 +36,7 @@ function SubsampleListing({ sample }: SubsampleListingArgs): React.ReactNode {
   }, [sample.subSamples]);
 
   useEffect(() => {
-    if (!sample.search.activeResult && sample.search.filteredResults.length > 0)
-      void sample.search.setActiveResult();
+    if (!sample.search.activeResult && sample.search.filteredResults.length > 0) void sample.search.setActiveResult();
   }, [sample.search.filteredResults, sample.search]);
 
   const handleSearch = (query: string) => {

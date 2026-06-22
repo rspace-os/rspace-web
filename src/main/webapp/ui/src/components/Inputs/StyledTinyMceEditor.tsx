@@ -1,6 +1,6 @@
-import { type RawEditorOptions } from "tinymce";
-import React from "react";
 import { Editor } from "@tinymce/tinymce-react";
+import type React from "react";
+import type { RawEditorOptions } from "tinymce";
 
 /*
  * The Inventory rich-text editor uses a self-hosted TinyMCE 8 build that is

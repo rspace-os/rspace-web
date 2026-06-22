@@ -1,16 +1,15 @@
-import { test, describe, expect, vi } from 'vitest';
-import {
-  makeMockContainer,
-  containerAttrs,
-} from "../../../models/__tests__/ContainerModel/mocking";
+import "@/stores/stores/RootStore";
+import { describe, expect, test, vi } from "vitest";
+import { containerAttrs, makeMockContainer } from "../../../models/__tests__/ContainerModel/mocking";
+import type Search from "../../../models/Search";
 import MoveStore from "../../MoveStore";
-import Search from "../../../models/Search";
 import type { RootStore } from "../../RootStore";
 
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  query: vi.fn(),
-  }})); // break import cycle
+    query: vi.fn(),
+  },
+})); // break import cycle
 describe("action: setTargetContainer", () => {
   describe("When called, setTargetContainer should", () => {
     /*
@@ -35,10 +34,7 @@ describe("action: setTargetContainer", () => {
           setDialogVisiblePanel: () => {},
         },
       } as unknown as RootStore);
-      const clearLocationsSpy = vi.spyOn(
-        moveStore,
-        "clearLocationsWithContentBeingMovedOut"
-      );
+      const clearLocationsSpy = vi.spyOn(moveStore, "clearLocationsWithContentBeingMovedOut");
       moveStore.search = {
         setActiveResult: async (record: typeof container | null) => {
           if (record) moveStore.clearLocationsWithContentBeingMovedOut(record);

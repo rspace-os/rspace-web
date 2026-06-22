@@ -1,4 +1,4 @@
-import { type URL } from "../util/types";
+import type { URL } from "../util/types";
 
 const mkDocLink = (pageId: string, hash: string = ""): URL =>
   `https://researchspace.helpdocs.io/article/${pageId}#${hash}`;
@@ -11,34 +11,19 @@ const docLinks: Record<string, URL> = {
   editLocationsInVisualContainers: mkDocLink("jya8j336dt"),
   createContainer: mkDocLink("e5v4bvcl61"),
   createTemplate: mkDocLink("c8sxesdqpy"),
-  updateAllSamplesOfTemplate: mkDocLink(
-    "c8sxesdqpy",
-    "update_all_of_your_samples_to_latest_template_version",
-  ),
+  updateAllSamplesOfTemplate: mkDocLink("c8sxesdqpy", "update_all_of_your_samples_to_latest_template_version"),
   createDialog: mkDocLink("x4y02hje72-edit-a-sample-or-container", "create"),
   createSample: mkDocLink("gb3r1lgm5g"),
-  createTemplateFromSample: mkDocLink(
-    "c8sxesdqpy",
-    "create_a_template_from_a_sample",
-  ),
+  createTemplateFromSample: mkDocLink("c8sxesdqpy", "create_a_template_from_a_sample"),
   search: mkDocLink("e0fngo8a5s"),
   import: mkDocLink("a5zm2c3vtw"),
   barcodes: mkDocLink("nr29uf0fdr-scan-and-use-barcodes"),
   permissions: mkDocLink("n09nmg4ax7"),
-  barcodesPrinting: mkDocLink(
-    "nr29uf0fdr-scan-and-use-barcodes",
-    "barcode_printing",
-  ),
-  zebraPrinter: mkDocLink(
-    "nr29uf0fdr-scan-and-use-barcodes",
-    "using_a_zebra_printer",
-  ),
+  barcodesPrinting: mkDocLink("nr29uf0fdr-scan-and-use-barcodes", "barcode_printing"),
+  zebraPrinter: mkDocLink("nr29uf0fdr-scan-and-use-barcodes", "using_a_zebra_printer"),
   luceneSyntax: mkDocLink("k919di8naq", "expert_lucene_query_syntax"),
   controlledVocabularies: mkDocLink("8ujmvpa1no"),
-  IGSNIdentifiers: mkDocLink(
-    "0wh5ziurr5",
-    "add-igsn-identifiers-to-your-samples",
-  ),
+  IGSNIdentifiers: mkDocLink("0wh5ziurr5", "add-igsn-identifiers-to-your-samples"),
   pyratCors: mkDocLink("9kkeooveia", "cors"),
   panelAdjuster: mkDocLink("bt6kx098eq", "panel_adjuster"),
   appsIntroduction: mkDocLink("08ky7o0l1y"),
@@ -58,10 +43,7 @@ const docLinks: Record<string, URL> = {
   videoIntegration: mkDocLink("cdzdub1ykw"),
   jupyter: mkDocLink("gg0ao0rqpt"),
   chemistry: mkDocLink("wfxm4xwtio"),
-  pubchem: mkDocLink(
-    "wfxm4xwtio",
-    "importing_chemical_structures_from_external_databases",
-  ),
+  pubchem: mkDocLink("wfxm4xwtio", "importing_chemical_structures_from_external_databases"),
   nextcloud: mkDocLink("na3hn8ilee"),
   omero: mkDocLink("bwwbpkll90"),
   owncloud: mkDocLink("v8ss2uso0a"),
@@ -80,7 +62,7 @@ const docLinks: Record<string, URL> = {
   fieldmark: mkDocLink("idbaaggghu"),
   orcid: mkDocLink("yhkbtnj61a"),
   gallery: mkDocLink("sl6mo1i9do"),
-  raid: mkDocLink("zb4c2c8a4b")
+  raid: mkDocLink("zb4c2c8a4b"),
 };
 
 /**

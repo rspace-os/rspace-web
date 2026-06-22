@@ -10,9 +10,7 @@
       "description": "",
       "annotations": [],
       "omeroConnectionKey": "user1a",
-      "samplesUrls": [
-        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2661/wellsampleindex/0/wells/"
-      ],
+      "samplesUrls": ["https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2661/wellsampleindex/0/wells/"],
       "type": "plateAcquisition",
       "parentId": 2551,
       "children": []
@@ -27,9 +25,7 @@
       "description": "",
       "annotations": [],
       "omeroConnectionKey": "user1a",
-      "samplesUrls": [
-        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2652/wellsampleindex/1/wells/"
-      ],
+      "samplesUrls": ["https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2652/wellsampleindex/1/wells/"],
       "type": "plateAcquisition",
       "parentId": 2551,
       "children": []
@@ -44,9 +40,7 @@
       "description": "",
       "annotations": [],
       "omeroConnectionKey": "user1a",
-      "samplesUrls": [
-        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2653/wellsampleindex/2/wells/"
-      ],
+      "samplesUrls": ["https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2653/wellsampleindex/2/wells/"],
       "type": "plateAcquisition",
       "parentId": 2551,
       "children": []
@@ -61,9 +55,7 @@
       "description": "",
       "annotations": [],
       "omeroConnectionKey": "user1a",
-      "samplesUrls": [
-        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2654/wellsampleindex/3/wells/"
-      ],
+      "samplesUrls": ["https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2654/wellsampleindex/3/wells/"],
       "type": "plateAcquisition",
       "parentId": 2551,
       "children": []
@@ -78,9 +70,7 @@
       "description": "",
       "annotations": [],
       "omeroConnectionKey": "user1a",
-      "samplesUrls": [
-        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2651/wellsampleindex/4/wells/"
-      ],
+      "samplesUrls": ["https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2651/wellsampleindex/4/wells/"],
       "type": "plateAcquisition",
       "parentId": 2551,
       "children": []
@@ -95,9 +85,7 @@
       "description": "",
       "annotations": [],
       "omeroConnectionKey": "user1a",
-      "samplesUrls": [
-        "https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2655/wellsampleindex/5/wells/"
-      ],
+      "samplesUrls": ["https://idr.openmicroscopy.org/api/v0/m/plateacquisitions/2655/wellsampleindex/5/wells/"],
       "type": "plateAcquisition",
       "parentId": 2551,
       "children": []

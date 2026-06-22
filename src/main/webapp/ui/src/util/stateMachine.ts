@@ -1,4 +1,4 @@
-import { action, observable, computed, makeObservable } from "mobx";
+import { action, computed, makeObservable, observable } from "mobx";
 import RsSet from "./set";
 
 type TransitionMapping<T extends string> = { [state in T]: Set<T> };
@@ -9,10 +9,7 @@ type TransitionCallbackReturn<T> = {
 type TransitionCallback<T> = {
   before: Set<T>;
   after: Set<T>;
-  callback: (
-    oldState: TransitionCallbackReturn<T>,
-    newState: TransitionCallbackReturn<T>
-  ) => void;
+  callback: (oldState: TransitionCallbackReturn<T>, newState: TransitionCallbackReturn<T>) => void;
 };
 
 /**
@@ -63,7 +60,7 @@ export default class StateMachine<T extends string> {
     transitionMapping: TransitionMapping<T>,
     initialState: T,
     showFn: (currentState: T) => string,
-    initialData: unknown
+    initialData: unknown,
   ) {
     makeObservable(this, {
       currentState: observable,
@@ -94,45 +91,30 @@ export default class StateMachine<T extends string> {
   }
 
   isCurrentState(states: RsSet<T> | T): boolean {
-    if (!(states instanceof RsSet))
-      return this.isCurrentState(new RsSet([states]));
+    if (!(states instanceof RsSet)) return this.isCurrentState(new RsSet([states]));
     if (!states.isSubsetOf(this.states))
       throw new Error(
-        `Invalid: ${this.setOfStatesToString(
-          states
-        )} is not a subset of ${this.setOfStatesToString(this.states)}`
+        `Invalid: ${this.setOfStatesToString(states)} is not a subset of ${this.setOfStatesToString(this.states)}`,
       );
     return states.has(this.currentState);
   }
 
   assertCurrentState(states: RsSet<T> | T): void {
-    if (!(states instanceof RsSet))
-      return this.assertCurrentState(new RsSet([states]));
+    // biome-ignore lint/correctness/noVoidTypeReturn: initial biome migration
+    if (!(states instanceof RsSet)) return this.assertCurrentState(new RsSet([states]));
     if (!states.isSubsetOf(this.states))
       throw new Error(
-        `Invalid: ${this.setOfStatesToString(
-          states
-        )} is not a subset of ${this.setOfStatesToString(this.states)}`
+        `Invalid: ${this.setOfStatesToString(states)} is not a subset of ${this.setOfStatesToString(this.states)}`,
       );
     if (!states.has(this.currentState)) {
-      throw new Error(
-        `Current state is not one of ${this.setOfStatesToString(states)}.`
-      );
+      throw new Error(`Current state is not one of ${this.setOfStatesToString(states)}.`);
     }
   }
 
-  transitionTo(
-    state: T,
-    dataFn: (oldData: unknown) => unknown = (x) => x
-  ): void {
-
+  transitionTo(state: T, dataFn: (oldData: unknown) => unknown = (x) => x): void {
     if (this.enableLogging) console.log(this.currentState, "->", state);
     if (!this.transitionMapping[this.currentState].has(state)) {
-      throw new Error(
-        `Cannot transition from '${this.showFn(
-          this.currentState
-        )}' to '${this.showFn(state)}'.`
-      );
+      throw new Error(`Cannot transition from '${this.showFn(this.currentState)}' to '${this.showFn(state)}'.`);
     }
     const before = { state: this.currentState, data: this.data };
 
@@ -142,11 +124,7 @@ export default class StateMachine<T extends string> {
     this.currentState = state;
 
     for (const [, tc] of this.transitionCallbacks) {
-      const {
-        before: beforeSet,
-        after: afterSet,
-        callback,
-      }: TransitionCallback<T> = tc;
+      const { before: beforeSet, after: afterSet, callback }: TransitionCallback<T> = tc;
       if (beforeSet.has(before.state) || afterSet.has(state))
         callback(before, { state: this.currentState, data: this.data });
     }

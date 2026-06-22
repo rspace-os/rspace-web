@@ -1,26 +1,25 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
 import { render } from "@testing-library/react";
-import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
-import Quantity from "../Quantity";
-import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
-import { storesContext } from "../../../../stores/stores-context";
 import fc from "fast-check";
+import { describe, expect, test, vi } from "vitest";
+import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
+import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../stores/stores-context";
+import Quantity from "../Quantity";
 
 vi.mock("../../../../common/InvApiService", () => ({
-  default: {
-  }}));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+  default: {},
+}));
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({
-      id: 1,
-      label: "foo",
-      category: "mass",
-      description: "foo is mass",
-    }),
-  },
-})
+    unitStore: {
+      getUnit: () => ({
+        id: 1,
+        label: "foo",
+        category: "mass",
+        description: "foo is mass",
+      }),
+    },
+  }),
 }));
 
 const unitOptions = [
@@ -56,114 +55,103 @@ describe("Quantity", () => {
           const { container } = render(
             <storesContext.Provider value={rootStore}>
               <Quantity onErrorStateChange={() => {}} sample={sample} />
-            </storesContext.Provider>
+            </storesContext.Provider>,
           );
           expect(container).not.toHaveTextContent(/per subsample/);
-        })
+        }),
       );
     });
     test('When there are multiple subsamples being created, "per subsample" should be shown.', () => {
       fc.assert(
-        fc.property(
-          fc.tuple(fc.nat(1000), fc.nat(100)),
-          ([quantity, count]) => {
-            fc.pre(count >= 2);
-            const sample = makeMockSample({
-              id: null,
-              quantity: {
-                numericValue: quantity,
-                unitId: 1,
-              },
-            });
-            sample.setAttributes({
-              newSampleSubSamplesCount: count,
-            });
-            const rootStore = makeMockRootStore({
-              uiStore: {},
-              unitStore: {
-                units: unitOptions,
-                unitsOfCategory: () => unitOptions,
-              },
-            });
-            const { container } = render(
-              <storesContext.Provider value={rootStore}>
-                <Quantity onErrorStateChange={() => {}} sample={sample} />
-              </storesContext.Provider>
-            );
-            expect(container).toHaveTextContent(/per subsample/);
-          }
-        )
+        fc.property(fc.tuple(fc.nat(1000), fc.nat(100)), ([quantity, count]) => {
+          fc.pre(count >= 2);
+          const sample = makeMockSample({
+            id: null,
+            quantity: {
+              numericValue: quantity,
+              unitId: 1,
+            },
+          });
+          sample.setAttributes({
+            newSampleSubSamplesCount: count,
+          });
+          const rootStore = makeMockRootStore({
+            uiStore: {},
+            unitStore: {
+              units: unitOptions,
+              unitsOfCategory: () => unitOptions,
+            },
+          });
+          const { container } = render(
+            <storesContext.Provider value={rootStore}>
+              <Quantity onErrorStateChange={() => {}} sample={sample} />
+            </storesContext.Provider>,
+          );
+          expect(container).toHaveTextContent(/per subsample/);
+        }),
       );
     });
   });
   describe("Helper text should render correctly.", () => {
     test("Whole units of quantity should have zero decimal places.", () => {
       fc.assert(
-        fc.property(
-          fc.tuple(fc.nat(1000), fc.nat(100)),
-          ([quantity, count]) => {
-            fc.pre(count >= 2);
-            const sample = makeMockSample({
-              id: null,
-              quantity: {
-                numericValue: quantity,
-                unitId: 1,
-              },
-            });
-            sample.setAttributes({
-              newSampleSubSamplesCount: count,
-            });
-            const rootStore = makeMockRootStore({
-              uiStore: {},
-              unitStore: {
-                units: unitOptions,
-                unitsOfCategory: () => unitOptions,
-              },
-            });
-            const { container } = render(
-              <storesContext.Provider value={rootStore}>
-                <Quantity onErrorStateChange={() => {}} sample={sample} />
-              </storesContext.Provider>
-            );
-            expect(container).toHaveTextContent(/\d+ foo/);
-          }
-        )
+        fc.property(fc.tuple(fc.nat(1000), fc.nat(100)), ([quantity, count]) => {
+          fc.pre(count >= 2);
+          const sample = makeMockSample({
+            id: null,
+            quantity: {
+              numericValue: quantity,
+              unitId: 1,
+            },
+          });
+          sample.setAttributes({
+            newSampleSubSamplesCount: count,
+          });
+          const rootStore = makeMockRootStore({
+            uiStore: {},
+            unitStore: {
+              units: unitOptions,
+              unitsOfCategory: () => unitOptions,
+            },
+          });
+          const { container } = render(
+            <storesContext.Provider value={rootStore}>
+              <Quantity onErrorStateChange={() => {}} sample={sample} />
+            </storesContext.Provider>,
+          );
+          expect(container).toHaveTextContent(/\d+ foo/);
+        }),
       );
-
     });
     test("Fractional units of quantity should have zero or two decimal places.", () => {
       fc.assert(
-        fc.property(
-          fc.tuple(fc.float({ min: 0, max: 1000 }), fc.nat(100)),
-          ([quantity, count]) => {
-            fc.pre(count >= 2);
-            const sample = makeMockSample({
-              id: null,
-              quantity: {
-                numericValue: quantity,
-                unitId: 1,
-              },
-            });
-            sample.setAttributes({
-              newSampleSubSamplesCount: count,
-            });
-            const rootStore = makeMockRootStore({
-              uiStore: {},
-              unitStore: {
-                units: unitOptions,
-                unitsOfCategory: () => unitOptions,
-              },
-            });
-            const { container } = render(
-              <storesContext.Provider value={rootStore}>
-                <Quantity onErrorStateChange={() => {}} sample={sample} />
-              </storesContext.Provider>
-            );
-            expect(container).toHaveTextContent(/\d+(\.\d\d)? foo/);
-          }
-        )
+        fc.property(fc.tuple(fc.float({ min: 0, max: 1000 }), fc.nat(100)), ([quantity, count]) => {
+          fc.pre(count >= 2);
+          const sample = makeMockSample({
+            id: null,
+            quantity: {
+              numericValue: quantity,
+              unitId: 1,
+            },
+          });
+          sample.setAttributes({
+            newSampleSubSamplesCount: count,
+          });
+          const rootStore = makeMockRootStore({
+            uiStore: {},
+            unitStore: {
+              units: unitOptions,
+              unitsOfCategory: () => unitOptions,
+            },
+          });
+          const { container } = render(
+            <storesContext.Provider value={rootStore}>
+              <Quantity onErrorStateChange={() => {}} sample={sample} />
+            </storesContext.Provider>,
+          );
+          expect(container).toHaveTextContent(/\d+(\.\d\d)? foo/);
+        }),
       );
     });
   });
 });
-

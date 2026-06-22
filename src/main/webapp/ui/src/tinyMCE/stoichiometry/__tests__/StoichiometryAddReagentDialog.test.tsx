@@ -1,7 +1,7 @@
-import React from "react";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ThemeProvider } from "@mui/material/styles";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import materialTheme from "@/theme";
@@ -53,10 +53,7 @@ describe("StoichiometryAddReagentDialog", () => {
     renderDialog({ onAddReagent, onClose });
 
     await user.type(screen.getByRole("textbox", { name: "Name" }), "  Water  ");
-    await user.type(
-      screen.getByRole("textbox", { name: "SMILES String" }),
-      "O",
-    );
+    await user.type(screen.getByRole("textbox", { name: "SMILES String" }), "O");
     await user.click(screen.getByRole("button", { name: "Add Chemical" }));
 
     await waitFor(() => {
@@ -83,4 +80,3 @@ describe("StoichiometryAddReagentDialog", () => {
     expect(smilesInput).toHaveValue("");
   });
 });
-

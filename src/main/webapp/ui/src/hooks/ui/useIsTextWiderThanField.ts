@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Optional } from "../../util/optional";
 
 /**
@@ -54,17 +54,13 @@ export default function useIsTextWiderThanField(): {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Canvas context is not available");
-    context.font = Optional.fromNullable(inputElement)
-      .map(getCanvasFont)
-      .orElse("");
+    context.font = Optional.fromNullable(inputElement).map(getCanvasFont).orElse("");
     const metrics = context.measureText(text);
     return metrics.width;
   }
 
   return {
-    textTooWide: Optional.fromNullable(ref.current).map(
-      (inputElement) => getTextWidth(inputElement) > width,
-    ),
+    textTooWide: Optional.fromNullable(ref.current).map((inputElement) => getTextWidth(inputElement) > width),
     inputRef: ref,
   };
 }

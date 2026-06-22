@@ -1,20 +1,20 @@
-import React, { type ReactElement } from "react";
+import type { ReactElement } from "react";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { menuIDs } from "../../../util/menuIDs";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-import { type ContextMenuRenderOptions } from "./ContextMenuAction";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import SelectAction from "./SelectAction";
-import EditAction from "./EditAction";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import AddToBasketAction from "./AddToBasketAction";
+import type { ContextMenuRenderOptions } from "./ContextMenuAction";
+import CreateAction from "./CreateAction";
 import DeleteAction from "./DeleteAction";
 import DuplicateAction from "./DuplicateAction";
-import MoveAction from "./MoveAction";
-import RestoreAction from "./RestoreAction";
-import TransferAction from "./TransferAction";
-import CreateAction from "./CreateAction";
-import AddToBasketAction from "./AddToBasketAction";
-import RemoveFromBasketAction from "./RemoveFromBasketAction";
+import EditAction from "./EditAction";
 import ExportAction from "./ExportAction";
+import MoveAction from "./MoveAction";
 import PrintBarcodeAction from "./PrintBarcodeAction";
+import RemoveFromBasketAction from "./RemoveFromBasketAction";
+import RestoreAction from "./RestoreAction";
+import SelectAction from "./SelectAction";
+import TransferAction from "./TransferAction";
 
 type ContextActionsArgs = {
   selectedResults: Array<InventoryRecord>;
@@ -39,28 +39,18 @@ const contextActions = ({
   closeMenu,
   menuID,
   basketSearch,
-}: ContextActionsArgs): ((
-  as: ContextMenuRenderOptions
-) => Array<ContextAction>) => {
+}: ContextActionsArgs): ((as: ContextMenuRenderOptions) => Array<ContextAction>) => {
   const contextActionsGenerator = (as: ContextMenuRenderOptions) => {
-    const allSelectedAvailable: boolean = selectedResults.every(
-      (r: InventoryRecord) => !r.deleted
-    );
-    const allSelectedDeleted: boolean = selectedResults.every(
-      (r: InventoryRecord) => r.deleted
-    );
+    const allSelectedAvailable: boolean = selectedResults.every((r: InventoryRecord) => !r.deleted);
+    const allSelectedDeleted: boolean = selectedResults.every((r: InventoryRecord) => r.deleted);
 
     const reasonsToDisableContextMenu = selectedResults
       .map((r: InventoryRecord) => r.contextMenuDisabled())
       .filter(Boolean);
     const disableAllActions: string =
-      forceDisabled ||
-      (reasonsToDisableContextMenu.length > 0
-        ? reasonsToDisableContextMenu[0] || ""
-        : "");
+      forceDisabled || (reasonsToDisableContextMenu.length > 0 ? reasonsToDisableContextMenu[0] || "" : "");
 
-    const hideInPickerAndWhenNotAllCurrent =
-      menuID === menuIDs.PICKER || allSelectedDeleted || mixedSelectedStatus;
+    const hideInPickerAndWhenNotAllCurrent = menuID === menuIDs.PICKER || allSelectedDeleted || mixedSelectedStatus;
 
     return [
       {
@@ -73,9 +63,7 @@ const contextActions = ({
             disabled={disableAllActions}
           />
         ),
-        hidden: new Set([menuIDs.STEPPER, menuIDs.CONTENT, menuIDs.CARD]).has(
-          menuID
-        ),
+        hidden: new Set([menuIDs.STEPPER, menuIDs.CONTENT, menuIDs.CARD]).has(menuID),
       },
       {
         component: (
@@ -147,10 +135,7 @@ const contextActions = ({
             closeMenu={closeMenu}
           />
         ),
-        hidden:
-          menuID === menuIDs.PICKER ||
-          allSelectedAvailable ||
-          mixedSelectedStatus,
+        hidden: menuID === menuIDs.PICKER || allSelectedAvailable || mixedSelectedStatus,
       },
       {
         component: (

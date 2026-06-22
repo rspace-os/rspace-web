@@ -1,17 +1,11 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
-import {
-  Filestore,
-  GalleryFile,
-  LocalGalleryFile,
-  RemoteFile,
-} from "@/eln/gallery/useGalleryListing";
+import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
+import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
-import * as ArrayUtils from "@/util/ArrayUtils";
-import { IsValid, IsInvalid } from "@/components/ValidatingSubmitButton";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
-import RsSet from "@/util/set";
+import * as ArrayUtils from "@/util/ArrayUtils";
+import type RsSet from "@/util/set";
 
 declare global {
   interface RSGlobal {
@@ -24,6 +18,7 @@ declare global {
   }
 }
 
+// biome-ignore lint/complexity/useArrowFunction: TinyMCE instantiates plugins with `new`, so this factory must be constructable (an arrow function throws "is not a constructor")
 parent.tinymce.PluginManager.add("gallery", function (editor) {
   function* renderGallery(domContainer: HTMLElement): Generator<
     {
@@ -41,18 +36,12 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
       };
       newProps = yield newProps;
       const handleSubmit = (files: RsSet<GalleryFile>) => {
-        const localFiles = ArrayUtils.filterClass(
-          LocalGalleryFile,
-          files.toArray(),
-        );
+        const localFiles = ArrayUtils.filterClass(LocalGalleryFile, files.toArray());
         localFiles.forEach((file) => {
           const recordId = file.id;
 
           if (recordId === null) {
-            window.RS.confirm?.(
-              `Could not insert file "${file.name}"`,
-              "error",
-            );
+            window.RS.confirm?.(`Could not insert file "${file.name}"`, "error");
             return;
           }
 
@@ -64,17 +53,11 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
               addFromGallery(recordInformation);
             } catch (e) {
               console.error(e);
-              window.RS.confirm?.(
-                `Could not insert file "${file.name}"`,
-                "error",
-              );
+              window.RS.confirm?.(`Could not insert file "${file.name}"`, "error");
             }
           })();
         });
-        const remoteFiles = ArrayUtils.filterClass(
-          RemoteFile,
-          files.toArray(),
-        );
+        const remoteFiles = ArrayUtils.filterClass(RemoteFile, files.toArray());
         remoteFiles.forEach((file) => {
           const json = {
             name: file.name,
@@ -84,35 +67,28 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
             nfsId: file.nfsId,
             nfsType: (file.path[0] as Filestore).filesystemType,
           };
-          window.RS.insertTemplateIntoTinyMCE?.(
-            "netFilestoreLink",
-            json,
-          );
+          window.RS.insertTemplateIntoTinyMCE?.("netFilestoreLink", json);
         });
-        if (
-          files.size >
-          localFiles.length + remoteFiles.length
-        ) {
-          throw new Error(
-            "Some selected files were of an unsupported type",
-          );
+        if (files.size > localFiles.length + remoteFiles.length) {
+          throw new Error("Some selected files were of an unsupported type");
         }
         newProps?.onClose?.();
       };
 
       const handleValidateSelection = (file: GalleryFile) => {
-        if (
-          !(file instanceof LocalGalleryFile) &&
-          !(file instanceof RemoteFile)
-        )
+        if (!(file instanceof LocalGalleryFile) && !(file instanceof RemoteFile))
           return IsInvalid("Unsupported file type");
-        if (file.isSystemFolder)
-          return IsInvalid("System Folders cannot be inserted");
+        if (file.isSystemFolder) return IsInvalid("System Folders cannot be inserted");
         return IsValid();
       };
 
       root.render(
-        <GalleryEntrypoint open={newProps.open} onClose={newProps.onClose} onSubmit={handleSubmit} validateSelection={handleValidateSelection} />,
+        <GalleryEntrypoint
+          open={newProps.open}
+          onClose={newProps.onClose}
+          onSubmit={handleSubmit}
+          validateSelection={handleValidateSelection}
+        />,
       );
     }
   }
@@ -122,19 +98,18 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
     div.id = "tinymce-gallery";
     document.body.appendChild(div);
   }
-  const galleryRenderer = renderGallery(
-    document.getElementById("tinymce-gallery")!,
-  );
+  // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+  const galleryRenderer = renderGallery(document.getElementById("tinymce-gallery")!);
   galleryRenderer.next({ open: false });
 
   const openGalleryAction = () => {
-      galleryRenderer.next({
-        open: true,
-        onClose: () => {
-          galleryRenderer.next({ open: false });
-        },
-      });
-    };
+    galleryRenderer.next({
+      open: true,
+      onClose: () => {
+        galleryRenderer.next({ open: false });
+      },
+    });
+  };
 
   // Add a button to the toolbar
   editor.ui.registry.addButton("btnMediaGallery", {
@@ -160,12 +135,12 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
     action: openGalleryAction,
   });
 
-  editor.addCommand('cmdMediaGallery', openGalleryAction);
+  editor.addCommand("cmdMediaGallery", openGalleryAction);
 
   return {
     getMetadata: () => ({
-      name: 'RSpace Gallery Plugin',
-      url: 'https://www.researchspace.com/',
-    })
+      name: "RSpace Gallery Plugin",
+      url: "https://www.researchspace.com/",
+    }),
   };
 });

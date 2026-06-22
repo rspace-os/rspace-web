@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.inventory.DataCiteRelationType;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -60,6 +61,25 @@ abstract class InstrumentTemplateFieldValidator implements Validator {
             "errors.inventory.template.invalid.field.content",
             new Object[] {e.getMessage()},
             e.getMessage());
+      }
+    }
+
+    // Link fields: every entry in the allowed-relation-types whitelist must be a valid DataCite
+    // relation type (a null/empty whitelist means "all relation types allowed"). Validate whenever
+    // the whitelist is present, not only when the DTO declares type==LINK: an existing-field PUT
+    // may
+    // omit `type` while still updating a link field's whitelist (persisted by DB field type), so
+    // gating on the incoming type would let an invalid whitelist bypass validation (RSDEV-1200).
+    // (Mirrors SampleTemplateFieldValidator: instrument templates support link fields too.)
+    if (apiTemplateField.getAllowedRelationTypes() != null) {
+      for (String relationType : apiTemplateField.getAllowedRelationTypes()) {
+        if (!DataCiteRelationType.isValid(relationType)) {
+          errors.rejectValue(
+              "allowedRelationTypes",
+              "errors.inventory.template.invalid.relation.type",
+              new Object[] {relationType},
+              "invalid relation type");
+        }
       }
     }
   }

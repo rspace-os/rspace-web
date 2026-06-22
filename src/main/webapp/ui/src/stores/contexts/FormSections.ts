@@ -1,5 +1,5 @@
 import React, { type Context } from "react";
-import { type RecordType } from "../definitions/InventoryRecord";
+import type { RecordType } from "../definitions/InventoryRecord";
 
 export type AllowedFormTypes = RecordType | "mixed";
 

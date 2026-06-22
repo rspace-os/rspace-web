@@ -1,8 +1,8 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../auth/useOauthToken";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import useOauthToken from "../auth/useOauthToken";
 
 export type ChemicalCompound = {
   name: string;
@@ -215,7 +215,7 @@ export default function useChemicalImport(): {
     const fullHeight = 500;
     const previewWidth = 250;
     const previewHeight = 250;
-    const milliseconds = new Date().getTime();
+    const milliseconds = Date.now();
     const json = {
       id,
       ecatChemFileId: chemFileId,
@@ -227,9 +227,7 @@ export default function useChemicalImport(): {
       fieldId,
       tstamp: milliseconds,
     };
-    const htmlTemplate = await axios.get(
-      "/fieldTemplates/ajax/chemElementLink",
-    );
+    const htmlTemplate = await axios.get("/fieldTemplates/ajax/chemElementLink");
     // @ts-expect-error Globally available on the document editor page
     return Mustache.render(htmlTemplate.data, json) as string;
   }

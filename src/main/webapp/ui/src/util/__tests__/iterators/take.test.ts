@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest';
-import { take, incrementForever } from "../../iterators";
-
 import fc from "fast-check";
+import { describe, expect, test } from "vitest";
+import { incrementForever, take } from "../../iterators";
+
 describe("take", () => {
   test("Returns an iterator, of desired length, from the head of another iterator.", () => {
     // Because take works over any iterator it will take from an array
@@ -18,7 +18,6 @@ describe("take", () => {
     expect([...take(m, 2)]).toEqual([
       ["foo", 3],
       ["bar", 7],
-
     ]);
     // Or a string
 
@@ -27,10 +26,7 @@ describe("take", () => {
 
     expect([...take(incrementForever(), 2)]).toEqual([0, 1]);
     // It can also be composed with itself
-    expect([...take(take([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5), 3)]).toEqual([
-      1, 2, 3,
-    ]);
-
+    expect([...take(take([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5), 3)]).toEqual([1, 2, 3]);
   });
   test("Length should be the minimum of the input iterator and the passed number", () => {
     fc.assert(
@@ -38,12 +34,9 @@ describe("take", () => {
         /// 1000 limit is for performance reasons
         fc.tuple(fc.array(fc.anything(), { maxLength: 1000 }), fc.nat(1000)),
         ([iterator, count]) => {
-          expect([...take(iterator, count)].length).toEqual(
-            Math.min(iterator.length, count)
-          );
-        }
-      )
+          expect([...take(iterator, count)].length).toEqual(Math.min(iterator.length, count));
+        },
+      ),
     );
   });
 });
-

@@ -1,18 +1,16 @@
-
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
+import type { GlobalId } from "../../../definitions/BaseRecord";
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
-import { sampleAttrs, makeMockSample } from "../../__tests__/SampleModel/mocking";
-import { subsampleAttrs } from "../../__tests__/SubSampleModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
+import { makeMockSample, sampleAttrs } from "../../__tests__/SampleModel/mocking";
+import { subsampleAttrs } from "../../__tests__/SubSampleModel/mocking";
 import AlwaysNewFactory from "../AlwaysNewFactory";
-import { type GlobalId } from "../../../definitions/BaseRecord";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
-  peopleStore: {},
-  unitStore: { getUnit: () => ({ label: "ml" }) },
-})
-
+    peopleStore: {},
+    unitStore: { getUnit: () => ({ label: "ml" }) },
+  }),
 })); // break import cycle
 describe("AlwaysNewFactory", () => {
   describe("When called with the same Global ID, newRecord should", () => {
@@ -21,16 +19,10 @@ describe("AlwaysNewFactory", () => {
       const attrs1 = containerAttrs({ globalId: "IC1" });
       const attrs2 = containerAttrs({ globalId: "IC1" });
       // Type assertion to satisfy the strict globalId requirement
-      const container1 = factory.newRecord(
-        attrs1 as Record<string, unknown> & { globalId: GlobalId }
-      );
-      const container2 = factory.newRecord(
-        attrs2 as Record<string, unknown> & { globalId: GlobalId }
-
-      );
+      const container1 = factory.newRecord(attrs1 as Record<string, unknown> & { globalId: GlobalId });
+      const container2 = factory.newRecord(attrs2 as Record<string, unknown> & { globalId: GlobalId });
       expect(container1).not.toBe(container2);
     });
-
   });
   describe("When called with a versioned Global ID, newRecord should", () => {
     /*
@@ -43,7 +35,7 @@ describe("AlwaysNewFactory", () => {
       const sample = factory.newRecord(
         sampleAttrs({ globalId: "SA42v2" }) as Record<string, unknown> & {
           globalId: GlobalId;
-        }
+        },
       );
       expect(sample.recordType).toBe("sample");
     });
@@ -56,7 +48,7 @@ describe("AlwaysNewFactory", () => {
           sample: makeMockSample(),
         }) as Record<string, unknown> & {
           globalId: GlobalId;
-        }
+        },
       );
       expect(subSample.recordType).toBe("subSample");
     });
@@ -66,7 +58,7 @@ describe("AlwaysNewFactory", () => {
       const container = factory.newRecord(
         containerAttrs({ globalId: "IC9v3" }) as Record<string, unknown> & {
           globalId: GlobalId;
-        }
+        },
       );
       expect(container.recordType).toBe("container");
     });
@@ -82,4 +74,3 @@ describe("AlwaysNewFactory", () => {
     });
   });
 });
-

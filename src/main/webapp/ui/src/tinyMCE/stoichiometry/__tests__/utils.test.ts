@@ -8,10 +8,7 @@ import {
   hasDuplicateInventoryLink,
 } from "@/tinyMCE/stoichiometry/utils";
 
-const createRsChemElement = (
-  id: number,
-  smiles: string,
-): NonNullable<EditableMolecule["rsChemElement"]> => ({
+const createRsChemElement = (id: number, smiles: string): NonNullable<EditableMolecule["rsChemElement"]> => ({
   id,
   parentId: null,
   ecatChemFileId: null,
@@ -170,12 +167,9 @@ describe("getInventoryUpdateEligibility", () => {
       stockDeducted: true,
     };
 
-    expect(
-      getInventoryUpdateEligibility(molecule, linkedQuantityInfo),
-    ).toMatchObject({
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: null,
-      helperText:
-        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      helperText: "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
@@ -196,8 +190,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "linkedStockUnavailable",
-      helperText:
-        "Linked stock information is unavailable, so this molecule cannot be updated.",
+      helperText: "Linked stock information is unavailable, so this molecule cannot be updated.",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "—", unitLabel: null },
@@ -214,9 +207,7 @@ describe("getInventoryUpdateEligibility", () => {
       inventoryItemGlobalId: "SS102",
     };
 
-    expect(
-      getInventoryUpdateEligibility(molecule, linkedQuantityInfo),
-    ).toMatchObject({
+    expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "nonMassInventoryQuantity",
       helperText:
         "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
@@ -355,8 +346,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "linkedStockUnavailable",
-      helperText:
-        "Linked stock information is unavailable, so this molecule cannot be updated.",
+      helperText: "Linked stock information is unavailable, so this molecule cannot be updated.",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "—", unitLabel: null },
@@ -555,31 +545,25 @@ describe("calculateUpdatedMolecules", () => {
     }> = [
       {
         edited: { ...molecules[0], name: "Renamed" },
-        message:
-          "Name is an intrinsic property of the chemical and cannot be modified",
+        message: "Name is an intrinsic property of the chemical and cannot be modified",
       },
       {
         edited: { ...molecules[0], molecularWeight: 11 },
-        message:
-          "Molecular weight is an intrinsic property of the chemical and cannot be modified",
+        message: "Molecular weight is an intrinsic property of the chemical and cannot be modified",
       },
       {
         edited: { ...molecules[0], formula: "A2" },
-        message:
-          "Chemical formula is an intrinsic property of the chemical and cannot be modified",
+        message: "Chemical formula is an intrinsic property of the chemical and cannot be modified",
       },
       {
         edited: { ...molecules[0], smiles: "AX" },
-        message:
-          "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
+        message: "The SMILES representation is an intrinsic property of the chemical and cannot be modified",
       },
       {
         edited: {
           ...molecules[0],
           rsChemElement: {
-            ...(molecules[0].rsChemElement as NonNullable<
-              EditableMolecule["rsChemElement"]
-            >),
+            ...(molecules[0].rsChemElement as NonNullable<EditableMolecule["rsChemElement"]>),
           },
         },
         message: "Modifying the rsChemElement of a molecule is not supported",
@@ -587,18 +571,16 @@ describe("calculateUpdatedMolecules", () => {
     ];
 
     for (const entry of cases) {
-      expect(() => calculateUpdatedMolecules(molecules, entry.edited)).toThrow(
-        entry.message,
-      );
+      expect(() => calculateUpdatedMolecules(molecules, entry.edited)).toThrow(entry.message);
     }
   });
 
   it("throws when role changes are not allowed", () => {
     const molecules = makeBaseMolecules();
 
-    expect(() =>
-      calculateUpdatedMolecules(molecules, { ...molecules[0], role: "PRODUCT" }),
-    ).toThrow("Modifying the role of a molecule is not supported");
+    expect(() => calculateUpdatedMolecules(molecules, { ...molecules[0], role: "PRODUCT" })).toThrow(
+      "Modifying the role of a molecule is not supported",
+    );
   });
 
   it("throws when no limiting reagent exists and coefficient is edited", () => {
@@ -608,9 +590,7 @@ describe("calculateUpdatedMolecules", () => {
     })) as [EditableMolecule, EditableMolecule, EditableMolecule];
     const editedRow = { ...molecules[1], coefficient: 4 };
 
-    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
-      "No limiting reagent found after update",
-    );
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow("No limiting reagent found after update");
   });
 
   it("throws when no limiting reagent exists and limiting mass update is attempted", () => {
@@ -620,9 +600,7 @@ describe("calculateUpdatedMolecules", () => {
     })) as [EditableMolecule, EditableMolecule, EditableMolecule];
     const editedRow = { ...molecules[0], limitingReagent: true, mass: 20 };
 
-    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
-      "No limiting reagent defined",
-    );
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow("No limiting reagent defined");
   });
 
   it("throws when moles are edited for a molecule with null molecular weight", () => {
@@ -630,9 +608,7 @@ describe("calculateUpdatedMolecules", () => {
     molecules[1] = { ...molecules[1], molecularWeight: null };
     const editedRow = { ...molecules[1], moles: 4 };
 
-    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
-      "Molecular weight is undefined",
-    );
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow("Molecular weight is undefined");
   });
 
   it("throws when actual moles are edited for a molecule with null molecular weight", () => {
@@ -640,9 +616,7 @@ describe("calculateUpdatedMolecules", () => {
     molecules[1] = { ...molecules[1], molecularWeight: null };
     const editedRow = { ...molecules[1], actualMoles: 4 };
 
-    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
-      "Molecular weight is undefined",
-    );
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow("Molecular weight is undefined");
   });
 
   it("throws when the edited coefficient was previously null", () => {
@@ -650,9 +624,7 @@ describe("calculateUpdatedMolecules", () => {
     molecules[1] = { ...molecules[1], coefficient: null };
     const editedRow = { ...molecules[1], coefficient: 4 };
 
-    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow(
-      "Molecule coefficient is undefined",
-    );
+    expect(() => calculateUpdatedMolecules(molecules, editedRow)).toThrow("Molecule coefficient is undefined");
   });
 
   it("throws when changing limiting reagent and any molecule coefficient is null", () => {
@@ -676,9 +648,7 @@ describe("hasDuplicateInventoryLink", () => {
       quantity: { numericValue: 1, unitId: 1 },
     };
 
-    expect(hasDuplicateInventoryLink(molecules, molecules[1].id, "SA123")).toBe(
-      true,
-    );
+    expect(hasDuplicateInventoryLink(molecules, molecules[1].id, "SA123")).toBe(true);
   });
 
   it("returns false when the link belongs to the same row", () => {
@@ -690,16 +660,12 @@ describe("hasDuplicateInventoryLink", () => {
       quantity: { numericValue: 1, unitId: 1 },
     };
 
-    expect(hasDuplicateInventoryLink(molecules, molecules[0].id, "SA123")).toBe(
-      false,
-    );
+    expect(hasDuplicateInventoryLink(molecules, molecules[0].id, "SA123")).toBe(false);
   });
 
   it("returns false when the inventory item has not been linked yet", () => {
     const molecules = makeBaseMolecules();
 
-    expect(hasDuplicateInventoryLink(molecules, molecules[0].id, "SA999")).toBe(
-      false,
-    );
+    expect(hasDuplicateInventoryLink(molecules, molecules[0].id, "SA999")).toBe(false);
   });
 });

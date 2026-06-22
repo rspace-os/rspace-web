@@ -1,10 +1,9 @@
-import { test, describe, expect, afterEach, vi } from 'vitest';
-import React from "react";
-import { render } from "@testing-library/react";
 import FormLabel from "@mui/material/FormLabel";
-import FormControl from "../FormControl";
 import { ThemeProvider } from "@mui/material/styles";
+import { render } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
+import FormControl from "../FormControl";
 
 vi.mock("@mui/material/FormLabel", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@mui/material/FormLabel")>();
@@ -25,7 +24,6 @@ describe("FormControl", () => {
             <div></div>
           </FormControl>
         </ThemeProvider>,
-
       );
       expect(FormLabel).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -45,10 +43,8 @@ describe("FormControl", () => {
             <div></div>
           </FormControl>
         </ThemeProvider>,
-
       );
       expect(FormLabel).not.toHaveBeenCalled();
     });
   });
 });
-

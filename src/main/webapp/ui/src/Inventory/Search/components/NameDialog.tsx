@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Dialog from "@mui/material/Dialog";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import InputAdornment from "@mui/material/InputAdornment";
+import type React from "react";
+import { useEffect, useState } from "react";
 import StringField from "../../../components/Inputs/StringField";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 
@@ -79,8 +80,8 @@ const NameDialog = ({
   const errorMessage: string = !validLength()
     ? "Please enter minimum 1 and maximum 32 characters."
     : !noDuplicates()
-    ? "This name is already taken. Please modify it."
-    : "Please enter a unique name, no longer than 32 characters.";
+      ? "This name is already taken. Please modify it."
+      : "Please enter a unique name, no longer than 32 characters.";
 
   const onSubmitHandler = () => {
     onChange();
@@ -101,9 +102,7 @@ const NameDialog = ({
             size="small"
             slotProps={{
               input: {
-                startAdornment: (
-                  <InputAdornment position="start">Name</InputAdornment>
-                ),
+                startAdornment: <InputAdornment position="start">Name</InputAdornment>,
               },
             }}
             onFocus={({ target }) => target.select()}
@@ -119,12 +118,7 @@ const NameDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <SubmitSpinner
-          onClick={onSubmitHandler}
-          disabled={error}
-          loading={false}
-          label="Save"
-        />
+        <SubmitSpinner onClick={onSubmitHandler} disabled={error} loading={false} label="Save" />
       </DialogActions>
     </Dialog>
   );

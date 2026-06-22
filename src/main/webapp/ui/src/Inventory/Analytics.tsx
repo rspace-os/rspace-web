@@ -1,8 +1,9 @@
-import React, { useEffect, useContext } from "react";
+import { runInAction } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect } from "react";
 import AnalyticsContext from "../stores/contexts/Analytics";
 import useStores from "../stores/use-stores";
-import { observer, useLocalObservable } from "mobx-react-lite";
-import { runInAction } from "mobx";
 
 type AnalyticsArgs = {
   children: React.ReactNode;
@@ -69,11 +70,7 @@ function Analytics({ children }: AnalyticsArgs): React.ReactNode {
     });
   }, [analyticsContext.isAvailable]);
 
-  return (
-    <AnalyticsContext.Provider value={value}>
-      {children}
-    </AnalyticsContext.Provider>
-  );
+  return <AnalyticsContext.Provider value={value}>{children}</AnalyticsContext.Provider>;
 }
 
 export default observer(Analytics);

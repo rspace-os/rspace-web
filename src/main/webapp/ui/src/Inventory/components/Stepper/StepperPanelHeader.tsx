@@ -1,25 +1,21 @@
-import React, { useState, useEffect, useContext } from "react";
-import Box from "@mui/material/Box";
-import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
-import Grid from "@mui/material/Grid";
 import Badge from "@mui/material/Badge";
-import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import { type GlobalId } from "../../../stores/definitions/BaseRecord";
-import Slide from "@mui/material/Slide";
+import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import { preventEventBubbling } from "../../../util/Util";
-import FormSectionsContext, {
-  type AllowedFormTypes,
-} from "../../../stores/contexts/FormSections";
-import { observer } from "mobx-react-lite";
-import { Heading } from "../../../components/DynamicHeadingLevel";
+import Grid from "@mui/material/Grid";
+import Slide from "@mui/material/Slide";
 import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect, useState } from "react";
+import { Heading } from "../../../components/DynamicHeadingLevel";
+import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
+import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import FormSectionsContext, { type AllowedFormTypes } from "../../../stores/contexts/FormSections";
+import type { GlobalId } from "../../../stores/definitions/BaseRecord";
+import { preventEventBubbling } from "../../../util/Util";
 
-export type FormSectionError = [
-  Set<string>,
-  React.Dispatch<React.SetStateAction<Set<string>>>,
-];
+export type FormSectionError = [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>];
 
 export function useFormSectionError({
   editing,
@@ -37,11 +33,7 @@ export function useFormSectionError({
   return [errors, setErrors];
 }
 
-export function setFormSectionError(
-  [errors, setErrors]: FormSectionError,
-  error: string,
-  value: boolean,
-): void {
+export function setFormSectionError([errors, setErrors]: FormSectionError, error: string, value: boolean): void {
   if (value) {
     errors.add(error);
     setErrors(errors);
@@ -74,8 +66,7 @@ function StepperPanelHeader_({
   const showErrorIndicator = numberInErrorState > 0 && !open;
   const [allBtn, setAllBtn] = useState(false);
   const formSectionContext = useContext(FormSectionsContext);
-  if (!formSectionContext)
-    throw new Error("FormSectionContext is required by StepperPanel");
+  if (!formSectionContext) throw new Error("FormSectionContext is required by StepperPanel");
   const theme = useTheme();
 
   useEffect(() => {
@@ -110,17 +101,15 @@ function StepperPanelHeader_({
                 badgeContent={numberInErrorState}
                 color="error"
                 invisible={open}
-                  slotProps={{
-                    badge: {
-                      sx: {
-                        transitionDuration: window.matchMedia(
-                          "(prefers-reduced-motion: reduce)",
-                        ).matches
-                          ? "0s"
-                          : "225ms",
-                      },
+                slotProps={{
+                  badge: {
+                    sx: {
+                      transitionDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                        ? "0s"
+                        : "225ms",
                     },
-                  }}
+                  },
+                }}
               >
                 <ExpandCollapseIcon open={open} />
               </Badge>

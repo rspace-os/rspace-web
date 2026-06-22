@@ -1,11 +1,11 @@
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import ContainerModel, { type ContainerAttrs } from "../../ContainerModel";
 import { containerAttrs } from "./mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} })); // break import cycle
-vi.mock("../../../../stores/stores/RootStore", () => ({
-  default: () => ({})
+vi.mock("../../../../stores/stores/getRootStore", () => ({
+  default: () => ({}),
 }));
 describe("action: populateFromJson", () => {
   describe("When called, it should", () => {
@@ -13,10 +13,7 @@ describe("action: populateFromJson", () => {
       const factory = mockFactory();
       const newRecordSpy = vi
         .spyOn(factory, "newRecord")
-        .mockImplementation(
-          (attrs) => new ContainerModel(factory, attrs as ContainerAttrs)
-
-        );
+        .mockImplementation((attrs) => new ContainerModel(factory, attrs as ContainerAttrs));
       const attrs = (): ContainerAttrs => ({
         ...containerAttrs(),
         locations: [
@@ -27,7 +24,6 @@ describe("action: populateFromJson", () => {
             content: containerAttrs({ id: 1, globalId: "IC1" }),
           },
         ],
-
       });
       const container = factory.newRecord(attrs());
 
@@ -40,4 +36,3 @@ describe("action: populateFromJson", () => {
     });
   });
 });
-

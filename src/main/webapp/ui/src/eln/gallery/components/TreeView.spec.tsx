@@ -1,8 +1,6 @@
-import { test, expect } from "@playwright/experimental-ct-react";
-import React from "react";
-import { TreeViewWithFiles } from "./TreeView.story";
-
+import { expect, test } from "@playwright/experimental-ct-react";
 import * as Jwt from "jsonwebtoken";
+import { TreeViewWithFiles } from "./TreeView.story";
 
 /*
  * This spec is the reduced remainder after the bulk of TreeView's cases were
@@ -22,16 +20,8 @@ const feature = test.extend<{
     "the tree view with files is mounted": () => Promise<void>;
   };
   When: {
-    "the user single-clicks on a {fileType}": ({
-      fileType,
-    }: {
-      fileType: string;
-    }) => Promise<void>;
-    "the user holds Shift and clicks on {fileName}": ({
-      fileName,
-    }: {
-      fileName: string;
-    }) => Promise<void>;
+    "the user single-clicks on a {fileType}": ({ fileType }: { fileType: string }) => Promise<void>;
+    "the user holds Shift and clicks on {fileName}": ({ fileName }: { fileName: string }) => Promise<void>;
   };
   Then: {
     "there is an error alert": () => Promise<void>;
@@ -48,14 +38,10 @@ const feature = test.extend<{
     await use({
       "the user single-clicks on a {fileType}": async ({ fileType }) => {
         const fileName = getFileNameByType(fileType);
-        await page
-          .getByRole("treeitem", { name: new RegExp(fileName) })
-          .click();
+        await page.getByRole("treeitem", { name: new RegExp(fileName) }).click();
       },
       "the user holds Shift and clicks on {fileName}": async ({ fileName }) => {
-        await page
-          .getByRole("treeitem", { name: new RegExp(fileName) })
-          .click({ modifiers: ["Shift"] });
+        await page.getByRole("treeitem", { name: new RegExp(fileName) }).click({ modifiers: ["Shift"] });
       },
     });
   },
@@ -86,10 +72,9 @@ feature.beforeEach(async ({ router }) => {
   await router.route("/userform/ajax/inventoryOauthToken", (route) => {
     const payload = {
       iss: "http://localhost:8080",
-      iat: new Date().getTime(),
+      iat: Date.now(),
       exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
     };
     return route.fulfill({
       status: 200,
@@ -133,18 +118,15 @@ feature.beforeEach(async ({ router }) => {
 
 test.describe("TreeView", () => {
   test.describe("Multi-Selection", () => {
-    feature(
-      "Should handle Shift+click without crashing",
-      async ({ Given, When, Then }) => {
-        await Given["the tree view with files is mounted"]();
-        await When["the user single-clicks on a {fileType}"]({
-          fileType: "folder",
-        });
-        await When["the user holds Shift and clicks on {fileName}"]({
-          fileName: "test-document.pdf",
-        });
-        await Then["there is an error alert"]();
-      },
-    );
+    feature("Should handle Shift+click without crashing", async ({ Given, When, Then }) => {
+      await Given["the tree view with files is mounted"]();
+      await When["the user single-clicks on a {fileType}"]({
+        fileType: "folder",
+      });
+      await When["the user holds Shift and clicks on {fileName}"]({
+        fileName: "test-document.pdf",
+      });
+      await Then["there is an error alert"]();
+    });
   });
 });

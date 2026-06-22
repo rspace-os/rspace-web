@@ -16,10 +16,7 @@ import React from "react";
  *   debouncedSearch(event.target.value);
  * };
  */
-export default function useDebounce<T>(
-  callback: (value: T) => void,
-  delay: number,
-) {
+export default function useDebounce<T>(callback: (value: T) => void, delay: number) {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {

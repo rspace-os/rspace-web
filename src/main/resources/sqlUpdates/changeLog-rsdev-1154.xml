@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-06-11a" context="run" author="fraser">
+    <comment>RSDEV-1154: widen AppConfigElement.value so it can hold Microsoft Teams
+      Workflows webhook URLs, which are ~300 characters and no longer fit in
+      VARCHAR(255). TEXT matches the 65535-character limit of SettingsType.TEXT.
+    </comment>
+    <modifyDataType tableName="AppConfigElement" columnName="value" newDataType="TEXT"/>
+  </changeSet>
+
+  <changeSet id="2026-06-11b" context="run" author="fraser">
+    <comment>RSDEV-1154: change the MSTEAMS_WEBHOOK_URL property descriptor from
+      STRING (max 255 chars) to TEXT (max 65535 chars) so validation accepts
+      Teams Workflows webhook URLs. Type ordinal 4 = SettingsType.TEXT.
+    </comment>
+    <update tableName="PropertyDescriptor">
+      <column name="type" value="4" type="int"/>
+      <where>name='MSTEAMS_WEBHOOK_URL'</where>
+    </update>
+  </changeSet>
+
+</databaseChangeLog>

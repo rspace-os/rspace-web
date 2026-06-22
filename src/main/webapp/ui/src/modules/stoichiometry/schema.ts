@@ -6,9 +6,7 @@ export const STOICHIOMETRY_ROLES = {
   AGENT: "AGENT",
 } as const;
 
-export const StoichiometryRoleSchema = v.picklist(
-  Object.values(STOICHIOMETRY_ROLES),
-);
+export const StoichiometryRoleSchema = v.picklist(Object.values(STOICHIOMETRY_ROLES));
 
 export const RsChemElementSchema = v.objectWithRest(
   {
@@ -67,9 +65,7 @@ export const StoichiometryMoleculeSchema = v.object({
   notes: v.nullable(v.string()),
 });
 
-export type StoichiometryMolecule = v.InferOutput<
-  typeof StoichiometryMoleculeSchema
->;
+export type StoichiometryMolecule = v.InferOutput<typeof StoichiometryMoleculeSchema>;
 
 export const ParentReactionSchema = v.objectWithRest(
   {
@@ -102,9 +98,7 @@ export const StoichiometryResponseSchema = v.objectWithRest(
   },
   v.unknown(),
 );
-export type StoichiometryResponse = v.InferOutput<
-  typeof StoichiometryResponseSchema
->;
+export type StoichiometryResponse = v.InferOutput<typeof StoichiometryResponseSchema>;
 
 export const ExistingMoleculeUpdateSchema = v.objectWithRest(
   {
@@ -124,9 +118,7 @@ export const ExistingMoleculeUpdateSchema = v.objectWithRest(
   },
   v.unknown(),
 );
-export type ExistingMoleculeUpdate = v.InferOutput<
-  typeof ExistingMoleculeUpdateSchema
->;
+export type ExistingMoleculeUpdate = v.InferOutput<typeof ExistingMoleculeUpdateSchema>;
 
 export const NewMoleculeSchema = v.objectWithRest(
   {
@@ -151,9 +143,7 @@ export const StoichiometryRequestSchema = v.object({
   id: v.number(),
   molecules: v.array(v.union([ExistingMoleculeUpdateSchema, NewMoleculeSchema])),
 });
-export type StoichiometryRequest = v.InferOutput<
-  typeof StoichiometryRequestSchema
->;
+export type StoichiometryRequest = v.InferOutput<typeof StoichiometryRequestSchema>;
 
 export const MoleculeInfoSchema = v.objectWithRest(
   {
@@ -167,9 +157,7 @@ export type MoleculeInfo = v.InferOutput<typeof MoleculeInfoSchema>;
 export const StoichiometryMessageErrorResponseSchema = v.object({
   message: v.string(),
 });
-export type StoichiometryMessageErrorResponse = v.InferOutput<
-  typeof StoichiometryMessageErrorResponseSchema
->;
+export type StoichiometryMessageErrorResponse = v.InferOutput<typeof StoichiometryMessageErrorResponseSchema>;
 
 export const DeleteStoichiometryResponseSchema = v.union([
   v.boolean(),
@@ -177,17 +165,13 @@ export const DeleteStoichiometryResponseSchema = v.union([
     success: v.boolean(),
   }),
 ]);
-export type DeleteStoichiometryResponse = v.InferOutput<
-  typeof DeleteStoichiometryResponseSchema
->;
+export type DeleteStoichiometryResponse = v.InferOutput<typeof DeleteStoichiometryResponseSchema>;
 
 export const StockDeductionRequestSchema = v.object({
   stoichiometryId: v.number(),
   linkIds: v.pipe(v.array(v.number()), v.minLength(1)),
 });
-export type StockDeductionRequest = v.InferOutput<
-  typeof StockDeductionRequestSchema
->;
+export type StockDeductionRequest = v.InferOutput<typeof StockDeductionRequestSchema>;
 
 export const StockDeductionIndividualResultSchema = v.objectWithRest(
   {
@@ -197,9 +181,7 @@ export const StockDeductionIndividualResultSchema = v.objectWithRest(
   },
   v.unknown(),
 );
-export type StockDeductionIndividualResult = v.InferOutput<
-  typeof StockDeductionIndividualResultSchema
->;
+export type StockDeductionIndividualResult = v.InferOutput<typeof StockDeductionIndividualResultSchema>;
 
 export const StockDeductionResultSchema = v.objectWithRest(
   {
@@ -209,7 +191,4 @@ export const StockDeductionResultSchema = v.objectWithRest(
   },
   v.unknown(),
 );
-export type StockDeductionResult = v.InferOutput<
-  typeof StockDeductionResultSchema
->;
-
+export type StockDeductionResult = v.InferOutput<typeof StockDeductionResultSchema>;

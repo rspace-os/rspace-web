@@ -1,23 +1,17 @@
-import React from "react";
+import { inputBaseClasses } from "@mui/material/InputBase";
 import { observer } from "mobx-react-lite";
-import {
-  Material,
-  type ListOfMaterials,
-} from "../../stores/models/MaterialsModel";
+import type React from "react";
 import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
 import { hasQuantity } from "../../stores/models/HasQuantity";
-import { inputBaseClasses } from "@mui/material/InputBase";
+import type { ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
 
 type UsedQuantityFieldArgs = {
   material: Material;
   list: ListOfMaterials;
 };
 
-function UsedQuantityField({
-  material,
-  list,
-}: UsedQuantityFieldArgs): React.ReactNode {
+function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): React.ReactNode {
   const globalId = material.invRec.globalId;
   if (!globalId) throw new Error("Item Global ID must be known");
 
@@ -35,19 +29,14 @@ function UsedQuantityField({
 
   const getNumericValue = () => {
     if (material.selected && mixedSelectedCategories) return "0";
-    if (isNaN(Number(list.additionalQuantity?.numericValue))) return "";
-    if (material.selected && list.additionalQuantity)
-      return list.additionalQuantity.numericValue;
+    if (Number.isNaN(Number(list.additionalQuantity?.numericValue))) return "";
+    if (material.selected && list.additionalQuantity) return list.additionalQuantity.numericValue;
     return "0";
   };
 
   const getUnitId = () => {
-    if (material.selected && list.additionalQuantity)
-      return list.additionalQuantity.unitId;
-    if (
-      material.usedQuantity === null ||
-      typeof material.usedQuantity === "undefined"
-    )
+    if (material.selected && list.additionalQuantity) return list.additionalQuantity.unitId;
+    if (material.usedQuantity === null || typeof material.usedQuantity === "undefined")
       throw new Error("Rendering record within quantity");
     return material.usedQuantity.unitId;
   };
@@ -56,8 +45,7 @@ function UsedQuantityField({
 
   const onChangeValue = (additionalValue: number) => {
     if (material.usedQuantity) {
-      const unitId =
-        list.additionalQuantity?.unitId ?? material.usedQuantity.unitId;
+      const unitId = list.additionalQuantity?.unitId ?? material.usedQuantity.unitId;
       list.setAdditionalQuantity({
         numericValue: additionalValue,
         unitId,
@@ -87,7 +75,6 @@ function UsedQuantityField({
       data-test-id={`material-additional-quantity-${globalId}`}
       disabled={!material.selected || mixedSelectedCategories}
       value={getNumericValue()}
-
       autoFocus
       onChange={({ target }) => {
         onChangeValue(parseFloat(target.value));

@@ -1,11 +1,7 @@
-import { test, describe, expect, vi } from "vitest";
-import {
-  DmpSummary,
-  DmpListing,
-  importDmpsIntoGallery,
-} from "../useDmpAssistantEndpoint";
 import MockAdapter from "axios-mock-adapter";
+import { describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
+import { DmpListing, DmpSummary, importDmpsIntoGallery } from "../useDmpAssistantEndpoint";
 
 const aPlan = (identifier: string) => ({
   title: "A plan",
@@ -17,16 +13,12 @@ const aPlan = (identifier: string) => ({
 describe("DmpSummary", () => {
   describe("id", () => {
     test("extracts the trailing path segment from a URL identifier", () => {
-      const dmp = new DmpSummary(
-        aPlan("https://dmp-pgd.ca/api/v2/plans/19142")
-      );
+      const dmp = new DmpSummary(aPlan("https://dmp-pgd.ca/api/v2/plans/19142"));
       expect(dmp.id).toBe("19142");
     });
 
     test("ignores a trailing slash on a URL identifier", () => {
-      const dmp = new DmpSummary(
-        aPlan("https://dmp-pgd.ca/api/v2/plans/19142/")
-      );
+      const dmp = new DmpSummary(aPlan("https://dmp-pgd.ca/api/v2/plans/19142/"));
       expect(dmp.id).toBe("19142");
     });
 
@@ -41,9 +33,7 @@ describe("DmpSummary", () => {
     });
 
     test("returns a URN identifier unchanged", () => {
-      const dmp = new DmpSummary(
-        aPlan("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-      );
+      const dmp = new DmpSummary(aPlan("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6"));
       expect(dmp.id).toBe("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6");
     });
   });
@@ -58,7 +48,7 @@ describe("DmpListing", () => {
       },
       0,
       20,
-      () => {}
+      () => {},
     );
 
     expect(listing.getById("19142")).toBeInstanceOf(DmpSummary);
@@ -69,23 +59,14 @@ describe("DmpListing", () => {
 describe("importDmpsIntoGallery", () => {
   test("posts to the absolute importPlans path so SPA routes cannot derail it", async () => {
     const mockAxios = new MockAdapter(axios);
-    mockAxios
-      .onPost("/apps/dmpassistant/importPlans")
-      .reply(200, { data: [], error: null });
+    mockAxios.onPost("/apps/dmpassistant/importPlans").reply(200, { data: [], error: null });
     const addAlert = vi.fn();
 
-    await importDmpsIntoGallery(
-      [new DmpSummary(aPlan("https://dmp-pgd.ca/api/v2/plans/19142"))],
-      addAlert
-    );
+    await importDmpsIntoGallery([new DmpSummary(aPlan("https://dmp-pgd.ca/api/v2/plans/19142"))], addAlert);
 
     expect(mockAxios.history.post.length).toBe(1);
-    expect(mockAxios.history.post[0].url).toBe(
-      "/apps/dmpassistant/importPlans"
-    );
-    expect(addAlert).toHaveBeenCalledWith(
-      expect.objectContaining({ variant: "success" })
-    );
+    expect(mockAxios.history.post[0].url).toBe("/apps/dmpassistant/importPlans");
+    expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
     mockAxios.restore();
   });
 });

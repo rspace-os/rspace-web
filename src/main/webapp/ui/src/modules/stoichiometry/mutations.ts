@@ -1,26 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import {
-  DeleteStoichiometryResponseSchema,
-  MoleculeInfo,
-  MoleculeInfoSchema,
-  StockDeductionRequestSchema,
-  StockDeductionResult,
-  StockDeductionResultSchema,
-  StoichiometryRequest,
-  StoichiometryRequestSchema,
-  StoichiometryResponse,
-  StoichiometryResponseSchema,
-} from "@/modules/stoichiometry/schema";
+import { resolveToken, type TokenParams } from "@/modules/common/utils/auth";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
 import {
-  STOICHIOMETRY_API_BASE_URL,
-  toStoichiometryError,
-} from "@/modules/stoichiometry/utils";
-import {
-  resolveToken,
-  TokenParams,
-} from "@/modules/common/utils/auth";
+  DeleteStoichiometryResponseSchema,
+  type MoleculeInfo,
+  MoleculeInfoSchema,
+  StockDeductionRequestSchema,
+  type StockDeductionResult,
+  StockDeductionResultSchema,
+  type StoichiometryRequest,
+  StoichiometryRequestSchema,
+  type StoichiometryResponse,
+  StoichiometryResponseSchema,
+} from "@/modules/stoichiometry/schema";
+import { STOICHIOMETRY_API_BASE_URL, toStoichiometryError } from "@/modules/stoichiometry/utils";
 
 export type CalculateStoichiometryParams = {
   recordId: number;
@@ -53,11 +47,7 @@ export type DeductStockMutationParams = DeductStockParams;
 export type GetMoleculeInfoMutationParams = GetMoleculeInfoParams;
 
 export async function calculateStoichiometry(
-  {
-    recordId,
-    chemId,
-    revision,
-  }: CalculateStoichiometryParams,
+  { recordId, chemId, revision }: CalculateStoichiometryParams,
   token: string,
 ): Promise<StoichiometryResponse> {
   const searchParams = new URLSearchParams();
@@ -69,33 +59,24 @@ export async function calculateStoichiometry(
     searchParams.set("revision", String(revision));
   }
 
-  const response = await fetch(
-    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`,
-    {
-      method: "POST",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        Authorization: `Bearer ${token}`,
-      },
+  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+    method: "POST",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: `Bearer ${token}`,
     },
-  );
+  });
 
   const data: unknown = await response.json();
   if (!response.ok) {
-    throw toStoichiometryError(
-      data,
-      `Failed to calculate stoichiometry: ${response.statusText}`,
-    );
+    throw toStoichiometryError(data, `Failed to calculate stoichiometry: ${response.statusText}`);
   }
 
   return parseOrThrow(StoichiometryResponseSchema, data);
 }
 
 export async function updateStoichiometry(
-  {
-    stoichiometryId,
-    stoichiometryData,
-  }: UpdateStoichiometryParams,
+  { stoichiometryId, stoichiometryData }: UpdateStoichiometryParams,
   token: string,
 ): Promise<StoichiometryResponse> {
   const searchParams = new URLSearchParams();
@@ -103,49 +84,38 @@ export async function updateStoichiometry(
 
   const requestBody = parseOrThrow(StoichiometryRequestSchema, stoichiometryData);
 
-  const response = await fetch(
-    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestBody),
+  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: `Bearer ${token}`,
     },
-  );
+    body: JSON.stringify(requestBody),
+  });
 
   const data: unknown = await response.json();
   if (!response.ok) {
-    throw toStoichiometryError(
-      data,
-      `Failed to update stoichiometry: ${response.statusText}`,
-    );
+    throw toStoichiometryError(data, `Failed to update stoichiometry: ${response.statusText}`);
   }
 
   return parseOrThrow(StoichiometryResponseSchema, data);
 }
 
 export async function deleteStoichiometry(
-  {
-    stoichiometryId,
-  }: DeleteStoichiometryParams,
+  { stoichiometryId }: DeleteStoichiometryParams,
   token: string,
 ): Promise<boolean> {
   const searchParams = new URLSearchParams();
   searchParams.set("stoichiometryId", String(stoichiometryId));
 
-  const response = await fetch(
-    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`,
-    {
-      method: "DELETE",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        Authorization: `Bearer ${token}`,
-      },
+  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+    method: "DELETE",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: `Bearer ${token}`,
     },
-  );
+  });
 
   let data: unknown;
   try {
@@ -155,10 +125,7 @@ export async function deleteStoichiometry(
   }
 
   if (!response.ok) {
-    throw toStoichiometryError(
-      data,
-      `Failed to delete stoichiometry: ${response.statusText}`,
-    );
+    throw toStoichiometryError(data, `Failed to delete stoichiometry: ${response.statusText}`);
   }
 
   if (data === null) {
@@ -170,10 +137,7 @@ export async function deleteStoichiometry(
 }
 
 export async function deductStock(
-  {
-    stoichiometryId,
-    linkIds,
-  }: DeductStockParams,
+  { stoichiometryId, linkIds }: DeductStockParams,
   token: string,
 ): Promise<StockDeductionResult> {
   const requestBody = parseOrThrow(StockDeductionRequestSchema, {
@@ -181,56 +145,39 @@ export async function deductStock(
     linkIds,
   });
 
-  const response = await fetch(
-    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry/link/deductStock`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestBody),
+  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry/link/deductStock`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: `Bearer ${token}`,
     },
-  );
+    body: JSON.stringify(requestBody),
+  });
 
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw toStoichiometryError(
-      data,
-      `Failed to deduct stock: ${response.statusText}`,
-    );
+    throw toStoichiometryError(data, `Failed to deduct stock: ${response.statusText}`);
   }
 
   return parseOrThrow(StockDeductionResultSchema, data);
 }
 
-export async function getMoleculeInfo(
-  {
-    smiles,
-  }: GetMoleculeInfoParams,
-  token: string,
-): Promise<MoleculeInfo> {
-  const response = await fetch(
-    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry/molecule/info`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ chemical: smiles }),
+export async function getMoleculeInfo({ smiles }: GetMoleculeInfoParams, token: string): Promise<MoleculeInfo> {
+  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry/molecule/info`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: `Bearer ${token}`,
     },
-  );
+    body: JSON.stringify({ chemical: smiles }),
+  });
 
   const data: unknown = await response.json();
   if (!response.ok) {
-    throw toStoichiometryError(
-      data,
-      `Failed to retrieve molecule information: ${response.statusText}`,
-    );
+    throw toStoichiometryError(data, `Failed to retrieve molecule information: ${response.statusText}`);
   }
 
   return parseOrThrow(MoleculeInfoSchema, data);
@@ -240,11 +187,7 @@ export function useCalculateStoichiometryMutation(tokenParams: TokenParams) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      recordId,
-      chemId,
-      revision,
-    }: CalculateStoichiometryMutationParams) =>
+    mutationFn: async ({ recordId, chemId, revision }: CalculateStoichiometryMutationParams) =>
       calculateStoichiometry(
         {
           recordId,
@@ -254,10 +197,7 @@ export function useCalculateStoichiometryMutation(tokenParams: TokenParams) {
         await resolveToken(tokenParams),
       ),
     onSuccess: async (responseData) => {
-      queryClient.setQueryData(
-        stoichiometryQueryKeys.byId(responseData.id, responseData.revision),
-        responseData,
-      );
+      queryClient.setQueryData(stoichiometryQueryKeys.byId(responseData.id, responseData.revision), responseData);
       await queryClient.invalidateQueries({
         queryKey: stoichiometryQueryKeys.all,
       });
@@ -269,10 +209,7 @@ export function useUpdateStoichiometryMutation(tokenParams: TokenParams) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      stoichiometryId,
-      stoichiometryData,
-    }: UpdateStoichiometryMutationParams) =>
+    mutationFn: async ({ stoichiometryId, stoichiometryData }: UpdateStoichiometryMutationParams) =>
       updateStoichiometry(
         {
           stoichiometryId,
@@ -284,10 +221,7 @@ export function useUpdateStoichiometryMutation(tokenParams: TokenParams) {
       await queryClient.invalidateQueries({
         queryKey: stoichiometryQueryKeys.all,
       });
-      queryClient.setQueryData(
-        stoichiometryQueryKeys.byId(responseData.id, responseData.revision),
-        responseData,
-      );
+      queryClient.setQueryData(stoichiometryQueryKeys.byId(responseData.id, responseData.revision), responseData);
     },
   });
 }

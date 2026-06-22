@@ -12,9 +12,7 @@ const JWT_TOKEN_PATTERN = /^.+\..+\..+$/;
 
 function getSessionStorage(): Storage | null {
   try {
-    return typeof globalThis.sessionStorage?.getItem === "function"
-      ? globalThis.sessionStorage
-      : null;
+    return typeof globalThis.sessionStorage?.getItem === "function" ? globalThis.sessionStorage : null;
   } catch {
     return null;
   }
@@ -55,10 +53,7 @@ export function secondsToExpiry(token: string): number {
   return expiresAt - timeNow;
 }
 
-export function isExpiringSoon(
-  token: string,
-  bufferSeconds = TOKEN_EXPIRY_BUFFER_SECONDS,
-): boolean {
+export function isExpiringSoon(token: string, bufferSeconds = TOKEN_EXPIRY_BUFFER_SECONDS): boolean {
   return secondsToExpiry(token) < bufferSeconds;
 }
 

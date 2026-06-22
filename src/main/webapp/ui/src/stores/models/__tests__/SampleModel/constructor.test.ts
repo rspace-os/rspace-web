@@ -1,20 +1,18 @@
-
-import { test, describe, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from "vitest";
+import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
+import type { Factory } from "../../../definitions/Factory";
 import SampleModel from "../../SampleModel";
 import SubSampleModel from "../../SubSampleModel";
-import { sampleAttrs } from "./mocking";
 import { subsampleAttrs } from "../SubSampleModel/mocking";
-import { mockFactory } from "../../../definitions/__tests__/Factory/mocking";
-import { type Factory } from "../../../definitions/Factory";
+import { sampleAttrs } from "./mocking";
 
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
-  peopleStore: {},
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    peopleStore: {},
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 })); // break import cycle
 function mockSampleWithTwoSubsamples(factory: Factory) {
   const attrs = sampleAttrs();
@@ -29,10 +27,8 @@ function mockSampleWithTwoSubsamples(factory: Factory) {
       id: 3,
       globalId: "SS3",
     },
-
   ];
   return factory.newRecord(attrs);
-
 }
 describe("constructor", () => {
   /*
@@ -50,18 +46,15 @@ describe("constructor", () => {
       // Create mock implementation that returns either SampleModel or SubSampleModel
       const mockNewRecord = vi
         .fn()
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .mockImplementation((attrs: any) =>
-          /^SA\d+/.test(attrs.globalId)
-            ? new SampleModel(factoryRef, attrs)
-            : new SubSampleModel(factoryRef, attrs)
-
+          /^SA\d+/.test(attrs.globalId) ? new SampleModel(factoryRef, attrs) : new SubSampleModel(factoryRef, attrs),
         );
       // Create factory function
       const createFactory = (): Factory =>
         mockFactory({
           newRecord: mockNewRecord,
           newFactory: vi.fn().mockImplementation(createFactory),
-
         });
       // Initialize factory
       const factory = createFactory();
@@ -72,21 +65,10 @@ describe("constructor", () => {
 
       expect(mockNewRecord).toHaveBeenCalledTimes(3);
       // the root sample
-      expect(mockNewRecord).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ globalId: "SA1" })
-
-      );
+      expect(mockNewRecord).toHaveBeenNthCalledWith(1, expect.objectContaining({ globalId: "SA1" }));
       // both the subsamples (sample is passed manually)
-      expect(mockNewRecord).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ globalId: "SS2" })
-      );
-      expect(mockNewRecord).toHaveBeenNthCalledWith(
-        3,
-        expect.objectContaining({ globalId: "SS3" })
-      );
+      expect(mockNewRecord).toHaveBeenNthCalledWith(2, expect.objectContaining({ globalId: "SS2" }));
+      expect(mockNewRecord).toHaveBeenNthCalledWith(3, expect.objectContaining({ globalId: "SS3" }));
     });
   });
 });
-

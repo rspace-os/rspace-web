@@ -1,18 +1,25 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useState, useContext } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import DryadIcon from "../../../assets/branding/dryad/logo.svg";
+import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
-import { useDryadEndpoint } from "../useDryad";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/dryad";
+import DryadIcon from "../../../assets/branding/dryad/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useDryadEndpoint } from "../useDryad";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type DryadArgs = {
   integrationState: IntegrationStates["DRYAD"];
   update: (newIntegrationState: IntegrationStates["DRYAD"]) => void;
 };
+
+export interface DryadConnectedMessage extends Record<string, unknown> {
+  type: "DRYAD_CONNECTED";
+  error?: string;
+}
+export const DRYAD_CONNECTION_CHANNEL = "rspace.apps.dryad.connection";
 
 /*
  * Dryad uses OAuth based authentication, as implemented by this form.
@@ -41,42 +48,44 @@ type DryadArgs = {
 function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useDryadEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
-      setConnected(true);
+  useBroadcastChannel<DryadConnectedMessage>(DRYAD_CONNECTION_CHANNEL, (e: MessageEvent<DryadConnectedMessage>) => {
+    if (e.data?.type !== "DRYAD_CONNECTED") return;
+    if (e.data.error) {
       addAlert(
         mkAlert({
-          variant: "success",
-          message: "Successfully connected to Dryad.",
-        })
+          variant: "error",
+          title: "Could not connect to Dryad",
+          message: e.data.error,
+        }),
       );
-    };
-    window.addEventListener("DRYAD_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DRYAD_CONNECTED", f);
-    };
-  }, []);
+      return;
+    }
+    setConnected(true);
+    addAlert(
+      mkAlert({
+        variant: "success",
+        message: "Successfully connected to Dryad.",
+      }),
+    );
+  });
 
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Dryad"
         integrationState={integrationState}
         explanatoryText="Deposit, discover, and cite research data through a curated open-access repository."
         image={DryadIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText="You can export your files and data directly from RSpace to Dryad, and provide metadata for the deposit."
         helpLinkText="Dryad integration docs"
         website="datadryad.org"
@@ -85,23 +94,13 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
           <>
             <ol>
               <li>
-                Dryad uses ORCID iD for authentication; if you don’t have an
-                ORCID iD, you can create one at{" "}
-                <Link
-                  href="https://orcid.org/register"
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                Dryad uses ORCID iD for authentication; if you don’t have an ORCID iD, you can create one at{" "}
+                <Link href="https://orcid.org/register" target="_blank" rel="noreferrer">
                   orcid.org/register
                 </Link>
               </li>
-              <li>
-                Click on Connect to authorise RSpace to access your Dryad
-                account.
-              </li>
-              <li>
-                Dryad will now be available as an option in the export dialog.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your Dryad account.</li>
+              <li>Dryad will now be available as an option in the export dialog.</li>
             </ol>
             {connected ? (
               <form
@@ -118,12 +117,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/dryad/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/dryad/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

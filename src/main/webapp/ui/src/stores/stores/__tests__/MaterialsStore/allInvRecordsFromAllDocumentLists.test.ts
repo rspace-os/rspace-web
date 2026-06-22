@@ -1,10 +1,11 @@
-import { test, describe, expect } from 'vitest';
-import getRootStore from "../../RootStore";
+import "@/stores/stores/RootStore";
+import { describe, expect, test } from "vitest";
 import { containerAttrs } from "../../../models/__tests__/ContainerModel/mocking";
-import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";
 import { sampleAttrs } from "../../../models/__tests__/SampleModel/mocking";
-
+import { subsampleAttrs } from "../../../models/__tests__/SubSampleModel/mocking";
 import { ListOfMaterials } from "../../../models/MaterialsModel";
+import getRootStore from "../../getRootStore";
+
 describe("allInvRecordsFromAllDocumentLists", () => {
   test("The same record across multiple lists of materials of one field should list the record once.", () => {
     const { materialsStore } = getRootStore();
@@ -24,7 +25,6 @@ describe("allInvRecordsFromAllDocumentLists", () => {
         elnFieldId: 1,
         materials: [{ invRec: container, usedQuantity: null }],
       }),
-
     ]);
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(1);
   });
@@ -48,12 +48,10 @@ describe("allInvRecordsFromAllDocumentLists", () => {
         elnFieldId: 1,
         materials: [{ invRec: container, usedQuantity: null }],
       }),
-
     ]);
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(1);
   });
   test("Different records with the same id in a single list of materials of a single field should list both records.", () => {
-
     const { materialsStore } = getRootStore();
     // having to set this back to empty set because the state of the tests are bleeding into eachother
 
@@ -78,9 +76,7 @@ describe("allInvRecordsFromAllDocumentLists", () => {
           { invRec: sample, usedQuantity: null },
         ],
       }),
-
     ]);
     expect(materialsStore.allInvRecordsFromAllDocumentLists.size).toBe(2);
   });
 });
-

@@ -115,9 +115,7 @@ async function getWhoami(token?: string) {
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch whoami info: ${response.statusText}`,
-    );
+    throw new Error(`Failed to fetch whoami info: ${response.statusText}`);
   }
 
   return data;

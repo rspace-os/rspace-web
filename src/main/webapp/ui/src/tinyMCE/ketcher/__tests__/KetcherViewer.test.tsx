@@ -1,12 +1,9 @@
-import React from "react";
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/__tests__/customQueries";
 
 const { mockAxiosGet } = vi.hoisted(() => ({
-  mockAxiosGet: vi.fn<
-    (url: string, config: { params: URLSearchParams }) => Promise<{ data: string }>
-  >(),
+  mockAxiosGet: vi.fn<(url: string, config: { params: URLSearchParams }) => Promise<{ data: string }>>(),
 }));
 
 vi.mock("@/common/axios", () => ({
@@ -16,13 +13,7 @@ vi.mock("@/common/axios", () => ({
 }));
 
 vi.mock("../../../components/Ketcher/KetcherDialog", () => ({
-  default: ({
-    isOpen,
-    title,
-  }: {
-    isOpen: boolean;
-    title: string;
-  }) =>
+  default: ({ isOpen, title }: { isOpen: boolean; title: string }) =>
     isOpen ? <div role="dialog" aria-label={title} /> : null,
 }));
 
@@ -78,5 +69,3 @@ describe("KetcherViewer", () => {
     expect(requestConfig?.params.toString()).toBe("chemId=chem-42&revision=3");
   });
 });
-
-
