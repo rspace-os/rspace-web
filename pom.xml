@@ -87,39 +87,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <executions>
-          <execution> <!-- default execution skips 'prod'/'prod-test' profile tests -->
-            <id>default-test</id>
-            <configuration>
-              <excludes>
-                <exclude>**/EgnyteFileSetupConfigTest.java</exclude>
-                <exclude>**/ProdConfigWiringTest.java</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-          <execution> <!-- separte execution for egnyte wiring -->
-            <id>unit-tests-egnyte-wiring</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/EgnyteFileSetupConfigTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution> <!-- separate execution for 'prod' profile tests -->
-            <id>unit-tests-production</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/ProdConfigWiringTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
           <execution> <!-- for 'dev' profile IT tests -->
             <id>integration-tests</id>
             <phase>integration-test</phase>
