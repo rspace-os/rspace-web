@@ -25,6 +25,7 @@ import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.imageutils.ImageProcessingFailureException;
 import com.researchspace.core.util.progress.ProgressMonitor;
+import com.researchspace.dao.FieldFormDao;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.linkedelements.FieldContents;
@@ -98,6 +99,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired RecordManager recordManager;
   @Autowired FolderDao folderDao;
   @Autowired FormManager formManager;
+  @Autowired FieldFormDao fieldFormDao;
   @Autowired FieldManager fieldManager;
   @Autowired MessageSourceUtils messages;
   @Autowired MediaManager mediaManager;
@@ -470,11 +472,6 @@ abstract class AbstractImporterStrategyImpl {
       }
       fieldByArchivalField.put(afd, fld);
     }
-    if (holderFieldAdded) {
-      // Persist the holder field form(s) once (not once per orphaned field) so the new fields have
-      // a persisted form to reference before they are saved in the loop below.
-      formManager.save(strucDoc.getForm(), user);
-    }
     for (ArchivalField afd : archivalFlds) {
       Field fld = fieldByArchivalField.get(afd);
       fld.setStructuredDocument(strucDoc);
@@ -521,9 +518,10 @@ abstract class AbstractImporterStrategyImpl {
   /**
    * RSDEV-1140: adds a text field to the imported document (and its form) to hold the content of an
    * archived field that has no counterpart in the rebuilt form. A text field is used as a universal
-   * container that accepts the archived content without template-validation failures. The new field
-   * is persisted by the surrounding import flow ({@link #convertStructuredDocumentField} saves the
-   * field; the form change is persisted here).
+   * container that accepts the archived content without template-validation failures. The field
+   * itself is persisted by the surrounding import flow ({@link #convertStructuredDocumentField}
+   * saves the field); the field form it references is persisted here, before the field is created
+   * from it, so that the field never references a transient form.
    */
   private Field addFieldToHoldOrphanedContent(
       StructuredDocument strucDoc, ArchivalField archivalField) {
@@ -539,11 +537,19 @@ abstract class AbstractImporterStrategyImpl {
       // blank name and skip saving the content) sees the same non-blank value.
       archivalField.setFieldName(fieldName);
     }
+    RSForm form = strucDoc.getForm();
     TextFieldForm fieldForm = new TextFieldForm(fieldName);
-    strucDoc.getForm().addFieldForm(fieldForm);
-    // The form is saved once by the caller after all holder field forms are added, so the new
-    // fields have a persisted form to reference before they are saved.
-    Field newField = fieldForm.createNewFieldFromForm();
+    fieldForm.setForm(form);
+    fieldForm.setColumnIndex(form.getNumActiveFields());
+    // Persist the field form now and keep the managed instance. FieldFormDao.save uses Hibernate
+    // merge(), which returns a *managed copy* and leaves the passed-in instance transient; the
+    // holder field below must be created from the managed copy, otherwise saving the field throws
+    // TransientPropertyValueException (TextField.fieldForm -> transient TextFieldForm). Persisting
+    // the form via formManager.save() did not fix this: it merges the form into a discarded copy,
+    // leaving the field form the document references still transient (RSDEV-1140).
+    TextFieldForm persistedFieldForm = (TextFieldForm) fieldFormDao.save(fieldForm);
+    form.addFieldForm(persistedFieldForm);
+    Field newField = persistedFieldForm.createNewFieldFromForm();
     strucDoc.addField(newField);
     log.warn(
         "RSDEV-1140: archived field '{}' had no field in the rebuilt document; added a text field"
