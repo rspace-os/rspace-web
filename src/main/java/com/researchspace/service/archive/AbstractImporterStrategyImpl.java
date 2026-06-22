@@ -57,6 +57,7 @@ import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -98,6 +99,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired FolderDao folderDao;
   @Autowired FormManager formManager;
   @Autowired FieldManager fieldManager;
+  @Autowired MessageSourceUtils messages;
   @Autowired MediaManager mediaManager;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired @Lazy StoichiometryService stoichiometryService;
@@ -461,12 +463,17 @@ abstract class AbstractImporterStrategyImpl {
       // add a field to hold the orphaned content so it is preserved instead of dropped.
       Field fld;
       if (unmatchedFields.isEmpty()) {
-        fld = addFieldToHoldOrphanedContent(strucDoc, afd, user);
+        fld = addFieldToHoldOrphanedContent(strucDoc, afd);
         holderFieldAdded = true;
       } else {
         fld = unmatchedFields.remove(0);
       }
       fieldByArchivalField.put(afd, fld);
+    }
+    if (holderFieldAdded) {
+      // Persist the holder field form(s) once (not once per orphaned field) so the new fields have
+      // a persisted form to reference before they are saved in the loop below.
+      formManager.save(strucDoc.getForm(), user);
     }
     for (ArchivalField afd : archivalFlds) {
       Field fld = fieldByArchivalField.get(afd);
@@ -519,12 +526,14 @@ abstract class AbstractImporterStrategyImpl {
    * field; the form change is persisted here).
    */
   private Field addFieldToHoldOrphanedContent(
-      StructuredDocument strucDoc, ArchivalField archivalField, User user) {
+      StructuredDocument strucDoc, ArchivalField archivalField) {
     // ArchivalField.fieldName is not required in the archive schema, so fall back to a stable
     // name derived from the archived field id rather than passing null/blank to the field form.
     String fieldName = archivalField.getFieldName();
     if (StringUtils.isBlank(fieldName)) {
-      fieldName = "Imported field " + archivalField.getFieldId();
+      fieldName =
+          messages.getMessage(
+              "archive.import.orphanedFieldName", new Object[] {archivalField.getFieldId()});
       // Write the fallback back so downstream code that re-reads the name (e.g.
       // convertStructuredDocumentField, which calls Field.setName and would otherwise throw on a
       // blank name and skip saving the content) sees the same non-blank value.
@@ -532,7 +541,8 @@ abstract class AbstractImporterStrategyImpl {
     }
     TextFieldForm fieldForm = new TextFieldForm(fieldName);
     strucDoc.getForm().addFieldForm(fieldForm);
-    formManager.save(strucDoc.getForm(), user);
+    // The form is saved once by the caller after all holder field forms are added, so the new
+    // fields have a persisted form to reference before they are saved.
     Field newField = fieldForm.createNewFieldFromForm();
     strucDoc.addField(newField);
     log.warn(
