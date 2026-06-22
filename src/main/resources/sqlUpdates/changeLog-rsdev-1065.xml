@@ -5,13 +5,6 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-  <!--
-    RSDEV-1065: SampleTemplate becomes a real entity. Single-table inheritance over the
-    existing Sample table now uses Hibernate's default DTYPE discriminator (values
-    "Sample"/"SampleTemplate"), mirroring InstrumentEntity. The legacy boolean "template"
-    column is intentionally retained but no longer maintained by Hibernate; DTYPE is
-    backfilled from it here for both the live and audit tables.
-  -->
 
   <changeSet id="2026-06-11a-a" context="run" author="nico">
     <comment>RSDEV-1065 add DTYPE discriminator column to the Sample table</comment>
@@ -60,6 +53,14 @@
     <comment>RSDEV-1065 make Sample.DTYPE NOT NULL once backfilled (audit table stays nullable,
       matching Envers conventions)</comment>
     <addNotNullConstraint tableName="Sample" columnName="DTYPE" columnDataType="varchar(20)"/>
+  </changeSet>
+
+  <changeSet id="2026-06-11d-a" context="run" author="nico">
+    <comment>RSDEV-1065 drop the legacy boolean template column now that DTYPE has fully replaced it.
+      It was retained only as a vestigial backfill source for DTYPE and is no longer mapped by
+      Hibernate or read anywhere, so it is now removed from the live and audit tables.</comment>
+    <dropColumn tableName="Sample" columnName="template"/>
+    <dropColumn tableName="Sample_AUD" columnName="template"/>
   </changeSet>
 
 </databaseChangeLog>
