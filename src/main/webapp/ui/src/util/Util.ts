@@ -122,14 +122,7 @@ export const isValidDate = (str: string): boolean => new Date(str).toString() !=
 /**
  * Checks if a string is a valid URL.
  */
-export const isUrl = (str: string): boolean => {
-  try {
-    new URL(str);
-    return true;
-  } catch {
-    return false;
-  }
-};
+export const isUrl = (str: string): boolean => URL.canParse(str);
 
 /**
  * Checks if a string is a valid Inventory URL to a container, sample,
