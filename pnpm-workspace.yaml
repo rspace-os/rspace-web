@@ -48,8 +48,8 @@ peerDependencyRules:
     # draft-js-custom-styles dependency declares draft-js@0.10.x.
     'draft-js-custom-styles>draft-js': 0.11.7
     # @sa11y/vitest pulls an older vitest, which wants the matching UI+browser packages.
-    'vitest>@vitest/ui': 4.1.8
-    'vitest>@vitest/browser': 4.1.8
+    'vitest>@vitest/ui': 4.1.9
+    'vitest>@vitest/browser': 4.1.9
     # @scalar/api-reference-react pulls neverpanic, which peer-declares
     # typescript@5 but works with the repo's typescript@6.0.3.
     'neverpanic>typescript': 6.0.3
