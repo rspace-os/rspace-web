@@ -434,18 +434,23 @@ export function useGalleryActions(): {
   }
 
   /**
-   * Delete files/folders inside an S3 filestore. Each item is a separate filestore-API call
-   * (POST /filestores/{id}/delete), subject to the backend creator/age gate, so per-item failures
-   * are collected and reported together rather than aborting the whole batch.
+   * Run a write operation (delete, move) over each item in an S3 filestore. Each item is a separate
+   * filestore-API call subject to the backend creator/age gate, so per-item failures are collected
+   * and reported together rather than aborting the whole batch. `verbs` supplies the user-facing
+   * wording: gerund (progress), past tense (success), and base verb (failure title).
    */
-  async function deleteRemoteFiles(files: RsSet<RemoteFile>) {
-    const deletingAlert = mkAlert({
-      message: "Deleting...",
+  async function runPerItemFilestoreOp(
+    items: ReadonlyArray<RemoteFile>,
+    verbs: { gerund: string; past: string; base: string },
+    request: (api: ReturnType<typeof axios.create>, file: RemoteFile) => Promise<unknown>,
+  ) {
+    const progressAlert = mkAlert({
+      message: `${verbs.gerund}...`,
       variant: "notice",
       isInfinite: true,
     });
     try {
-      addAlert(deletingAlert);
+      addAlert(progressAlert);
       const api = axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
@@ -453,16 +458,19 @@ export function useGalleryActions(): {
         },
       });
       const failures: Array<string> = [];
-      for (const file of files) {
+      for (const file of items) {
         try {
-          await api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, {
-            path: file.remotePath,
-          });
+          await request(api, file);
         } catch (e) {
+          // Prefer a non-blank entry from the validation `errors` array (BindException), but fall
+          // back to `data.message`/`data.exceptionMessage` via getErrorMessage. The 403 forbidden
+          // gate returns its reason in `message` and a blank `errors: [""]`, so a blank array entry
+          // must not win over the real message.
           const message = Parsers.objectPath(["response", "data", "errors"], e)
             .flatMap(Parsers.isArray)
             .flatMap(ArrayUtils.head)
             .flatMap(Parsers.isString)
+            .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
             .orElse(getErrorMessage(e, "Unknown error"));
           failures.push(`${file.name}: ${message}`);
         }
@@ -470,7 +478,7 @@ export function useGalleryActions(): {
       if (failures.length === 0) {
         addAlert(
           mkAlert({
-            message: `Successfully deleted item${files.size > 1 ? "s" : ""}.`,
+            message: `Successfully ${verbs.past} item${items.length > 1 ? "s" : ""}.`,
             variant: "success",
           }),
         );
@@ -478,70 +486,34 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Failed to delete ${failures.length} item${failures.length > 1 ? "s" : ""}.`,
+            title: `Failed to ${verbs.base} ${failures.length} item${failures.length > 1 ? "s" : ""}.`,
             message: failures.join("; "),
           }),
         );
       }
     } finally {
-      removeAlert(deletingAlert);
+      removeAlert(progressAlert);
     }
   }
 
+  /** Delete files/folders inside an S3 filestore (POST /filestores/{id}/delete per item). */
+  async function deleteRemoteFiles(files: RsSet<RemoteFile>) {
+    await runPerItemFilestoreOp(files.toArray(), { gerund: "Deleting", past: "deleted", base: "delete" }, (api, file) =>
+      api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, { path: file.remotePath }),
+    );
+  }
+
   /**
-   * Move files/folders within an S3 filestore. Each item is a separate filestore-API call
-   * (POST /filestores/{id}/move) that keeps the item's leaf name under destPath, so per-item
-   * failures are collected and reported together rather than aborting the whole batch.
+   * Move files/folders to another folder within the same S3 filestore (POST /filestores/{id}/move
+   * per item), keeping each item's leaf name under destPath.
    */
   async function moveRemoteFiles(filestoreId: number, sources: ReadonlyArray<RemoteFile>, destPath: string) {
-    const movingAlert = mkAlert({
-      message: "Moving...",
-      variant: "notice",
-      isInfinite: true,
-    });
-    try {
-      addAlert(movingAlert);
-      const api = axios.create({
-        baseURL: "/api/v1/gallery",
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-        },
-      });
-      const failures: Array<string> = [];
-      for (const file of sources) {
-        try {
-          await api.post<unknown>(`filestores/${idToString(filestoreId).elseThrow()}/move`, {
-            sourcePath: file.remotePath,
-            destPath,
-          });
-        } catch (e) {
-          const message = Parsers.objectPath(["response", "data", "errors"], e)
-            .flatMap(Parsers.isArray)
-            .flatMap(ArrayUtils.head)
-            .flatMap(Parsers.isString)
-            .orElse(getErrorMessage(e, "Unknown error"));
-          failures.push(`${file.name}: ${message}`);
-        }
-      }
-      if (failures.length === 0) {
-        addAlert(
-          mkAlert({
-            message: `Successfully moved item${sources.length > 1 ? "s" : ""}.`,
-            variant: "success",
-          }),
-        );
-      } else {
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: `Failed to move ${failures.length} item${failures.length > 1 ? "s" : ""}.`,
-            message: failures.join("; "),
-          }),
-        );
-      }
-    } finally {
-      removeAlert(movingAlert);
-    }
+    await runPerItemFilestoreOp(sources, { gerund: "Moving", past: "moved", base: "move" }, (api, file) =>
+      api.post<unknown>(`filestores/${idToString(filestoreId).elseThrow()}/move`, {
+        sourcePath: file.remotePath,
+        destPath,
+      }),
+    );
   }
 
   async function deleteFilestore(filestore: Filestore) {
