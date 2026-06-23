@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/folders}. Creates a new
+ * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/folder}. Creates a new
  * subfolder named {@code name} under {@code path} (a filestore-relative path; {@code ""} or {@code
  * "/"} for the filestore root). S3 only.
  */

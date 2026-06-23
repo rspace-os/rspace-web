@@ -100,8 +100,9 @@ public interface FilestoreWriteManager {
    * <p>Authorized by the filesystem write-allowlist only. Unlike {@link #deleteFromFilestore}, move
    * is deliberately <em>not</em> subject to the per-object creator/age gate: relocating an item
    * within the same filestore is a reorganisation rather than a destruction (the data is preserved,
-   * along with its original {@code rspace-created-by}/{@code -at} attribution), so it is intended to
-   * be more lenient than delete. Any user on the write-allowlist may move any item in the filestore.
+   * along with its original {@code rspace-created-by}/{@code -at} attribution), so it is intended
+   * to be more lenient than delete. Any user on the write-allowlist may move any item in the
+   * filestore.
    *
    * @param sourcePath filestore-relative path of the item to move
    * @param destFolderPath filestore-relative path of the destination folder
