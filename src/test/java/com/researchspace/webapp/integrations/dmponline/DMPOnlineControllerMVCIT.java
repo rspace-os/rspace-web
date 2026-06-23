@@ -63,6 +63,10 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
     // assert is forwarded to the shared connection-result page (error variant)
     assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
+    // the shared page serves both outcomes, so pin the error branch via its model attribute
+    assertTrue(
+        ((String) result.getModelAndView().getModel().get("connectionError"))
+            .contains("Error during token creation"));
   }
 
   @Test
@@ -82,6 +86,10 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
     // assert is forwarded to the shared connection-result page (error variant)
     assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
+    // the shared page serves both outcomes, so pin the error branch via its model attribute
+    assertTrue(
+        ((String) result.getModelAndView().getModel().get("connectionError"))
+            .contains("Error during token refresh"));
   }
 
   private void seedUserConnection() {
