@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, override } from "mobx";
+import { firstValue } from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import { match } from "../../util/Util";
 import type { HasEditableFields } from "../definitions/Editable";
@@ -57,7 +58,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
     const currentNames = new Set(Array.from(this.records, (r) => r.name));
     this.name =
       currentNames.size === 1
-        ? { common: currentNames.values().next().value ?? "", suffix: "NONE" }
+        ? { common: firstValue(currentNames) ?? "", suffix: "NONE" }
         : { common: "", suffix: "NONE" };
     this.sharedWith = [];
   }
@@ -98,11 +99,12 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
     );
 
     const currentSharingMode = new Set(Array.from(this.records, (r) => r.sharingMode));
+    const currentImage = firstValue(currentImages);
 
     return {
-      image: currentImages.values().next().value ?? null,
-      newBase64Image: currentImages.values().next().value ?? null,
-      description: currentDescriptions.values().next().value ?? "",
+      image: currentImage ?? null,
+      newBase64Image: currentImage ?? null,
+      description: firstValue(currentDescriptions) ?? "",
       name: this.name,
 
       // all the tags that the records have in common
@@ -112,8 +114,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
       ).toArray(),
 
       barcodes: [...newBarcodes],
-      sharingMode:
-        currentSharingMode.size === 1 ? (currentSharingMode.values().next().value ?? "OWNER_GROUPS") : "OWNER_GROUPS", // owner's groups acts as default
+      sharingMode: currentSharingMode.size === 1 ? (firstValue(currentSharingMode) ?? "OWNER_GROUPS") : "OWNER_GROUPS", // owner's groups acts as default
       sharedWith: this.sharedWith,
     };
   }

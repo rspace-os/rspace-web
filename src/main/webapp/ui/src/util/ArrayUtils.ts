@@ -24,6 +24,12 @@ export function head<T>(array: ReadonlyArray<T>): Result<T> {
 }
 
 /**
+ * Pulls a representative value from any iterable, such as a Set of distinct
+ * field values, without materializing it as an array.
+ */
+export const firstValue = <T>(values: Iterable<T>): T | undefined => values[Symbol.iterator]().next().value;
+
+/**
  * Return a new array where between each pair of elements in the passed array
  * the constant value is inserted.
  *

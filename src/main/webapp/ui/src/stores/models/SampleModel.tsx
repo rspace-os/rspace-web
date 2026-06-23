@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/util/error";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import ApiService from "../../common/InvApiService";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
+import { firstValue } from "../../util/ArrayUtils";
 import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -1002,10 +1003,10 @@ export class SampleCollection
 
     return {
       ...super.fieldValues,
-      sampleSource: currentSources.values().next().value ?? DEFAULT_SAMPLE.sampleSource,
-      expiryDate: currentExpiryDates.values().next().value ?? null,
-      storageTempMin: allSameTemperatures ? (currentStorageTemperatureMin.values().next().value ?? null) : null,
-      storageTempMax: allSameTemperatures ? (currentStorageTemperatureMax.values().next().value ?? null) : null,
+      sampleSource: firstValue(currentSources) ?? DEFAULT_SAMPLE.sampleSource,
+      expiryDate: firstValue(currentExpiryDates) ?? null,
+      storageTempMin: allSameTemperatures ? (firstValue(currentStorageTemperatureMin) ?? null) : null,
+      storageTempMax: allSameTemperatures ? (firstValue(currentStorageTemperatureMax) ?? null) : null,
 
       // Not supported when batch editing
       quantity: null,
