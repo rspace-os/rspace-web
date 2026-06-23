@@ -2161,7 +2161,7 @@ paths:
         `destFilestoreId` in the body (no data flows through RSpace). When
         `deleteSource` is true the source is deleted after a successful copy.
         Currently S3↔S3 only; other combinations and same source/destination
-        filestore id return **501**.
+        filestore id return **404**.
       tags:
         - Gallery Filestores
       parameters:

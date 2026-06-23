@@ -60,9 +60,8 @@ public interface FilestoreWriteManager {
   /**
    * Deletes a file or empty folder within an S3 filestore, subject to the creator/age gate: the
    * object must carry {@code rspace-created-by} equal to {@code user} and a {@code
-   * rspace-created-at} within the configured window, otherwise an {@link
-   * org.apache.shiro.authz.AuthorizationException} (HTTP 403) is thrown. A non-empty folder is
-   * rejected.
+   * rspace-created-at} within the configured window, otherwise a {@link
+   * FilestoreOperationForbiddenException} (HTTP 403) is thrown. A non-empty folder is rejected.
    *
    * @param filestoreId the filestore containing the item
    * @param path filestore-relative path of the file or folder to delete

@@ -90,7 +90,7 @@ public interface GalleryFilestoresApi {
    * Uploads (imports) Gallery items into the filestore identified by {@code filestoreId}, creating
    * an {@code ExternalStorageLocation} link row per success. When {@code removeOriginalFromRspace}
    * in the request is true the RSpace media records are deleted after a successful upload (a
-   * "move"); when false they are kept (a "copy"). Unwritable backends produce 501 Not Implemented.
+   * "move"); when false they are kept (a "copy"). Unwritable backends produce 404 Not Found.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/uploadFromGallery",
@@ -107,7 +107,7 @@ public interface GalleryFilestoresApi {
   /**
    * Moves a file or folder to another folder within the same filestore (server-side; S3 only).
    * Paths are relative to the filestore root; the moved item keeps its leaf name. Non-S3 backends
-   * produce 501.
+   * produce 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/move",
@@ -121,7 +121,7 @@ public interface GalleryFilestoresApi {
   /**
    * Creates a new subfolder within the filestore identified by {@code filestoreId} (S3 only; a
    * zero-byte placeholder object carrying creator/creation-time metadata). Non-S3 backends produce
-   * 501.
+   * 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/folder",
@@ -136,7 +136,7 @@ public interface GalleryFilestoresApi {
    * Deletes a file or folder within the filestore identified by {@code filestoreId} (S3 only),
    * subject to the creator/age gate: only the creating user may delete, and only within the
    * configured window after creation. A non-empty folder is rejected. Returns 204 on success; 403
-   * when the gate denies the deletion; 501 for non-S3 backends.
+   * when the gate denies the deletion; 404 for non-S3 backends.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/delete",
@@ -149,7 +149,7 @@ public interface GalleryFilestoresApi {
   /**
    * Server-side transfers a single object from the filestore identified by {@code filestoreId} (the
    * source) to the filestore identified by {@code destFilestoreId} in the body. Currently supports
-   * S3↔S3 only; other source/destination backends produce 501. Rejects same source+dest filestore
+   * S3↔S3 only; other source/destination backends produce 404. Rejects same source+dest filestore
    * id (within-filestore moves are out of scope of this subtask). When {@code deleteSource} is
    * true, the source object is deleted after a successful copy.
    */

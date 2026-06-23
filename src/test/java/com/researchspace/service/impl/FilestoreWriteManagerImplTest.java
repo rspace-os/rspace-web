@@ -96,6 +96,18 @@ class FilestoreWriteManagerImplTest {
   }
 
   @Test
+  void deleteFromFilestore_noCreationRecord_deniedWithoutDeleting() throws Exception {
+    // No created-by/at (written outside RSpace): denied as no-metadata, not as non-creator.
+    when(client.resolveDeletableTarget("dir/file.txt"))
+        .thenReturn(new DeletableTarget("dir/file.txt", FilestoreAuditMetadata.from(null)));
+
+    assertThrows(
+        FilestoreOperationForbiddenException.class,
+        () -> manager.deleteFromFilestore(FS_ID, "dir/file.txt", errors(), user));
+    verify(client, never()).deleteByKey(any());
+  }
+
+  @Test
   void deleteFromFilestore_rootPath_rejectedWithoutTouchingClient() throws Exception {
     assertThrows(
         BindException.class, () -> manager.deleteFromFilestore(FS_ID, "/", errors(), user));

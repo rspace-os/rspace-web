@@ -424,7 +424,11 @@ function useS3Provenance(file: GalleryFile): { createdBy: string | null; created
   });
   const filestore = file.path[0];
   const remotePath = file instanceof RemoteFile ? file.remotePath : null;
-  const filestoreId = file instanceof RemoteFile && filestore instanceof Filestore ? filestore.id : null;
+  // S3-only; other backends have no provenance to fetch.
+  const filestoreId =
+    file instanceof RemoteFile && filestore instanceof Filestore && filestore.filesystemType === "S3"
+      ? filestore.id
+      : null;
   React.useEffect(() => {
     setAudit({ createdBy: null, createdAt: null });
     if (remotePath === null || filestoreId === null) return;

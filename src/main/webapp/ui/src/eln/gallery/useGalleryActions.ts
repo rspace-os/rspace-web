@@ -20,7 +20,7 @@ import {
   RemoteFile,
 } from "./useGalleryListing";
 
-const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 /**
  * The destination of a move operation.
@@ -147,11 +147,11 @@ export function useGalleryActions(): {
    */
   const galleryApi = axios.create({
     baseURL: "/gallery/ajax",
-    timeout: ONE_MINUTE_IN_MS,
+    timeout: ONE_HOUR_IN_MS,
   });
   const structuredDocumentApi = axios.create({
     baseURL: "/workspace/editor/structuredDocument/ajax",
-    timeout: ONE_MINUTE_IN_MS,
+    timeout: ONE_HOUR_IN_MS,
   });
 
   async function uploadFiles(parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) {

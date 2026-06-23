@@ -246,8 +246,8 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     WritableNfsClient client;
     try {
       client = resolveWritableClient(user, filestore, null, errors);
-    } catch (UnsupportedOperationException e) {
-      // backend has no write client and therefore no RSpace audit metadata
+    } catch (UnsupportedOperationException | BindException e) {
+      // unsupported backend, or missing per-user credentials: no RSpace metadata to read
       return FilestoreAuditMetadata.from(null);
     }
     try {
@@ -264,13 +264,14 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
    * {@link FilestoreOperationForbiddenException} (→ 403) before anything is deleted.
    */
   private void assertDeletable(FilestoreAuditMetadata audit, User user) {
+    // No RSpace creation record: deny before the creator check, which would mislabel it.
+    if (audit.createdBy() == null || !audit.hasTimestamp()) {
+      throw new FilestoreOperationForbiddenException(
+          messages.getMessage("netfilestores.s3.delete.denied.noMetadata"));
+    }
     if (!audit.isCreatedBy(user.getUsername())) {
       throw new FilestoreOperationForbiddenException(
           messages.getMessage("netfilestores.s3.delete.denied.notCreator"));
-    }
-    if (!audit.hasTimestamp()) {
-      throw new FilestoreOperationForbiddenException(
-          messages.getMessage("netfilestores.s3.delete.denied.noMetadata"));
     }
     int windowMinutes = properties.getS3DeleteWindowMinutes();
     if (!audit.isWithin(Instant.now(clock).minus(Duration.ofMinutes(windowMinutes)))) {

@@ -118,7 +118,7 @@ const MoveWithinFilestoreDialog = observer(
                   listing={listing}
                   path={[filestore]}
                   selectedSection={GALLERY_SECTION.NETWORKFILES}
-                  refreshListing={refreshListing}
+                  refreshListing={refreshListingInsideDialog}
                   filter={filterFile}
                   disableDragAndDrop
                   sortOrder="ASC"
