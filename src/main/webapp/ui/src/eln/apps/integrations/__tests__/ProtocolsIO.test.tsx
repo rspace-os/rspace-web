@@ -4,6 +4,7 @@ import { Optional } from "../../../../util/optional";
 import ProtocolsIO from "../ProtocolsIO";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("ProtocolsIO", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {

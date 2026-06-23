@@ -12,6 +12,7 @@ import Search from "../../../stores/models/Search";
 import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 
 import "@/__tests__/assertUrlSearchParams";
+
 type TriggersSearchNavigateArgs = {
   skipToParentContext?: boolean;
 };

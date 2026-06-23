@@ -9,6 +9,7 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import Slack, { SLACK_CONNECTION_CHANNEL } from "../Slack";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("Slack", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {

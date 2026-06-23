@@ -1,5 +1,7 @@
 # Git hooks managed by lefthook (https://lefthook.dev).
 # Enable once per clone by running `pnpm install` in the repo root.
+colors: false
+
 pre-commit:
   parallel: true
   commands:

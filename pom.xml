@@ -1966,7 +1966,7 @@
             <version>2.0.0</version>
             <configuration>
               <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.3.0</pnpmVersion>
+              <pnpmVersion>11.8.0</pnpmVersion>
               <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
