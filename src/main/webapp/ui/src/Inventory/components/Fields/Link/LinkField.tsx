@@ -84,7 +84,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const openHref = openHrefForLink(props.link, targetIsInventory);
   return (
     <Card variant="outlined" aria-label={props.name ? `Link field ${props.name}` : "Link field"}>
-      <CardContent>
+      <CardContent sx={{ "&:last-child": { pb: 2 } }}>
         <Box
           sx={{
             display: "flex",

@@ -93,6 +93,56 @@ The app URL and ports are printed by `up` and by `ps` (e.g.
 `http://localhost:8080`). Logins: `user1a` / `user1234`,
 sysadmin `sysadmin1` / `sysWisc23!`.
 
+### 2a. Enable chemistry (Ketcher structure editing)
+
+`up --chemistry` only starts the chemistry microservice and sets
+`chemistry.provider=indigo` — necessary but **not** sufficient. The in-editor
+chemical-structure tool is gated by three layers that must all be satisfied, in
+order:
+
+1. **Deployment (the `--chemistry` flag):** sets `chemistry.provider=indigo`
+   and points the app at the microservice. Verify with
+   `docker exec <project>-app sh -c 'ps aux | grep -o "chemistry.provider=[a-z]*"'`
+   or `RS.chemistryProvider` in the browser console.
+
+2. **System setting (sysadmin, persisted in the DB) — the easy one to miss.**
+   Log in as `sysadmin1` → **System → Configuration → System Settings** (the
+   `#systemSettingsLink` on `/system/config`; it is under *Configuration*, not
+   *Maintenance*). Confirm **`chemistry.available`** is **`ALLOWED`** (options:
+   `ALLOWED` / `DENIED_BY_DEFAULT` / `DENIED`). **Check it rather than assume:**
+   the seeded value is `ALLOWED` by default. Startup forces it to `DENIED` only
+   when the chemistry provider or service URL is missing (any boot without
+   `--chemistry`), but does not restore it afterwards. So a stack first booted
+   with `--chemistry` is usually already `ALLOWED` (no change needed); but if it
+   was ever started without chemistry, the setting stays at `DENIED` and you
+   must set it back to `ALLOWED`.
+   - **Gotcha:** the row shows the *saved* value as text, with a separate edit
+     dropdown that **always defaults to "Allowed"** even when the saved value is
+     `DENIED`. Don't trust the dropdown's default — click the value to enter
+     edit mode, pick **Allowed**, and click **Save**, then confirm the row's
+     displayed value now reads `ALLOWED`.
+   - **Authoritative check** (bypasses the UI). Use the `mariadb` client — the dev
+     DB is MariaDB and the image has no `mysql` symlink (the launcher's own `db`
+     command uses `mariadb`):
+     ```bash
+     docker exec <project>-db mariadb -urspacedbuser -prspacedbpwd rspace -e \
+       "SELECT pd.name, spv.value FROM PropertyDescriptor pd \
+        JOIN SystemProperty sp ON sp.descriptor_id = pd.id \
+        JOIN SystemPropertyValue spv ON spv.property_id = sp.id \
+        WHERE pd.name='chemistry.available';"
+     ```
+
+3. **Per-user integration (Apps page).** As the working user, open **Apps**
+   (top-right profile menu → Apps). The **Chemistry** card is greyed/disabled
+   until step 2 is `ALLOWED`; once it is, open the card and click **ENABLE**.
+
+With all three in place, the document editor's rich-text toolbar gains
+**"Ketcher Insert chemical structure"** (plus "Insert reaction table" and
+"Insert PubChem Compound"). That button opens the Ketcher editor; drawing a
+structure enables Ketcher's **3D Viewer** button, which loads the Miew viewer
+(`miew-react`). A fresh login / editor reload may be needed for a
+just-enabled integration to appear.
+
 ### 3. Apply changes while running
 
 | You changed…             | Command                                         |
