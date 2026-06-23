@@ -28,30 +28,31 @@ type CommonSize = {
   name: string;
 };
 
-// the order of these key/value pairs is significant
+// Declaration order is the menu display order: the most popular size (96 well
+// plate) first, "Custom" last.
 const commonSizes: Record<CommonSizeIndex, CommonSize> = {
-  custom: { rows: null, cols: null, name: "Custom" },
-  "64-place-freezer-box": { rows: 8, cols: 8, name: "64 place freezer box" },
-  "81-place-freezer-box": { rows: 9, cols: 9, name: "81 place freezer box" },
-  "100-place-freezer-box": {
-    rows: 10,
-    cols: 10,
-    name: "100 place freezer box",
+  "96-well-plate": { rows: 8, cols: 12, name: "96 well plate" },
+  "24-well-plate": { rows: 4, cols: 6, name: "24 well plate" },
+  "12-well-plate": { rows: 3, cols: 4, name: "12 well plate" },
+  "6-well-plate": { rows: 2, cols: 3, name: "6 well plate" },
+  "196-place-freezer-box": {
+    rows: 14,
+    cols: 14,
+    name: "196 place freezer box",
   },
   "169-place-freezer-box": {
     rows: 13,
     cols: 13,
     name: "169 place freezer box",
   },
-  "196-place-freezer-box": {
-    rows: 14,
-    cols: 14,
-    name: "196 place freezer box",
+  "100-place-freezer-box": {
+    rows: 10,
+    cols: 10,
+    name: "100 place freezer box",
   },
-  "6-well-plate": { rows: 2, cols: 3, name: "6 well plate" },
-  "12-well-plate": { rows: 3, cols: 4, name: "12 well plate" },
-  "24-well-plate": { rows: 4, cols: 6, name: "24 well plate" },
-  "96-well-plate": { rows: 8, cols: 12, name: "96 well plate" },
+  "81-place-freezer-box": { rows: 9, cols: 9, name: "81 place freezer box" },
+  "64-place-freezer-box": { rows: 8, cols: 8, name: "64 place freezer box" },
+  custom: { rows: null, cols: null, name: "Custom" },
 };
 
 function GridDimensions(): React.ReactNode {
@@ -144,15 +145,13 @@ function GridDimensions(): React.ReactNode {
       >
         <FormControl fullWidth size="small">
           <Select value={commonSize} label="" onChange={handleChooseCommonSize}>
-            {/* reverse() reproduces the prior mapObject behaviour, which prepended each
-                entry and so emitted commonSizes in reverse-insertion order (96-well first) */}
             {Object.values(
               mapValues(commonSizes, (size, value) => (
                 <MenuItem value={value} key={value}>
                   {size.name}
                 </MenuItem>
               )),
-            ).reverse()}
+            )}
           </Select>
         </FormControl>
       </Grid>
