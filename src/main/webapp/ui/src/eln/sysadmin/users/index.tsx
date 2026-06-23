@@ -663,6 +663,7 @@ const SetUsernamAliasAction = ({
               <DialogTitle>Set Username Alias</DialogTitle>
               <DialogContent>
                 <DialogContentText
+                  component="div"
                   variant="body2"
                   sx={{
                     mb: 2,
@@ -784,6 +785,7 @@ const DeleteAction = ({
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
                 <DialogContentText
+                  component="div"
                   variant="body2"
                   sx={{
                     mb: 2,
