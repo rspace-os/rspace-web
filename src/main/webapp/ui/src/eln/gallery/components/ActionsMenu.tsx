@@ -482,7 +482,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   });
 
   const exportAllowed = computed((): Result<null> => {
-    if (selection.size > 100) return Result.Error([new Error("Cannot export more than 100 itemes at once.")]);
+    if (selection.size > 100) return Result.Error([new Error("Cannot export more than 100 items at once.")]);
     return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
   });
   const getShareDialogSelection = (): Result<{
