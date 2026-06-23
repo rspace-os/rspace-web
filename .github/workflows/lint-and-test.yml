@@ -129,7 +129,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
@@ -212,7 +211,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
@@ -269,7 +267,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
@@ -329,7 +326,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
@@ -388,7 +384,6 @@ jobs:
         if: steps.base-support.outputs.supported == 'true'
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
@@ -660,7 +655,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 11.3.0
           run_install: false
 
       - name: Setup Node.js
