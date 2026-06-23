@@ -114,7 +114,7 @@ export function AboutRSpaceContent(): React.ReactElement {
       </Typography>
 
       <Box sx={{ mt: 2, mb: 3 }}>
-        <Typography variant="body2">
+        <Typography variant="body2" component="div">
           <Stack spacing={2} direction="row" sx={{ alignItems: "center" }}>
             <Link href="https://researchspace.com" target="_blank" rel="noreferrer">
               Website
