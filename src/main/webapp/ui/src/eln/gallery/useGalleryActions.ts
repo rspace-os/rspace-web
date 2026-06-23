@@ -23,6 +23,20 @@ import {
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 /**
+ * Best error message from a failed filestore API call: the first non-blank entry of the
+ * BindException `errors` array, else `data.message`/`exceptionMessage` via getErrorMessage. A 403
+ * gate denial returns its reason in `message` with a blank `errors: [""]`, so blanks must not win.
+ */
+function firstErrorMessage(e: unknown): string {
+  return Parsers.objectPath(["response", "data", "errors"], e)
+    .flatMap(Parsers.isArray)
+    .flatMap(ArrayUtils.head)
+    .flatMap(Parsers.isString)
+    .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
+    .orElse(getErrorMessage(e, "Unknown error"));
+}
+
+/**
  * The destination of a move operation.
  */
 export type Destination =
@@ -154,6 +168,13 @@ export function useGalleryActions(): {
     timeout: ONE_HOUR_IN_MS,
   });
 
+  /** Authenticated client for the REST gallery API (/api/v1/gallery). */
+  const remoteGalleryApi = async () =>
+    axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: { Authorization: `Bearer ${await getToken()}` },
+    });
+
   async function uploadFiles(parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
@@ -269,12 +290,7 @@ export function useGalleryActions(): {
   }
 
   async function createRemoteFolder(filestoreId: number, path: string, name: string) {
-    const api = axios.create({
-      baseURL: "/api/v1/gallery",
-      headers: {
-        Authorization: `Bearer ${await getToken()}`,
-      },
-    });
+    const api = await remoteGalleryApi();
     try {
       await api.post<unknown>(`filestores/${filestoreId}/folder`, { path, name });
       addAlert(
@@ -284,16 +300,11 @@ export function useGalleryActions(): {
         }),
       );
     } catch (e) {
-      const message = Parsers.objectPath(["response", "data", "errors"], e)
-        .flatMap(Parsers.isArray)
-        .flatMap(ArrayUtils.head)
-        .flatMap(Parsers.isString)
-        .orElse(getErrorMessage(e, "Unknown error"));
       addAlert(
         mkAlert({
           variant: "error",
           title: "Failed to create new folder.",
-          message,
+          message: firstErrorMessage(e),
         }),
       );
       throw e;
@@ -438,28 +449,13 @@ export function useGalleryActions(): {
     });
     try {
       addAlert(progressAlert);
-      const api = axios.create({
-        baseURL: "/api/v1/gallery",
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-        },
-      });
+      const api = await remoteGalleryApi();
       const failures: Array<string> = [];
       for (const file of items) {
         try {
           await request(api, file);
         } catch (e) {
-          // Prefer a non-blank entry from the validation `errors` array (BindException), but fall
-          // back to `data.message`/`data.exceptionMessage` via getErrorMessage. The 403 forbidden
-          // gate returns its reason in `message` and a blank `errors: [""]`, so a blank array entry
-          // must not win over the real message.
-          const message = Parsers.objectPath(["response", "data", "errors"], e)
-            .flatMap(Parsers.isArray)
-            .flatMap(ArrayUtils.head)
-            .flatMap(Parsers.isString)
-            .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
-            .orElse(getErrorMessage(e, "Unknown error"));
-          failures.push(`${file.name}: ${message}`);
+          failures.push(`${file.name}: ${firstErrorMessage(e)}`);
         }
       }
       if (failures.length === 0) {
@@ -501,12 +497,7 @@ export function useGalleryActions(): {
   }
 
   async function deleteFilestore(filestore: Filestore) {
-    const api = axios.create({
-      baseURL: "/api/v1/gallery",
-      headers: {
-        Authorization: `Bearer ${await getToken()}`,
-      },
-    });
+    const api = await remoteGalleryApi();
     try {
       await api.delete<unknown>(`filestores/${idToString(filestore.id).elseThrow()}`);
       addAlert(
