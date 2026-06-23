@@ -15,7 +15,6 @@ import FileField from "./FileField";
 export type ImageData = {
   dataURL: string;
   file: Blob;
-  binaryString?: string;
 };
 type ImageFieldArgs = {
   // required
@@ -65,15 +64,11 @@ function ImageField({
     setEditorFile(imageData.file);
     storeImage(imageData);
   };
-  const imageSelection = ({ binaryString, file }: { binaryString: string; file: File }) => {
+  const imageSelection = ({ dataURL, file }: { dataURL: string; file: File }) => {
     if (!/^image/.test(file.type)) {
       throw new Error("Not an image");
     }
-    storeNewImage({
-      binaryString,
-      dataURL: `data:${file.type};base64,${btoa(binaryString)}`,
-      file,
-    });
+    storeNewImage({ dataURL, file });
   };
   const readAsDataUrl = (file: Blob): Promise<string> =>
     new Promise((resolve, reject) => {

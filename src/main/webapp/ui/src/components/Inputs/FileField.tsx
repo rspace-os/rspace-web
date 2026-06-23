@@ -78,7 +78,7 @@ ButtonThatTriggersInvisibleInput.displayName = "ButtonThatTriggersInvisibleInput
 export type FileFieldArgs = {
   // required
   accept: string;
-  onChange: (event: { binaryString: string; file: File }) => void;
+  onChange: (event: { dataURL: string; file: File }) => void;
 
   // optional
   id?: string;
@@ -144,31 +144,20 @@ function FileField({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    Promise.resolve(file.arrayBuffer())
-      // Build a Latin1 "binary string" (1:1 byte -> code unit) as btoa() expects
-      // downstream. TextDecoder can't do this faithfully (its "iso-8859-1" label
-      // decodes as windows-1252). Chunked fromCharCode avoids a large intermediate.
-      .then((buf) => {
-        const bytes = new Uint8Array(buf);
-        let binaryString = "";
-        for (let i = 0; i < bytes.length; i += 0x8000) {
-          binaryString += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-        }
-        return binaryString;
-      })
-      .then((binaryString) => {
-        setFailedToLoad(false);
-        setSelectedFilename(file.name);
-        onChange({ binaryString, file });
-      })
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFailedToLoad(false);
+      setSelectedFilename(file.name);
+      onChange({ dataURL: reader.result as string, file });
       // reset value allows re-selection of last selected file
-      .then(() => {
-        event.target.value = "";
-      })
-      .catch((readError) => {
-        setFailedToLoad(true);
-        console.error("Failed to load file.", readError);
-      });
+      event.target.value = "";
+    };
+    reader.onerror = () => {
+      setFailedToLoad(true);
+      console.error("Failed to load file.", reader.error);
+    };
+    // base64 data URL ("data:<mime>;base64,...") that consumers can use directly
+    reader.readAsDataURL(file);
   };
 
   const helperText = failedToLoad ? "Failed to load file. Please try again." : "";
