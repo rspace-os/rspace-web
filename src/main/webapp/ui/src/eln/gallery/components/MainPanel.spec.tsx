@@ -1,631 +1,577 @@
-import AxeBuilder from "@axe-core/playwright";
-import { cardClasses } from "@mui/material/Card";
-import { expect, test } from "@playwright/experimental-ct-react";
-import * as Jwt from "jsonwebtoken";
+import { cleanup, render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
+import { suppressFireAndForget404, worker } from "@/__tests__/browserSetup";
+import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
+import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
+import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { BunchOfImages, NestedFoldersWithImageFile } from "./MainPanel.story";
+import { MainPanelPage } from "./pageObjects/MainPanelPage";
 
-const feature = test.extend<{
-  Given: {
-    "the main panel is showing a nested folder structure": () => Promise<void>;
-    "the main panel is showing a bunch of image files": () => Promise<void>;
-    "tree view is being shown": () => Promise<void>;
-    "the outer folder is open": () => Promise<void>;
-    "the inner folder is selected": () => Promise<void>;
-    "the outer folder is selected": () => Promise<void>;
+/*
+ * CLIPBOARD: Clipboard APIs require a browser permission grant that is not
+ * available in Vitest browser mode. We stub `navigator.clipboard.writeText`
+ * before each test that needs it, capture the written value in a local
+ * variable, and assert on it. The stub is restored in afterEach.
+ *
+ * MODIFIER CLICKS: Use `locator.click({ modifiers: [...] })` — the
+ * `userEvent.keyboard` pointer-hold form is unreliable (vitest-browser #7007).
+ *
+ * ANIMATIONS: `page.evaluate(() => document.getAnimations()...)` becomes a
+ * direct `document.getAnimations()` call wrapped in `expect.poll` (tests run
+ * in-browser so there is no page-eval indirection needed).
+ *
+ * KEYBOARD: `page.keyboard.press("Shift+ArrowRight")` becomes
+ * `userEvent.keyboard("{Shift>}{ArrowRight}{/Shift}")`.
+ *
+ * REDUCED MOTION (axe test): `page.emulateMedia` is CDP-only. We emulate via
+ * CDP on Chromium so the cards render at their final opacity immediately.
+ * On Firefox/WebKit CDP is unavailable; the media emulation step is skipped
+ * but the axe scan still runs.
+ */
+
+const panel = new MainPanelPage();
+
+// ── Clipboard stub ────────────────────────────────────────────────────────────
+// Shared state for stub; populated only during clipboard tests.
+let capturedClipboardText: string | null = null;
+let originalWriteText: typeof navigator.clipboard.writeText | null = null;
+
+function installClipboardStub(): void {
+  capturedClipboardText = null;
+  originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
+  navigator.clipboard.writeText = (text: string) => {
+    capturedClipboardText = text;
+    return Promise.resolve();
   };
-  Once: {
-    "a clipboard success alert is shown": () => Promise<void>;
-  };
-  When: {
-    "the user taps the paths's copy-to-clipboard button": () => Promise<void>;
-    "the user opens the outer folder": () => Promise<void>;
-    "the user opens the inner folder": () => Promise<void>;
-    "the user taps the gallery section breadcrumb": () => Promise<void>;
-    "the user taps the outer folder breadcrumb": () => Promise<void>;
-    "the user taps the outer folder": () => Promise<void>;
-    "the user taps the image file": (
-      filename: string,
-      options?: { modifiers: Array<"Shift" | "ControlOrMeta"> },
-    ) => Promise<void>;
-    "the user taps the arrow key": (
-      key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft",
-    ) => Promise<void>;
-  };
-  Then: {
-    "the clipboard contains a link to the file's parent folder": () => Promise<void>;
-    "the clipboard contains the gallery-section link": () => Promise<void>;
-    "only the gallery section is shown in the breadcrumbs": () => Promise<void>;
-    "the opened folder and gallery section are shown in the breadcrumbs": () => Promise<void>;
-    "the root gallery section is returned to": () => Promise<void>;
-    "the outer folder is returned to": () => Promise<void>;
-    "there shouldn't be any axe violations": () => Promise<void>;
-    "the outer folder is selected": () => Promise<void>;
-    "the selection is": (expectedSelection: Array<string>) => Promise<void>;
-    "the name of the selected file has colour": ({
-      text,
-      background,
-    }: {
-      text: string;
-      background: string;
-    }) => Promise<void>;
-  };
-  networkRequests: Array<URL>;
-}>({
-  Given: async ({ mount, page }, use) => {
-    await use({
-      "the main panel is showing a nested folder structure": async () => {
-        await mount(<NestedFoldersWithImageFile />);
-      },
-      "the main panel is showing a bunch of image files": async () => {
-        await mount(<BunchOfImages />);
-      },
-      "tree view is being shown": async () => {
-        await page.getByRole("button", { name: /views/i }).click();
-        await page.getByRole("menuitem", { name: /tree view/i }).click();
-      },
-      "the outer folder is open": async () => {
-        const treeitem = page.getByRole("treeitem", {
-          name: "Outer folder",
-        });
-        await treeitem.locator("> div").click();
-        await expect(page.getByRole("treeitem", { name: "Inner folder" })).toBeVisible();
-      },
-      "the inner folder is selected": async () => {
-        await page.getByRole("treeitem", { name: "Inner folder" }).locator("> div").click();
-      },
-      "the outer folder is selected": async () => {
-        await page.getByRole("treeitem", { name: "Outer folder" }).locator("> div").click();
-      },
-    });
-  },
-  Once: async ({ page }, use) => {
-    await use({
-      "a clipboard success alert is shown": async () => {
-        await expect(
-          page.getByRole("alert", {
-            name: "Link copied to clipboard successfully!",
-          }),
-        ).toBeVisible();
-      },
-    });
-  },
-  When: async ({ page, context, browserName }, use) => {
-    await use({
-      "the user taps the paths's copy-to-clipboard button": async () => {
-        // Chrome supports the clipboard API, but only after opting in
-        if (browserName === "chromium") {
-          await context.grantPermissions(["clipboard-read", "clipboard-write"], {
-            origin: page.url(),
-          });
-        }
-        await page.getByRole("button", { name: "Copy to clipboard" }).click();
-      },
-      "the user opens the outer folder": async () => {
-        await page.getByRole("gridcell", { name: "Outer folder" }).dblclick();
-      },
-      "the user opens the inner folder": async () => {
-        await page.getByRole("gridcell", { name: "Inner folder" }).dblclick();
-      },
-      "the user taps the gallery section breadcrumb": async () => {
-        await page.getByRole("navigation", { name: "Breadcrumbs" }).getByRole("button", { name: "Images" }).click();
-      },
-      "the user taps the outer folder breadcrumb": async () => {
-        await page
-          .getByRole("navigation", { name: "Breadcrumbs" })
-          .getByRole("button", { name: "Outer folder" })
-          .click();
-      },
-      "the user taps the outer folder": async () => {
-        await page.getByRole("gridcell", { name: "Outer folder" }).click();
-      },
-      "the user taps the image file": async (
-        filename: string,
-        options: { modifiers: Array<"Shift" | "ControlOrMeta"> } = {
-          modifiers: [],
+}
+
+function uninstallClipboardStub(): void {
+  if (originalWriteText !== null) {
+    navigator.clipboard.writeText = originalWriteText;
+    originalWriteText = null;
+  }
+  capturedClipboardText = null;
+}
+
+// ── Per-suite MSW handlers ─────────────────────────────────────────────────────
+
+function linkedDocumentsHandler() {
+  return http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+    HttpResponse.json({
+      data: [],
+      error: null,
+      success: true,
+      errorMsg: null,
+    }),
+  );
+}
+
+/*
+ * When the TreeView expands the Outer folder (id=1), it calls
+ * `useGalleryListing` which fetches `/gallery/getUploadedFiles?currentFolderId=1&...`.
+ *
+ * This handler MUST be registered before `galleryAppShellHandlers()` in the
+ * `worker.use(...)` call because the app-shell handlers contain a wildcard catch-all
+ * for `/gallery/getUploadedFiles` that returns an empty listing. MSW resolves
+ * handlers in registration order (first match wins within a single `worker.use()`
+ * call), so our specific folder handler must appear first.
+ */
+function outerFolderListingHandler() {
+  return http.get("/gallery/getUploadedFiles", ({ request }) => {
+    const url = new URL(request.url);
+    if (url.searchParams.get("currentFolderId") === "1") {
+      return HttpResponse.json({
+        data: {
+          items: {
+            totalHits: 1,
+            totalPages: 1,
+            results: [
+              {
+                id: 2,
+                oid: { idString: "GF2" },
+                name: "Inner folder",
+                ownerName: "user1",
+                description: null,
+                creationDate: 1672531200,
+                modificationDate: 1672531200,
+                type: "Folder",
+                extension: null,
+                thumbnailId: null,
+                size: 12345,
+                version: 1,
+                originalImageOid: { idString: "GF2" },
+              },
+            ],
+          },
+          parentId: 1,
         },
-      ) => {
-        await page.getByRole("gridcell", { name: filename }).click(options);
-      },
-      "the user taps the arrow key": async (
-        key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft",
-      ) => {
-        await page.keyboard.press(key, {
-          delay: 100, // Add a delay to ensure the key press is registered
-        });
-      },
-    });
-  },
-  Then: async ({ page }, use) => {
-    await use({
-      "the clipboard contains a link to the file's parent folder": async () => {
-        const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-        expect(clipboardText).toMatch(/\/gallery\/1/);
-      },
-      "the clipboard contains the gallery-section link": async () => {
-        const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-        expect(clipboardText).toMatch(/\?mediaType=Images/);
-      },
-      "only the gallery section is shown in the breadcrumbs": async () => {
-        const breadcrumbs = page.getByRole("navigation", {
-          name: "Breadcrumbs",
-        });
-        const listItems = breadcrumbs.getByRole("listitem");
-        await expect(listItems).toHaveCount(1);
-        await expect(listItems.first()).toHaveText("Images");
-      },
-      "the opened folder and gallery section are shown in the breadcrumbs": async () => {
-        const breadcrumbs = page.getByRole("navigation", {
-          name: "Breadcrumbs",
-        });
-        const listItems = breadcrumbs.getByRole("listitem");
-        await expect(listItems).toHaveCount(2);
-        await expect(listItems.first()).toHaveText("Images");
-        await expect(listItems.nth(1)).toHaveText("Outer folder");
-      },
-      "the root gallery section is returned to": async () => {
-        const breadcrumbs = page.getByRole("navigation", {
-          name: "Breadcrumbs",
-        });
-        const listItems = breadcrumbs.getByRole("listitem");
-        await expect(listItems).toHaveCount(1);
-        await expect(listItems.first().getByRole("button")).toHaveText("Images");
-        await expect(page.getByRole("gridcell", { name: "Outer folder" })).toBeVisible();
-      },
-      "the outer folder is returned to": async () => {
-        const breadcrumbs = page.getByRole("navigation", {
-          name: "Breadcrumbs",
-        });
-        const listItems = breadcrumbs.getByRole("listitem");
-        await expect(listItems).toHaveCount(2);
-        await expect(listItems.first().getByRole("button")).toHaveText("Images");
-        await expect(listItems.nth(1).getByRole("button")).toHaveText("Outer folder");
-      },
-      "there shouldn't be any axe violations": async () => {
-        const cards = page.locator(`.${cardClasses.root}`);
-        if ((await cards.count()) > 0) {
-          /*
-           * FileCards fade in with a per-card staggered transitionDelay, so the
-           * last card (largest delay) finishes after the first. Waiting only for
-           * the first card leaves later cards mid-fade (opacity < 1) when axe
-           * runs, which trips color-contrast checks in slower browsers (WebKit
-           * on CI). Wait for the last card and for every animation on the page.
-           */
-          await expect(cards.last()).toHaveCSS("opacity", "1");
-          await expect
-            .poll(() =>
-              page.evaluate(() => document.getAnimations().every((animation) => animation.playState === "finished")),
-            )
-            .toBe(true);
-        }
-        const accessibilityScanResults = await new AxeBuilder({
-          page,
-        }).analyze();
-        expect(
-          accessibilityScanResults.violations.filter((v) => {
-            /*
-             * These violations are expected in component tests as we're not rendering
-             * a complete page with proper document structure:
-             *
-             * 1. MUI DataGrid renders its immediate children with role=presentation,
-             *    which Firefox considers to be a violation
-             * 2. Component tests don't have main landmarks as they're isolated components
-             * 3. Component tests typically don't have h1 headings as they're not full pages
-             * 4. Content not in landmarks is expected in component testing context
-             */
-            return (
-              v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
-              v.id !== "landmark-one-main" &&
-              v.id !== "page-has-heading-one" &&
-              v.id !== "region"
-            );
-          }),
-        ).toEqual([]);
-      },
-      "the outer folder is selected": async () => {
-        await expect(page.getByRole("region", { name: "files listing controls" })).toHaveText(/1 folder selected/);
-        await expect(page.getByRole("gridcell", { name: "Outer folder" })).toHaveAttribute("aria-selected", "true");
-      },
-      "the selection is": async (expectedSelection) => {
-        for (const item of expectedSelection) {
-          await expect(page.getByRole("gridcell", { name: item })).toHaveAttribute("aria-selected", "true");
-        }
-        const selectionStatusText =
-          (await page.getByRole("region", { name: "files listing controls" }).getByRole("status").textContent()) ?? "";
-        const matches = selectionStatusText.match(/((\d+) files?)?(, )?((\d+) folders?)?/);
-        if (!matches) throw new Error("Selection status text does not match expected format");
-        const [, , files = "0", , , folders = "0"] = matches;
-        expect(expectedSelection.length).toEqual(parseInt(files, 10) + parseInt(folders, 10));
-      },
-      "the name of the selected file has colour": async ({ text, background }) => {
-        const selectedFile = page.getByRole("gridcell", {
-          name: "Image0.jpg",
-        });
-        await expect(selectedFile.locator("p")).toHaveCSS("color", text);
-        await expect(selectedFile.locator("p")).toHaveCSS("background-color", background);
-      },
-    });
-  },
-  // biome-ignore lint/correctness/noEmptyPattern: initial biome migration
-  networkRequests: async ({}, use) => {
-    await use([]);
-  },
-});
-feature.beforeEach(async ({ router }) => {
-  await router.route("/session/ajax/analyticsProperties", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        analyticsEnabled: false,
-      }),
-    });
-  });
-  await router.route("/userform/ajax/preference*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({}),
-    });
-  });
-  await router.route("/deploymentproperties/ajax/property*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(false),
-    });
-  });
-  await router.route("/*/supportedExts", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({}),
-    });
-  });
-  await router.route("**/*.svg", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "image/svg+xml",
-      body: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,
-    });
-  });
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
-    const payload = {
-      iss: "http://localhost:8080",
-      iat: Date.now(),
-      exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
-    };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: Jwt.sign(payload, "dummySecretKey"),
-      }),
-    });
-  });
-  await router.route("/gallery/ajax/getLinkedDocuments/*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: [],
         error: null,
         success: true,
         errorMsg: null,
-      }),
-    });
-  });
-  await router.route("/workspace/getReferencingInventoryItems/*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ referencingItems: [] }),
-    });
-  });
-  await router.route(
-    "/gallery/getUploadedFiles?mediatype=Images&currentFolderId=1&name=&pageNumber=0&sortOrder=ASC&orderBy=name&foldersOnly=false",
-    (route) => {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          data: {
-            items: {
-              totalHits: 1,
-              totalPages: 1,
-              results: [
-                {
-                  id: 2,
-                  oid: { idString: "GF2" },
-                  name: "Inner folder",
-                  ownerName: "user1",
-                  description: null,
-                  creationDate: 1672531200,
-                  modificationDate: 1672531200,
-                  type: "Folder",
-                  extension: null,
-                  thumbnailId: null,
-                  size: 12345,
-                  version: 1,
-                  originalImageOid: { idString: "GF2" },
-                },
-              ],
-            },
-            parentId: 1,
-          },
-          error: null,
-          success: true,
-          errorMsg: null,
-        }),
       });
-    },
-  );
-  await router.route("/gallery/getThumbnail/*/*", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "image/png",
-      body: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8//8/AwAI/wH+9Q4AAAAASUVORK5CYII=",
-        "base64",
-      ),
-    });
+    }
+    // Let other handlers (including the galleryAppShellHandlers catch-all) handle it.
+    return undefined;
   });
+}
+
+/*
+ * Install the fire-and-forget 404 suppressor once for the entire file.
+ *
+ * Gallery tests expand folders and select files, which fire fire-and-forget
+ * requests (listing, thumbnail, linked-documents) the component never awaits.
+ * One of these can still be in-flight when a test ends; the `resetHandlers()`
+ * in browserSetup.ts's afterEach drops its MSW mock, the request bypasses MSW
+ * and 404s against the Vite dev server, then surfaces as an unhandled rejection
+ * that fails the run on slow CI runners.
+ *
+ * Using beforeAll/afterAll (rather than beforeEach/afterEach) is essential:
+ * Vitest runs the spec file's afterEach BEFORE the setup file's afterEach, so
+ * a per-test suppressor installed/removed in spec afterEach would be gone by
+ * the time resetHandlers() fires (setup afterEach). With beforeAll/afterAll the
+ * suppressor outlives resetHandlers() — afterAll runs AFTER the setup file's
+ * last afterEach — so late-arriving 404s are still caught.
+ */
+const restoreFireAndForget404 = suppressFireAndForget404([
+  "/gallery/getUploadedFiles",
+  "/gallery/getThumbnail",
+  "/gallery/ajax/getLinkedDocuments",
+]);
+
+/*
+ * This suite pins the viewport to 1280×720 (see beforeEach). The viewport is a
+ * property of the shared browser instance, not of this file's iframe, so it
+ * would otherwise leak to whichever spec file runs next and skew its layout-
+ * dependent assertions. Capture the original size once and restore it after the
+ * suite so file ordering cannot make another suite flaky.
+ */
+let originalViewport: { width: number; height: number } | undefined;
+beforeAll(() => {
+  originalViewport = { width: window.innerWidth, height: window.innerHeight };
+});
+afterAll(async () => {
+  restoreFireAndForget404();
+  if (originalViewport) {
+    await page.viewport(originalViewport.width, originalViewport.height);
+  }
 });
 
-// biome-ignore lint/correctness/noEmptyPattern: initial biome migration
-feature.afterEach(({}) => {});
-test.describe("MainPanel", () => {
-  feature("Should have no axe violations", async ({ Given, Then, page }) => {
+beforeEach(async () => {
+  /*
+   * Pin the viewport to 1280×720 for consistent grid column counts. The grid
+   * computes its column count from the MUI breakpoint of the window width
+   * (`cols = 12 / cardWidth[viewportSize]`): at 1280 the breakpoint is "lg" →
+   * 4 columns, which is what the rectangular shift-range selection expectations
+   * below assume. Browser mode's default viewport is wider ("xl" → 6 columns),
+   * which would change the selected region. Other test files do not set a
+   * viewport, so this is scoped to MainPanel.
+   */
+  await page.viewport(1280, 720);
+
+  /*
+   * IMPORTANT: outerFolderListingHandler must be registered BEFORE
+   * galleryAppShellHandlers() because the app-shell handlers contain a
+   * wildcard catch-all for `/gallery/getUploadedFiles` that would otherwise
+   * intercept the folder-specific request first.
+   */
+  worker.use(oauthTokenHandler(), linkedDocumentsHandler(), outerFolderListingHandler(), ...galleryAppShellHandlers());
+});
+
+afterEach(() => {
+  uninstallClipboardStub();
+  cleanup();
+});
+
+describe("MainPanel", () => {
+  test("Should have no axe violations", async () => {
+    render(<NestedFoldersWithImageFile />);
+
+    // Wait for the grid to appear before running the axe scan.
+    await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+
     /*
-     * FileCards fade in with a per-card staggered transitionDelay. Scanning
-     * mid-fade trips axe's color-contrast check because the text is composited
-     * at partial opacity over the background. WebKit reports transitions that
-     * are still in their delay phase inconsistently, so waiting for the
-     * animations to settle is unreliable. Emulating reduced motion makes the
-     * component render the cards at their final opacity immediately (the fade
-     * timeout/delay become 0), so axe scans the settled UI. This is also the
-     * correct surface to assert accessibility against.
+     * FileCards fade in with a per-card staggered transitionDelay. axe's
+     * color-contrast check trips if it scans mid-fade, when a card is at a low
+     * opacity and therefore low contrast. Snap every running transition/
+     * animation to its end so the cards sit at their final opacity before the
+     * scan. This is deterministic and works on every engine, unlike CDP
+     * `prefers-reduced-motion` emulation, which is Chromium-only and so left
+     * WebKit/Firefox scanning a mid-fade frame (intermittently, under slower CI).
      */
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await Given["the main panel is showing a nested folder structure"]();
-    await Then["there shouldn't be any axe violations"]();
+    for (const animation of document.getAnimations()) {
+      try {
+        animation.finish();
+      } catch {
+        // Indefinite/infinite animations cannot be finished; ignore them.
+      }
+    }
+
+    await expectNoAxeViolations();
   });
-  test.describe("breadcrumbs", () => {
-    feature("The root of the gallery section", async ({ Given, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await Then["only the gallery section is shown in the breadcrumbs"]();
+
+  describe("breadcrumbs", () => {
+    test("The root of the gallery section", async () => {
+      render(<NestedFoldersWithImageFile />);
+      await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+
+      const items = panel.breadcrumbItems();
+      expect(items.elements().length).toBe(1);
+      await expect.element(items.nth(0)).toHaveTextContent("Images");
     });
-    feature("A outer folder is opened", async ({ Given, When, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await When["the user opens the outer folder"]();
-      await Then["the opened folder and gallery section are shown in the breadcrumbs"]();
+
+    test("A outer folder is opened", async () => {
+      render(<NestedFoldersWithImageFile />);
+      await panel.dblClickFile("Outer folder");
+      await expect.element(panel.gridCell("Inner folder")).toBeVisible();
+
+      const items = panel.breadcrumbItems();
+      expect(items.elements().length).toBe(2);
+      await expect.element(items.nth(0)).toHaveTextContent("Images");
+      await expect.element(items.nth(1)).toHaveTextContent("Outer folder");
     });
-    feature("Selecting the inner folder alters the breadcrumbs", async ({ Given, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await Given["tree view is being shown"]();
-      await Given["the outer folder is open"]();
-      await Given["the inner folder is selected"]();
-      await Then["the opened folder and gallery section are shown in the breadcrumbs"]();
+
+    test("Selecting the inner folder alters the breadcrumbs", async () => {
+      render(<NestedFoldersWithImageFile />);
+      await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+
+      await panel.switchToTreeView();
+
+      // Expand the outer folder in the tree view
+      await expect.element(panel.treeItem("Outer folder")).toBeVisible();
+      await panel.expandTreeItem("Outer folder");
+      await expect.element(panel.treeItem("Inner folder")).toBeVisible();
+
+      // Select the inner folder
+      await panel.selectTreeItem("Inner folder");
+
+      // Breadcrumbs should show Images > Outer folder
+      const items = panel.breadcrumbItems();
+      expect(items.elements().length).toBe(2);
+      await expect.element(items.nth(0)).toHaveTextContent("Images");
+      await expect.element(items.nth(1)).toHaveTextContent("Outer folder");
+    });
+
+    test("Tapping the root gallery section breadcrumb works as a link", async () => {
+      render(<NestedFoldersWithImageFile />);
+      await panel.dblClickFile("Outer folder");
+      await expect.element(panel.gridCell("Inner folder")).toBeVisible();
+
+      await panel.breadcrumbButton("Images").click();
+
+      // Root gallery section is returned to
+      const items = panel.breadcrumbItems();
+      expect(items.elements().length).toBe(1);
+      await expect.element(panel.breadcrumbButton("Images")).toHaveTextContent("Images");
+      await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+    });
+
+    test("Tapping the outer folder breadcrumb works as a link", async () => {
+      render(<NestedFoldersWithImageFile />);
+      await panel.dblClickFile("Outer folder");
+      await expect.element(panel.gridCell("Inner folder")).toBeVisible();
+      await panel.dblClickFile("Inner folder");
+
+      // Wait for breadcrumbs to update to show two items after navigating into inner folder
+      await vi.waitFor(
+        () => {
+          const items = panel.breadcrumbItems().elements();
+          if (items.length < 2) throw new Error("Breadcrumbs not updated to 2 items yet");
+        },
+        { timeout: 5000, interval: 50 },
+      );
+
+      await panel.breadcrumbButton("Outer folder").click();
+
+      // Should be back to outer folder showing two breadcrumb items
+      const items = panel.breadcrumbItems();
+      expect(items.elements().length).toBe(2);
+      await expect.element(panel.breadcrumbButton("Images")).toHaveTextContent("Images");
+      await expect.element(panel.breadcrumbButton("Outer folder")).toHaveTextContent("Outer folder");
+    });
+  });
+
+  describe("Copy-to-clipboard button and tree-view", () => {
+    /*
+     * Clipboard tests use a JS stub — no browser permissions needed, and the
+     * tests run on all browsers (no webkit skip).
+     */
+
+    test("Nothing is selected — clipboard contains the gallery-section link", async () => {
+      installClipboardStub();
+      render(<NestedFoldersWithImageFile />);
+      await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+
+      await panel.switchToTreeView();
+      await expect.element(panel.treeItem("Outer folder")).toBeVisible();
+      await panel.expandTreeItem("Outer folder");
+      await expect.element(panel.treeItem("Inner folder")).toBeVisible();
+
+      await panel.copyToClipboardButton.click();
+      await expect.element(panel.clipboardSuccessAlert()).toBeVisible();
+
+      expect(capturedClipboardText).toMatch(/\?mediaType=Images/);
+    });
+
+    test("A outer folder is selected — clipboard contains the gallery-section link", async () => {
+      installClipboardStub();
+      render(<NestedFoldersWithImageFile />);
+      await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+
+      await panel.switchToTreeView();
+      await expect.element(panel.treeItem("Outer folder")).toBeVisible();
+      await panel.expandTreeItem("Outer folder");
+      await expect.element(panel.treeItem("Inner folder")).toBeVisible();
+
+      await panel.selectTreeItem("Outer folder");
+
+      await panel.copyToClipboardButton.click();
+      await expect.element(panel.clipboardSuccessAlert()).toBeVisible();
+
+      expect(capturedClipboardText).toMatch(/\?mediaType=Images/);
+    });
+
+    test("The inner folder is selected — clipboard contains a link to the file's parent folder", async () => {
+      installClipboardStub();
+      render(<NestedFoldersWithImageFile />);
+      await expect.element(panel.gridCell("Outer folder")).toBeVisible();
+
+      await panel.switchToTreeView();
+      await expect.element(panel.treeItem("Outer folder")).toBeVisible();
+      await panel.expandTreeItem("Outer folder");
+      await expect.element(panel.treeItem("Inner folder")).toBeVisible();
+
+      await panel.selectTreeItem("Inner folder");
+
+      await panel.copyToClipboardButton.click();
+      await expect.element(panel.clipboardSuccessAlert()).toBeVisible();
+
       /*
-       * When the user selects a file inside a folder when using tree view,
-       * the breadcrumbs update to show the path to the selected file, not the
-       * root folder, mimicing the behaviour of similar systems like macOS's
-       * Finder.
+       * When the user selects a file inside a folder when using tree view, and
+       * the breadcrumbs update to show the path to the selected file, the adjacent
+       * copy button should refer to the parent folder of the selected file and not
+       * the current root folder.
        */
-    });
-    feature("Tapping the root gallery section breadcrumb works as a link", async ({ Given, When, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await When["the user opens the outer folder"]();
-      await When["the user taps the gallery section breadcrumb"]();
-      await Then["the root gallery section is returned to"]();
-    });
-    feature("Tapping the outer folder breadcrump works as a link", async ({ Given, When, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await When["the user opens the outer folder"]();
-      await When["the user opens the inner folder"]();
-      await When["the user taps the outer folder breadcrumb"]();
-      await Then["the outer folder is returned to"]();
+      expect(capturedClipboardText).toMatch(/\/gallery\/1/);
     });
   });
-  test.describe("Copy-to-clipboard button and tree-view", () => {
-    test.skip(({ browserName }) => browserName === "webkit", "Safari does not support clipboard API");
-    feature("Nothing is selected.", async ({ Given, When, Once, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await Given["tree view is being shown"]();
-      await Given["the outer folder is open"]();
-      await When["the user taps the paths's copy-to-clipboard button"]();
-      await Once["a clipboard success alert is shown"]();
-      await Then["the clipboard contains the gallery-section link"]();
-    });
-    feature("A outer folder is selected.", async ({ Given, When, Once, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await Given["tree view is being shown"]();
-      await Given["the outer folder is open"]();
-      await Given["the outer folder is selected"]();
-      await When["the user taps the paths's copy-to-clipboard button"]();
-      await Once["a clipboard success alert is shown"]();
-      await Then["the clipboard contains the gallery-section link"]();
-    });
-    feature("The inner folder is selected.", async ({ Given, When, Once, Then }) => {
-      await Given["the main panel is showing a nested folder structure"]();
-      await Given["tree view is being shown"]();
-      await Given["the outer folder is open"]();
-      await Given["the inner folder is selected"]();
-      await When["the user taps the paths's copy-to-clipboard button"]();
-      await Once["a clipboard success alert is shown"]();
-      await Then["the clipboard contains a link to the file's parent folder"]();
-      /*
-       * When the user selects a file inside a folder when using tree view,
-       * and the breadcrumbs update to show the path to the selected file, the
-       * adjacent button that copies the URL of the path should similarly
-       * refer to the parent folder of the selected file and not the current
-       * root folder.
-       */
-    });
-  });
-  feature.describe("Grid view", () => {
-    feature.describe("Selection", () => {
-      feature("When a file is tapped, it should become selected", async ({ Given, When, Then }) => {
-        await Given["the main panel is showing a bunch of image files"]();
-        await When["the user taps the image file"]("Image0.jpg");
-        await Then["the selection is"](["Image0.jpg"]);
+
+  describe("Grid view", () => {
+    describe("Selection", () => {
+      test("When a file is tapped, it should become selected", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+
+        await assertSelection(["Image0.jpg"]);
       });
-      feature("Ctrl-clicking on a second file, adds it to the selection", async ({ Given, When, Then }) => {
-        await Given["the main panel is showing a bunch of image files"]();
-        await When["the user taps the image file"]("Image0.jpg");
-        await When["the user taps the image file"]("Image1.jpg", {
+
+      test("Ctrl-clicking on a second file, adds it to the selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image1.jpg", {
           modifiers: ["ControlOrMeta"],
         });
-        await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
+
+        await assertSelection(["Image0.jpg", "Image1.jpg"]);
       });
-      feature("Shift-clicking on a second file select the region", async ({ Given, When, Then }) => {
-        await Given["the main panel is showing a bunch of image files"]();
-        await When["the user taps the image file"]("Image0.jpg");
-        await When["the user taps the image file"]("Image5.jpg", {
-          modifiers: ["Shift"],
-        });
-        await Then["the selection is"](["Image0.jpg", "Image1.jpg", "Image4.jpg", "Image5.jpg"]);
+
+      test("Shift-clicking on a second file selects the region", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image5.jpg", { modifiers: ["Shift"] });
+
+        await assertSelection(["Image0.jpg", "Image1.jpg", "Image4.jpg", "Image5.jpg"]);
       });
-      feature(
-        "Shift-clicking a second time modifies the selection based on the first click",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image1.jpg");
-          await When["the user taps the image file"]("Image6.jpg", {
-            modifiers: ["Shift"],
-          });
-          await When["the user taps the image file"]("Image7.jpg", {
-            modifiers: ["Shift"],
-          });
-          await Then["the selection is"]([
-            "Image1.jpg",
-            "Image2.jpg",
-            "Image3.jpg",
-            "Image5.jpg",
-            "Image6.jpg",
-            "Image7.jpg",
-          ]);
-          await When["the user taps the image file"]("Image4.jpg", {
-            modifiers: ["Shift"],
-          });
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg", "Image4.jpg", "Image5.jpg"]);
-        },
-      );
-      feature(
-        "Ctrl-clicking an unselected file after shift-clicking several files should expand the selection",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image0.jpg");
-          await When["the user taps the image file"]("Image5.jpg", {
-            modifiers: ["Shift"],
-          });
-          await When["the user taps the image file"]("Image6.jpg", {
-            modifiers: ["ControlOrMeta"],
-          });
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg", "Image4.jpg", "Image5.jpg", "Image6.jpg"]);
-        },
-      );
-      feature(
-        "Ctrl-clicking a selected file after shift-clicking several files should reduce the selection",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image0.jpg");
-          await When["the user taps the image file"]("Image5.jpg", {
-            modifiers: ["Shift"],
-          });
-          await When["the user taps the image file"]("Image1.jpg", {
-            modifiers: ["ControlOrMeta"],
-          });
-          await Then["the selection is"](["Image0.jpg", "Image4.jpg", "Image5.jpg"]);
-        },
-      );
-      feature("Pressing an arrow key moves the selection", async ({ Given, When, Then }) => {
-        await Given["the main panel is showing a bunch of image files"]();
-        await When["the user taps the image file"]("Image0.jpg");
-        await When["the user taps the arrow key"]("ArrowRight");
-        await Then["the selection is"](["Image1.jpg"]);
+
+      test("Shift-clicking a second time modifies the selection based on the first click", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image1.jpg")).toBeVisible();
+
+        await panel.clickFile("Image1.jpg");
+        await panel.clickFile("Image6.jpg", { modifiers: ["Shift"] });
+        await panel.clickFile("Image7.jpg", { modifiers: ["Shift"] });
+
+        await assertSelection(["Image1.jpg", "Image2.jpg", "Image3.jpg", "Image5.jpg", "Image6.jpg", "Image7.jpg"]);
+
+        await panel.clickFile("Image4.jpg", { modifiers: ["Shift"] });
+
+        await assertSelection(["Image0.jpg", "Image1.jpg", "Image4.jpg", "Image5.jpg"]);
       });
-      feature(
-        "Pressing an arrow key after selecting multiple files with ctrl moves the selection relative to the second selection",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image0.jpg");
-          await When["the user taps the image file"]("Image1.jpg", {
-            modifiers: ["ControlOrMeta"],
-          });
-          await When["the user taps the arrow key"]("ArrowRight");
-          await Then["the selection is"](["Image2.jpg"]);
-        },
-      );
-      feature(
-        "Pressing an arrow key after selecting multiple files with shift moves the selection relative to the second selection",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image0.jpg");
-          await When["the user taps the image file"]("Image1.jpg", {
-            modifiers: ["Shift"],
-          });
-          await When["the user taps the arrow key"]("ArrowRight");
-          await Then["the selection is"](["Image2.jpg"]);
-        },
-      );
-      feature(
-        "Pressing shift-arrow key after selecting multiple files with ctrl expands the selection",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image0.jpg");
-          await When["the user taps the image file"]("Image1.jpg", {
-            modifiers: ["ControlOrMeta"],
-          });
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
-          await When["the user taps the arrow key"]("Shift+ArrowRight");
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg", "Image2.jpg"]);
-        },
-      );
-      feature(
-        "Pressing shift-arrow key after selecting multiple files with shift expands the selection",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image0.jpg");
-          await When["the user taps the image file"]("Image1.jpg", {
-            modifiers: ["Shift"],
-          });
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
-          await When["the user taps the arrow key"]("Shift+ArrowRight");
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg", "Image2.jpg"]);
-        },
-      );
-      feature(
-        "Shift-arrowing a second time modifies the selection based on the first click",
-        async ({ Given, When, Then }) => {
-          await Given["the main panel is showing a bunch of image files"]();
-          await When["the user taps the image file"]("Image1.jpg");
-          await When["the user taps the arrow key"]("Shift+ArrowRight");
-          await Then["the selection is"](["Image1.jpg", "Image2.jpg"]);
-          await When["the user taps the arrow key"]("Shift+ArrowLeft");
-          await When["the user taps the arrow key"]("Shift+ArrowLeft");
-          await Then["the selection is"](["Image0.jpg", "Image1.jpg"]);
-        },
-      );
-      feature("The name of a selected file has a background colour", async ({ Given, When, Then }) => {
-        await Given["the main panel is showing a bunch of image files"]();
-        await Then["the name of the selected file has colour"]({
-          text: "rgb(75, 71, 77)",
-          background: "rgba(0, 0, 0, 0)",
-        });
-        await When["the user taps the image file"]("Image0.jpg");
-        await Then["the name of the selected file has colour"]({
-          text: "rgb(38, 75, 88)",
-          background: "rgb(147, 198, 240)",
-        });
+
+      test("Ctrl-clicking an unselected file after shift-clicking several files should expand the selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image5.jpg", { modifiers: ["Shift"] });
+        await panel.clickFile("Image6.jpg", { modifiers: ["ControlOrMeta"] });
+
+        await assertSelection(["Image0.jpg", "Image1.jpg", "Image4.jpg", "Image5.jpg", "Image6.jpg"]);
+      });
+
+      test("Ctrl-clicking a selected file after shift-clicking several files should reduce the selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image5.jpg", { modifiers: ["Shift"] });
+        await panel.clickFile("Image1.jpg", { modifiers: ["ControlOrMeta"] });
+
+        await assertSelection(["Image0.jpg", "Image4.jpg", "Image5.jpg"]);
+      });
+
+      test("Pressing an arrow key moves the selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await pressKey("ArrowRight");
+
+        await assertSelection(["Image1.jpg"]);
+      });
+
+      test("Pressing an arrow key after selecting multiple files with ctrl moves the selection relative to the second selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image1.jpg", { modifiers: ["ControlOrMeta"] });
+        await pressKey("ArrowRight");
+
+        await assertSelection(["Image2.jpg"]);
+      });
+
+      test("Pressing an arrow key after selecting multiple files with shift moves the selection relative to the second selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image1.jpg", { modifiers: ["Shift"] });
+        await pressKey("ArrowRight");
+
+        await assertSelection(["Image2.jpg"]);
+      });
+
+      test("Pressing shift-arrow key after selecting multiple files with ctrl expands the selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image1.jpg", { modifiers: ["ControlOrMeta"] });
+        await assertSelection(["Image0.jpg", "Image1.jpg"]);
+
+        await pressKey("Shift+ArrowRight");
+
+        await assertSelection(["Image0.jpg", "Image1.jpg", "Image2.jpg"]);
+      });
+
+      test("Pressing shift-arrow key after selecting multiple files with shift expands the selection", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        await panel.clickFile("Image0.jpg");
+        await panel.clickFile("Image1.jpg", { modifiers: ["Shift"] });
+        await assertSelection(["Image0.jpg", "Image1.jpg"]);
+
+        await pressKey("Shift+ArrowRight");
+
+        await assertSelection(["Image0.jpg", "Image1.jpg", "Image2.jpg"]);
+      });
+
+      test("Shift-arrowing a second time modifies the selection based on the first click", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image1.jpg")).toBeVisible();
+
+        await panel.clickFile("Image1.jpg");
+        await pressKey("Shift+ArrowRight");
+        await assertSelection(["Image1.jpg", "Image2.jpg"]);
+
+        await pressKey("Shift+ArrowLeft");
+        await pressKey("Shift+ArrowLeft");
+        await assertSelection(["Image0.jpg", "Image1.jpg"]);
+      });
+
+      test("The name of a selected file has a background colour", async () => {
+        render(<BunchOfImages />);
+        await expect.element(panel.gridCell("Image0.jpg")).toBeVisible();
+
+        // Before selection: unselected colours
+        const nameEl = panel.gridCell("Image0.jpg").getByRole("paragraph");
+        await expect.element(nameEl).toHaveStyle({ color: "rgb(75, 71, 77)" });
+        await expect.element(nameEl).toHaveStyle({ "background-color": "rgba(0, 0, 0, 0)" });
+
+        // After selecting Image0.jpg: selected colours
+        await panel.clickFile("Image0.jpg");
+        await expect.element(nameEl).toHaveStyle({ color: "rgb(38, 75, 88)" });
+        await expect.element(nameEl).toHaveStyle({ "background-color": "rgb(147, 198, 240)" });
+
         /*
          * This is done to ensure that we are not using colour alone to indicate
          * selection. The border colour changes to indicate selection but it is
-         * possible that this will be imperceptable to some users. The
-         * background and text colours of the file name, however, completely
-         * switch places which should suffice
+         * possible that this will be imperceptable to some users. The background
+         * and text colours of the file name, however, completely switch places
+         * which should suffice.
          */
       });
     });
   });
 });
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Asserts that the given set of items is selected in the grid.
+ *
+ * Checks:
+ * 1. Each named gridcell carries `aria-selected="true"`.
+ * 2. The selection-status text in the listing-controls region accounts for
+ *    exactly `expectedSelection.length` items total.
+ */
+async function assertSelection(expectedSelection: string[]): Promise<void> {
+  for (const item of expectedSelection) {
+    await expect.element(panel.gridCell(item)).toHaveAttribute("aria-selected", "true");
+  }
+  // Poll the status text because MobX state + React render is async.
+  await expect
+    .poll(() => {
+      const statusEl = document.querySelector('[role="status"]');
+      return statusEl?.textContent ?? "";
+    })
+    .toMatch(new RegExp(`(${expectedSelection.length} file|${expectedSelection.length} folder)`));
+}
+
+/**
+ * Presses a keyboard key (with optional Shift modifier) via `userEvent.keyboard`.
+ *
+ * Translates Playwright's `"Shift+ArrowRight"` notation to the
+ * `userEvent.keyboard` `{Shift>}{ArrowRight}{/Shift}` form.
+ */
+async function pressKey(key: "ArrowRight" | "Shift+ArrowRight" | "ArrowLeft" | "Shift+ArrowLeft"): Promise<void> {
+  /*
+   * Ensure the grid's roving-tabindex card holds focus before dispatching the
+   * key, so the keydown bubbles up to the grid container's `onKeyDown` handler.
+   * The component focuses this card itself (a `useEffect` keyed on
+   * `tabIndexCoord`), but that runs asynchronously: after a click + MobX/React
+   * re-render the active element can momentarily fall back to `<body>`, which
+   * would swallow the arrow key and leave the selection unchanged (the test
+   * then polls until timeout). Re-focusing the card the grid renders with
+   * `tabindex="0"` makes arrow-key navigation deterministic across engines.
+   */
+  await expect.poll(() => document.querySelector('[role="grid"] [tabindex="0"]') instanceof HTMLElement).toBe(true);
+  const activeCard = document.querySelector('[role="grid"] [tabindex="0"]');
+  if (activeCard instanceof HTMLElement) activeCard.focus();
+
+  if (key.includes("+")) {
+    const [modifier, base] = key.split("+");
+    await userEvent.keyboard(`{${modifier}>}{${base}}{/${modifier}}`);
+  } else {
+    await userEvent.keyboard(`{${key}}`);
+  }
+}

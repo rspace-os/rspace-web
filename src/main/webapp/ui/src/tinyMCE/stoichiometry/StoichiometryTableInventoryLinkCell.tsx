@@ -198,7 +198,7 @@ const StoichiometryTableInventoryLinkCell = ({
         {showInsufficientStockIndicator && (
           <Tooltip title="Insufficient Stock">
             <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}>
-              <WarningAmberIcon aria-label="Insufficient Stock" fontSize="small" sx={{ color: "warning.main" }} />
+              <WarningAmberIcon titleAccess="Insufficient Stock" fontSize="small" sx={{ color: "warning.main" }} />
             </Box>
           </Tooltip>
         )}
