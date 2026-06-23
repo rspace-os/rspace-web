@@ -5,9 +5,8 @@ import ErrorBoundary from "./ErrorBoundary";
 import { ErrorComponent } from "./ErrorBoundary.story";
 
 /*
- * Converted from ErrorBoundary.spec.tsx (Playwright CT). This component only
- * renders text/markup once it catches a child render error, so it gets no value
- * from a real browser and runs as a jsdom unit test instead.
+ * This component only renders text/markup once it catches a child render
+ * error, so it runs as a jsdom unit test.
  */
 describe("ErrorBoundary", () => {
   // React logs the caught render error via console.error; that noise is

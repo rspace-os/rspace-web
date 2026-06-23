@@ -21,16 +21,13 @@ import {
 } from "./ActionsMenu.story";
 
 /*
- * Converted from ActionsMenu.spec.tsx (Playwright CT). These cases are all
- * DOM/role/state based: opening the menu, asserting which items appear and
- * whether they are enabled/disabled based on the props/selection, plus a
- * share flow. They all run in jsdom.
+ * DOM/role/state based tests: opening the menu, asserting which items appear
+ * and whether they are enabled/disabled based on the props/selection, plus a
+ * share flow. These run in jsdom.
  *
- * The Playwright spec used `router.route` to stub network at the browser
- * level (covering both fetch and XHR). In jsdom we mock the single shared
- * `@/common/axios` instance that every hook in the tree uses (useWhoAmI,
- * useDeploymentProperty, useCollabora, useOfficeOnline, useShare, useGroups,
- * useUserDetails, useFolders, useDocuments).
+ * Network is mocked via the `@/common/axios` instance that every hook in the
+ * tree uses (useWhoAmI, useDeploymentProperty, useCollabora, useOfficeOnline,
+ * useShare, useGroups, useUserDetails, useFolders, useDocuments).
  */
 
 const mockAxios = new MockAdapter(axios);
