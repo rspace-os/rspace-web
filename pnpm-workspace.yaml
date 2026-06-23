@@ -3,18 +3,24 @@ packages: []
 
 overrides:
   react-is: ^18.3.1
-  # Pin the MUI core packages to 9.0.x. 9.1.x ships an ESM build whose
-  # @mui/material/internal/Transition.mjs does a bare directory import of
-  # `react-transition-group/TransitionGroupContext`, which Node's native ESM
-  # resolver rejects with ERR_UNSUPPORTED_DIR_IMPORT under Vitest, failing the
-  # whole frontend test suite. See
-  # https://github.com/mui/material-ui/issues/48644.
-  # MUI X (@mui/x-*) is intentionally left on its newer versions.
-  # Remove these pins once the upstream issue is resolved.
-  '@mui/material': 9.0.1
-  '@mui/icons-material': 9.0.1
-  '@mui/system': 9.0.1
-  '@mui/styled-engine': 9.0.0
+  # The @mui core overrides below are intentionally COMMENTED OUT, not deleted,
+  # so the history and rationale stay visible. They pin RSpace's MUI v9 family to
+  # 9.0.x (9.1.x has an ESM Transition.mjs bug under Vitest, mui#48644).
+  # DO NOT re-enable them as bare-name overrides: that also forces ketcher-react@3.x
+  # (which requires @mui/material@^5 and ships its own v5 copy) onto v9, so
+  # Ketcher's macromolecule editor renders v9 Tabs/Tab and crashes with
+  # "MUI: RovingTabIndexContext is missing" in the ELN editor. RSpace is already
+  # held at 9.0.x by the exact pins in package.json, which do not touch ketcher's
+  # nested v5 (the working arrangement on main). If a future case genuinely needs
+  # these, scope them so ketcher-react's subtree keeps MUI v5.
+  #   '@mui/material': 9.0.1
+  #   '@mui/icons-material': 9.0.1
+  #   '@mui/system': 9.0.1
+  #   '@mui/styled-engine': 9.0.0
+  #   '@mui/utils': 9.0.1
+  #   '@mui/private-theming': 9.0.1
+  #   '@mui/core-downloads-tracker': 9.0.1
+  #   '@mui/types': 9.0.0
   # Pin rolldown to 1.0.1 (bundled in Vite 8.0.13) to avoid
   # https://github.com/rolldown/rolldown/issues/9502 and
   # https://github.com/vitejs/vite/issues/22499, where rolldown 1.0.2+

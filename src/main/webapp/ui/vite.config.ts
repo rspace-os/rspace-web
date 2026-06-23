@@ -162,10 +162,23 @@ export default defineConfig(async ({ mode }) => {
     );
   }
 
+  // Some chemistry deps (openchemlib, pulled in lazily by the Ketcher editor)
+  // bundle Node's `util` polyfill, which reads bare `process.*`
+  // (process.stderr.isTTY, process.nextTick, …) at module-eval time. The
+  // browser has no `process`, so the chunk throws "process is not defined" the
+  // moment Ketcher loads. Provide a minimal global shim. esbuild/rolldown only
+  // substitute *unbound* `process` references, so deps that declare their own
+  // local `process` are untouched. The shim carries NODE_ENV so code that reads
+  // process.env.NODE_ENV (e.g. React) still sees the right mode.
+  const processShim = `{env:{NODE_ENV:${JSON.stringify(
+    mode === "production" ? "production" : "development",
+  )}},platform:"browser",browser:true,version:"",versions:{},argv:[],nextTick:(cb)=>Promise.resolve().then(cb),cwd:()=>"/",emitWarning:()=>{}}`;
+
   const config: UserConfig = {
     base: "/ui/dist/",
     define: {
       global: "globalThis",
+      process: processShim,
       // Cache-busting token + base URL for the lazily-loaded, self-hosted
       // TinyMCE assets. The base differs between the app build ("/ui/dist/")
       // and the Playwright component-test build ("/", see
