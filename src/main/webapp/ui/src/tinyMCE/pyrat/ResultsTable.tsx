@@ -85,7 +85,7 @@ export default function ResultsTable({
           />
           <TableBody>
             {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-            {[...animals].sort(getSorting(order, orderBy)).map((animal: any, index: number) => {
+            {animals.toSorted(getSorting(order, orderBy)).map((animal: any, index: number) => {
               const isItemSelected = selectedAnimalIds.indexOf(animal.eartag_or_id) !== -1;
               const labelId = `animal-search-results-checkbox-${index}`;
 

@@ -85,7 +85,7 @@ export default function ResultsTable({
             rowCount={results.length}
           />
           <TableBody>
-            {[...results].sort(getSorting(order, orderBy)).map((booking, index) => {
+            {results.toSorted(getSorting(order, orderBy)).map((booking, index) => {
               const isItemSelected =
                 selectedBookingIds.indexOf(
                   // @ts-expect-error looks like a mix up of id types

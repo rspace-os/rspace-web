@@ -161,8 +161,8 @@ export default function OrfTable(props: any) {
                   rowCount={filteredResults.length}
                 />
                 <TableBody>
-                  {[...filteredResults]
-                    .sort(getSorting(order, orderBy))
+                  {filteredResults
+                    .toSorted(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                     .map((result: any) => (

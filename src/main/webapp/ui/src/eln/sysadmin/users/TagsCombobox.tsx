@@ -274,7 +274,7 @@ function TagsComboboxContent({
   };
 
   const sortedOptions = useMemo(() => {
-    return [...tags].sort((tagA, tagB) => {
+    return tags.toSorted((tagA, tagB) => {
       // sort all complete matches above all other suggestions
       if (tagA.value === filter) return -1;
       if (tagB.value === filter) return 1;

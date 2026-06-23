@@ -29,7 +29,7 @@ describe("assertConsistentOrderOfLists", () => {
           ),
         ),
         ([strings, breakPoints]) => {
-          const sortedBreakPoints = [...breakPoints].sort((a, b) => a - b);
+          const sortedBreakPoints = breakPoints.toSorted((a, b) => a - b);
           const bounds = [0, ...sortedBreakPoints, strings.length];
           const lists: Array<Array<string>> = [];
           for (let i = 0; i <= breakPoints.length; i++) {

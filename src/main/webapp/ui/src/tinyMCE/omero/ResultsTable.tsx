@@ -51,7 +51,7 @@ const CHECKBOX_CELL_INDENT: Partial<Record<OmeroDataTypes, number>> = {
  * whereas Screens -> Plates ->PlateAcquisitions -> images
  */
 export const omeroSort = (results: Array<OmeroItem>, order: "asc" | "desc", orderBy: string): Array<OmeroItem> => {
-  const sorted = [...results].sort(getSorting(order, orderBy));
+  const sorted = results.toSorted(getSorting(order, orderBy));
   const notTopParent: Array<OmeroItem> = [];
   const sortedByParentThenChild: Array<OmeroItem> = [];
   sorted.forEach((item) => {

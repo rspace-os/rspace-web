@@ -106,7 +106,7 @@ export default function GroupsTable(props: any) {
                 />
                 <TableBody>
                   {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-                  {[...groups].sort(getSorting(order, orderBy)).map((group: any) => (
+                  {groups.toSorted(getSorting(order, orderBy)).map((group: any) => (
                     <TableRow hover tabIndex={-1} key={group.groupDisplayName}>
                       <TableCell align="left">
                         <a href={`/groups/view/${group.groupId}`}>{group.groupDisplayName}</a>

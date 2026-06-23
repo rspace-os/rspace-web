@@ -77,7 +77,7 @@ export default function AccountActivity(props: any) {
                 />
                 <TableBody>
                   {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-                  {[...(activities ?? [])].sort(getSorting(order, orderBy)).map((row: any, index) => {
+                  {(activities ?? []).toSorted(getSorting(order, orderBy)).map((row: any, index) => {
                     return (
                       <TableRow data-test-id="row" hover tabIndex={-1} key={`${row.timestamp}-${index}`}>
                         <TableCell scope="row">

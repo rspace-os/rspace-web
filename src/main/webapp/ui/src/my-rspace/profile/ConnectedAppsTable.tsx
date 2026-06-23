@@ -108,9 +108,9 @@ export default function ConnectedAppsTable() {
                 rowCount={apps.length}
               />
               <TableBody>
-                {[...apps]
+                {apps
                   // @ts-expect-error getSorting types its comparator params more loosely than the row type
-                  .sort(getSorting(order, orderBy))
+                  .toSorted(getSorting(order, orderBy))
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((app) => (
                     <ConnectedAppsTableRow

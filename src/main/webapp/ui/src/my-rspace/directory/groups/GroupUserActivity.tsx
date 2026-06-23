@@ -70,7 +70,7 @@ function GroupActivity({ groupId }: GroupActivityProps) {
           rowCount={activities.length}
         />
         <TableBody>
-          {[...activities].sort(getSorting(order, orderBy)).map((row) => {
+          {activities.toSorted(getSorting(order, orderBy)).map((row) => {
             return (
               <TableRow hover tabIndex={-1} key={row.eventId}>
                 <TableCell scope="row">

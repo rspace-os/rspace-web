@@ -144,8 +144,8 @@ export default function EnzymeTable(props: any) {
                   rowCount={enzymeList.length}
                 />
                 <TableBody>
-                  {[...enzymeList]
-                    .sort(getSorting(order, orderBy))
+                  {enzymeList
+                    .toSorted(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                     .map((enzyme: any) => (

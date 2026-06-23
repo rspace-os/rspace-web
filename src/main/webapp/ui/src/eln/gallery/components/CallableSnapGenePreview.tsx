@@ -324,8 +324,8 @@ function RestrictionSites({
                   rowCount={enzymeList.length}
                 />
                 <TableBody>
-                  {[...enzymeList]
-                    .sort(getSorting(order, orderBy))
+                  {enzymeList
+                    .toSorted(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((enzyme) => (
                       <TableRow
@@ -562,8 +562,8 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
                   rowCount={filteredResults.length}
                 />
                 <TableBody>
-                  {[...filteredResults]
-                    .sort(getSorting(order, orderBy))
+                  {filteredResults
+                    .toSorted(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((result) => (
                       <TableRow hover tabIndex={-1} key={result.id}>

@@ -337,7 +337,7 @@ export default function useIrods(
     throw new Error("Invalid selected Ids");
   });
   const sortedStringOfSelectedIds = JSON.stringify(
-    [...parsedSelectedIds].sort((a, b) => {
+    parsedSelectedIds.toSorted((a, b) => {
       if (a > b) return 1;
       if (a < b) return -1;
       return 0;

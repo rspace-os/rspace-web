@@ -278,8 +278,8 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
               emptyCol={true}
             />
             <TableBody>
-              {[...revisions]
-                .sort(getSorting(order, orderBy))
+              {revisions
+                .toSorted(getSorting(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((revision, index) => {
                   const isItemSelected = matchesVersion(revision.version, selected);

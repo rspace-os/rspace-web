@@ -261,7 +261,7 @@ export default function Filter({
             <FormControl fullWidth>
               <Autocomplete
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                options={[...Object.values(config.enumObj)].sort((a: any, b: any) => a.label.localeCompare(b.label))}
+                options={Object.values(config.enumObj).toSorted((a: any, b: any) => a.label.localeCompare(b.label))}
                 renderInput={(props) => <TextField variant="outlined" {...props} label={config.label} />}
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 getOptionLabel={(option: any) => {

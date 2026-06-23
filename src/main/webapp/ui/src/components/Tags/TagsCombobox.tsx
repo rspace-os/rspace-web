@@ -445,7 +445,7 @@ function TagsComboboxContent<
      * response, which at time of writing is 1000 tags, so applying client-side
      * sorting is a safe operation.
      */
-    return [...tags].sort((tagA, tagB) => {
+    return tags.toSorted((tagA, tagB) => {
       // sort all complete matches above all other suggestions
       if (tagA.value === filter) return -1;
       if (tagB.value === filter) return 1;
