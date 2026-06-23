@@ -33,6 +33,9 @@
 /node/
 node_modules
 src/main/webapp/ui/playwright/
+# Playwright/Vitest browser-mode HTML report, sometimes emitted at the repo
+# root when the runner is invoked from here rather than the ui/ dir.
+/playwright-report/
 /.classpath
 /.project
 /.settings

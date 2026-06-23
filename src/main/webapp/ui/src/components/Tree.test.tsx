@@ -4,12 +4,9 @@ import { expectAccessible, render, screen } from "@/__tests__/customQueries";
 import { ControlledTreeExample, ExpandableTreeExample, MultiSelectTreeExample, SimpleTreeExample } from "./Tree.story";
 
 /*
- * Converted from Tree.spec.tsx (Playwright CT). Every case runs in jsdom:
- * selection/expansion is driven by click, and keyboard navigation relies on the
- * roving-tabindex implemented by MUI's SimpleTreeView, which moves focus via
- * `element.focus()` internally. The spec never used real `Tab` traversal
- * (`page.keyboard.press("Tab")` with no prior focus) - it always called
- * `.focus()` on a treeitem first - so nothing is browser-bound.
+ * Every case runs in jsdom: selection/expansion is driven by click, and
+ * keyboard navigation relies on the roving-tabindex implemented by MUI's
+ * SimpleTreeView, which moves focus via `element.focus()` internally.
  */
 
 type TreeItem = {

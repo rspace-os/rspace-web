@@ -10,6 +10,8 @@ const TestLandmark = ({ name }: { name: string }) => {
     <Box
       ref={ref}
       tabIndex={-1}
+      role="region"
+      aria-label={`${name} Content`}
       sx={{
         height: 150,
         border: 1,

@@ -5,15 +5,20 @@
 import prettyBytes from "pretty-bytes";
 
 /**
- * Given the number of bytes, return a human-readable string using SI units
- * (decimal, e.g. "1.02 kB"). Returns "" for null/undefined so callers can pass
- * an optional size straight through. `locale: false` keeps the output
- * locale-invariant (always a "." decimal separator), matching the previous
- * hand-rolled implementation regardless of the host locale.
+ * Given the number of bytes, return a human-readable string using SI units.
+ * When callers pass decimalPlaces explicitly, preserve the previous fixed
+ * precision behavior.
  */
-export function formatFileSize(bytes: number | null | undefined, decimalPlaces: number = 2): string {
+export function formatFileSize(bytes: number | null | undefined, decimalPlaces?: number): string {
   if (bytes === null || typeof bytes === "undefined") return "";
-  return prettyBytes(bytes, { maximumFractionDigits: decimalPlaces, locale: false });
+  if (typeof decimalPlaces === "undefined") return prettyBytes(bytes, { locale: false });
+
+  if (bytes === 0) return "0 B";
+  const k = 1000;
+  const sizes = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB", "RB", "QB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const rounded = parseFloat((bytes / k ** i).toFixed(decimalPlaces));
+  return `${rounded} ${sizes[i]}`;
 }
 
 /**

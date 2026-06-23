@@ -41,7 +41,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 **Frontend** (`src/main/webapp/ui/`):
 - TypeScript + React, Node 24, pnpm
 - Vite bundler, Material-UI v5
-- Vitest (unit tests), Playwright (component/E2E tests)
+- Vitest (jsdom unit tests + Browser Mode component tests in real browsers via the Playwright provider + MSW)
 - MobX (legacy state) + React Query (newer state)
 
 ## Build & Run
@@ -172,9 +172,10 @@ Choosing a base class:
 ### Frontend
 
 ```bash
-pnpm run test          # Vitest unit tests
+pnpm run test          # Vitest unit tests (jsdom)
 pnpm run test:ui       # Vitest with browser UI
-pnpm run test-ct       # Playwright component tests
+pnpm run test-browser  # Vitest Browser Mode component tests (real browsers via Playwright + MSW)
+                       # all of chromium,firefox,webkit by default; override with VITEST_BROWSERS=chromium
 pnpm run tsc           # TypeScript type check
 pnpm run lint          # Biome lint + format check (read-only)
 pnpm run lint:fix      # Biome lint + format with auto-fix
@@ -396,10 +397,10 @@ Currently available:
 - `.agents/skills/rspace-dev-stack/` — boot, drive, and tear down the per-worktree
   Dockerized dev stack (`docker/dev/rspace-dev`) to reproduce bugs, diagnose issues,
   and manually test functionality against a real running RSpace instance.
-- `.agents/skills/es-toolkit-utils/` — when and how to use es-toolkit (the
-  zero-dependency, tree-shakeable, typed lodash replacement) for generic
-  array/object/number helpers in the frontend, including the bespoke-util →
-  es-toolkit/native mapping and what stays bespoke.
+- `.agents/skills/rspace-browser-tests/` — write, run, and debug frontend
+  component tests in Vitest Browser Mode (real chromium/firefox/webkit via the
+  Playwright provider + MSW + a Page Object Model; `*.spec.tsx`). Covers the
+  four-artifact pattern, shared infra, and the cross-engine gotchas.
 
 **Discovery:** `.agents/skills/` is the cross-agent convention (used by
 agents-md-aware tools, Cursor, Codex CLI, and others that follow the AGENTS.md

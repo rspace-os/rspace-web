@@ -212,7 +212,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Insufficient Stock", { selector: "svg" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "Insufficient Stock" })).toBeVisible();
   });
 
   it("renders a stock deducted indicator and hides the insufficient stock warning when stock was already deducted", () => {
@@ -225,13 +225,13 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     );
 
     expect(screen.getByLabelText("Stock deducted")).toBeVisible();
-    expect(screen.queryByLabelText("Insufficient Stock", { selector: "svg" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Insufficient Stock" })).not.toBeInTheDocument();
   });
 
   it("does not render an insufficient stock warning by default", () => {
     render(<StoichiometryTableInventoryLinkCell inventoryLink={mockInventoryLink} moleculeName="Cyclopentadiene" />);
 
-    expect(screen.queryByLabelText("Insufficient Stock", { selector: "svg" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Insufficient Stock" })).not.toBeInTheDocument();
   });
 
   it("disables controls in read-only mode", () => {

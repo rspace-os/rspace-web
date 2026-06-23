@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import Omero from "../Omero";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("Omero", () => {
   test("Should have no axe violations.", async () => {
     const { baseElement } = render(
