@@ -48,5 +48,47 @@
         }
       }
     }
-  }
+  },
+  "overrides": [
+    // i18n rollout: noJsxLiterals is enabled per module as each is migrated off
+    // hard-coded strings (the i18n ratchet). This converted-glob list only grows;
+    // once every module is migrated, noJsxLiterals moves to the top-level linter
+    // config and these per-glob overrides are removed.
+    {
+      "includes": ["src/eln/about/**", "src/components/AppBar/AboutRSpaceDialog.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noJsxLiterals": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/components/PublicPages/IdentifierPublicPage.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noJsxLiterals": {
+              "level": "error",
+              "options": { "allowedStrings": ["˚"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/modules/common/i18n/resources.d.ts"],
+      "formatter": {
+        "enabled": false
+      },
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noBannedTypes": "off"
+          }
+        }
+      }
+    }
+  ]
 }

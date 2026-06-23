@@ -34,6 +34,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { Person } from "@/stores/definitions/Person";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
@@ -913,7 +914,9 @@ function GalleryAppBar({
                   ))
                   .orElse(null)}
               </Menu>
-              <AboutRSpaceDialog open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
+              <I18nRoot namespaces={["about"]}>
+                <AboutRSpaceDialog open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
+              </I18nRoot>
             </Box>
           </>
         )}
