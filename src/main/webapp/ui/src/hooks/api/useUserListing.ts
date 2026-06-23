@@ -5,7 +5,6 @@ import type * as FetchingData from "../../util/fetchingData";
 import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
-import RsSet from "../../util/set";
 
 export type UserId = number;
 
@@ -489,7 +488,13 @@ export function useUserListing(): {
           `system/users/saveTagsForUsers`,
           usersToBeTagged.map((user) => ({
             userId: user.id,
-            userTags: new RsSet(user.tags).union(new RsSet(addedTags)).subtract(new RsSet(deletedTags)).toArray(),
+            userTags: (() => {
+              const tags = new Set([...user.tags, ...addedTags]);
+              deletedTags.forEach((tag) => {
+                tags.delete(tag);
+              });
+              return [...tags];
+            })(),
           })),
         );
         if (typeof data === "object") throw new Error(data.exceptionMessage);

@@ -6,7 +6,6 @@ import type React from "react";
 import { useState } from "react";
 import type { Group } from "../../../stores/definitions/Group";
 import useStores from "../../../stores/use-stores";
-import RsSet from "../../../util/set";
 
 type GroupsFieldArgs = {
   onSelection: (selectedGroup: Group) => Promise<void> | void;
@@ -20,7 +19,7 @@ type GroupsFieldArgs = {
 function GroupsField({ onSelection, label, getOptionDisabled }: GroupsFieldArgs): React.ReactNode {
   const { peopleStore } = useStores();
 
-  const [searchResults, setSearchResults] = useState<Set<Group>>(new RsSet());
+  const [searchResults, setSearchResults] = useState<Set<Group>>(new Set());
 
   const handleGroupChange = (group: Group) => {
     void onSelection(group);
@@ -33,7 +32,7 @@ function GroupsField({ onSelection, label, getOptionDisabled }: GroupsFieldArgs)
         setSearchResults(people);
       })
       .catch(() => {
-        setSearchResults(new RsSet());
+        setSearchResults(new Set());
       });
   };
 

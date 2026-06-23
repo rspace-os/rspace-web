@@ -359,8 +359,8 @@ export class ListOfMaterials {
   }
 
   updatePickerSearch() {
-    this.pickerSearch.alwaysFilterOut = (result) =>
-      new RsSet(this.materials).map((mat) => mat.invRec.globalId).has(result.globalId) || !result.usableInLoM;
+    const materialGlobalIds = new Set(this.materials.map((mat) => mat.invRec.globalId));
+    this.pickerSearch.alwaysFilterOut = (result) => materialGlobalIds.has(result.globalId) || !result.usableInLoM;
   }
 
   /*
@@ -465,8 +465,8 @@ export class ListOfMaterials {
   }
 
   get selectedCategories(): Set<UnitCategory> {
-    return new RsSet(filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))).map(
-      (r) => r.quantityCategory,
+    return new Set(
+      [...filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))].map((r) => r.quantityCategory),
     );
   }
 

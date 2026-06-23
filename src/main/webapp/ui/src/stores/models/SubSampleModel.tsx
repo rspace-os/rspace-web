@@ -5,7 +5,7 @@ import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/Head
 import ApiService from "../../common/InvApiService";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import type { _LINK } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
 import type { BarcodeAttrs } from "../definitions/Barcode";
@@ -432,11 +432,11 @@ export class SubSampleCollection
   }
 
   get sameQuantityUnits(): boolean {
-    return new RsSet(this.records.map((r) => getUnitId(r.quantity))).size === 1;
+    return new Set([...this.records].map((r) => getUnitId(r.quantity))).size === 1;
   }
 
   get fieldValues(): BatchSubSampleEditableFields {
-    const currentQuanities = new RsSet(this.records.map((r) => getValue(r.quantity)));
+    const currentQuanities = new Set([...this.records].map((r) => getValue(r.quantity)));
 
     return {
       ...super.fieldValues,
@@ -455,7 +455,7 @@ export class SubSampleCollection
   get noValueLabel(): {
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {
-    const currentQuanities = new RsSet(this.records.map((r) => getValue(r.quantity)));
+    const currentQuanities = new Set([...this.records].map((r) => getValue(r.quantity)));
     return {
       ...super.noValueLabel,
       quantity: currentQuanities.size === 1 ? null : "Varies",

@@ -194,7 +194,11 @@ const TagDialog = ({
   const [deletedTags, setDeletedTags] = React.useState<Array<string>>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const visibleTags = React.useMemo(() => {
-    return [...new RsSet(addedTags).union(commonTags).subtract(new RsSet(deletedTags))];
+    const tags = new Set([...commonTags, ...addedTags]);
+    deletedTags.forEach((tag) => {
+      tags.delete(tag);
+    });
+    return [...tags];
   }, [commonTags, addedTags, deletedTags]);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   React.useEffect(() => {

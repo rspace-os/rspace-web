@@ -54,9 +54,11 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
       canChooseWhichToEdit: computed,
     });
     this.records = records;
-    const currentNames = new RsSet(this.records.map((r) => r.name));
+    const currentNames = new Set([...this.records].map((r) => r.name));
     this.name =
-      currentNames.size === 1 ? { common: currentNames.first, suffix: "NONE" } : { common: "", suffix: "NONE" };
+      currentNames.size === 1
+        ? { common: currentNames.values().next().value ?? "", suffix: "NONE" }
+        : { common: "", suffix: "NONE" };
     this.sharedWith = [];
   }
 
@@ -65,7 +67,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
   }
 
   get fieldValues(): InventoryBaseRecordCollectionEditableFields {
-    const currentDescriptions = new RsSet(this.records.map((r) => r.description));
+    const currentDescriptions = new Set([...this.records].map((r) => r.description));
 
     /*
      * Image preview can only be shown after the user has modified the image,
@@ -79,7 +81,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
      * which is because the API returns the same URL for the images of each
      * subsample.
      */
-    const currentImages = new RsSet(this.records.map((r) => r.image));
+    const currentImages = new Set([...this.records].map((r) => r.image));
 
     /*
      * Only new barcodes are shown as editing/deleting existing barcodes across
@@ -95,12 +97,12 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
         .filter((b) => b.id === null),
     );
 
-    const currentSharingMode = new RsSet(this.records.map((r) => r.sharingMode));
+    const currentSharingMode = new Set([...this.records].map((r) => r.sharingMode));
 
     return {
-      image: currentImages.first ?? null,
-      newBase64Image: currentImages.first ?? null,
-      description: currentDescriptions.first ?? "",
+      image: currentImages.values().next().value ?? null,
+      newBase64Image: currentImages.values().next().value ?? null,
+      description: currentDescriptions.values().next().value ?? "",
       name: this.name,
 
       // all the tags that the records have in common
@@ -110,7 +112,8 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
       ).toArray(),
 
       barcodes: [...newBarcodes],
-      sharingMode: currentSharingMode.size === 1 ? currentSharingMode.first : "OWNER_GROUPS", // owner's groups acts as default
+      sharingMode:
+        currentSharingMode.size === 1 ? (currentSharingMode.values().next().value ?? "OWNER_GROUPS") : "OWNER_GROUPS", // owner's groups acts as default
       sharedWith: this.sharedWith,
     };
   }
@@ -130,10 +133,10 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
   get noValueLabel(): {
     [key in keyof InventoryBaseRecordCollectionEditableFields]: string | null;
   } {
-    const currentNames = new RsSet(this.records.map((r) => r.name));
-    const currentDescriptions = new RsSet(this.records.map((r) => r.description));
-    const currentTags = new RsSet(this.records.map((r) => r.tags));
-    const currentImages = new RsSet(this.records.map((r) => r.image));
+    const currentNames = new Set([...this.records].map((r) => r.name));
+    const currentDescriptions = new Set([...this.records].map((r) => r.description));
+    const currentTags = new Set([...this.records].map((r) => r.tags));
+    const currentImages = new Set([...this.records].map((r) => r.image));
     return {
       image: currentImages.size === 1 ? null : "Enable to set image for all items",
       newBase64Image: null,

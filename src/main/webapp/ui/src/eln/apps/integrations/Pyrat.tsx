@@ -16,7 +16,6 @@ import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { Optional } from "../../../util/optional";
-import RsSet from "../../../util/set";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 
@@ -177,19 +176,19 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                         })
                           .then((newConfigs) => {
                             setAddMenuAnchorEl(null);
-                            const optionIdsOfExistingServers = new RsSet(
+                            const optionIdsOfExistingServers = new Set(
                               authenticatedServers.map(({ optionsId }) => optionsId),
                             );
-                            const optionIdsOfNewServers = new RsSet(
-                              newConfigs.credentials.authenticatedServers.map(({ optionsId }) => optionsId),
+                            const newServer = newConfigs.credentials.authenticatedServers.find(
+                              ({ optionsId }) => !optionIdsOfExistingServers.has(optionsId),
                             );
-                            const newOptionId = optionIdsOfNewServers.subtract(optionIdsOfExistingServers).first;
+                            if (!newServer) throw new Error("Save completed but cannot show results.");
                             runInAction(() => {
                               authenticatedServers.push({
                                 alias,
                                 url,
                                 apiKey: "",
-                                optionsId: newOptionId,
+                                optionsId: newServer.optionsId,
                               });
                               addAlert(
                                 mkAlert({
