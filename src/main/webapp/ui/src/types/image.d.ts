@@ -22,3 +22,11 @@ declare module "*.svg" {
   const src: string;
   export default src;
 }
+
+// Vite `?url` asset imports (e.g. `import pdf from "./x.pdf?url"`) resolve to
+// the served URL string. tsconfig restricts `types`, so vite/client's own
+// declaration isn't loaded; declare it here.
+declare module "*?url" {
+  const src: string;
+  export default src;
+}

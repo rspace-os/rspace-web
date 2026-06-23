@@ -1,12 +1,17 @@
 name: Coverage
 
 # Whole-codebase JaCoCo coverage, run on a nightly schedule (and on manual
-# dispatch). Kept separate from lint-and-test.yml so the fast
-# spring-tests/integration-tests split stays agent-free and there is no
-# cross-shard report merge. `mvn verify -DenableTestCoverage` runs the test
-# phase (unit + Spring) and the integration-test phase, producing both
-# target/site/jacoco/jacoco.xml and target/site/jacoco-it/jacoco.xml, which
-# Codecov merges server-side.
+# dispatch). The work is split across two parallel runners that mirror the
+# spring-tests/integration-tests split in lint-and-test.yml:
+# - unit-spring-coverage: runs the `test` phase (pure-unit + Spring) and emits
+#   target/site/jacoco/jacoco.xml
+# - integration-coverage: runs only the integration-test phase
+#   (-DskipUnitTests=true) and emits target/site/jacoco-it/jacoco.xml
+# Each job uploads only its own report; Codecov merges them server-side. Running
+# them in parallel keeps wall-clock bounded by the slower (integration) shard
+# rather than the sum of both phases.
+# ponytail: this doubles DB schema-init cost (each shard runs drop-recreate-db);
+# a pre-seeded DB image (planned) would remove that overhead.
 
 on:
   schedule:
@@ -26,7 +31,7 @@ env:
   CI: "true"
 
 jobs:
-  coverage:
+  unit-spring-coverage:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -49,13 +54,13 @@ jobs:
           --health-retries=40
           --health-start-period=30s
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5.2.0
+        uses: actions/setup-java@v5.3.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
@@ -76,9 +81,12 @@ jobs:
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
 
-      - name: Run full suite with coverage
+      - name: Run unit + Spring tests with coverage
+        # The jacoco `report` goal is bound to `verify`, which `mvn test` never
+        # reaches, so invoke it explicitly to emit target/site/jacoco/jacoco.xml.
         run: |
-          ./mvnw clean verify -DenableTestCoverage -Denvironment=drop-recreate-db \
+          ./mvnw clean test org.jacoco:jacoco-maven-plugin:report \
+            -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Djavax.xml.accessExternalDTD=all \
@@ -90,8 +98,220 @@ jobs:
             -DRS.devlogLevel=INFO \
             -DRS_FILE_BASE=${RS_FILE_BASE}
 
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=target/site/jacoco/jacoco.csv
+          [ -f "$csv" ] || { echo "No coverage report ($csv missing)." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          echo "### Unit + Spring coverage" >> "$GITHUB_STEP_SUMMARY"
+          awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
+            printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";
+            printf "| Instructions | %d | %d | %.1f%% |\n", ic, ic+im, (ic+im)?100*ic/(ic+im):0;
+            printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+            printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+          }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage-unit-spring
+          path: target/site/jacoco
+          if-no-files-found: ignore
+
+      - name: Upload exec data for merge
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage-exec-unit-spring
+          path: target/jacoco.exec
+          if-no-files-found: ignore
+
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v7.0.0
         with:
-          files: target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml
+          files: target/site/jacoco/jacoco.xml
+
+  integration-coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [17]
+    services:
+      db:
+        image: mariadb:lts-jammy
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.3.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+
+      - name: Run integration tests with coverage
+        run: |
+          ./mvnw clean verify -DskipUnitTests=true \
+            -DenableTestCoverage -Denvironment=drop-recreate-db -Dspotless.apply.skip=true \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djavax.xml.accessExternalDTD=all \
+            -Dlog4j2.configurationFile=log4j2-dev.xml \
+            -Dsurefire.rerunFailingTestsCount=1 \
+            -Djdbc.db.maven=rspace \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Dmaven.test.failure.ignore=false \
+            -DRS.devlogLevel=INFO \
+            -DRS_FILE_BASE=${RS_FILE_BASE}
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=target/site/jacoco-it/jacoco.csv
+          [ -f "$csv" ] || { echo "No coverage report ($csv missing)." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          echo "### Integration coverage" >> "$GITHUB_STEP_SUMMARY"
+          awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
+            printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";
+            printf "| Instructions | %d | %d | %.1f%% |\n", ic, ic+im, (ic+im)?100*ic/(ic+im):0;
+            printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+            printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+          }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage-integration
+          path: target/site/jacoco-it
+          if-no-files-found: ignore
+
+      - name: Upload exec data for merge
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage-exec-integration
+          path: target/jacoco-it.exec
+          if-no-files-found: ignore
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v7.0.0
+        with:
+          files: target/site/jacoco-it/jacoco.xml
+
+  # Combines the two shards' exec data into one figure. JaCoCo merges at the
+  # instruction level (a line covered by either unit or IT tests counts once),
+  # which summing the per-shard CSVs cannot do. Needs compiled classes, so this
+  # job recompiles (fast: no tests, no DB, no frontend) and uses the JaCoCo CLI
+  # to merge + report. Codecov already merges its two uploads server-side, so
+  # the merged report is NOT re-uploaded there.
+  merge-coverage:
+    runs-on: ubuntu-latest
+    needs: [unit-spring-coverage, integration-coverage]
+    if: always()
+    strategy:
+      matrix:
+        java-version: [17]
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.3.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Compile main classes
+        run: |
+          ./mvnw -q compile -Dspotless.apply.skip=true \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
+
+      - name: Download unit + Spring exec
+        continue-on-error: true
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: coverage-exec-unit-spring
+          path: target
+
+      - name: Download integration exec
+        continue-on-error: true
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: coverage-exec-integration
+          path: target
+
+      - name: Merge and report
+        run: |
+          execs=""
+          [ -f target/jacoco.exec ] && execs="$execs target/jacoco.exec"
+          [ -f target/jacoco-it.exec ] && execs="$execs target/jacoco-it.exec"
+          if [ -z "$execs" ]; then
+            echo "No coverage exec data to merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          ./mvnw -q org.apache.maven.plugins:maven-dependency-plugin:3.6.1:copy \
+            -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps \
+            -DoutputDirectory=target/jacoco-cli
+          cli=target/jacoco-cli/org.jacoco.cli-0.8.15-nodeps.jar
+          java -jar "$cli" merge $execs --destfile target/merged.exec
+          mkdir -p target/site/jacoco-merged
+          java -jar "$cli" report target/merged.exec \
+            --classfiles target/classes \
+            --sourcefiles src/main/java \
+            --xml target/site/jacoco-merged/jacoco.xml \
+            --csv target/site/jacoco-merged/jacoco.csv \
+            --html target/site/jacoco-merged
+          echo "### Combined coverage (unit + Spring + integration)" >> "$GITHUB_STEP_SUMMARY"
+          awk -F, 'NR>1{im+=$4;ic+=$5;bm+=$6;bc+=$7;lm+=$8;lc+=$9} END{
+            printf "| Metric | Covered | Total | Coverage |\n|---|---|---|---|\n";
+            printf "| Instructions | %d | %d | %.1f%% |\n", ic, ic+im, (ic+im)?100*ic/(ic+im):0;
+            printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+            printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+          }' target/site/jacoco-merged/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload merged HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage-merged
+          path: target/site/jacoco-merged
+          if-no-files-found: ignore
