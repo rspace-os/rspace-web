@@ -109,7 +109,6 @@ export default function ConnectedAppsTable() {
               />
               <TableBody>
                 {apps
-                  // @ts-expect-error getSorting types its comparator params more loosely than the row type
                   .toSorted(getSorting(order, orderBy))
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((app) => (

@@ -2,24 +2,24 @@ import type { GridColDef } from "@mui/x-data-grid";
 import { mapValues } from "es-toolkit";
 import type { Order } from "./types";
 
-export function desc<T extends string, U>(a: { [K in T]: U }, b: { [K in T]: U }, orderBy: T): -1 | 0 | 1 {
-  if (b[orderBy] < a[orderBy]) {
+export function desc<Row>(a: Row, b: Row, orderBy: string): -1 | 0 | 1 {
+  // `orderBy` is a runtime string key, so reading it off a generic row is an
+  // inherently dynamic access. Sort values are strings or numbers, both of
+  // which order correctly under `<`/`>` at runtime; the numeric view here only
+  // satisfies the type checker and keeps the public signature row-generic.
+  const av = (a as Record<string, number>)[orderBy];
+  const bv = (b as Record<string, number>)[orderBy];
+  if (bv < av) {
     return -1;
   }
-  if (b[orderBy] > a[orderBy]) {
+  if (bv > av) {
     return 1;
   }
   return 0;
 }
 
-export function getSorting<T extends string, U>(
-  order: Order,
-  orderBy: T,
-): (a: { [K in T]: U }, b: { [K in T]: U }) => -1 | 0 | 1 {
-  return (order === "desc" ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy)) as (
-    a: { [K in T]: U },
-    b: { [K in T]: U },
-  ) => -1 | 0 | 1;
+export function getSorting<Row>(order: Order, orderBy: string): (a: Row, b: Row) => -1 | 0 | 1 {
+  return order === "desc" ? (a, b) => desc(a, b, orderBy) : (a, b) => desc(b, a, orderBy);
 }
 
 const _transformObject = <T, U extends keyof T, V>(obj: T, map: { [K in U]: (t: T) => V }): { [K in U]: V } =>
