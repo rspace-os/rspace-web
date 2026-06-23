@@ -25,7 +25,6 @@ import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.imageutils.ImageProcessingFailureException;
 import com.researchspace.core.util.progress.ProgressMonitor;
-import com.researchspace.dao.FieldFormDao;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.linkedelements.FieldContents;
@@ -46,7 +45,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.field.Field;
-import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RSForm;
@@ -58,7 +56,6 @@ import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaManager;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -69,7 +66,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -99,9 +95,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired RecordManager recordManager;
   @Autowired FolderDao folderDao;
   @Autowired FormManager formManager;
-  @Autowired FieldFormDao fieldFormDao;
   @Autowired FieldManager fieldManager;
-  @Autowired MessageSourceUtils messages;
   @Autowired MediaManager mediaManager;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired @Lazy StoichiometryService stoichiometryService;
@@ -341,15 +335,8 @@ abstract class AbstractImporterStrategyImpl {
 
     if (newDoc != null) {
       linkRecord.addOldIdToNewIdMapping(archivalDoc.getDocId(), newDoc.getId());
-      boolean holderFieldAdded =
-          convertStructureDocument(
-              archivalDoc, newDoc, importingUser, ref.getPath(), linkRecord, oldIdToNewGalleryItem);
-      if (holderFieldAdded) {
-        // The document's form was mutated to hold orphaned content. Stop sharing it with later
-        // documents from the same archived form (formMap dedup) so they do not inherit the holder
-        // field; they will rebuild a fresh form instead. See RSDEV-1140.
-        formMap.remove(olderId);
-      }
+      convertStructureDocument(
+          archivalDoc, newDoc, importingUser, ref.getPath(), linkRecord, oldIdToNewGalleryItem);
       if (isTemplate(archivalDoc)) {
         newDoc.addType(RecordType.TEMPLATE);
       }
@@ -403,10 +390,8 @@ abstract class AbstractImporterStrategyImpl {
     return formImporter.makeRSForm(parserRef, user);
   }
 
-  // the sdc created and set Form. Returns true if a holder field had to be added to the document's
-  // form to preserve orphaned content (see addFieldToHoldOrphanedContent), so the caller can stop
-  // sharing this now-mutated form with sibling documents.
-  private boolean convertStructureDocument(
+  // the sdc created and set Form
+  private void convertStructureDocument(
       ArchivalDocument archivalDoc,
       StructuredDocument strucDoc,
       User user,
@@ -434,47 +419,11 @@ abstract class AbstractImporterStrategyImpl {
           archivalFlds.size(),
           stdFields.size());
     }
-    // RSDEV-1140: pair archived fields to the new document's fields in two passes so content is
-    // preserved and correctly routed even when the rebuilt form differs from the archived document.
-    // The previous code iterated positionally over min(archivalFields, docFields), so whenever the
-    // rebuilt form had fewer fields than the archived document - e.g. a form field deleted after
-    // the document was created, which the exported form excludes (RSPAC-1793) - the trailing
-    // archived field was silently dropped and its content lost.
-    //
-    // Pass 1 lets each archived field claim the document field with the same name; pass 2 assigns
-    // the still-unpaired archived fields to the remaining document fields positionally, in document
-    // order, creating a holder field only once the document fields are exhausted. Matching by name
-    // first prevents a positional assignment from stealing a document field that a later exact-name
-    // match needs (which would silently misroute content with no warning).
-    List<Field> unmatchedFields = new ArrayList<>(stdFields);
-    Map<ArchivalField, Field> fieldByArchivalField = new LinkedHashMap<>();
-    List<ArchivalField> unpairedByName = new ArrayList<>();
-    for (ArchivalField afd : archivalFlds) {
-      Field byName = takeFieldByName(unmatchedFields, afd.getFieldName());
-      if (byName != null) {
-        fieldByArchivalField.put(afd, byName);
-      } else {
-        unpairedByName.add(afd);
-      }
-    }
-    boolean holderFieldAdded = false;
-    for (ArchivalField afd : unpairedByName) {
-      // Fall back to the next unused field in document order, or - once the rebuilt document has
-      // fewer fields than the archive (a form field deleted after the document was created, so the
-      // exported form excludes it - RSPAC-1793 - while the document still carries its content) -
-      // add a field to hold the orphaned content so it is preserved instead of dropped.
-      Field fld;
-      if (unmatchedFields.isEmpty()) {
-        fld = addFieldToHoldOrphanedContent(strucDoc, afd);
-        holderFieldAdded = true;
-      } else {
-        fld = unmatchedFields.remove(0);
-      }
-      fieldByArchivalField.put(afd, fld);
-    }
-    for (ArchivalField afd : archivalFlds) {
-      Field fld = fieldByArchivalField.get(afd);
+    for (int i = 0; i < archivalFlds.size() && i < stdFields.size(); i++) {
+
+      Field fld = stdFields.get(i);
       fld.setStructuredDocument(strucDoc);
+      ArchivalField afd = archivalFlds.get(i);
       log.info(
           "Field name - {}, type - {}, data - {}, fieldData - {}, archiveFld - {}",
           fld.getName(),
@@ -494,68 +443,6 @@ abstract class AbstractImporterStrategyImpl {
     // RSPAC-2761 - field data modifications push modification date of a doc to current date, so
     // resetting here
     strucDoc.setModificationDate(archivalDoc.getLastModifiedDate());
-    return holderFieldAdded;
-  }
-
-  /**
-   * Removes and returns the first unused document field whose name equals {@code name}, or {@code
-   * null} when {@code name} is null or no unused field has that name. Used by the first pairing
-   * pass so each archived field claims its same-named document field before any positional
-   * assignment.
-   */
-  private Field takeFieldByName(List<Field> unmatchedFields, String name) {
-    if (name == null) {
-      return null;
-    }
-    for (int i = 0; i < unmatchedFields.size(); i++) {
-      if (name.equals(unmatchedFields.get(i).getName())) {
-        return unmatchedFields.remove(i);
-      }
-    }
-    return null;
-  }
-
-  /**
-   * RSDEV-1140: adds a text field to the imported document (and its form) to hold the content of an
-   * archived field that has no counterpart in the rebuilt form. A text field is used as a universal
-   * container that accepts the archived content without template-validation failures. The field
-   * itself is persisted by the surrounding import flow ({@link #convertStructuredDocumentField}
-   * saves the field); the field form it references is persisted here, before the field is created
-   * from it, so that the field never references a transient form.
-   */
-  private Field addFieldToHoldOrphanedContent(
-      StructuredDocument strucDoc, ArchivalField archivalField) {
-    // ArchivalField.fieldName is not required in the archive schema, so fall back to a stable
-    // name derived from the archived field id rather than passing null/blank to the field form.
-    String fieldName = archivalField.getFieldName();
-    if (StringUtils.isBlank(fieldName)) {
-      fieldName =
-          messages.getMessage(
-              "archive.import.orphanedFieldName", new Object[] {archivalField.getFieldId()});
-      // Write the fallback back so downstream code that re-reads the name (e.g.
-      // convertStructuredDocumentField, which calls Field.setName and would otherwise throw on a
-      // blank name and skip saving the content) sees the same non-blank value.
-      archivalField.setFieldName(fieldName);
-    }
-    RSForm form = strucDoc.getForm();
-    TextFieldForm fieldForm = new TextFieldForm(fieldName);
-    fieldForm.setForm(form);
-    fieldForm.setColumnIndex(form.getNumActiveFields());
-    // Persist the field form now and keep the managed instance. FieldFormDao.save uses Hibernate
-    // merge(), which returns a *managed copy* and leaves the passed-in instance transient; the
-    // holder field below must be created from the managed copy, otherwise saving the field throws
-    // TransientPropertyValueException (TextField.fieldForm -> transient TextFieldForm). Persisting
-    // the form via formManager.save() did not fix this: it merges the form into a discarded copy,
-    // leaving the field form the document references still transient (RSDEV-1140).
-    TextFieldForm persistedFieldForm = (TextFieldForm) fieldFormDao.save(fieldForm);
-    form.addFieldForm(persistedFieldForm);
-    Field newField = persistedFieldForm.createNewFieldFromForm();
-    strucDoc.addField(newField);
-    log.warn(
-        "RSDEV-1140: archived field '{}' had no field in the rebuilt document; added a text field"
-            + " to preserve its content (the form had fewer fields than the document).",
-        fieldName);
-    return newField;
   }
 
   private void convertStructuredDocumentField(
