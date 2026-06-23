@@ -1,5 +1,4 @@
 import { action, computed, makeObservable, observable, override } from "mobx";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import { match } from "../../util/Util";
 import type { HasEditableFields } from "../definitions/Editable";
@@ -91,7 +90,9 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
      * adding of new barcodes.
      */
     const newBarcodes = new RsSet(
-      ArrayUtils.filterClass(PersistedBarcode, this.records.first.barcodes).filter((b) => b.id === null),
+      this.records.first.barcodes
+        .filter((barcode): barcode is PersistedBarcode => barcode instanceof PersistedBarcode)
+        .filter((b) => b.id === null),
     );
 
     const currentSharingMode = new RsSet(this.records.map((r) => r.sharingMode));

@@ -57,9 +57,8 @@ import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensional
 import { mergeSx } from "../../../modules/common/utils/styles";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
-import { getByKey, type Optional } from "../../../util/optional";
+import { getByKey, Optional } from "../../../util/optional";
 import RsSet from "../../../util/set";
 import { match } from "../../../util/Util";
 import {
@@ -319,11 +318,12 @@ const Path = observer(
             void (async () => {
               try {
                 await navigator.clipboard.writeText(
-                  `${window.location.origin}/gallery${ArrayUtils.last(
+                  `${window.location.origin}/gallery${Optional.fromNullable(
                     selection
                       .asSet()
                       .only.map((f) => f.path)
-                      .orElse(path),
+                      .orElse(path)
+                      .at(-1),
                   )
                     .map(({ id }) => `/${idToString(id).elseThrow()}`)
                     .orElse(`?mediaType=${section}`)}`,

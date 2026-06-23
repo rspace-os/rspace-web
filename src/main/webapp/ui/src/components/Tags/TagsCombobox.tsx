@@ -18,7 +18,6 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { VariableSizeList as List, type VariableSizeList } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import type { Tag } from "../../stores/definitions/Tag";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { lift3, Optional } from "../../util/optional";
 import type RsSet from "../../util/set";
 import { FINAL_DATA_SIGNAL, parseEncodedTags, SMALL_DATASET_SIGNAL } from "./ParseEncodedTagStrings";
@@ -253,7 +252,7 @@ function OptionsListing({
            */
           itemSize={(i) =>
             OPTION_HEIGHT +
-            ArrayUtils.getAt(i, sortedOptions)
+            Optional.fromNullable(sortedOptions.at(i))
               .map((tag) => {
                 const tagHasHelpText = helpText(checkInternalTag(tag, { enforceOntologies })) === null;
                 return tagHasHelpText ? 0 : 20;

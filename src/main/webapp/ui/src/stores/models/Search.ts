@@ -1,4 +1,4 @@
-import { groupBy, isEqual, mapValues, omitBy } from "es-toolkit";
+import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
 import { allAreValid, IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
@@ -415,16 +415,21 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
-        ({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted,
-      );
-      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
-        (r) => r.type === "SAMPLE" && r.canBeDeleted,
-      );
+      const samplesThatCouldNotBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(isNotNil)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(isNotNil)
+        .filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
-        ...ArrayUtils.filterNull(data.results.filter(({ error }) => !error).map(({ record }) => record))
+        ...data.results
+          .filter(({ error }) => !error)
+          .map(({ record }) => record)
+          .filter(isNotNil)
           .filter((record) => record.type !== "SAMPLE")
           /*
            * The list is reversed because the server processes each record in
@@ -455,17 +460,20 @@ export default class Search implements SearchInterface {
             variant: "error",
             title: "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
-            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${ArrayUtils.head(ss.parentContainers)
-                .map(({ name, globalId }) => `(in ${name} ${globalId ?? ""})`)
-                .orElse("")}`,
-              variant: "error",
-              record: factory.newRecord({
-                ...ss,
-                sample: s,
-                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-              } as any as Record<string, unknown> & { globalId: GlobalId }),
-            })),
+            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => {
+              const parentContainer = ss.parentContainers.at(0);
+              return {
+                title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
+                  parentContainer ? `(in ${parentContainer.name} ${parentContainer.globalId ?? ""})` : ""
+                }`,
+                variant: "error",
+                record: factory.newRecord({
+                  ...ss,
+                  sample: s,
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                } as any as Record<string, unknown> & { globalId: GlobalId }),
+              };
+            }),
             actionLabel: "Move all to trash",
             onActionClick: () => {
               void this.deleteRecords(records, { forceDelete: true });
@@ -541,9 +549,8 @@ export default class Search implements SearchInterface {
 
   offerToDeleteNowEmptySamples(deletedRecords: Array<InventoryRecord>) {
     const { uiStore, searchStore } = getRootStore();
-    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = ArrayUtils.filterClass(
-      SubSampleModel,
-      deletedRecords,
+    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = deletedRecords.filter(
+      (record): record is SubSampleModel => record instanceof SubSampleModel,
     );
     const samplesOfDeletedSubSamples: Array<SampleModel> = justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
     /*

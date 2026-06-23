@@ -1,7 +1,6 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { showToastWhilstPending } from "../../util/alerts";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -384,7 +383,7 @@ export class ListOfMaterials {
       this.description === other.description,
       this.elnFieldId === other.elnFieldId,
       this.materials.length === other.materials.length &&
-        ArrayUtils.zipWith(this.materials, other.materials, (x, y) => x.isEqual(y)).every((x) => x),
+        this.materials.every((material, index) => material.isEqual(other.materials[index])),
     ].every((x) => x);
   }
 

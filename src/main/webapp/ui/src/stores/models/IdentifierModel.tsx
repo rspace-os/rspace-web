@@ -19,7 +19,6 @@ import type React from "react";
 import { getErrorMessage } from "@/util/error";
 import type InvApiService from "../../common/InvApiService";
 import type { RadioOption } from "../../components/Inputs/RadioField";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import type { _LINK, URL } from "../../util/types";
 import { type Alert, mkAlert } from "../contexts/Alert";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
@@ -328,7 +327,10 @@ export default class IdentifierModel implements Identifier {
         key: "Geolocations",
         value: this.geoLocations,
         handler: (v) => {
-          if (Array.isArray(v)) this.setGeoLocations(ArrayUtils.filterClass(GeoLocationModel, v));
+          if (Array.isArray(v))
+            this.setGeoLocations(
+              v.filter((geoLocation): geoLocation is GeoLocationModel => geoLocation instanceof GeoLocationModel),
+            );
         },
       },
     ];

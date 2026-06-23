@@ -79,7 +79,6 @@ import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty"
 import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/useUiPreference";
 import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
 import type { Optional } from "../../../util/optional";
@@ -904,8 +903,7 @@ const SelectionActions = ({
             FetchingData.getSuccessValue(fetchedListing).flatMap((listing) => listing.getById(id)),
           ),
         );
-  const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
-    .toResult(() => new Error("selectedIds is empty"))
+  const selectedUser: Result<User> = Result.fromNullable(selectedIds.at(0), new Error("selectedIds is empty"))
     .flatMap((id) =>
       selectedIds.length > 1 ? Result.Error<UserId>([new Error("More than one user is selected")]) : Result.Ok(id),
     )

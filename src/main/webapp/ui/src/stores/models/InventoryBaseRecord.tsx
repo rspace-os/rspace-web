@@ -6,7 +6,6 @@ import ApiService from "../../common/InvApiService";
 import { decodeTagString, encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { SortProperty } from "../../Inventory/components/Tables/SortableProperty";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "../../util/error";
 import { capImageAt1MB } from "../../util/images";
 import { Optional } from "../../util/optional";
@@ -590,7 +589,9 @@ export default class InventoryBaseRecord
 
     if (this.currentlyEditableFields.has("image")) params.newBase64Image = this.newBase64Image;
     if (this.currentlyEditableFields.has("barcodes"))
-      params.barcodes = ArrayUtils.filterClass(PersistedBarcode, this.barcodes).map((b) => b.paramsForBackend);
+      params.barcodes = this.barcodes
+        .filter((barcode): barcode is PersistedBarcode => barcode instanceof PersistedBarcode)
+        .map((b) => b.paramsForBackend);
     if (this.currentlyEditableFields.has("identifiers")) params.identifiers = this.identifiers.map((i) => i.toJson());
     if (this.currentlyEditableFields.has("sharingMode")) params.sharingMode = this.sharingMode;
     if (this.currentlyEditableFields.has("sharedWith")) params.sharedWith = this.sharedWith;
@@ -622,7 +623,8 @@ export default class InventoryBaseRecord
     };
 
     const validateExtraFields = () => {
-      if (!ArrayUtils.allAreUnique(this.fieldNamesInUse)) return IsInvalid("All field names must be distinct.");
+      if (new Set(this.fieldNamesInUse).size !== this.fieldNamesInUse.length)
+        return IsInvalid("All field names must be distinct.");
       return allAreValid(this.extraFields.map((e) => e.isValid));
     };
 

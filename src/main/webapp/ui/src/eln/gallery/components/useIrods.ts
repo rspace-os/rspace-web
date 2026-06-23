@@ -2,13 +2,15 @@ import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import type * as FetchingData from "../../../util/fetchingData";
-import type { Optional } from "../../../util/optional";
+import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 
 type Link = { operation: string; href: string };
+
+const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
   return Parsers.getValueWithKey("_links")(obj)
@@ -41,12 +43,12 @@ function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
 const parseSpecificHref =
   (op: string) =>
   (links: ReadonlyArray<Link>): Optional<string> =>
-    ArrayUtils.find(({ operation }) => operation === op, links).map(({ href }) => href);
+    Optional.fromNullable(links.find(({ operation }) => operation === op)).map(({ href }) => href);
 
 const parseOperationError = (error: unknown): Result<string> =>
   Parsers.objectPath(["response", "data", "errors"], error)
     .flatMap(Parsers.isArray)
-    .flatMap(ArrayUtils.head)
+    .flatMap(firstResult)
     .flatMap(Parsers.isString)
     .map((errorMsg) => {
       if (/attempt to overwrite file/.test(errorMsg)) return "Some or all of the files already exist";
@@ -316,7 +318,7 @@ export default function useIrods(
               .do((message) => console.error(message));
             return Parsers.getValueWithKey("errors")(data)
               .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head)
+              .flatMap(firstResult)
               .flatMap(Parsers.isString);
           })
           .orElse("Error parsing error"),

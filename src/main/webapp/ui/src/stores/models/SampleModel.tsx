@@ -4,7 +4,6 @@ import { getErrorMessage } from "@/util/error";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import ApiService from "../../common/InvApiService";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -449,12 +448,11 @@ export default class SampleModel
       return newFields?.find((f) => f.name === field.name)?.globalId;
     };
 
-    const fieldAttachments: Array<Attachment> = ArrayUtils.filterNull(
-      this.fields
-        .filter((f) => Boolean(f.attachment))
-        // handle removal of correct field attachment
-        .map((f) => (f.attachment?.removed ? f.originalAttachment : f.attachment)),
-    );
+    const fieldAttachments: Array<Attachment> = this.fields
+      .filter((f) => Boolean(f.attachment))
+      // handle removal of correct field attachment
+      .map((f) => (f.attachment?.removed ? f.originalAttachment : f.attachment))
+      .filter((attachment): attachment is Attachment => attachment !== null && typeof attachment !== "undefined");
 
     await Promise.all(
       fieldAttachments.map((attachment) => {

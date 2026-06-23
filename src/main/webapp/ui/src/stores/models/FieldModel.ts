@@ -2,7 +2,6 @@ import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { UnparsableString } from "../../util/error";
 import type { URL as URLType } from "../../util/types";
 import type { Attachment } from "../definitions/Attachment";
@@ -224,7 +223,8 @@ export default class FieldModel implements Field {
   }
 
   get optionsAreUnique(): boolean {
-    return ArrayUtils.allAreUnique(this.options.map((o) => o.value));
+    const optionValues = this.options.map((o) => o.value);
+    return new Set(optionValues).size === optionValues.length;
   }
 
   validate(): ValidationResult {
