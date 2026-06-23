@@ -866,6 +866,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
           permFac.createIdPermission(PermissionDomain.RECORD, permType, toUnshare.getId()));
       saveUserOrGroup(toUnshareWith);
       permissnUtils.refreshCache();
+      // the sharee's cached Shiro authorisation still grants RECORD:READ on the
+      // unshared record; notify them so their next permission-checked request
+      // refreshes the cache (refreshCacheIfNotified) instead of serving the
+      // stale grant until restart
+      permissnUtils.notifyUserOrGroupToRefreshCache(toUnshareWith);
       if (toUnshareWith.isUser() && toUnshare.isNotebook()) {
 
         RecordSharingACL acl = toUnshare.getSharingACL();

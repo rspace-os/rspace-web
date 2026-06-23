@@ -12,11 +12,16 @@ type LatestTemplateActionsArgs = {
 };
 
 function LatestTemplateActions({ record }: LatestTemplateActionsArgs): React.ReactNode {
-  if (!(record instanceof TemplateModel) || record.historicalVersion) return null;
+  // Only offer the update when the template actually has samples to update:
+  // samples created from an older version of it (samplesToUpdateCount). Merely
+  // being a link target (e.g. a sample links to this template) is not something
+  // to update, so the button must stay hidden in that case.
+  if (!(record instanceof TemplateModel) || record.historicalVersion || record.samplesToUpdateCount <= 0) return null;
 
   return (
-    <FormControl component="fieldset">
+    <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
       <FormLabel component="legend">Update Samples</FormLabel>
+      {/* width is unified across the sidebar's action buttons in SidebarBody */}
       <FormGroup>
         <Button
           variant="outlined"

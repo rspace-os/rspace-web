@@ -29,6 +29,7 @@ type ValidatingSubmitButtonArgs = {
   progress?: Progress;
   color?: "primary" | "callToAction";
   sx?: SxProps<Theme>;
+  disabled?: boolean;
 };
 export default function ValidatingSubmitButton({
   children,
@@ -38,6 +39,7 @@ export default function ValidatingSubmitButton({
   progress,
   color = "callToAction",
   sx,
+  disabled = false,
 }: ValidatingSubmitButtonArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
@@ -45,7 +47,7 @@ export default function ValidatingSubmitButton({
     <>
       <SubmitSpinnerButton
         label={children}
-        disabled={loading}
+        disabled={loading || disabled}
         loading={loading}
         /*
          * By using type="submit", any <form> element that wraps this button

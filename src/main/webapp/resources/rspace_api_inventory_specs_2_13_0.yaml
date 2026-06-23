@@ -2282,10 +2282,10 @@ paths:
           description: Details of connected attachment (ApiInventoryFile object).
   /identifiers:
     get:
-      summary: Get all the identifiers created by the `user` with a given `state`
+      summary: Get all the DataCite IGSN identifiers created by the `user` with a given `state`
       description: >
-        It will return a list of identifiers that are created by the specific
-        `user`  and having the specific `state`. 
+        It will return a list of all the DataCite IGSN identifiers created by the specific `user` 
+        and having the specific `state`. 
 
         Moreover you can specify the filter `isAssociated` in case you want ONLY the Identifiers  that have already been bound to a record.
 
@@ -2293,7 +2293,7 @@ paths:
          * `10.47366/3bgk.v5n1a3`
          * `https://doi.org/10.47366/3bgk.v5n1a3`
       tags:
-        - IGSN Identifiers
+        - IGSN Identifiers bulk operation
       parameters:
         - name: state
           description: The state of the Identifier you want to filter in the list
@@ -2317,10 +2317,14 @@ paths:
         "200":
           description: The list is successfully returned
     post:
-      summary: Register a new DataCite IGSN identifier for an inventory item
+      summary: Register a new External Identifier (IGSN/PIDINST) for an inventory item
       description: >
         Creates an identifier for the requested inventory item. Requires object
         with one "parentGlobalId" property as a request body.
+
+        The type of identifier created depends on the kind of inventory item referenced by `parentGlobalId`:
+         * an `IGSN` identifier is created when the `parentGlobalId` references a Sample, SubSample or Container
+         * a `PIDINST` identifier is created when the `parentGlobalId` references an Instrument
 
         You must have UPDATE permission for the item to create an identifier for it.
 
@@ -2330,9 +2334,9 @@ paths:
 
         | --- | --- |
 
-        { "parentGlobalId": "IC8" } | Register new identifier for a container with id=8
+        `{ "parentGlobalId": "IC8" }` | Register new identifier for a container with id=8
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       requestBody:
         content:
           application/json:
@@ -2350,7 +2354,7 @@ paths:
         Register a number of DataCite IGSN identifier without associating them
         to any inventory item
       tags:
-        - IGSN Identifiers
+        - IGSN Identifiers bulk operation
       parameters:
         - name: count
           description: The id for the formIcon
@@ -2385,7 +2389,7 @@ paths:
 
         { "parentGlobalId": "SS12" } | Register new identifier for a SubSample with id=12
       tags:
-        - IGSN Identifiers
+        - IGSN Identifiers bulk operation
       parameters:
         - name: doiId
           in: path
@@ -2405,13 +2409,13 @@ paths:
           description: Identifier is assigned to the inventory item
   "/identifiers/{doiId}":
     delete:
-      summary: Delete a draft DataCite IGSN identifier that was not associated or that
-        was registered for the inventory item
-      description: |
-        Attempts to delete a connected DataCite IGSN identifier.
+      summary: Delete a draft External Identifier (IGSN/PIDINST) that was not associated or that was registered for the inventory item
+      description: >
+        Attempts to delete a connected External Identifier (IGSN/PIDINST).
+
         You must have UPDATE permission for the item to delete its identifier.
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       parameters:
         - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
       responses:
@@ -2420,10 +2424,13 @@ paths:
   "/identifiers/{doiId}/publish":
     post:
       summary: Publish an identifier, and the connected inventory item
-      description: |
-        Publishes DataCite IGSN identifier and connected record.
+      description: >
+        Publishes External Identifier (IGSN/PIDINST) and connected record.
+
+      produces:
+        - application/json
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       parameters:
         - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
       responses:
@@ -2433,22 +2440,40 @@ paths:
     post:
       summary: Retract an identifier, and unpublish connected inventory item
       description: >
-        Retracts DataCite IGSN identifier and hides previously published
-        connected record.
+        Retracts External Identifier (IGSN/PIDINST) and hides previously published connected record.
+
+      produces:
+        - application/json
       tags:
-        - IGSN Identifiers
+        - External Identifiers
       parameters:
         - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
       responses:
         "200":
           description: Identifier is retracted and inventory item is hidden.
-  /identifiers/testDataCiteConnection:
+
+  '/identifiers/testIgsnConnection':
     get:
-      summary: Test connection settings saved for DataCite integration
-      description: |
-        Test connection settings saved for DataCite integration
+      summary: Test connection settings saved for the DataCite IGSN integration
+      description: >
+        Test connection settings saved for the DataCite IGSN integration
+      produces:
+        - application/json
       tags:
-        - IGSN Identifiers
+        - External Identifiers
+      responses:
+        '200':
+          description: boolean saying whether connection was successful
+
+  '/identifiers/testPidinstConnection':
+    get:
+      summary: Test connection settings saved for the DataCite PIDINST integration
+      description: >
+        Test connection settings saved for the DataCite PIDINST integration
+      produces:
+        - application/json
+      tags:
+        - External Identifiers
       responses:
         "200":
           description: boolean saying whether connection was successful
@@ -2733,17 +2758,170 @@ paths:
           application/json:
             schema:
               example:
-                datacite:
-                  serverUrl: https://api.test.datacite.org/
-                  username: AJFO.JIJEMD
-                  password: <AJFO.JIJEMD password>
-                  repositoryPrefix: "10.82316"
-                  enabled: "true"
-        description: Settings to update
+                provider: PIDINST_DATACITE
+                serverUrl: https://api.test.datacite.org/
+                username: AJFO.PIDINST
+                password: <AJFO.PIDINST password>
+                repositoryPrefix: "10.82317"
+                enabled: "true"
+        description: >
+          Settings for a single identifier type to update. The `provider` selects which
+          configuration is updated: `IGSN_DATACITE` updates the IGSN configuration, while
+          `PIDINST_DATACITE` or `PIDINST_B2INST` updates the PIDINST configuration.
         required: true
       responses:
         "200":
           description: Success - settings are updated.
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+  "/samples/{sampleId}/referencingItems":
+    get:
+      summary: List Inventory items linking to a Sample
+      description: >
+        Returns the Inventory items whose "Related Items" Link field points at
+        this Sample (its inbound links / back-references). Results are
+        permission-filtered to the source items the current user can read. A
+        target that does not exist, or that the user cannot read, is reported
+        with the same "not found" error as a missing one, so the endpoint cannot
+        be used to probe which records exist.
+      tags:
+        - Related Items
+      parameters:
+        - $ref: "#/components/parameters/sampleIdParam"
+      responses:
+        "200":
+          description: The items referencing this Sample.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReferencingItems"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+  "/subSamples/{subSampleId}/referencingItems":
+    get:
+      summary: List Inventory items linking to a SubSample
+      description: >
+        As `/samples/{sampleId}/referencingItems`, but for a SubSample target.
+      tags:
+        - Related Items
+      parameters:
+        - $ref: "#/components/parameters/subSampleIdParam"
+      responses:
+        "200":
+          description: The items referencing this SubSample.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReferencingItems"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+  "/containers/{containerId}/referencingItems":
+    get:
+      summary: List Inventory items linking to a Container
+      description: >
+        As `/samples/{sampleId}/referencingItems`, but for a Container target.
+      tags:
+        - Related Items
+      parameters:
+        - $ref: "#/components/parameters/containerIdParam"
+      responses:
+        "200":
+          description: The items referencing this Container.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReferencingItems"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+  "/instruments/{instrumentId}/referencingItems":
+    get:
+      summary: List Inventory items linking to an Instrument
+      description: >
+        As `/samples/{sampleId}/referencingItems`, but for an Instrument target.
+      tags:
+        - Related Items
+      parameters:
+        - name: instrumentId
+          in: path
+          required: true
+          description: A unique identifier of the instrument.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The items referencing this Instrument.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReferencingItems"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+  "/referencingItems/{globalId}":
+    get:
+      summary: List Inventory items linking to any target by Global ID
+      description: >
+        Target-agnostic back-reference lookup: returns the Inventory items whose
+        "Related Items" Link field points at the supplied target Global ID. The
+        target may be an Inventory item (SA, SS, IC, IN) or an ELN record - a
+        document (SD), notebook (NB) or gallery file (GL). Used by the ELN-side
+        "Related inventory items" panels. Results are permission-filtered to the
+        source items the current user can read; a target that does not exist, or
+        that the user cannot read, returns the same "not found" error as a
+        missing one.
+      tags:
+        - Related Items
+      parameters:
+        - name: globalId
+          in: path
+          required: true
+          description: >-
+            Global ID of the target - an Inventory item (e.g. `SA123`) or an ELN
+            record (e.g. `SD456`, `NB78`, `GL90`). Any version suffix (e.g.
+            `SA123v2`) is ignored; back-references match on the base record.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The items referencing this target.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReferencingItems"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
+  "/linkTargets/{globalId}/summary":
+    get:
+      summary: Summarise an Inventory Link target
+      description: >
+        Resolves the current state (Global ID, name, type, deleted) of a
+        "Related Items" Link target, Inventory or ELN alike. Backs the target
+        name and "Target deleted" indicator shown on link cards. Permission
+        redacted: for a target the caller cannot read (or that does not exist)
+        the response contains only `globalId` with `readable` false, deliberately
+        identical for unreadable and nonexistent targets so callers cannot probe
+        which records exist.
+      tags:
+        - Related Items
+      parameters:
+        - name: globalId
+          in: path
+          required: true
+          description: >-
+            Global ID of the link target - an Inventory item or an ELN record
+            (document, notebook or gallery file). A version suffix (e.g.
+            `SD456v2`) is accepted.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: >-
+            The target summary (redacted to `globalId` only when the caller
+            cannot read the target).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryLinkTargetSummary"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
 servers:
@@ -3863,3 +4041,83 @@ components:
         httpCode: 422
         internalCode: 42201
         message: Query could not be processed.
+    InventoryReferencingItems:
+      type: object
+      description: >
+        Inventory items that reference a target record through a "Related Items"
+        Link field (the target's inbound links). The target may be an Inventory
+        item or an ELN record.
+      properties:
+        referencingItems:
+          type: array
+          description: >-
+            The referencing items, permission-filtered to those the caller can
+            read. Empty when nothing readable links to the target.
+          items:
+            $ref: "#/components/schemas/InventoryReferencingItem"
+    InventoryReferencingItem:
+      type: object
+      description: A single Inventory item that links to the requested target.
+      properties:
+        sourceGlobalId:
+          type: string
+          description: Global ID of the referencing (source) Inventory item.
+          example: SA123
+        sourceName:
+          type: string
+          description: Name of the referencing item.
+        sourceType:
+          type: string
+          description: Inventory type of the referencing item.
+          enum:
+            - SAMPLE
+            - SUBSAMPLE
+            - CONTAINER
+            - INSTRUMENT
+        relationType:
+          type: string
+          description: >-
+            The DataCite 4.7 relationship type of the link (plus the PIDINST
+            `IsCalibratedBy` / `Calibrates` pair).
+          example: References
+        versionPin:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The pinned user-facing version of the target this link points at, or
+            null when the link follows the latest version.
+        modifiedAt:
+          type: string
+          format: date-time
+          description: When the link was last modified.
+    InventoryLinkTargetSummary:
+      type: object
+      description: >
+        Read-time summary of a "Related Items" Link target. For a target the
+        caller cannot read (or that does not exist) only `globalId` is populated
+        and `readable` is false - deliberately identical for unreadable and
+        nonexistent targets (see ADR 0002, link-target-state non-disclosure).
+      properties:
+        globalId:
+          type: string
+          description: >-
+            Global ID of the target, including a version suffix when the link is
+            pinned (e.g. `SA123v2`).
+          example: SA123
+        name:
+          type: string
+          description: Current name of the target. Empty when not readable.
+        type:
+          type: string
+          description: >-
+            Type of the target, e.g. SAMPLE, SUBSAMPLE, CONTAINER, INSTRUMENT,
+            DOCUMENT, NOTEBOOK or MEDIA_FILE.
+        deleted:
+          type: boolean
+          description: True when the target record is currently soft-deleted.
+        readable:
+          type: boolean
+          description: >-
+            True only when the caller can read the target; false deliberately
+            conflates "unreadable" with "nonexistent".

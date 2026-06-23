@@ -9,6 +9,7 @@ import TextField from "../../../../components/Inputs/TextField";
 import NoValue from "../../../../components/NoValue";
 import type Result from "../../../../stores/models/InventoryBaseRecord";
 import FormField from "../../../components/Inputs/FormField";
+import LinkField from "../Link/LinkField";
 import NewField from "./NewField";
 import UpdateField from "./UpdateField";
 
@@ -21,9 +22,46 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
   const EachField = observer(({ editable }: { editable: boolean }): React.ReactNode => {
     const extraFieldsDisabled = !editable;
     return result.visibleExtraFields.map((ef, i) => (
-      <div key={ef.name} aria-live="polite">
+      // the key must be stable while the field is edited: keying by the
+      // user-editable name would remount the editor (dropping focus and
+      // local state) whenever a rename commits, and two unsaved fields can
+      // both briefly be named ""
+      <div key={ef.id !== null ? `field-${ef.id}` : `unsaved-${i}`} aria-live="polite">
         {ef.editing ? (
           <UpdateField extraField={ef} index={i} record={result} />
+        ) : ef.type === "Link" ? (
+          <Box sx={{ mt: 1, position: "relative" }}>
+            {!extraFieldsDisabled && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  zIndex: 1,
+                }}
+              >
+                <IconButtonWithTooltip
+                  title="Field settings"
+                  size="small"
+                  onClick={() => ef.setEditing(true)}
+                  icon={<SettingsIcon fontSize="small" />}
+                />
+                <IconButtonWithTooltip
+                  title="Delete field"
+                  size="small"
+                  onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
+                  icon={<CloseIcon fontSize="small" />}
+                />
+              </div>
+            )}
+            {ef.link?.targetGlobalId ? (
+              <LinkField name={ef.name} link={ef.link} editable={editable} />
+            ) : (
+              // a Link row can exist before its link payload does; the
+              // settings affordance above still lets the user set one
+              <NoValue label="No link set" />
+            )}
+          </Box>
         ) : ef.type === "Number" ? (
           <FormField
             label={ef.name}

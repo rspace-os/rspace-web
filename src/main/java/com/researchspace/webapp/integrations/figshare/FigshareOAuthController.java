@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +46,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequestMapping("/apps/figshare")
 @Slf4j
 public class FigshareOAuthController extends BaseOAuth2Controller {
+
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "Figshare";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.figshare.connection";
+  private static final String CONNECTION_TYPE = "FIGSHARE_CONNECTED";
 
   @Value("${figshare.id}")
   private String clientId;
@@ -127,7 +133,9 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
       conn.setRefreshToken(token.getRefreshToken());
       log.info("Plain text access token is {}", accessTokenStr);
       userConnectionManager.save(conn);
-      return "connect/figshare/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+      return CONNECTED_VIEW;
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -135,8 +143,9 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
+      return CONNECTED_VIEW;
     }
   }
 

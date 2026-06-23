@@ -33,6 +33,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
 import { useFolderOpen } from "./OpenFolderProvider";
+import { ReferencingInventoryItemsPanel } from "./ReferencingInventoryItemsPanel";
 
 /**
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -597,6 +598,7 @@ const InfoPanelContent = observer(
           />
         </Box>
         {file.linkedDocuments}
+        <ReferencingInventoryItemsPanel file={file} />
       </Stack>
     );
   },

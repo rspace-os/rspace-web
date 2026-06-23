@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
   </parent>
 
   <repositories>
@@ -90,6 +90,7 @@
           <execution> <!-- default execution skips 'prod'/'prod-test' profile tests -->
             <id>default-test</id>
             <configuration>
+              <skip>${skipUnitTests}</skip>
               <excludes>
                 <exclude>**/EgnyteFileSetupConfigTest.java</exclude>
                 <exclude>**/ProdConfigWiringTest.java</exclude>
@@ -103,6 +104,7 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <skip>${skipUnitTests}</skip>
               <includes>
                 <include>**/EgnyteFileSetupConfigTest.java</include>
               </includes>
@@ -115,6 +117,7 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <skip>${skipUnitTests}</skip>
               <includes>
                 <include>**/ProdConfigWiringTest.java</include>
               </includes>
@@ -440,6 +443,25 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.mnode.ical4j</groupId>
+      <artifactId>ical4j</artifactId>
+      <version>${ical4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-collections4</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-client-java</artifactId>
       <version>5.15.0</version>
@@ -546,6 +568,12 @@
       <version>${javax-mail-api.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>javax.mail</artifactId>
+      <version>${javax-mail-api.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>${servlet.version}</version>
@@ -555,6 +583,25 @@
       <groupId>javax.servlet</groupId>
       <artifactId>jstl</artifactId>
       <version>${jstl.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mnode.ical4j</groupId>
+      <artifactId>ical4j</artifactId>
+      <version>${ical4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-collections4</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>javax.servlet.jsp</groupId>
@@ -1447,7 +1494,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.26.0</version>
+      <version>2.28.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1460,6 +1507,14 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
+             slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
+             of the build uses 1.7.21 / 3.18.0). rspace-web does not use ICS (it built against
+             2.26.0 which had no ical4j), so exclude ical4j entirely. -->
+        <exclusion>
+          <groupId>org.mnode.ical4j</groupId>
+          <artifactId>ical4j</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -2484,7 +2539,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.8</version>
+            <version>0.8.15</version>
             <executions>
               <execution>
                 <id>default-prepare-agent</id>
@@ -2602,6 +2657,7 @@
     <servlet.version>3.1.0</servlet.version>
     <sitemesh.version>2.4.2</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
+    <skipUnitTests>false</skipUnitTests>
     <spotless.version>3.5.1</spotless.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 

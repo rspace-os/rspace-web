@@ -8,6 +8,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.UnsupportedEncodingException;
@@ -225,11 +226,12 @@ public class GitHubController {
       log.error("GitHub access denied", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Github access denied")
+              .errorMsg("GitHub access denied")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     } catch (Exception e) {
       log.error("Exception during GitHub token exchange", e);
       OauthAuthorizationError error =
@@ -237,13 +239,13 @@ public class GitHubController {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
-    List<Repository> repositories;
     try {
-      repositories = getUserRepositories(accessToken);
+      getUserRepositories(accessToken);
     } catch (Exception e) {
       log.error("Getting GitHub repositories list failed", e);
       OauthAuthorizationError error =
@@ -251,19 +253,21 @@ public class GitHubController {
               .errorMsg("Getting repositories list failed")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
-    model.addAttribute("gitHubAccessToken", accessToken);
-    model.addAttribute("gitHubRepositories", repositories);
+    ConnectionResultPage.addConnectionAttributes(
+        model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED");
+    model.addAttribute("connectionToken", accessToken);
 
-    return "connect/github/connected";
+    return ConnectionResultPage.VIEW;
   }
 
   private OauthAuthorizationErrorBuilder getAuthorizationBuilder() {
-    return OauthAuthorizationError.builder().appName("Github");
+    return OauthAuthorizationError.builder().appName("GitHub");
   }
 
   // Map is from repository name to access code

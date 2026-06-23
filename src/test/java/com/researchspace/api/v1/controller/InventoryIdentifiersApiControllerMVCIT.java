@@ -11,6 +11,7 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.Arrays;
@@ -52,22 +53,26 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   private void enableDataCiteRealConnectionSettings(boolean enabled) throws BindException {
-    ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setEnabled(String.valueOf(enabled));
-    update.getDatacite().setServerUrl("https://api.test.datacite.org");
-    update.getDatacite().setUsername(testDataciteUsername);
-    update.getDatacite().setPassword(testDatacitePassword);
-    update.getDatacite().setRepositoryPrefix(testDatacitePrefix);
+    ApiInventorySystemSettings.IdentifierSettings igsnSettings =
+        new ApiInventorySystemSettings.IdentifierSettings();
+    igsnSettings.setProvider(IdentifierType.IGSN_DATACITE);
+    igsnSettings.setEnabled(String.valueOf(enabled));
+    igsnSettings.setServerUrl("https://api.test.datacite.org");
+    igsnSettings.setUsername(testDataciteUsername);
+    igsnSettings.setPassword(testDatacitePassword);
+    igsnSettings.setRepositoryPrefix(testDatacitePrefix);
     settingsController.updateInventorySettings(
-        new MockHttpServletRequest(), update, mockBindingResult, getSysAdminUser());
+        new MockHttpServletRequest(), igsnSettings, mockBindingResult, getSysAdminUser());
   }
 
   @After
   public void disableDataCiteConnection() throws BindException {
-    ApiInventorySystemSettings update = new ApiInventorySystemSettings();
-    update.getDatacite().setEnabled("false");
+    ApiInventorySystemSettings.IdentifierSettings igsnSettings =
+        new ApiInventorySystemSettings.IdentifierSettings();
+    igsnSettings.setProvider(IdentifierType.IGSN_DATACITE);
+    igsnSettings.setEnabled("false");
     settingsController.updateInventorySettings(
-        new MockHttpServletRequest(), update, mockBindingResult, getSysAdminUser());
+        new MockHttpServletRequest(), igsnSettings, mockBindingResult, getSysAdminUser());
   }
 
   @Test

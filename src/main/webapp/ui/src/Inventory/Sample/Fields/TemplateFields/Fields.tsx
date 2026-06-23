@@ -17,6 +17,7 @@ import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
 import type InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
 import FormField from "../../../components/Inputs/FormField";
+import LinkFieldValue from "./LinkFieldValue";
 
 type FieldsArgs = {
   onErrorStateChange: (fieldName: string, hasError: boolean) => void;
@@ -274,6 +275,31 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setError(false); // URIs are strings, so isNaN is not the right validation
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
+            />
+          )}
+        />
+      );
+    }
+
+    if (field.type === "link") {
+      return (
+        <FormField
+          {...commonProps}
+          key={field.name}
+          value={field.link?.targetGlobalId ?? ""}
+          // ID is not used because there is no singular HTMLInputElement to attach it to
+          doNotAttachIdToLabel
+          // the field name is shown inside the link card (after "Link"), like a
+          // custom Link extra-field, so the duplicate label above the card is hidden
+          hideLabel
+          renderInput={() => (
+            <LinkFieldValue
+              field={field}
+              sourceGlobalId={sample.globalId ?? ""}
+              disabled={!sample.isFieldEditable("fields")}
+              onChange={() =>
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error)
+              }
             />
           )}
         />

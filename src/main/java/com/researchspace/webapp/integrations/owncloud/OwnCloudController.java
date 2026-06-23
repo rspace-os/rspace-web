@@ -11,6 +11,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.IOException;
@@ -48,7 +49,6 @@ public class OwnCloudController extends BaseOAuth2Controller {
 
   private static final String UTF_8 = "UTF-8";
   private static final String ERROR = "error";
-  private static final String CONNECT_AUTHORIZATION_ERROR = "connect/authorizationError";
   private static final String ACCESS_TOKEN = "access_token";
   private static final String USERNAME = "username";
 
@@ -136,8 +136,9 @@ public class OwnCloudController extends BaseOAuth2Controller {
               .errorDetails(params.get(ERROR))
               .build();
 
-      model.addAttribute(ERROR, error);
-      return CONNECT_AUTHORIZATION_ERROR;
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     if (userManager.getAuthenticatedUserInSession() == null) {
@@ -147,8 +148,9 @@ public class OwnCloudController extends BaseOAuth2Controller {
               .errorDetails(params.get(ERROR))
               .build();
 
-      model.addAttribute(ERROR, error);
-      return CONNECT_AUTHORIZATION_ERROR;
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     String authorizationCode = params.get("code");
@@ -184,8 +186,6 @@ public class OwnCloudController extends BaseOAuth2Controller {
       conn.setSecret(clientSecret);
 
       userConnectionManager.save(conn);
-      model.addAttribute("ownCloudAccessToken", contentMap.get(ACCESS_TOKEN));
-      model.addAttribute("ownCloudUsername", conn.getId().getProviderUserId());
 
       log.info("ownCloud response retrieved fine");
 
@@ -197,11 +197,14 @@ public class OwnCloudController extends BaseOAuth2Controller {
               .errorDetails(e.getMessage())
               .build();
 
-      model.addAttribute(ERROR, error);
-      return CONNECT_AUTHORIZATION_ERROR;
+      ConnectionResultPage.addError(
+          model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
-    return "connect/owncloud/connected";
+    ConnectionResultPage.addConnectionAttributes(
+        model, "ownCloud", "rspace.apps.owncloud.connection", "OWNCLOUD_CONNECTED");
+    return ConnectionResultPage.VIEW;
   }
 
   private OauthAuthorizationErrorBuilder getAuthErrorBuilder() {

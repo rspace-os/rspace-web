@@ -2,6 +2,7 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/dmponline";
 import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -14,6 +15,12 @@ type DMPOnlineArgs = {
   update: (newIntegrationState: IntegrationStates["DMPONLINE"]) => void;
 };
 
+export interface DMPOnlineConnectedMessage extends Record<string, unknown> {
+  type: "DMPONLINE_CONNECTED";
+  error?: string;
+}
+export const DMPONLINE_CONNECTION_CHANNEL = "rspace.apps.dmponline.connection";
+
 /*
  * There is no authentication mechanism with DMPonline. All DMPs are public and by
  * simply enabling the integration users can import those DMPs into the Gallery
@@ -23,8 +30,20 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
   const { disconnect } = useDmpOnlineEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  React.useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<DMPOnlineConnectedMessage>(
+    DMPONLINE_CONNECTION_CHANNEL,
+    (e: MessageEvent<DMPOnlineConnectedMessage>) => {
+      if (e.data?.type !== "DMPONLINE_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to DMPOnline",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -32,12 +51,8 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
           message: "Successfully connected to DMPOnline.",
         }),
       );
-    };
-    window.addEventListener("DMPONLINE_CONNECTED", f);
-    return () => {
-      window.removeEventListener("DMPONLINE_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid
