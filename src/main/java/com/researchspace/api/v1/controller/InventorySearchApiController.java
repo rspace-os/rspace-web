@@ -12,6 +12,8 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import java.util.List;
@@ -75,6 +77,20 @@ public class InventorySearchApiController extends BaseApiInventoryController
       apiSearchResult =
           runSearchByParentOidWithNoSearchTerm(
               user, srchConfig.getOwnedBy(), apiPgCrit, searchType, deletedItemsOption, parentOid);
+    } else if (InventorySearchType.INSTRUMENT.equals(searchType)) {
+      /* instruments are not Lucene-indexed; bypass the full-text search path */
+      PaginationCriteria<Instrument> instrumentPgCrit =
+          getPaginationCriteriaForApiSearch(apiPgCrit, Instrument.class);
+      apiSearchResult =
+          instrumentApiMgr.searchInstrumentsForUser(
+              instrumentPgCrit, srchConfig.getOwnedBy(), deletedItemsOption, searchQuery, user);
+    } else if (InventorySearchType.INSTRUMENT_TEMPLATE.equals(searchType)) {
+      /* instrument templates are not Lucene-indexed; bypass the full-text search path */
+      PaginationCriteria<InstrumentTemplate> templatePgCrit =
+          getPaginationCriteriaForApiSearch(apiPgCrit, InstrumentTemplate.class);
+      apiSearchResult =
+          instrumentApiMgr.searchInstrumentTemplatesForUser(
+              templatePgCrit, srchConfig.getOwnedBy(), deletedItemsOption, searchQuery, user);
     } else {
       PaginationCriteria<InventoryRecord> pgCrit =
           getPaginationCriteriaForApiSearch(apiPgCrit, InventoryRecord.class);
@@ -96,14 +112,6 @@ public class InventorySearchApiController extends BaseApiInventoryController
   }
 
   private boolean isValidSearchConfig(GlobalIdentifier parentOid, InventorySearchType searchType) {
-    // instruments and instrument templates have dedicated endpoints; the general search does not
-    // index them
-    if (InventorySearchType.INSTRUMENT.equals(searchType)) {
-      return false;
-    }
-    if (InventorySearchType.INSTRUMENT_TEMPLATE.equals(searchType)) {
-      return false;
-    }
     if (parentOid != null) {
       if (GlobalIdPrefix.SA.equals(parentOid.getPrefix())
           && !(searchType.equals(InventorySearchType.ALL)
@@ -145,6 +153,11 @@ public class InventorySearchApiController extends BaseApiInventoryController
             getPaginationCriteriaForApiSearch(apiPgCrit, Sample.class);
         return findSamplesFromTemplate(
             parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, samplePgCrit, user);
+      case NT:
+        PaginationCriteria<Instrument> instrumentPgCrit =
+            getPaginationCriteriaForApiSearch(apiPgCrit, Instrument.class);
+        return findInstrumentsFromTemplate(
+            parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, instrumentPgCrit, user);
       case SA:
         return findSubSamplesForSample(
             parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, pgCrit, user);
@@ -185,6 +198,21 @@ public class InventorySearchApiController extends BaseApiInventoryController
       return ApiInventorySearchResult.emptyResult();
     }
     return sampleApiMgr.getSamplesCreatedFromTemplate(
+        templateId, ownedBy, deletedItemsOption, pgCrit, user);
+  }
+
+  private ApiInventorySearchResult findInstrumentsFromTemplate(
+      Long templateId,
+      String ownedBy,
+      InventorySearchType searchType,
+      InventorySearchDeletedOption deletedItemsOption,
+      PaginationCriteria<Instrument> pgCrit,
+      User user) {
+
+    if (searchType != InventorySearchType.ALL && searchType != InventorySearchType.INSTRUMENT) {
+      return ApiInventorySearchResult.emptyResult();
+    }
+    return instrumentApiMgr.getInstrumentsCreatedFromTemplate(
         templateId, ownedBy, deletedItemsOption, pgCrit, user);
   }
 

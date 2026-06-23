@@ -69,6 +69,7 @@ type InstrumentTemplateSections = {
   attachments: boolean;
   permissions: boolean;
   customFields: boolean;
+  instruments: boolean;
 };
 
 type FormSectionsState = {
@@ -141,6 +142,7 @@ const defaultFormSectionExpandedState = (): FormSectionsState =>
       attachments: false,
       permissions: false,
       customFields: false,
+      instruments: true,
     },
     mixed: {
       information: false,

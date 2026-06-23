@@ -278,13 +278,13 @@ const baseTheme = createTheme({
       },
       instrument: {
         fg: "#f57c00",
-        bg: "#bf5000",
+        bg: "#ab4c08",
         lighter: "#fce8d5",
       },
       instrumentTemplate: {
-        fg: "#00897b",
-        bg: "#00695c",
-        lighter: "#e0f2f1",
+        fg: "#651ef5",
+        bg: "#6B5C8A",
+        lighter: "#ecebf0",
       },
       document: {
         bg: "#af5076",

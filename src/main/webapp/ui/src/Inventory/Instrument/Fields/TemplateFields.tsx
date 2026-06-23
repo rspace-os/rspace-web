@@ -211,11 +211,15 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
 
     if (field.type === "time") {
       if (typeof field.content === "number") throw new Error("Invalid content type");
+      const timeValue =
+        field.content instanceof Date
+          ? field.content.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+          : String(field.content);
       return (
         <FormField
           {...commonProps}
           key={field.name}
-          value={String(field.content)}
+          value={timeValue}
           renderInput={({ error: _error, ...props }) => (
             <TimeField
               {...props}

@@ -1,3 +1,5 @@
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -10,6 +12,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import GlobalId from "../../../components/GlobalId";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
+import NoValue from "../../../components/NoValue";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import InstrumentModel from "../../../stores/models/InstrumentModel";
@@ -80,6 +83,8 @@ function InstrumentTemplateField(): React.ReactNode {
     );
   }
 
+  const loading = activeResult.templateId !== null && template === null;
+
   // Existing instrument — show read-only template summary
   return (
     <InputWrapper label="Instrument Template" disabled>
@@ -99,8 +104,17 @@ function InstrumentTemplateField(): React.ReactNode {
             </ListItemSecondaryAction>
           </ListItem>
         </List>
+      ) : loading ? (
+        <List dense disablePadding>
+          <ListItem>
+            <ListItemAvatar>
+              <FontAwesomeIcon icon={faSpinner} spin size="lg" />
+            </ListItemAvatar>
+            <ListItemText primary="Loading" />
+          </ListItem>
+        </List>
       ) : (
-        <span>No template</span>
+        <NoValue label="No Template" />
       )}
     </InputWrapper>
   );

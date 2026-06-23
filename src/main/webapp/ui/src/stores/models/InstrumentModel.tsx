@@ -1,7 +1,8 @@
-import { action, makeObservable, observable, override } from "mobx";
+import { action, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import type { _LINK } from "@/util/types";
 import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
+import ApiService from "../../common/InvApiService";
 import RsSet from "../../util/set";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
@@ -23,7 +24,7 @@ import type { AttachmentJson } from "./AttachmentModel";
 import type { ContainerAttrs } from "./ContainerModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { HasLocationMixin } from "./HasLocation";
-import type InstrumentTemplateModel from "./InstrumentTemplateModel";
+import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "./InstrumentTemplateModel";
 import InventoryBaseRecord, {
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
@@ -196,6 +197,12 @@ export default class InstrumentModel
       : null;
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
     this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
+    if (typeof params.templateId !== "undefined") {
+      this.templateId = params.templateId ?? null;
+    }
+    if (typeof params.templateVersion !== "undefined") {
+      this.templateVersion = params.templateVersion ?? null;
+    }
   }
 
   get paramsForBackend(): Record<string, unknown> {
@@ -230,6 +237,13 @@ export default class InstrumentModel
 
   async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
     await super.fetchAdditionalInfo(silent);
+    if (this.templateId) {
+      const templateId = this.templateId;
+      const { data } = await ApiService.get<InstrumentTemplateAttrs>("instrumentTemplates", String(templateId));
+      runInAction(() => {
+        this.template = new InstrumentTemplateModel(this.factory.newFactory(), data);
+      });
+    }
     getRootStore().trackingStore.trackEvent("InventoryRecordAccessed", {
       type: this.recordType,
     });

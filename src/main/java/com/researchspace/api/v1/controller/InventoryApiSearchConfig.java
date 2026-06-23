@@ -37,10 +37,10 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   private String resultType;
 
   @Pattern(
-      regexp = "(IC|BE|SA|IT|BA)(\\d+)(v\\d+)?",
+      regexp = "(IC|BE|SA|IT|BA|IN|NT)(\\d+)(v\\d+)?",
       message =
           "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench,"
-              + " Sample, Sample Template, or Basket")
+              + " Sample, Sample Template, Instrument, Instrument Template or Basket")
   @JsonProperty("parentGlobalId")
   private String parentGlobalId;
 

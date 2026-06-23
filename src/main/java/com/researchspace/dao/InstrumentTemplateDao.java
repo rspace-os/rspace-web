@@ -11,11 +11,16 @@ import java.util.List;
 /** For DAO operations specific to Inventory {@link InstrumentTemplate} */
 public interface InstrumentTemplateDao extends InstrumentEntityDao<InstrumentTemplate> {
 
-  /** Returns a paginated list of instrument templates visible to the given user. */
+  /**
+   * Returns a paginated list of instrument templates visible to the given user. When {@code
+   * searchTerm} is non-blank, results are filtered to records whose name contains the term
+   * (case-insensitive).
+   */
   ISearchResults<InstrumentTemplate> getTemplatesForUser(
       PaginationCriteria<InstrumentTemplate> pgCrit,
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
+      String searchTerm,
       User user);
 
   /** Returns all instrument templates with the given name owned by the given user. */

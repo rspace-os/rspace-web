@@ -279,7 +279,13 @@ const TemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label="Sample Templates"
+        label={
+          <>
+            Sample
+            <br />
+            Templates
+          </>
+        }
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("TEMPLATE")}
         icon={
           <RecordTypeIcon
@@ -322,7 +328,13 @@ const InstrumentTemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label="Instrument Templates"
+        label={
+          <>
+            Instrument
+            <br />
+            Templates
+          </>
+        }
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")}
         icon={
           <RecordTypeIcon

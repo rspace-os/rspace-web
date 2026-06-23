@@ -17,6 +17,7 @@ import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
+import InstrumentTemplateField from "./Fields/InstrumentTemplateField";
 import TemplateFields from "./Fields/TemplateFields";
 
 type OverviewSectionArgs = {
@@ -47,6 +48,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
       <OwnerField fieldOwner={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
         <>
+          <InstrumentTemplateField />
           <LocationField fieldOwner={activeResult} />
           <ImageField fieldOwner={activeResult} alt="What the instrument looks like" />
         </>

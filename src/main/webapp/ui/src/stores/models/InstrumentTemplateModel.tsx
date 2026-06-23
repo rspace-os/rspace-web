@@ -23,6 +23,7 @@ import InventoryBaseRecord, {
   type InventoryBaseRecordUneditableFields,
   RESULT_FIELDS,
 } from "./InventoryBaseRecord";
+import Search from "./Search";
 
 type InstrumentTemplateEditableFields = InventoryBaseRecordEditableFields;
 
@@ -65,6 +66,7 @@ export default class InstrumentTemplateModel
     HasUneditableFields<InstrumentTemplateUneditableFields>
 {
   fields: Array<Field> = [];
+  search: Search;
 
   declare version: number;
 
@@ -72,6 +74,7 @@ export default class InstrumentTemplateModel
     super(factory, params);
     makeObservable(this, {
       fields: observable,
+      search: observable,
       addField: action,
       removeCustomField: action,
       moveField: action,
@@ -90,6 +93,19 @@ export default class InstrumentTemplateModel
     });
 
     if (this.recordType === "instrumentTemplate") this.populateFromJson(factory, params, {});
+
+    this.search = new Search({
+      fetcherParams: {
+        parentGlobalId: this.globalId,
+        resultType: "INSTRUMENT",
+      },
+      uiConfig: {
+        allowedSearchModules: new Set(["TYPE", "STATUS", "OWNER", "TAG"]),
+        allowedTypeFilters: new Set(["INSTRUMENT"]),
+        hideContentsOfChip: true,
+      },
+      factory: this.factory.newFactory(),
+    });
   }
 
   get recordType(): RecordType {
@@ -206,6 +222,12 @@ export default class InstrumentTemplateModel
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     return new Map([...super.adjustableTableOptions()]);
+  }
+
+  refreshAssociatedSearch() {
+    if (this.id !== null) {
+      void this.search.fetcher.performInitialSearch(null);
+    }
   }
 
   get usableInLoM(): boolean {

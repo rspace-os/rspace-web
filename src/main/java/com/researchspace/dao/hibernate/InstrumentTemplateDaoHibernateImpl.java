@@ -15,6 +15,7 @@ import com.researchspace.model.inventory.field.InventoryRadioField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -38,6 +39,7 @@ public class InstrumentTemplateDaoHibernateImpl
       PaginationCriteria<InstrumentTemplate> pgCrit,
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
+      String searchTerm,
       User user) {
 
     List<String> userGroupMembers =
@@ -54,6 +56,8 @@ public class InstrumentTemplateDaoHibernateImpl
     }
     String orderByFragment = getOrderBySqlFragmentForInventoryRecord(pgCrit);
     String deletedFragment = getDeletedSqlFragmentForInventoryRecord(deletedOption);
+    String nameFragment =
+        StringUtils.isNotBlank(searchTerm) ? " lower(name) like lower(:searchTerm) " : "";
     int startPosition = pgCrit.getFirstResultIndex();
     int maxResult = pgCrit.getResultsPerPage();
 
@@ -62,12 +66,16 @@ public class InstrumentTemplateDaoHibernateImpl
             .getCurrentSession()
             .createQuery(
                 "select count(t) from InstrumentTemplate t where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='InstrumentTemplate' ")
+                    + connectSqlConditionsWithAnd(
+                        deletedFragment, " DTYPE='InstrumentTemplate' ", nameFragment)
                     + permittedFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
         addQueryParams(
             ownedBy, user, countQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    if (StringUtils.isNotBlank(searchTerm)) {
+      countQueryWithParams.setParameter("searchTerm", "%" + searchTerm + "%");
+    }
     long totalCount = countQueryWithParams.getSingleResult();
     if (totalCount == 0) {
       return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
@@ -78,7 +86,8 @@ public class InstrumentTemplateDaoHibernateImpl
             .getCurrentSession()
             .createQuery(
                 "from InstrumentTemplate where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='InstrumentTemplate' ")
+                    + connectSqlConditionsWithAnd(
+                        deletedFragment, " DTYPE='InstrumentTemplate' ", nameFragment)
                     + permittedFragment
                     + orderByFragment,
                 InstrumentTemplate.class)
@@ -87,6 +96,9 @@ public class InstrumentTemplateDaoHibernateImpl
     Query<InstrumentTemplate> pageQueryWithParams =
         addQueryParams(
             ownedBy, user, pageQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    if (StringUtils.isNotBlank(searchTerm)) {
+      pageQueryWithParams.setParameter("searchTerm", "%" + searchTerm + "%");
+    }
     List<InstrumentTemplate> page = pageQueryWithParams.list();
     return new SearchResultsImpl<>(page, pgCrit, totalCount);
   }

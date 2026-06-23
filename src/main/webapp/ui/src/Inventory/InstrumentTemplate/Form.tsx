@@ -16,6 +16,7 @@ import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
 import CustomFields from "./Fields/CustomFields";
+import InstrumentsList from "./Fields/InstrumentsList";
 
 type OverviewSectionArgs = {
   activeResult: InstrumentTemplateModel;
@@ -149,6 +150,16 @@ function InstrumentTemplateForm(): ReactNode {
             <AccessPermissions fieldOwner={activeResult} />
           </StepperPanel>
           <CustomFieldSection activeResult={activeResult} />
+          {activeResult.state === "preview" && (
+            <StepperPanel
+              icon="instrumentTemplate"
+              title="Instruments"
+              sectionName="instruments"
+              recordType="instrumentTemplate"
+            >
+              <InstrumentsList />
+            </StepperPanel>
+          )}
         </>
       )}
     </Stepper>

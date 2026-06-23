@@ -21,6 +21,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
@@ -328,8 +330,21 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       case CONTAINER:
         resultClasses = new Class[] {Container.class};
         break;
+      case INSTRUMENT:
+        resultClasses = new Class[] {Instrument.class};
+        break;
+      case INSTRUMENT_TEMPLATE:
+        resultClasses = new Class[] {InstrumentTemplate.class};
+        break;
       case ALL:
-        resultClasses = new Class[] {Sample.class, SubSample.class, Container.class};
+        resultClasses =
+            new Class[] {
+              Sample.class,
+              SubSample.class,
+              Container.class,
+              Instrument.class,
+              InstrumentTemplate.class
+            };
         break;
       default:
         throw new IllegalArgumentException("unknown requested search type: " + searchType);
