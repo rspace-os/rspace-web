@@ -432,11 +432,11 @@ export class SubSampleCollection
   }
 
   get sameQuantityUnits(): boolean {
-    return new Set([...this.records].map((r) => getUnitId(r.quantity))).size === 1;
+    return new Set(Array.from(this.records, (r) => getUnitId(r.quantity))).size === 1;
   }
 
   get fieldValues(): BatchSubSampleEditableFields {
-    const currentQuanities = new Set([...this.records].map((r) => getValue(r.quantity)));
+    const currentQuanities = new Set(Array.from(this.records, (r) => getValue(r.quantity)));
 
     return {
       ...super.fieldValues,
@@ -455,7 +455,7 @@ export class SubSampleCollection
   get noValueLabel(): {
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {
-    const currentQuanities = new Set([...this.records].map((r) => getValue(r.quantity)));
+    const currentQuanities = new Set(Array.from(this.records, (r) => getValue(r.quantity)));
     return {
       ...super.noValueLabel,
       quantity: currentQuanities.size === 1 ? null : "Varies",

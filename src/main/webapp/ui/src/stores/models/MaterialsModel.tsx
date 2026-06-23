@@ -466,7 +466,7 @@ export class ListOfMaterials {
 
   get selectedCategories(): Set<UnitCategory> {
     return new Set(
-      [...filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))].map((r) => r.quantityCategory),
+      Array.from(filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec)), (r) => r.quantityCategory),
     );
   }
 

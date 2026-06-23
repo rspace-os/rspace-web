@@ -489,11 +489,14 @@ export function useUserListing(): {
           usersToBeTagged.map((user) => ({
             userId: user.id,
             userTags: (() => {
-              const tags = new Set([...user.tags, ...addedTags]);
+              const tags = new Set(user.tags);
+              addedTags.forEach((tag) => {
+                tags.add(tag);
+              });
               deletedTags.forEach((tag) => {
                 tags.delete(tag);
               });
-              return [...tags];
+              return Array.from(tags);
             })(),
           })),
         );

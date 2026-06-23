@@ -194,11 +194,14 @@ const TagDialog = ({
   const [deletedTags, setDeletedTags] = React.useState<Array<string>>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const visibleTags = React.useMemo(() => {
-    const tags = new Set([...commonTags, ...addedTags]);
+    const tags = new Set(commonTags);
+    addedTags.forEach((tag) => {
+      tags.add(tag);
+    });
     deletedTags.forEach((tag) => {
       tags.delete(tag);
     });
-    return [...tags];
+    return Array.from(tags);
   }, [commonTags, addedTags, deletedTags]);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   React.useEffect(() => {
@@ -1339,7 +1342,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
                       allowNewTags={false}
                       onSelection={(newTag) => {
                         if (!tags.includes(newTag)) {
-                          const newTags = [...tags, newTag];
+                          const newTags = tags.concat(newTag);
                           setTags(newTags);
                           FetchingData.getSuccessValue(userListing).do((listing) => {
                             void listing.applyTagsFilter(newTags);

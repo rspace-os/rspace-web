@@ -74,14 +74,14 @@ describe("ContentContextMenu", () => {
           cleanup();
           const container: ContainerModel = makeMockContainer({
             name: "A visual container",
-            locations: [...take(incrementForever(), width)].flatMap((coordX: number) =>
-              [...take(incrementForever(), height)].map((coordY: number) => ({
+            locations: Array.from(take(incrementForever(), width), (coordX: number) =>
+              Array.from(take(incrementForever(), height), (coordY: number) => ({
                 coordX,
                 coordY,
                 content: containerAttrs(),
                 id: null,
               })),
-            ),
+            ).flat(),
             cType: "GRID",
             gridLayout: {
               rowsNumber: height,

@@ -54,7 +54,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
       canChooseWhichToEdit: computed,
     });
     this.records = records;
-    const currentNames = new Set([...this.records].map((r) => r.name));
+    const currentNames = new Set(Array.from(this.records, (r) => r.name));
     this.name =
       currentNames.size === 1
         ? { common: currentNames.values().next().value ?? "", suffix: "NONE" }
@@ -67,7 +67,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
   }
 
   get fieldValues(): InventoryBaseRecordCollectionEditableFields {
-    const currentDescriptions = new Set([...this.records].map((r) => r.description));
+    const currentDescriptions = new Set(Array.from(this.records, (r) => r.description));
 
     /*
      * Image preview can only be shown after the user has modified the image,
@@ -81,7 +81,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
      * which is because the API returns the same URL for the images of each
      * subsample.
      */
-    const currentImages = new Set([...this.records].map((r) => r.image));
+    const currentImages = new Set(Array.from(this.records, (r) => r.image));
 
     /*
      * Only new barcodes are shown as editing/deleting existing barcodes across
@@ -97,7 +97,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
         .filter((b) => b.id === null),
     );
 
-    const currentSharingMode = new Set([...this.records].map((r) => r.sharingMode));
+    const currentSharingMode = new Set(Array.from(this.records, (r) => r.sharingMode));
 
     return {
       image: currentImages.values().next().value ?? null,
@@ -133,10 +133,10 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
   get noValueLabel(): {
     [key in keyof InventoryBaseRecordCollectionEditableFields]: string | null;
   } {
-    const currentNames = new Set([...this.records].map((r) => r.name));
-    const currentDescriptions = new Set([...this.records].map((r) => r.description));
-    const currentTags = new Set([...this.records].map((r) => r.tags));
-    const currentImages = new Set([...this.records].map((r) => r.image));
+    const currentNames = new Set(Array.from(this.records, (r) => r.name));
+    const currentDescriptions = new Set(Array.from(this.records, (r) => r.description));
+    const currentTags = new Set(Array.from(this.records, (r) => r.tags));
+    const currentImages = new Set(Array.from(this.records, (r) => r.image));
     return {
       image: currentImages.size === 1 ? null : "Enable to set image for all items",
       newBase64Image: null,
