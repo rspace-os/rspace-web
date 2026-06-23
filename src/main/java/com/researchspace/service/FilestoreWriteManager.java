@@ -57,11 +57,11 @@ public interface FilestoreWriteManager {
       throws BindException;
 
   /**
-   * Deletes a file or folder within an S3 filestore, subject to the creator/age gate: every object
-   * removed must carry {@code rspace-created-by} equal to {@code user} and a {@code
-   * rspace-created-at} within the configured window. For a folder this is evaluated atomically over
-   * the placeholder and every descendant — if any object fails, nothing is deleted and an {@link
-   * org.apache.shiro.authz.AuthorizationException} is thrown (mapped to HTTP 403).
+   * Deletes a file or empty folder within an S3 filestore, subject to the creator/age gate: the
+   * object must carry {@code rspace-created-by} equal to {@code user} and a {@code
+   * rspace-created-at} within the configured window, otherwise an {@link
+   * org.apache.shiro.authz.AuthorizationException} (HTTP 403) is thrown. A non-empty folder is
+   * rejected.
    *
    * @param filestoreId the filestore containing the item
    * @param path filestore-relative path of the file or folder to delete
@@ -84,6 +84,12 @@ public interface FilestoreWriteManager {
   /**
    * Moves a file or folder to another folder within the same filestore (server-side, preserving the
    * item's creator/creation-time metadata).
+   *
+   * <p>Authorized by the filesystem write-allowlist only. Unlike {@link #deleteFromFilestore}, move
+   * is deliberately <em>not</em> subject to the per-object creator/age gate: relocating an item
+   * within the same filestore is a reorganisation rather than a destruction (the data is preserved,
+   * along with its original {@code rspace-created-by}/{@code -at} attribution), so it is intended to
+   * be more lenient than delete. Any user on the write-allowlist may move any item in the filestore.
    *
    * @param sourcePath filestore-relative path of the item to move
    * @param destFolderPath filestore-relative path of the destination folder

@@ -135,10 +135,7 @@ const NewFolderMenuItem = ({
   const [name, setName] = React.useState("");
   const { createFolder, createRemoteFolder } = useGalleryActions();
 
-  /*
-   * When browsing inside an S3 filestore, folders are created through the
-   * filestore API (path-based) rather than the local Gallery endpoint.
-   */
+  // Inside an S3 filestore, folders are created via the filestore API (path-based), not the local endpoint.
   const s3Target = React.useMemo((): { filestoreId: number; parentPath: string } | null => {
     if (!path || path.length === 0) return null;
     const filestore = path[0];

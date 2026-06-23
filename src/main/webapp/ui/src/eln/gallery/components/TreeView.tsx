@@ -367,8 +367,7 @@ const CustomTreeItem = observer(
             borderRadius: "4px",
           }}
           sx={(theme) => ({
-            // x-tree-view v9 marks the selected/focused content element with data attributes
-            // (data-selected / data-focused) rather than the legacy Mui-selected / Mui-focused classes.
+            // x-tree-view v9: selection/focus are data attributes, not Mui-selected/Mui-focused classes.
             [`.${treeItemClasses.content}`]: {
               "&[data-selected]": {
                 backgroundColor: window.matchMedia("(prefers-contrast: more)").matches

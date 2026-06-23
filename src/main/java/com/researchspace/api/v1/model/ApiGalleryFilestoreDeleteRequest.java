@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/delete}. Deletes the file
- * or folder at {@code path} (filestore-relative), subject to the creator/age gate. S3 only. Folder
- * deletes are recursive and atomic.
+ * or empty folder at {@code path} (filestore-relative), subject to the creator/age gate. S3 only; a
+ * non-empty folder is rejected.
  */
 @Data
 @NoArgsConstructor

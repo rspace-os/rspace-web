@@ -1043,8 +1043,7 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 ? "transparent"
                 : darken(secondaryBackground, hoverDarkenCoefficient * 2),
             },
-            // x-tree-view v9 expresses selection/focus as data attributes on the content element
-            // (data-selected / data-focused), not the legacy Mui-selected / Mui-focused classes.
+            // x-tree-view v9: selection/focus are data attributes, not Mui-selected/Mui-focused classes.
             "&[data-selected]": {
               backgroundColor: accentedBackground,
               "&[data-focused]": {

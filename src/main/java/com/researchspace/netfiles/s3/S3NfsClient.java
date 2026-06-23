@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -186,7 +187,7 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
 
   @Override
   public String uploadFile(File source, String destDirectoryPath) throws IOException {
-    return uploadFile(source, destDirectoryPath, java.util.Collections.emptyMap());
+    return uploadFile(source, destDirectoryPath, Collections.emptyMap());
   }
 
   /**
@@ -198,8 +199,7 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
    * filestore path like {@code /my-folder} behaves identically to {@code my-folder}. This keeps
    * uploads consistent with {@link #createFileTree}, which also normalises the path.
    */
-  public String uploadFile(
-      File source, String destDirectoryPath, java.util.Map<String, String> metadata)
+  public String uploadFile(File source, String destDirectoryPath, Map<String, String> metadata)
       throws IOException {
     String normalizedDir = stripStartAndEndSlashFromPath(destDirectoryPath);
     if (s3Utilities.isFileInS3(normalizedDir, source.getName())) {
@@ -277,17 +277,14 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
       }
       // empty metadata => S3 COPY directive, preserving the placeholder's created-by/created-at
       s3Utilities.copyObjectFromBucket(
-          s3Utilities.getBucketName(),
-          sourceKey + "/",
-          destBase + "/",
-          java.util.Collections.emptyMap());
+          s3Utilities.getBucketName(), sourceKey + "/", destBase + "/", Collections.emptyMap());
       s3Utilities.deleteObject(sourceKey + "/");
       return destBase;
     }
 
     // copyObject (not copyObjectFromBucket) adds the 5 GB limit + destination-collision checks
     String destKey = joinPath(destFolder, leafName);
-    copyObject(sourceKey, this, destKey, java.util.Collections.emptyMap());
+    copyObject(sourceKey, this, destKey, Collections.emptyMap());
     s3Utilities.deleteObject(sourceKey);
     return destKey;
   }
@@ -323,8 +320,7 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
   public String copyObject(
       String sourceAbsolutePath, WritableNfsClient destClient, String destAbsolutePath)
       throws IOException {
-    return copyObject(
-        sourceAbsolutePath, destClient, destAbsolutePath, java.util.Collections.emptyMap());
+    return copyObject(sourceAbsolutePath, destClient, destAbsolutePath, Collections.emptyMap());
   }
 
   /**
@@ -336,7 +332,7 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
       String sourceAbsolutePath,
       WritableNfsClient destClient,
       String destAbsolutePath,
-      java.util.Map<String, String> metadata)
+      Map<String, String> metadata)
       throws IOException {
     if (!destClient.supportsServerSideTransfer()) {
       throw new UnsupportedOperationException(
@@ -387,10 +383,7 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
   }
 
   void copyObjectFromBucket(
-      String sourceBucketName,
-      String sourceKey,
-      String destKey,
-      java.util.Map<String, String> metadata) {
+      String sourceBucketName, String sourceKey, String destKey, Map<String, String> metadata) {
     s3Utilities.copyObjectFromBucket(sourceBucketName, sourceKey, destKey, metadata);
   }
 

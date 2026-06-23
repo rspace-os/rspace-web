@@ -25,20 +25,16 @@ import TreeView from "./TreeView";
 type MoveWithinFilestoreDialogArgs = {
   open: boolean;
   onClose: () => void;
-  /** The S3 filestore whose contents are being moved; also the root of the destination tree. */
+  /** The S3 filestore being moved within; also the root of the destination tree. */
   filestore: Filestore;
-  /** The items to move (all inside `filestore`). */
   sources: RsSet<RemoteFile>;
-
   /** Refreshes the page's main listing after a move (distinct from the dialog's own tree refresh). */
   refreshListing: () => Promise<void>;
 };
 
 /**
- * Move dialog for files/folders inside an S3 filestore. Mirrors MoveDialog but browses the
- * filestore's own folder tree (rather than a local Gallery section) and moves via the filestore
- * API, using each item's filestore-relative remotePath. The destination is a folder within the
- * same filestore, or the filestore root ("Move to top level").
+ * Move dialog for items inside an S3 filestore: like MoveDialog but browses the filestore's own
+ * folder tree, moving via the filestore API to any subfolder or the filestore root.
  */
 const MoveWithinFilestoreDialog = observer(
   ({ open, onClose, filestore, sources, refreshListing }: MoveWithinFilestoreDialogArgs): React.ReactNode => {
@@ -58,7 +54,6 @@ const MoveWithinFilestoreDialog = observer(
       searchTerm: "",
       orderBy: "name",
       sortOrder: "ASC",
-      foldersOnly: true,
     });
     const { moveRemoteFiles } = useGalleryActions();
     const selection = useGallerySelection();
@@ -86,10 +81,9 @@ const MoveWithinFilestoreDialog = observer(
     }
 
     async function move(destPath: string, setLoading: (b: boolean) => void) {
-      if (filestore.id === null) return;
       setLoading(true);
       try {
-        await moveRemoteFiles(filestore.id, sources.toArray(), destPath);
+        await moveRemoteFiles(sources.toArray(), destPath);
         void refreshListing();
         onClose();
         trackEvent("user:moved:files:gallery", { count: sources.size });
@@ -174,12 +168,7 @@ const MoveWithinFilestoreDialog = observer(
   },
 );
 
-/**
- * A dialog for moving files/folders to another folder within the same S3 filestore.
- *
- * Like MoveDialog, the dialog mounts (and fetches the filestore folder tree) as soon as it is
- * rendered. It owns a fresh single-selection context for picking the destination folder.
- */
+/** Wraps the dialog in a fresh single-selection context for picking the destination folder. */
 export default (props: MoveWithinFilestoreDialogArgs): React.ReactNode => {
   return (
     <GallerySelection onlyAllowSingleSelection>

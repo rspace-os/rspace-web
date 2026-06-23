@@ -73,23 +73,11 @@ export function useGalleryActions(): {
    */
   createFolder: (parentId: Id, name: string) => Promise<void>;
 
-  /**
-   * Create a new folder inside an S3 filestore.
-   *
-   * @arg filestoreId The id of the S3 filestore.
-   * @arg path        The parent folder relative to the filestore root ("" for the root).
-   * @arg name        The name of the new folder.
-   */
+  /** Create a folder inside an S3 filestore, under `path` ("" for the filestore root). */
   createRemoteFolder: (filestoreId: number, path: string, name: string) => Promise<void>;
 
-  /**
-   * Move files/folders to another folder within the same S3 filestore.
-   *
-   * @arg filestoreId The id of the S3 filestore.
-   * @arg sources     The items to move (each carries its own filestore-relative remotePath).
-   * @arg destPath    The destination folder relative to the filestore root ("" for the root).
-   */
-  moveRemoteFiles: (filestoreId: number, sources: ReadonlyArray<RemoteFile>, destPath: string) => Promise<void>;
+  /** Move items to another folder within the same S3 filestore (destPath "" for the root). */
+  moveRemoteFiles: (sources: ReadonlyArray<RemoteFile>, destPath: string) => Promise<void>;
 
   /**
    * Move files to a different folder.
@@ -434,10 +422,9 @@ export function useGalleryActions(): {
   }
 
   /**
-   * Run a write operation (delete, move) over each item in an S3 filestore. Each item is a separate
-   * filestore-API call subject to the backend creator/age gate, so per-item failures are collected
-   * and reported together rather than aborting the whole batch. `verbs` supplies the user-facing
-   * wording: gerund (progress), past tense (success), and base verb (failure title).
+   * Run a per-item S3 filestore write op. Each item is a separate API call gated server-side, so
+   * failures are collected and reported together rather than aborting the batch. `verbs` are the
+   * gerund/past/base forms used in the progress, success, and failure messages.
    */
   async function runPerItemFilestoreOp(
     items: ReadonlyArray<RemoteFile>,
@@ -503,13 +490,10 @@ export function useGalleryActions(): {
     );
   }
 
-  /**
-   * Move files/folders to another folder within the same S3 filestore (POST /filestores/{id}/move
-   * per item), keeping each item's leaf name under destPath.
-   */
-  async function moveRemoteFiles(filestoreId: number, sources: ReadonlyArray<RemoteFile>, destPath: string) {
+  /** Move items to another folder within the same S3 filestore (POST /filestores/{id}/move per item). */
+  async function moveRemoteFiles(sources: ReadonlyArray<RemoteFile>, destPath: string) {
     await runPerItemFilestoreOp(sources, { gerund: "Moving", past: "moved", base: "move" }, (api, file) =>
-      api.post<unknown>(`filestores/${idToString(filestoreId).elseThrow()}/move`, {
+      api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/move`, {
         sourcePath: file.remotePath,
         destPath,
       }),

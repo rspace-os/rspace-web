@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -135,21 +137,20 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Override
   public SdkHttpResponse uploadToS3(String folderPath, File file) {
-    return uploadToS3(folderPath, file, java.util.Collections.emptyMap());
+    return uploadToS3(folderPath, file, Collections.emptyMap());
   }
 
   @Override
-  public SdkHttpResponse uploadToS3(
-      String folderPath, File file, java.util.Map<String, String> metadata) {
+  public SdkHttpResponse uploadToS3(String folderPath, File file, Map<String, String> metadata) {
     return getS3Uploader(folderPath, file, metadata).apply(file);
   }
 
   protected Function<File, SdkHttpResponse> getS3Uploader(String folderPath, File file) {
-    return getS3Uploader(folderPath, file, java.util.Collections.emptyMap());
+    return getS3Uploader(folderPath, file, Collections.emptyMap());
   }
 
   protected Function<File, SdkHttpResponse> getS3Uploader(
-      String folderPath, File file, java.util.Map<String, String> metadata) {
+      String folderPath, File file, Map<String, String> metadata) {
     if ((file.length() <= AWS_PUT_FILE_LIMIT)
         && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
       return new S3PutUploader(s3Client, bucketName, folderPath, metadata);
@@ -310,7 +311,7 @@ public class S3UtilitiesImpl implements S3Utilities {
      * empty for virtual folders that have no placeholder object. Drives the creator/age delete
      * gate.
      */
-    private java.util.Map<String, String> userMetadata = java.util.Collections.emptyMap();
+    private Map<String, String> userMetadata = Collections.emptyMap();
   }
 
   @Override
@@ -320,7 +321,7 @@ public class S3UtilitiesImpl implements S3Utilities {
   }
 
   @Override
-  public void createFolder(String folderPath, java.util.Map<String, String> metadata) {
+  public void createFolder(String folderPath, Map<String, String> metadata) {
     String key = folderPath.endsWith("/") ? folderPath : folderPath + "/";
     try {
       PutObjectRequest.Builder builder = PutObjectRequest.builder().bucket(bucketName).key(key);
@@ -350,15 +351,12 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Override
   public void copyObjectFromBucket(String sourceBucket, String sourceKey, String destKey) {
-    copyObjectFromBucket(sourceBucket, sourceKey, destKey, java.util.Collections.emptyMap());
+    copyObjectFromBucket(sourceBucket, sourceKey, destKey, Collections.emptyMap());
   }
 
   @Override
   public void copyObjectFromBucket(
-      String sourceBucket,
-      String sourceKey,
-      String destKey,
-      java.util.Map<String, String> metadata) {
+      String sourceBucket, String sourceKey, String destKey, Map<String, String> metadata) {
     try {
       CopyObjectRequest.Builder builder =
           CopyObjectRequest.builder()

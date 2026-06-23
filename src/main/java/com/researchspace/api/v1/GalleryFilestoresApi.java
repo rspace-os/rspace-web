@@ -125,8 +125,8 @@ public interface GalleryFilestoresApi {
   /**
    * Deletes a file or folder within the filestore identified by {@code filestoreId} (S3 only),
    * subject to the creator/age gate: only the creating user may delete, and only within the
-   * configured window after creation. Folder deletes are recursive and atomic. Returns 204 on
-   * success; 403 when the gate denies the deletion; 501 for non-S3 backends.
+   * configured window after creation. A non-empty folder is rejected. Returns 204 on success; 403
+   * when the gate denies the deletion; 501 for non-S3 backends.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/delete",

@@ -461,8 +461,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     return sources.length === files.length ? sources : null;
   });
 
-  // When the whole selection lives in one writable S3 filestore, "Move" opens the filestore move
-  // dialog (move within that filestore) rather than the local Gallery move dialog.
+  // A selection wholly within one writable S3 filestore moves via the filestore dialog, not the local one.
   const s3MoveTarget = computed((): { filestore: Filestore; sources: RsSet<RemoteFile> } | null => {
     const files = selection.asSet();
     if (files.isEmpty) return null;
@@ -1036,9 +1035,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             avatar={<DeleteOutlineOutlinedIcon />}
             onClick={() => {
               const files = selection.asSet();
-              // S3 filestore deletes are permanent, so require a typed "permanently delete"
-              // confirmation (RSDEV-1110). Local Gallery deletes are soft-deletes and keep their
-              // existing one-tap behaviour.
+              // S3 deletes are permanent: require typed confirmation. Local deletes are soft, so one tap.
               if (!files.isEmpty && files.every((f) => f instanceof RemoteFile)) {
                 setActionsMenuAnchorEl(null);
                 setDeleteConfirmOpen(true);

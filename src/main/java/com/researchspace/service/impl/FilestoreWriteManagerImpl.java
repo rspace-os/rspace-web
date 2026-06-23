@@ -147,13 +147,17 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     if (sourceFilestore == null) {
       errors.addError(
           new ObjectError(
-              "sourceFilestore", "Could not find file store with id: " + sourceFilestoreId));
+              "sourceFilestore",
+              messages.getMessage(
+                  "netfilestores.write.filestore.notFound", new Object[] {sourceFilestoreId})));
     }
     if (destFilestore == null) {
       errors.addError(
           new ObjectError(
               "destFilestore",
-              "Could not find file store with id: " + request.getDestFilestoreId()));
+              messages.getMessage(
+                  "netfilestores.write.filestore.notFound",
+                  new Object[] {request.getDestFilestoreId()})));
     }
     throwBindExceptionIfErrors(errors);
 
@@ -259,7 +263,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       Long filestoreId, String parentPath, String folderName, BindingResult errors, User user)
       throws BindException {
     if (StringUtils.isBlank(folderName)) {
-      errors.addError(new ObjectError("folderName", "folderName is mandatory"));
+      errors.addError(
+          new ObjectError(
+              "folderName", messages.getMessage("netfilestores.write.folderName.mandatory")));
     }
     throwBindExceptionIfErrors(errors);
     NfsFileStore filestore = getFilestoreOrThrow(filestoreId, errors);
@@ -288,6 +294,8 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     NfsFileStore filestore = getFilestoreOrThrow(filestoreId, errors);
     assertNotFilestoreRoot(sourcePath, "sourcePath", errors);
     aclChecker.assertCanWrite(user, filestore.getFileSystem());
+    // Write-allowlist only: move is intentionally not subject to the creator/age delete gate (see
+    // FilestoreWriteManager#moveWithinFilestore) — it reorganises rather than destroys.
     WritableNfsClient client = resolveWritableClient(user, filestore, null, errors);
 
     String absoluteSource = resolveAbsolute(filestore, sourcePath);
@@ -317,7 +325,8 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
   private void assertNotFilestoreRoot(String relativePath, String field, BindingResult errors)
       throws BindException {
     if (StringUtils.isBlank(StringUtils.strip(relativePath, "/"))) {
-      errors.addError(new ObjectError(field, "Cannot move or delete the filestore root"));
+      errors.addError(
+          new ObjectError(field, messages.getMessage("netfilestores.write.cannot.modify.root")));
       throw new BindException(errors);
     }
   }
@@ -327,7 +336,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     if (filestore == null) {
       errors.addError(
-          new ObjectError("nfsFileStore", "Could not find file store with id: " + filestoreId));
+          new ObjectError(
+              "nfsFileStore",
+              messages.getMessage(
+                  "netfilestores.write.filestore.notFound", new Object[] {filestoreId})));
       throw new BindException(errors);
     }
     return filestore;
@@ -362,7 +374,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestorePathId);
     if (filestore == null) {
       errors.addError(
-          new ObjectError("nfsFileStore", "Could not find file store with id: " + filestorePathId));
+          new ObjectError(
+              "nfsFileStore",
+              messages.getMessage(
+                  "netfilestores.write.filestore.notFound", new Object[] {filestorePathId})));
     }
     throwBindExceptionIfErrors(errors);
     return filestore;
@@ -412,11 +427,11 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       nfsClient =
           credentialsStore.validateCredentialsAndLoginNfs(credentials, errors, user, fileSystem);
     }
-    if (!(nfsClient instanceof WritableNfsClient)) {
+    if (!(nfsClient instanceof WritableNfsClient writable)) {
       throw new UnsupportedOperationException(
           "Filestore backend does not support write operations: " + filestore.getName());
     }
-    return (WritableNfsClient) nfsClient;
+    return writable;
   }
 
   /**
