@@ -18,7 +18,10 @@ For each module (namespace), in order:
 3. Author English in `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/<ns>.json`,
    then `pnpm run i18n:extract` and `pnpm run i18n:types`.
 4. Add the module's glob to the `noJsxLiterals` override in `biome.jsonc`
-   (bare rule; add unit symbols like `˚` to `allowedStrings` only).
+   (bare rule; add unit symbols like `˚` to `allowedStrings` only) — but ONLY if
+   the module is fully converted. If any markup is deferred, skip the override
+   (the deferred JSX text would fail the rule); it's added when the markup is
+   completed in review.
 5. Gate green: `pnpm run tsc`, `pnpm run lint`, `pnpm run i18n:check`,
    relevant tests. Commit the module.
 
@@ -40,6 +43,15 @@ after all modules are done. Defer when a string:
 |---|---|---|---|
 | about | components/AppBar/AboutRSpaceDialog.tsx | support/account email lines, license `<br/>` | Already converted via label+link / two-key split; review whether the split reads well for RTL/other word orders, or should be ICU. |
 | public | components/PublicPages/IdentifierPublicPage.tsx | (none — all strings were standalone) | — |
+| system | system-ror/RoRIntegration.tsx | "By associating a `<a>`ROR ID`</a>` …" help text | inline link mid-sentence |
+| system | system-ror/RoRIntegration.tsx | "You can search the `<a>`ROR registry`</a>` … `<a>`curation request form`</a>`" | multiple inline links |
+| system | system-ror/RoRIntegration.tsx | "ROR ID found. Click `<strong>`Link`</strong>` …" | inline `<strong>` |
+| system | system-ror/RoRIntegration.tsx | "A ROR ID is linked … Click on `<strong>`UNLINK`</strong>` …" | inline `<strong>` |
+| system | system-ror/RoRIntegration.tsx | "Please ensure the ROR ID is one of the following formats: …" | inline styled `<RorErrorHelpText>` example spans |
+
+> When the `system-ror` markup above is completed in review, also add
+> `src/system-ror/**` to the `noJsxLiterals` override in `biome.jsonc` (the
+> module can't be ratcheted while deferred JSX-text markup remains).
 
 ## Module order
 

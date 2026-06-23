@@ -111,7 +111,17 @@ export default interface Resources {
     }
   },
   "system": {
-
+    "errors": {
+      "networkProblem": "There is a problem, please try again later"
+    },
+    "ror": {
+      "heading": "Research Organization Registry (ROR) Integration",
+      "institutionalIdHeading": "Institutional ROR ID",
+      "linkButton": "Link",
+      "searchTooltip": "Search Registry",
+      "statusLabel": "Status:",
+      "unlinkButton": "UnLink"
+    }
   },
   "workspace": {
 

@@ -10,7 +10,9 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import GenericsearchBar from "../components/GenericsearchBar";
 import materialTheme from "../theme";
 
@@ -55,12 +57,13 @@ function RorErrorHelpText(props: React.HTMLAttributes<HTMLSpanElement>): React.R
 }
 
 function RoRIntegration(): React.ReactNode {
+  const { t } = useTranslation("system");
   const [ror, setRor] = useState<string>("");
   const [candidateRor, setCandidateRor] = useState<string>("");
   const [rorDetails, setRorDetails] = useState<RoRApiResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const handleNetworkError = (e: Error) => {
-    setErrorMessage(e.message ? e.message : "There is a problem, please try again later");
+    setErrorMessage(e.message ? e.message : t("errors.networkProblem"));
   };
 
   useEffect(() => {
@@ -180,7 +183,7 @@ function RoRIntegration(): React.ReactNode {
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <div>
-          <h1>Research Organization Registry (ROR) Integration</h1>
+          <h1>{t("ror.heading")}</h1>
           <RorHelpText>
             By associating a{" "}
             <a target="_blank" rel="noreferrer" href="https://ror.org">
@@ -192,13 +195,13 @@ function RoRIntegration(): React.ReactNode {
           </RorHelpText>
         </div>
         <RorHelpText>
-          <h2>Institutional ROR ID</h2>
+          <h2>{t("ror.institutionalIdHeading")}</h2>
         </RorHelpText>
         {!ror && (
           <GenericsearchBar
             handleSearch={handleSearch}
             placeholder={"https://ror.org/038xqyz77"}
-            searchToolTip={"Search Registry"}
+            searchToolTip={t("ror.searchTooltip")}
           />
         )}
         {!rorDetails && (
@@ -262,7 +265,9 @@ function RoRIntegration(): React.ReactNode {
               </RorDetails>
             ))}
             <RorDetails>
-              <h5>Status: {rorDetails.status}</h5>
+              <h5>
+                {t("ror.statusLabel")} {rorDetails.status}
+              </h5>
             </RorDetails>
           </>
         )}
@@ -283,7 +288,7 @@ function RoRIntegration(): React.ReactNode {
             onClick={() => void updateRor()}
             startIcon={<FontAwesomeIcon icon={faPlus} />}
           >
-            Link
+            {t("ror.linkButton")}
           </Button>
         )}
         {showUnlinkAction && (
@@ -295,7 +300,7 @@ function RoRIntegration(): React.ReactNode {
             onClick={() => void deleteRor()}
             startIcon={<FontAwesomeIcon icon={faMinus} />}
           >
-            UnLink
+            {t("ror.unlinkButton")}
           </Button>
         )}
       </ThemeProvider>
@@ -329,7 +334,11 @@ function mountRoRIntegration(event?: Event) {
 
   const root = createRoot(domContainer);
   mainArea.rorRoot = root;
-  root.render(<RoRIntegration />);
+  root.render(
+    <I18nRoot namespaces={["system"]}>
+      <RoRIntegration />
+    </I18nRoot>,
+  );
 }
 
 window.addEventListener("load", () => {
