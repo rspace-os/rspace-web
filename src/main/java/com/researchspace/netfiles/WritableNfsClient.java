@@ -68,6 +68,9 @@ public interface WritableNfsClient extends NfsClient {
    * may be moved; implementations reject non-empty folders. Default throws — only backends that
    * support within-filestore moves (e.g. S3) override this.
    *
+   * <p>May be non-atomic: backends without an atomic rename (e.g. S3) implement this as copy then
+   * delete-source, so a failure after the copy can leave the item at both locations.
+   *
    * @param sourceAbsolutePath absolute path of the file/empty folder to move
    * @param destFolderAbsolutePath absolute path of the destination folder
    * @return the external-storage id of the moved object at its new location

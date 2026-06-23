@@ -163,6 +163,16 @@ public class S3NfsClientTest {
   }
 
   @Test
+  public void createFolder_whenFolderExistsAtPath_throwsAndDoesNotOverwriteMetadata() {
+    // Re-creating an existing folder must not overwrite its created-by/created-at provenance.
+    S3FolderContentItem folder = new S3FolderContentItem("new", true, null, null);
+    when(s3Utilities.getObjectDetails("parent/new")).thenReturn(folder);
+
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    verify(s3Utilities, never()).createFolder(any(), any());
+  }
+
+  @Test
   public void createFileTree_emptyPath_browsesBucketRoot() throws IOException {
     // A filestore rooted at the bucket top level has an empty path; browsing it must list the
     // bucket root rather than require a subfolder.

@@ -252,8 +252,12 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
   public String createFolder(String absolutePath, Map<String, String> metadata) throws IOException {
     String path = stripStartAndEndSlashFromPath(absolutePath);
     S3FolderContentItem existing = s3Utilities.getObjectDetails(path);
-    if (existing != null && !existing.isFolder()) {
-      throw new IOException("A file already exists at: " + path);
+    // Reject any existing object: re-creating over an existing folder would overwrite its
+    // created-by/created-at metadata, letting a write-user reset provenance and bypass the gate.
+    if (existing != null) {
+      throw new IOException(
+          (existing.isFolder() ? "A folder already exists at: " : "A file already exists at: ")
+              + path);
     }
     s3Utilities.createFolder(path, metadata);
     return path;
