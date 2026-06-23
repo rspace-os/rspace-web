@@ -54,6 +54,7 @@ const MoveWithinFilestoreDialog = observer(
       searchTerm: "",
       orderBy: "name",
       sortOrder: "ASC",
+      foldersOnly: true,
     });
     const { moveRemoteFiles } = useGalleryActions();
     const selection = useGallerySelection();

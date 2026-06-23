@@ -195,11 +195,14 @@ function TreeListing({
   fsName,
   path,
   onFailToAuthenticate,
+  showBucketTopLevel = false,
 }: {
   fsId: number;
   fsName: string;
   path: string;
   onFailToAuthenticate: () => void;
+  /** Root S3 listing only: prepend the "(bucket top level)" option once the folders have loaded. */
+  showBucketTopLevel?: boolean;
 }): React.ReactNode {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -215,8 +218,10 @@ function TreeListing({
   );
 
   const [listing, setListing] = React.useState<FilesystemListing>([]);
+  const [loading, setLoading] = React.useState(true);
   const { login } = useFilestoreLogin();
   React.useEffect(() => {
+    setLoading(true);
     async function browse(): Promise<void> {
       try {
         const { data } = await (await api.current).get<{ content: FilesystemListing }>(
@@ -256,13 +261,21 @@ function TreeListing({
                 }
               }),
         );
+      } finally {
+        setLoading(false);
       }
     }
     void browse();
   }, [fsId, path]);
 
+  // Root S3 listing: hold back the "(bucket top level)" option until the folders have loaded, so
+  // every option appears at once rather than top-level looking like the only choice.
+  if (showBucketTopLevel && loading) {
+    return <TreeItem itemId="__loading__" label="Loading..." disabled key="__loading__" />;
+  }
   return (
     <>
+      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" key={TOP_LEVEL_ITEM_ID} />}
       {listing.map(
         ({ folder, name }) =>
           folder && (
@@ -320,7 +333,6 @@ function FolderSelectionStep(props: {
             setSelectedFolderPath(itemId === TOP_LEVEL_ITEM_ID ? "" : decodeURIComponent(itemId));
           }}
         >
-          {isS3 && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" key={TOP_LEVEL_ITEM_ID} />}
           {selectedFilesystem
             .map(({ id, name }) => (
               <TreeListing
@@ -328,6 +340,7 @@ function FolderSelectionStep(props: {
                 fsId={id}
                 fsName={name}
                 key={null}
+                showBucketTopLevel={isS3}
                 onFailToAuthenticate={() => {
                   onCancel();
                 }}

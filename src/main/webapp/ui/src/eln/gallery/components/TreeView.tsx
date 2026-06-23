@@ -575,7 +575,7 @@ const TreeView = ({
        */}
       <GallerySelection>
         {listing.list.map((file, index) =>
-          filter(file) ? (
+          filter(file) !== "hide" ? (
             <CustomTreeItem
               index={index}
               file={file}
