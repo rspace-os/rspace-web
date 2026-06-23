@@ -149,4 +149,16 @@ class FilestoreWriteManagerImplTest {
     assertEquals("destFolder/a.txt", result);
     verify(client).moveWithin("src/a.txt", "destFolder");
   }
+
+  @Test
+  void getAuditMetadata_delegatesToClientWithResolvedPath() throws Exception {
+    FilestoreAuditMetadata expected =
+        new FilestoreAuditMetadata("alice", Instant.parse("2026-06-18T12:00:00Z"));
+    when(client.getAuditMetadata("dir/a.txt")).thenReturn(expected);
+
+    FilestoreAuditMetadata result = manager.getAuditMetadata(FS_ID, "dir/a.txt", user);
+
+    assertEquals(expected, result);
+    verify(client).getAuditMetadata("dir/a.txt");
+  }
 }

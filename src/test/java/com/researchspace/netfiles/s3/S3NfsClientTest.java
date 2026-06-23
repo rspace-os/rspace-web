@@ -10,11 +10,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.netfiles.DeletableTarget;
+import com.researchspace.netfiles.FilestoreAuditMetadata;
 import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsFileTreeNode;
 import com.researchspace.netfiles.NfsFolderDetails;
@@ -174,33 +176,52 @@ public class S3NfsClientTest {
   }
 
   @Test
-  public void createFileTree_populatesCreatedByAndCreatedAtFromObjectMetadata() throws IOException {
+  public void createFileTree_doesNotFetchPerItemMetadata() throws IOException {
+    // Listing must be a single ListObjectsV2 (no per-item HeadObject); audit metadata is fetched
+    // lazily via getAuditMetadata when the info panel opens.
     when(s3Utilities.listFolderContents("dir"))
         .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 10L, Instant.now())));
+
+    NfsFileTreeNode node = client.createFileTree("dir", null, null).getNodes().get(0);
+
+    assertEquals("a.txt", node.getFileName());
+    verify(s3Utilities, never()).getObjectDetails(any());
+  }
+
+  @Test
+  public void getAuditMetadata_file_readsObjectUserMetadata() throws IOException {
     S3FolderContentItem withMeta = new S3FolderContentItem("a.txt", false, 10L, Instant.now());
     withMeta.setUserMetadata(
         Map.of("rspace-created-by", "alice", "rspace-created-at", "2026-06-18T10:00:00Z"));
     when(s3Utilities.getObjectDetails("dir/a.txt")).thenReturn(withMeta);
 
-    NfsFileTreeNode node = client.createFileTree("dir", null, null).getNodes().get(0);
+    FilestoreAuditMetadata audit = client.getAuditMetadata("dir/a.txt");
 
-    assertEquals("alice", node.getCreatedBy());
-    assertEquals(
-        Instant.parse("2026-06-18T10:00:00Z").toEpochMilli(),
-        node.getCreatedAtMillis().longValue());
+    assertEquals("alice", audit.createdBy());
+    assertEquals(Instant.parse("2026-06-18T10:00:00Z"), audit.createdAt());
   }
 
   @Test
-  public void createFileTree_metadataLookupFailure_stillReturnsListing() throws IOException {
-    when(s3Utilities.listFolderContents("dir"))
-        .thenReturn(List.of(new S3FolderContentItem("a.txt", false, 10L, Instant.now())));
-    when(s3Utilities.getObjectDetails("dir/a.txt"))
-        .thenThrow(new RuntimeException("S3 unavailable"));
+  public void getAuditMetadata_folder_readsPlaceholderMetadata() throws IOException {
+    S3FolderContentItem folder = new S3FolderContentItem("sub", true, 0L, null);
+    when(s3Utilities.getObjectDetails("dir/sub")).thenReturn(folder);
+    S3FolderContentItem placeholder = new S3FolderContentItem("sub", true, 0L, null);
+    placeholder.setUserMetadata(Map.of("rspace-created-by", "alice"));
+    when(s3Utilities.getObjectDetails("dir/sub/")).thenReturn(placeholder);
 
-    NfsFileTreeNode node = client.createFileTree("dir", null, null).getNodes().get(0);
+    FilestoreAuditMetadata audit = client.getAuditMetadata("dir/sub");
 
-    assertEquals("a.txt", node.getFileName());
-    assertNull(node.getCreatedBy());
+    assertEquals("alice", audit.createdBy());
+  }
+
+  @Test
+  public void getAuditMetadata_missingObject_returnsEmpty() throws IOException {
+    when(s3Utilities.getObjectDetails("dir/gone.txt")).thenReturn(null);
+
+    FilestoreAuditMetadata audit = client.getAuditMetadata("dir/gone.txt");
+
+    assertNull(audit.createdBy());
+    assertNull(audit.createdAt());
   }
 
   @Test

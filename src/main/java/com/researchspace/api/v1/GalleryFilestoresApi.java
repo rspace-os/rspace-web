@@ -5,6 +5,7 @@
 package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreAuditInfo;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
@@ -44,6 +45,15 @@ public interface GalleryFilestoresApi {
   void downloadFromFilestore(
       Long filestoreId, String downloadPath, Long remoteId, User user, HttpServletResponse response)
       throws IOException;
+
+  /**
+   * Returns the RSpace write-provenance (created-by / created-at) of a single filestore item,
+   * fetched on demand for the Gallery info panel. Both fields are null when the object carries no
+   * such metadata. Requires read access.
+   */
+  @GetMapping("/filestores/{filestoreId}/metadata")
+  ApiGalleryFilestoreAuditInfo getFilestoreItemMetadata(
+      Long filestoreId, String remotePath, User user) throws BindException;
 
   @PostMapping("/filestores")
   @ResponseBody

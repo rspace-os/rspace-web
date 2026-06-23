@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -233,6 +234,27 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       log.error("Error deleting object from filestore: ", e);
       errors.addError(new ObjectError("path", e.getMessage()));
       throw new BindException(errors);
+    }
+  }
+
+  @Override
+  public FilestoreAuditMetadata getAuditMetadata(Long filestoreId, String path, User user)
+      throws BindException {
+    BindingResult errors = new BeanPropertyBindingResult(new Object(), "filestoreAuditMetadata");
+    NfsFileStore filestore = getFilestoreOrThrow(filestoreId, errors);
+    aclChecker.assertCanRead(user, filestore.getFileSystem());
+    WritableNfsClient client;
+    try {
+      client = resolveWritableClient(user, filestore, null, errors);
+    } catch (UnsupportedOperationException e) {
+      // backend has no write client and therefore no RSpace audit metadata
+      return FilestoreAuditMetadata.from(null);
+    }
+    try {
+      return client.getAuditMetadata(resolveAbsolute(filestore, path));
+    } catch (IOException e) {
+      log.warn("Could not read audit metadata for {} in filestore {}", path, filestoreId, e);
+      return FilestoreAuditMetadata.from(null);
     }
   }
 

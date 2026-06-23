@@ -103,6 +103,18 @@ public interface WritableNfsClient extends NfsClient {
   }
 
   /**
+   * Reads the creator/creation-time audit metadata of the object at {@code absolutePath}, fetched
+   * on demand (e.g. when the Gallery info panel opens) rather than per item during a listing.
+   * Returns empty metadata when the object is absent or carries none. Default returns empty — only
+   * backends with native metadata (e.g. S3) override this.
+   *
+   * @param absolutePath absolute path of the file or folder
+   */
+  default FilestoreAuditMetadata getAuditMetadata(String absolutePath) throws IOException {
+    return FilestoreAuditMetadata.from(null);
+  }
+
+  /**
    * Server-side copies a single object from this filestore to a destination filestore. For S3 this
    * uses {@code CopyObject} (no data flows through the RSpace server). Implementations may throw
    * {@link UnsupportedOperationException} if the destination backend is incompatible (e.g. S3

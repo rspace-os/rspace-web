@@ -105,24 +105,28 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
     String fullPathToTarget = joinPath(rootPath, item.getName());
     node.setNodePath(fullPathToTarget);
     node.calculateLogicPath("/" + fullPathToTarget, activeFilestore);
-
-    // ListObjectsV2 omits user metadata, so HeadObject each item for its created-by/-at. This is
-    // supplementary, so a per-item lookup failure must not break the whole listing.
-    try {
-      String objectKey = item.isFolder() ? fullPathToTarget + "/" : fullPathToTarget;
-      S3FolderContentItem details = s3Utilities.getObjectDetails(objectKey);
-      if (details != null) {
-        FilestoreAuditMetadata audit = FilestoreAuditMetadata.from(details.getUserMetadata());
-        node.setCreatedBy(audit.createdBy());
-        if (audit.createdAt() != null) {
-          node.setCreatedAtMillis(audit.createdAt().toEpochMilli());
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Could not read audit metadata for {}", fullPathToTarget, e);
-    }
-
     return node;
+  }
+
+  /**
+   * Reads an object's audit metadata on demand. ListObjectsV2 omits user metadata, so this
+   * HeadObjects the single object (a folder's metadata lives on its {@code key + "/"} placeholder).
+   */
+  @Override
+  public FilestoreAuditMetadata getAuditMetadata(String absolutePath) {
+    String key = stripStartAndEndSlashFromPath(absolutePath);
+    S3FolderContentItem details = s3Utilities.getObjectDetails(key);
+    if (details == null) {
+      return FilestoreAuditMetadata.from(null);
+    }
+    Map<String, String> userMetadata;
+    if (details.isFolder()) {
+      S3FolderContentItem placeholder = s3Utilities.getObjectDetails(key + "/");
+      userMetadata = placeholder == null ? null : placeholder.getUserMetadata();
+    } else {
+      userMetadata = details.getUserMetadata();
+    }
+    return FilestoreAuditMetadata.from(userMetadata);
   }
 
   @Override

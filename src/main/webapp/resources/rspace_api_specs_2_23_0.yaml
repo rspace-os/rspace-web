@@ -1934,6 +1934,21 @@ paths:
       responses:
         "200":
           description: A list of FileStoreNode objects
+  "/gallery/filestores/{filestoreId}/metadata":
+    get:
+      summary: Get filestore item write-provenance
+      description: >-
+        Returns the RSpace write-provenance (created-by / created-at) of a single filestore item,
+        fetched on demand for the Gallery info panel. Both fields are null when the object carries
+        no such metadata (e.g. non-S3 backends, or objects written outside RSpace).
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: "#/components/parameters/filestoreIdParam"
+        - $ref: "#/components/parameters/filestoreRemotePathParam"
+      responses:
+        "200":
+          description: The item's created-by username and creation time (either may be null)
   "/gallery/filestores/{filestoreId}/download":
     get:
       summary: Download from remote filestore

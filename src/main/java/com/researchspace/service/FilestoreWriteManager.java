@@ -5,6 +5,7 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
+import com.researchspace.netfiles.FilestoreAuditMetadata;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -67,6 +68,17 @@ public interface FilestoreWriteManager {
    * @param path filestore-relative path of the file or folder to delete
    */
   void deleteFromFilestore(Long filestoreId, String path, BindingResult errors, User user)
+      throws BindException;
+
+  /**
+   * Reads the creator/creation-time audit metadata of the file or folder at {@code path}
+   * (filestore-relative), for on-demand display in the Gallery info panel. Requires read access.
+   * Returns empty metadata for backends without native metadata (e.g. iRODS) or objects lacking it.
+   *
+   * @param filestoreId the filestore containing the item
+   * @param path filestore-relative path of the file or folder
+   */
+  FilestoreAuditMetadata getAuditMetadata(Long filestoreId, String path, User user)
       throws BindException;
 
   /**

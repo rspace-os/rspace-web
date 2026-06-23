@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.GalleryFilestoresApi;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationInfo;
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreAuditInfo;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
@@ -87,6 +88,18 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     NfsFileTreeNode fileTree = nfsClient.createFileTree(combinedPath, null, filestore);
     return getRemotePathBrowseResult(filesystem, nfsClient, fileTree);
+  }
+
+  @Override
+  public ApiGalleryFilestoreAuditInfo getFilestoreItemMetadata(
+      @PathVariable Long filestoreId,
+      @RequestParam("remotePath") String remotePath,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    assertFilestoresApiEnabled(user);
+    return new ApiGalleryFilestoreAuditInfo(
+        filestoreWriteManager.getAuditMetadata(filestoreId, remotePath, user));
   }
 
   /**

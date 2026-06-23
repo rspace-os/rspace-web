@@ -658,13 +658,6 @@ export class RemoteFile implements GalleryFile {
   readonly isFolder: boolean;
   readonly size: number;
   readonly modificationDate: Date | undefined;
-  // S3 filestore write-provenance metadata (rspace-created-by / rspace-created-at): the RSpace user
-  // who wrote the object via RSpace, and when. This is RSpace-stamped provenance, not the object's
-  // real owner/creation, so it is deliberately kept separate from ownerName/creationDate and shown
-  // under its own "Added to S3" rows in the info panel. Null/undefined for backends or objects
-  // without it (e.g. iRODS, pre-audit objects).
-  readonly createdBy: string | null;
-  readonly createdAt: Date | undefined;
   readonly path: ReadonlyArray<GalleryFile>;
   downloadHref?: () => Promise<UrlType>;
   logicPath: string;
@@ -679,8 +672,6 @@ export class RemoteFile implements GalleryFile {
     folder,
     fileSize,
     modificationDate,
-    createdBy,
-    createdAt,
     path,
     logicPath,
     token,
@@ -690,8 +681,6 @@ export class RemoteFile implements GalleryFile {
     folder: boolean;
     fileSize: number;
     modificationDate: Date | undefined;
-    createdBy?: string | null;
-    createdAt?: Date | undefined;
     path: ReadonlyArray<GalleryFile>;
     logicPath: string;
     token: string;
@@ -702,8 +691,6 @@ export class RemoteFile implements GalleryFile {
     this.isFolder = folder;
     this.size = fileSize;
     this.modificationDate = modificationDate;
-    this.createdBy = createdBy ?? null;
-    this.createdAt = createdAt;
     this.path = path;
     this.logicPath = logicPath;
     this.remotePath = logicPath.split(":").slice(1).join(":");
@@ -1448,14 +1435,6 @@ export function useGalleryListing({
                       .flatMap(Parsers.parseDate)
                       .orElse(undefined);
 
-                    // S3 filestore write-provenance metadata (absent for other backends / pre-audit objects)
-                    const createdBy = Parsers.getValueWithKey("createdBy")(obj).flatMap(Parsers.isString).orElse(null);
-
-                    const createdAt = Parsers.getValueWithKey("createdAt")(obj)
-                      .flatMap(Parsers.isString)
-                      .flatMap(Parsers.parseDate)
-                      .orElse(undefined);
-
                     const logicPath = Parsers.getValueWithKey("logicPath")(obj).flatMap(Parsers.isString).elseThrow();
 
                     return Result.Ok<GalleryFile>(
@@ -1465,8 +1444,6 @@ export function useGalleryListing({
                         folder,
                         fileSize,
                         modificationDate,
-                        createdBy,
-                        createdAt,
                         path: pa,
                         logicPath,
                         token,
