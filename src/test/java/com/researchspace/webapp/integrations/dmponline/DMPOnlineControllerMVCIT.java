@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dmponline;
 
 import static com.researchspace.service.IntegrationsHandler.DMPONLINE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.controller.API_MVC_TestBase;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import java.util.Optional;
 import org.junit.Before;
@@ -61,10 +63,21 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
     // assert is forwarded to the shared connection-result page (error variant)
     assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
+    // the shared page serves both outcomes, so pin the error branch via its model attribute
+    assertTrue(
+        ((String) result.getModelAndView().getModel().get("connectionError"))
+            .contains("Error during token creation"));
   }
 
   @Test
   public void testRefreshToken() throws Exception {
+    // A connection must exist, otherwise refresh_token throws NOT_FOUND before reaching the
+    // shared connection-result page. With a connection present the upstream token refresh fails
+    // (no reachable DMPonline server in the test environment), exercising the error variant of
+    // that page. Like testCallback / testIsConnectionAlive above, this calls the real endpoint and
+    // asserts the error-page forward rather than mocking the HTTP call.
+    seedUserConnection();
+
     MvcResult result =
         mockMvc
             .perform(post("/apps/dmponline/refresh_token").principal(user::getUsername))
@@ -73,6 +86,21 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
     // assert is forwarded to the shared connection-result page (error variant)
     assertTrue(result.getResponse().getForwardedUrl().contains("connect/connected"));
+    // the shared page serves both outcomes, so pin the error branch via its model attribute
+    assertTrue(
+        ((String) result.getModelAndView().getModel().get("connectionError"))
+            .contains("Error during token refresh"));
+  }
+
+  private void seedUserConnection() {
+    UserConnection connection = new UserConnection();
+    connection.setId(
+        new UserConnectionId(user.getUsername(), DMPONLINE_APP_NAME, PROVIDER_USER_ID));
+    connection.setAccessToken("ACCESS_TOKEN");
+    connection.setRefreshToken("REFRESH_TOKEN");
+    connection.setExpireTime(System.currentTimeMillis() + 60L * 60 * 1000);
+    connection.setDisplayName("DMPonline access token");
+    userConnectionManager.save(connection);
   }
 
   @Test
