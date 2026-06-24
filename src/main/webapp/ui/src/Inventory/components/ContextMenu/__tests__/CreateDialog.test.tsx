@@ -31,6 +31,7 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 // Mock AlertContext
 
 const mockAddAlert = vi.fn();
+const createButton = () => screen.getByRole("button", { name: "actions.create" });
 describe("CreateDialog", () => {
   describe("Splitting", () => {
     test("Subsamples", async () => {
@@ -44,7 +45,7 @@ describe("CreateDialog", () => {
       );
       await user.click(await screen.findByRole("radio", { name: /Subsample, by splitting/ }));
       expect(screen.getByRole("spinbutton", { name: /Number of new subsamples/i })).toBeVisible();
-      expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+      expect(createButton()).toBeVisible();
     });
     test("Subsamples, with too many copies", async () => {
       const user = userEvent.setup();
@@ -59,7 +60,7 @@ describe("CreateDialog", () => {
       );
       await user.click(await screen.findByRole("radio", { name: /Subsample, by splitting/ }));
       await user.type(screen.getByRole("spinbutton", { name: /Number of new subsamples/i }), "200");
-      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+      expect(createButton()).toBeDisabled();
     });
     test("Samples, when there is one subsample", async () => {
       const user = userEvent.setup();
@@ -81,7 +82,7 @@ describe("CreateDialog", () => {
         }),
       );
       expect(screen.getByRole("spinbutton", { name: /Number of new subsamples/i })).toBeVisible();
-      expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+      expect(createButton()).toBeVisible();
     });
     test("Samples, with too many copies", async () => {
       const user = userEvent.setup();
@@ -100,7 +101,7 @@ describe("CreateDialog", () => {
         }),
       );
       await user.type(screen.getByRole("spinbutton", { name: /Number of new subsamples/i }), "200");
-      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+      expect(createButton()).toBeDisabled();
     });
     test("Samples, when there are multiple subsamples", async () => {
       const sample = makeMockSample({
@@ -148,8 +149,8 @@ describe("CreateDialog", () => {
       );
       expect(screen.getByText("No location selection required for list containers.")).toBeVisible();
 
-      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
-      await user.click(screen.getByRole("button", { name: /create/i }));
+      expect(createButton()).toBeEnabled();
+      await user.click(createButton());
     });
     /*
      * Writing a test for picking locations in grid and visual containers is
@@ -202,8 +203,8 @@ describe("CreateDialog", () => {
         }),
       );
       expect(screen.getByText("No location selection required for list containers.")).toBeVisible();
-      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
-      await user.click(screen.getByRole("button", { name: /create/i }));
+      expect(createButton()).toBeEnabled();
+      await user.click(createButton());
     });
     /*
      * Writing a test for picking locations in grid and visual containers is
@@ -279,8 +280,8 @@ describe("CreateDialog", () => {
       await user.type(screen.getByRole("textbox", { name: /name/i }), "New template");
 
       await user.click(screen.getByRole("button", { name: /next/i }));
-      expect(screen.getByText("No fields.")).toBeVisible();
-      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+      expect(screen.getByText("contextMenu.createDialog.noFields")).toBeVisible();
+      expect(createButton()).toBeEnabled();
     });
     test("Name that's too short", async () => {
       const user = userEvent.setup();
@@ -332,14 +333,14 @@ describe("CreateDialog", () => {
       );
       expect(screen.getByRole("spinbutton", { name: /Number of new subsamples/i })).toBeVisible();
       await user.type(screen.getByRole("spinbutton", { name: /Number of new subsamples/i }), "4");
-      expect(screen.getByRole("button", { name: /create/i })).toBeVisible();
+      expect(createButton()).toBeVisible();
 
-      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+      expect(createButton()).toBeDisabled();
       expect(screen.getByRole("button", { name: /next/i })).toBeVisible();
 
       await user.click(screen.getByRole("button", { name: /next/i }));
       expect(screen.getByRole("spinbutton", { name: /Quantity per subsample/i })).toBeVisible();
-      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+      expect(createButton()).toBeEnabled();
       await user.type(screen.getByRole("spinbutton", { name: /Quantity per subsample/i }), "4");
     });
     test("Clearing the quantity field disables the submit button", async () => {
@@ -363,9 +364,9 @@ describe("CreateDialog", () => {
       );
 
       await user.click(screen.getByRole("button", { name: /next/i }));
-      expect(screen.getByRole("button", { name: /create/i })).toBeEnabled();
+      expect(createButton()).toBeEnabled();
       await user.clear(screen.getByRole("spinbutton", { name: /Quantity per subsample/i }));
-      expect(screen.getByRole("button", { name: /create/i })).toBeDisabled();
+      expect(createButton()).toBeDisabled();
     });
   });
 });

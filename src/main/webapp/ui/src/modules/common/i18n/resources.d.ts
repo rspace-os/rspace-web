@@ -477,6 +477,24 @@ export default interface Resources {
         }
       }
     },
+    "contextMenu": {
+      "createDialog": {
+        "change": "Change",
+        "columns": {
+          "defaultValue": "Default Value",
+          "field": "Field"
+        },
+        "fields": {
+          "copies": "Copies",
+          "count": "Count"
+        },
+        "helpTitle": "Info on creating new items.",
+        "itemType": "Type of item to create",
+        "loading": "Loading...",
+        "noFields": "No fields.",
+        "noOptions": "No options available."
+      }
+    },
     "createNew": {
       "button": "Create",
       "containers": "Containers",
