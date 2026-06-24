@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
 import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import SampleModel from "../../stores/models/SampleModel";
@@ -31,6 +32,7 @@ import TemplateField from "./Fields/Template/Template";
 import Fields from "./Fields/TemplateFields/Fields";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -46,7 +48,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
   return (
     <StepperPanel
       icon="sample"
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="sample"
@@ -63,6 +65,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
 });
 
 const DetailsSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -71,7 +74,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: SampleModel }
   return (
     <StepperPanel
       icon="sample"
-      title="Details"
+      title={t("formSections.details")}
       sectionName="details"
       formSectionError={formSectionError}
       recordType="sample"
@@ -95,6 +98,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: SampleModel }
 });
 
 const MoreFieldsSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -103,7 +107,7 @@ const MoreFieldsSection = observer(({ activeResult }: { activeResult: SampleMode
   return (
     <StepperPanel
       icon="sample"
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="sample"
@@ -172,6 +176,7 @@ const SubSamplesSection = observer(({ activeResult }: { activeResult: SampleMode
 });
 
 function NewRecordForm(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -191,16 +196,21 @@ function NewRecordForm(): React.ReactNode {
           <OverviewSection activeResult={activeResult} />
         </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
-        <StepperPanel icon="sample" title="Barcodes" sectionName="barcodes" recordType="sample">
+        <StepperPanel icon="sample" title={t("formSections.barcodes")} sectionName="barcodes" recordType="sample">
           <BarcodesField fieldOwner={activeResult} factory={activeResult.factory} connectedItem={activeResult} />
         </StepperPanel>
-        <StepperPanel icon="sample" title="Identifiers" sectionName="identifiers" recordType="sample">
+        <StepperPanel icon="sample" title={t("formSections.identifiers")} sectionName="identifiers" recordType="sample">
           <IdentifiersField fieldOwner={activeResult} />
         </StepperPanel>
-        <StepperPanel icon="sample" title="Attachments" sectionName="attachments" recordType="sample">
+        <StepperPanel icon="sample" title={t("formSections.attachments")} sectionName="attachments" recordType="sample">
           <AttachmentsField fieldOwner={activeResult} />
         </StepperPanel>
-        <StepperPanel icon="sample" title="Access Permissions" sectionName="permissions" recordType="sample">
+        <StepperPanel
+          icon="sample"
+          title={t("formSections.accessPermissions")}
+          sectionName="permissions"
+          recordType="sample"
+        >
           <AccessPermissions
             fieldOwner={activeResult}
             additionalExplanation="Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples."

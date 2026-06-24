@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import ContainerModel from "../../stores/models/ContainerModel";
 import useStores from "../../stores/use-stores";
@@ -24,13 +25,19 @@ import CanStore from "./Fields/CanStore";
 import OrganizationField from "./Fields/Organization/Organization";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: ContainerModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
 
   return (
-    <StepperPanel title="Overview" sectionName="overview" formSectionError={formSectionError} recordType="container">
+    <StepperPanel
+      title={t("formSections.overview")}
+      sectionName="overview"
+      formSectionError={formSectionError}
+      recordType="container"
+    >
       <NameField
         fieldOwner={activeResult}
         record={activeResult}
@@ -49,13 +56,19 @@ const OverviewSection = observer(({ activeResult }: { activeResult: ContainerMod
 });
 
 const DetailsSection = observer(({ activeResult }: { activeResult: ContainerModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
 
   return (
-    <StepperPanel title="Details" sectionName="details" formSectionError={formSectionError} recordType="container">
+    <StepperPanel
+      title={t("formSections.details")}
+      sectionName="details"
+      formSectionError={formSectionError}
+      recordType="container"
+    >
       <CanStore
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "canstore", e)}
         container={activeResult}
@@ -70,6 +83,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: ContainerMode
 });
 
 const ExtaFieldSection = observer(({ activeResult }: { activeResult: ContainerModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -77,7 +91,7 @@ const ExtaFieldSection = observer(({ activeResult }: { activeResult: ContainerMo
 
   return (
     <StepperPanel
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="container"
@@ -91,6 +105,7 @@ const ExtaFieldSection = observer(({ activeResult }: { activeResult: ContainerMo
 });
 
 function Form(): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -110,25 +125,29 @@ function Form(): ReactNode {
       {activeResult.readAccessLevel !== "public" && (
         <>
           <DetailsSection activeResult={activeResult} />
-          <StepperPanel title="Barcodes" sectionName="barcodes" recordType="container">
+          <StepperPanel title={t("formSections.barcodes")} sectionName="barcodes" recordType="container">
             <BarcodesField fieldOwner={activeResult} factory={activeResult.factory} connectedItem={activeResult} />
           </StepperPanel>
         </>
       )}
       {activeResult.readAccessLevel === "full" && (
         <>
-          <StepperPanel title="Identifiers" sectionName="identifiers" recordType="container">
+          <StepperPanel title={t("formSections.identifiers")} sectionName="identifiers" recordType="container">
             <IdentifiersField fieldOwner={activeResult} />
           </StepperPanel>
-          <StepperPanel title="Attachments" sectionName="attachments" recordType="container">
+          <StepperPanel title={t("formSections.attachments")} sectionName="attachments" recordType="container">
             <AttachmentsField fieldOwner={activeResult} />
           </StepperPanel>
-          <StepperPanel title="Access Permissions" sectionName="permissions" recordType="container">
+          <StepperPanel title={t("formSections.accessPermissions")} sectionName="permissions" recordType="container">
             <AccessPermissions fieldOwner={activeResult} />
           </StepperPanel>
           <ExtaFieldSection activeResult={activeResult} />
           {activeResult.state === "preview" && !activeResult.historicalVersion ? (
-            <StepperPanel title="Locations and Content" sectionName="locationsAndContent" recordType="container">
+            <StepperPanel
+              title={t("formSections.locationsAndContent")}
+              sectionName="locationsAndContent"
+              recordType="container"
+            >
               <ContainerContent />
             </StepperPanel>
           ) : null}

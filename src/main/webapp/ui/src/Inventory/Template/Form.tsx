@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import TemplateModel from "../../stores/models/TemplateModel";
 import useStores from "../../stores/use-stores";
@@ -23,6 +24,7 @@ import SamplesList from "./Fields/SamplesList";
 import VersionInfo from "./Fields/VersionInfo";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: TemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -30,7 +32,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: TemplateMode
 
   return (
     <StepperPanel
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="sampleTemplate"
@@ -52,13 +54,19 @@ const OverviewSection = observer(({ activeResult }: { activeResult: TemplateMode
 });
 
 const DetailsSection = observer(({ activeResult }: { activeResult: TemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
 
   return (
-    <StepperPanel title="Details" sectionName="details" formSectionError={formSectionError} recordType="sampleTemplate">
+    <StepperPanel
+      title={t("formSections.details")}
+      sectionName="details"
+      formSectionError={formSectionError}
+      recordType="sampleTemplate"
+    >
       <Expiry
         fieldOwner={activeResult}
         onErrorStateChange={(value) => setFormSectionError(formSectionError, "expiry", value)}
@@ -83,6 +91,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: TemplateModel
 });
 
 const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -90,7 +99,7 @@ const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel 
 
   return (
     <StepperPanel
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="sampleTemplate"
@@ -101,6 +110,7 @@ const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel 
 });
 
 function Form(): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -120,7 +130,11 @@ function Form(): ReactNode {
       {activeResult.readAccessLevel !== "public" && <DetailsSection activeResult={activeResult} />}
       {activeResult.readAccessLevel === "full" && (
         <>
-          <StepperPanel title="Access Permissions" sectionName="permissions" recordType="sampleTemplate">
+          <StepperPanel
+            title={t("formSections.accessPermissions")}
+            sectionName="permissions"
+            recordType="sampleTemplate"
+          >
             <AccessPermissions
               fieldOwner={activeResult}
               additionalExplanation="This template will also be accessible to anyone who has access to a sample that has been created from it."
@@ -128,7 +142,7 @@ function Form(): ReactNode {
           </StepperPanel>
           <FieldsSection activeResult={activeResult} />
           {activeResult.state === "preview" ? (
-            <StepperPanel title="Samples" sectionName="samples" recordType="sampleTemplate">
+            <StepperPanel title={t("formSections.samples")} sectionName="samples" recordType="sampleTemplate">
               <SamplesList />
             </StepperPanel>
           ) : null}

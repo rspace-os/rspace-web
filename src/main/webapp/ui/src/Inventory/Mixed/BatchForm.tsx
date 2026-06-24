@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
 import type InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 import { MixedInventoryBaseRecordCollection } from "../../stores/models/InventoryBaseRecordCollection";
@@ -27,13 +28,19 @@ function OverviewSection({
   collection: MixedInventoryBaseRecordCollection;
   recordsCount: number;
 }) {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
   });
 
   return (
-    <StepperPanel title="Overview" formSectionError={formSectionError} sectionName="overview" recordType="mixed">
+    <StepperPanel
+      title={t("formSections.overview")}
+      formSectionError={formSectionError}
+      sectionName="overview"
+      recordType="mixed"
+    >
       <Image fieldOwner={collection} alt="What all of the items look like" />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
@@ -52,13 +59,19 @@ function OverviewSection({
 }
 
 function DetailsSection({ collection }: { collection: MixedInventoryBaseRecordCollection }) {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
   });
 
   return (
-    <StepperPanel title="Details" formSectionError={formSectionError} sectionName="details" recordType="mixed">
+    <StepperPanel
+      title={t("formSections.details")}
+      formSectionError={formSectionError}
+      sectionName="details"
+      recordType="mixed"
+    >
       <Description
         fieldOwner={collection}
         onErrorStateChange={(value) => setFormSectionError(formSectionError, "description", value)}
@@ -73,6 +86,7 @@ type BatchFormArgs = {
 };
 
 function BatchForm({ records }: BatchFormArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(new MixedInventoryBaseRecordCollection(records));
@@ -86,16 +100,16 @@ function BatchForm({ records }: BatchFormArgs): React.ReactNode {
       titleText={`Batch editing ${records.size} items`}
       editableObject={searchStore.search.batchEditableInstance}
     >
-      <StepperPanel title="Information" sectionName="information" recordType="mixed">
-        <BatchEditingItemsTable records={records} label="Items being edited" />
+      <StepperPanel title={t("formSections.information")} sectionName="information" recordType="mixed">
+        <BatchEditingItemsTable records={records} label={t("formSections.itemsBeingEdited")} />
       </StepperPanel>
       <OverviewSection collection={collection} recordsCount={records.size} />
       <DetailsSection collection={collection} />
-      <StepperPanel title="Barcodes" sectionName="barcodes" recordType="mixed">
+      <StepperPanel title={t("formSections.barcodes")} sectionName="barcodes" recordType="mixed">
         <BarcodesField fieldOwner={collection} factory={new AlwaysNewFactory()} />
       </StepperPanel>
       {!records.some((r) => r instanceof SubSampleModel) && (
-        <StepperPanel title="Access Permissions" sectionName="permissions" recordType="mixed">
+        <StepperPanel title={t("formSections.accessPermissions")} sectionName="permissions" recordType="mixed">
           <AccessPermissions fieldOwner={collection} hideOwnersGroups />
         </StepperPanel>
       )}

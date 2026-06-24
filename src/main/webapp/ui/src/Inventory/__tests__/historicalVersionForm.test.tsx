@@ -114,7 +114,7 @@ describe("Container Form and historical versions", () => {
     );
 
     // locations are not audited, so a snapshot has no contents to show
-    expect(screen.queryByRole("heading", { name: /locations and content/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "formSections.locationsAndContent" })).not.toBeInTheDocument();
     // the sticky alert explains why
     expect(screen.getByText(/contents are not part of/i)).toBeInTheDocument();
   });
@@ -122,6 +122,6 @@ describe("Container Form and historical versions", () => {
   test("the Locations and Content section is shown for a live container", () => {
     renderContainerForm(makeMockContainer({ owner: personAttrs() }));
 
-    expect(screen.getByRole("heading", { name: /locations and content/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "formSections.locationsAndContent" })).toBeInTheDocument();
   });
 });

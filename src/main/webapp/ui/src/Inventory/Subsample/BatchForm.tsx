@@ -34,7 +34,7 @@ function OverviewSection({ setOfSubSamples, recordsCount }: OverviewSectionArgs)
   return (
     <StepperPanel
       icon="subsample"
-      title={t("subsample.batch.sections.overview")}
+      title={t("formSections.overview")}
       formSectionError={formSectionError}
       sectionName="overview"
       recordType="subSample"
@@ -68,7 +68,7 @@ function DetailsSection({ setOfSubSamples }: DetailsSectionArgs): ReactNode {
   return (
     <StepperPanel
       icon="subsample"
-      title={t("subsample.batch.sections.details")}
+      title={t("formSections.details")}
       formSectionError={formSectionError}
       sectionName="details"
       recordType="subSample"
@@ -112,7 +112,7 @@ function BatchForm({ records }: BatchFormArgs): ReactNode {
     >
       <StepperPanel
         icon="subsample"
-        title={t("subsample.batch.sections.information")}
+        title={t("formSections.information")}
         sectionName="information"
         recordType="subSample"
       >
@@ -120,12 +120,7 @@ function BatchForm({ records }: BatchFormArgs): ReactNode {
       </StepperPanel>
       <OverviewSection setOfSubSamples={setOfSubSamples} recordsCount={records.size} />
       <DetailsSection setOfSubSamples={setOfSubSamples} />
-      <StepperPanel
-        icon="subsample"
-        title={t("subsample.batch.sections.barcodes")}
-        sectionName="barcodes"
-        recordType="subSample"
-      >
+      <StepperPanel icon="subsample" title={t("formSections.barcodes")} sectionName="barcodes" recordType="subSample">
         <BarcodesField fieldOwner={setOfSubSamples} factory={new AlwaysNewFactory()} />
       </StepperPanel>
     </FormWrapper>

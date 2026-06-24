@@ -579,6 +579,24 @@ export default interface Resources {
         "addField": "Add field"
       }
     },
+    "formSections": {
+      "accessPermissions": "Access Permissions",
+      "attachments": "Attachments",
+      "barcodes": "Barcodes",
+      "containersBeingEdited": "Containers being edited",
+      "customFields": "Custom Fields",
+      "details": "Details",
+      "identifiers": "Identifiers",
+      "information": "Information",
+      "itemsBeingEdited": "Items being edited",
+      "locationsAndContent": "Locations and Content",
+      "notes": "Notes",
+      "overview": "Overview",
+      "parentSample": "Parent Sample",
+      "sampleFields": "Sample Fields",
+      "samples": "Samples",
+      "samplesBeingEdited": "Samples being edited"
+    },
     "layout": {
       "initialScreen": {
         "navigateTo": "Navigate to:"
@@ -864,12 +882,6 @@ export default interface Resources {
         "itemsTableLabel": "Subsamples being edited",
         "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
-        "sections": {
-          "barcodes": "Barcodes",
-          "details": "Details",
-          "information": "Information",
-          "overview": "Overview"
-        },
         "title": "Batch editing {count} subsamples"
       }
     }
