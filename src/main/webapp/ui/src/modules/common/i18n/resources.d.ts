@@ -66,10 +66,14 @@ export default interface Resources {
       "next": "Next",
       "ok": "OK",
       "retry": "Retry",
+      "search": "Search",
       "submit": "Submit"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
+    },
+    "search": {
+      "placeholder": "Search..."
     },
     "values": {
       "none": "None"
