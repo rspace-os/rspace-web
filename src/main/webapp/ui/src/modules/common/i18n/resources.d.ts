@@ -90,8 +90,17 @@ export default interface Resources {
       "dateField": {
         "invalidDate": "Invalid date."
       },
+      "optionField": {
+        "deleteNewOption": "Delete New Option",
+        "deleteOption": "Delete Option: {option}",
+        "emptyOption": "Option value cannot be empty",
+        "noOptionSelected": "No option selected"
+      },
       "referenceField": {
         "notYetSupported": "Not yet supported."
+      },
+      "selectedFileInfo": {
+        "invalidFile": "Invalid file."
       },
       "unitSelect": {
         "quantityUnits": "Quantity units"

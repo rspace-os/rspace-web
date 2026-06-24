@@ -7,6 +7,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 import RemoveButton from "../../components/RemoveButton";
 
@@ -49,6 +50,7 @@ function RadioField<OptionValue extends string>({
   row = false,
   smallText = false,
 }: RadioFieldArgs<OptionValue>): React.ReactNode {
+  const { t } = useTranslation("common");
   const updateSelected = (newValue: OptionValue | null) => {
     onChange({ target: { value: newValue, name } });
   };
@@ -65,7 +67,7 @@ function RadioField<OptionValue extends string>({
     const filteredOptions = disabled && hideWhenDisabled ? options.filter((o) => o.value === value) : options;
 
     return disabled && !value && hideWhenDisabled ? (
-      <NoValue label={noValueLabel ?? "No option selected"} />
+      <NoValue label={noValueLabel ?? t("inputs.optionField.noOptionSelected")} />
     ) : (
       filteredOptions.map(
         (
@@ -117,7 +119,7 @@ function RadioField<OptionValue extends string>({
                   if (value === option.value) handleRemoveOption();
                   onOptionRemove(i);
                 }}
-                title={`Delete Option: ${option.value}`}
+                title={t("inputs.optionField.deleteOption", { option: option.value })}
               />
             )}
             {option.editing && (
@@ -138,7 +140,7 @@ function RadioField<OptionValue extends string>({
                 }}
                 placeholder={`Option ${i + 1}`}
                 error={option.value === ""}
-                helperText={option.value.length === 0 ? "Option value cannot be empty" : null}
+                helperText={option.value.length === 0 ? t("inputs.optionField.emptyOption") : null}
                 slotProps={{
                   input: {
                     endAdornment: (
@@ -148,7 +150,7 @@ function RadioField<OptionValue extends string>({
                             if (value === option.value) handleRemoveOption();
                             onOptionRemove(i);
                           }}
-                          title="Delete New Option"
+                          title={t("inputs.optionField.deleteNewOption")}
                         />
                       </InputAdornment>
                     ),
