@@ -4,6 +4,7 @@ import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import { type ChangeEvent, useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import ConnectedAppsTableRow from "@/my-rspace/profile/ConnectedAppsTableRow";
 import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
@@ -11,14 +12,8 @@ import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getSorting, paginationOptions } from "@/util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
-const headCells = [
-  { id: "clientName", numeric: false, label: "App Name" },
-  { id: "clientId", numeric: false, label: "Client ID", disablePadding: true },
-  { id: "scope", numeric: false, label: "Scope" },
-  { id: "", numeric: true, label: "Actions", align: "right" },
-];
-
 export default function ConnectedAppsTable() {
+  const { t } = useTranslation("common");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [orderBy, setOrderBy] = useState<string>("clientName");
   const [page, setPage] = useState<number>(0);
@@ -27,6 +22,13 @@ export default function ConnectedAppsTable() {
 
   const [apps, setApps] = useState<ConnectedOAuthApp[]>([]);
   const [fetchSuccess, setFetchSuccess] = useState<boolean>(false);
+
+  const headCells = [
+    { id: "clientName", numeric: false, label: t("profile.oauth.table.appName") },
+    { id: "clientId", numeric: false, label: t("profile.oauth.table.clientId"), disablePadding: true },
+    { id: "scope", numeric: false, label: t("profile.oauth.table.scope") },
+    { id: "", numeric: true, label: t("profile.oauth.table.actions"), align: "right" },
+  ];
 
   const fetchApps = async () => {
     const urlConnected = "/userform/ajax/oAuthConnectedApps";
@@ -56,8 +58,8 @@ export default function ConnectedAppsTable() {
       await axios.delete(`/userform/ajax/oAuthConnectedApps/${id}`);
       addAlert(
         mkAlert({
-          title: "App disconnected",
-          message: `App with client ID ${id} was successfully disconnected.`,
+          title: t("profile.oauth.connectedApps.disconnectSuccessTitle"),
+          message: t("profile.oauth.connectedApps.disconnectSuccessMessage", { clientId: id }),
           variant: "success",
         }),
       );
@@ -65,8 +67,8 @@ export default function ConnectedAppsTable() {
     } catch {
       addAlert(
         mkAlert({
-          title: "Unable to disconnect app",
-          message: `There was a problem disconnecting app with client ID ${id}.  Please contact support if the problem persists.`,
+          title: t("profile.oauth.connectedApps.disconnectErrorTitle"),
+          message: t("profile.oauth.connectedApps.disconnectErrorMessage", { clientId: id }),
           variant: "error",
           isInfinite: true,
         }),
@@ -93,13 +95,13 @@ export default function ConnectedAppsTable() {
   return (
     <Box sx={{ width: "690px", padding: "0px 15px" }}>
       <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
-        <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>Connected Apps</Box>
+        <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>{t("profile.oauth.connectedApps.title")}</Box>
       </Box>
       <br />
       {fetchSuccess && (
         <>
           <TableContainer>
-            <Table size="small" aria-label="enhanced table">
+            <Table size="small" aria-label={t("profile.oauth.table.ariaLabel")}>
               <EnhancedTableHead
                 headCells={headCells}
                 order={order}
@@ -132,7 +134,7 @@ export default function ConnectedAppsTable() {
           />
         </>
       )}
-      {!fetchSuccess && <>There was a problem fetching your apps. Please, try again.</>}
+      {!fetchSuccess && <>{t("profile.oauth.fetchError")}</>}
     </Box>
   );
 }

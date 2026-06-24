@@ -4,6 +4,7 @@ import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import { type ChangeEvent, useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import OAuthTableRow from "@/my-rspace/profile/OAuthTableRow";
 import type { OAuthApp } from "@/my-rspace/profile/types";
@@ -12,13 +13,8 @@ import { getSorting, paginationOptions } from "@/util/table";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import OAuthDialog from "./OAuthDialog";
 
-const headCells = [
-  { id: "appName", numeric: false, label: "App Name" },
-  { id: "clientId", numeric: false, label: "Client ID", disablePadding: true },
-  { id: "", numeric: true, label: "Actions", align: "right" },
-];
-
 export default function OAuthTable() {
+  const { t } = useTranslation("common");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [orderBy, setOrderBy] = useState<string>("appName");
   const [page, setPage] = useState<number>(0);
@@ -27,6 +23,12 @@ export default function OAuthTable() {
 
   const [apps, setApps] = useState<OAuthApp[]>([]);
   const [fetchSuccess, setFetchSuccess] = useState(false);
+
+  const headCells = [
+    { id: "appName", numeric: false, label: t("profile.oauth.table.appName") },
+    { id: "clientId", numeric: false, label: t("profile.oauth.table.clientId"), disablePadding: true },
+    { id: "", numeric: true, label: t("profile.oauth.table.actions"), align: "right" },
+  ];
 
   const fetchApps = async () => {
     const urlAll = "/userform/ajax/oAuthApps";
@@ -54,8 +56,8 @@ export default function OAuthTable() {
       if (response.status === 200) {
         addAlert(
           mkAlert({
-            title: "App successfully deleted",
-            message: `App with client ID ${clientId} was successfully deleted.`,
+            title: t("profile.oauth.createdApps.deleteSuccessTitle"),
+            message: t("profile.oauth.createdApps.deleteSuccessMessage", { clientId }),
             duration: 3000,
             variant: "success",
           }),
@@ -64,8 +66,8 @@ export default function OAuthTable() {
       } else {
         addAlert(
           mkAlert({
-            title: "Unable to delete app",
-            message: `There was a problem deleting app with client ID ${clientId}.`,
+            title: t("profile.oauth.createdApps.deleteErrorTitle"),
+            message: t("profile.oauth.createdApps.deleteErrorMessage", { clientId }),
             duration: 5000,
             variant: "warning",
           }),
@@ -74,8 +76,11 @@ export default function OAuthTable() {
     } catch (e) {
       addAlert(
         mkAlert({
-          title: "Unable to delete app",
-          message: `There was a problem deleting app with client ID ${clientId}: ${e instanceof Error ? e.message : String(e)}.`,
+          title: t("profile.oauth.createdApps.deleteErrorTitle"),
+          message: t("profile.oauth.createdApps.deleteExceptionMessage", {
+            clientId,
+            error: e instanceof Error ? e.message : String(e),
+          }),
           isInfinite: true,
           variant: "error",
         }),
@@ -110,14 +115,14 @@ export default function OAuthTable() {
   return (
     <Box sx={{ width: "690px", padding: "0px 15px" }}>
       <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
-        <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>OAuth Apps</Box>
+        <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>{t("profile.oauth.createdApps.title")}</Box>
         <OAuthDialog addApp={(app: OAuthApp) => addApp(app)} />
       </Box>
       <br />
       {fetchSuccess && (
         <>
           <TableContainer>
-            <Table size="small" aria-label="enhanced table">
+            <Table size="small" aria-label={t("profile.oauth.table.ariaLabel")}>
               <EnhancedTableHead
                 headCells={headCells}
                 order={order}
@@ -146,7 +151,7 @@ export default function OAuthTable() {
           />
         </>
       )}
-      {!fetchSuccess && <>There was a problem fetching your apps. Please, try again.</>}
+      {!fetchSuccess && <>{t("profile.oauth.fetchError")}</>}
     </Box>
   );
 }

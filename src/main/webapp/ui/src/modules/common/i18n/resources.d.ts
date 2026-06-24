@@ -90,6 +90,35 @@ export default interface Resources {
         "quantityUnits": "Quantity units"
       }
     },
+    "profile": {
+      "oauth": {
+        "connectedApps": {
+          "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
+          "disconnectErrorTitle": "Unable to disconnect app",
+          "disconnectSuccessMessage": "App with client ID {clientId} was successfully disconnected.",
+          "disconnectSuccessTitle": "App disconnected",
+          "show": "Show Connected Apps",
+          "title": "Connected Apps"
+        },
+        "createdApps": {
+          "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
+          "deleteErrorTitle": "Unable to delete app",
+          "deleteExceptionMessage": "There was a problem deleting app with client ID {clientId}: {error}.",
+          "deleteSuccessMessage": "App with client ID {clientId} was successfully deleted.",
+          "deleteSuccessTitle": "App successfully deleted",
+          "show": "Show Created OAuth Apps",
+          "title": "OAuth Apps"
+        },
+        "fetchError": "There was a problem fetching your apps. Please, try again.",
+        "table": {
+          "actions": "Actions",
+          "appName": "App Name",
+          "ariaLabel": "enhanced table",
+          "clientId": "Client ID",
+          "scope": "Scope"
+        }
+      }
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
