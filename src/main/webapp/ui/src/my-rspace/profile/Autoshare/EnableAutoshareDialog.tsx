@@ -12,6 +12,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
@@ -30,6 +31,7 @@ function EnableAutoshareDialog({
   switchDisabledReason,
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -64,8 +66,8 @@ function EnableAutoshareDialog({
         }
         const async = response.data.data.async;
         const msg = async
-          ? `Autoshare for ${group.groupDisplayName} was enabled successfully. You will receive a notification once it is complete.`
-          : `Autoshare for ${group.groupDisplayName} was enabled successfully.`;
+          ? t("profile.groups.autosharing.enableAsyncSuccess", { group: group.groupDisplayName })
+          : t("profile.groups.autosharing.enableSuccess", { group: group.groupDisplayName });
 
         setDone(true);
         callback();
@@ -73,11 +75,7 @@ function EnableAutoshareDialog({
       })
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
-        RS.confirm(
-          error.response.data || "Something went wrong. Please, contact support if the issue persists.",
-          "warning",
-          "infinite",
-        );
+        RS.confirm(error.response.data || t("profile.groups.autosharing.genericError"), "warning", "infinite");
       })
       .then(() => {
         setWaiting(false);
@@ -93,7 +91,7 @@ function EnableAutoshareDialog({
     <>
       {!isSwitch && (
         <Button variant="outlined" size="small" onClick={handleClickOpen}>
-          Enable autosharing
+          {t("profile.groups.autosharing.enable")}
         </Button>
       )}
       {isSwitch && (
@@ -105,13 +103,13 @@ function EnableAutoshareDialog({
               checked={false}
               disabled={isSwitchDisabled}
               onChange={handleClickOpen}
-              slotProps={{ input: { "aria-label": "Enable autosharing" } }}
+              slotProps={{ input: { "aria-label": t("profile.groups.autosharing.enable") } }}
             />
           </div>
         </Tooltip>
       )}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle id="form-dialog-title">Enable autosharing</DialogTitle>
+        <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.enable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Autosharing work will ensure that all current and future documents and notebooks for user{" "}
@@ -127,7 +125,7 @@ function EnableAutoshareDialog({
           </DialogContentText>
           <TextField
             variant="standard"
-            label="Folder name"
+            label={t("profile.groups.autosharing.folderName")}
             placeholder={username}
             autoFocus={true}
             fullWidth
@@ -137,10 +135,10 @@ function EnableAutoshareDialog({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} sx={{ color: "grey" }}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button onClick={handleSubmit} color="primary" disabled={waiting || done}>
-            Confirm
+            {t("actions.confirm")}
             {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
           </Button>
         </DialogActions>

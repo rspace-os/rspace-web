@@ -115,8 +115,16 @@ export default interface Resources {
           "title": "User's group activity"
         },
         "autosharing": {
+          "disable": "Disable autosharing",
+          "disableStarted": "Reverting autoshare for {group} started successfully. You will receive a notification once it is complete.",
+          "disableSuccess": "Autoshare for {group} was disabled successfully.",
           "disabled": "Disabled",
+          "enable": "Enable autosharing",
+          "enableAsyncSuccess": "Autoshare for {group} was enabled successfully. You will receive a notification once it is complete.",
+          "enableSuccess": "Autoshare for {group} was enabled successfully.",
           "enabled": "Enabled",
+          "folderName": "Folder name",
+          "genericError": "Something went wrong. Please, contact support if the issue persists.",
           "inProgress": "Autosharing is in progress",
           "notApplicable": "n/a",
           "onlyLabGroups": "Autosharing is only possible for LabGroups"
@@ -174,6 +182,16 @@ export default interface Resources {
           "ariaLabel": "enhanced table",
           "clientId": "Client ID",
           "scope": "Scope"
+        }
+      },
+      "raidConnections": {
+        "adding": "Adding...",
+        "identifier": "RAiD Identifier",
+        "loadOptionsError": "Error loading RAiD identifier options: {error}",
+        "noOptions": "No valid available RAiD found, or the RAiD has been used by another project group.",
+        "validation": {
+          "identifierMinLength": "RAiD identifier must be at least 3 characters",
+          "identifierRequired": "RAiD identifier is required"
         }
       }
     },
