@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -166,7 +167,8 @@ public class ApiSubSampleTest extends SpringTransactionalTest {
     subSampleWithJustGlobalViewProperties.setPermittedActions(apiSubSample.getPermittedActions());
     subSampleWithJustGlobalViewProperties.setLinks(apiSubSample.getLinks());
     // also has a reference to public info of parent sample
-    Sample parentSample = sampleApiMgr.getSampleById(apiSubSample.getSampleInfo().getId(), user);
+    SampleEntity parentSample =
+        sampleApiMgr.getSampleById(apiSubSample.getSampleInfo().getId(), user);
     ApiSampleWithoutSubSamples apiParentSamplePublicView =
         new ApiSampleWithoutSubSamples(parentSample);
     apiParentSamplePublicView.clearPropertiesForPublicView();

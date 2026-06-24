@@ -108,7 +108,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     getTargetObject(fileIndexSearcher.getFileSearchStrategy(), LuceneSearchStrategy.class)
         .setIndexFolderDirectly(indexfolder.getRoot());
     perFactory = new DefaultPermissionFactory();
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
   /** Check if we can search documents created from templates by the template name */

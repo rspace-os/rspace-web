@@ -5,7 +5,7 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.HashSet;
@@ -56,8 +56,8 @@ public final class InventoryFieldNameUniquenessValidator {
    */
   public static void assertNoDuplicateFieldNames(InventoryRecord record) {
     Set<String> seen = new HashSet<>();
-    if (record instanceof Sample) {
-      for (InventoryEntityField field : ((Sample) record).getActiveFields()) {
+    if (record instanceof SampleEntity) {
+      for (InventoryEntityField field : ((SampleEntity) record).getActiveFields()) {
         rejectIfDuplicate(seen, field.getName());
       }
     } else if (record instanceof InstrumentEntity) {

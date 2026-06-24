@@ -839,6 +839,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     switch (parentEntity.getType()) {
       case SAMPLE:
         return sampleApiManager.assertUserCanReadSample(entityGlobalId.getDbId(), user);
+      case SAMPLE_TEMPLATE:
+        return sampleApiManager.assertUserCanReadSampleTemplate(entityGlobalId.getDbId(), user);
       case INSTRUMENT:
         return this.assertUserCanReadInstrument(entityGlobalId.getDbId(), user);
       case INSTRUMENT_TEMPLATE:
@@ -856,6 +858,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     switch (parentEntity.getType()) {
       case SAMPLE:
         return sampleApiManager.assertUserCanEditSample(entityGlobalId.getDbId(), user);
+      case SAMPLE_TEMPLATE:
+        return sampleApiManager.assertUserCanEditSampleTemplate(entityGlobalId.getDbId(), user);
       case INSTRUMENT:
         return this.assertUserCanEditInstrument(entityGlobalId.getDbId(), user);
       case INSTRUMENT_TEMPLATE:

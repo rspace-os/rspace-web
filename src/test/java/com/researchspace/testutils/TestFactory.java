@@ -48,6 +48,7 @@ import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraNumberField;
 import com.researchspace.model.inventory.field.ExtraTextField;
@@ -727,7 +728,8 @@ public class TestFactory {
 
   public static Sample createComplexSampleInContainer(User user) {
     Container cont = rf.createListContainer("test", user);
-    Sample sampleTemplate = rf.createComplexSampleTemplate("complex template", "for tests", user);
+    SampleTemplate sampleTemplate =
+        rf.createComplexSampleTemplate("complex template", "for tests", user);
     Sample sample = rf.createSample("test complex sample", user, sampleTemplate);
     sample.getSubSamples().get(0).moveToNewParent(cont);
     return sample;

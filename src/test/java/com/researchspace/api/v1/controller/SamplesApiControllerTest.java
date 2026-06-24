@@ -39,7 +39,7 @@ import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
@@ -77,7 +77,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   @Before
   public void setUp() {
     openMocks(this);
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
     ReflectionTestUtils.setField(sampleApiMgr, "documentTagManager", documentTagManagerMock);
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());
@@ -280,13 +280,13 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     extraApiNumberField.setType(ExtraFieldTypeEnum.NUMBER);
     newSample.setExtraFields(List.of(extraApiNumberField));
 
-    Sample sampleTemplate =
+    SampleTemplate sampleTemplate =
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
     // add default value to various fields
     sampleTemplate.getActiveFields().get(4).setData("text"); // text
     sampleTemplate.getActiveFields().get(8).setData("option1"); // radio
     sampleTemplate.getActiveFields().get(9).setSelectedOptions(List.of("optionA")); // choice
-    Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
     ApiSampleWithFullSubSamples createdSample =
@@ -344,9 +344,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples();
     newSample.setName("complex sample with field content");
 
-    Sample sampleTemplate =
+    SampleTemplate sampleTemplate =
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
-    Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
     List<ApiInventoryEntityField> fields = new ArrayList<>();
@@ -645,9 +645,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
             () -> samplesApi.createNewSample(newSample, mockBindingResult, testUser));
     assertEquals("Please use /sampleTemplates endpoint for template actions", iae.getMessage());
 
-    Sample sampleTemplate =
+    SampleTemplate sampleTemplate =
         recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
-    Sample savedTemplate = sampleDao.persistSampleTemplate(sampleTemplate);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
     newSample.setTemplateId(savedTemplate.getId());
 
     // try changing template name through samples controller
@@ -660,6 +660,71 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
                 samplesApi.updateSample(
                     savedTemplate.getId(), sampleUpdate, mockBindingResult, testUser));
     assertEquals("Please use /sampleTemplates endpoint for template actions", iae.getMessage());
+  }
+
+  @Test
+  public void sampleDeleteRestoreDuplicateRejectTemplateIds() {
+    SampleTemplate sampleTemplate =
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", testUser);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
+    Long templateId = savedTemplate.getId();
+
+    IllegalArgumentException deleteError =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> samplesApi.deleteSample(templateId, false, testUser));
+    assertEquals(
+        "Please use /sampleTemplates endpoint for template actions", deleteError.getMessage());
+
+    IllegalArgumentException restoreError =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> samplesApi.restoreDeletedSample(templateId, testUser));
+    assertEquals(
+        "Please use /sampleTemplates endpoint for template actions", restoreError.getMessage());
+
+    IllegalArgumentException duplicateError =
+        assertThrows(
+            IllegalArgumentException.class, () -> samplesApi.duplicate(templateId, testUser));
+    assertEquals(
+        "Please use /sampleTemplates endpoint for template actions", duplicateError.getMessage());
+  }
+
+  @Test
+  public void duplicateDoesNotLeakTemplateExistenceToUnauthorizedUser() {
+    // The template must be genuinely private. testUser (created first in setUp) owns the lowest-id
+    // sample templates and is therefore the default-templates-owner, whose templates are
+    // world-readable; own this one with a later-created user so it is not a "default" template.
+    User templateOwner = createInitAndLoginAnyUser();
+    SampleTemplate sampleTemplate =
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", templateOwner);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
+    User otherUser = createInitAndLoginAnyUser();
+
+    // the template-id guard must enforce permissions before revealing it is a template: a user
+    // without access gets the read-path not-found rather than the 400 endpoint-mismatch leak
+    assertThrows(
+        NotFoundException.class, () -> samplesApi.duplicate(savedTemplate.getId(), otherUser));
+  }
+
+  @Test
+  public void createSampleFromInaccessibleTemplateIsRejected() {
+    // owner must not be the default-templates-owner (testUser, created first in setUp), otherwise
+    // the template is a world-readable "default" template and is not actually inaccessible
+    User templateOwner = createInitAndLoginAnyUser();
+    SampleTemplate sampleTemplate =
+        recordFactory.createComplexSampleTemplate("API sample template", "API test", templateOwner);
+    SampleTemplate savedTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
+    User otherUser = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples newSample =
+        new ApiSampleWithFullSubSamples("from inaccessible template");
+    newSample.setTemplateId(savedTemplate.getId());
+
+    // a user without read access to the template must not be able to create a sample from it
+    // (would otherwise be a permission bypass and a template-existence oracle)
+    assertThrows(
+        NotFoundException.class,
+        () -> samplesApi.createNewSample(newSample, mockBindingResult, otherUser));
   }
 
   @Test

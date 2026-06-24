@@ -15,7 +15,7 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
@@ -89,16 +89,16 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
 
   @Override
   protected void addCustomSampleTemplates(User u) {
-    List<Sample> templates = new ArrayList<>();
+    List<SampleTemplate> templates = new ArrayList<>();
     createBuiltIns();
     log.info("No sample templates in system; adding builtin sample templates");
     for (SampleTemplateBuiltIn builtin : sampleBuiltins) {
-      Optional<Sample> sampleTemplateOpt = builtin.createSampleTemplate(u);
+      Optional<SampleTemplate> sampleTemplateOpt = builtin.createSampleTemplate(u);
       if (!sampleTemplateOpt.isPresent()) {
         log.warn("Couldn't create template with name : {}", builtin.getClass().getName());
         continue;
       }
-      Sample template = sampleTemplateOpt.get();
+      SampleTemplate template = sampleTemplateOpt.get();
 
       log.info("Created sample template {}", template.getName());
       try {

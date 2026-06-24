@@ -8,7 +8,7 @@ import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.RecordDao;
-import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.User;
@@ -66,7 +66,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     initializer.setContentInitialiserUtils(getBeanOfClass(IContentInitialiserUtils.class));
     initializer.setImporter(getBeanOfClass(ExportImport.class));
     initializer.setFolderManager(getBeanOfClass(FolderManager.class));
-    initializer.setSampleDao(getBeanOfClass(SampleDao.class));
+    initializer.setSampleTemplateDao(getBeanOfClass(SampleTemplateDao.class));
     initializer.setSampleApiMgr(getBeanOfClass(SampleApiManager.class));
     initializer.setContainerApiMgr(getBeanOfClass(ContainerApiManager.class));
     initializer.setImportRecordsOnly(

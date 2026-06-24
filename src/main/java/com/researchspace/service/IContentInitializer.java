@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
@@ -29,7 +29,7 @@ public interface IContentInitializer {
 
   void saveForm(RSForm form);
 
-  void saveSampleTemplate(Sample sampleTemplate);
+  void saveSampleTemplate(SampleTemplate sampleTemplate);
 
   /**
    * Optional configuration to disable the custom initialization of forms and records for testing.

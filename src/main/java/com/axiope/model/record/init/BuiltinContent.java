@@ -3,7 +3,7 @@ package com.axiope.model.record.init;
 import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.RSForm;
@@ -31,7 +31,7 @@ public abstract class BuiltinContent implements IBuiltinContent {
   RSForm m_form;
 
   /* the SampleTemplate associated with this content */
-  Sample m_sampleTemplate;
+  SampleTemplate m_sampleTemplate;
 
   Logger log = LoggerFactory.getLogger(BuiltinContent.class);
 

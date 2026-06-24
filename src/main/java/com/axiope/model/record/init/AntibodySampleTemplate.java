@@ -4,7 +4,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
@@ -32,15 +32,15 @@ public class AntibodySampleTemplate extends BuiltinContent implements SampleTemp
     return "Antibody";
   }
 
-  public Optional<Sample> createSampleTemplate(User createdBy) {
-    Sample sample = createTemplate(createdBy);
+  public Optional<SampleTemplate> createSampleTemplate(User createdBy) {
+    SampleTemplate sample = createTemplate(createdBy);
     m_initializer.saveSampleTemplate(sample);
     m_sampleTemplate = sample;
     return Optional.of(sample);
   }
 
-  private Sample createTemplate(User createdBy) {
-    Sample sample = recordFactory.createSample("Antibody", createdBy);
+  private SampleTemplate createTemplate(User createdBy) {
+    SampleTemplate sample = recordFactory.createSampleTemplate("Antibody", createdBy);
     sample.setStorageTempMax(QuantityInfo.of(5, RSUnitDef.CELSIUS));
     sample.setStorageTempMin(QuantityInfo.of(3, RSUnitDef.CELSIUS));
 
@@ -105,7 +105,6 @@ public class AntibodySampleTemplate extends BuiltinContent implements SampleTemp
     sample.addSampleField(ref);
 
     sample.setSubSampleAliases(SubSampleName.ALIQUOT);
-    sample.setTemplate(true);
     return sample;
   }
 

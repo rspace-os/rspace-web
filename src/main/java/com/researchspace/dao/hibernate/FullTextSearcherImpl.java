@@ -26,6 +26,7 @@ import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -322,7 +323,9 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     switch (searchType) {
       case SAMPLE:
       case SAMPLE_TEMPLATE:
-        resultClasses = new Class[] {Sample.class};
+        // Sample and SampleTemplate have separate Lucene indexes; targeting the abstract
+        // SampleEntity searches both, and search-type post-filtering picks the right kind
+        resultClasses = new Class[] {SampleEntity.class};
         break;
       case SUBSAMPLE:
         resultClasses = new Class[] {SubSample.class};
@@ -339,7 +342,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       case ALL:
         resultClasses =
             new Class[] {
-              Sample.class,
+              SampleEntity.class,
               SubSample.class,
               Container.class,
               Instrument.class,
@@ -435,6 +438,9 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   private boolean isMatchingSearchType(InventoryRecord foundRec, InventorySearchType searchType) {
+    // a template's type is SAMPLE_TEMPLATE, so the type-name arm no longer matches templates for
+    // SAMPLE searches (isMatchingTemplateOption used to drop them later; same outcome), and the
+    // explicit last arm matches them for TEMPLATE searches
     return searchType == null
         || searchType.equals(InventorySearchType.ALL)
         || searchType.toString().equals(foundRec.getType().toString())
@@ -467,6 +473,8 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
         return foundRecParent != null && foundRecParent.getOid().equals(parentOid);
       }
     } else if (GlobalIdPrefix.IT.equals(parentOid.getPrefix())) {
+      // only concrete samples have a parent template; a template hit fails the isSample() check,
+      // matching the old behavior where a template's parentTemplateId was always null
       return foundRec.isSample()
           && parentOid.getDbId().equals(((Sample) foundRec).getParentTemplateId());
     } else if (GlobalIdPrefix.SA.equals(parentOid.getPrefix())) {
@@ -485,7 +493,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   private boolean isMatchingTemplateOption(InventoryRecord record, InventorySearchType searchType) {
-    boolean isTemplate = record.isSample() && ((Sample) record).isTemplate();
+    boolean isTemplate = record.isSampleTemplate();
     if (isTemplate
         && !(searchType == InventorySearchType.ALL
             || searchType == InventorySearchType.SAMPLE_TEMPLATE)) {
@@ -501,8 +509,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     }
     boolean notOwnedByDefaultTemplateOwner =
         !defaultTemplatesOwner.equals(rec.getOwner().getUsername());
-    boolean isSampleTemplate = rec.isSample() && ((Sample) rec).isTemplate();
-    return notOwnedByDefaultTemplateOwner || isSampleTemplate;
+    return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate();
   }
 
   private boolean canCurrentUserReadInvRec(InventoryRecord rec, User authenticatedUser) {

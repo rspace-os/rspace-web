@@ -2,8 +2,8 @@ package com.axiope.model.record.init;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
@@ -30,15 +30,15 @@ public class FFPESampleTemplate extends BuiltinContent implements SampleTemplate
     return "FFPE ";
   }
 
-  public Optional<Sample> createSampleTemplate(User createdBy) {
-    Sample sample = createTemplate(createdBy);
+  public Optional<SampleTemplate> createSampleTemplate(User createdBy) {
+    SampleTemplate sample = createTemplate(createdBy);
     m_initializer.saveSampleTemplate(sample);
     m_sampleTemplate = sample;
     return Optional.of(sample);
   }
 
-  private Sample createTemplate(User createdBy) {
-    Sample sample = recordFactory.createSample("FFPE tissue", createdBy);
+  private SampleTemplate createTemplate(User createdBy) {
+    SampleTemplate sample = recordFactory.createSampleTemplate("FFPE tissue", createdBy);
     sample.setSampleSource(SampleSource.LAB_CREATED);
     sample.setSubSampleAliases(SubSampleName.PORTION);
     sample.setDefaultUnitId(RSUnitDef.DIMENSIONLESS.getId());
@@ -84,7 +84,6 @@ public class FFPESampleTemplate extends BuiltinContent implements SampleTemplate
 
     sample.setStorageTempMax(QuantityInfo.of(5, RSUnitDef.CELSIUS));
     sample.setStorageTempMin(QuantityInfo.of(3, RSUnitDef.CELSIUS));
-    sample.setTemplate(true);
     return sample;
   }
 
