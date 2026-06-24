@@ -78,6 +78,38 @@
       }
     },
     "format": {
+      "chooser": {
+        "additionalDestinations": "Choose additional destinations",
+        "exportToRepository": "Export to a repository",
+        "filestoresSection": "Filestores",
+        "formats": {
+          "docAvailable": "MS Word version of your RSpace documents will be placed in the 'Exports' area of the Gallery.",
+          "docHeading": ".DOC file",
+          "elnExplanation": "An XML bundle with an RO-Crate metadata file, zipped into a .eln archive.",
+          "elnHeading": "RO-Crate",
+          "htmlExplanation": "Exported data, notebooks and attached files can be accessed offline with a browser.",
+          "htmlHeading": ".ZIP bundle containing .HTML files",
+          "pdfAvailable": "A read-only version of your RSpace documents will be placed in the 'Exports' area of the Gallery",
+          "pdfHeading": "PDF file",
+          "pdfUnavailable": "All selected items are attachments — there are no RSpace documents to export.",
+          "xmlExplanation": "Exported data is machine readable. Good for archiving, or transferring data from one RSpace server or user to another.",
+          "xmlHeading": ".ZIP bundle containing .XML files"
+        },
+        "heading": "Choose an appropriate format for your export",
+        "includeAllVersions": "Check to include all previous versions of your documents, or leave unchecked for only current version",
+        "includeFilestoreLinks": "Include filestore links",
+        "loading": "Loading",
+        "noRepoSetup": "You have not setup a repository, to do so please activate them within Apps",
+        "repoFetchError": "Export to repository is not available because there was an error fetching repository configurations.",
+        "revisionsSection": "Revisions",
+        "selectAria": "Select Export",
+        "wordErrors": {
+          "allMedia": "All selected items are attachments — there are no RSpace documents to export.",
+          "folder": "Word export is only available for a single document, and you've selected a folder.",
+          "multiple": "Word export is only available for a single document, and you have selected more than one.",
+          "notebook": "Word export is only available for a single document or notebook entry, and you've selected a Notebook."
+        }
+      },
       "htmlXml": {
         "depthInfinity": "Include linked documents to depth infinity",
         "depthLevel": "Include linked documents to depth {level}",

@@ -144,10 +144,10 @@ describe("ExportDialog", () => {
         });
         await user.click(
           screen.getByRole("radio", {
-            name: /^.ZIP bundle containing .HTML files/,
+            name: /^export.format.chooser.formats.htmlHeading/,
           }),
         );
-        await user.click(screen.getByRole("checkbox", { name: "Include filestore links" }));
+        await user.click(screen.getByRole("checkbox", { name: "export.format.chooser.includeFilestoreLinks" }));
 
         await user.click(screen.getByRole("button", { name: "common:actions.next" }));
         await waitFor(() => {
@@ -161,11 +161,7 @@ describe("ExportDialog", () => {
 
         await user.click(screen.getByRole("button", { name: "common:actions.export" }));
         await waitFor(() => {
-          expect(
-            within(screen.getByRole("dialog")).getByText(
-              "You are not logged into all required File Systems and some filestore links won't be exported. Do you want to proceed without logging in?",
-            ),
-          ).toBeVisible();
+          expect(within(screen.getByRole("dialog")).getByText("export.fileStore.validation.loggedOut")).toBeVisible();
         });
       });
       test("but without scanning should show a warning.", async () => {
@@ -198,10 +194,10 @@ describe("ExportDialog", () => {
         });
         await user.click(
           screen.getByRole("radio", {
-            name: /^.ZIP bundle containing .HTML files/,
+            name: /^export.format.chooser.formats.htmlHeading/,
           }),
         );
-        await user.click(screen.getByRole("checkbox", { name: "Include filestore links" }));
+        await user.click(screen.getByRole("checkbox", { name: "export.format.chooser.includeFilestoreLinks" }));
 
         await user.click(screen.getByRole("button", { name: "common:actions.next" }));
         await waitFor(() => {
@@ -219,9 +215,7 @@ describe("ExportDialog", () => {
         await user.click(screen.getByRole("button", { name: "common:actions.export" }));
         await waitFor(() => {
           expect(
-            within(screen.getByRole("dialog")).getByText(
-              "You have not performed links availability scan. We strongly recommend running it, as it will report any potential problems with accessing filestore link. Do you want to proceed without running the scan?",
-            ),
+            within(screen.getByRole("dialog")).getByText("export.fileStore.validation.scanNotPerformed"),
           ).toBeVisible();
         });
       });
@@ -277,8 +271,8 @@ describe("ExportDialog", () => {
         });
       });
 
-      await user.click(await screen.findByRole("radio", { name: /PDF/ }));
-      await user.click(screen.getByRole("checkbox", { name: /Export to a repository/ }));
+      await user.click(await screen.findByRole("radio", { name: /export.format.chooser.formats.pdfHeading/ }));
+      await user.click(screen.getByRole("checkbox", { name: /export.format.chooser.exportToRepository/ }));
 
       await user.click(screen.getByRole("button", { name: /common:actions.next/ }));
       await screen.findByRole("textbox", { name: "export.format.pdf.nameLabel" });
@@ -315,13 +309,13 @@ describe("ExportDialog", () => {
           });
           await user.click(
             screen.getByRole("radio", {
-              name: /^.ZIP bundle containing .XML files/,
+              name: /^export.format.chooser.formats.xmlHeading/,
             }),
           );
           if (setAllVersionsSwitch) {
             await user.click(
               await screen.findByRole("checkbox", {
-                name: /^Check to include all previous versions of your documents/,
+                name: /^export.format.chooser.includeAllVersions/,
               }),
             );
           }
@@ -362,7 +356,7 @@ describe("ExportDialog", () => {
           },
         });
       });
-      fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
+      fireEvent.click(await screen.findByRole("radio", { name: /^export.format.chooser.formats.docHeading/ }));
       fireEvent.click(screen.getByRole("button", { name: "common:actions.next" }));
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
       fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -396,7 +390,7 @@ describe("ExportDialog", () => {
                 act(() => {
                   setProps({ open: true, selection });
                 });
-                fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
+                fireEvent.click(screen.getByRole("radio", { name: /^export.format.chooser.formats.pdfHeading/ }));
                 await user.click(screen.getByRole("button", { name: "common:actions.next" }));
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
@@ -415,7 +409,7 @@ describe("ExportDialog", () => {
               act(() => {
                 setProps({ open: true, selection });
               });
-              await user.click(screen.getByRole("radio", { name: /^PDF/ }));
+              await user.click(screen.getByRole("radio", { name: /^export.format.chooser.formats.pdfHeading/ }));
 
               await user.click(screen.getByRole("button", { name: "common:actions.next" }));
               await waitFor(() => {
@@ -434,7 +428,7 @@ describe("ExportDialog", () => {
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
+              fireEvent.click(screen.getByRole("radio", { name: /^export.format.chooser.formats.pdfHeading/ }));
 
               await user.click(screen.getByRole("button", { name: "common:actions.next" }));
               await waitFor(() => {
@@ -458,7 +452,9 @@ describe("ExportDialog", () => {
                 act(() => {
                   setProps({ open: true, selection });
                 });
-                fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
+                fireEvent.click(
+                  await screen.findByRole("radio", { name: /^export.format.chooser.formats.docHeading/ }),
+                );
                 await user.click(screen.getByRole("button", { name: "common:actions.next" }));
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
@@ -488,7 +484,7 @@ describe("ExportDialog", () => {
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
+              fireEvent.click(await screen.findByRole("radio", { name: /^export.format.chooser.formats.docHeading/ }));
               await user.click(screen.getByRole("button", { name: "common:actions.next" }));
               await waitFor(() => {
                 expect(screen.getByRole("combobox")).toHaveTextContent(new RegExp(pageSize, "i"));
@@ -512,7 +508,7 @@ describe("ExportDialog", () => {
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
+              fireEvent.click(await screen.findByRole("radio", { name: /^export.format.chooser.formats.docHeading/ }));
               await user.click(screen.getByRole("button", { name: "common:actions.next" }));
               await waitFor(() => {
                 expect(screen.getByRole("combobox")).toHaveTextContent(new RegExp(pageSize, "i"));

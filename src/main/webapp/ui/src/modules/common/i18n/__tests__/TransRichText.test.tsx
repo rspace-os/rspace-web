@@ -8,6 +8,8 @@ import materialTheme from "@/theme";
 vi.unmock("react-i18next");
 
 const { I18nextProvider, Trans, initReactI18next } = await import("react-i18next");
+const { default: TransRichTextComponent } = await import("@/modules/common/i18n/TransRichText");
+const TransRichText = TransRichTextComponent as React.ComponentType<{ i18nKey: string }>;
 const TestTrans = Trans as React.ComponentType<{
   i18nKey: string;
   components: {
@@ -27,6 +29,7 @@ async function createTestI18n(): Promise<I18nInstance> {
             'Read the <strong>important note</strong> and <docsLink href="/docs/from-translation">open the translated docs</docsLink>.',
           richTextComponentUrlProbe:
             "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
+          richTextDefaultMapProbe: 'Open the <a href="/docs">docs</a>.',
         },
       },
     },
@@ -85,5 +88,22 @@ describe("Trans rich text rendering", () => {
         (_content, element) => element?.textContent === "Read the important note and open the component docs.",
       ),
     ).toBeInTheDocument();
+  });
+});
+
+describe("TransRichText default vocabulary", () => {
+  it("renders the <link> tag via the default (MUI) map with no provider wiring", async () => {
+    const i18n = await createTestI18n();
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <I18nextProvider i18n={i18n}>
+          <p>
+            <TransRichText i18nKey="richTextDefaultMapProbe" />
+          </p>
+        </I18nextProvider>
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByRole("link", { name: "docs" })).toHaveAttribute("href", "/docs");
   });
 });
