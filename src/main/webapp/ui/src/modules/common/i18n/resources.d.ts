@@ -705,6 +705,7 @@ export default interface Resources {
     "print": {
       "dialog": {
         "loading": "Loading...",
+        "nothingToPreview": "Nothing to preview",
         "previewLabelLayout": "Preview Barcode Label Layout",
         "printError": "Print error.",
         "printSelected": "Print selected ({count})",
@@ -726,6 +727,7 @@ export default interface Resources {
         "igsnMissing": "Some of the selected records do not have an IGSN ID.",
         "labelPrinter": "Label Printer",
         "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
+        "labelPrinterCopies": "For label printers, the number of copies is set to 1 per item.",
         "labelPrinterHint": "Print one label per sticker (Zebra printer).",
         "large": "Large",
         "printCopies": "Print Copies",
