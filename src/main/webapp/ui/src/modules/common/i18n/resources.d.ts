@@ -142,6 +142,8 @@ export default interface Resources {
         "createOption": "Select {userInput}",
         "heading": "Select PI",
         "nominateHint": "Enter a single email address of a new or existing user to be asked to be group PI.",
+        "nominateOtherPi": "Nominate a PI, make me Lab Admin, and supply users for pending invitations.",
+        "piInvitationNote": "Note: group wont be created until PI accepts invitation",
         "roleAriaLabel": "Pi Role",
         "searchPlaceholder": "Start typing...",
         "selfPi": "Make me the group PI and invite users"
@@ -195,7 +197,10 @@ export default interface Resources {
       "groupOwners": "Group owners",
       "groupPis": "Group PIs",
       "noUsersFound": "No users found",
-      "search": "Search..."
+      "one": "one",
+      "pi": "PI",
+      "search": "Search...",
+      "selectOnlyPrefix": "Please, select only"
     }
   },
   "inventory": {

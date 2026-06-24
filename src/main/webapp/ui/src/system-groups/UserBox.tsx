@@ -13,7 +13,7 @@ import UserList from "./UserList";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function main(props: any) {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation(["groups", "common"]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [usersLeft, setUsersLeft] = React.useState<any[]>([]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -57,7 +57,7 @@ export default function main(props: any) {
     if (props.maxSelected && props.maxSelected < selected.length) {
       setSnackbarMessage(
         <span>
-          Please, select only <strong>one</strong> PI
+          {t("userBox.selectOnlyPrefix")} <strong>{t("userBox.one")}</strong> {t("userBox.pi")}
         </span>,
       );
       setSnackbar(true);
@@ -164,7 +164,12 @@ export default function main(props: any) {
         }}
         message={<span id="message-id">{snackbarMessage}</span>}
         action={[
-          <IconButton key="close" aria-label={t("actions.close")} color="inherit" onClick={() => setSnackbar(false)}>
+          <IconButton
+            key="close"
+            aria-label={t("common:actions.close")}
+            color="inherit"
+            onClick={() => setSnackbar(false)}
+          >
             <CloseIcon />
           </IconButton>,
         ]}

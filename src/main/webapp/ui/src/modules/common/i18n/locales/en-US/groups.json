@@ -17,6 +17,8 @@
       "createOption": "Select {userInput}",
       "heading": "Select PI",
       "nominateHint": "Enter a single email address of a new or existing user to be asked to be group PI.",
+      "nominateOtherPi": "Nominate a PI, make me Lab Admin, and supply users for pending invitations.",
+      "piInvitationNote": "Note: group wont be created until PI accepts invitation",
       "roleAriaLabel": "Pi Role",
       "searchPlaceholder": "Start typing...",
       "selfPi": "Make me the group PI and invite users"
@@ -70,6 +72,9 @@
     "groupOwners": "Group owners",
     "groupPis": "Group PIs",
     "noUsersFound": "No users found",
+    "one": "one",
+    "pi": "PI",
+    "selectOnlyPrefix": "Please, select only",
     "search": "Search..."
   }
 }

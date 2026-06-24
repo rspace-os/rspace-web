@@ -151,10 +151,10 @@ class createGroupStep2 extends React.Component<any, any> {
                 control={<Radio color="primary" />}
                 label={
                   <span>
-                    Nominate a PI, make me Lab Admin, and supply users for pending invitations.
+                    {i18n.t("groups:createGroup.step2.nominateOtherPi")}
                     <br />
                     <Typography variant="inherit" component="em" sx={{ fontSize: "11px" }}>
-                      Note: group wont be created until PI accepts invitation
+                      {i18n.t("groups:createGroup.step2.piInvitationNote")}
                     </Typography>
                   </span>
                 }
