@@ -1148,6 +1148,23 @@ export default interface Resources {
         "body": "Nothing here yet.",
         "title": "Empty {recordType}"
       },
+      "feedback": {
+        "ariaLabel": "Search status",
+        "containerContents": "{count} container contents found.",
+        "errorGlobalId": "ERROR",
+        "foundGlobalId": "Found {globalId}.",
+        "itemsInBasket": "{count} items found in {basketName}.",
+        "itemsOnBench": "{count} items found on this bench.",
+        "loading": "Loading...",
+        "results": "{count} search results found.",
+        "samples": "{count} samples found.",
+        "samplesOfTemplate": "{count} samples of the template found.",
+        "subsamples": "{count} subsamples found.",
+        "templates": "{count} templates found.",
+        "thisBasket": "this basket",
+        "topLevelContainers": "{count} top-level containers found.",
+        "undetermined": "Results cannot be fully determined."
+      },
       "helpTitle": "Info on searching Inventory.",
       "navigation": {
         "ariaLabel": "Search and Navigation"

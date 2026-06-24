@@ -3,6 +3,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { match } from "@/util/Util";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
@@ -10,6 +11,7 @@ import useStores from "../../../stores/use-stores";
 import SaveSearch from "./SaveSearch";
 
 function SearchFeedback(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
   const { search } = useContext(SearchContext);
   const { useLocation } = useContext(NavigateContext);
@@ -20,29 +22,40 @@ function SearchFeedback(): React.ReactNode {
   const searchParams = useSearchParams();
   const currentBasket = searchStore.savedBaskets.find((b) => b.globalId === searchParams.get("parentGlobalId"));
 
-  const resultsStatusText = (what: string) => `${search.count} ${what} found.`;
-
   const statusText = match<void, string>([
-    [() => search.loading, "Loading..."],
+    [() => search.loading, t("search.feedback.loading")],
     [() => Boolean(search.fetcher.error), search.fetcher.error],
-    [() => Boolean(search.fetcher.query), resultsStatusText("search results")],
-    [() => search.fetcher.resultType === "CONTAINER", resultsStatusText("top-level containers")],
-    [() => search.fetcher.resultType === "SAMPLE", resultsStatusText("samples")],
-    [() => search.fetcher.resultType === "SUBSAMPLE", resultsStatusText("subsamples")],
-    [() => search.fetcher.resultType === "TEMPLATE", resultsStatusText("templates")],
-    [() => search.fetcher.parentGlobalIdType === "SAMPLE", resultsStatusText("subsamples")],
-    [() => search.fetcher.parentGlobalIdType === "CONTAINER", resultsStatusText("container contents")],
-    [() => search.fetcher.parentGlobalIdType === "TEMPLATE", resultsStatusText("samples of the template")],
-    [() => search.fetcher.parentGlobalIdType === "BENCH", `${search.count} items found on this bench.`],
+    [() => Boolean(search.fetcher.query), t("search.feedback.results", { count: search.count })],
+    [() => search.fetcher.resultType === "CONTAINER", t("search.feedback.topLevelContainers", { count: search.count })],
+    [() => search.fetcher.resultType === "SAMPLE", t("search.feedback.samples", { count: search.count })],
+    [() => search.fetcher.resultType === "SUBSAMPLE", t("search.feedback.subsamples", { count: search.count })],
+    [() => search.fetcher.resultType === "TEMPLATE", t("search.feedback.templates", { count: search.count })],
+    [() => search.fetcher.parentGlobalIdType === "SAMPLE", t("search.feedback.subsamples", { count: search.count })],
+    [
+      () => search.fetcher.parentGlobalIdType === "CONTAINER",
+      t("search.feedback.containerContents", { count: search.count }),
+    ],
+    [
+      () => search.fetcher.parentGlobalIdType === "TEMPLATE",
+      t("search.feedback.samplesOfTemplate", { count: search.count }),
+    ],
+    [() => search.fetcher.parentGlobalIdType === "BENCH", t("search.feedback.itemsOnBench", { count: search.count })],
     [
       () => search.fetcher.parentGlobalIdType === "BASKET",
-      `${search.count} items found in ${currentBasket?.name || "this basket"}.`,
+      t("search.feedback.itemsInBasket", {
+        basketName: currentBasket?.name || t("search.feedback.thisBasket"),
+        count: search.count,
+      }),
     ],
     [
       () => Boolean(search.fetcher.permalink),
-      search.filteredResults.length > 0 ? `Found ${search.filteredResults[0].globalId ?? "ERROR"}.` : "",
+      search.filteredResults.length > 0
+        ? t("search.feedback.foundGlobalId", {
+            globalId: search.filteredResults[0].globalId ?? t("search.feedback.errorGlobalId"),
+          })
+        : "",
     ],
-    [() => true, "Results cannot be fully determined."],
+    [() => true, t("search.feedback.undetermined")],
   ]);
 
   return (
@@ -65,7 +78,7 @@ function SearchFeedback(): React.ReactNode {
       icon={false}
       severity={search.fetcher.error ? "warning" : "info"}
       action={<SaveSearch sx={{ p: 0 }} />}
-      aria-label="Search status"
+      aria-label={t("search.feedback.ariaLabel")}
       role="status"
     >
       {statusText()}
