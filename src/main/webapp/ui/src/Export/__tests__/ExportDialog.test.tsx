@@ -366,8 +366,8 @@ describe("ExportDialog", () => {
       fireEvent.click(screen.getByRole("button", { name: "Next" }));
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
       fireEvent.mouseDown(screen.getByRole("combobox"));
-      fireEvent.click(screen.getByRole("option", { name: "Letter" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Set LETTER as default." }));
+      fireEvent.click(screen.getByRole("option", { name: "export.format.word.pageSize.letter" }));
+      fireEvent.click(screen.getByRole("checkbox", { name: "export.format.word.setDefault" }));
 
       mockAxios.resetHistory();
       fireEvent.click(screen.getByRole("button", { name: "Export" }));

@@ -46,6 +46,17 @@
         "showLastButton": "Show last scan results",
         "skippedHeading": "Skipped files from {name}"
       }
+    },
+    "format": {
+      "word": {
+        "nameLabel": "Name your file",
+        "pageFormatLabel": "Page format: ",
+        "pageSize": {
+          "a4": "A4",
+          "letter": "Letter"
+        },
+        "setDefault": "Set {pageSize} as default."
+      }
     }
   }
 }
