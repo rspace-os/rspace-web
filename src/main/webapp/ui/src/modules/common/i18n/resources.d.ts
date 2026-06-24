@@ -90,6 +90,9 @@ export default interface Resources {
       "dateField": {
         "invalidDate": "Invalid date."
       },
+      "referenceField": {
+        "notYetSupported": "Not yet supported."
+      },
       "unitSelect": {
         "quantityUnits": "Quantity units"
       }
