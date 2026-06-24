@@ -7,6 +7,7 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import LoadingFade from "../components/LoadingFade";
 import type { FileSystemId } from "./common";
@@ -22,6 +23,7 @@ export default function FileStoreLogin({
   callBack,
   fileSystemId,
 }: FileStoreLoginArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const [userName, setUserName] = useState("");
   const [userNameError, setUserNameError] = useState(false);
 
@@ -76,42 +78,40 @@ export default function FileStoreLogin({
           <FormControl error aria-describedby="name-error-text">
             <TextField
               variant="standard"
-              label="Username"
+              label={t("export.fileStore.login.usernameLabel")}
               value={userName}
               onChange={({ target: { value } }) => setUserName(value)}
               autoComplete="nfsUsername"
               data-test-id="username"
             />
-            {userNameError && <FormHelperText id="name-error-text">Username cannot be blank</FormHelperText>}
+            {userNameError && (
+              <FormHelperText id="name-error-text">{t("export.fileStore.login.usernameBlank")}</FormHelperText>
+            )}
           </FormControl>
         </Grid>
         <Grid size={12}>
           <FormControl error aria-describedby="password-error-text">
             <TextField
               variant="standard"
-              label="Password"
+              label={t("export.fileStore.login.passwordLabel")}
               type="password"
               value={password}
               onChange={({ target: { value } }) => setPassword(value)}
               autoComplete="nfsPassword"
               data-test-id="password"
             />
-            {passwordError && <FormHelperText>Password cannot be blank</FormHelperText>}
-            {loginError && (
-              <FormHelperText>
-                Authentication problem, check your username and password or contact your System Admin
-              </FormHelperText>
-            )}
+            {passwordError && <FormHelperText>{t("export.fileStore.login.passwordBlank")}</FormHelperText>}
+            {loginError && <FormHelperText>{t("export.fileStore.login.authProblem")}</FormHelperText>}
             <br />
           </FormControl>
         </Grid>
         {!hideCancelButton && (
           <Button variant="contained" color="primary" disabled={loading} data-test-id="cancel-button">
-            Cancel
+            {t("common:actions.cancel")}
           </Button>
         )}
         <Button variant="contained" color="primary" disabled={loading} onClick={login} data-test-id="login-button">
-          Login
+          {t("export.fileStore.login.submitButton")}
         </Button>
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "right" }}
@@ -119,7 +119,7 @@ export default function FileStoreLogin({
           autoHideDuration={6000}
           onClose={() => setToast(false)}
         >
-          <SnackbarContent message={`Logged in as ${userName}`} />
+          <SnackbarContent message={t("export.fileStore.login.loggedInToast", { userName })} />
         </Snackbar>
       </Grid>
       <LoadingFade loading={loading} />

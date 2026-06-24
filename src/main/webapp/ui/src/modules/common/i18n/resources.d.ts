@@ -250,6 +250,7 @@ export default interface Resources {
         },
         "login": {
           "allLoggedIn": "You are logged into all File Systems referenced by filestore links.",
+          "authProblem": "Authentication problem, check your username and password or contact your System Admin",
           "checkButton": "Check File Systems login details",
           "columns": {
             "loggedInAs": "Logged in as",
@@ -257,9 +258,15 @@ export default interface Resources {
           },
           "dialogTitle": "File Systems login status",
           "heading": "File Systems that require login",
+          "loggedInToast": "Logged in as {userName}",
           "loginButton": "Login to remaining File Systems",
           "notAllLoggedIn": "You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems or some linked files may be omitted during the export.",
-          "notLoggedIn": "Not logged in"
+          "notLoggedIn": "Not logged in",
+          "passwordBlank": "Password cannot be blank",
+          "passwordLabel": "Password",
+          "submitButton": "Login",
+          "usernameBlank": "Username cannot be blank",
+          "usernameLabel": "Username"
         },
         "scan": {
           "columns": {

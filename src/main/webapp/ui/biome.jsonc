@@ -69,7 +69,8 @@
         "src/Export/repositories/ZenodoRepo.tsx",
         "src/Export/repositories/DryadRepo.tsx",
         "src/Export/repositories/FigshareRepo.tsx",
-        "src/Export/repositories/DataverseRepo.tsx"
+        "src/Export/repositories/DataverseRepo.tsx",
+        "src/Export/FileStoreLogin.tsx"
       ],
       "linter": {
         "rules": {
