@@ -10,6 +10,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import type { ImportRecordType } from "../../../stores/stores/ImportStore";
@@ -60,6 +61,7 @@ type MappingArgs = {
 };
 
 function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { importStore, unitStore } = useStores();
 
   const importData = importStore.importData;
@@ -87,33 +89,32 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
         !importData.createNewTemplate &&
         !matchExistingTemplate?.matches,
       severity: "error",
-      title:
-        "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
+      title: t("import.columnMapping.templateMismatch"),
       content: matchExistingTemplate?.matches ? "" : (matchExistingTemplate?.reason ?? ""),
     },
     {
       key: "name-required-info",
       show: hasRows && !importData.nameFieldIsSelected,
       severity: "info",
-      content: `You must select one column to convert to the Name of the ${label}.`,
+      content: t("import.columnMapping.nameRequiredInfo", { recordType: label }),
     },
     {
       key: "quantity-conversion",
       show: hasRows && importData.isSamplesImport && !importData.quantityFieldIsSelected,
       severity: "info",
-      content: `Quantity conversion is not set. All imported ${label} will have a total quantity of 1 ${unitLabel}.`,
+      content: t("import.columnMapping.quantityConversion", { recordType: label, unitLabel }),
     },
     {
       key: "unconverted",
       show: hasRows && importData.unconvertedFieldIsSelected,
       severity: "info",
-      content: "You have one or more columns selected without conversion. The columns' data will not be used.",
+      content: t("import.columnMapping.unconverted"),
     },
     {
       key: "subsample-parent-required",
       show: hasRows && importData.isSubSamplesImport && !importData.anyParentSamplesFieldIsSelected,
       severity: "info",
-      content: "You must select one column that refers to a Sample.",
+      content: t("import.columnMapping.parentSampleRequired"),
     },
     {
       key: "parent-sample-import-id",
@@ -145,7 +146,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       key: "no-csv",
       show: rowCount < 1,
       severity: "info",
-      content: "Column conversion is only available once a CSV file has been selected.",
+      content: t("import.columnMapping.noCsv"),
     },
     {
       key: "name-required-error",
@@ -154,7 +155,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
         !importData.nameFieldIsSelected &&
         importStore.isCurrentImportState("nameRequired"),
       severity: "error",
-      content: `It is required that a column be mapped to 'Name', as all ${label} must have a name.`,
+      content: t("import.columnMapping.nameRequiredError", { recordType: label }),
     },
   ];
 
@@ -175,8 +176,8 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
                     color="default"
                   />
                 </TableCell>
-                <SimpleBottomHeadCell>Found CSV Columns</SimpleBottomHeadCell>
-                <SimpleBottomHeadCell colSpan={3}>Convert To</SimpleBottomHeadCell>
+                <SimpleBottomHeadCell>{t("import.columnMapping.columns.foundCsvColumns")}</SimpleBottomHeadCell>
+                <SimpleBottomHeadCell colSpan={3}>{t("import.columnMapping.columns.convertTo")}</SimpleBottomHeadCell>
               </TableRow>
             </TableHead>
             <TableBody>

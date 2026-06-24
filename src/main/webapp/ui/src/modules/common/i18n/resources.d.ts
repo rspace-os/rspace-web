@@ -893,13 +893,38 @@ export default interface Resources {
       "actions": {
         "import": "Import"
       },
+      "columnMapping": {
+        "columns": {
+          "convertTo": "Convert To",
+          "foundCsvColumns": "Found CSV Columns"
+        },
+        "nameRequiredError": "It is required that a column be mapped to 'Name', as all {recordType} must have a name.",
+        "nameRequiredInfo": "You must select one column to convert to the Name of the {recordType}.",
+        "noCsv": "Column conversion is only available once a CSV file has been selected.",
+        "parentSampleRequired": "You must select one column that refers to a Sample.",
+        "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
+        "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
+        "unconverted": "You have one or more columns selected without conversion. The columns' data will not be used."
+      },
       "customDetails": "Custom details",
       "customFieldName": "Custom Field Name",
+      "file": {
+        "clearFileAndMappings": "Clear File and Mappings",
+        "errorDetails": "Error details:",
+        "replaceCsvFile": "Replace {recordType} CSV File",
+        "selectCsvFile": "Select {recordType} CSV File",
+        "title": "Upload CSV File"
+      },
       "helpTitle": "Info on importing.",
       "importDocumentation": "Import Documentation",
       "sections": {
         "columnConversion": "CSV Column Conversion Settings",
         "templateDetails": "Template Details"
+      },
+      "templateDetails": {
+        "chooseExistingTemplate": "Choose existing template.",
+        "createNewTemplate": "Create new template.",
+        "selectTemplate": "Select a template from which these imported samples will be created."
       },
       "title": "IMPORT",
       "types": {
