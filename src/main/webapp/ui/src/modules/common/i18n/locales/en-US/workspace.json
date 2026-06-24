@@ -51,6 +51,11 @@
         "usernameBlank": "Username cannot be blank",
         "usernameLabel": "Username"
       },
+      "noLinks": {
+        "checkSelection": "If that's unexpected, you should check your export selection.",
+        "heading": "No filestore links found in exported content.",
+        "proceed": "Otherwise you can proceed with the export."
+      },
       "scan": {
         "columns": {
           "path": "Full path on the File System",
@@ -65,6 +70,11 @@
         "scanButton": "Scan filestore links",
         "showLastButton": "Show last scan results",
         "skippedHeading": "Skipped files from {name}"
+      },
+      "validation": {
+        "loggedOut": "You are not logged into all required File Systems and some filestore links won't be exported. Do you want to proceed without logging in?",
+        "proceedButton": "Yes, proceed",
+        "scanNotPerformed": "You have not performed links availability scan. We strongly recommend running it, as it will report any potential problems with accessing filestore link. Do you want to proceed without running the scan?"
       }
     },
     "format": {

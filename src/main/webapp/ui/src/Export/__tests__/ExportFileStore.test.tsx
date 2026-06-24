@@ -41,7 +41,7 @@ describe("ExportFileStore", () => {
           />,
         ),
     );
-    expect(screen.getByText("No filestore links found in exported content.")).toBeVisible();
+    expect(screen.getByText("export.fileStore.noLinks.heading")).toBeVisible();
   });
   test("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();

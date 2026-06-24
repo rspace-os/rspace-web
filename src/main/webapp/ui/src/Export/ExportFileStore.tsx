@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import { observable, runInAction } from "mobx";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "../components/ConfirmProvider";
 import LoadingFade from "../components/LoadingFade";
@@ -85,6 +86,7 @@ export default function ExportFileStore({
   updateFilters,
   validator,
 }: ExportFileStoreArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   const [loadingQuickPlan, setLoadingQuickPlan]: UseState<boolean> = useState(false);
   const [loadingFullPlan, setLoadingFullPlan]: UseState<boolean> = useState(false);
 
@@ -122,8 +124,8 @@ export default function ExportFileStore({
         if (
           !(await confirm(
             "",
-            "You are not logged into all required File Systems and some filestore links won't be exported. Do you want to proceed without logging in?",
-            "Yes, proceed",
+            t("export.fileStore.validation.loggedOut"),
+            t("export.fileStore.validation.proceedButton"),
           ))
         )
           return false;
@@ -133,8 +135,8 @@ export default function ExportFileStore({
         if (
           !(await confirm(
             "",
-            "You have not performed links availability scan. We strongly recommend running it, as it will report any potential problems with accessing filestore link. Do you want to proceed without running the scan?",
-            "Yes, proceed",
+            t("export.fileStore.validation.scanNotPerformed"),
+            t("export.fileStore.validation.proceedButton"),
           ))
         )
           return false;
@@ -172,7 +174,7 @@ export default function ExportFileStore({
 
       return true;
     });
-  }, []);
+  }, [confirm, t, validationData, validator]);
 
   const fileStoreCheck = async () => {
     const url = "/nfsExport/ajax/createQuickExportPlan";
@@ -298,9 +300,9 @@ export default function ExportFileStore({
       {!loadingQuickPlan && totalFilesFound === 0 && (
         <Card sx={{ p: 1 }}>
           <div>
-            <h4>No filestore links found in exported content.</h4>
-            <h4>If that&apos;s unexpected, you should check your export selection.</h4>
-            <h4>Otherwise you can proceed with the export.</h4>
+            <h4>{t("export.fileStore.noLinks.heading")}</h4>
+            <h4>{t("export.fileStore.noLinks.checkSelection")}</h4>
+            <h4>{t("export.fileStore.noLinks.proceed")}</h4>
           </div>
         </Card>
       )}
