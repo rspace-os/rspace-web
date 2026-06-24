@@ -1,7 +1,9 @@
 import { isEqual, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
+import { Trans } from "react-i18next";
 import type { AxiosProgressEvent } from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import ApiService from "../../common/InvApiService";
 import { decodeTagString, encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -714,12 +716,13 @@ export default class InventoryBaseRecord
         getRootStore().uiStore.closeConfirmationDialog();
       }
       await getRootStore().uiStore.confirm(
-        "Your editing session has expired",
-        <>
-          Another user may be editing this {this.recordTypeLabel.toLowerCase()}. Please copy any information you need
-          and then press <strong>Cancel</strong>.
-        </>,
-        "OK",
+        i18n.t("inventory:baseRecord.editSessionExpired.title"),
+        <Trans
+          ns="inventory"
+          i18nKey="baseRecord.editSessionExpired.body"
+          values={{ recordType: this.recordTypeLabel.toLowerCase() }}
+        />,
+        i18n.t("common:actions.ok"),
         "",
       );
     }
@@ -1365,12 +1368,10 @@ export default class InventoryBaseRecord
     try {
       if (
         await getRootStore().uiStore.confirm(
-          "You are about to create an Identifier",
-          <>
-            An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.
-          </>,
-          "OK",
-          "CANCEL",
+          i18n.t("inventory:identifierConfirm.create.title"),
+          <Trans ns="inventory" i18nKey="identifierConfirm.create.body" />,
+          i18n.t("common:actions.ok"),
+          i18n.t("inventory:identifierConfirm.cancelButton"),
         )
       ) {
         const globalId = this.globalId;

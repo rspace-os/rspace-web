@@ -727,6 +727,12 @@ export default interface Resources {
       "empty": "The document has no connected Inventory items.",
       "loading": "Loading"
     },
+    "baseRecord": {
+      "editSessionExpired": {
+        "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
+        "title": "Your editing session has expired"
+      }
+    },
     "container": {
       "content": {
         "placeMarkers": {
@@ -1107,6 +1113,21 @@ export default interface Resources {
       "sampleFields": "Sample Fields",
       "samples": "Samples",
       "samplesBeingEdited": "Samples being edited"
+    },
+    "identifierConfirm": {
+      "cancelButton": "CANCEL",
+      "create": {
+        "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
+        "title": "You are about to create an Identifier"
+      },
+      "publish": {
+        "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
+        "title": "You are about to publish this Identifier"
+      },
+      "retract": {
+        "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the Public API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
+        "title": "You are about to retract this Identifier"
+      }
     },
     "igsnManagement": {
       "actions": {
@@ -1566,6 +1587,12 @@ export default interface Resources {
       "summary": {
         "loading": "Loading",
         "noTemplate": "No Template"
+      },
+      "updateSamplesConfirm": {
+        "body": "All of your samples created from this template will be updated to pick up the structural changes that have been made to the template since the sample was created or last updated, such as the addition, deletion and reordering of fields, and the change to available options in choice and radio fields. <strong>This action cannot be undone.</strong>",
+        "confirmButton": "Update all",
+        "helpTitle": "Info on updating samples to latest template version.",
+        "title": "Update all samples to latest template version?"
       }
     },
     "tinyMceIdentifiers": {

@@ -16,6 +16,8 @@
  */
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
+import { Trans } from "react-i18next";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import type InvApiService from "../../common/InvApiService";
 import type { RadioOption } from "../../components/Inputs/RadioField";
@@ -415,21 +417,10 @@ export default class IdentifierModel implements Identifier {
     try {
       if (
         await confirm(
-          "You are about to publish this Identifier",
-          <>
-            The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.
-            <br />
-            <br />
-            <strong>
-              Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make
-              public before publishing, as this action cannot be fully undone.
-            </strong>
-            <br />
-            <br />
-            Do you want to proceed?
-          </>,
-          "OK",
-          "CANCEL",
+          i18n.t("inventory:identifierConfirm.publish.title"),
+          <Trans ns="inventory" i18nKey="identifierConfirm.publish.body" />,
+          i18n.t("common:actions.ok"),
+          i18n.t("inventory:identifierConfirm.cancelButton"),
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
@@ -489,19 +480,10 @@ export default class IdentifierModel implements Identifier {
     try {
       if (
         await confirm(
-          "You are about to retract this Identifier",
-          <>
-            The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the
-            Public API, and the landing page will not display any metadata.
-            <br />
-            <br />
-            <strong>The metadata will remain visible to other DataCite Members via the Member API.</strong>
-            <br />
-            <br />
-            Do you want to proceed?
-          </>,
-          "OK",
-          "CANCEL",
+          i18n.t("inventory:identifierConfirm.retract.title"),
+          <Trans ns="inventory" i18nKey="identifierConfirm.retract.body" />,
+          i18n.t("common:actions.ok"),
+          i18n.t("inventory:identifierConfirm.cancelButton"),
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
