@@ -7,7 +7,7 @@ function InstrumentHeader(): React.ReactNode {
       version="1.1"
       x="0px"
       y="0px"
-      style={{ height: 67, opacity: 0.7, position: "absolute", bottom: -8, width: 67, right: 113 }}
+      style={{ height: 67, opacity: 0.7, position: "absolute", bottom: -8, width: 67 }}
       width="200px"
       height="200px"
       viewBox="0 0 200 200"

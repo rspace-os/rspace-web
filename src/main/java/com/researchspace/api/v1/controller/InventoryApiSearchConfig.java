@@ -32,7 +32,7 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   private String query;
 
   @Pattern(
-      regexp = "SAMPLE|SUBSAMPLE|CONTAINER|TEMPLATE|INSTRUMENT|INSTRUMENT_TEMPLATE",
+      regexp = "SAMPLE|SUBSAMPLE|CONTAINER|SAMPLE_TEMPLATE|INSTRUMENT|INSTRUMENT_TEMPLATE",
       message = "{errors.inventory.search.resultType.invalid}")
   private String resultType;
 

@@ -131,12 +131,12 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemText primary="Instruments" />
         </MenuItem>
         <MenuItem
-          selected={current === "TEMPLATE"}
-          aria-current={current === "TEMPLATE"}
+          selected={current === "SAMPLE_TEMPLATE"}
+          aria-current={current === "SAMPLE_TEMPLATE"}
           onClick={() => {
-            onClose("TEMPLATE");
+            onClose("SAMPLE_TEMPLATE");
           }}
-          disabled={!search.allowedTypeFilters.has("TEMPLATE")}
+          disabled={!search.allowedTypeFilters.has("SAMPLE_TEMPLATE")}
           data-test-id="templateType"
         >
           <ListItemIcon>
@@ -155,7 +155,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemText
             primary="Sample Templates"
             secondary={match<void, string>([
-              [() => search.benchSearch, "Templates cannot be found on benches."],
+              [() => search.benchSearch, "Sample Templates cannot be found on benches."],
               [() => search.fetcher.parentIsContainer, "Templates cannot be found in containers."],
               [() => true, ""],
             ])()}
@@ -183,7 +183,14 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
               }}
             />
           </ListItemIcon>
-          <ListItemText primary="Instrument Templates" />
+          <ListItemText
+            primary="Instrument Templates"
+            secondary={match<void, string>([
+              [() => search.benchSearch, "Instrument Templates cannot be found on benches."],
+              [() => search.fetcher.parentIsContainer, "Instrument Templates cannot be found in containers."],
+              [() => true, ""],
+            ])()}
+          />
         </MenuItem>
       </StyledMenu>
     </div>

@@ -3529,7 +3529,9 @@ components:
           - SAMPLE
           - SUBSAMPLE
           - CONTAINER
-          - TEMPLATE
+          - SAMPLE_TEMPLATE
+          - INSTRUMENT
+          - INSTRUMENT_TEMPLATE
     deletedItemsParam:
       name: deletedItems
       in: query
@@ -3552,9 +3554,10 @@ components:
       name: parentGlobalId
       in: query
       description: Must be a global id of a Container (IC), Workbench (BE), Sample
-        (SA), or Sample Template (IT). Limits the results to items being stored
-        inside a container (or workbench), to subsamples of a given sample, or
-        to samples created from given template.
+        (SA), or Sample Template (IT), or Instrument Template (NT). Limits the results
+        to items being stored inside a container (or workbench), to subsamples of a 
+        given sample, to samples created from a given template, or to instruments 
+        created from a given template.
       schema:
         type: string
     docIdParam:

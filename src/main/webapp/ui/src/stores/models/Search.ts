@@ -89,7 +89,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
     "SAMPLE",
     "SUBSAMPLE",
     "INSTRUMENT",
-    "TEMPLATE",
+    "SAMPLE_TEMPLATE",
     "INSTRUMENT_TEMPLATE",
   ]),
   mainColumn: "Name",
@@ -491,7 +491,15 @@ export default class Search implements SearchInterface {
         "sending to trash",
         (erroredRecords) => this.deleteRecords(erroredRecords),
       );
-      if (successfullyDeleted.length > 0) handleDetailedSuccesses(successfullyDeleted, "trashed");
+      if (successfullyDeleted.length > 0) {
+        handleDetailedSuccesses(successfullyDeleted, "trashed");
+        for (const record of successfullyDeleted) {
+          if (record.recordType === "instrument" || record.recordType === "instrumentTemplate") {
+            const type = record.recordType === "instrument" ? "instrument" : "instrument_template";
+            getRootStore().trackingStore.trackEvent(`user:delete:${type}:inventory`);
+          }
+        }
+      }
       this.offerToDeleteNowEmptySamples(successfullyDeleted);
 
       await this.updateStateAfterDelete(new RsSet(successfullyDeleted));
@@ -965,7 +973,7 @@ export default class Search implements SearchInterface {
     instrument: Instrument,
     includeContentForFields: Set<Id>,
   ): Promise<void> {
-    const { uiStore } = getRootStore();
+    const { uiStore, trackingStore } = getRootStore();
     try {
       const args = {
         name,
@@ -992,6 +1000,7 @@ export default class Search implements SearchInterface {
           ],
         }),
       );
+      trackingStore.trackEvent("user:create:instrument_template:inventory");
       void this.fetcher.performInitialSearch(null);
     } catch (error) {
       uiStore.addAlert(
@@ -1387,18 +1396,19 @@ export default class Search implements SearchInterface {
     if (!this.uiConfig.allowedTypeFilters) return new Set([]);
     const allowedTypeFilters = new Set([...this.uiConfig.allowedTypeFilters]);
     if (this.benchSearch || this.fetcher.parentIsContainer) {
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
       allowedTypeFilters.delete("SAMPLE");
     }
     if (this.fetcher.parentIsSample) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SAMPLE");
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
     }
     if (this.fetcher.parentIsTemplate) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SUBSAMPLE");
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
     }
     if (!this.fetcher.allTypesAllowed) {
       allowedTypeFilters.delete("ALL");

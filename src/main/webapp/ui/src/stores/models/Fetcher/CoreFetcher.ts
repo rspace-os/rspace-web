@@ -270,7 +270,7 @@ export default class CoreFetcher {
       if (!this.query && this.resultType === "CONTAINER") {
         this.endpoint = "containers";
       }
-      if (!this.query && this.resultType === "TEMPLATE") {
+      if (!this.query && this.resultType === "SAMPLE_TEMPLATE") {
         this.endpoint = "sampleTemplates";
       }
       if (!this.query && this.resultType === "INSTRUMENT") {

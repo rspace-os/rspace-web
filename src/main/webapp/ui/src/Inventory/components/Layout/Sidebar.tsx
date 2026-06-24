@@ -286,7 +286,7 @@ const TemplateNavItem = observer(
             Templates
           </>
         }
-        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("TEMPLATE")}
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE_TEMPLATE")}
         icon={
           <RecordTypeIcon
             record={{
@@ -303,7 +303,7 @@ const TemplateNavItem = observer(
         drawerOpen={uiStore.sidebarOpen}
         onClick={() => {
           navigateToSearch({
-            resultType: "TEMPLATE",
+            resultType: "SAMPLE_TEMPLATE",
           });
         }}
       />

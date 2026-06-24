@@ -19,14 +19,14 @@ function TemplatePicker({ setTemplate, disabled, sample }: TemplatePickerArgs): 
     new Search({
       factory: new AlwaysNewFactory(),
       fetcherParams: {
-        resultType: "TEMPLATE",
+        resultType: "SAMPLE_TEMPLATE",
         pageSize: 5,
         orderBy: "name",
         order: "asc",
       },
       uiConfig: {
         allowedSearchModules: new Set(["TYPE", "OWNER", "SAVEDSEARCHES", "TAG"]),
-        allowedTypeFilters: new Set(["TEMPLATE"]),
+        allowedTypeFilters: new Set(["SAMPLE_TEMPLATE"]),
         selectionMode: "SINGLE",
       },
     }),

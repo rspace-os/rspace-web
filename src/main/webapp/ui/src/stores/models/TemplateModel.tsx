@@ -465,7 +465,7 @@ export default class TemplateModel extends SampleModel implements Template {
 
   get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs {
     return {
-      resultType: "TEMPLATE",
+      resultType: "SAMPLE_TEMPLATE",
     };
   }
 

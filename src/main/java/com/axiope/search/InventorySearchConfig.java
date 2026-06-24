@@ -20,7 +20,7 @@ public class InventorySearchConfig extends SearchConfig {
     SAMPLE,
     SUBSAMPLE,
     CONTAINER,
-    TEMPLATE, // Sample Template (not renamed due to compatibility)
+    SAMPLE_TEMPLATE,
     INSTRUMENT,
     INSTRUMENT_TEMPLATE
   }

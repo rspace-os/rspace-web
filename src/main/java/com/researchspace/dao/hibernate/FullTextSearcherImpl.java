@@ -321,7 +321,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     InventorySearchType searchType = srchConfig.getSearchType();
     switch (searchType) {
       case SAMPLE:
-      case TEMPLATE:
+      case SAMPLE_TEMPLATE:
         resultClasses = new Class[] {Sample.class};
         break;
       case SUBSAMPLE:
@@ -438,7 +438,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     return searchType == null
         || searchType.equals(InventorySearchType.ALL)
         || searchType.toString().equals(foundRec.getType().toString())
-        || (searchType.equals(InventorySearchType.TEMPLATE)
+        || (searchType.equals(InventorySearchType.SAMPLE_TEMPLATE)
             && foundRec.isSample()
             && ((Sample) foundRec).isTemplate());
   }
@@ -487,10 +487,11 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   private boolean isMatchingTemplateOption(InventoryRecord record, InventorySearchType searchType) {
     boolean isTemplate = record.isSample() && ((Sample) record).isTemplate();
     if (isTemplate
-        && !(searchType == InventorySearchType.ALL || searchType == InventorySearchType.TEMPLATE)) {
+        && !(searchType == InventorySearchType.ALL
+            || searchType == InventorySearchType.SAMPLE_TEMPLATE)) {
       return false;
     }
-    return isTemplate || searchType != InventorySearchType.TEMPLATE;
+    return isTemplate || searchType != InventorySearchType.SAMPLE_TEMPLATE;
   }
 
   private boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(

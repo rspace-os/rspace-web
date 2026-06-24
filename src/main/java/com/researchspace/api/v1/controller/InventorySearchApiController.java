@@ -13,7 +13,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import java.util.List;
@@ -77,20 +76,6 @@ public class InventorySearchApiController extends BaseApiInventoryController
       apiSearchResult =
           runSearchByParentOidWithNoSearchTerm(
               user, srchConfig.getOwnedBy(), apiPgCrit, searchType, deletedItemsOption, parentOid);
-    } else if (InventorySearchType.INSTRUMENT.equals(searchType)) {
-      /* instruments are not Lucene-indexed; bypass the full-text search path */
-      PaginationCriteria<Instrument> instrumentPgCrit =
-          getPaginationCriteriaForApiSearch(apiPgCrit, Instrument.class);
-      apiSearchResult =
-          instrumentApiMgr.searchInstrumentsForUser(
-              instrumentPgCrit, srchConfig.getOwnedBy(), deletedItemsOption, searchQuery, user);
-    } else if (InventorySearchType.INSTRUMENT_TEMPLATE.equals(searchType)) {
-      /* instrument templates are not Lucene-indexed; bypass the full-text search path */
-      PaginationCriteria<InstrumentTemplate> templatePgCrit =
-          getPaginationCriteriaForApiSearch(apiPgCrit, InstrumentTemplate.class);
-      apiSearchResult =
-          instrumentApiMgr.searchInstrumentTemplatesForUser(
-              templatePgCrit, srchConfig.getOwnedBy(), deletedItemsOption, searchQuery, user);
     } else {
       PaginationCriteria<InventoryRecord> pgCrit =
           getPaginationCriteriaForApiSearch(apiPgCrit, InventoryRecord.class);
@@ -122,7 +107,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
       if ((GlobalIdPrefix.IC.equals(parentOid.getPrefix())
               || GlobalIdPrefix.BE.equals(parentOid.getPrefix()))
           && (searchType.equals(InventorySearchType.SAMPLE)
-              || searchType.equals(InventorySearchType.TEMPLATE))) {
+              || searchType.equals(InventorySearchType.SAMPLE_TEMPLATE))) {
         /* subsamples and subcontainers are only children of the container, we can reject at this point */
         return false;
       }

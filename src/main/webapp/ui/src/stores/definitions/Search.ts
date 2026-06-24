@@ -39,7 +39,7 @@ export type ResultType =
   | "CONTAINER"
   | "SAMPLE"
   | "SUBSAMPLE"
-  | "TEMPLATE"
+  | "SAMPLE_TEMPLATE"
   | "INSTRUMENT"
   | "INSTRUMENT_TEMPLATE";
 
@@ -49,7 +49,7 @@ export function parseResultType(str: string): Result<ResultType> {
     parseString("CONTAINER", str),
     parseString("SAMPLE", str),
     parseString("SUBSAMPLE", str),
-    parseString("TEMPLATE", str),
+    parseString("SAMPLE_TEMPLATE", str),
     parseString("INSTRUMENT", str),
     parseString("INSTRUMENT_TEMPLATE", str),
   );
@@ -59,7 +59,7 @@ export type ParentGlobalIdType = "SAMPLE" | "SUBSAMPLE" | "CONTAINER" | "TEMPLAT
 
 /*
  * Except for container's contentSearch in  'public view case', must include
- * at least one of "SAMPLE", "SUBSAMPLE", "CONTAINER", "TEMPLATE".
+ * at least one of "SAMPLE", "SUBSAMPLE", "CONTAINER", "SAMPLE_TEMPLATE".
  * "ALL" can optionally be included if more than one of the above are added.
  *
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
