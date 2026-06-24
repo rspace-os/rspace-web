@@ -13,6 +13,8 @@ describe("Organization", () => {
         <Organization container={makeMockContainer({ id: null })} />
       </ThemeProvider>,
     );
-    expect(screen.getByRole("group", { name: "Type" })).toHaveTextContent("well plate");
+    expect(screen.getByRole("group", { name: "container.fields.organization.type" })).toHaveTextContent(
+      "container.fields.organization.options.grid.explanation",
+    );
   });
 });

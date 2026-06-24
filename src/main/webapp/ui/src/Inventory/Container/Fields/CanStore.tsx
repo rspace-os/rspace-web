@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import ChoiceField, { type ChoiceOption } from "../../../components/Inputs/ChoiceField";
 import { mapPermissioned, orElseIfNoAccess } from "../../../stores/definitions/PermissionedData";
 import type ContainerModel from "../../../stores/models/ContainerModel";
@@ -11,6 +12,7 @@ type CanStoreArgs = {
 };
 
 function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const handleChange = ({
     target: { value },
   }: {
@@ -32,7 +34,7 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
   const options: Array<ChoiceOption<"sample" | "container">> = [
     {
       value: "sample",
-      label: "Subsamples",
+      label: t("container.fields.canStore.subsamples"),
       disabled: orElseIfNoAccess(
         mapPermissioned(container.contentSummary, ({ subSampleCount }) => subSampleCount > 0),
         true,
@@ -41,7 +43,7 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
     },
     {
       value: "container",
-      label: "Containers",
+      label: t("container.fields.canStore.containers"),
       disabled: orElseIfNoAccess(
         mapPermissioned(container.contentSummary, ({ containerCount }) => containerCount > 0),
         true,
@@ -56,12 +58,12 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
   ];
 
   const valid = value.length > 0;
-  const errorMessage = valid ? null : "Select at least one.";
+  const errorMessage = valid ? null : t("container.fields.canStore.selectAtLeastOne");
 
   const editable = container.isFieldEditable("canStore");
   return (
     <FormField
-      label="Can Store"
+      label={t("container.fields.canStore.label")}
       helperText={errorMessage}
       error={!valid}
       disabled={!editable}

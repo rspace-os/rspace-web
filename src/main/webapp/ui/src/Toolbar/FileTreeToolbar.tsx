@@ -3,8 +3,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot } from "react-dom/client";
 import BaseToolbar from "../components/BaseToolbar";
-import i18n from "../modules/common/i18n";
 import TreeSort from "../components/TreeSort";
+import i18n from "../modules/common/i18n";
 import materialTheme from "../theme";
 
 /**

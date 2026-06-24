@@ -4,6 +4,61 @@
     "empty": "The document has no connected Inventory items.",
     "loading": "Loading"
   },
+  "container": {
+    "fields": {
+      "canStore": {
+        "containers": "Containers",
+        "label": "Can Store",
+        "selectAtLeastOne": "Select at least one.",
+        "subsamples": "Subsamples"
+      },
+      "gridDimensions": {
+        "chooseCommonSize": "Choose a common size",
+        "columns": "Columns",
+        "commonSizes": {
+          "custom": "Custom",
+          "freezerBox64": "64 place freezer box",
+          "freezerBox81": "81 place freezer box",
+          "freezerBox100": "100 place freezer box",
+          "freezerBox169": "169 place freezer box",
+          "freezerBox196": "196 place freezer box",
+          "wellPlate6": "6 well plate",
+          "wellPlate12": "12 well plate",
+          "wellPlate24": "24 well plate",
+          "wellPlate96": "96 well plate"
+        },
+        "error": "Must be at least {min}, and not more than {max}.",
+        "label": "Grid Dimensions",
+        "rows": "Rows",
+        "specifyDimensions": "Or specify the dimensions"
+      },
+      "gridLabels": {
+        "expandAria": "Expand grid dimension controls group",
+        "title": "Configure Grid Labels"
+      },
+      "gridLayout": {
+        "columnLabels": "Column Labels",
+        "rowLabels": "Row Labels"
+      },
+      "organization": {
+        "options": {
+          "grid": {
+            "explanation": "Two-dimensional container with rows and columns e.g. a well plate.",
+            "label": "Grid"
+          },
+          "list": {
+            "explanation": "Generic container for storing unordered content.",
+            "label": "List"
+          },
+          "visual": {
+            "explanation": "Container showing exact locations on an image background.",
+            "label": "Visual"
+          }
+        },
+        "type": "Type"
+      }
+    }
+  },
   "permalinkNotFound": {
     "latestLink": "View the latest version",
     "typeLabels": {

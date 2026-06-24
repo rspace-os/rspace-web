@@ -8,9 +8,9 @@
  * ================
  */
 
+import i18n from "@/modules/common/i18n";
 import type { Tag } from "../../stores/definitions/Tag";
 import { lift2 } from "../../util/optional";
-import i18n from "@/modules/common/i18n";
 
 /**
  * The max length of an individual tag. Chosen rather arbitrarily based on the
