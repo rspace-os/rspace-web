@@ -654,6 +654,22 @@ export default interface Resources {
           "nameTooLong": "Name must be no longer than 255 characters."
         }
       },
+      "link": {
+        "editor": {
+          "browseEln": "Browse ELN",
+          "browseInventory": "Browse Inventory",
+          "latest": "Latest",
+          "pinVersion": "Pin version",
+          "pinVersionFor": "Pin version for {globalId}",
+          "pinnedVersion": "Pinned to v{version}",
+          "targetGlobalId": "Target Global ID"
+        },
+        "relatedInventoryItems": {
+          "loading": "Loading...",
+          "none": "No Inventory items link to this {recordTypeName}.",
+          "title": "Related inventory items"
+        }
+      },
       "location": {
         "label": "Location"
       },

@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import ElnRecordPicker from "./ElnRecordPicker";
 import { iconForGlobalId } from "./iconForGlobalId";
@@ -79,6 +80,7 @@ export default function LinkEditor({
   onVersionPinChange,
   canPinVersion,
 }: LinkEditorProps): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnOpen, setElnOpen] = useState(false);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
@@ -137,15 +139,25 @@ export default function LinkEditor({
               );
             })()
           : null}
-        <Button size="small" variant="outlined" aria-label="Browse Inventory" onClick={() => setBrowserOpen(true)}>
-          Browse Inventory
+        <Button
+          size="small"
+          variant="outlined"
+          aria-label={t("fields.link.editor.browseInventory")}
+          onClick={() => setBrowserOpen(true)}
+        >
+          {t("fields.link.editor.browseInventory")}
         </Button>
-        <Button size="small" variant="outlined" aria-label="Browse ELN" onClick={() => setElnOpen(true)}>
-          Browse ELN
+        <Button
+          size="small"
+          variant="outlined"
+          aria-label={t("fields.link.editor.browseEln")}
+          onClick={() => setElnOpen(true)}
+        >
+          {t("fields.link.editor.browseEln")}
         </Button>
       </Stack>
       <TextField
-        label="Target Global ID"
+        label={t("fields.link.editor.targetGlobalId")}
         value={targetGlobalId}
         onChange={(e) => onTargetChange(e.target.value, "")}
         fullWidth
@@ -154,19 +166,27 @@ export default function LinkEditor({
         sx={{ mt: 1 }}
         helperText={targetHelperText}
         error={targetError}
-        slotProps={{ htmlInput: { "aria-label": "Target Global ID" } }}
+        slotProps={{ htmlInput: { "aria-label": t("fields.link.editor.targetGlobalId") } }}
       />
       {validationMessage ? <FormHelperText error>{validationMessage}</FormHelperText> : null}
       <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
         <Chip
           size="small"
           variant="outlined"
-          label={versionPin != null ? `Pinned to v${versionPin}` : "Latest"}
+          label={
+            versionPin != null
+              ? t("fields.link.editor.pinnedVersion", { version: versionPin })
+              : t("fields.link.editor.latest")
+          }
           data-test-id="LinkEditor-version"
         />
         <IconButton
           size="small"
-          aria-label={targetGlobalId ? `Pin version for ${targetGlobalId}` : "Pin version"}
+          aria-label={
+            targetGlobalId
+              ? t("fields.link.editor.pinVersionFor", { globalId: targetGlobalId })
+              : t("fields.link.editor.pinVersion")
+          }
           disabled={!canPinVersion}
           onClick={() => setVersionDialogOpen(true)}
         >

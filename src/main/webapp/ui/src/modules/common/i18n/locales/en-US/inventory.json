@@ -227,6 +227,22 @@
     "location": {
       "label": "Location"
     },
+    "link": {
+      "editor": {
+        "browseEln": "Browse ELN",
+        "browseInventory": "Browse Inventory",
+        "latest": "Latest",
+        "pinnedVersion": "Pinned to v{version}",
+        "pinVersion": "Pin version",
+        "pinVersionFor": "Pin version for {globalId}",
+        "targetGlobalId": "Target Global ID"
+      },
+      "relatedInventoryItems": {
+        "loading": "Loading...",
+        "none": "No Inventory items link to this {recordTypeName}.",
+        "title": "Related inventory items"
+      }
+    },
     "name": {
       "label": "Name",
       "maxLength": "Name must be no longer than {max} characters.",
