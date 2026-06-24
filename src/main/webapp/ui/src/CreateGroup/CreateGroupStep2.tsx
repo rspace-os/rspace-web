@@ -11,6 +11,7 @@ import EmailValidator from "email-validator";
 import React from "react";
 import CreatableSelect from "react-select/creatable";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import materialTheme from "../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -131,9 +132,9 @@ class createGroupStep2 extends React.Component<any, any> {
       <Box sx={{ padding: "0 25px 10px 25px" }}>
         <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={materialTheme}>
-            <h3>Select PI</h3>
+            <h3>{i18n.t("groups:createGroup.step2.heading")}</h3>
             <RadioGroup
-              aria-label="Pi Role"
+              aria-label={i18n.t("groups:createGroup.step2.roleAriaLabel")}
               name="piRole"
               value={this.state.radioOptions.value}
               onChange={this.handleChange}
@@ -142,7 +143,7 @@ class createGroupStep2 extends React.Component<any, any> {
                 data-test-id="createGroupSelectSelfPI"
                 value={this.props.currentUser}
                 control={<Radio color="primary" />}
-                label="Make me the group PI and invite users"
+                label={i18n.t("groups:createGroup.step2.selfPi")}
               />
               <FormControlLabel
                 data-test-id="createGroupSelectOtherPI"
@@ -161,7 +162,7 @@ class createGroupStep2 extends React.Component<any, any> {
             </RadioGroup>
             {this.state.radioOptions.displayNominate === true && (
               <div>
-                <p>Enter a single email address of a new or existing user to be asked to be group PI.</p>
+                <p>{i18n.t("groups:createGroup.step2.nominateHint")}</p>
                 <FormControl
                   data-test-id="createGroupChoosePI"
                   error
@@ -173,8 +174,8 @@ class createGroupStep2 extends React.Component<any, any> {
                     onChange={this.handleSelect}
                     onInputChange={this.getCurrentUsers}
                     options={this.state.returnedUserList}
-                    placeholder="Start typing..."
-                    formatCreateLabel={(userInput) => `Select ${userInput}`}
+                    placeholder={i18n.t("groups:createGroup.step2.searchPlaceholder")}
+                    formatCreateLabel={(userInput) => i18n.t("groups:createGroup.step2.createOption", { userInput })}
                     defaultValue={{
                       value: this.props.radioDetails.selectedUser,
                       label: this.props.radioDetails.selectedUser,
@@ -182,7 +183,9 @@ class createGroupStep2 extends React.Component<any, any> {
                     classNamePrefix="seleniumTest"
                   />
                   {!this.state.emailValidation && (
-                    <FormHelperText id="email-error-text">Please enter a valid email address</FormHelperText>
+                    <FormHelperText id="email-error-text">
+                      {i18n.t("groups:createGroup.validation.invalidEmail")}
+                    </FormHelperText>
                   )}
                 </FormControl>
               </div>

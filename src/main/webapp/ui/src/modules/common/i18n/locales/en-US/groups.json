@@ -1,4 +1,51 @@
 {
+  "createGroup": {
+    "errors": {
+      "requestFailed": "Your request failed due to: {message}. If this problem persists, please contact RSpace Support."
+    },
+    "nav": {
+      "back": "Back",
+      "create": "Create {groupType}",
+      "next": "Next"
+    },
+    "openButton": "Create Group",
+    "step1": {
+      "heading": "Group Name",
+      "hint": "Enter a name to identify the new group"
+    },
+    "step2": {
+      "createOption": "Select {userInput}",
+      "heading": "Select PI",
+      "nominateHint": "Enter a single email address of a new or existing user to be asked to be group PI.",
+      "roleAriaLabel": "Pi Role",
+      "searchPlaceholder": "Start typing...",
+      "selfPi": "Make me the group PI and invite users"
+    },
+    "step3": {
+      "emailPlaceholder": "Enter email address",
+      "inviteExistingHeading": "Invite RSpace users",
+      "inviteNewHeading": "Invite new users",
+      "typeHint": "type at least 3 characters"
+    },
+    "step4": {
+      "groupNameLabel": "Group name:",
+      "groupNameRequired": "You require a group name",
+      "groupOwnerLabel": "Group Owner:",
+      "heading": "Summary",
+      "invitedMembersLabel": "Invited members:",
+      "invitedNonMembersLabel": "Invited non-members:",
+      "piLabel": "PI:",
+      "piRequired": "You must select a PI"
+    },
+    "title": "Create group",
+    "toast": {
+      "created": "{groupName} group created successfully!",
+      "requestSent": "Group creation request for {groupName} sent successfully"
+    },
+    "validation": {
+      "invalidEmail": "Please enter a valid email address"
+    }
+  },
   "errors": {
     "selectGroupOwner": "Please select at least one group owner",
     "selectPi": "Please, select a PI"
