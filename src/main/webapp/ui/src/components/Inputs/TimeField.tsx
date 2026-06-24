@@ -5,6 +5,7 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { format, isValid, parse } from "date-fns";
 import { enGB } from "date-fns/locale";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 
 const TIME_FORMAT = "HH:mm";
@@ -25,12 +26,13 @@ export type TimeFieldArgs = {
 };
 
 export default function TimeField({ disabled, value, onChange, id }: TimeFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const pickerValue = parseTimeFieldValue(value);
 
   return (
     <Grid container spacing={0}>
       {disabled && !value ? (
-        <NoValue label="None" />
+        <NoValue label={t("values.none")} />
       ) : (
         <Grid size={{ md: 6, xs: 12 }}>
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>

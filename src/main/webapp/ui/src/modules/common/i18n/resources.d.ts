@@ -263,6 +263,7 @@ export default interface Resources {
       "notebook": "Notebook",
       "notebookIcon": "Notebook Icon",
       "notifications": "Notifications",
+      "print": "Print",
       "protocolsIoIcon": "Protocols.io Icon",
       "receivedMessages": "Received messages",
       "saveAndClone": "Save & Clone",
