@@ -6,6 +6,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
 import Result from "@/util/result";
@@ -271,6 +272,7 @@ const WholePage = ({
  * gallery will show the images section.
  */
 function LandingPage() {
+  const { t } = useTranslation("gallery");
   const [searchParams, setSelectedSection] = useSearchParamState<{
     mediaType: (typeof GALLERY_SECTION)[keyof typeof GALLERY_SECTION];
   }>({
@@ -288,7 +290,7 @@ function LandingPage() {
   }, [selectedSection, path]);
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
-    error: () => <PlaceholderLabel>Error checking if filestores are enabled.</PlaceholderLabel>,
+    error: () => <PlaceholderLabel>{t("landingPage.filestoreEnabledError")}</PlaceholderLabel>,
     success: (fsEnabled) => {
       const validGallerySections = new Set([
         "Images",
@@ -302,8 +304,9 @@ function LandingPage() {
         ...(fsEnabled === true ? ["NetworkFiles"] : []),
         "PdfDocuments",
       ]);
-      if (!validGallerySections.has(selectedSection))
-        return <PlaceholderLabel>Not a valid Gallery section.</PlaceholderLabel>;
+      if (!validGallerySections.has(selectedSection)) {
+        return <PlaceholderLabel>{t("landingPage.invalidSection")}</PlaceholderLabel>;
+      }
       return (
         <WholePage
           listingOf={listingOf}
