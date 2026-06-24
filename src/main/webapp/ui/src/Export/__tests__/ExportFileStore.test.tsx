@@ -130,11 +130,11 @@ describe("ExportFileStore", () => {
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
-          name: /Check file systems login details/i,
+          name: /export.fileStore.login.checkButton/i,
         }),
       ).toBeVisible();
     }));
-    await user.click(screen.getByRole("button", { name: /Check file systems login details/i }));
+    await user.click(screen.getByRole("button", { name: /export.fileStore.login.checkButton/i }));
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "samba-folder" }),
     ).toBeVisible();

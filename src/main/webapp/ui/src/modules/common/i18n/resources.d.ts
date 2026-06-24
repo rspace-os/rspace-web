@@ -244,6 +244,19 @@ export default interface Resources {
           "heading": "Filestore links found in exported content",
           "showButton": "Show found filestore links",
           "summary": "Exported content contains {filesCount} filestore link from {fileSystemsCount} File System."
+        },
+        "login": {
+          "allLoggedIn": "You are logged into all File Systems referenced by filestore links.",
+          "checkButton": "Check File Systems login details",
+          "columns": {
+            "loggedInAs": "Logged in as",
+            "name": "File System Name"
+          },
+          "dialogTitle": "File Systems login status",
+          "heading": "File Systems that require login",
+          "loginButton": "Login to remaining File Systems",
+          "notAllLoggedIn": "You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems or some linked files may be omitted during the export.",
+          "notLoggedIn": "Not logged in"
         }
       }
     }

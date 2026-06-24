@@ -213,7 +213,7 @@ describe("ExportDialog", () => {
           expect(screen.getByText("export.fileStore.foundLinks.summary")).toBeVisible();
         });
         await waitFor(() => {
-          expect(screen.getByText("You are logged into all File Systems referenced by filestore links.")).toBeVisible();
+          expect(screen.getByText("export.fileStore.login.allLoggedIn")).toBeVisible();
         });
 
         await user.click(screen.getByRole("button", { name: "Export" }));
