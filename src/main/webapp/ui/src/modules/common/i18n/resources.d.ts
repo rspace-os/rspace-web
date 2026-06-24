@@ -236,6 +236,19 @@ export default interface Resources {
       "button": "Inventory Items",
       "empty": "The document has no connected Inventory items.",
       "loading": "Loading"
+    },
+    "permalinkNotFound": {
+      "latestLink": "View the latest version",
+      "typeLabels": {
+        "container": "container",
+        "sample": "sample",
+        "sampleTemplate": "sample template",
+        "subsample": "subsample"
+      },
+      "unversionedBody": "It may have been deleted, or you may not have permission to view it.",
+      "unversionedTitle": "This {typeLabel} could not be found.",
+      "versionedBody": "The version may never have existed.",
+      "versionedTitle": "Version {version} of this {typeLabel} could not be found."
     }
   },
   "public": {

@@ -5,15 +5,16 @@ import Link from "@mui/material/Link";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import NavigateContext from "../../stores/contexts/Navigate";
 import type { Permalink, PermalinkType } from "../../stores/definitions/Search";
 
-const TYPE_LABELS: Record<PermalinkType, string> = {
-  sample: "sample",
-  subsample: "subsample",
-  container: "container",
-  sampletemplate: "sample template",
-};
+const TYPE_LABEL_KEYS = {
+  sample: "permalinkNotFound.typeLabels.sample",
+  subsample: "permalinkNotFound.typeLabels.subsample",
+  container: "permalinkNotFound.typeLabels.container",
+  sampletemplate: "permalinkNotFound.typeLabels.sampleTemplate",
+} as const satisfies Record<PermalinkType, string>;
 
 type PermalinkNotFoundArgs = {
   permalink: Permalink;
@@ -25,18 +26,18 @@ type PermalinkNotFoundArgs = {
  * message with a link to the latest state of the record.
  */
 function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const latestUrl = `/inventory/${permalink.type}/${permalink.id}`;
+  const typeLabel = t(TYPE_LABEL_KEYS[permalink.type]);
 
   return (
     <Box sx={{ p: 2 }}>
       {permalink.version != null ? (
         <Alert severity="warning">
-          <AlertTitle>
-            Version {permalink.version} of this {TYPE_LABELS[permalink.type]} could not be found.
-          </AlertTitle>
-          The version may never have existed.{" "}
+          <AlertTitle>{t("permalinkNotFound.versionedTitle", { typeLabel, version: permalink.version })}</AlertTitle>
+          {t("permalinkNotFound.versionedBody")}{" "}
           <Link
             href={latestUrl}
             onClick={(e: React.MouseEvent) => {
@@ -44,14 +45,14 @@ function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNod
               navigate(latestUrl);
             }}
           >
-            View the latest version
+            {t("permalinkNotFound.latestLink")}
           </Link>
           .
         </Alert>
       ) : (
         <Alert severity="warning">
-          <AlertTitle>This {TYPE_LABELS[permalink.type]} could not be found.</AlertTitle>
-          It may have been deleted, or you may not have permission to view it.
+          <AlertTitle>{t("permalinkNotFound.unversionedTitle", { typeLabel })}</AlertTitle>
+          {t("permalinkNotFound.unversionedBody")}
         </Alert>
       )}
     </Box>
