@@ -65,7 +65,8 @@
         "src/Export/WordExport.tsx",
         "src/Export/HtmlXmlExport.tsx",
         "src/Export/PdfExport.tsx",
-        "src/Export/repositories/DigitalCommonsDataRepo.tsx"
+        "src/Export/repositories/DigitalCommonsDataRepo.tsx",
+        "src/Export/repositories/ZenodoRepo.tsx"
       ],
       "linter": {
         "rules": {
