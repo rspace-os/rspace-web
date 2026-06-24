@@ -12,7 +12,7 @@ import TableRow from "@mui/material/TableRow";
 import { isNotNil } from "es-toolkit";
 import type React from "react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import LoadingFade from "../../components/LoadingFade";
 import { formatFileSize } from "../../util/files";
 import type { FileSystem } from "../common";
@@ -51,21 +51,22 @@ export default function LinkAvailabilityScan({
       ) : (
         <p>
           {scanResultsAvailableCount === 0 ? (
-            <span>
-              Export <strong>will not include any filestore files</strong>.
-            </span>
+            <Trans i18nKey="export.fileStore.scan.noFilesIncluded" ns="workspace" />
           ) : (
-            <span>
-              Export will include <strong>{scanResultsAvailableCount} filestore file(s) </strong>
-              of total size <strong>{formatFileSize(scanResultsTotalFileSize)}</strong>.{" "}
-            </span>
+            <Trans
+              i18nKey="export.fileStore.scan.filesIncluded"
+              ns="workspace"
+              values={{ count: scanResultsAvailableCount, size: formatFileSize(scanResultsTotalFileSize) }}
+            />
           )}
           {scanResultsAvailableCount > 0 && scanResultsOmittedCount > 0 && (
-            <span>
-              <strong>{scanResultsOmittedCount} file(s) or folder(s) will be skipped</strong>.{" "}
-            </span>
+            <Trans
+              i18nKey="export.fileStore.scan.filesSkipped"
+              ns="workspace"
+              values={{ count: scanResultsOmittedCount }}
+            />
           )}
-          {scanResultsOmittedCount > 0 && <span>Please check the scan results for details.</span>}
+          {scanResultsOmittedCount > 0 && <Trans i18nKey="export.fileStore.scan.checkResults" ns="workspace" />}
         </p>
       )}
       <Button

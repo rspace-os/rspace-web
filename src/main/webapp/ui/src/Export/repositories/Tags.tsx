@@ -8,6 +8,7 @@ import type React from "react";
 import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { color, currentPage } from "@/util/pageBranding";
 import docLinks from "../../assets/DocLinks";
 import InputWrapper from "../../components/Inputs/InputWrapper";
@@ -66,12 +67,12 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
           }
         >
           <FormHelperText sx={{ ml: 0, mb: 2 }}>
-            Add tags from controlled vocabularies to this export. The term&apos;s value and URI will be included in the
-            deposit&apos;s metadata. For more info see{" "}
-            <a href={docLinks.controlledVocabularies} target="_blank" rel="noreferrer">
-              Tagging Documents and using Controlled Vocabularies
-            </a>
-            .
+            <TransRichText
+              i18nKey="export.repositories.tags.helperText"
+              ns="workspace"
+              // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
+              components={{ a: <a href={docLinks.controlledVocabularies} target="_blank" rel="noreferrer" /> }}
+            />
           </FormHelperText>
           {fieldOwner.fieldValues.tags.length === 0 && !fieldOwner.isFieldEditable("tags") && (
             <NoValue label={fieldOwner.noValueLabel.tags ?? t("common:values.none")} />

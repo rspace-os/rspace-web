@@ -86,7 +86,7 @@ export default function ExportFileStore({
   updateFilters,
   validator,
 }: ExportFileStoreArgs): React.ReactNode {
-  const { t } = useTranslation("workspace");
+  const { t } = useTranslation(["workspace", "common"]);
   const [loadingQuickPlan, setLoadingQuickPlan]: UseState<boolean> = useState(false);
   const [loadingFullPlan, setLoadingFullPlan]: UseState<boolean> = useState(false);
 
@@ -149,24 +149,14 @@ export default function ExportFileStore({
       ) {
         await confirm(
           "",
-          <>
-            The size of filestore files to be included in export (
-            {formatFileSize(validationData.scanResultsTotalFileSize)})
-            {validationData.scanResultsTotalFileSize > validationData.maxArchiveSizeBytes ? (
-              <span>
-                {" "}
-                exceeds the global limit set for size of RSpace archive file. Use file filters to exclude some files, or
-                ask your System Admin to raise the limit on archive size.
-              </span>
-            ) : (
-              <span>
-                {" "}
-                exceeds disk space currently available on RSpace server. Use file filters to exclude some files, or
-                contact your System Admin.
-              </span>
-            )}
-          </>,
-          "OK",
+          validationData.scanResultsTotalFileSize > validationData.maxArchiveSizeBytes
+            ? t("export.fileStore.validation.exceedsGlobalLimit", {
+                size: formatFileSize(validationData.scanResultsTotalFileSize),
+              })
+            : t("export.fileStore.validation.exceedsDiskSpace", {
+                size: formatFileSize(validationData.scanResultsTotalFileSize),
+              }),
+          t("common:actions.ok"),
           "",
         );
         return false;

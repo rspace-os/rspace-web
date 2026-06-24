@@ -8,7 +8,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 type FoundLinksListingArgs = {
   maxFileSizeInMB: number | string;
@@ -37,17 +37,15 @@ export default function FileFilters({
     <Card sx={{ p: 1 }}>
       <h2>{t("export.fileStore.filters.heading")}</h2>
       <p>
-        Filestore files larger than <strong>{maxFileSizeInMB} MB</strong> will not be included in the export. All types
-        of filestore files will be included
         {excludedFileExtensions === "" ? (
-          ""
+          <Trans i18nKey="export.fileStore.filters.summary" ns="workspace" values={{ sizeMB: maxFileSizeInMB }} />
         ) : (
-          <span>
-            {" "}
-            apart from the following <strong>{excludedFileExtensions}</strong>
-          </span>
+          <Trans
+            i18nKey="export.fileStore.filters.summaryWithExclusions"
+            ns="workspace"
+            values={{ sizeMB: maxFileSizeInMB, extensions: excludedFileExtensions }}
+          />
         )}
-        .
       </p>
       <Button
         variant="outlined"
