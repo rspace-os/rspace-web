@@ -267,6 +267,40 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
   }
 
   @Test
+  public void bulkCreateWithInvalidTemplateIdReportsPerRecordErrorWithoutRollback()
+      throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // a plain sample's id is a valid id that is NOT a SampleTemplate, so using it as a templateId
+    // drives the create-time template lookup down its "not a readable template" branch
+    Long nonTemplateId = createBasicSampleForUser(anyUser).getId();
+
+    // With rollbackOnError=false each record is processed in its own transaction, so a record with
+    // an invalid templateId must surface as a per-record error while the other records are still
+    // created, rather than aborting the whole request with an UnexpectedRollbackException.
+    String createWithBadTemplateJSON =
+        String.format(
+            "{ \"operationType\": \"CREATE\", \"rollbackOnError\": false, \"records\": [ "
+                + "{ \"type\": \"SAMPLE\", \"name\": \"okSampleA\" }, "
+                + "{ \"type\": \"SAMPLE\", \"name\": \"badTemplate\", \"templateId\": %d }, "
+                + "{ \"type\": \"SAMPLE\", \"name\": \"okSampleB\" } ] }",
+            nonTemplateId);
+    MvcResult result = postBulkOperation(anyUser, apiKey, createWithBadTemplateJSON);
+
+    assertNull(result.getResolvedException());
+    ApiInventoryBulkOperationResult bulkOpResult =
+        getFromJsonResponseBody(result, ApiInventoryBulkOperationResult.class);
+    assertNotNull(bulkOpResult);
+    assertEquals(2, bulkOpResult.getSuccessCount());
+    assertEquals(1, bulkOpResult.getErrorCount());
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, bulkOpResult.getStatus());
+    assertNotNull(bulkOpResult.getResults().get(1).getError());
+    String templateError = bulkOpResult.getResults().get(1).getError().getErrors().get(0);
+    assertTrue(templateError.contains("templateId"), templateError);
+  }
+
+  @Test
   public void bulkMoveAndSwap() throws Exception {
     Mockito.reset(auditer);
 
