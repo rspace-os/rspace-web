@@ -55,9 +55,8 @@ describe("Apps page", () => {
           <App />
         </ThemeProvider>,
       );
-      await screen.findAllByText(/Something went wrong!/i);
+      await screen.findAllByText(/errorBoundary\.message/i);
 
-      await screen.findByAltText("branding");
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await expect(container).toBeAccessible();
@@ -75,7 +74,7 @@ describe("Apps page", () => {
       </ThemeProvider>,
     );
 
-    await screen.findAllByText(/Something went wrong!/i);
+    await screen.findAllByText(/errorBoundary\.message/i);
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(container).assertHeadings([

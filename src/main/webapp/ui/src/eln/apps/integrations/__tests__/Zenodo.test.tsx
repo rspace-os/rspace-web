@@ -39,9 +39,9 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getByText("integrations.zenodo.name");
     });
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
   });
   test("should close dialog when close button is clicked", async () => {
@@ -49,10 +49,10 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getByText("integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Close dialog
@@ -74,10 +74,10 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getByText("integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Enable integration
@@ -104,10 +104,10 @@ describe("Zenodo", () => {
       .thenReturn(expectedState);
     render(<ZenodoWrapper state={initialState} />);
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getByText("integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Disable integration
@@ -133,10 +133,10 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getByText("integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
@@ -145,7 +145,7 @@ describe("Zenodo", () => {
      * fields do not have a role. For more info, see
      * https://github.com/testing-library/dom-testing-library/issues/567
      */
-    await user.type(screen.getAllByLabelText("API Key")[0], apiKey);
+    await user.type(screen.getAllByLabelText("integrations.zenodo.fields.apiKey")[0], apiKey);
 
     await user.click(screen.getByRole("button", { name: /save/i }));
     // Verify update was called with correct arguments
@@ -174,14 +174,14 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("Zenodo");
+      screen.getByText("integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /^zenodo/i }));
+    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
-    await user.type(screen.getAllByLabelText("API Key")[0], apiKey);
+    await user.type(screen.getAllByLabelText("integrations.zenodo.fields.apiKey")[0], apiKey);
 
     await user.click(screen.getByRole("button", { name: /save/i }));
     // Verify update was called with correct arguments for setting API key

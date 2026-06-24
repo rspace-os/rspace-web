@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/dmptool";
 import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
@@ -24,6 +25,7 @@ export const DMPTOOL_CONNECTION_CHANNEL = "rspace.apps.dmptool.connection";
  * DMPTool uses OAuth based authentication, as implemeted by the form below.
  */
 function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmptoolEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -36,7 +38,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to DMPTool",
+            title: t("integrations.dmptool.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -46,7 +48,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to DMPTool.",
+          message: t("integrations.dmptool.alerts.connectSuccess"),
         }),
       );
     },
@@ -61,24 +63,22 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="DMPTool"
+        name={t("integrations.dmptool.name")}
         integrationState={integrationState}
-        explanatoryText="Create Data Management Plans for your research through a guided web-based tool with templates."
+        explanatoryText={t("integrations.dmptool.description")}
         image={DMPToolIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        helpLinkText="DMPTool integration docs"
+        helpLinkText={t("integrations.dmptool.helpLink")}
         website="dmptool.org"
         docLink="dmptool"
-        usageText="You can import Data Management Plans (DMPs) from DMPTool into RSpace, and associate DMPs with repository exports. Exporting from RSpace automatically updates the DMP in DMPTool with a DOI of the repository deposit."
+        usageText={t("integrations.dmptool.usage")}
         setupSection={
           <>
             <ol>
-              <li>Click on Connect to authorise RSpace to access your DMPTool account.</li>
-              <li>Enable the integration.</li>
-              <li>
-                You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.
-              </li>
+              <li>{t("integrations.dmptool.setup.connect")}</li>
+              <li>{t("integrations.dmptool.setup.enable")}</li>
+              <li>{t("integrations.dmptool.setup.gallery")}</li>
             </ol>
             {connected ? (
               <form
@@ -91,13 +91,13 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/dmptool/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

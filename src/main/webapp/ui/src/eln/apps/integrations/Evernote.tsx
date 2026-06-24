@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../../assets/branding/evernote";
 import EvernoteIcon from "../../../assets/branding/evernote/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -16,6 +17,7 @@ type EvernoteArgs = {
  * import documents into RSpace.
  */
 function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -25,19 +27,19 @@ function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Evernote"
+        name={t("integrations.evernote.name")}
         integrationState={integrationState}
-        explanatoryText="Take notes, manage tasks, and organise your notes into notebooks with embedded media."
+        explanatoryText={t("integrations.evernote.description")}
         image={EvernoteIcon}
         color={LOGO_COLOR}
-        usageText="You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
-        helpLinkText="Evernote integration docs"
+        usageText={t("integrations.evernote.usage")}
+        helpLinkText={t("integrations.evernote.helpLink")}
         website="evernote.com"
         docLink="evernote"
         setupSection={
           <ol>
-            <li>Enable the integration.</li>
-            <li>In the Workspace, select Create → Import from Evernote.</li>
+            <li>{t("integrations.evernote.setup.enable")}</li>
+            <li>{t("integrations.evernote.setup.import")}</li>
           </ol>
         }
         update={(newMode) => update({ mode: newMode, credentials: {} })}

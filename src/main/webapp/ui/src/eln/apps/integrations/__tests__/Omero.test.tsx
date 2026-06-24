@@ -34,12 +34,12 @@ describe("Omero", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("textbox", { name: "Username" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "integrations.omero.fields.username" })).toBeVisible();
     /*
      * We have to use getByLabelText instead of getByRole because password
      * fields do not have a role. For more info, see
      * https://github.com/testing-library/dom-testing-library/issues/567
      */
-    expect(screen.getByLabelText("Password")).toBeVisible();
+    expect(screen.getByLabelText("integrations.omero.fields.password")).toBeVisible();
   });
 });

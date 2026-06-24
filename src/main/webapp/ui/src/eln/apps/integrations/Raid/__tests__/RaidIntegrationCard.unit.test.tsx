@@ -81,7 +81,7 @@ describe("RaidIntegrationCard", () => {
       });
 
       await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      expect(screen.getAllByText(/No authenticated servers./i)[0]).toBeVisible();
+      expect(screen.getAllByText(/integrations.raid.noServers/i)[0]).toBeVisible();
     });
 
     test("Renders server alias and URL link.", async () => {
@@ -124,7 +124,7 @@ describe("RaidIntegrationCard", () => {
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
       const alertArg = (vi.mocked(addAlert).mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Successfully connected to srvA RAiD server.");
+      expect(alertArg.message).toContain("integrations.raid.alerts.connectSuccess");
     });
 
     test("Ignores broadcast messages for unknown serverAlias", async () => {
@@ -254,7 +254,7 @@ describe("RaidIntegrationCard", () => {
         expect(addAlert).toHaveBeenCalled();
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Server responded with status 500: Internal Server Error");
+      expect(alertArg.message).toContain("integrations.raid.alerts.serverStatus");
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
     });
 

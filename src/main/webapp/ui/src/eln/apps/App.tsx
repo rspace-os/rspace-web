@@ -12,7 +12,7 @@ import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 import docLinks from "../../assets/DocLinks";
@@ -71,11 +71,14 @@ function LoadingSkeleton() {
 function ErrorMessage() {
   return (
     <Alert severity="error">
-      Something went wrong! Please refresh the page. If this error persists, please contact{" "}
-      <a href="mailto:support@researchspace.com" rel="noreferrer" target="_blank">
-        support@researchspace.com
-      </a>{" "}
-      with details of when the issue happens.
+      <Trans
+        ns="common"
+        i18nKey="errorBoundary.message"
+        components={[
+          // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+          <a key={0} href="mailto:support@researchspace.com" rel="noreferrer" target="_blank" />,
+        ]}
+      />
     </Alert>
   );
 }
@@ -196,10 +199,9 @@ function App(): React.ReactNode {
               <Box sx={{ my: 4 }}>
                 <Typography variant="h1">{t("page.title")}</Typography>
                 <Typography variant="body1">
-                  RSpace provides integrations with various third-party apps that enable extra features. Apps need to be
-                  enabled to work, and some require authentication.{" "}
+                  {t("page.introText")}{" "}
                   <Link href={docLinks.appsIntroduction} target="_blank" rel="noreferrer">
-                    See Apps Introduction to learn more.
+                    {t("page.introLink")}
                   </Link>
                 </Typography>
                 <Stack spacing={6} sx={{ mt: 1 }}>

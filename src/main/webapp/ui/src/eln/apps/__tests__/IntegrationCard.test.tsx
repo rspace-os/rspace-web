@@ -143,7 +143,7 @@ describe("IntegrationCard", () => {
 
     fireEvent.click(screen.getByRole("button"));
 
-    fireEvent.click(screen.getByRole("button", { name: "ENABLE" }));
+    fireEvent.click(screen.getByRole("button", { name: "integrationCard.enable" }));
     expect(update).toHaveBeenCalledWith("ENABLED");
   });
   test("When tapped, the disable button should invoke update.", () => {
@@ -169,7 +169,7 @@ describe("IntegrationCard", () => {
 
     fireEvent.click(screen.getByRole("button"));
 
-    fireEvent.click(screen.getByRole("button", { name: "DISABLE" }));
+    fireEvent.click(screen.getByRole("button", { name: "integrationCard.disable" }));
     expect(update).toHaveBeenCalledWith("DISABLED");
   });
 });

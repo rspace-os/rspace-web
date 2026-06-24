@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/github";
 import GitHubIcon from "../../../assets/branding/github/logo.svg";
@@ -44,6 +45,7 @@ const DialogContent = observer(
     linkedRepos: UnwrapArray<IntegrationStates["GITHUB"]["credentials"]>;
     integrationState: IntegrationStates["GITHUB"];
   }) => {
+    const { t } = useTranslation("apps");
     const { addAlert } = useContext(AlertContext);
     const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
@@ -60,7 +62,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not connect to GitHub",
+              title: t("integrations.github.alerts.connectError"),
               message: e.data.error,
             }),
           );
@@ -85,7 +87,7 @@ const DialogContent = observer(
               addAlert(
                 mkAlert({
                   variant: "error",
-                  title: "Could not fetch listing of repositories",
+                  title: t("integrations.github.alerts.fetchError"),
                   message: error.message,
                 }),
               );
@@ -109,7 +111,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not fetch listing of repositories",
+              title: t("integrations.github.alerts.fetchError"),
               message: e.message,
             }),
           );
@@ -122,18 +124,18 @@ const DialogContent = observer(
       <Stack spacing={3} sx={{ mt: 1 }}>
         <Box>
           <Typography component="h5" variant="subtitle1">
-            Linked Repositories
+            {t("integrations.github.repositories.linkedHeading")}
           </Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell colSpan={2}>Repository Name</TableCell>
+                <TableCell colSpan={2}>{t("integrations.github.repositories.nameHeader")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {copyOfRepos.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={2}>There are no linked repositories.</TableCell>
+                  <TableCell colSpan={2}>{t("integrations.github.repositories.noLinked")}</TableCell>
                 </TableRow>
               )}
               {copyOfRepos.map((config, i) => (
@@ -142,7 +144,7 @@ const DialogContent = observer(
                     <ListItemText
                       primary={config.GITHUB_REPOSITORY_FULL_NAME}
                       secondary={config.GITHUB_ACCESS_TOKEN.map(() => null).orElse(
-                        "Repository is in an invalid state. Please remove and re-add.",
+                        t("integrations.github.repositories.invalidState"),
                       )}
                     />
                   </TableCell>
@@ -160,7 +162,7 @@ const DialogContent = observer(
                             addAlert(
                               mkAlert({
                                 variant: "success",
-                                message: "Successfully removed repository.",
+                                message: t("integrations.github.alerts.removeSuccess"),
                               }),
                             );
                           } catch (e) {
@@ -168,7 +170,7 @@ const DialogContent = observer(
                               addAlert(
                                 mkAlert({
                                   variant: "error",
-                                  title: "Failed to remove repository.",
+                                  title: t("integrations.github.alerts.removeError"),
                                   message: e.message,
                                 }),
                               );
@@ -177,7 +179,7 @@ const DialogContent = observer(
                         })();
                       }}
                     >
-                      Remove
+                      {t("actions.remove")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -189,18 +191,18 @@ const DialogContent = observer(
           .map((repos) => (
             <Box key={null}>
               <Typography component="h5" variant="subtitle1">
-                Link Additional Repositories
+                {t("integrations.github.repositories.additionalHeading")}
               </Typography>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell colSpan={2}>Repository Name</TableCell>
+                    <TableCell colSpan={2}>{t("integrations.github.repositories.nameHeader")}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {repos.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={2}>There are no available repositories.</TableCell>
+                      <TableCell colSpan={2}>{t("integrations.github.repositories.noAvailable")}</TableCell>
                     </TableRow>
                   )}
                   {repos.map((repo, i) => (
@@ -244,7 +246,7 @@ const DialogContent = observer(
                                 addAlert(
                                   mkAlert({
                                     variant: "success",
-                                    message: "Successfully added repository.",
+                                    message: t("integrations.github.alerts.addSuccess"),
                                   }),
                                 );
                               } catch (e) {
@@ -252,7 +254,7 @@ const DialogContent = observer(
                                   addAlert(
                                     mkAlert({
                                       variant: "error",
-                                      title: "Failed to add repository.",
+                                      title: t("integrations.github.alerts.addError"),
                                       message: e.message,
                                     }),
                                   );
@@ -261,7 +263,7 @@ const DialogContent = observer(
                             })();
                           }}
                         >
-                          Add
+                          {t("actions.add")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -279,7 +281,7 @@ const DialogContent = observer(
                 void addHandler();
               }}
             >
-              {loadingAllRepositories ? "Loading available repositories" : "Add"}
+              {loadingAllRepositories ? t("integrations.github.repositories.loading") : t("actions.add")}
             </Button>
           </Box>
         )}
@@ -311,6 +313,7 @@ type GitHubArgs = {
  * further refined once the old apps page has been deprecated.
  */
 function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -320,29 +323,29 @@ function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="GitHub"
+        name={t("integrations.github.name")}
         integrationState={integrationState}
-        explanatoryText="Store and manage your code through a software development and Git version control platform."
+        explanatoryText={t("integrations.github.description")}
         image={GitHubIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can link to projects, folders, or files stored in GitHub repositories directly from RSpace."
-        helpLinkText="GitHub integration docs"
+        usageText={t("integrations.github.usage")}
+        helpLinkText={t("integrations.github.helpLink")}
         website="github.com"
         docLink="github"
         setupSection={
           <>
             <ol>
-              <li>Click on Connect to authorise RSpace to access your GitHub account.</li>
-              <li>Select repositories you want to give RSpace access to.</li>
-              <li>Enable the integration.</li>
-              <li>When editing a document, click on the GitHub icon in the text editor toolbar.</li>
+              <li>{t("integrations.github.setup.authorise")}</li>
+              <li>{t("integrations.github.setup.select")}</li>
+              <li>{t("integrations.github.setup.enable")}</li>
+              <li>{t("integrations.github.setup.toolbar")}</li>
             </ol>
             {ArrayUtils.all(integrationState.credentials)
               .map((linkedRepos) => (
                 <DialogContent key={null} linkedRepos={linkedRepos} integrationState={integrationState} />
               ))
-              .orElse("Error getting configured repositories")}
+              .orElse(t("integrations.github.orElse"))}
           </>
         }
       />

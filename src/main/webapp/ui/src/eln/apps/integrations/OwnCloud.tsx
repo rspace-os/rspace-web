@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/owncloud";
 import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
@@ -45,6 +46,7 @@ export const OWNCLOUD_CONNECTION_CHANNEL = "rspace.apps.owncloud.connection";
  * ../useOwncloud.
  */
 function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useOwncloudEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -57,7 +59,7 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to OwnCloud",
+            title: t("integrations.ownCloud.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -67,7 +69,7 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to OwnCloud.",
+          message: t("integrations.ownCloud.alerts.connectSuccess"),
         }),
       );
     },
@@ -82,22 +84,22 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="ownCloud"
+        name={t("integrations.ownCloud.name")}
         integrationState={integrationState}
-        explanatoryText="Create, manage, and share your files through an open-source file hosting system."
+        explanatoryText={t("integrations.ownCloud.description")}
         image={OwnCloudIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        helpLinkText="OwnCloud integration docs"
+        helpLinkText={t("integrations.ownCloud.helpLink")}
         website="owncloud.com"
         docLink="owncloud"
-        usageText="You can make links to ownCloud documents directly from RSpace."
+        usageText={t("integrations.ownCloud.usage")}
         setupSection={
           <>
             <ol>
-              <li>Click on Connect to authorise RSpace to access your ownCloud account.</li>
-              <li>Enable the integration.</li>
-              <li>When editing a document, click on the ownCloud icon in the text editor toolbar.</li>
+              <li>{t("integrations.ownCloud.setup.connect")}</li>
+              <li>{t("integrations.ownCloud.setup.enable")}</li>
+              <li>{t("integrations.ownCloud.setup.toolbar")}</li>
             </ol>
             {connected ? (
               <form
@@ -110,13 +112,13 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/owncloud/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

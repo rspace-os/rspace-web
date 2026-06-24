@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
@@ -45,6 +46,7 @@ export const PROTOCOLS_IO_CONNECTION_CHANNEL = "rspace.apps.protocolsio.connecti
  * ../useProtocolsio.
  */
 function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useProtocolsioEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -57,7 +59,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to Protocols IO",
+            title: t("integrations.protocolsIo.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -67,7 +69,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to Protocols IO.",
+          message: t("integrations.protocolsIo.alerts.connectSuccess"),
         }),
       );
     },
@@ -82,26 +84,23 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
       }}
     >
       <IntegrationCard
-        name="protocols.io"
+        name={t("integrations.protocolsIo.name")}
         integrationState={integrationState}
-        explanatoryText="Develop, organise, and share reproducible experimental protocols through a secure repository."
+        explanatoryText={t("integrations.protocolsIo.description")}
         image={ProtocolsIOIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can browse private and public protocols, and import them into RSpace."
-        helpLinkText="protocols.io integration docs"
+        usageText={t("integrations.protocolsIo.usage")}
+        helpLinkText={t("integrations.protocolsIo.helpLink")}
         website="protocols.io"
         docLink="protocolsio"
         setupSection={
           <>
             <ol>
-              <li>Register for a protocols.io account.</li>
-              <li>Click on Connect to authorise RSpace to access your protocols.io account.</li>
-              <li>Enable the integration.</li>
-              <li>
-                You can now import protocols from the Workspace Create menu, or from the text editor toolbar when
-                editing a document.
-              </li>
+              <li>{t("integrations.protocolsIo.setup.register")}</li>
+              <li>{t("integrations.protocolsIo.setup.connect")}</li>
+              <li>{t("integrations.protocolsIo.setup.enable")}</li>
+              <li>{t("integrations.protocolsIo.setup.import")}</li>
             </ol>
             {connected ? (
               <form
@@ -114,13 +113,13 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/protocolsio/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -60,6 +61,7 @@ type NewConfig = {
 
 const DialogContent = observer(
   ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DATAVERSE"] }) => {
+    const { t } = useTranslation("apps");
     const { addAlert } = useContext(AlertContext);
     const { test } = useDataverseTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -109,7 +111,7 @@ const DialogContent = observer(
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully saved Dataverse details.",
+            message: t("integrations.dataverse.alerts.saveExistingSuccess"),
           }),
         );
       } catch (e) {
@@ -117,7 +119,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Error saving Dataverse configuration.",
+              title: t("integrations.dataverse.alerts.saveExistingError"),
               message: e.message,
             }),
           );
@@ -152,7 +154,7 @@ const DialogContent = observer(
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully saved Dataverse details",
+            message: t("integrations.dataverse.alerts.saveNewSuccess"),
           }),
         );
       } catch (e) {
@@ -160,7 +162,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not save Dataverse details",
+              title: t("integrations.dataverse.alerts.saveNewError"),
               message: e.message,
             }),
           );
@@ -177,7 +179,7 @@ const DialogContent = observer(
                   event.preventDefault();
                   void saveExistingConfig(config, i);
                 }}
-                aria-label={`Configured Dataverse with name ${config.DATAVERSE_ALIAS}`}
+                aria-label={t("integrations.dataverse.configuredAriaLabel", { name: config.DATAVERSE_ALIAS })}
               >
                 <CardContent>
                   <Stack spacing={2}>
@@ -190,9 +192,9 @@ const DialogContent = observer(
                           config.dirty = true;
                         });
                       }}
-                      label="Dataverse Name"
+                      label={t("integrations.dataverse.fields.alias")}
                       error={config.DATAVERSE_ALIAS === ""}
-                      helperText={config.DATAVERSE_ALIAS === "" && "Name is required."}
+                      helperText={config.DATAVERSE_ALIAS === "" && t("integrations.dataverse.fields.aliasRequired")}
                     />
                     <TextField
                       fullWidth
@@ -203,9 +205,9 @@ const DialogContent = observer(
                           config.dirty = true;
                         });
                       }}
-                      label="Server URL"
+                      label={t("integrations.dataverse.fields.serverUrl")}
                       error={config.DATAVERSE_URL === ""}
-                      helperText={config.DATAVERSE_URL === "" && "URL is required."}
+                      helperText={config.DATAVERSE_URL === "" && t("integrations.dataverse.fields.urlRequired")}
                     />
                     <TextField
                       fullWidth
@@ -217,9 +219,9 @@ const DialogContent = observer(
                         });
                       }}
                       type="password"
-                      label="API key"
+                      label={t("integrations.dataverse.fields.apiKey")}
                       error={config.DATAVERSE_APIKEY === ""}
-                      helperText={config.DATAVERSE_APIKEY === "" && "API key is required."}
+                      helperText={config.DATAVERSE_APIKEY === "" && t("integrations.dataverse.fields.apiKeyRequired")}
                     />
                   </Stack>
                 </CardContent>
@@ -237,7 +239,7 @@ const DialogContent = observer(
                           addAlert(
                             mkAlert({
                               variant: "success",
-                              message: "Successfully deleted configuration.",
+                              message: t("integrations.dataverse.alerts.deleteConfigSuccess"),
                             }),
                           );
                         } catch (e) {
@@ -245,7 +247,7 @@ const DialogContent = observer(
                             addAlert(
                               mkAlert({
                                 variant: "error",
-                                title: "Could not delete configuration.",
+                                title: t("integrations.dataverse.alerts.deleteConfigError"),
                                 message: e.message,
                               }),
                             );
@@ -253,7 +255,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    Delete
+                    {t("actions.delete")}
                   </Button>
                   <Button
                     disabled={config.dirty}
@@ -264,7 +266,7 @@ const DialogContent = observer(
                           addAlert(
                             mkAlert({
                               variant: "success",
-                              message: "Connection details are valid.",
+                              message: t("integrations.dataverse.alerts.testValid"),
                             }),
                           );
                         } catch (e) {
@@ -272,7 +274,7 @@ const DialogContent = observer(
                             addAlert(
                               mkAlert({
                                 variant: "error",
-                                title: "Connection details are not valid.",
+                                title: t("integrations.dataverse.alerts.testInvalid"),
                                 message: e.message,
                               }),
                             );
@@ -280,7 +282,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    Test
+                    {t("actions.test")}
                   </Button>
                   <Button
                     type="submit"
@@ -288,7 +290,7 @@ const DialogContent = observer(
                       config.DATAVERSE_ALIAS === "" || config.DATAVERSE_URL === "" || config.DATAVERSE_APIKEY === ""
                     }
                   >
-                    Save
+                    {t("actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -312,9 +314,9 @@ const DialogContent = observer(
                           newConfig.DATAVERSE_ALIAS = value;
                         });
                       }}
-                      label="Dataverse Name"
+                      label={t("integrations.dataverse.fields.alias")}
                       error={newConfig.DATAVERSE_ALIAS === ""}
-                      helperText={newConfig.DATAVERSE_ALIAS === "" && "Name is required."}
+                      helperText={newConfig.DATAVERSE_ALIAS === "" && t("integrations.dataverse.fields.aliasRequired")}
                     />
                     <TextField
                       fullWidth
@@ -324,9 +326,9 @@ const DialogContent = observer(
                           newConfig.DATAVERSE_URL = value;
                         });
                       }}
-                      label="Server URL"
+                      label={t("integrations.dataverse.fields.serverUrl")}
                       error={newConfig.DATAVERSE_URL === ""}
-                      helperText={newConfig.DATAVERSE_URL === "" && "URL is required."}
+                      helperText={newConfig.DATAVERSE_URL === "" && t("integrations.dataverse.fields.urlRequired")}
                     />
                     <TextField
                       fullWidth
@@ -337,9 +339,11 @@ const DialogContent = observer(
                         });
                       }}
                       type="password"
-                      label="API key"
+                      label={t("integrations.dataverse.fields.apiKey")}
                       error={newConfig.DATAVERSE_APIKEY === ""}
-                      helperText={newConfig.DATAVERSE_APIKEY === "" && "API key is required."}
+                      helperText={
+                        newConfig.DATAVERSE_APIKEY === "" && t("integrations.dataverse.fields.apiKeyRequired")
+                      }
                     />
                   </Stack>
                 </CardContent>
@@ -350,7 +354,7 @@ const DialogContent = observer(
                       setNewConfig(null);
                     }}
                   >
-                    Delete
+                    {t("actions.delete")}
                   </Button>
                   <Button
                     variant="outlined"
@@ -358,7 +362,7 @@ const DialogContent = observer(
                     disabled
                     onClick={() => {}}
                   >
-                    Test
+                    {t("actions.test")}
                   </Button>
                   <Button
                     variant="outlined"
@@ -369,7 +373,7 @@ const DialogContent = observer(
                       newConfig.DATAVERSE_APIKEY === ""
                     }
                   >
-                    Save
+                    {t("actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -389,7 +393,7 @@ const DialogContent = observer(
             );
           }}
         >
-          Add
+          {t("actions.add")}
         </Button>
       </Stack>
     );
@@ -412,6 +416,7 @@ type DataverseArgs = {
 };
 
 function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -421,30 +426,28 @@ function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode
       }}
     >
       <IntegrationCard
-        name="Dataverse"
-        explanatoryText="Explore, analyse, and share data through an open-source research data repository software."
+        name={t("integrations.dataverse.name")}
+        explanatoryText={t("integrations.dataverse.description")}
         image={DataverseIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         integrationState={integrationState}
-        helpLinkText="Dataverse integration docs"
+        helpLinkText={t("integrations.dataverse.helpLink")}
         website="dataverse.org"
         docLink="dataverse"
-        usageText="You can export your files and data directly from RSpace to
-            Dataverse. You are able to specify various metadata and controlled
-            vocabulary terms for the deposit."
+        usageText={t("integrations.dataverse.usage")}
         setupSection={
           <>
-            <Typography variant="body2">You can configure multiple Dataverses to connect to.</Typography>
+            <Typography variant="body2">{t("integrations.dataverse.multipleConfig")}</Typography>
             <ol>
-              <li>Enter the required credentials and Save.</li>
-              <li>Click on Test to ensure your credentials are correct.</li>
-              <li>Enable the integration.</li>
-              <li>Dataverse will now be available as an option in the export dialog.</li>
+              <li>{t("integrations.dataverse.setup.enterCredentials")}</li>
+              <li>{t("integrations.dataverse.setup.test")}</li>
+              <li>{t("integrations.dataverse.setup.enable")}</li>
+              <li>{t("integrations.dataverse.setup.exportDialog")}</li>
             </ol>
             {ArrayUtils.all(integrationState.credentials)
               .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
-              .orElse(<>There was an error getting the configured Dataverses.</>)}
+              .orElse(t("integrations.dataverse.errorGettingConfigs"))}
           </>
         }
       />
