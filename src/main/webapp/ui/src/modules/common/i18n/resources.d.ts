@@ -263,6 +263,11 @@ export default interface Resources {
         }
       }
     },
+    "pubchemImport": {
+      "importSelected": "Import Selected",
+      "importing": "Importing...",
+      "title": "Import from PubChem"
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
@@ -273,6 +278,13 @@ export default interface Resources {
       "errorFetchingTags": "Error fetching tags",
       "filterSuggestedTags": "Filter suggested tags",
       "loading": "Loading...",
+      "metadata": {
+        "controlledVocabularyName": "Controlled Vocabulary Name",
+        "controlledVocabularyVersion": "Controlled Vocabulary Version",
+        "term": "Term",
+        "termUri": "Term's URI",
+        "view": "View metadata"
+      },
       "noMatchingSuggestions": "No matching tag suggestions.",
       "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
       "noName": "no name",

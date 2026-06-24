@@ -7,30 +7,10 @@ import Grid from "@mui/material/Grid";
 import Popover from "@mui/material/Popover";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Tag } from "../../stores/definitions/Tag";
 import DescriptionList from "../DescriptionList";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
-
-function cardContent(tag: Tag) {
-  return [
-    {
-      label: "Term",
-      value: tag.value,
-    },
-    {
-      label: "Term's URI",
-      value: tag.uri.orElse(<>&mdash;</>),
-    },
-    {
-      label: "Controlled Vocabulary Name",
-      value: tag.vocabulary.orElse(<>&mdash;</>),
-    },
-    {
-      label: "Controlled Vocabulary Version",
-      value: tag.version.orElse(<>&mdash;</>),
-    },
-  ];
-}
 
 type TagListingArgs = {
   tags: Array<Tag>;
@@ -61,10 +41,29 @@ export default function TagListing({
   onDelete,
   onClick = () => {},
 }: TagListingArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [metadataPopup, setMetadataPopup] = useState<{
     anchorEl: HTMLElement;
     tag: Tag;
   } | null>(null);
+  const cardContent = (tag: Tag) => [
+    {
+      label: t("tags.metadata.term"),
+      value: tag.value,
+    },
+    {
+      label: t("tags.metadata.termUri"),
+      value: tag.uri.orElse(<>&mdash;</>),
+    },
+    {
+      label: t("tags.metadata.controlledVocabularyName"),
+      value: tag.vocabulary.orElse(<>&mdash;</>),
+    },
+    {
+      label: t("tags.metadata.controlledVocabularyVersion"),
+      value: tag.version.orElse(<>&mdash;</>),
+    },
+  ];
 
   return (
     <Grid container direction="row" spacing={1}>
@@ -108,7 +107,7 @@ export default function TagListing({
               tag.version.isPresent() && {
                 icon: (
                   <IconButtonWithTooltip
-                    title="View metadata"
+                    title={t("tags.metadata.view")}
                     icon={<FontAwesomeIcon icon={faSitemap} />}
                     size="small"
                     color="primary"

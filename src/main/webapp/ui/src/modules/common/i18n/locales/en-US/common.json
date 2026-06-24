@@ -152,6 +152,11 @@
     "clearTooltip": "Clear search",
     "placeholder": "Search..."
   },
+  "pubchemImport": {
+    "importSelected": "Import Selected",
+    "importing": "Importing...",
+    "title": "Import from PubChem"
+  },
   "tags": {
     "addTag": "Add Tag",
     "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
@@ -162,6 +167,13 @@
     "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
     "noName": "no name",
     "noTagsAvailable": "No tags available",
+    "metadata": {
+      "controlledVocabularyName": "Controlled Vocabulary Name",
+      "controlledVocabularyVersion": "Controlled Vocabulary Version",
+      "term": "Term",
+      "termUri": "Term's URI",
+      "view": "View metadata"
+    },
     "typeTagInstead": "Simply type in the tag and press enter instead.",
     "useNewTagHint": "To use a new tag, press Enter.",
     "validation": {

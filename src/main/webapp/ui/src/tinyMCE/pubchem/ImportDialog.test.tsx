@@ -110,10 +110,10 @@ describe("ImportDialog", () => {
   test("Should have a title", () => {
     render(<ImportDialogStory />);
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAccessibleName("Import from PubChem");
+    expect(dialog).toHaveAccessibleName("pubchemImport.title");
     const title = within(dialog).getByRole("heading", { level: 3 });
     expect(title).toBeVisible();
-    expect(title).toHaveTextContent("Import from PubChem");
+    expect(title).toHaveTextContent("pubchemImport.title");
   });
 
   test("Should have a close button", async () => {
@@ -217,7 +217,7 @@ describe("ImportDialog", () => {
     await screen.findAllByRole("checkbox", { name: /select/i });
 
     // clicking import without selecting any compounds shows a validation warning
-    await user.click(screen.getByRole("button", { name: /import selected/i }));
+    await user.click(screen.getByRole("button", { name: "pubchemImport.importSelected" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toBeVisible();
     expect(alert).toHaveTextContent(/please select at least one compound/i);
