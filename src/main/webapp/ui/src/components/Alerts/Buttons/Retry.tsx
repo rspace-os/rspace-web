@@ -4,6 +4,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../IconButtonWithTooltip";
 
 type RetryArgs = {
@@ -12,10 +13,11 @@ type RetryArgs = {
 };
 
 function Retry({ retryFunction, onClose }: RetryArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [retrying, setRetrying] = useState(false);
   return (
     <IconButtonWithTooltip
-      title="Retry"
+      title={t("actions.retry")}
       icon={retrying ? <FontAwesomeIcon icon={faSpinner} spin size="sm" /> : <RefreshIcon />}
       onClick={(_event: React.MouseEvent<HTMLButtonElement>) => {
         void (async () => {

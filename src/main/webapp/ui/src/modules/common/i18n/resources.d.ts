@@ -61,9 +61,11 @@ export default interface Resources {
       "close": "Close",
       "confirm": "Confirm",
       "delete": "Delete",
+      "dismiss": "Dismiss",
       "export": "Export",
       "next": "Next",
       "ok": "OK",
+      "retry": "Retry",
       "submit": "Submit"
     },
     "confirmationDialog": {
