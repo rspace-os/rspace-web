@@ -292,6 +292,16 @@ export default interface Resources {
         }
       }
     },
+    "fields": {
+      "extraFields": {
+        "deleteField": "Delete field",
+        "fieldSettings": "Field settings",
+        "maxCharacters": "Must be no more than {max} characters.",
+        "noLinkSet": "No link set",
+        "noMoreFields": "No more fields",
+        "validNumber": "Must be a valid number."
+      }
+    },
     "permalinkNotFound": {
       "latestLink": "View the latest version",
       "typeLabels": {
