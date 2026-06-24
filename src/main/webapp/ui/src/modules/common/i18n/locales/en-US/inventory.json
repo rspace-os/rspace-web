@@ -18,6 +18,9 @@
     "versionedTitle": "Version {version} of this {typeLabel} could not be found."
   },
   "search": {
+    "details": {
+      "loadingBatchEditing": "Loading batch editing"
+    },
     "emptyListing": {
       "alt": "Empty Listing",
       "body": "Nothing here yet.",
@@ -31,6 +34,10 @@
     "noResults": {
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
+    },
+    "helpTitle": "Info on searching Inventory.",
+    "navigation": {
+      "ariaLabel": "Search and Navigation"
     },
     "resultsTable": {
       "actionInProgress": "Action In Progress",

@@ -251,10 +251,17 @@ export default interface Resources {
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
     },
     "search": {
+      "details": {
+        "loadingBatchEditing": "Loading batch editing"
+      },
       "emptyListing": {
         "alt": "Empty Listing",
         "body": "Nothing here yet.",
         "title": "Empty {recordType}"
+      },
+      "helpTitle": "Info on searching Inventory.",
+      "navigation": {
+        "ariaLabel": "Search and Navigation"
       },
       "noActiveResult": {
         "body": "Let's get you started with the system.",

@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Route, Routes } from "react-router";
 import { useLandmark } from "../../components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
@@ -18,6 +19,7 @@ import Search from "./Search";
 import SearchView from "./SearchView";
 
 function LeftPanelView(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { useNavigate } = React.useContext(NavigateContext);
@@ -107,7 +109,7 @@ function LeftPanelView(): React.ReactNode {
       spacing={1}
       data-testid="MainSearch"
       role="navigation"
-      aria-label="Search and Navigation"
+      aria-label={t("search.navigation.ariaLabel")}
     >
       <Box sx={{ width: "100%" }}>
         <Search handleSearch={handleSearch} searchbarAdornment={<RightPanelToggle />} />
