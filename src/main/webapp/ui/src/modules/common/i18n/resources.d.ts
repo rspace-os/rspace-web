@@ -98,6 +98,27 @@ export default interface Resources {
       }
     },
     "profile": {
+      "groups": {
+        "activity": {
+          "action": "Action",
+          "show": "Show group activity",
+          "time": "Time",
+          "title": "User's group activity"
+        },
+        "autosharing": {
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "notApplicable": "n/a"
+        },
+        "table": {
+          "actions": "Actions",
+          "ariaLabel": "enhanced table",
+          "autosharing": "Autosharing",
+          "group": "Group",
+          "role": "Role"
+        },
+        "title": "Groups"
+      },
       "oauth": {
         "connectedApps": {
           "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",

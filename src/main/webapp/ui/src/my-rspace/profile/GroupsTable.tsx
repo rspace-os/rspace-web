@@ -8,6 +8,7 @@ import TableRow from "@mui/material/TableRow";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
@@ -22,6 +23,7 @@ declare function setPage(n: number): void;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function GroupsTable(props: any) {
+  const { t } = useTranslation("common");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [groups, setGroups] = React.useState<any[]>([]);
   const [isCurrentlySharing, setIsCurrentlySharing] = React.useState(false);
@@ -71,18 +73,18 @@ export default function GroupsTable(props: any) {
 
   const tableHeaders = () => {
     return [
-      { id: "groupName", numeric: false, label: "Group" },
-      ...(props.privateGroup ? [] : [{ id: "role", numeric: false, label: "Role" }]),
+      { id: "groupName", numeric: false, label: t("profile.groups.table.group") },
+      ...(props.privateGroup ? [] : [{ id: "role", numeric: false, label: t("profile.groups.table.role") }]),
       ...(props.privateGroup
         ? []
         : [
             {
               id: "status",
               numeric: false,
-              label: "Autosharing",
+              label: t("profile.groups.table.autosharing"),
             },
           ]),
-      ...(props.canEdit ? [{ id: "actions", numeric: false, label: "Actions" }] : []),
+      ...(props.canEdit ? [{ id: "actions", numeric: false, label: t("profile.groups.table.actions") }] : []),
     ];
   };
 
@@ -91,12 +93,12 @@ export default function GroupsTable(props: any) {
       <ThemeProvider theme={materialTheme}>
         <Box sx={{ width: "690px", padding: "0px 15px" }}>
           <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
-            <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>Groups</Box>
+            <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>{t("profile.groups.title")}</Box>
           </Box>
           <br />
           {groups.length > 0 && fetchSuccess && (
             <TableContainer>
-              <Table size="small" aria-label="enhanced table">
+              <Table size="small" aria-label={t("profile.groups.table.ariaLabel")}>
                 <EnhancedTableHead
                   headCells={tableHeaders()}
                   order={order}
@@ -115,7 +117,11 @@ export default function GroupsTable(props: any) {
                         <>
                           <TableCell align="left">{group.roleInGroup}</TableCell>
                           <TableCell align="left">
-                            {group.autoshareEnabled ? "Enabled" : group.labGroup ? "Disabled" : "n/a"}
+                            {group.autoshareEnabled
+                              ? t("profile.groups.autosharing.enabled")
+                              : group.labGroup
+                                ? t("profile.groups.autosharing.disabled")
+                                : t("profile.groups.autosharing.notApplicable")}
                           </TableCell>
                         </>
                       )}
