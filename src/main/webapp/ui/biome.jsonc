@@ -64,7 +64,8 @@
         "src/Export/fileStoreComponents/LoginStatus.tsx",
         "src/Export/WordExport.tsx",
         "src/Export/HtmlXmlExport.tsx",
-        "src/Export/PdfExport.tsx"
+        "src/Export/PdfExport.tsx",
+        "src/Export/repositories/DigitalCommonsDataRepo.tsx"
       ],
       "linter": {
         "rules": {

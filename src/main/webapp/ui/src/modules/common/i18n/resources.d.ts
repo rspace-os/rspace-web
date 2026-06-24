@@ -316,6 +316,12 @@ export default interface Resources {
           },
           "setDefault": "Set {pageSize} as default."
         }
+      },
+      "repositories": {
+        "common": {
+          "descriptionLabel": "Description *",
+          "titleLabel": "Title *"
+        }
       }
     }
   }

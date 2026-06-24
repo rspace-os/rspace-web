@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person, StandardValidations } from "./common";
 import type { Tag } from "./Tags";
 
@@ -54,6 +55,7 @@ export default function DigitalCommonsDataRepo({
   onTagsChange: _onTagsChange,
   fetchingTags: _fetchingTags,
 }: DigitalCommonsDataRepoArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   /*
    * DigitalCommonsData doesn't require all of the same information as all of the other
    * repositories, but the RSpace backend is set up to require author,
@@ -88,7 +90,7 @@ export default function DigitalCommonsDataRepo({
         <TextField
           name="title"
           error={submitAttempt && !inputValidations.title}
-          label="Title *"
+          label={t("export.repositories.common.titleLabel")}
           onChange={({ target: { value } }) => handleChange({ target: { name: "title", value } })}
           margin="normal"
           fullWidth
@@ -98,7 +100,7 @@ export default function DigitalCommonsDataRepo({
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
-          label="Description *"
+          label={t("export.repositories.common.descriptionLabel")}
           name="description"
           multiline
           maxRows="4"
