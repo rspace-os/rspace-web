@@ -112,10 +112,42 @@
       "addOneFieldAtATime": "You can only create one field at a time.",
       "deleteField": "Delete field",
       "fieldSettings": "Field settings",
+      "fields": {
+        "fieldName": "Field name",
+        "fieldType": "Field type",
+        "relationType": "Relation type"
+      },
+      "fieldTypes": {
+        "link": "Link",
+        "number": "Number",
+        "text": "Text"
+      },
+      "groups": {
+        "editing": "Editing extra field with name {name}",
+        "new": "New extra field"
+      },
+      "link": {
+        "relationHelper": "Pick a DataCite relation type",
+        "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+        "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
+      },
       "maxCharacters": "Must be no more than {max} characters.",
       "noLinkSet": "No link set",
       "noMoreFields": "No more fields",
-      "validNumber": "Must be a valid number."
+      "updateField": {
+        "apply": "Apply",
+        "ariaCancel": "Cancel update",
+        "ariaUpdate": "Update field",
+        "cancel": "Cancel",
+        "discard": "Discard",
+        "update": "Update"
+      },
+      "validNumber": "Must be a valid number.",
+      "validation": {
+        "duplicateName": "You either already have a field with that name or that name is not permitted.",
+        "emptyName": "Name should not be empty.",
+        "nameTooLong": "Name must be no longer than 255 characters."
+      }
     },
     "location": {
       "label": "Location"
