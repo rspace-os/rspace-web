@@ -20,7 +20,9 @@ import {
   RemoteFile,
 } from "./useGalleryListing";
 
-const ONE_HOUR_IN_MS = 60 * 60 * 1000;
+const ONE_MINUTE_IN_MS = 60 * 1000;
+// Uploads need longer than the gallery clients' 1-minute default.
+const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 
 /**
  * Best error message from a failed filestore API call: the first non-blank entry of the
@@ -161,11 +163,11 @@ export function useGalleryActions(): {
    */
   const galleryApi = axios.create({
     baseURL: "/gallery/ajax",
-    timeout: ONE_HOUR_IN_MS,
+    timeout: ONE_MINUTE_IN_MS,
   });
   const structuredDocumentApi = axios.create({
     baseURL: "/workspace/editor/structuredDocument/ajax",
-    timeout: ONE_HOUR_IN_MS,
+    timeout: ONE_MINUTE_IN_MS,
   });
 
   /** Authenticated client for the REST gallery API (/api/v1/gallery). */
@@ -727,6 +729,7 @@ export function useGalleryActions(): {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
