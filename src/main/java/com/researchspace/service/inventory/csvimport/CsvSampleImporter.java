@@ -14,8 +14,8 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.units.RSUnitDef;
@@ -63,8 +63,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
         filename.toLowerCase().endsWith(".csv")
             ? filename.substring(0, filename.length() - 4)
             : filename;
-    Sample template = recordFactory.createSample(templateName, createdBy);
-    template.setTemplate(true);
+    SampleTemplate template = recordFactory.createSampleTemplate(templateName, createdBy);
     setDefaultsInSuggestedParsedTemplate(template);
 
     // for each column decide field type and add to result template
@@ -84,7 +83,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
     return sampleParseResult;
   }
 
-  private void setDefaultsInSuggestedParsedTemplate(Sample template) {
+  private void setDefaultsInSuggestedParsedTemplate(SampleTemplate template) {
     template.setSampleSource(SampleSource.OTHER);
   }
 

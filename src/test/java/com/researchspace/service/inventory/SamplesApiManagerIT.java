@@ -17,7 +17,7 @@ import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
@@ -41,7 +41,7 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     moveSubSampleIntoListContainer(subSample.getId(), subContainer.getId(), testUser);
 
     // get sample details, verify subsample parent/grandparent are present
-    Sample dbSample = sampleApiMgr.getSampleById(sample.getId(), testUser);
+    SampleEntity dbSample = sampleApiMgr.getSampleById(sample.getId(), testUser);
     assertEquals(1, dbSample.getSubSamples().size());
     SubSample dbSubSample = dbSample.getSubSamples().get(0);
     assertEquals(subContainer.getId(), dbSubSample.getParentId());

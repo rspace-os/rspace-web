@@ -158,8 +158,9 @@ public class BaseApiInventoryController extends BaseApiController {
       GlobalIdentifier recordOid, User user) {
     switch (recordOid.getPrefix()) {
       case SA:
-      case IT:
         return sampleApiMgr.assertUserCanEditSample(recordOid.getDbId(), user);
+      case IT:
+        return sampleApiMgr.assertUserCanEditSampleTemplate(recordOid.getDbId(), user);
       case SS:
         return subSampleApiMgr.assertUserCanEditSubSample(recordOid.getDbId(), user);
       case IC:
@@ -180,8 +181,9 @@ public class BaseApiInventoryController extends BaseApiController {
       GlobalIdentifier recordOid, User user) {
     switch (recordOid.getPrefix()) {
       case SA:
-      case IT:
         return sampleApiMgr.assertUserCanReadSample(recordOid.getDbId(), user);
+      case IT:
+        return sampleApiMgr.assertUserCanReadSampleTemplate(recordOid.getDbId(), user);
       case SS:
         return subSampleApiMgr.assertUserCanReadSubSample(recordOid.getDbId(), user);
       case IC:

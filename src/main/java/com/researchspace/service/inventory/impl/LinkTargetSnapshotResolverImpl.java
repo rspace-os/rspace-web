@@ -10,6 +10,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -134,8 +135,10 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       case IN:
         return Instrument.class;
       case IT:
-        // Sample templates are persisted as Sample rows (treated as SA elsewhere).
-        return Sample.class;
+        // a template is a distinct SampleTemplate entity (DTYPE='SampleTemplate'); query that
+        // concrete class so Envers resolves the template revision (Sample.class would filter to
+        // DTYPE='Sample' and miss it).
+        return SampleTemplate.class;
       case SD:
         return StructuredDocument.class;
       case NB:

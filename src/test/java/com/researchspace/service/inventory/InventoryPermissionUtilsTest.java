@@ -18,7 +18,7 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.StructuredDocument;
@@ -96,7 +96,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     // standard group-sharing mode
     ApiSampleWithFullSubSamples createdSample = createBasicSampleForUser(testUser, "basicSample");
     assertEquals(ApiInventorySharingMode.OWNER_GROUPS, createdSample.getSharingMode());
-    Sample sample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
+    SampleEntity sample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
 
     // all within group have full permission, outside group none
     assertTrue(invPermissionUtils.canUserEditInventoryRecord(sample, testUser));
@@ -157,7 +157,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     // create a sample that is shared with group1 only
     ApiSampleWithFullSubSamples createdSample =
         createBasicSampleForUserAndGroups(testUser, "basicSample", List.of(group1));
-    Sample sample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
+    SampleEntity sample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
     assertEquals(InventorySharingMode.WHITELIST, sample.getSharingMode());
     assertEquals(List.of(group1.getUniqueName()), sample.getSharedWithUniqueNames());
 
@@ -246,7 +246,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
 
     // create a sample that is group-shared
     ApiSampleWithFullSubSamples createdSample = createBasicSampleForUser(testUser);
-    Sample sample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
+    SampleEntity sample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
     assertEquals(InventorySharingMode.OWNER_GROUPS, sample.getSharingMode());
 
     // within group1 full permission, outside group1 none
@@ -399,7 +399,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     ApiSubSample newSubSample2 = new ApiSubSample("SS2");
     newSample.setSubSamples(List.of(newSubSample1, newSubSample2));
     ApiSampleWithFullSubSamples apiSampleSA1 = sampleApiMgr.createNewApiSample(newSample, userE);
-    Sample sampleSA1 = sampleApiMgr.getSampleById(apiSampleSA1.getId(), userE);
+    SampleEntity sampleSA1 = sampleApiMgr.getSampleById(apiSampleSA1.getId(), userE);
     assertEquals("SA1", sampleSA1.getName());
     assertEquals(InventorySharingMode.OWNER_GROUPS, sampleSA1.getSharingMode());
     assertEquals(2, sampleSA1.getSubSamples().size());
@@ -650,7 +650,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples apiSampleSA1 = createBasicSampleForUser(userA, "SA1");
     moveSubSampleIntoListContainer(
         apiSampleSA1.getSubSamples().get(0).getId(), containerC1.getId(), userA);
-    Sample sampleSA1 = sampleApiMgr.getSampleById(apiSampleSA1.getId(), userA);
+    SampleEntity sampleSA1 = sampleApiMgr.getSampleById(apiSampleSA1.getId(), userA);
     assertEquals("SA1", sampleSA1.getName());
     assertEquals(InventorySharingMode.OWNER_GROUPS, sampleSA1.getSharingMode());
     assertEquals(1, sampleSA1.getSubSamples().size());

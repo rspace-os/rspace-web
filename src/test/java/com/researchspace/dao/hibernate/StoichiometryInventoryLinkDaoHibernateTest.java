@@ -4,20 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.RSChemElementDao;
-import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.StoichiometryDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.testutils.SpringTransactionalTest;
-import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import javax.validation.ConstraintViolationException;
 import org.junit.Test;
@@ -26,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactionalTest {
 
   @Autowired private StoichiometryInventoryLinkDao dao;
-  @Autowired private SampleDao sampleDao;
   @Autowired private StoichiometryDao stoichDao;
   @Autowired private RSChemElementDao chemDao;
 
@@ -46,9 +43,8 @@ public class StoichiometryInventoryLinkDaoHibernateTest extends SpringTransactio
   }
 
   private StoichiometryInventoryLink setupSampleTemplateAndStoichiometry(User user) {
-    Sample sample = TestFactory.createBasicSampleOutsideContainer(user);
-    sample.setTemplate(true);
-    sampleDao.save(sample);
+    SampleTemplate sample = recordFactory.createSampleTemplate("test sample", user);
+    sampleTemplateDao.save(sample);
 
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "test");
 
