@@ -250,6 +250,41 @@
     "versionedBody": "The version may never have existed.",
     "versionedTitle": "Version {version} of this {typeLabel} could not be found."
   },
+  "print": {
+    "dialog": {
+      "loading": "Loading...",
+      "previewLabelLayout": "Preview Barcode Label Layout",
+      "printError": "Print error.",
+      "printSelected": "Print selected ({count})",
+      "resolveError": "Please resolve error.",
+      "title": "Print Options",
+      "unableToRetrieveBarcodeImages": "Unable to retrieve barcode images."
+    },
+    "options": {
+      "basic": "Basic",
+      "eachBarcodeOnce": "Each barcode once",
+      "eachBarcodeTwice": "Each barcode twice (raffle book)",
+      "full": "Full",
+      "fullWidth": "Full width (4cm).",
+      "globalId": "Global ID",
+      "halfWidth": "Half width (2cm).",
+      "horizontalLayout": "Applying a horizontal layout.",
+      "identifierType": "Identifier Type",
+      "igsnId": "IGSN ID",
+      "igsnMissing": "Some of the selected records do not have an IGSN ID.",
+      "labelPrinter": "Label Printer",
+      "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
+      "labelPrinterHint": "Print one label per sticker (Zebra printer).",
+      "large": "Large",
+      "printCopies": "Print Copies",
+      "printLayout": "Print Layout",
+      "printSize": "Print Size",
+      "printerType": "Printer Type",
+      "small": "Small",
+      "standardPrinter": "Standard Printer",
+      "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
+    }
+  },
   "sample": {
     "fields": {
       "expiryDate": {
