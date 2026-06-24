@@ -48,7 +48,7 @@ describe("BatchName", () => {
       common: "",
       suffix: "NONE",
     });
-    expect(container).not.toHaveTextContent("Name must be at least 2 characters.");
+    expect(container).not.toHaveTextContent("fields.name.minLength");
   });
   test("Should enter an error state when value is only a single character and the suffix is NONE.", () => {
     fc.assert(
@@ -61,7 +61,7 @@ describe("BatchName", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: name },
           });
-          expect(container).toHaveTextContent("Name must be at least 2 characters.");
+          expect(container).toHaveTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
@@ -85,7 +85,7 @@ describe("BatchName", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: common },
           });
-          expect(container).not.toHaveTextContent("Name must be at least 2 characters.");
+          expect(container).not.toHaveTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
         },
       ),
@@ -101,7 +101,7 @@ describe("BatchName", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: common },
           });
-          expect(container).toHaveTextContent("Name must be no longer than 255 characters.");
+          expect(container).toHaveTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
@@ -115,7 +115,7 @@ describe("BatchName", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: common },
           });
-          expect(container).toHaveTextContent("Name must be no longer than 253 characters.");
+          expect(container).toHaveTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
@@ -129,7 +129,7 @@ describe("BatchName", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: common },
           });
-          expect(container).toHaveTextContent("Name must be no longer than 253 characters.");
+          expect(container).toHaveTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
@@ -143,7 +143,7 @@ describe("BatchName", () => {
           fireEvent.input(screen.getByRole("textbox"), {
             target: { value: common },
           });
-          expect(container).toHaveTextContent("Name must be no longer than 236 characters.");
+          expect(container).toHaveTextContent("fields.name.maxLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         }),
       );
@@ -167,13 +167,13 @@ describe("BatchName", () => {
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: firstValidValue },
           });
-          expect(container).not.toHaveTextContent("Name must be at least 2 characters.");
+          expect(container).not.toHaveTextContent("fields.name.minLength");
 
           expect(onErrorStateChange).toHaveBeenCalledWith(false);
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: secondInvalidValue },
           });
-          expect(container).toHaveTextContent("Name must be at least 2 characters.");
+          expect(container).toHaveTextContent("fields.name.minLength");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),
@@ -190,7 +190,7 @@ describe("BatchName", () => {
           fireEvent.change(screen.getByRole("textbox"), {
             target: { value: name },
           });
-          expect(container).toHaveTextContent("Name must include at least one non-whitespace character.");
+          expect(container).toHaveTextContent("fields.name.nonWhitespace");
           expect(onErrorStateChange).toHaveBeenCalledWith(true);
         },
       ),

@@ -5,6 +5,7 @@ import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import StringField from "../../../components/Inputs/StringField";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import type { BatchName } from "../../../stores/models/InventoryBaseRecordCollection";
@@ -22,6 +23,7 @@ function Name<Fields extends { name: BatchName }, FieldOwner extends HasEditable
   allowAlphabeticalSuffix: boolean; // has to be disabled if there are more than 26 items selected
   onErrorStateChange: (isError: boolean) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [initial, setInitial] = useState(true);
 
   const lengthOfSuffix = {
@@ -55,17 +57,17 @@ function Name<Fields extends { name: BatchName }, FieldOwner extends HasEditable
       fieldOwner.fieldValues.name.common.trim().length === 0 &&
       !initial
     )
-      return "Name must include at least one non-whitespace character.";
+      return t("fields.name.nonWhitespace");
     if (fieldOwner.fieldValues.name.common.length + lengthOfSuffix < MIN && !initial)
-      return `Name must be at least ${MIN} characters.`;
+      return t("fields.name.minLength", { min: MIN });
     if (fieldOwner.fieldValues.name.common.length + lengthOfSuffix > MAX)
-      return `Name must be no longer than ${MAX - lengthOfSuffix} characters.`;
+      return t("fields.name.maxLength", { max: MAX - lengthOfSuffix });
     return null;
   };
 
   return (
     <BatchFormField
-      label="Name"
+      label={t("fields.name.label")}
       maxLength={MAX - lengthOfSuffix}
       error={Boolean(errorMessage())}
       disabled={!fieldOwner.isFieldEditable("name")}
@@ -90,14 +92,14 @@ function Name<Fields extends { name: BatchName }, FieldOwner extends HasEditable
               endAdornment: !disabled ? (
                 <InputAdornment position="end">
                   <Box sx={{ mx: 1 }}>
-                    Suffix:&nbsp;
+                    {t("fields.name.suffix.label")}&nbsp;
                     <Select variant="standard" value={fieldOwner.fieldValues.name.suffix} onChange={handleChangeSuffix}>
-                      <MenuItem value="NONE">None</MenuItem>
-                      <MenuItem value="INDEX_NUMBER">Numerical Index: 1, 2, 3...</MenuItem>
+                      <MenuItem value="NONE">{t("fields.name.suffix.none")}</MenuItem>
+                      <MenuItem value="INDEX_NUMBER">{t("fields.name.suffix.numericalIndex")}</MenuItem>
                       <MenuItem disabled={!allowAlphabeticalSuffix} value="INDEX_LETTER">
-                        Alphabetical Index: A, B, C...
+                        {t("fields.name.suffix.alphabeticalIndex")}
                       </MenuItem>
-                      <MenuItem value="CREATED">Date of Creation</MenuItem>
+                      <MenuItem value="CREATED">{t("fields.name.suffix.dateOfCreation")}</MenuItem>
                     </Select>
                   </Box>
                 </InputAdornment>

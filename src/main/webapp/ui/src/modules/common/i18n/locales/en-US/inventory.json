@@ -71,13 +71,43 @@
     "thirdPartyImport": "Third-Party Import"
   },
   "fields": {
+    "description": {
+      "label": "Description",
+      "maxLength": "Description must be no longer than {max} characters (including HTML tags)."
+    },
     "extraFields": {
+      "addCustomField": "Add custom field.",
+      "addNewField": "Add new field",
+      "addOneFieldAtATime": "You can only create one field at a time.",
       "deleteField": "Delete field",
       "fieldSettings": "Field settings",
       "maxCharacters": "Must be no more than {max} characters.",
       "noLinkSet": "No link set",
       "noMoreFields": "No more fields",
       "validNumber": "Must be a valid number."
+    },
+    "location": {
+      "label": "Location"
+    },
+    "name": {
+      "label": "Name",
+      "maxLength": "Name must be no longer than {max} characters.",
+      "minLength": "Name must be at least {min} characters.",
+      "nonWhitespace": "Name must include at least one non-whitespace character.",
+      "suffix": {
+        "alphabeticalIndex": "Alphabetical Index: A, B, C...",
+        "dateOfCreation": "Date of Creation",
+        "label": "Suffix:",
+        "none": "None",
+        "numericalIndex": "Numerical Index: 1, 2, 3..."
+      }
+    },
+    "owner": {
+      "label": "Owner",
+      "unknownOwner": "Unknown Owner"
+    },
+    "templateFields": {
+      "addField": "Add field"
     }
   },
   "layout": {
