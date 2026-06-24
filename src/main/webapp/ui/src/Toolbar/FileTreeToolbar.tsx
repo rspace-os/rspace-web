@@ -3,6 +3,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot } from "react-dom/client";
 import BaseToolbar from "../components/BaseToolbar";
+import i18n from "../modules/common/i18n";
 import TreeSort from "../components/TreeSort";
 import materialTheme from "../theme";
 
@@ -37,9 +38,9 @@ export default function FileTreeToolbar() {
               component="button"
               type="button"
               id="hideFileTreeSmall"
-              title="Hide tree browser"
+              title={i18n.t("common:toolbar.hideTreeBrowser")}
               data-test-id="hide-tree"
-              aria-label="Hide tree browser"
+              aria-label={i18n.t("common:toolbar.hideTreeBrowser")}
               sx={{
                 color: "white",
                 fontSize: "18px",

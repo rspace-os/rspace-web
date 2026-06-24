@@ -62,12 +62,16 @@ export default interface Resources {
       "confirm": "Confirm",
       "delete": "Delete",
       "dismiss": "Dismiss",
+      "edit": "Edit",
       "export": "Export",
       "next": "Next",
       "ok": "OK",
       "retry": "Retry",
       "search": "Search",
-      "submit": "Submit"
+      "share": "Share",
+      "sign": "Sign",
+      "submit": "Submit",
+      "witness": "Witness"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
@@ -75,6 +79,9 @@ export default interface Resources {
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
+    },
+    "toolbar": {
+      "hideTreeBrowser": "Hide tree browser"
     },
     "values": {
       "none": "None"
