@@ -15,6 +15,10 @@ For each module (namespace), in order:
 2. `useTranslation("<ns>")` per component; cross-namespace components use
    `useTranslation(["<ns>", "common"])`. Wrap each root in `<I18nRoot>` (the
    `namespaces` prop is an optional preload hint, not required).
+   - **Class components** can't use the hook: import the singleton
+     (`import i18n from "@/modules/common/i18n"`) and call `i18n.t("<ns>:key")`
+     (ns-prefixed). Wrap the root in `<I18nRoot namespaces={["<ns>"]}>` so the
+     namespace is preloaded before the class renders (i18n.t does not suspend).
 3. Author English in `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/<ns>.json`,
    then `pnpm run i18n:extract` and `pnpm run i18n:types`.
 4. Add the module's glob to the `noJsxLiterals` override in `biome.jsonc`
