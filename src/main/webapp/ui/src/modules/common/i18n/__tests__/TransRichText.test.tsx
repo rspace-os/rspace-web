@@ -23,7 +23,10 @@ async function createTestI18n(): Promise<I18nInstance> {
     resources: {
       "en-US": {
         common: {
-          richTextCompilerProbe: "Read the <strong>important note</strong> and <docsLink>open the docs</docsLink>.",
+          richTextTranslationUrlProbe:
+            'Read the <strong>important note</strong> and <docsLink href="/docs/from-translation">open the translated docs</docsLink>.',
+          richTextComponentUrlProbe:
+            "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
         },
       },
     },
@@ -40,9 +43,17 @@ function RichTextProbe({ i18n }: { i18n: I18nInstance }): React.ReactNode {
       <I18nextProvider i18n={i18n}>
         <p>
           <TestTrans
-            i18nKey="richTextCompilerProbe"
+            i18nKey="richTextTranslationUrlProbe"
             components={{
-              docsLink: <a href="/docs/rich-text">open the docs</a>,
+              docsLink: <a href="/docs/fallback">fallback docs text</a>,
+            }}
+          />
+        </p>
+        <p>
+          <TestTrans
+            i18nKey="richTextComponentUrlProbe"
+            components={{
+              docsLink: <a href="/docs/from-component">fallback docs text</a>,
             }}
           />
         </p>
@@ -55,8 +66,24 @@ describe("Trans rich text rendering", () => {
   it("renders basic rich text and supplied components without a compiler opt-out wrapper", async () => {
     render(<RichTextProbe i18n={await createTestI18n()} />);
 
-    expect(screen.getByText("important note").tagName).toBe("STRONG");
-    expect(screen.getByRole("link", { name: "open the docs" })).toHaveAttribute("href", "/docs/rich-text");
-    expect(screen.getByText(/Read the/)).toHaveTextContent("Read the important note and open the docs.");
+    expect(screen.getAllByText("important note").map(({ tagName }) => tagName)).toEqual(["STRONG", "STRONG"]);
+    expect(screen.getByRole("link", { name: "open the translated docs" })).toHaveAttribute(
+      "href",
+      "/docs/from-translation",
+    );
+    expect(screen.getByRole("link", { name: "open the component docs" })).toHaveAttribute(
+      "href",
+      "/docs/from-component",
+    );
+    expect(
+      screen.getByText(
+        (_content, element) => element?.textContent === "Read the important note and open the translated docs.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_content, element) => element?.textContent === "Read the important note and open the component docs.",
+      ),
+    ).toBeInTheDocument();
   });
 });
