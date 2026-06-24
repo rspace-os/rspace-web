@@ -32,6 +32,18 @@ export default interface Resources {
       "error": "Could not disconnect from {appName}.",
       "success": "Successfully disconnected from {appName}."
     },
+    "dmpIntegrations": {
+      "argos": "Argos",
+      "dmpAssistant": "DMP Assistant",
+      "dmponline": "DMPonline",
+      "dmptool": "DMPTool",
+      "scope": {
+        "both": "Both",
+        "mine": "Mine",
+        "name": "DMP Scope Options",
+        "public": "Public"
+      }
+    },
     "externalWorkflows": {
       "columns": {
         "container": "Container/Galaxy History",
