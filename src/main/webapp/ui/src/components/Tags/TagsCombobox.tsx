@@ -15,6 +15,7 @@ import useAutocomplete, {
 } from "@mui/material/useAutocomplete";
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
 import type { Tag } from "../../stores/definitions/Tag";
 import { lift3, Optional } from "../../util/optional";
@@ -117,15 +118,16 @@ function TagRow({
   keyboardFocusIndex,
   getOptionProps,
 }: RowComponentProps<TagRowProps>) {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   const isItemLoaded = !hasNextPage || index < sortedOptions.length;
   if (!isItemLoaded && isNextPageLoading) {
-    return <li style={style}>Loading...</li>;
+    return <li style={style}>{t("tags.loading")}</li>;
   }
   if (!groupedOptions || index >= groupedOptions.length) return <li style={style} />;
 
   const option = groupedOptions[index] as InternalTag;
-  const name = option.value || "no name";
+  const name = option.value || t("tags.noName");
   const tagIsAllowed = isAllowed(checkInternalTag(option, { enforceOntologies }));
 
   const start = name.indexOf(filter);
@@ -381,6 +383,7 @@ function TagsComboboxContent<
         };
       },
 >({ onSelection, value, anchorEl, onClose, enforceOntologies }: TagsComboboxArgs<Toggle>): React.ReactNode {
+  const { t } = useTranslation("common");
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -612,7 +615,7 @@ function TagsComboboxContent<
       >
         <TextField
           variant="standard"
-          label="Filter suggested tags"
+          label={t("tags.filterSuggestedTags")}
           inputRef={inputRef}
           onFocus={() => {
             /*
@@ -800,24 +803,22 @@ function TagsComboboxContent<
       )}
       {!error && groupedOptions.length === 0 && filter === "" && (
         <Alert severity="info">
-          <AlertTitle>No tags available</AlertTitle>
+          <AlertTitle>{t("tags.noTagsAvailable")}</AlertTitle>
         </Alert>
       )}
       {!error && groupedOptions.length === 0 && filter !== "" && (
         <Alert severity="info">
-          <AlertTitle>No matching tag suggestions {enforceOntologies ? "from ontologies" : ""}.</AlertTitle>
+          <AlertTitle>
+            {enforceOntologies ? t("tags.noMatchingSuggestionsFromOntologies") : t("tags.noMatchingSuggestions")}
+          </AlertTitle>
           {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-          {enforceOntologies ? <></> : <>To use a new tag, press Enter.</>}
+          {enforceOntologies ? <></> : <>{t("tags.useNewTagHint")}</>}
         </Alert>
       )}
       {error && (
         <Alert severity="warning">
-          <AlertTitle>Error fetching tags</AlertTitle>
-          {enforceOntologies ? (
-            <>Please check that the ontology files are correctly configured.</>
-          ) : (
-            <>Simply type in the tag and press enter instead.</>
-          )}
+          <AlertTitle>{t("tags.errorFetchingTags")}</AlertTitle>
+          {enforceOntologies ? <>{t("tags.checkOntologyFiles")}</> : <>{t("tags.typeTagInstead")}</>}
         </Alert>
       )}
     </>

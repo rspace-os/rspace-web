@@ -86,6 +86,30 @@ export default interface Resources {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
     },
+    "tags": {
+      "addTag": "Add Tag",
+      "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
+      "errorFetchingTags": "Error fetching tags",
+      "filterSuggestedTags": "Filter suggested tags",
+      "loading": "Loading...",
+      "noMatchingSuggestions": "No matching tag suggestions.",
+      "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
+      "noName": "no name",
+      "noTagsAvailable": "No tags available",
+      "typeTagInstead": "Simply type in the tag and press enter instead.",
+      "useNewTagHint": "To use a new tag, press Enter.",
+      "validation": {
+        "alreadySelected": "Tag is already selected.",
+        "fromSource": "From version {version} of {filename}",
+        "invalidChar": "Tag contains invalid character \"{char}\".",
+        "notFromOntology": "Not from an ontology",
+        "tooLong": "Tag cannot exceed {maxLength} characters.",
+        "tooShort": "Tag must be at least {minLength} characters long.",
+        "whitespaceConsecutive": "Tags cannot contain consecutive whitespace characters.",
+        "whitespacePrefix": "Tags cannot start with whitespace characters.",
+        "whitespaceSuffix": "Tags cannot end with whitespace characters."
+      }
+    },
     "toolbar": {
       "createDocument": "CREATE DOCUMENT",
       "createRecord": "Create a record",
