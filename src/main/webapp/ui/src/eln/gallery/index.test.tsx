@@ -16,6 +16,7 @@ vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router");
   return actual;
 });
+
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";

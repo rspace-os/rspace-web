@@ -9,6 +9,7 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import Dataverse from "../Dataverse";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("Dataverse", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {

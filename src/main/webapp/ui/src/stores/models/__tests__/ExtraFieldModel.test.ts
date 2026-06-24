@@ -83,6 +83,72 @@ describe("ExtraFieldModel link validation", () => {
   });
 });
 
+function makeTextField(attrs: { name?: string; content?: string; editing?: boolean } = {}): ExtraFieldModel {
+  return new ExtraFieldModel(
+    {
+      id: 8,
+      globalId: "EF8",
+      name: attrs.name ?? "Notes",
+      lastModified: null,
+      type: "text",
+      content: attrs.content ?? "some text",
+      parentGlobalId: "SA1",
+      editing: attrs.editing ?? false,
+    } as unknown as ConstructorParameters<typeof ExtraFieldModel>[0],
+    makeMockSample(),
+  );
+}
+
+describe("ExtraFieldModel editing blocks record save for any open editor (RSDEV-1201)", () => {
+  it("blocks Save while a Text field's name/type editor is open", () => {
+    // the name/type edit lives only in the editor (local React state) until Update is
+    // clicked, so saving mid-edit would silently discard a rename. Save stays greyed
+    // until the edit is committed or cancelled.
+    const field = makeTextField({
+      name: "Notes",
+      content: "hello",
+      editing: true,
+    });
+    expect(field.isValid.isOk).toBe(false);
+    const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
+    expect(message).toMatch(/update or cancel/i);
+  });
+
+  it("blocks Save while a Number field's editor is open", () => {
+    const field = new ExtraFieldModel(
+      {
+        id: 9,
+        globalId: "EF9",
+        name: "Count",
+        lastModified: null,
+        type: "number",
+        content: "42",
+        parentGlobalId: "SA1",
+        editing: true,
+      } as unknown as ConstructorParameters<typeof ExtraFieldModel>[0],
+      makeMockSample(),
+    );
+    expect(field.isValid.isOk).toBe(false);
+    const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
+    expect(message).toMatch(/update or cancel/i);
+  });
+
+  it("does NOT block Save when only the field value is edited inline (editor closed)", () => {
+    // editing a field's value happens inline on the card (editing stays false) and the
+    // content live-syncs into the model, so the record-level Save keeps working normally.
+    const field = makeTextField({
+      name: "Notes",
+      content: "hello",
+      editing: false,
+    });
+    expect(field.isValid.isOk).toBe(true);
+
+    // mirrors the inline TextField onChange (setAttributesDirty({ content }))
+    field.setAttributes({ content: "hello world" });
+    expect(field.isValid.isOk).toBe(true);
+  });
+});
+
 describe("ExtraFieldModel editing blocks record save", () => {
   it("is invalid while the field editor is open, so Save is greyed out", () => {
     // mid-edit values live in the editor, not the model: saving now would
@@ -104,7 +170,31 @@ describe("ExtraFieldModel editing blocks record save", () => {
     expect(field.isValid.isOk).toBe(true);
   });
 
-  it("is invalid while a brand-new field is unapplied, so Save is greyed out", () => {
+  it.each(["text", "number", "link"] as const)("blocks Save when a new %s field is being added", (type) => {
+    const field = new ExtraFieldModel(
+      {
+        id: null,
+        globalId: null,
+        name: "My field",
+        lastModified: null,
+        type,
+        content: "",
+        parentGlobalId: "SA1",
+        editing: true,
+        initial: true,
+      } as unknown as ConstructorParameters<typeof ExtraFieldModel>[0],
+      makeMockSample(),
+    );
+
+    expect(field.isValid.isOk).toBe(false);
+    const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
+    expect(message).toMatch(/new field is being added/i);
+  });
+
+  it("blocks Save for a brand-new unapplied field of any type via the edit-mode rule", () => {
+    // A new field's name/type/content all live in the editor until Apply; saving mid-add
+    // would silently discard them. The edit-mode guard fires for all field types when
+    // initial=true so Save is greyed regardless of field type (RSDEV-1201 review).
     const field = new ExtraFieldModel(
       {
         id: null,
@@ -122,7 +212,7 @@ describe("ExtraFieldModel editing blocks record save", () => {
 
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/apply or discard/i);
+    expect(message).toMatch(/new field is being added/i);
   });
 });
 

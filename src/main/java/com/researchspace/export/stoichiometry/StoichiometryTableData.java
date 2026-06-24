@@ -3,6 +3,8 @@ package com.researchspace.export.stoichiometry;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 import lombok.Getter;
 
 @Getter
@@ -79,7 +81,7 @@ public class StoichiometryTableData {
     if (value == null) {
       return "0";
     }
-    DecimalFormat df = new DecimalFormat("#.###");
+    DecimalFormat df = new DecimalFormat("#.###", DecimalFormatSymbols.getInstance(Locale.US));
     df.setRoundingMode(RoundingMode.HALF_UP);
     return df.format(value);
   }

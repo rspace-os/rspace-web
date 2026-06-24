@@ -5,9 +5,8 @@ import { expectAccessible, render, screen } from "@/__tests__/customQueries";
 import { SimplePageWithSidebarToggle } from "./SidebarToggle.story";
 
 /*
- * Converted from SidebarToggle.spec.tsx (Playwright CT). This component renders
- * a single icon button and only exercises markup/aria/click behaviour, so it
- * gets no value from a real browser and runs as a jsdom unit test instead.
+ * This component renders a single icon button and only exercises
+ * markup/aria/click behaviour, so it runs as a jsdom unit test.
  */
 describe("Functional requirements", () => {
   test("Clicking the button should toggle the sidebar.", async () => {

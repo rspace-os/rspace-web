@@ -8,6 +8,7 @@ import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrati
 import allIntegrationsAreDisabled from "./allIntegrationsAreDisabled.json";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 describe("useIntegrationsEndpoint", () => {
   describe("saveAppOptions", () => {
     function Wrapper() {

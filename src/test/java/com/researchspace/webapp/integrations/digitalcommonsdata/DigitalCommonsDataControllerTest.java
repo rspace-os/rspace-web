@@ -43,6 +43,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.validation.support.BindingAwareModelMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
@@ -92,11 +93,11 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
 
   @Test
   public void testConnect() throws MalformedURLException {
-    RedirectView result =
+    ModelAndView result =
         digitalCommonsDataController.connect(new BindingAwareModelMap(), principal);
 
     UserConnection actualConnection = getUserConnection(testUser);
-    assertTrue(result.getUrl().contains("data.mendeley.com"));
+    assertTrue(((RedirectView) result.getView()).getUrl().contains("data.mendeley.com"));
     assertEquals("DigitalCommonsData Client Access Secret", actualConnection.getDisplayName());
     assertNotNull(actualConnection.getExpireTime());
     assertFalse(actualConnection.getAccessToken().contains("ACCESS_TOKEN"));

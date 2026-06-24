@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/figshare";
 import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -12,6 +13,12 @@ type FigshareArgs = {
   integrationState: IntegrationStates["FIGSHARE"];
   update: (newIntegrationState: IntegrationStates["FIGSHARE"]) => void;
 };
+
+export interface FigshareConnectedMessage extends Record<string, unknown> {
+  type: "FIGSHARE_CONNECTED";
+  error?: string;
+}
+export const FIGSHARE_CONNECTION_CHANNEL = "rspace.apps.figshare.connection";
 
 /*
  * Figshare uses OAuth based authentication, as implemented by this form.
@@ -42,8 +49,20 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
   const { disconnect } = useFigshareEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<FigshareConnectedMessage>(
+    FIGSHARE_CONNECTION_CHANNEL,
+    (e: MessageEvent<FigshareConnectedMessage>) => {
+      if (e.data?.type !== "FIGSHARE_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to Figshare",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
@@ -51,12 +70,8 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
           message: "Successfully connected to Figshare.",
         }),
       );
-    };
-    window.addEventListener("FIGSHARE_CONNECTED", f);
-    return () => {
-      window.removeEventListener("FIGSHARE_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid

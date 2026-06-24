@@ -10,6 +10,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -44,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 @Controller
@@ -75,6 +77,10 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
   private static String URL_CALLBACK;
   private static final String TEMP_TOKEN = "TEMP";
   private static final String FAKE_DATASET_ID = "FAKE_ID";
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "DigitalCommonsData";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.digitalcommonsdata.connection";
+  private static final String CONNECTION_TYPE = "DIGITALCOMMONSDATA_CONNECTED";
 
   public DigitalCommonsDataController() {
     this.restTemplate = new RestTemplate();
@@ -101,10 +107,9 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
   }
 
   @PostMapping("/connect")
-  public RedirectView connect(Model model, Principal principal) throws MalformedURLException {
-    String redirectUrl = "";
+  public ModelAndView connect(Model model, Principal principal) throws MalformedURLException {
     try {
-      redirectUrl = triggerLoginClient(principal);
+      return new ModelAndView(new RedirectView(triggerLoginClient(principal)));
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -112,11 +117,10 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-
-      redirectUrl = "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
+      return new ModelAndView(CONNECTED_VIEW, model.asMap());
     }
-    return new RedirectView(redirectUrl);
   }
 
   private String triggerLoginClient(Principal principal) throws HttpStatusCodeException {
@@ -176,9 +180,10 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
-      return "connect/authorizationError";
+      return CONNECTED_VIEW;
     }
 
     userConnection.setAccessToken(accessToken.getAccessToken());
@@ -188,7 +193,9 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     userConnectionManager.save(userConnection);
     log.info("Connected DigitalCommonsData for user {}", principal.getName());
 
-    return "connect/dcd/connected";
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+    return CONNECTED_VIEW;
   }
 
   private DcdAccessToken getAccessToken(String clientCode) throws HttpStatusCodeException {
@@ -239,9 +246,10 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
               .errorMsg("Exception during token refresh")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error);
 
-      return "connect/authorizationError";
+      return CONNECTED_VIEW;
     }
 
     userConnection.setAccessToken(accessToken.getAccessToken());
@@ -251,7 +259,9 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     userConnectionManager.save(userConnection);
     log.info("Connected DigitalCommonsData for user {}", principal.getName());
 
-    return "connected";
+    ConnectionResultPage.addConnectionAttributes(
+        model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+    return CONNECTED_VIEW;
   }
 
   @GetMapping("/test_connection")

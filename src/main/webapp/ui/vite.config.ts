@@ -7,7 +7,6 @@ import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
 
@@ -138,13 +137,7 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [
-    react(),
-    nodePolyfills({
-      globals: { process: true, Buffer: true, global: true },
-      protocolImports: false,
-    }),
-  ];
+  const plugins: PluginOption[] = [react()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
@@ -169,14 +162,26 @@ export default defineConfig(async ({ mode }) => {
     );
   }
 
+  // Some chemistry deps (openchemlib, pulled in lazily by the Ketcher editor)
+  // bundle Node's `util` polyfill, which reads bare `process.*`
+  // (process.stderr.isTTY, process.nextTick, …) at module-eval time. The
+  // browser has no `process`, so the chunk throws "process is not defined" the
+  // moment Ketcher loads. Provide a minimal global shim. esbuild/rolldown only
+  // substitute *unbound* `process` references, so deps that declare their own
+  // local `process` are untouched. The shim carries NODE_ENV so code that reads
+  // process.env.NODE_ENV (e.g. React) still sees the right mode.
+  const processShim = `{env:{NODE_ENV:${JSON.stringify(
+    mode === "production" ? "production" : "development",
+  )}},platform:"browser",browser:true,version:"",versions:{},argv:[],nextTick:(cb)=>Promise.resolve().then(cb),cwd:()=>"/",emitWarning:()=>{}}`;
+
   const config: UserConfig = {
     base: "/ui/dist/",
     define: {
       global: "globalThis",
+      process: processShim,
       // Cache-busting token + base URL for the lazily-loaded, self-hosted
-      // TinyMCE assets. The base differs between the app build ("/ui/dist/")
-      // and the Playwright component-test build ("/", see
-      // playwright-ct.config.ts), so it is injected rather than hard-coded.
+      // TinyMCE assets. The base is injected at build time rather than
+      // hard-coded so different build targets can use different paths.
       __TINYMCE_VERSION__: JSON.stringify(tinymceVersion),
       // Full directory URL the TinyMCE assets are served from (the
       // rspace:tinymce-assets plugin serves /ui/dist/tinymce/*).

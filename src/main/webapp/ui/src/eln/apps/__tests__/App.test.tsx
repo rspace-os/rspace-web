@@ -11,6 +11,7 @@ import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 const mockAxios = new MockAdapter(axios);
 
 const uiNavigationData = {

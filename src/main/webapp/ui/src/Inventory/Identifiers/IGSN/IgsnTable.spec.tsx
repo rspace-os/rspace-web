@@ -1,159 +1,158 @@
-import fs from "node:fs/promises";
-import { expect, test } from "@playwright/experimental-ct-react";
-import * as Jwt from "jsonwebtoken";
-import type { Download } from "playwright-core";
-import identifiersJson from "../../__tests__/identifiers.json";
+import { cleanup, render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { worker } from "@/__tests__/browserSetup";
+import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { SimpleIgsnTable } from "./IgsnTable.story";
+import { IgsnTablePage } from "./pageObjects/IgsnTablePage";
 
 /*
- * Only the CSV-export cases that assert the CONTENTS of a REAL downloaded file
- * remain here. Everything else has been converted to a Vitest jsdom unit test
- * in IgsnTable.test.tsx. Under Vitest the @mui/x-data-grid stub's
- * `exportDataAsCsv` builds a CSV string and calls `window.URL.createObjectURL`
- * but never writes a file, so these two cases must stay in Playwright where the
- * browser actually triggers a `download` event and writes the file to disk.
+ * The four identifiers returned by the mock API — matches
+ * src/main/webapp/ui/src/Inventory/__tests__/identifiers.json exactly.
  */
+const IDENTIFIERS_PAYLOAD = [
+  {
+    id: 3,
+    doiType: "DATACITE_IGSN",
+    doi: "10.82316/khma-em96",
+    associatedGlobalId: "SA32768",
+    creatorName: "user user",
+    creatorType: "Personal",
+    creatorAffiliation: null,
+    creatorAffiliationIdentifier: null,
+    title: "prt-907-1",
+    publisher: "University of RSpace (Localhost)",
+    publicationYear: 2025,
+    state: "draft",
+    resourceType: "Material Sample",
+    resourceTypeGeneral: "PhysicalObject",
+    url: "http://localhost:8080/public/inventory/uNc26-leAIjD45m-Q55SQg",
+    subjects: null,
+    descriptions: null,
+    geoLocations: null,
+    alternateIdentifiers: null,
+    dates: null,
+    rsPublicId: "uNc26-leAIjD45m-Q55SQg",
+    publicUrl: null,
+    customFieldsOnPublicPage: false,
+    _links: [],
+  },
+  {
+    id: 4,
+    doiType: "DATACITE_IGSN",
+    doi: "10.82316/jy8j-ts43",
+    associatedGlobalId: "SA32769",
+    creatorName: "user user",
+    creatorType: "Personal",
+    creatorAffiliation: null,
+    creatorAffiliationIdentifier: null,
+    title: "prt-907-2",
+    publisher: "University of RSpace (Localhost)",
+    publicationYear: 2025,
+    state: "draft",
+    resourceType: "Material Sample",
+    resourceTypeGeneral: "PhysicalObject",
+    url: "http://localhost:8080/public/inventory/Ee1FnIsnlFmcLi393KcBhw",
+    subjects: null,
+    descriptions: null,
+    geoLocations: null,
+    alternateIdentifiers: null,
+    dates: null,
+    rsPublicId: "Ee1FnIsnlFmcLi393KcBhw",
+    publicUrl: null,
+    customFieldsOnPublicPage: false,
+    _links: [],
+  },
+  {
+    id: 5,
+    doiType: "DATACITE_IGSN",
+    doi: "10.82316/hqkq-hr38",
+    associatedGlobalId: "SA32770",
+    creatorName: "user user",
+    creatorType: "Personal",
+    creatorAffiliation: null,
+    creatorAffiliationIdentifier: null,
+    title: "prt-907-3",
+    publisher: "University of RSpace (Localhost)",
+    publicationYear: 2025,
+    state: "draft",
+    resourceType: "Material Sample",
+    resourceTypeGeneral: "PhysicalObject",
+    url: "http://localhost:8080/public/inventory/j6t3oZv5B8Zs_FaM6u2eKQ",
+    subjects: null,
+    descriptions: null,
+    geoLocations: null,
+    alternateIdentifiers: null,
+    dates: null,
+    rsPublicId: "j6t3oZv5B8Zs_FaM6u2eKQ",
+    publicUrl: null,
+    customFieldsOnPublicPage: false,
+    _links: [],
+  },
+  {
+    id: 6,
+    doiType: "DATACITE_IGSN",
+    doi: "10.82316/cn5w-1959",
+    associatedGlobalId: "SA32773",
+    creatorName: "user user",
+    creatorType: "Personal",
+    creatorAffiliation: null,
+    creatorAffiliationIdentifier: null,
+    title: "prt-907-6",
+    publisher: "University of RSpace (Localhost)",
+    publicationYear: 2025,
+    state: "draft",
+    resourceType: "Material Sample",
+    resourceTypeGeneral: "PhysicalObject",
+    url: "http://localhost:8080/public/inventory/LB1_7qaSiviUukEUfBsU8g",
+    subjects: null,
+    descriptions: null,
+    geoLocations: null,
+    alternateIdentifiers: null,
+    dates: null,
+    rsPublicId: "LB1_7qaSiviUukEUfBsU8g",
+    publicUrl: null,
+    customFieldsOnPublicPage: false,
+    _links: [],
+  },
+];
 
-const feature = test.extend<{
-  Given: {
-    "the researcher is viewing the IGSN table": () => Promise<void>;
-  };
-  Once: {
-    "the table has loaded": () => Promise<void>;
-  };
-  When: {
-    "a CSV export is downloaded": () => Promise<Download>;
-    "the researcher selects {count} IGSNs": ({ count }: { count: number }) => Promise<void>;
-  };
-  Then: {
-    "{CSV} should have {count} rows": ({ csv, count }: { csv: Download; count: number }) => Promise<void>;
-  };
-  networkRequests: Array<URL>;
-}>({
-  Given: async ({ mount }, use) => {
-    await use({
-      "the researcher is viewing the IGSN table": async () => {
-        await mount(<SimpleIgsnTable />);
-      },
-    });
-  },
-  Once: async ({ page }, use) => {
-    await use({
-      "the table has loaded": async () => {
-        await page.waitForFunction(() => {
-          const rows = document.querySelectorAll('[role="row"]').length;
-          const noIgsnMessage = document.body.textContent?.includes("No IGSN IDs");
-          return rows > 1 || noIgsnMessage; // (1 is for the header row) or empty state message
-        });
-      },
-    });
-  },
-  When: async ({ page }, use) => {
-    await use({
-      "a CSV export is downloaded": async () => {
-        await page.getByRole("button", { name: /Export/ }).click();
-        const [download] = await Promise.all([
-          page.waitForEvent("download"),
-          page
-            .getByRole("menuitem", {
-              name: /Export to CSV/,
-            })
-            .click(),
-        ]);
-        return download;
-      },
-      "the researcher selects {count} IGSNs": async ({ count }: { count: number }) => {
-        for (let i = 0; i < count; i++) {
-          await page
-            .getByRole("checkbox", { name: /Select row/ })
-            .nth(0) // for some reason, only the unchecked ones are found
-            .click();
-        }
-      },
-    });
-  },
-  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
-  Then: async ({}, use) => {
-    await use({
-      "{CSV} should have {count} rows": async ({ csv, count }) => {
-        const path = await csv.path();
-        const fileContents = await fs.readFile(path, "utf8");
-        const lines = fileContents.split("\n");
-        expect(lines.length).toBe(count + 1);
-      },
-    });
-  },
-  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture takes no destructured deps
-  networkRequests: async ({}, use) => {
-    await use([]);
-  },
-});
-feature.beforeEach(async ({ router, page, networkRequests }) => {
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
-    const payload = {
-      iss: "http://localhost:8080",
-      iat: Date.now(),
-      exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
-    };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: Jwt.sign(payload, "dummySecretKey"),
-      }),
-    });
-  });
-  await router.route(
-    (url) => url.pathname === "/api/inventory/v1/identifiers",
-    (route) => {
-      const url = new URL(route.request().url());
-      const state = url.searchParams.get("state");
-      const isAssociated = url.searchParams.get("isAssociated");
+const table = new IgsnTablePage();
 
-      const searchTerm = url.searchParams.get("searchTerm");
-
-      let filteredIdentifiers = identifiersJson;
-      if (state) {
-        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.state === state);
-      }
-      if (searchTerm) {
-        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.doi.includes(searchTerm));
-      }
-      if (isAssociated === "true") {
-        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId !== null);
-      } else if (isAssociated === "false") {
-        filteredIdentifiers = filteredIdentifiers.filter((identifier) => identifier.associatedGlobalId === null);
-      }
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(filteredIdentifiers),
-      });
-    },
+beforeEach(() => {
+  worker.use(
+    oauthTokenHandler(),
+    http.get("/api/inventory/v1/identifiers", () => HttpResponse.json(IDENTIFIERS_PAYLOAD)),
   );
-  page.on("request", (request) => {
-    networkRequests.push(new URL(request.url()));
-  });
 });
-feature.afterEach(({ networkRequests }) => {
-  networkRequests.splice(0, networkRequests.length);
+
+afterEach(() => {
+  cleanup();
 });
-test.describe("IGSN Table", () => {
-  feature("When there is no selection, all rows should be included in the export.", async ({ Given, When, Then }) => {
-    await Given["the researcher is viewing the IGSN table"]();
-    // Note that no selection is made
-    const csv = await When["a CSV export is downloaded"]();
-    await Then["{CSV} should have {count} rows"]({ csv, count: 4 });
+
+describe("IGSN Table", () => {
+  test("When there is no selection, all rows should be included in the export.", async () => {
+    render(<SimpleIgsnTable />);
+    await table.waitForLoad();
+    // Ensure every row has rendered before exporting, otherwise a slow engine
+    // can export a partial CSV.
+    await table.waitForRowCount(4);
+    const csv = await table.exportToCsv();
+    const lines = csv.split("\n");
+    // 4 data rows + 1 header row
+    expect(lines.length).toBe(4 + 1);
   });
-  feature(
-    "When some IGSNs are selected, CSV exports should include just those rows",
-    async ({ Given, Once, When, Then }) => {
-      await Given["the researcher is viewing the IGSN table"]();
-      await Once["the table has loaded"]();
-      await When["the researcher selects {count} IGSNs"]({ count: 2 });
-      const csv = await When["a CSV export is downloaded"]();
-      await Then["{CSV} should have {count} rows"]({ csv, count: 2 });
-    },
-  );
+
+  test("When some IGSNs are selected, CSV exports should include just those rows", async () => {
+    render(<SimpleIgsnTable />);
+    await table.waitForLoad();
+    await table.waitForRowCount(4);
+    // Select 2 rows
+    await table.selectRowByIndex(0);
+    await table.selectRowByIndex(1);
+    const csv = await table.exportToCsv();
+    const lines = csv.split("\n");
+    // 2 selected rows + 1 header row
+    expect(lines.length).toBe(2 + 1);
+  });
 });

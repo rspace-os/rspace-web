@@ -5,11 +5,10 @@ import { expectAccessible, render, screen, waitFor } from "@/__tests__/customQue
 import { ProgressExample, SimpleExample } from "./ValidatingSubmitButton.story";
 
 /*
- * Converted from ValidatingSubmitButton.spec.tsx (Playwright CT). The render,
- * click, disabled, validation-popover and progress cases all behave
- * deterministically in jsdom, so they run as fast unit tests here. The single
- * WCAG AAA contrast case that needs a real browser (forcedColors /
- * color-contrast-enhanced) is kept in the reduced .spec.tsx.
+ * The render, click, disabled, validation-popover and progress cases all
+ * behave deterministically in jsdom, so they run as fast unit tests here.
+ * The single WCAG AAA contrast case that needs a real browser (forcedColors /
+ * color-contrast-enhanced) is in the .spec.tsx.
  */
 describe("ValidatingSubmitButton", () => {
   test("The button shows its descendants", () => {

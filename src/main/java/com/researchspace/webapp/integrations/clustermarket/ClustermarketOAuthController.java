@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NA
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.User;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.util.Map;
@@ -85,7 +86,12 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
     String authorizationCode = params.get("code");
     try {
       clustermarketOAuthService.generateAndSaveAuthCodeAccessToken(authorizationCode, subject);
-      return "connect/clustermarket/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model,
+          "Clustermarket",
+          "rspace.apps.clustermarket.connection",
+          "CLUSTERMARKET_CONNECTED");
+      return ConnectionResultPage.VIEW;
     } catch (HttpStatusCodeException e) {
       log.error(makeMessage(e), e);
       OauthAuthorizationError error =
@@ -94,8 +100,13 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model,
+          "Clustermarket",
+          "rspace.apps.clustermarket.connection",
+          "CLUSTERMARKET_CONNECTED",
+          error);
+      return ConnectionResultPage.VIEW;
     }
   }
 

@@ -166,7 +166,7 @@ public class RecordEditorTrackerTest {
 
         Record r = getARandomRecord();
         int random = new Random().nextInt(n10);
-        String editor = tracker.isEditing(r).get();
+        String editor = tracker.isEditing(r).orElse(null);
         String username = user.getUsername();
 
         if (editor != null && username.equals(editor)) {
