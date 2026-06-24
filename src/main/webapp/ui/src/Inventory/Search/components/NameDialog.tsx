@@ -7,6 +7,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import InputAdornment from "@mui/material/InputAdornment";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import StringField from "../../../components/Inputs/StringField";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 
@@ -57,6 +58,7 @@ const NameDialog = ({
   existingNames,
   onChange,
 }: NameDialogArgs): React.ReactNode => {
+  const { t } = useTranslation("inventory");
   const [error, setError] = useState<boolean>(false);
 
   const noDuplicates = (): boolean => {
@@ -78,10 +80,10 @@ const NameDialog = ({
   }, [name]);
 
   const errorMessage: string = !validLength()
-    ? "Please enter minimum 1 and maximum 32 characters."
+    ? t("search.controls.nameDialog.invalidLength")
     : !noDuplicates()
-      ? "This name is already taken. Please modify it."
-      : "Please enter a unique name, no longer than 32 characters.";
+      ? t("search.controls.nameDialog.duplicateName")
+      : t("search.controls.nameDialog.helperText");
 
   const onSubmitHandler = () => {
     onChange();
@@ -102,7 +104,9 @@ const NameDialog = ({
             size="small"
             slotProps={{
               input: {
-                startAdornment: <InputAdornment position="start">Name</InputAdornment>,
+                startAdornment: (
+                  <InputAdornment position="start">{t("search.controls.nameDialog.name")}</InputAdornment>
+                ),
               },
             }}
             onFocus={({ target }) => target.select()}
@@ -117,8 +121,13 @@ const NameDialog = ({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <SubmitSpinner onClick={onSubmitHandler} disabled={error} loading={false} label="Save" />
+        <Button onClick={() => setOpen(false)}>{t("search.controls.nameDialog.cancel")}</Button>
+        <SubmitSpinner
+          onClick={onSubmitHandler}
+          disabled={error}
+          loading={false}
+          label={t("search.controls.nameDialog.save")}
+        />
       </DialogActions>
     </Dialog>
   );

@@ -6,6 +6,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { useTheme } from "@mui/material/styles";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
@@ -19,6 +20,7 @@ type TypeFilterArgs = {
 };
 
 export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const theme = useTheme();
 
@@ -44,8 +46,8 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             <FontAwesomeIcon icon={faCircle} />
           </ListItemIcon>
           <ListItemText
-            primary="All"
-            secondary={search.fetcher.allTypesAllowed ? null : "Enter a search query first."}
+            primary={t("search.controls.type.all")}
+            secondary={search.fetcher.allTypesAllowed ? null : t("search.controls.type.enterQueryFirst")}
           />
         </MenuItem>
         <MenuItem
@@ -60,13 +62,13 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: "Container",
+                recordTypeLabel: t("search.controls.type.container"),
                 iconName: "container",
               }}
               color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
-          <ListItemText primary="Containers" />
+          <ListItemText primary={t("search.controls.type.containers")} />
         </MenuItem>
         <MenuItem
           selected={current === "SAMPLE"}
@@ -80,17 +82,17 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: "Sample",
+                recordTypeLabel: t("search.controls.type.sample"),
                 iconName: "sample",
               }}
               color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
           <ListItemText
-            primary="Samples"
+            primary={t("search.controls.type.samples")}
             secondary={match<void, string>([
-              [() => search.benchSearch, "Samples cannot be found on benches."],
-              [() => search.fetcher.parentIsContainer, "Samples cannot be found in containers."],
+              [() => search.benchSearch, t("search.controls.type.samplesNotOnBenches")],
+              [() => search.fetcher.parentIsContainer, t("search.controls.type.samplesNotInContainers")],
               [() => true, ""],
             ])()}
           />
@@ -107,13 +109,13 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: "Subsample",
+                recordTypeLabel: t("search.controls.type.subsample"),
                 iconName: "subsample",
               }}
               color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
-          <ListItemText primary="Subsamples" />
+          <ListItemText primary={t("search.controls.type.subsamples")} />
         </MenuItem>
         <MenuItem
           selected={current === "TEMPLATE"}
@@ -127,7 +129,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: "Template",
+                recordTypeLabel: t("search.controls.type.template"),
                 iconName: "template",
               }}
               color={theme.palette.standardIcon.main}
@@ -138,10 +140,10 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             />
           </ListItemIcon>
           <ListItemText
-            primary="Templates"
+            primary={t("search.controls.type.templates")}
             secondary={match<void, string>([
-              [() => search.benchSearch, "Templates cannot be found on benches."],
-              [() => search.fetcher.parentIsContainer, "Templates cannot be found in containers."],
+              [() => search.benchSearch, t("search.controls.type.templatesNotOnBenches")],
+              [() => search.fetcher.parentIsContainer, t("search.controls.type.templatesNotInContainers")],
               [() => true, ""],
             ])()}
           />

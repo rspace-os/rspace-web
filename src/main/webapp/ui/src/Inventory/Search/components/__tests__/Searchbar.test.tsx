@@ -28,7 +28,7 @@ describe("Searchbar", () => {
         </SearchContext.Provider>
       </ThemeProvider>,
     );
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "search.controls.searchbar.search" }), {
       target: { value: "this is a really long piece of text" },
     });
     expect(screen.getByRole("button", { name: "Expand field" })).toBeVisible();

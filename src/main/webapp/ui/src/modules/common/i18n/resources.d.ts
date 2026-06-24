@@ -372,6 +372,59 @@ export default interface Resources {
       }
     },
     "search": {
+      "controls": {
+        "nameDialog": {
+          "cancel": "Cancel",
+          "duplicateName": "This name is already taken. Please modify it.",
+          "helperText": "Please enter a unique name, no longer than 32 characters.",
+          "invalidLength": "Please enter minimum 1 and maximum 32 characters.",
+          "name": "Name",
+          "save": "Save"
+        },
+        "saveSearch": {
+          "defaultName": "New saved search",
+          "saveSearch": "Save search"
+        },
+        "searchbar": {
+          "clearSearch": "Clear search",
+          "search": "Search"
+        },
+        "sort": {
+          "ascending": "(A-Z)",
+          "cannotSortView": "Cannot sort {view} view.",
+          "descending": "(Z-A)",
+          "sortBy": "Sort by"
+        },
+        "status": {
+          "current": "Current",
+          "currentAndInTrash": "Current & In Trash",
+          "inTrash": "In Trash"
+        },
+        "type": {
+          "all": "All",
+          "container": "Container",
+          "containers": "Containers",
+          "enterQueryFirst": "Enter a search query first.",
+          "sample": "Sample",
+          "samples": "Samples",
+          "samplesNotInContainers": "Samples cannot be found in containers.",
+          "samplesNotOnBenches": "Samples cannot be found on benches.",
+          "subsample": "Subsample",
+          "subsamples": "Subsamples",
+          "template": "Template",
+          "templates": "Templates",
+          "templatesNotInContainers": "Templates cannot be found in containers.",
+          "templatesNotOnBenches": "Templates cannot be found on benches."
+        },
+        "view": {
+          "card": "Card View",
+          "changeView": "Change view",
+          "grid": "Grid View",
+          "image": "Image View",
+          "list": "List View",
+          "tree": "Tree View"
+        }
+      },
       "details": {
         "loadingBatchEditing": "Loading batch editing"
       },

@@ -9,8 +9,9 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import type { SxProps, Theme } from "@mui/material/styles";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import StyledMenu from "@/components/StyledMenu";
-import { type SearchView, TYPE_LABEL } from "@/stores/definitions/Search";
+import type { SearchView } from "@/stores/definitions/Search";
 import DropdownButton from "../../../components/DropdownButton";
 
 const Icon = ({ type, sx }: { type: SearchView; sx?: SxProps<Theme> }) =>
@@ -29,6 +30,7 @@ type ToggleViewArgs = {
 };
 
 export default function ToggleView({ onChange, currentView, views }: ToggleViewArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const handleClick = (event: { currentTarget: HTMLElement }) => {
@@ -44,6 +46,15 @@ export default function ToggleView({ onChange, currentView, views }: ToggleViewA
     handleClose();
   };
 
+  const viewLabel = (type: SearchView): string =>
+    ({
+      LIST: t("search.controls.view.list"),
+      TREE: t("search.controls.view.tree"),
+      CARD: t("search.controls.view.card"),
+      GRID: t("search.controls.view.grid"),
+      IMAGE: t("search.controls.view.image"),
+    })[type];
+
   return (
     <Box sx={{ alignSelf: "center" }}>
       <DropdownButton
@@ -57,7 +68,7 @@ export default function ToggleView({ onChange, currentView, views }: ToggleViewA
           />
         }
         onClick={handleClick}
-        title="Change view"
+        title={t("search.controls.view.changeView")}
       >
         <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
           {views.map((type, i) => (
@@ -70,7 +81,7 @@ export default function ToggleView({ onChange, currentView, views }: ToggleViewA
               <ListItemIcon>
                 <Icon type={type} />
               </ListItemIcon>
-              <ListItemText primary={TYPE_LABEL[type]} />
+              <ListItemText primary={viewLabel(type)} />
             </MenuItem>
           ))}
         </StyledMenu>

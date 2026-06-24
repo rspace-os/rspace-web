@@ -15,7 +15,7 @@ describe("TypeFilter", () => {
     );
     expect(
       screen.getByRole("menuitem", {
-        name: /All/,
+        name: /search\.controls\.type\.all/,
       }),
     ).toHaveAttribute("aria-current", "true");
   });

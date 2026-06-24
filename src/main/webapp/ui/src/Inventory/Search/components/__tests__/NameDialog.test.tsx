@@ -18,6 +18,6 @@ describe("NameDialog", () => {
         />
       </ThemeProvider>,
     );
-    expect(screen.getByText("This name is already taken. Please modify it.")).toBeVisible();
+    expect(screen.getByText("search.controls.nameDialog.duplicateName")).toBeVisible();
   });
 });

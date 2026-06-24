@@ -3,6 +3,7 @@ import type { SxProps, Theme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
@@ -13,6 +14,7 @@ type SaveSearchArgs = {
 };
 
 function SaveSearch({ sx }: SaveSearchArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const { searchStore } = useStores();
 
@@ -24,7 +26,7 @@ function SaveSearch({ sx }: SaveSearchArgs): React.ReactNode {
      * `||` rather than `??` because query is empty string, not null, when
      * not set
      */
-    setName(search.fetcher.query || "New saved search");
+    setName(search.fetcher.query || t("search.controls.saveSearch.defaultName"));
     setOpen(true);
   };
 
@@ -32,7 +34,7 @@ function SaveSearch({ sx }: SaveSearchArgs): React.ReactNode {
     <>
       {!search.fetcher.permalink && !search.fetcher.error && !searchStore.searchIsSaved ? (
         <IconButtonWithTooltip
-          title="Save search"
+          title={t("search.controls.saveSearch.saveSearch")}
           size="small"
           data-test-id="save-search"
           onClick={handleOpen}

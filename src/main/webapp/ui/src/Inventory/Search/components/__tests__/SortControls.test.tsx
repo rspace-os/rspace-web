@@ -28,14 +28,16 @@ describe("SortControls", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
+    fireEvent.click(screen.getByRole("button", { name: "search.controls.sort.sortBy" }));
     const selectedOptions = sortProperties.filter(({ key }) => search.fetcher.isCurrentSort(key));
     if (selectedOptions.length !== 1) throw new Error("Invalid menu selection");
 
     const selectedOption = selectedOptions[0];
     expect(
       screen.getByRole("menuitem", {
-        name: new RegExp(`${selectedOption.label} (\\(A-Z\\)|\\(Z-A\\))`),
+        name: new RegExp(
+          `${selectedOption.label} (search\\.controls\\.sort\\.ascending|search\\.controls\\.sort\\.descending)`,
+        ),
       }),
     ).toHaveAttribute("aria-current", "true");
   });
