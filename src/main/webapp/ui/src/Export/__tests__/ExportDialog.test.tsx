@@ -151,7 +151,7 @@ describe("ExportDialog", () => {
 
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("Should linked RSpace documents be included in export?")).toBeVisible();
+          expect(screen.getByText("export.format.htmlXml.includeLinksLabel")).toBeVisible();
         });
 
         await user.click(screen.getByRole("button", { name: "Next" }));
@@ -205,7 +205,7 @@ describe("ExportDialog", () => {
 
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("Should linked RSpace documents be included in export?")).toBeVisible();
+          expect(screen.getByText("export.format.htmlXml.includeLinksLabel")).toBeVisible();
         });
 
         await user.click(screen.getByRole("button", { name: "Next" }));

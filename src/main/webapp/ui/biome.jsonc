@@ -62,7 +62,8 @@
         "src/components/ConfirmationDialog.tsx",
         "src/Export/fileStoreComponents/FoundLinksListing.tsx",
         "src/Export/fileStoreComponents/LoginStatus.tsx",
-        "src/Export/WordExport.tsx"
+        "src/Export/WordExport.tsx",
+        "src/Export/HtmlXmlExport.tsx"
       ],
       "linter": {
         "rules": {

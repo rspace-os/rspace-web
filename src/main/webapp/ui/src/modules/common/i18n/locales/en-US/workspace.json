@@ -48,6 +48,14 @@
       }
     },
     "format": {
+      "htmlXml": {
+        "depthInfinity": "Include linked documents to depth infinity",
+        "depthLevel": "Include linked documents to depth {level}",
+        "depthNone": "Don't include linked documents",
+        "descriptionLabel": "Export Description (optional)",
+        "foldersNote": "Linked folders and notebooks are never included",
+        "includeLinksLabel": "Should linked RSpace documents be included in export?"
+      },
       "word": {
         "nameLabel": "Name your file",
         "pageFormatLabel": "Page format: ",
