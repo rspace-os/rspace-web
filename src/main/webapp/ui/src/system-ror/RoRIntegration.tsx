@@ -185,13 +185,11 @@ function RoRIntegration(): React.ReactNode {
         <div>
           <h1>{t("ror.heading")}</h1>
           <RorHelpText>
-            By associating a{" "}
+            {t("ror.introPrefix")}{" "}
             <a target="_blank" rel="noreferrer" href="https://ror.org">
-              ROR ID
+              {t("ror.rorIdLink")}
             </a>{" "}
-            with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your
-            research organisation. All research outputs with a DOI will automatically include the ROR ID in their
-            affiliation metadata.
+            {t("ror.introSuffix")}
           </RorHelpText>
         </div>
         <RorHelpText>
@@ -206,29 +204,28 @@ function RoRIntegration(): React.ReactNode {
         )}
         {!rorDetails && (
           <RorHelpText>
-            You can search the{" "}
+            {t("ror.searchHelpPrefix")}{" "}
             <a target="_blank" rel="noreferrer" href="https://ror.org/search">
-              ROR registry
+              {t("ror.registryLink")}
             </a>{" "}
-            to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a{" "}
+            {t("ror.searchHelpMiddle")}{" "}
             <a
               target="_blank"
               rel="noreferrer"
               href="https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform"
             >
-              curation request form.
+              {t("ror.curationRequestLink")}
             </a>
           </RorHelpText>
         )}
         {showLinkAction && (
           <RorHelpText>
-            ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.
+            {t("ror.linkHelpPrefix")} <strong>{t("ror.linkHelpAction")}</strong> {t("ror.linkHelpSuffix")}
           </RorHelpText>
         )}
         {showUnlinkAction && (
           <RorHelpText>
-            A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association.
-            Future published or updated DOIs will not include the ROR ID.
+            {t("ror.unlinkHelpPrefix")} <strong>{t("ror.unlinkHelpAction")}</strong> {t("ror.unlinkHelpSuffix")}
           </RorHelpText>
         )}
         {rorDetails && (
@@ -274,7 +271,7 @@ function RoRIntegration(): React.ReactNode {
         {errorMessage && <Alert severity={getSeverity(errorMessage)}>{errorMessage}</Alert>}
         {errorMessage && getSeverity(errorMessage) === "error" && (
           <RorHelpText>
-            Please ensure the ROR ID is one of the following formats:
+            {t("ror.invalidFormatHelp")}
             <RorErrorHelpText>https://ror.org/02mhbdp94</RorErrorHelpText>,{" "}
             <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>, <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
           </RorHelpText>

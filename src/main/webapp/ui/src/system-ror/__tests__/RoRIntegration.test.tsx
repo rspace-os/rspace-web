@@ -57,7 +57,7 @@ async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
     target: { value: term },
   });
   expect(rorInput).toHaveValue(term);
-  const searchButton = await screen.findByLabelText("Search");
+  const searchButton = await screen.findByLabelText("actions.search");
   fireEvent.click(searchButton);
 }
 async function assertRoRDetailsText() {
@@ -99,7 +99,7 @@ describe("Renders page with ROR data", () => {
     setupRoRMocks("https://ror.org/02mhbdp94");
     setUpComponent();
     await screen.findByText("ror.heading");
-    await screen.findByText(/A ROR ID is linked to this RSpace Instance./);
+    await screen.findByText(/ror.unlinkHelpPrefix/);
     expect(
       screen.getByRole("button", {
         name: /ror.unlinkButton/,
@@ -113,7 +113,7 @@ describe("Renders page with ROR data", () => {
     await screen.findByText("ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails();
-    await screen.findByText(/ROR ID found. Click./);
+    await screen.findByText(/ror.linkHelpPrefix/);
     await assertRoRDetailsText();
   });
 
