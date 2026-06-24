@@ -292,6 +292,17 @@ export default interface Resources {
         }
       }
     },
+    "createNew": {
+      "button": "Create",
+      "containers": "Containers",
+      "csvImport": "CSV Import",
+      "newContainer": "New Container",
+      "newSample": "New Sample",
+      "newTemplate": "New Template",
+      "samples": "Samples",
+      "subsamples": "Subsamples",
+      "thirdPartyImport": "Third-Party Import"
+    },
     "fields": {
       "extraFields": {
         "deleteField": "Delete field",

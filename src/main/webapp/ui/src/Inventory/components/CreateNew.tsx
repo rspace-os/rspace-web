@@ -7,6 +7,7 @@ import Menu from "@mui/material/Menu";
 import { paperClasses } from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
 import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
@@ -37,6 +38,7 @@ type CreateNewArgs = {
  * that the button stands out on the page.
  */
 function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -95,7 +97,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           height: "32px",
         }}
       >
-        {uiStore.sidebarOpen && <div>Create</div>}
+        {uiStore.sidebarOpen && <div>{t("createNew.button")}</div>}
       </Button>
       <Menu
         open={Boolean(anchorEl)}
@@ -122,7 +124,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       >
         <AccentMenuItem
           compact
-          title="New Sample"
+          title={t("createNew.newSample")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -143,7 +145,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title="New Container"
+          title={t("createNew.newContainer")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -164,7 +166,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title="New Template"
+          title={t("createNew.newTemplate")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -185,12 +187,12 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             void handleCreate("template");
           }}
         />
-        <Divider textAlign="left" aria-label="CSV import">
-          CSV Import
+        <Divider textAlign="left" aria-label={t("createNew.csvImport")}>
+          {t("createNew.csvImport")}
         </Divider>
         <AccentMenuItem
           compact
-          title="Samples"
+          title={t("createNew.samples")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -211,7 +213,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title="Subsamples"
+          title={t("createNew.subsamples")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -232,7 +234,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title="Containers"
+          title={t("createNew.containers")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -253,8 +255,8 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         {showFieldmark && (
           <>
-            <Divider textAlign="left" aria-label="Other import">
-              Third-Party Import
+            <Divider textAlign="left" aria-label={t("createNew.thirdPartyImport")}>
+              {t("createNew.thirdPartyImport")}
             </Divider>
             <AccentMenuItem
               compact
