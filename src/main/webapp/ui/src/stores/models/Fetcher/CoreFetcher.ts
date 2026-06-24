@@ -578,6 +578,7 @@ export default class CoreFetcher {
       [(id) => globalIdPatterns.subsample.test(id ?? ""), "SUBSAMPLE"],
       [(id) => globalIdPatterns.container.test(id ?? ""), "CONTAINER"],
       [(id) => globalIdPatterns.sampleTemplate.test(id ?? ""), "TEMPLATE"],
+      [(id) => globalIdPatterns.instrumentTemplate.test(id ?? ""), "INSTRUMENT_TEMPLATE"],
       [(id) => globalIdPatterns.bench.test(id ?? ""), "BENCH"],
       [(id) => globalIdPatterns.basket.test(id ?? ""), "BASKET"],
       [(id) => !id, null],

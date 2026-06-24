@@ -55,7 +55,14 @@ export function parseResultType(str: string): Result<ResultType> {
   );
 }
 
-export type ParentGlobalIdType = "SAMPLE" | "SUBSAMPLE" | "CONTAINER" | "TEMPLATE" | "BENCH" | "BASKET";
+export type ParentGlobalIdType =
+  | "SAMPLE"
+  | "SUBSAMPLE"
+  | "CONTAINER"
+  | "TEMPLATE"
+  | "INSTRUMENT_TEMPLATE"
+  | "BENCH"
+  | "BASKET";
 
 /*
  * Except for container's contentSearch in  'public view case', must include
