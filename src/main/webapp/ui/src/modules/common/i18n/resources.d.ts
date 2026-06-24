@@ -162,7 +162,11 @@ export default interface Resources {
     }
   },
   "inventory": {
-
+    "associatedRecords": {
+      "button": "Inventory Items",
+      "empty": "The document has no connected Inventory items.",
+      "loading": "Loading"
+    }
   },
   "public": {
     "footer": {

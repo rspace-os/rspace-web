@@ -1,1 +1,7 @@
-{}
+{
+  "associatedRecords": {
+    "button": "Inventory Items",
+    "empty": "The document has no connected Inventory items.",
+    "loading": "Loading"
+  }
+}
