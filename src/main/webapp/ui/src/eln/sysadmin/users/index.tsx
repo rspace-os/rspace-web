@@ -64,6 +64,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { delay } from "es-toolkit";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import docLinks from "../../../assets/DocLinks";
@@ -189,6 +190,7 @@ const TagDialog = ({
   onClose: () => void;
   setTags: (addedTags: Array<string>, deletedTags: Array<string>) => Promise<void>;
 }) => {
+  const { t: tCommon } = useTranslation("common");
   const { addAlert } = React.useContext(AlertContext);
   const [commonTags, setCommonTags] = React.useState<RsSet<string>>(new RsSet([]));
   const [addedTags, setAddedTags] = React.useState<Array<string>>([]);
@@ -262,7 +264,7 @@ const TagDialog = ({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{tCommon("actions.cancel")}</Button>
           <SubmitSpinnerButton
             disabled={addedTags.length === 0 && deletedTags.length === 0}
             loading={submitting}
@@ -396,6 +398,7 @@ const PiAction = ({
   setActionsAnchorEl: (_: null) => void;
   autoFocus: boolean;
 }) => {
+  const { t: tCommon } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
@@ -576,7 +579,7 @@ const PiAction = ({
                       setActionsAnchorEl(null);
                     }}
                   >
-                    Cancel
+                    {tCommon("actions.cancel")}
                   </Button>
                   <SubmitSpinnerButton
                     type="submit"
@@ -600,6 +603,7 @@ const SetUsernamAliasAction = ({
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
+  const { t: tCommon } = useTranslation("common");
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [alias, setAlias] = React.useState("");
@@ -700,7 +704,7 @@ const SetUsernamAliasAction = ({
                     setActionsAnchorEl(null);
                   }}
                 >
-                  Cancel
+                  {tCommon("actions.cancel")}
                 </Button>
                 <SubmitSpinnerButton type="submit" loading={false} disabled={false} label="Set Alias" />
               </DialogActions>
@@ -718,6 +722,8 @@ const DeleteAction = ({
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
+  const { t } = useTranslation("system");
+  const { t: tCommon } = useTranslation("common");
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState("");
@@ -801,12 +807,11 @@ const DeleteAction = ({
                   {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
-                        The user you are trying to delete is{" "}
-                        <strong>the owner of Forms and/or Templates that are used by other users.</strong> To ensure
-                        continued access to these Forms/Templates, the system
-                        <strong> will transfer ownership</strong> of those files to
-                        <strong> this System Administrator</strong> account. Forms and Templates that are not used by
-                        others will be deleted.
+                        The user you are trying to delete is <strong>{t("usersPage.ownerOfFormsAndTemplates")}</strong>{" "}
+                        To ensure continued access to these Forms/Templates, the system
+                        <strong> {t("usersPage.willTransferOwnership")}</strong> of those files to
+                        <strong> {t("usersPage.thisSystemAdministrator")}</strong> account. Forms and Templates that are
+                        not used by others will be deleted.
                       </Typography>
                     </Alert>
                   )}
@@ -825,12 +830,11 @@ const DeleteAction = ({
                         mb: 1,
                       }}
                     >
-                      The user you are trying to delete is{" "}
-                      <strong>the owner of Forms that are used by other users.</strong>
+                      The user you are trying to delete is <strong>{t("usersPage.ownerOfForms")}</strong>
                       To ensure continued access to these Forms, the system
-                      <strong> will transfer ownership</strong> of the Forms to
-                      <strong> this System Administrator</strong> account. Forms that are not used by others will be
-                      deleted.
+                      <strong> {t("usersPage.willTransferOwnership")}</strong> of the Forms to
+                      <strong> {t("usersPage.thisSystemAdministrator")}</strong> account. Forms that are not used by
+                      others will be deleted.
                     </Typography>
                   )}
                   <Typography
@@ -870,7 +874,7 @@ const DeleteAction = ({
                     setActionsAnchorEl(null);
                   }}
                 >
-                  Cancel
+                  {tCommon("actions.cancel")}
                 </Button>
                 <SubmitSpinnerButton
                   type="submit"
@@ -897,6 +901,7 @@ const SelectionActions = ({
   selectedIds: ReadonlyArray<UserId>;
   fetchedListing: FetchingData.Fetched<UserListing>;
 }) => {
+  const { t } = useTranslation("system");
   const { addAlert } = React.useContext(AlertContext);
   const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
   const [actionsAnchorEl, setActionsAnchorEl] = React.useState<HTMLElement | null>(null);
@@ -967,11 +972,11 @@ const SelectionActions = ({
                 onClick={(e) => {
                   setActionsAnchorEl(e.currentTarget);
                 }}
-                aria-label="Actions menu for selected rows"
+                aria-label={t("usersPage.actionsAriaLabel")}
                 aria-haspopup="menu"
                 aria-expanded={Boolean(actionsAnchorEl)}
               >
-                Actions
+                {t("usersPage.actionsButton")}
               </Button>
               <Menu
                 open={Boolean(actionsAnchorEl)}
@@ -1196,6 +1201,7 @@ const SelectionActions = ({
   );
 };
 const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) => {
+  const { t } = useTranslation("system");
   const [filterAnchorEl, setFilterAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
@@ -1253,11 +1259,11 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         onClick={(e) => {
           setFilterAnchorEl(e.currentTarget);
         }}
-        aria-label="Filter users"
+        aria-label={t("usersPage.filterAriaLabel")}
         aria-haspopup="dialog"
         aria-expanded={Boolean(filterAnchorEl)}
       >
-        Filters
+        {t("usersPage.filtersButton")}
         {tagsChecked && tags.length > 0 && (
           <Chip
             label={tags.length}
@@ -1387,6 +1393,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
   );
 };
 export const UsersPage = (): React.ReactNode => {
+  const { t } = useTranslation("system");
   const { userListing } = useUserListing();
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
     type: "include",
@@ -1682,8 +1689,8 @@ export const UsersPage = (): React.ReactNode => {
                         </TableRow>
                         <TableRow>
                           <TableCell>
-                            <CustomTooltip title="Enabled users and PIs, excluding admins.">
-                              <Abbr>Billable Users</Abbr>
+                            <CustomTooltip title={t("usersPage.billableUsersTooltip")}>
+                              <Abbr>{t("usersPage.billableUsers")}</Abbr>
                             </CustomTooltip>
                           </TableCell>
                           <TableCell>
@@ -1716,8 +1723,8 @@ export const UsersPage = (): React.ReactNode => {
                         </TableRow>
                         <TableRow>
                           <TableCell>
-                            <CustomTooltip title="All users including admins and those with disabled accounts.">
-                              <Abbr>Total Users</Abbr>
+                            <CustomTooltip title={t("usersPage.totalUsersTooltip")}>
+                              <Abbr>{t("usersPage.totalUsers")}</Abbr>
                             </CustomTooltip>
                           </TableCell>
                           <TableCell>

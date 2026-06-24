@@ -2442,6 +2442,20 @@ export default interface Resources {
       "unlinkHelpAction": "UNLINK",
       "unlinkHelpPrefix": "A ROR ID is linked to this RSpace Instance. Click on",
       "unlinkHelpSuffix": "to remove the association. Future published or updated DOIs will not include the ROR ID."
+    },
+    "usersPage": {
+      "actionsAriaLabel": "Actions menu for selected rows",
+      "actionsButton": "Actions",
+      "billableUsers": "Billable Users",
+      "billableUsersTooltip": "Enabled users and PIs, excluding admins.",
+      "filterAriaLabel": "Filter users",
+      "filtersButton": "Filters",
+      "ownerOfForms": "the owner of Forms that are used by other users.",
+      "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
+      "thisSystemAdministrator": "this System Administrator",
+      "totalUsers": "Total Users",
+      "totalUsersTooltip": "All users including admins and those with disabled accounts.",
+      "willTransferOwnership": "will transfer ownership"
     }
   },
   "workspace": {

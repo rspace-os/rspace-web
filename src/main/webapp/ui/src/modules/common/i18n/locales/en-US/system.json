@@ -2,6 +2,20 @@
   "errors": {
     "networkProblem": "There is a problem, please try again later"
   },
+  "usersPage": {
+    "actionsAriaLabel": "Actions menu for selected rows",
+    "actionsButton": "Actions",
+    "billableUsers": "Billable Users",
+    "billableUsersTooltip": "Enabled users and PIs, excluding admins.",
+    "filterAriaLabel": "Filter users",
+    "filtersButton": "Filters",
+    "ownerOfForms": "the owner of Forms that are used by other users.",
+    "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
+    "thisSystemAdministrator": "this System Administrator",
+    "totalUsers": "Total Users",
+    "totalUsersTooltip": "All users including admins and those with disabled accounts.",
+    "willTransferOwnership": "will transfer ownership"
+  },
   "ror": {
     "curationRequestLink": "curation request form.",
     "heading": "Research Organization Registry (ROR) Integration",

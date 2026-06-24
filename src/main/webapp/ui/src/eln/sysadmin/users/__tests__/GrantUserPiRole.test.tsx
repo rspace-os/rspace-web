@@ -70,7 +70,7 @@ describe("Grant User PI Role", () => {
       const checkbox = within(await screen.findByRole("row", { name: /user8h/ })).getByRole("checkbox");
 
       await user.click(checkbox);
-      await user.click(screen.getByRole("button", { name: /Actions/ }));
+      await user.click(screen.getByRole("button", { name: /usersPage\.actionsAriaLabel/ }));
       await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
@@ -114,7 +114,7 @@ describe("Grant User PI Role", () => {
       const checkbox = within(await screen.findByRole("row", { name: /user8h/ })).getByRole("checkbox");
 
       await user.click(checkbox);
-      await user.click(screen.getByRole("button", { name: /Actions/ }));
+      await user.click(screen.getByRole("button", { name: /usersPage\.actionsAriaLabel/ }));
       await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
