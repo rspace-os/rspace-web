@@ -75,6 +75,10 @@ export default interface Resources {
       "submit": "Submit",
       "witness": "Witness"
     },
+    "apiAuthentication": {
+      "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
+      "warningTitle": "Could not authenticate via API"
+    },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
     },

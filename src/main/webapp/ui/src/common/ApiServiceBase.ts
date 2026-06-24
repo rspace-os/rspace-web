@@ -6,6 +6,7 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import { mkAlert } from "../stores/contexts/Alert";
 import getRootStore from "../stores/stores/getRootStore";
 import JwtService from "./JwtService";
@@ -14,9 +15,8 @@ type JSON = unknown;
 
 const toast = mkAlert({
   variant: "warning",
-  title: "Could not authenticate via API",
-  message:
-    "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
+  title: i18n.t("apiAuthentication.warningTitle"),
+  message: i18n.t("apiAuthentication.warningMessage"),
   isInfinite: true,
 });
 
