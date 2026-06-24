@@ -242,7 +242,7 @@ describe("MoveToIrods", () => {
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/move")).toBe(true);
     });
 
-    test("Checking 'Retain a copy' and clicking Copy calls the copy endpoint", async () => {
+    test("Checking 'Retain a copy' and submitting calls the copy endpoint and reports a copy", async () => {
       const user = userEvent.setup();
       render(<MoveToIrodsDialogWithOneFile />);
       expect(await screen.findByRole("heading", { name: /move to irods/i })).toBeVisible();
@@ -251,9 +251,10 @@ describe("MoveToIrods", () => {
       await user.type(await screen.findByRole("textbox", { name: /username/i }), "alice");
       await user.type(screen.getByLabelText(/password/i, { selector: "input" }), "secret");
       await user.click(screen.getByRole("checkbox", { name: /retain a copy in rspace/i }));
+      // The submit button stays labelled "Move"; ticking "Retain a copy" routes it to copy.
       await user.click(screen.getByRole("button", { name: /^move$/i }));
 
-      expect(await screen.findByText(/successfully moved/i)).toBeVisible();
+      expect(await screen.findByText(/successfully copied/i)).toBeVisible();
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/1/copy")).toBe(true);
     });
 

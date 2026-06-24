@@ -20,7 +20,11 @@ const parseOperationError = (error: unknown): Result<string> =>
       return errorMsg;
     });
 
-function handleErrors(response: unknown): Alert {
+function handleErrors(
+  response: unknown,
+  successMessage = "Successfully moved the files.",
+  partialFailureMessage = "Moving some files failed.",
+): Alert {
   const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
   return data
@@ -35,7 +39,7 @@ function handleErrors(response: unknown): Alert {
             return Result.Ok(
               mkAlert({
                 variant: "success",
-                message: "Successfully moved the files.",
+                message: successMessage,
               }),
             );
           return data
@@ -83,7 +87,7 @@ function handleErrors(response: unknown): Alert {
               ).map((details) =>
                 mkAlert({
                   variant: "warning",
-                  message: "Moving some files failed.",
+                  message: partialFailureMessage,
                   details,
                   isInfinite: true,
                 }),
@@ -173,12 +177,18 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
           recordIds,
           credentials: { username, password },
         });
-        addAlert(handleErrors(response));
+        addAlert(
+          handleErrors(
+            response,
+            operation === "copy" ? "Successfully copied the files." : "Successfully moved the files.",
+            operation === "copy" ? "Copying some files failed." : "Moving some files failed.",
+          ),
+        );
       } catch (e) {
         console.error(e);
-        const errorMsg = parseOperationError(e).orElseGet(([error]) => {
-          throw new Error("Could not parse error object", { cause: error });
-        });
+        // Fall back to a safe message rather than throwing while handling the
+        // error, which would suppress the user-facing alert (mirrors the S3 flow).
+        const errorMsg = parseOperationError(e).orElse("Unknown error");
         addAlert(
           mkAlert({
             variant: "error",
