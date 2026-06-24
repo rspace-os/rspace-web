@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import DateField from "../../../components/Inputs/DateField";
 // biome-ignore lint/style/useImportType: initial biome migration
 import { type HasEditableFields } from "../../../stores/definitions/Editable";
@@ -19,6 +20,7 @@ function ExpiryDate<
   fieldOwner: FieldOwner;
   onErrorStateChange: (value: boolean) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const handleChange = ({ target: { value } }: { target: { value: Date | null } }) => {
     // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
     onErrorStateChange(value ? isNaN(value.getTime()) : false);
@@ -33,7 +35,7 @@ function ExpiryDate<
 
   return (
     <BatchFormField
-      label="Expiry Date"
+      label={t("sample.fields.expiryDate.label")}
       value={expiryDate}
       disabled={!fieldOwner.isFieldEditable("expiryDate")}
       renderInput={({ value, id, disabled }) => (
@@ -47,7 +49,7 @@ function ExpiryDate<
             // biome-ignore lint/complexity/noUselessFragments: initial biome migration
             <>
               {expiryDate && new Date(expiryDate) < todaysDate() && (
-                <Alert severity="warning">This sample has expired.</Alert>
+                <Alert severity="warning">{t("sample.fields.expiryDate.expiredWarning")}</Alert>
               )}
             </>
           }

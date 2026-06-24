@@ -317,6 +317,10 @@ export default interface Resources {
     },
     "sample": {
       "fields": {
+        "expiryDate": {
+          "expiredWarning": "This sample has expired.",
+          "label": "Expiry Date"
+        },
         "storageTemperature": {
           "belowAbsoluteZero": "One or more values are below absolute zero.",
           "between": "Between {min} and {max}.",
@@ -324,6 +328,8 @@ export default interface Resources {
           "label": "Storage Temperature",
           "max": "Max",
           "min": "Min",
+          "none": "None",
+          "notSpecified": "The storage temperature for this item is currently not specified.",
           "presets": {
             "ambient": "Ambient",
             "frozen": "Frozen",
@@ -331,6 +337,7 @@ export default interface Resources {
             "refrigerated": "Refrigerated",
             "ultFrozen": "ULT Frozen"
           },
+          "specify": "Specify",
           "unit": "Unit"
         }
       }
