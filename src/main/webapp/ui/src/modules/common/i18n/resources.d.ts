@@ -315,6 +315,26 @@ export default interface Resources {
       "versionedBody": "The version may never have existed.",
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
     },
+    "sample": {
+      "fields": {
+        "storageTemperature": {
+          "belowAbsoluteZero": "One or more values are below absolute zero.",
+          "between": "Between {min} and {max}.",
+          "invalidValues": "Invalid values.",
+          "label": "Storage Temperature",
+          "max": "Max",
+          "min": "Min",
+          "presets": {
+            "ambient": "Ambient",
+            "frozen": "Frozen",
+            "liquidNitrogen": "Liquid Nitrogen",
+            "refrigerated": "Refrigerated",
+            "ultFrozen": "ULT Frozen"
+          },
+          "unit": "Unit"
+        }
+      }
+    },
     "search": {
       "details": {
         "loadingBatchEditing": "Loading batch editing"
