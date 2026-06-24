@@ -1030,6 +1030,13 @@ export default interface Resources {
           "nameRequired": "Please enter a name"
         }
       },
+      "newNotebook": {
+        "name": "New notebook name",
+        "title": "Create a notebook",
+        "validation": {
+          "nameRequired": "Please enter a name - excluding '/' characters."
+        }
+      },
       "rename": {
         "emptyName": "Empty name is not permitted.",
         "error": "An error occurred while renaming the document.",
@@ -1045,6 +1052,16 @@ export default interface Resources {
           "title": "Scope search within records",
           "withinSelected": "Within selected"
         }
+      },
+      "tags": {
+        "getTagsError": "Could not get tags.",
+        "invalidTags": "Some tags are invalid",
+        "multipleErrors": "There are multiple errors.",
+        "ontologyError": "Could not determine if ontologies are enforced or not.",
+        "saveError": "Could not save tags.",
+        "saveSuccess": "Successfully saved tags.",
+        "title": "Tagging {count, plural, one {# item} other {# items}}",
+        "unknownError": "An unknown error occurred."
       }
     }
   }

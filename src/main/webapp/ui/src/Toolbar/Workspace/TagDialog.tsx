@@ -6,6 +6,7 @@ import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import docLinks from "../../assets/DocLinks";
 import Alerts from "../../components/Alerts/Alerts";
@@ -40,6 +41,7 @@ export default function Wrapper(): React.ReactNode {
 }
 
 function TagDialog(): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [saving, setSaving] = React.useState(false);
@@ -106,7 +108,7 @@ function TagDialog(): React.ReactNode {
             addAlert(
               mkAlert({
                 variant: "error",
-                title: "Could not get tags.",
+                title: t("toolbar.tags.getTagsError"),
                 message: error.message,
               }),
             );
@@ -133,7 +135,7 @@ function TagDialog(): React.ReactNode {
           ]).map((tagMetaData) => ({ recordId, tagMetaData })),
         ),
       ).orElseGet(() => {
-        throw new Error("Some tags are invalid");
+        throw new Error(t("toolbar.tags.invalidTags"));
       });
       await axios.post<unknown>("/workspace/saveTagsForRecords", postData);
     } catch (e) {
@@ -160,7 +162,7 @@ function TagDialog(): React.ReactNode {
             console.error(e);
             addAlert(
               mkAlert({
-                title: "Could not determine if ontologies are enforced or not.",
+                title: t("toolbar.tags.ontologyError"),
                 message: e.message,
                 variant: "error",
               }),
@@ -177,13 +179,7 @@ function TagDialog(): React.ReactNode {
 
   return (
     <Dialog open={selectedIds !== null} onClose={() => setSelectedIds(null)}>
-      <DialogTitle>
-        {selectedIds !== null && (
-          <>
-            Tagging {selectedIds.length} item{selectedIds.length > 1 && "s"}
-          </>
-        )}
-      </DialogTitle>
+      <DialogTitle>{selectedIds !== null && <>{t("toolbar.tags.title", { count: selectedIds.length })}</>}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">
@@ -246,7 +242,7 @@ function TagDialog(): React.ReactNode {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setSelectedIds(null)}>Cancel</Button>
+        <Button onClick={() => setSelectedIds(null)}>{t("common:actions.cancel")}</Button>
         <SubmitSpinnerButton
           disabled={saving || (addedTags.length === 0 && deletedTags.length === 0)}
           onClick={() => {
@@ -260,14 +256,14 @@ function TagDialog(): React.ReactNode {
                 addAlert(
                   mkAlert({
                     variant: "success",
-                    message: "Successfully saved tags.",
+                    message: t("toolbar.tags.saveSuccess"),
                   }),
                 );
               } catch (e) {
                 let error: Error;
                 let details: Array<AlertDetails> = [];
                 if (!(e instanceof Error)) {
-                  error = new Error("An unknown error occurred.");
+                  error = new Error(t("toolbar.tags.unknownError"));
                 } else {
                   error = e;
                 }
@@ -279,13 +275,13 @@ function TagDialog(): React.ReactNode {
                       title: e.message,
                       variant: "error",
                     }));
-                  message = "There are multiple errors.";
+                  message = t("toolbar.tags.multipleErrors");
                 }
                 console.error(error);
                 addAlert(
                   mkAlert({
                     variant: "error",
-                    title: "Could not save tags.",
+                    title: t("toolbar.tags.saveError"),
                     message,
                     ...(details.length === 0 ? {} : { details }),
                   }),
@@ -294,7 +290,7 @@ function TagDialog(): React.ReactNode {
             })();
           }}
           loading={saving}
-          label="Save"
+          label={t("common:actions.save")}
         />
       </DialogActions>
     </Dialog>
