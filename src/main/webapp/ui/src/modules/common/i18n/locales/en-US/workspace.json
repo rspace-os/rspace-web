@@ -95,6 +95,16 @@
         "descriptionLabel": "Description *",
         "titleLabel": "Title *"
       },
+      "dataverse": {
+        "descriptionHelper": "Please add a relevant description for your export",
+        "licenseHelper": "Please select your license",
+        "licenseLabel": "License *",
+        "metadataLanguageHelper": "Please select your metadata language (only if target Dataverse supports it)",
+        "metadataLanguageLabel": "Metadata language",
+        "subjectHelper": "Please select your subject",
+        "subjectLabel": "Subject *",
+        "titleHelper": "Please choose a title, >3 symbols"
+      },
       "dryad": {
         "abstractHelper": "Please add a relevant abstract for your export",
         "abstractLabel": "Add an abstract *",
