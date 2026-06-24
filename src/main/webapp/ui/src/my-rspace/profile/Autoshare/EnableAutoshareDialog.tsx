@@ -12,7 +12,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
@@ -112,16 +112,11 @@ function EnableAutoshareDialog({
         <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.enable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Autosharing work will ensure that all current and future documents and notebooks for user{" "}
-            <strong>{username}</strong> will be shared with group
-            <strong> {group.groupDisplayName}</strong> with the READ permission.
-            <br />
-            <br />
-            The EDIT permission can be granted or items can be unshared from the "Manage Shared Documents" section as
-            usual.
-            <br />
-            <br />
-            Please enter a name for the folder that the work will be shared into.
+            <Trans
+              i18nKey="profile.groups.autosharing.enableUserText"
+              ns="common"
+              values={{ username, group: group.groupDisplayName }}
+            />
           </DialogContentText>
           <TextField
             variant="standard"

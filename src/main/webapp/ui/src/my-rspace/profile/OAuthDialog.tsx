@@ -14,7 +14,7 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useRef } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../theme";
 
@@ -146,12 +146,7 @@ export default function OAuthDialog(props: any) {
           </DialogTitle>
           <DialogContent>
             <DialogContentText>
-              {created && (
-                <>
-                  Please write down the client secret.{" "}
-                  <strong>It will not be available once you close this window.</strong>
-                </>
-              )}
+              {created && <Trans i18nKey="profile.oauth.dialog.secretWarning" ns="common" />}
             </DialogContentText>
             {!created && (
               <form onSubmit={handleSubmit}>

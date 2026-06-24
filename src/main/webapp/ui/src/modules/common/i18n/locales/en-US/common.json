@@ -10,6 +10,7 @@
     "dismiss": "Dismiss",
     "edit": "Edit",
     "export": "Export",
+    "invite": "Invite",
     "next": "Next",
     "ok": "OK",
     "retry": "Retry",
@@ -60,6 +61,12 @@
     }
   },
   "profile": {
+    "accountActivity": {
+      "action": "Action",
+      "show": "Show account activity",
+      "time": "Time",
+      "title": "User's account activity"
+    },
     "groups": {
       "activity": {
         "action": "Action",
@@ -68,19 +75,127 @@
         "title": "User's group activity"
       },
       "autosharing": {
-        "disabled": "Disabled",
+        "additionalInfo": {
+          "p1": "Enabling autosharing for a member will ensure that all their current and future documents and notebooks will be shared automatically with the \"read\" permission with this group.",
+          "p2": "Edit permission can be granted or items can be unshared through the \"Manage Shared Documents\" section as usual.",
+          "p3": "This setting is revertible and you can always manually change the autoshare status of any non-PI member in your lab group.",
+          "title": "Additional Information",
+          "toggle": "Toggle additional information"
+        },
         "disable": "Disable autosharing",
+        "disableGroup": {
+          "button": "disable autosharing",
+          "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
+          "title": "Disable group-wide autosharing"
+        },
         "disableStarted": "Reverting autoshare for {group} started successfully. You will receive a notification once it is complete.",
         "disableSuccess": "Autoshare for {group} was disabled successfully.",
+        "disabled": "Disabled",
+        "disableUserText": "Disabling autosharing will unshare all work for user <strong>{{username}}</strong> from group <strong>{{group}}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
         "enable": "Enable autosharing",
         "enableAsyncSuccess": "Autoshare for {group} was enabled successfully. You will receive a notification once it is complete.",
-        "enabled": "Enabled",
+        "enableGroup": {
+          "button": "enable autosharing",
+          "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
+          "title": "Enable group-wide autosharing"
+        },
         "enableSuccess": "Autoshare for {group} was enabled successfully.",
+        "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{{username}}</strong> will be shared with group<strong> {{group}}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
+        "enabled": "Enabled",
         "folderName": "Folder name",
         "genericError": "Something went wrong. Please, contact support if the issue persists.",
         "inProgress": "Autosharing is in progress",
         "notApplicable": "n/a",
-        "onlyLabGroups": "Autosharing is only possible for LabGroups"
+        "onlyLabGroups": "Autosharing is only possible for LabGroups",
+        "settingInProgress": "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete"
+      },
+      "bioOntologies": {
+        "allow": {
+          "button": "allow BioPortal Ontologies",
+          "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
+          "title": "Allow BioPortal Ontologies to be used for tag suggestions"
+        },
+        "disallow": {
+          "button": "disallow BioPortal Ontologies",
+          "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
+          "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
+        },
+        "disabledButton": "disallow Ontologies",
+        "onlyEnterprise": "Only available on Enterprise"
+      },
+      "dialog": {
+        "addError": "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
+        "availableUsers": "Available users",
+        "membersTitle": "{action} members",
+        "selectedUsers": "Selected users"
+      },
+      "editBar": {
+        "cancel": "Cancel",
+        "editTooltip": "Edit profile settings",
+        "errorMessage": "Your request failed: {error}. Please contact support if this problem persists.",
+        "hideGroup": "Hide the group from public listings",
+        "noProfile": "There is no profile information for this group.",
+        "piCanEdit": "PI can edit all work in this lab group.",
+        "placeholder": "Please enter a short description of this group...",
+        "profileDescription": "Profile description",
+        "save": "Save",
+        "subheader": "Profile"
+      },
+      "groupActivity": {
+        "title": "Group Activity",
+        "user": "User"
+      },
+      "manager": {
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "contactAdmin": "Please contact your system administrator to enable this feature",
+        "notAvailableForCollaboration": "Not available for collaboration groups",
+        "onlyEnterprise": "Only available on Enterprise"
+      },
+      "members": "Members",
+      "ontologies": {
+        "enforce": {
+          "button": "enforce Ontologies",
+          "text": "Enforcing ontologies for tags will result in all new tags coming from autopopulated values read from ontology files. These ontology files must be shared with a Group and any user creating new tags must be a member of that Group. Collaboration Groups can be used for this purpose. Tags can not be created from free text and will not autopopulate from existing tags.",
+          "title": "Enforce ontologies for tags"
+        },
+        "disabledButton": "disable Ontologies",
+        "onlyEnterprise": "Only available on Enterprise",
+        "unenforce": {
+          "button": "un-enforce Ontologies",
+          "text": "Un-enforcing use of ontologies for tags will result in group members being able to enter free text when creating new tags. They may also use values autopopulated from ontology files. These ontology files may be their own, or may be files shared with them. They may also use values autopopulated from existing tags.",
+          "title": "Un-enforce use of ontologies for tags"
+        }
+      },
+      "publication": {
+        "disable": {
+          "button": "disable publication",
+          "text": "Disabling group-wide publication will prevent non PI members of the <strong>{{groupDisplayName}}</strong> group publishing their own documents. They may still unpublish previously published documents.",
+          "title": "Disable group-wide publication"
+        },
+        "disabledButton": "disable publication",
+        "enable": {
+          "button": "enable publication",
+          "text": "Enabling group-wide publication will allow non-PI members in the <strong>{{groupDisplayName}}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
+          "title": "Enable group publication"
+        },
+        "notAvailableForCollaboration": "Not available for collaboration groups",
+        "onlyEnterprise": "Only available on Enterprise"
+      },
+      "seo": {
+        "disable": {
+          "button": "disable published seo",
+          "text": "Disabling group-wide SEO of public documents will prevent non PI members of the <strong>{{groupDisplayName}}</strong> group from allowing SEO bots to index their documents. Their published documents will not appear on the 'Published' page visible to the public.",
+          "title": "Disable group-wide SEO of public documents"
+        },
+        "disabledButton": "disable published seo",
+        "enable": {
+          "button": "enable published seo",
+          "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{{groupDisplayName}}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
+          "title": "Enable group-wide SEO for published documents"
+        },
+        "notAvailableForCollaboration": "Not available for collaboration groups",
+        "onlyEnterprise": "Only available on Enterprise"
       },
       "table": {
         "actions": "Actions",
@@ -89,7 +204,10 @@
         "group": "Group",
         "role": "Role"
       },
-      "title": "Groups"
+      "title": "Groups",
+      "userList": {
+        "search": "Search..."
+      }
     },
     "oauth": {
       "connectedApps": {
@@ -123,6 +241,7 @@
         "createError": "There was a problem while creating your application. Please, try again later or contact support.",
         "createTitle": "Create an OAuth application",
         "createdTitle": "App Successfully Created",
+        "secretWarning": "Please write down the client secret. <strong>It will not be available once you close this window.</strong>",
         "validation": {
           "alphanumeric": "The application name should only contain alphanumeric symbols.",
           "maxLength": "The application name should be less than 100 symbols."
@@ -139,9 +258,25 @@
     },
     "raidConnections": {
       "adding": "Adding...",
+      "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{{raidTitle}}</strong> ({{raidIdentifier}}) from this project group?",
+      "confirmDisassociateTitle": "Confirm Disassociation",
+      "connectedTo": "connected to:",
+      "currently": "Currently",
+      "disassociate": "Disassociate",
+      "disabledForProjectType": "RAiD is disabled for this project - only project groups can have RAiD connections.",
+      "errorLoadingGroupInfo": "Error loading group info: {error}",
+      "errorLoadingIntegrationInfo": "Error loading RAiD integration info: {error}",
+      "errorPrefix": "Error: {error}",
+      "groupNotFound": "Group not found, or you may not have permission to view this group.",
       "identifier": "RAiD Identifier",
       "loadOptionsError": "Error loading RAiD identifier options: {error}",
+      "noConnectedServers": "RAiD has been enabled, but no RAiD servers have been connected yet. Please go to the <a href=\"/apps\">Apps page</a> and add a RAiD server.",
       "noOptions": "No valid available RAiD found, or the RAiD has been used by another project group.",
+      "notAvailable": "RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.",
+      "notConnected": "Not connected",
+      "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <a href=\"/apps\">Apps page</a> and enable RAiD.",
+      "previously": "Previously",
+      "title": "RAiD Connections",
       "validation": {
         "identifierMinLength": "RAiD identifier must be at least 3 characters",
         "identifierRequired": "RAiD identifier is required"

@@ -9,6 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
@@ -19,6 +20,7 @@ declare const getValidationErrorString: (...args: any[]) => string;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: any) {
+  const { t } = useTranslation("common");
   const [bioOntologiesAllowedStatus, setBioOntologiesAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -38,7 +40,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
       setBioOntologiesAllowedStatus(response.data.data);
       setLoaded(true);
     });
-  }, [bioOntologiesAllowedStatus]);
+  }, [groupId]);
 
   function allowGroupBioOntologies() {
     submit("/groups/ajax/allowBioOntologies/", true);
@@ -68,11 +70,11 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
 
   /* BioPortal Ontologies are not supported on the community version */
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  function DisabledBioOntologiesButton(props: any) {
+  function DisabledBioOntologiesButton(_props: any) {
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (isCloud) {
-      title = "Only available on Enterprise";
+      title = t("profile.groups.manager.onlyEnterprise");
     }
 
     return (
@@ -81,7 +83,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
           <Tooltip title={title} aria-label={title}>
             <div>
               <Button sx={{ margin: "0 0 0.5em 15px" }} variant="outlined" size="small" disabled>
-                {props.mode} Ontologies
+                {t("profile.groups.bioOntologies.disabledButton")}
               </Button>
             </div>
           </Tooltip>
@@ -92,11 +94,15 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function BioOntologiesButton(props: any) {
+    const label =
+      props.mode === "allow"
+        ? t("profile.groups.bioOntologies.allow.button")
+        : t("profile.groups.bioOntologies.disallow.button");
     return (
       <>
         {!isCloud && canManageOntologies && (
           <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-            {props.mode} BioPortal Ontologies
+            {label}
           </Button>
         )}
       </>
@@ -108,10 +114,10 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
     return (
       <>
         <Button onClick={props.onCancel} sx={{ color: "grey" }}>
-          Cancel
+          {t("profile.groups.manager.cancel")}
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
-          Confirm
+          {t("profile.groups.manager.confirm")}
           {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
         </Button>
       </>
@@ -126,16 +132,18 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
           <BioOntologiesButton mode="allow" callback={() => setEnableDialogOpen(true)} />
           <Dialog open={enableDialogOpen} onClose={() => setEnableDialogOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle id="group-publication-dialog-title">
-              Allow BioPortal Ontologies to be used for tag suggestions
+              {t("profile.groups.bioOntologies.allow.title")}
             </DialogTitle>
             <DialogContent>
               <DialogContentText component="div">
-                Allowing BioPortal Ontologies for tags will query data from the
-                <a href={"https://bioportal.bioontology.org/ontologies"} target={"_blank"} rel="noreferrer">
-                  {" "}
-                  BioPortal Ontologies Portal
-                </a>{" "}
-                and use the values to generate tag suggestions{" "}
+                <Trans
+                  i18nKey="profile.groups.bioOntologies.allow.text"
+                  ns="common"
+                  components={{
+                    // biome-ignore lint/a11y/useAnchorContent: Trans component placeholder — children are injected by react-i18next
+                    a: <a href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
+                  }}
+                />{" "}
                 <Box sx={{ fontSize: "8px" }}>
                   Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced
                   functionality via new Web services from the National Center for Biomedical Ontology to access and use
@@ -156,16 +164,18 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
           <BioOntologiesButton mode="disallow" callback={() => setDisableDialogOpen(true)} />
           <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle id="group-sharing-dialog-title">
-              Disallow BioPortal Ontologies to be used for tag suggestions
+              {t("profile.groups.bioOntologies.disallow.title")}
             </DialogTitle>
             <DialogContent>
               <DialogContentText>
-                Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the
-                <a href={"https://bioportal.bioontology.org/ontologies"} target={"_blank"} rel="noreferrer">
-                  {" "}
-                  BioPortal Ontologies Portal
-                </a>{" "}
-                will no longer be suggested.
+                <Trans
+                  i18nKey="profile.groups.bioOntologies.disallow.text"
+                  ns="common"
+                  components={{
+                    // biome-ignore lint/a11y/useAnchorContent: Trans component placeholder — children are injected by react-i18next
+                    a: <a href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
+                  }}
+                />
               </DialogContentText>
             </DialogContent>
             <DialogActions>

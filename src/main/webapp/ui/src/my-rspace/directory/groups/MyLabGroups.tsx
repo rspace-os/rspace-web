@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import i18n from "../../../modules/common/i18n";
 import materialTheme from "../../../theme";
 import GroupAutoshareManager from "./Autoshare/GroupAutoshareManager";
 import GroupBioOntologiesManager from "./GroupBioOntologiesManager";
@@ -49,7 +50,7 @@ class MyLabGroups extends React.Component<any, any> {
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
-            <h3>Members</h3>
+            <h3>{i18n.t("profile.groups.members")}</h3>
             {this.state.isCloud && (
               <Button
                 id="inviteNewMembersGrpLink"
@@ -58,7 +59,7 @@ class MyLabGroups extends React.Component<any, any> {
                 sx={{ margin: "0 0 0.5em 15px" }}
                 data-test-id="button-invite-members"
               >
-                Invite
+                {i18n.t("actions.invite")}
               </Button>
             )}
             {!this.state.isCloud && this.state.canEdit && this.state.role !== "admin" && (
@@ -69,7 +70,7 @@ class MyLabGroups extends React.Component<any, any> {
                 sx={{ margin: "0 0 0.5em 15px" }}
                 data-test-id="button-add-members"
               >
-                Invite
+                {i18n.t("actions.invite")}
               </Button>
             )}
             {this.state.canEdit && this.state.role === "admin" && (
@@ -80,7 +81,7 @@ class MyLabGroups extends React.Component<any, any> {
                 sx={{ margin: "0 0 0.5em 15px" }}
                 data-test-id="button-add-members"
               >
-                Add
+                {i18n.t("actions.add")}
               </Button>
             )}
             {this.state.canManageAutoshare && (

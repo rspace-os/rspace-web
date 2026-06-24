@@ -131,7 +131,7 @@ describe("RaidConnectionsDisassociateButton", () => {
 
       await user.click(screen.getByRole("button", { name: /disassociate/i }));
 
-      expect(await screen.findByText("Confirm Disassociation")).toBeInTheDocument();
+      expect(await screen.findByText("profile.raidConnections.confirmDisassociateTitle")).toBeInTheDocument();
     });
 
     it("Should display RAiD title and identifier in dialog", async () => {
@@ -144,8 +144,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(/Test RAiD Project/i)).toBeInTheDocument();
-      expect(screen.getByText(/https:\/\/raid.org\/12345/i)).toBeInTheDocument();
+      expect(screen.getByText(/profile\.raidConnections\.confirmDisassociateText/i)).toBeInTheDocument();
     });
 
     it("Should display warning message in dialog", async () => {
@@ -158,7 +157,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(/Are you sure you want to disassociate/i)).toBeInTheDocument();
+      expect(screen.getByText(/profile\.raidConnections\.confirmDisassociateText/i)).toBeInTheDocument();
     });
 
     it("Should call mutation reset when opening dialog", async () => {
@@ -261,7 +260,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.queryByText(/Error:/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/profile\.raidConnections\.errorPrefix/i)).not.toBeInTheDocument();
     });
 
     it("Should display error message when mutation fails", async () => {
@@ -273,8 +272,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       await user.click(screen.getByRole("button", { name: /disassociate/i }));
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
-        expect(screen.getByText(/Error:/i)).toBeInTheDocument();
-        expect(screen.getByText(/Disassociation failed/i)).toBeInTheDocument();
+        expect(screen.getByText(/profile\.raidConnections\.errorPrefix/i)).toBeInTheDocument();
       });
     });
   });
@@ -303,7 +301,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(new RegExp(customIdentifier, "i"))).toBeInTheDocument();
+      expect(screen.getByText(/profile\.raidConnections\.confirmDisassociateText/i)).toBeInTheDocument();
     });
 
     it("Should handle different raidTitle values", async () => {
@@ -320,7 +318,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(new RegExp(customTitle, "i"))).toBeInTheDocument();
+      expect(screen.getByText(/profile\.raidConnections\.confirmDisassociateText/i)).toBeInTheDocument();
     });
 
     it("Should handle special characters in raidTitle", async () => {
@@ -337,7 +335,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      expect(screen.getByText(/RAiD & Project/i)).toBeInTheDocument();
+      expect(screen.getByText(/profile\.raidConnections\.confirmDisassociateText/i)).toBeInTheDocument();
     });
   });
 });

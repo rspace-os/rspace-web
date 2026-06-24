@@ -4,6 +4,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Suspense } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
@@ -11,20 +12,29 @@ import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
 import RaidConnectionsEntry from "@/my-rspace/profile/RaidConnections/RaidConnectionsEntry";
 
 const RaidConnections = ({ groupId }: { groupId: string }) => {
+  const { t } = useTranslation("common");
   const { data: token } = useOauthTokenQuery();
   const { data: integrationData } = useRaidIntegrationInfoAjaxQuery();
   const { data: groupData, error: groupError } = useGetGroupByIdQuery({ id: groupId, token });
 
   if (!integrationData.success) {
-    return <Typography variant="body2">Error loading RAiD integration info: {integrationData.errorMsg}</Typography>;
+    return (
+      <Typography variant="body2">
+        {t("profile.raidConnections.errorLoadingIntegrationInfo", { error: integrationData.errorMsg })}
+      </Typography>
+    );
   }
 
   if (groupError) {
-    return <Typography variant="body2">Error loading group info: {groupError.message}</Typography>;
+    return (
+      <Typography variant="body2">
+        {t("profile.raidConnections.errorLoadingGroupInfo", { error: groupError.message })}
+      </Typography>
+    );
   }
 
   if (groupData === null) {
-    return <Typography variant="body2">Group not found, or you may not have permission to view this group.</Typography>;
+    return <Typography variant="body2">{t("profile.raidConnections.groupNotFound")}</Typography>;
   }
 
   const groupType = groupData?.type;
@@ -43,31 +53,19 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
 
   const getUnavailableMessage = () => {
     if (groupType !== "PROJECT_GROUP") {
-      return <>RAiD is disabled for this project - only project groups can have RAiD connections.</>;
+      return <>{t("profile.raidConnections.disabledForProjectType")}</>;
     }
 
     if (!integrationData?.data?.available) {
-      return (
-        <>RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.</>
-      );
+      return <>{t("profile.raidConnections.notAvailable")}</>;
     }
 
     if (!integrationData?.data?.enabled) {
-      return (
-        <>
-          RAiD is not enabled for your account. To add or change RAiD connections, go to the{" "}
-          <Link href="/apps">Apps page</Link> and enable RAiD.
-        </>
-      );
+      return <Trans i18nKey="profile.raidConnections.notEnabled" ns="common" components={{ a: <Link /> }} />;
     }
 
     if (!hasConnectedServers) {
-      return (
-        <>
-          RAiD has been enabled, but no RAiD servers have been connected yet. Please go to the{" "}
-          <Link href="/apps">Apps page</Link> and add a RAiD server.
-        </>
-      );
+      return <Trans i18nKey="profile.raidConnections.noConnectedServers" ns="common" components={{ a: <Link /> }} />;
     }
 
     return null;
@@ -78,7 +76,7 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
 
   return (
     <Stack spacing={1} sx={{ width: "100%" }} direction="column">
-      <Typography variant="h6">RAiD Connections</Typography>
+      <Typography variant="h6">{t("profile.raidConnections.title")}</Typography>
       <ErrorBoundary>
         <Suspense fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}>
           {shouldShowUnavailableMessage ? (
@@ -90,8 +88,10 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
                     {/* It shouldn't be possible for groups to change types
                        (so a project group can never become a lab group),
                         but handling it here just in case */}
-                    {!integrationData.data?.available || groupType !== "PROJECT_GROUP" ? "Previously" : "Currently"}{" "}
-                    connected to:
+                    {!integrationData.data?.available || groupType !== "PROJECT_GROUP"
+                      ? t("profile.raidConnections.previously")
+                      : t("profile.raidConnections.currently")}{" "}
+                    {t("profile.raidConnections.connectedTo")}
                   </strong>{" "}
                   {raidTitle} ({raidIdentifier})
                 </Typography>

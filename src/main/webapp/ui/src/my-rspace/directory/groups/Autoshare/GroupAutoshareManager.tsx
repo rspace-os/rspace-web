@@ -10,6 +10,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../../theme";
 import AdditionalInfo from "./AdditionalInfo";
@@ -21,6 +22,7 @@ declare const getValidationErrorString: (...args: any[]) => string;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGroupAutoshareAllowed }: any) {
+  const { t } = useTranslation("common");
   const [autoshareStatus, setAutoshareStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -63,11 +65,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
       setAutoshareStatus(true);
       setEnableDialogOpen(false);
       setDisableDialogOpen(false);
-      RS.confirm(
-        "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete",
-        "notice",
-        5000,
-      );
+      RS.confirm(t("profile.groups.autosharing.settingInProgress"), "notice", 5000);
     });
   }
 
@@ -78,12 +76,17 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
     let title;
 
     if (!isLabGroup) {
-      title = `Can only ${props.mode} autoshare for lab groups`;
+      title = t("profile.groups.autosharing.onlyLabGroups");
     } else if (isCloud) {
-      title = "Only available on Enterprise";
+      title = t("profile.groups.manager.onlyEnterprise");
     } else if (!isGroupAutoshareAllowed) {
-      title = "Please contact your system administrator to enable this feature";
+      title = t("profile.groups.manager.contactAdmin");
     }
+
+    const label =
+      props.mode === "enable"
+        ? t("profile.groups.autosharing.enableGroup.button")
+        : t("profile.groups.autosharing.disableGroup.button");
 
     return (
       <>
@@ -91,7 +94,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
           <Tooltip title={title} aria-label={title}>
             <div>
               <Button sx={{ margin: "0 0 0.5em 15px" }} variant="outlined" size="small" disabled>
-                {props.mode} autosharing
+                {label}
               </Button>
             </div>
           </Tooltip>
@@ -102,11 +105,16 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function AutoshareButton(props: any) {
+    const label =
+      props.mode === "enable"
+        ? t("profile.groups.autosharing.enableGroup.button")
+        : t("profile.groups.autosharing.disableGroup.button");
+
     return (
       <>
         {isLabGroup && !isCloud && isGroupAutoshareAllowed && (
           <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-            {props.mode} autosharing
+            {label}
           </Button>
         )}
       </>
@@ -118,10 +126,10 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
     return (
       <>
         <Button onClick={props.onCancel} sx={{ color: "grey" }}>
-          Cancel
+          {t("profile.groups.manager.cancel")}
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
-          Confirm
+          {t("profile.groups.manager.confirm")}
           {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
         </Button>
       </>
@@ -136,12 +144,16 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
             <DisabledAutoshareButton mode="enable" />
             <AutoshareButton mode="enable" callback={() => setEnableDialogOpen(true)} />
             <Dialog open={enableDialogOpen} onClose={() => setEnableDialogOpen(false)} maxWidth="sm" fullWidth>
-              <DialogTitle id="group-sharing-dialog-title">Enable group-wide autosharing</DialogTitle>
+              <DialogTitle id="group-sharing-dialog-title">
+                {t("profile.groups.autosharing.enableGroup.title")}
+              </DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  Enabling group-wide autosharing will enable autosharing for all non-PI members in the{" "}
-                  <strong>{groupDisplayName}</strong> group. Once enabled, new non-PI members will have autosharing
-                  automatically enabled on joining.
+                  <Trans
+                    i18nKey="profile.groups.autosharing.enableGroup.text"
+                    ns="common"
+                    values={{ groupDisplayName }}
+                  />
                 </DialogContentText>
                 <AdditionalInfo />
               </DialogContent>
@@ -156,12 +168,16 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
             <DisabledAutoshareButton mode="disable" />
             <AutoshareButton mode="disable" callback={() => setDisableDialogOpen(true)} />
             <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
-              <DialogTitle id="group-sharing-dialog-title">Disable group-wide autosharing</DialogTitle>
+              <DialogTitle id="group-sharing-dialog-title">
+                {t("profile.groups.autosharing.disableGroup.title")}
+              </DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  Disabling group-wide autosharing will unshare all work shared by non-PI members in the{" "}
-                  <strong>{groupDisplayName}</strong> group. Once disabled, new non-PI members will no longer have
-                  autosharing automatically enabled on joining.
+                  <Trans
+                    i18nKey="profile.groups.autosharing.disableGroup.text"
+                    ns="common"
+                    values={{ groupDisplayName }}
+                  />
                 </DialogContentText>
                 <AdditionalInfo />
               </DialogContent>

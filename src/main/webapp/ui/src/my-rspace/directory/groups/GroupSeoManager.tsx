@@ -9,6 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
@@ -19,6 +20,7 @@ declare const getValidationErrorString: (...args: any[]) => string;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGroupSeoAllowed, canManagePublish }: any) {
+  const { t } = useTranslation("common");
   const [seoAllowedStatus, setSeoAllowedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -38,7 +40,7 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
       setSeoAllowedStatus(response.data.data);
       setLoaded(true);
     });
-  }, [seoAllowedStatus]);
+  }, [groupId]);
 
   function allowGroupSeo() {
     submit("/groups/ajax/allowGroupSeo/", true);
@@ -72,13 +74,16 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (!isLabGroup) {
-      title = `Not available for collaboration groups`;
+      title = t("profile.groups.manager.notAvailableForCollaboration");
     }
     if (isCloud) {
-      title = "Only available on Enterprise";
+      title = t("profile.groups.manager.onlyEnterprise");
     } else if (!isGroupSeoAllowed) {
-      title = "Please contact your system administrator to enable this feature";
+      title = t("profile.groups.manager.contactAdmin");
     }
+
+    const label =
+      props.mode === "enable" ? t("profile.groups.seo.enable.button") : t("profile.groups.seo.disable.button");
 
     return (
       <>
@@ -86,7 +91,7 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
           <Tooltip title={title} aria-label={title}>
             <div>
               <Button sx={{ margin: "0 0 0.5em 15px" }} variant="outlined" size="small" disabled>
-                {props.mode} published seo
+                {label}
               </Button>
             </div>
           </Tooltip>
@@ -97,11 +102,13 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function SEOButton(props: any) {
+    const label =
+      props.mode === "enable" ? t("profile.groups.seo.enable.button") : t("profile.groups.seo.disable.button");
     return (
       <>
         {isLabGroup && !isCloud && isGroupSeoAllowed && canManagePublish && (
           <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-            {props.mode} published seo
+            {label}
           </Button>
         )}
       </>
@@ -113,10 +120,10 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
     return (
       <>
         <Button onClick={props.onCancel} sx={{ color: "grey" }}>
-          Cancel
+          {t("profile.groups.manager.cancel")}
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
-          Confirm
+          {t("profile.groups.manager.confirm")}
           {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
         </Button>
       </>
@@ -130,12 +137,10 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
           <DisabledSEOButton mode="enable" />
           <SEOButton mode="enable" callback={() => setEnableDialogOpen(true)} />
           <Dialog open={enableDialogOpen} onClose={() => setEnableDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle id="group-publication-dialog-title">Enable group-wide SEO for published documents</DialogTitle>
+            <DialogTitle id="group-publication-dialog-title">{t("profile.groups.seo.enable.title")}</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                Enabling group-wide SEO for published documents will allow non-PI members in the{" "}
-                <strong>{groupDisplayName}</strong> group to choose to have their documents indexed by SEO bots. These
-                documents will also be shown on the 'Published' page visible to the public.
+                <Trans i18nKey="profile.groups.seo.enable.text" ns="common" values={{ groupDisplayName }} />
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -149,12 +154,10 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
           <DisabledSEOButton mode="disable" />
           <SEOButton mode="disable" callback={() => setDisableDialogOpen(true)} />
           <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle id="group-sharing-dialog-title">Disable group-wide SEO of public documents</DialogTitle>
+            <DialogTitle id="group-sharing-dialog-title">{t("profile.groups.seo.disable.title")}</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                Disabling group-wide SEO of public documents will prevent non PI members of the{" "}
-                <strong>{groupDisplayName}</strong> group from allowing SEO bots to index their documents. Their
-                published documents will not appear on the 'Published' page visible to the public.
+                <Trans i18nKey="profile.groups.seo.disable.text" ns="common" values={{ groupDisplayName }} />
               </DialogContentText>
             </DialogContent>
             <DialogActions>
