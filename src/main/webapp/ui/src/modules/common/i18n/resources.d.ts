@@ -435,6 +435,21 @@ export default interface Resources {
       "loading": "Loading"
     },
     "container": {
+      "content": {
+        "placeMarkers": {
+          "actions": {
+            "open": "Open",
+            "remove": "Remove"
+          },
+          "columns": {
+            "actions": "Actions",
+            "content": "Content",
+            "location": "Location"
+          },
+          "emptyLocation": "Empty Location",
+          "emptyLocationHelper": "This location can be chosen as the destination in a move operation."
+        }
+      },
       "fields": {
         "canStore": {
           "containers": "Containers",
@@ -1085,6 +1100,12 @@ export default interface Resources {
         "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
         "title": "Batch editing {count} subsamples"
+      }
+    },
+    "template": {
+      "summary": {
+        "loading": "Loading",
+        "noTemplate": "No Template"
       }
     }
   },

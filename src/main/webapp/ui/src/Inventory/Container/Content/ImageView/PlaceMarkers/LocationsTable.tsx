@@ -9,6 +9,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { type MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { Location } from "../../../../../stores/definitions/Container";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { preventEventBubbling } from "../../../../../util/Util";
@@ -35,6 +36,7 @@ function LocationsTable({
   selected,
   onClick,
 }: LocationsTableArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const tableBody = React.useRef(null);
 
   type CustomEvent = {
@@ -86,7 +88,7 @@ function LocationsTable({
           <ButtonGroup color="primary" size="small">
             {!location.hasContent && (
               <Button onClick={(e: MouseEvent<HTMLButtonElement>) => preventEventBubbling(() => onRemove(mark))(e)}>
-                Remove
+                {t("container.content.placeMarkers.actions.remove")}
               </Button>
             )}
           </ButtonGroup>
@@ -100,10 +102,10 @@ function LocationsTable({
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ padding: "10px" }}>Location</TableCell>
-            <TableCell sx={{ padding: "10px" }}>Content</TableCell>
+            <TableCell sx={{ padding: "10px" }}>{t("container.content.placeMarkers.columns.location")}</TableCell>
+            <TableCell sx={{ padding: "10px" }}>{t("container.content.placeMarkers.columns.content")}</TableCell>
             <TableCell sx={{ width: 1 }} align="right" component="th">
-              Actions
+              {t("container.content.placeMarkers.columns.actions")}
             </TableCell>
           </TableRow>
         </TableHead>
