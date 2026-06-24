@@ -877,6 +877,20 @@ export class RemoteFile implements GalleryFile {
   }
 }
 
+/**
+ * Returns `candidate` as a {@link Filestore} when it is a writable S3 filestore -- the only
+ * filestores whose contents RSpace can create/move/delete -- otherwise null. Used to gate the
+ * S3-only write actions.
+ */
+export function asWritableS3Filestore(candidate: GalleryFile | undefined): Filestore | null {
+  return candidate instanceof Filestore &&
+    candidate.filesystemType === "S3" &&
+    candidate.id !== null &&
+    candidate.canWrite
+    ? candidate
+    : null;
+}
+
 function parseGalleryFileFromFolderApiResponse(
   obj: object,
   path: ReadonlyArray<GalleryFile>,

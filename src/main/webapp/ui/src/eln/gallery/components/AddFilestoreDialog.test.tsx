@@ -178,12 +178,9 @@ describe("AddFilestoreDialog", () => {
     await user.click(await screen.findByRole("radio", { name: "s3 test" }));
     await user.click(screen.getByRole("button", { name: /Choose filesystem/i }));
 
-    // S3 offers a selectable "bucket top level" entry (no subfolder needed)
-    const topLevel = await screen.findByRole("treeitem", { name: /bucket top level/i });
-    /* eslint-disable testing-library/no-node-access -- click the x-tree-view content row, not the li */
-    const content = topLevel.querySelector<HTMLElement>(":scope > div") ?? topLevel;
-    /* eslint-enable testing-library/no-node-access */
-    await user.click(content);
+    // S3 offers a selectable "(bucket top level)" entry (no subfolder needed); clicking its label
+    // selects it (the click bubbles to the tree-item content handler).
+    await user.click(await screen.findByText("(bucket top level)"));
     await user.click(screen.getByRole("button", { name: /Choose folder/i }));
 
     const nameField = await screen.findByRole("textbox", { name: "Filestore name" });

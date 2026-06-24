@@ -434,16 +434,20 @@ export function useGalleryActions(): {
 
   /**
    * Run a per-item S3 filestore write op. Each item is a separate API call gated server-side, so
-   * failures are collected and reported together rather than aborting the batch. `verbs` are the
-   * gerund/past/base forms used in the progress, success, and failure messages.
+   * failures are collected and reported together rather than aborting the batch. Callers supply
+   * complete user-facing phrases (not assembled from fragments) so each is translatable as a unit.
    */
   async function runPerItemFilestoreOp(
     items: ReadonlyArray<RemoteFile>,
-    verbs: { gerund: string; past: string; base: string },
+    messages: {
+      inProgress: string;
+      success: (count: number) => string;
+      failure: (count: number) => string;
+    },
     request: (api: ReturnType<typeof axios.create>, file: RemoteFile) => Promise<unknown>,
   ) {
     const progressAlert = mkAlert({
-      message: `${verbs.gerund}...`,
+      message: messages.inProgress,
       variant: "notice",
       isInfinite: true,
     });
@@ -461,7 +465,7 @@ export function useGalleryActions(): {
       if (failures.length === 0) {
         addAlert(
           mkAlert({
-            message: `Successfully ${verbs.past} item${items.length > 1 ? "s" : ""}.`,
+            message: messages.success(items.length),
             variant: "success",
           }),
         );
@@ -469,7 +473,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Failed to ${verbs.base} ${failures.length} item${failures.length > 1 ? "s" : ""}.`,
+            title: messages.failure(failures.length),
             message: failures.join("; "),
           }),
         );
@@ -481,18 +485,32 @@ export function useGalleryActions(): {
 
   /** Delete files/folders inside an S3 filestore (POST /filestores/{id}/delete per item). */
   async function deleteRemoteFiles(files: RsSet<RemoteFile>) {
-    await runPerItemFilestoreOp(files.toArray(), { gerund: "Deleting", past: "deleted", base: "delete" }, (api, file) =>
-      api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, { path: file.remotePath }),
+    await runPerItemFilestoreOp(
+      files.toArray(),
+      {
+        inProgress: "Deleting...",
+        success: (count) => (count === 1 ? "Successfully deleted 1 item." : `Successfully deleted ${count} items.`),
+        failure: (count) => (count === 1 ? "Failed to delete 1 item." : `Failed to delete ${count} items.`),
+      },
+      (api, file) =>
+        api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, { path: file.remotePath }),
     );
   }
 
   /** Move items to another folder within the same S3 filestore (POST /filestores/{id}/move per item). */
   async function moveRemoteFiles(sources: ReadonlyArray<RemoteFile>, destPath: string) {
-    await runPerItemFilestoreOp(sources, { gerund: "Moving", past: "moved", base: "move" }, (api, file) =>
-      api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/move`, {
-        sourcePath: file.remotePath,
-        destPath,
-      }),
+    await runPerItemFilestoreOp(
+      sources,
+      {
+        inProgress: "Moving...",
+        success: (count) => (count === 1 ? "Successfully moved 1 item." : `Successfully moved ${count} items.`),
+        failure: (count) => (count === 1 ? "Failed to move 1 item." : `Failed to move ${count} items.`),
+      },
+      (api, file) =>
+        api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/move`, {
+          sourcePath: file.remotePath,
+          destPath,
+        }),
     );
   }
 

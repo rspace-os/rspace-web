@@ -41,7 +41,7 @@ import Result from "../../../util/result";
 import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
 import { type GallerySection, gallerySectionIcon, gallerySectionLabel } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
-import { Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
+import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
 
 const UploadMenuItem = ({
@@ -138,9 +138,8 @@ const NewFolderMenuItem = ({
   // Inside an S3 filestore, folders are created via the filestore API (path-based), not the local endpoint.
   const s3Target = React.useMemo((): { filestoreId: number; parentPath: string } | null => {
     if (!path || path.length === 0) return null;
-    const filestore = path[0];
-    if (!(filestore instanceof Filestore) || filestore.filesystemType !== "S3" || filestore.id === null) return null;
-    if (!filestore.canWrite) return null;
+    const filestore = asWritableS3Filestore(path[0]);
+    if (!filestore || filestore.id === null) return null;
     const openFolder = path[path.length - 1];
     const parentPath = openFolder instanceof RemoteFile ? openFolder.remotePath : "";
     return { filestoreId: filestore.id, parentPath };

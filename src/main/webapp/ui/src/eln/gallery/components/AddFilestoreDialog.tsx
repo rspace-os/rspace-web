@@ -271,11 +271,11 @@ function TreeListing({
   // Root S3 listing: hold back the "(bucket top level)" option until the folders have loaded, so
   // every option appears at once rather than top-level looking like the only choice.
   if (showBucketTopLevel && loading) {
-    return <TreeItem itemId="__loading__" label="Loading..." disabled key="__loading__" />;
+    return <TreeItem itemId="__loading__" label="Loading..." disabled />;
   }
   return (
     <>
-      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" key={TOP_LEVEL_ITEM_ID} />}
+      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" />}
       {listing.map(
         ({ folder, name }) =>
           folder && (

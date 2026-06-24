@@ -58,7 +58,14 @@ import {
 } from "../primaryActionHooks";
 import useFilestoresEndpoint from "../useFilestoresEndpoint";
 import { useGalleryActions } from "../useGalleryActions";
-import { Filestore, type GalleryFile, type Id, idToString, RemoteFile } from "../useGalleryListing";
+import {
+  asWritableS3Filestore,
+  Filestore,
+  type GalleryFile,
+  type Id,
+  idToString,
+  RemoteFile,
+} from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
@@ -468,15 +475,8 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     if (files.some((f) => !(f instanceof RemoteFile))) return null;
     const sources = files.filterClass(RemoteFile);
     const parents = sources.toArray().map((f) => f.path[0]);
-    const filestore = parents[0];
-    if (
-      !(filestore instanceof Filestore) ||
-      filestore.filesystemType !== "S3" ||
-      filestore.id === null ||
-      !filestore.canWrite
-    ) {
-      return null;
-    }
+    const filestore = asWritableS3Filestore(parents[0]);
+    if (!filestore) return null;
     if (parents.some((p) => p !== filestore)) return null;
     return { filestore, sources };
   });
