@@ -1,5 +1,6 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
+import { useTranslation } from "react-i18next";
 import { ErrorReason, type ErrorReasonType } from "./Enums";
 
 type ErrorViewProps = {
@@ -8,9 +9,11 @@ type ErrorViewProps = {
 };
 
 export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps) {
+  const { t } = useTranslation("common");
+
   return (
     <Alert severity="error">
-      <AlertTitle>Error</AlertTitle>
+      <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <>
           The Omero server at{" "}
@@ -29,17 +32,17 @@ export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps)
           the issue is.
         </>
       )}
-      {errorReason === ErrorReason.NotFound && <>The requested data was not found on this instance of Omero</>}
+      {errorReason === ErrorReason.NotFound && <>{t("integrationErrors.omero.notFound")}</>}
       {/* when user credentials expire on user session end, server responds with 401 */}
       {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) && (
-        <>Your session with Omero has expired. Please re-connect to Omero on the Apps page.</>
+        <>{t("integrationErrors.omero.sessionExpired")}</>
       )}
-      {errorReason === ErrorReason.Timeout && <>Request timed out.</>}
+      {errorReason === ErrorReason.Timeout && <>{t("integrationErrors.timeout")}</>}
       {/* when a refresh token expires the omero API responds with 400 response and 'invalid_grant' in the response message */}
       {errorReason === ErrorReason.BadRequest && !errorMessage.includes("invalid_grant") && (
-        <> There is a problem, please try again later </>
+        <>{t("integrationErrors.tryAgainLater")}</>
       )}
-      {errorReason === ErrorReason.UNKNOWN && <>Unknown issue, please attempt to relogin to RSpace.</>}
+      {errorReason === ErrorReason.UNKNOWN && <>{t("integrationErrors.unknownRelogin")}</>}
     </Alert>
   );
 }

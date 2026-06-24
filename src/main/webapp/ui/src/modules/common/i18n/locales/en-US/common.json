@@ -148,6 +148,20 @@
       }
     }
   },
+  "integrationErrors": {
+    "calira": {
+      "invalidToken": "Invalid Calira user or client token. Please re-connect to Calira.",
+      "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
+    },
+    "omero": {
+      "notFound": "The requested data was not found on this instance of Omero",
+      "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
+    },
+    "timeout": "Request timed out.",
+    "title": "Error",
+    "tryAgainLater": "There is a problem, please try again later",
+    "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
+  },
   "search": {
     "clearTooltip": "Clear search",
     "placeholder": "Search..."

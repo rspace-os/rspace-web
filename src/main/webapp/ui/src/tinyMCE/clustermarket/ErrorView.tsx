@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { ErrorReason } from "./Enums";
 
 export default function ErrorView({
@@ -10,9 +11,11 @@ export default function ErrorView({
   errorReason: (typeof ErrorReason)[keyof typeof ErrorReason];
   errorMessage: string;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
+
   return (
     <Alert severity="error">
-      <AlertTitle>Error</AlertTitle>
+      <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <>
           The Calira server at{" "}
@@ -31,20 +34,18 @@ export default function ErrorView({
           what the issue is.
         </>
       )}
-      {errorReason === ErrorReason.NotFound && (
-        <>Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?</>
-      )}
+      {errorReason === ErrorReason.NotFound && <>{t("integrationErrors.calira.notFound")}</>}
       {/* when an OAuth token expires the Clustermarket API responds with 401 response.
         When a refresh token expires the Clustermarket API responds with 400 response and 'invalid_grant' in the response message */}
       {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) && (
-        <>Invalid Calira user or client token. Please re-connect to Calira.</>
+        <>{t("integrationErrors.calira.invalidToken")}</>
       )}
-      {errorReason === ErrorReason.Timeout && <>Request timed out.</>}
+      {errorReason === ErrorReason.Timeout && <>{t("integrationErrors.timeout")}</>}
       {/* when a refresh token expires the Clustermarket API responds with 400 response and 'invalid_grant' in the response message */}
       {errorReason === ErrorReason.BadRequest && !errorMessage.includes("invalid_grant") && (
-        <> There is a problem, please try again later </>
+        <>{t("integrationErrors.tryAgainLater")}</>
       )}
-      {errorReason === ErrorReason.UNKNOWN && <>Unknown issue, please attempt to relogin to RSpace.</>}
+      {errorReason === ErrorReason.UNKNOWN && <>{t("integrationErrors.unknownRelogin")}</>}
     </Alert>
   );
 }
