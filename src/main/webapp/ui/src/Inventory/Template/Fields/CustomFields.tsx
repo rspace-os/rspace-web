@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../../components/NoValue";
 import FieldModel from "../../../stores/models/FieldModel";
 import TemplateModel from "../../../stores/models/TemplateModel";
@@ -14,6 +15,7 @@ type FieldsArgs = {
 };
 
 function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
     uiStore,
@@ -55,7 +57,7 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
         <TemplateFields editable={editable} />
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
-          <NoValue label="No more fields" />
+          <NoValue label={t("fields.templateFields.customField.noMoreFields")} />
         </Box>
       )}
       {editable && <NewField record={activeResult} />}

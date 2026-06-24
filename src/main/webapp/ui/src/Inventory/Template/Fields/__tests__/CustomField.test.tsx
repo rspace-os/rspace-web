@@ -44,8 +44,8 @@ describe("CustomField", () => {
           />
         </ThemeProvider>,
       );
-      await user.click(screen.getByRole("button", { name: "Delete field" }));
-      await user.click(screen.getByRole("menuitem", { name: "Keep field in existing samples" }));
+      await user.click(screen.getByRole("button", { name: "fields.templateFields.customField.deleteField" }));
+      await user.click(screen.getByRole("menuitem", { name: "fields.templateFields.customField.deleteOptions.keep" }));
       expect(onRemove).toHaveBeenCalledWith(false);
     });
     test("Remove field in existing samples", async () => {
@@ -72,10 +72,10 @@ describe("CustomField", () => {
           />
         </ThemeProvider>,
       );
-      await user.click(screen.getByRole("button", { name: "Delete field" }));
+      await user.click(screen.getByRole("button", { name: "fields.templateFields.customField.deleteField" }));
       await user.click(
         screen.getByRole("menuitem", {
-          name: "Remove field from existing samples",
+          name: "fields.templateFields.customField.deleteOptions.remove",
         }),
       );
       expect(onRemove).toHaveBeenCalledWith(true);

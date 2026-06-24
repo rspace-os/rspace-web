@@ -158,7 +158,72 @@
       }
     },
     "templateFields": {
-      "addField": "Add field"
+      "addField": "Add field",
+      "alias": {
+        "custom": "Custom",
+        "defaults": {
+          "aliquot": "Aliquot",
+          "component": "Component",
+          "individual": "Individual",
+          "piece": "Piece",
+          "portion": "Portion",
+          "section": "Section",
+          "subsample": "Subsample",
+          "unit": "Unit",
+          "volume": "Volume"
+        },
+        "explanation": "The name for subsamples of the samples created from this template.",
+        "helperText": "Please enter at least {min} characters, and no more than {max}",
+        "label": "Subsample Alias",
+        "minimumPlaceholder": "Minimum 2 char.",
+        "plural": "Plural",
+        "singular": "Singular"
+      },
+      "customField": {
+        "defaultDescription": "Default Description",
+        "defaultValue": "Default Value",
+        "deleteField": "Delete field",
+        "deleteNewField": "Delete new field",
+        "deleteOptions": {
+          "keep": "Keep field in existing samples",
+          "remove": "Remove field from existing samples"
+        },
+        "mandatory": "Mandatory",
+        "name": "Name",
+        "noMoreFields": "No more fields",
+        "type": "Type",
+        "validation": {
+          "duplicateName": "You either already have a field with that name or that name is not permitted",
+          "emptyName": "Name cannot be empty",
+          "nameTooLong": "Name cannot be longer than 50 characters",
+          "optionsNotUnique": "All values must be unique.",
+          "optionsRequired": "One or more values are required."
+        },
+        "values": "Values",
+        "valuesExplanation": "The set of available options. Any selected values will be the default when creating samples."
+      },
+      "defaultValue": {
+        "addValue": "Add Value",
+        "allRelationshipTypes": "All relationship types",
+        "allowedRelationshipTypes": "Allowed relationship types",
+        "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
+        "none": "None"
+      },
+      "move": {
+        "down": "Down",
+        "label": "Move",
+        "toBottom": "To Bottom",
+        "toTop": "To Top",
+        "up": "Up"
+      },
+      "quantityUnits": {
+        "defaultScale": "Default Scale",
+        "label": "Quantity Units",
+        "mass": "Mass",
+        "unitType": "Unit Type",
+        "unitless": "Unitless",
+        "volume": "Volume"
+      }
     }
   },
   "formSections": {
