@@ -664,10 +664,20 @@ export default interface Resources {
           "pinnedVersion": "Pinned to v{version}",
           "targetGlobalId": "Target Global ID"
         },
+        "elnPicker": {
+          "ariaLabel": "Browse the ELN for a link target",
+          "cancel": "Cancel",
+          "choose": "Choose",
+          "title": "Browse ELN"
+        },
         "relatedInventoryItems": {
           "loading": "Loading...",
           "none": "No Inventory items link to this {recordTypeName}.",
           "title": "Related inventory items"
+        },
+        "targetBrowser": {
+          "ariaLabel": "Browse Inventory for link target",
+          "title": "Browse Inventory"
         }
       },
       "location": {

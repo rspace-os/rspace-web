@@ -4,6 +4,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import ElnFolderBrowser from "./ElnFolderBrowser";
 
 export type ElnRecordPickerResult = {
@@ -27,6 +28,7 @@ export interface ElnRecordPickerProps {
  * MobX so it can be reused outside the Inventory dialog.
  */
 export default function ElnRecordPicker(props: ElnRecordPickerProps): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const [selection, setSelection] = React.useState<ElnRecordPickerResult | null>(null);
 
   // a reopened dialog must not retain (and offer to Choose) a stale selection
@@ -40,9 +42,9 @@ export default function ElnRecordPicker(props: ElnRecordPickerProps): React.Reac
       onClose={props.onCancel}
       fullWidth
       maxWidth="sm"
-      aria-label="Browse the ELN for a link target"
+      aria-label={t("fields.link.elnPicker.ariaLabel")}
     >
-      <DialogTitle>Browse ELN</DialogTitle>
+      <DialogTitle>{t("fields.link.elnPicker.title")}</DialogTitle>
       <DialogContent dividers sx={{ minHeight: "40vh" }}>
         <ElnFolderBrowser onSelectionChange={setSelection} />
       </DialogContent>
@@ -56,9 +58,9 @@ export default function ElnRecordPicker(props: ElnRecordPickerProps): React.Reac
             if (selection) props.onPick(selection);
           }}
         >
-          Choose
+          {t("fields.link.elnPicker.choose")}
         </Button>
-        <Button onClick={props.onCancel}>Cancel</Button>
+        <Button onClick={props.onCancel}>{t("fields.link.elnPicker.cancel")}</Button>
       </DialogActions>
     </Dialog>
   );
