@@ -67,7 +67,8 @@
         "src/Export/PdfExport.tsx",
         "src/Export/repositories/DigitalCommonsDataRepo.tsx",
         "src/Export/repositories/ZenodoRepo.tsx",
-        "src/Export/repositories/DryadRepo.tsx"
+        "src/Export/repositories/DryadRepo.tsx",
+        "src/Export/repositories/FigshareRepo.tsx"
       ],
       "linter": {
         "rules": {

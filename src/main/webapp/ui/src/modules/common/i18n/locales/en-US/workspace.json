@@ -105,6 +105,17 @@
         "researchDomainHelper": "Please select your research domain",
         "researchDomainLabel": "Research Domain *",
         "titleHelper": "Please choose a title, >3 symbols"
+      },
+      "figshare": {
+        "descriptionHelper": "Please add a relevant description for your export",
+        "draft": "Draft",
+        "licenseHelper": "Please select your license",
+        "licenseLabel": "License *",
+        "publish": "Publish",
+        "publishingStatus": "Publishing status",
+        "subjectHelper": "Please select your subject",
+        "subjectLabel": "Subject *",
+        "titleHelper": "Please choose a title, >3 symbols"
       }
     }
   }

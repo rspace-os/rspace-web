@@ -7,6 +7,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import Users from "../ExportRepoUser";
 import type { Person, Repo, StandardValidations } from "./common";
 
@@ -48,17 +49,18 @@ export default function FigshareRepo({
   license,
   publish,
 }: FigshareArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
-          label="Title *"
+          label={t("export.repositories.common.titleLabel")}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
-          helperText="Please choose a title, >3 symbols"
+          helperText={t("export.repositories.figshare.titleHelper")}
           fullWidth
           value={title}
         />
@@ -67,13 +69,13 @@ export default function FigshareRepo({
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
-          label="Description *"
+          label={t("export.repositories.common.descriptionLabel")}
           multiline
           maxRows="4"
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
-          helperText="Please add a relevant description for your export"
+          helperText={t("export.repositories.figshare.descriptionHelper")}
           fullWidth
           value={description}
         />
@@ -83,11 +85,11 @@ export default function FigshareRepo({
           error={submitAttempt && !inputValidations.subject}
           name="subject"
           select
-          label="Subject *"
+          label={t("export.repositories.figshare.subjectLabel")}
           defaultValue={""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
-          helperText="Please select your subject"
+          helperText={t("export.repositories.figshare.subjectHelper")}
           margin="normal"
           fullWidth
           value={subject}
@@ -104,11 +106,11 @@ export default function FigshareRepo({
         <TextField
           name="license"
           select
-          label="License *"
+          label={t("export.repositories.figshare.licenseLabel")}
           defaultValue={0}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
-          helperText="Please select your license"
+          helperText={t("export.repositories.figshare.licenseHelper")}
           margin="normal"
           fullWidth
           value={license}
@@ -122,9 +124,9 @@ export default function FigshareRepo({
       </Grid>
       <Grid size={12}>
         <FormControl component="fieldset" sx={{ marginTop: "20px" }}>
-          <FormLabel component="legend">Publishing status</FormLabel>
+          <FormLabel component="legend">{t("export.repositories.figshare.publishingStatus")}</FormLabel>
           <RadioGroup
-            aria-label="Publishing status"
+            aria-label={t("export.repositories.figshare.publishingStatus")}
             name="publish"
             // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleChange}
@@ -133,8 +135,16 @@ export default function FigshareRepo({
             }}
             value={publish}
           >
-            <FormControlLabel value="true" control={<Radio color="primary" />} label="Publish" />
-            <FormControlLabel value="false" control={<Radio color="primary" />} label="Draft" />
+            <FormControlLabel
+              value="true"
+              control={<Radio color="primary" />}
+              label={t("export.repositories.figshare.publish")}
+            />
+            <FormControlLabel
+              value="false"
+              control={<Radio color="primary" />}
+              label={t("export.repositories.figshare.draft")}
+            />
           </RadioGroup>
         </FormControl>
       </Grid>
