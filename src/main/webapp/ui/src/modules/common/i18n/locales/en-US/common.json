@@ -78,6 +78,21 @@
         "show": "Show Created OAuth Apps",
         "title": "OAuth Apps"
       },
+      "dialog": {
+        "addNewApp": "Add a new app",
+        "appName": "App name",
+        "clientSecret": "Client Secret",
+        "copy": "Copy",
+        "copyError": "Couldn't copy to clipboard. Try again manually.",
+        "copySuccess": "Copied to clipboard",
+        "createError": "There was a problem while creating your application. Please, try again later or contact support.",
+        "createTitle": "Create an OAuth application",
+        "createdTitle": "App Successfully Created",
+        "validation": {
+          "alphanumeric": "The application name should only contain alphanumeric symbols.",
+          "maxLength": "The application name should be less than 100 symbols."
+        }
+      },
       "fetchError": "There was a problem fetching your apps. Please, try again.",
       "table": {
         "actions": "Actions",
