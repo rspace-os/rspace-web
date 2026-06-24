@@ -166,6 +166,18 @@
     "clearTooltip": "Clear search",
     "placeholder": "Search..."
   },
+  "stoichiometry": {
+    "addReagent": {
+      "addChemical": "Add Chemical",
+      "name": "Name",
+      "smilesString": "SMILES String",
+      "title": "Add New Chemical",
+      "validation": {
+        "nameRequired": "Name is required",
+        "smilesRequired": "SMILES string is required"
+      }
+    }
+  },
   "pubchemImport": {
     "importSelected": "Import Selected",
     "importing": "Importing...",

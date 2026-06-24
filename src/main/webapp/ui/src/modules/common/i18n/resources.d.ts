@@ -286,6 +286,18 @@ export default interface Resources {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
     },
+    "stoichiometry": {
+      "addReagent": {
+        "addChemical": "Add Chemical",
+        "name": "Name",
+        "smilesString": "SMILES String",
+        "title": "Add New Chemical",
+        "validation": {
+          "nameRequired": "Name is required",
+          "smilesRequired": "SMILES string is required"
+        }
+      }
+    },
     "tags": {
       "addTag": "Add Tag",
       "checkOntologyFiles": "Please check that the ontology files are correctly configured.",

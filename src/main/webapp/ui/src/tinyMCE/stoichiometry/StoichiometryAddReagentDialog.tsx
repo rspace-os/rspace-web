@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import Result from "../../util/result";
 
@@ -18,13 +19,14 @@ export type AddReagentDialogArgs = {
 };
 
 const StoichiometryAddReagentDialog = ({ open, onClose, onAddReagent }: AddReagentDialogArgs) => {
+  const { t } = useTranslation("common");
   const [smilesString, setSmilesString] = useState<string>("");
   const [name, setName] = useState<string>("");
 
   const validate = () => {
     return Result.all(
-      smilesString.length === 0 ? IsInvalid("SMILES string is required") : IsValid(),
-      name.length === 0 ? IsInvalid("Name is required") : IsValid(),
+      smilesString.length === 0 ? IsInvalid(t("stoichiometry.addReagent.validation.smilesRequired")) : IsValid(),
+      name.length === 0 ? IsInvalid(t("stoichiometry.addReagent.validation.nameRequired")) : IsValid(),
     ).map(() => null);
   };
 
@@ -43,13 +45,13 @@ const StoichiometryAddReagentDialog = ({ open, onClose, onAddReagent }: AddReage
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={onSubmitHandler}>
-        <DialogTitle>Add New Chemical</DialogTitle>
+        <DialogTitle>{t("stoichiometry.addReagent.title")}</DialogTitle>
         <DialogContent>
           <FormControl component="fieldset" sx={{ width: "100%", mt: 1 }}>
             <Stack spacing={2}>
               <TextField
                 name="Name"
-                label="Name"
+                label={t("stoichiometry.addReagent.name")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 variant="outlined"
@@ -59,7 +61,7 @@ const StoichiometryAddReagentDialog = ({ open, onClose, onAddReagent }: AddReage
               />
               <TextField
                 name="SMILES String"
-                label="SMILES String"
+                label={t("stoichiometry.addReagent.smilesString")}
                 value={smilesString}
                 onChange={(e) => setSmilesString(e.target.value)}
                 variant="outlined"
@@ -72,9 +74,9 @@ const StoichiometryAddReagentDialog = ({ open, onClose, onAddReagent }: AddReage
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{t("actions.cancel")}</Button>
           <ValidatingSubmitButton onClick={onSubmitHandler} validationResult={validate()} loading={false}>
-            Add Chemical
+            {t("stoichiometry.addReagent.addChemical")}
           </ValidatingSubmitButton>
         </DialogActions>
       </form>

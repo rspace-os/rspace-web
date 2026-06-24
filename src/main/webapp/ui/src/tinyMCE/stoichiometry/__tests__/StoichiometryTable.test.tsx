@@ -468,7 +468,7 @@ describe("StoichiometryTable", () => {
         }),
       );
 
-      expect(await screen.findByRole("dialog", { name: /Add New Chemical/i })).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: "stoichiometry.addReagent.title" })).toBeVisible();
     });
 
     it("opens the Gallery dialog from the Add Chemical menu", async () => {
