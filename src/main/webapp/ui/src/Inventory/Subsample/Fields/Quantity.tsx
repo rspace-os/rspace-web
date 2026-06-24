@@ -5,6 +5,7 @@ import { textFieldClasses } from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
@@ -54,6 +55,7 @@ function QuantityField<
   parentSample?: Sample;
 }): React.ReactNode {
   const { useNavigate } = React.useContext(NavigateContext);
+  const { t } = useTranslation("inventory");
   const navigate = useNavigate();
   const quantityValue = getValue(fieldOwner.fieldValues.quantity);
   const quantityUnitId = getUnitId(fieldOwner.fieldValues.quantity);
@@ -104,13 +106,13 @@ function QuantityField<
     });
   };
 
-  const errorMessage = () => (valid ? null : "Should be a positive number or zero.");
+  const errorMessage = () => (valid ? null : t("fields.quantity.validation.positiveOrZero"));
 
   return (
     <>
       {editable ? (
         <CustomBatchFormField<string | number>
-          label="Quantity"
+          label={t("fields.quantity.label")}
           value={amount}
           error={!valid}
           helperText={errorMessage()}
@@ -147,7 +149,7 @@ function QuantityField<
         />
       ) : (
         <CustomBatchFormField
-          label="Quantity"
+          label={t("fields.quantity.label")}
           value={quantityLabel}
           disabled
           setDisabled={(checked) => {

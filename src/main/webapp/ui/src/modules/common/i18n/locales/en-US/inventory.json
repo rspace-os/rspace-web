@@ -120,6 +120,12 @@
       "label": "Owner",
       "unknownOwner": "Unknown Owner"
     },
+    "quantity": {
+      "label": "Quantity",
+      "validation": {
+        "positiveOrZero": "Should be a positive number or zero."
+      }
+    },
     "templateFields": {
       "addField": "Add field"
     }
@@ -272,6 +278,21 @@
         "none": "None",
         "notMine": "Not Mine"
       }
+    }
+  },
+  "subsample": {
+    "batch": {
+      "imageAlt": "What the {count} subsamples look like",
+      "itemsTableLabel": "Subsamples being edited",
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+      "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
+      "sections": {
+        "barcodes": "Barcodes",
+        "details": "Details",
+        "information": "Information",
+        "overview": "Overview"
+      },
+      "title": "Batch editing {count} subsamples"
     }
   }
 }
