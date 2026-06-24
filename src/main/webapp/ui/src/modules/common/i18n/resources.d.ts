@@ -372,7 +372,14 @@ export default interface Resources {
 
   },
   "gallery": {
-
+    "filestoreLogin": {
+      "couldNotAuthenticate": "Could not authenticate",
+      "login": "Login",
+      "password": "Password",
+      "title": "Filestore Login",
+      "username": "Username",
+      "wrongCredentials": "Wrong credentials?"
+    }
   },
   "groups": {
     "createGroup": {
