@@ -115,7 +115,7 @@ describe("NewNote", () => {
 
   test("Validates empty notes", async () => {
     await mountDefaultStory();
-    await notePage.expectErrorOnSubmit("Note cannot be empty.");
+    await notePage.expectErrorOnSubmit("fields.notes.validation.empty");
   });
 
   describe("Validates notes that exceed character limit", () => {
@@ -132,7 +132,7 @@ describe("NewNote", () => {
        * and the error state is set (matches the original spec's approach).
        */
       await notePage.fillEditorLong(longText);
-      await notePage.expectErrorOnSubmit("Note cannot exceed 2000 characters.");
+      await notePage.expectErrorOnSubmit("fields.notes.validation.tooLong");
     });
   });
 
@@ -152,7 +152,7 @@ describe("NewNote", () => {
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([false]);
     await notePage.clearEditor();
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([true]);
-    await notePage.expectErrorOnSubmit("Note cannot be empty.");
+    await notePage.expectErrorOnSubmit("fields.notes.validation.empty");
   });
 
   test("Handles transitioning from invalid to valid state", async () => {
@@ -160,7 +160,7 @@ describe("NewNote", () => {
     await notePage.typeInEditor("Valid note");
     await notePage.clearEditor();
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([true]);
-    await notePage.expectErrorOnSubmit("Note cannot be empty.");
+    await notePage.expectErrorOnSubmit("fields.notes.validation.empty");
     await notePage.typeInEditor("Valid note");
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([false]);
     await notePage.expectNoErrorOnSubmit();
@@ -178,7 +178,7 @@ describe("NewNote", () => {
   test("Handles non-editable state correctly", async () => {
     await mountNonEditableStory();
     await expect.element(notePage.createNoteButton).toBeEnabled();
-    await notePage.expectErrorOnSubmit("Notes are not editable");
+    await notePage.expectErrorOnSubmit("fields.notes.validation.notEditable");
   });
 
   test("Does not trigger error state during programmatic reset after successful note creation", async () => {

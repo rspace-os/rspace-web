@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import TextField from "../../../../components/Inputs/TextField";
 import type SubSampleModel from "../../../../stores/models/SubSampleModel";
@@ -15,6 +16,7 @@ type NewNoteArgs = {
 };
 
 function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [note, setNote] = useState("");
   const [initial, setInitial] = useState(true);
 
@@ -73,13 +75,13 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
 
   function validateValue(value: string) {
     if (!record.isFieldEditable("notes")) {
-      return IsInvalid("Notes are not editable");
+      return IsInvalid(t("fields.notes.validation.notEditable"));
     }
     if (value === "") {
-      return IsInvalid("Note cannot be empty.");
+      return IsInvalid(t("fields.notes.validation.empty"));
     }
     if (value.length > 2000) {
-      return IsInvalid("Note cannot exceed 2000 characters.");
+      return IsInvalid(t("fields.notes.validation.tooLong", { max: 2000 }));
     }
     return IsValid();
   }
@@ -98,20 +100,18 @@ function NewNote({ record, onErrorStateChange }: NewNoteArgs): React.ReactNode {
   return (
     <>
       <FormField
-        label="New note"
+        label={t("fields.notes.newNote")}
         maxLength={2000}
         value={note}
         renderInput={({ error: _error, ...props }) => <TextField onChange={handleChange} name="content" {...props} />}
         disabled={!record.isFieldEditable("notes")}
       />
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Typography variant="caption">
-          Please note that once created, notes can be neither edited nor deleted.
-        </Typography>
+        <Typography variant="caption">{t("fields.notes.immutableNote")}</Typography>
         <Stack direction="row" spacing={1}>
-          <Button onClick={clearNote}>Clear</Button>
+          <Button onClick={clearNote}>{t("fields.notes.clear")}</Button>
           <ValidatingSubmitButton validationResult={validateValue(note)} onClick={createNote} loading={false}>
-            Create note
+            {t("fields.notes.createNote")}
           </ValidatingSubmitButton>
         </Stack>
       </Stack>

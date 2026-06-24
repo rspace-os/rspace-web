@@ -376,6 +376,20 @@ export default interface Resources {
           "numericalIndex": "Numerical Index: 1, 2, 3..."
         }
       },
+      "notes": {
+        "clear": "Clear",
+        "createNote": "Create note",
+        "immutableNote": "Please note that once created, notes can be neither edited nor deleted.",
+        "label": "Notes",
+        "newNote": "New note",
+        "showFewer": "Show fewer",
+        "showMore": "Show more",
+        "validation": {
+          "empty": "Note cannot be empty.",
+          "notEditable": "Notes are not editable",
+          "tooLong": "Note cannot exceed {max} characters."
+        }
+      },
       "owner": {
         "label": "Owner",
         "unknownOwner": "Unknown Owner"

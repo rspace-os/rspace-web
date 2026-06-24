@@ -4,6 +4,7 @@ import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type SubSampleModel from "../../../../stores/models/SubSampleModel";
 import NoteItem from "./NoteItem";
 
@@ -12,6 +13,7 @@ type NotesListArgs = {
 };
 
 function NotesList({ record }: NotesListArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [firstNote, secondNote, ...restOfNotes] = record.notes.toReversed();
   const [open, setOpen] = React.useState(false);
 
@@ -30,7 +32,7 @@ function NotesList({ record }: NotesListArgs): React.ReactNode {
               setOpen(!open);
             }}
           >
-            {open ? "Show fewer" : "Show more"}
+            {open ? t("fields.notes.showFewer") : t("fields.notes.showMore")}
           </Button>
         </Divider>
       )}
