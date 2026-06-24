@@ -8,6 +8,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import useStores from "../../../stores/use-stores";
@@ -18,13 +19,14 @@ import Layout from "./Layout2x1";
 import Sidebar from "./Sidebar";
 
 function InitialScreen(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const theme = useTheme();
   const { peopleStore } = useStores();
   const { navigateToSearch } = useNavigateHelpers();
 
   const navFilters = [
     {
-      label: "My Bench",
+      label: t("layout.sidebar.myBench"),
       onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch(
@@ -38,7 +40,7 @@ function InitialScreen(): React.ReactNode {
       icon: <MyBenchIcon />,
     },
     {
-      label: "Containers",
+      label: t("layout.sidebar.containers"),
       onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch({ resultType: "CONTAINER" });
@@ -55,7 +57,7 @@ function InitialScreen(): React.ReactNode {
       ),
     },
     {
-      label: "Samples",
+      label: t("layout.sidebar.samples"),
       onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch({ resultType: "SAMPLE" });
@@ -101,7 +103,7 @@ function InitialScreen(): React.ReactNode {
           colLeft={
             <Container sx={{ margin: "20px 0px" }}>
               <Typography variant="subtitle1" gutterBottom>
-                Navigate to:
+                {t("layout.initialScreen.navigateTo")}
               </Typography>
               <List component="nav">{navButtons(navFilters)}</List>
             </Container>

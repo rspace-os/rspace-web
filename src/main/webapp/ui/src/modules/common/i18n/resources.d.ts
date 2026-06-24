@@ -313,6 +313,24 @@ export default interface Resources {
         "validNumber": "Must be a valid number."
       }
     },
+    "layout": {
+      "initialScreen": {
+        "navigateTo": "Navigate to:"
+      },
+      "sidebar": {
+        "containers": "Containers",
+        "exportData": "Export Data",
+        "igsnIds": "IGSN IDs",
+        "itemsListAriaLabel": "List existing Inventory items",
+        "myBench": "My Bench",
+        "navigationAriaLabel": "Inventory Sidebar Navigation",
+        "otherActionsAriaLabel": "Other places and action",
+        "samples": "Samples",
+        "settings": "Settings",
+        "subsamples": "Subsamples",
+        "templates": "Templates"
+      }
+    },
     "permalinkNotFound": {
       "latestLink": "View the latest version",
       "typeLabels": {

@@ -24,8 +24,8 @@ describe("InitialScreen", () => {
     );
     expect(Header).toHaveBeenCalled();
     expect(Sidebar).toHaveBeenCalled();
-    expect(screen.getByText("My Bench")).toBeInTheDocument();
-    expect(screen.getByText("Containers")).toBeInTheDocument();
-    expect(screen.getByText("Samples")).toBeInTheDocument();
+    expect(screen.getByText("layout.sidebar.myBench")).toBeInTheDocument();
+    expect(screen.getByText("layout.sidebar.containers")).toBeInTheDocument();
+    expect(screen.getByText("layout.sidebar.samples")).toBeInTheDocument();
   });
 });
