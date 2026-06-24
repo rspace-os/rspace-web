@@ -39,6 +39,28 @@
     "queryingTitle": "Galaxy Query In Progress",
     "showWorkflowsAria": "Show computational workflows associated with this field"
   },
+  "page": {
+    "nothingHere": "Nothing here!",
+    "sections": {
+      "disabled": {
+        "description": "The following Apps are not currently enabled on this account. Click on an App card for setup instructions on how to enable the integration.",
+        "title": "Disabled"
+      },
+      "enabled": {
+        "description": "The following Apps are enabled on this account. Click on an App card to modify or disable the integration.",
+        "title": "Enabled"
+      },
+      "external": {
+        "description": "These RSpace applications have been built by partners or other external software developers. Note, ResearchSpace does not provide direct support for these integrations.",
+        "title": "Third-party RSpace Integrations"
+      },
+      "unavailable": {
+        "description": "The following Apps need to be enabled by your System Administrator before they can be used; please get in touch with them directly to set this up.",
+        "title": "Unavailable"
+      }
+    },
+    "title": "Apps"
+  },
   "pyrat": {
     "columnVisibility": {
       "hideSettings": "Hide column visibility settings",

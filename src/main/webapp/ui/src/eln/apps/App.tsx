@@ -12,6 +12,7 @@ import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 import docLinks from "../../assets/DocLinks";
@@ -128,6 +129,7 @@ function AppsSection({ id, title, description, mode, allStates }: AppsSectionArg
 }
 
 function App(): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { allIntegrations } = useIntegrationsEndpoint();
   const { trackEvent, isAvailable: analyticsIsAvailable } = useContext(AnalyticsContext);
   const [, setLastDialogOpened] = useState<string | null>(null);
@@ -192,7 +194,7 @@ function App(): React.ReactNode {
               }}
             >
               <Box sx={{ my: 4 }}>
-                <Typography variant="h1">Apps</Typography>
+                <Typography variant="h1">{t("page.title")}</Typography>
                 <Typography variant="body1">
                   RSpace provides integrations with various third-party apps that enable extra features. Apps need to be
                   enabled to work, and some require authentication.{" "}
@@ -203,49 +205,29 @@ function App(): React.ReactNode {
                 <Stack spacing={6} sx={{ mt: 1 }}>
                   <AppsSection
                     id="enabled"
-                    title="Enabled"
-                    description={
-                      <>
-                        The following Apps are enabled on this account. Click on an App card to modify or disable the
-                        integration.
-                      </>
-                    }
+                    title={t("page.sections.enabled.title")}
+                    description={t("page.sections.enabled.description")}
                     mode="ENABLED"
                     allStates={allStates}
                   />
                   <AppsSection
                     id="disabled"
-                    title="Disabled"
-                    description={
-                      <>
-                        The following Apps are not currently enabled on this account. Click on an App card for setup
-                        instructions on how to enable the integration.
-                      </>
-                    }
+                    title={t("page.sections.disabled.title")}
+                    description={t("page.sections.disabled.description")}
                     mode="DISABLED"
                     allStates={allStates}
                   />
                   <AppsSection
                     id="unavailable"
-                    title="Unavailable"
-                    description={
-                      <>
-                        The following Apps need to be enabled by your System Administrator before they can be used;
-                        please get in touch with them directly to set this up.
-                      </>
-                    }
+                    title={t("page.sections.unavailable.title")}
+                    description={t("page.sections.unavailable.description")}
                     mode="UNAVAILABLE"
                     allStates={allStates}
                   />
                   <AppsSection
                     id="third-party-rspace-integrations"
-                    title="Third-party RSpace Integrations"
-                    description={
-                      <>
-                        These RSpace applications have been built by partners or other external software developers.
-                        Note, ResearchSpace does not provide direct support for these integrations.
-                      </>
-                    }
+                    title={t("page.sections.external.title")}
+                    description={t("page.sections.external.description")}
                     mode="EXTERNAL"
                     allStates={allStates}
                   />

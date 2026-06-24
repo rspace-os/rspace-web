@@ -79,11 +79,11 @@ describe("Apps page", () => {
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(container).assertHeadings([
-      { level: 1, content: "Apps" },
-      { level: 2, content: "Enabled" },
-      { level: 2, content: "Disabled" },
-      { level: 2, content: "Unavailable" },
-      { level: 2, content: "Third-party RSpace Integrations" },
+      { level: 1, content: "page.title" },
+      { level: 2, content: "page.sections.enabled.title" },
+      { level: 2, content: "page.sections.disabled.title" },
+      { level: 2, content: "page.sections.unavailable.title" },
+      { level: 2, content: "page.sections.external.title" },
     ]);
   });
 });
