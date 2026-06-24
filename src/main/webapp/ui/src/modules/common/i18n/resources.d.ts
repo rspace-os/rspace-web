@@ -249,6 +249,22 @@ export default interface Resources {
       "unversionedTitle": "This {typeLabel} could not be found.",
       "versionedBody": "The version may never have existed.",
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
+    },
+    "search": {
+      "emptyListing": {
+        "alt": "Empty Listing",
+        "body": "Nothing here yet.",
+        "title": "Empty {recordType}"
+      },
+      "noActiveResult": {
+        "body": "Let's get you started with the system.",
+        "guideLink": "Get Started Guide",
+        "title": "Welcome to RSpace Inventory!"
+      },
+      "noResults": {
+        "title": "No results.",
+        "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
+      }
     }
   },
   "public": {

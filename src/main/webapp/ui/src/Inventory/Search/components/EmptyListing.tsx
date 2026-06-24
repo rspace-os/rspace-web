@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import EmptyListingSvg from "@/assets/graphics/EmptyListing.svg";
 import { type GlobalId, globalIdToInventoryRecordTypeLabel } from "../../../stores/definitions/BaseRecord";
 
@@ -10,8 +11,10 @@ type EmptyListingArgs = {
 };
 
 function EmptyListing({ parentGlobalId }: EmptyListingArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const theme = useTheme();
   const color = darken(theme.palette.primary.main, 0.2);
+  const recordType = globalIdToInventoryRecordTypeLabel(parentGlobalId);
   return (
     <Box
       sx={{
@@ -25,10 +28,10 @@ function EmptyListing({ parentGlobalId }: EmptyListingArgs): React.ReactNode {
         mb: 1,
       }}
     >
-      <img src={EmptyListingSvg} alt="Empty Listing" />
-      Empty {globalIdToInventoryRecordTypeLabel(parentGlobalId)}
+      <img src={EmptyListingSvg} alt={t("search.emptyListing.alt")} />
+      {t("search.emptyListing.title", { recordType })}
       <Typography sx={{ textAlign: "center", color, mt: 2, fontSize: "1rem", maxWidth: "20em" }}>
-        Nothing here yet.
+        {t("search.emptyListing.body")}
       </Typography>
     </Box>
   );
