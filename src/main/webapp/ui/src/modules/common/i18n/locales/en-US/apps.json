@@ -1,1 +1,26 @@
-{}
+{
+  "externalWorkflows": {
+    "columns": {
+      "container": "Container/Galaxy History",
+      "created": "Invocation Created",
+      "dataUploaded": "Data Uploaded",
+      "invocation": "Invocation",
+      "status": "Invocation Status"
+    },
+    "dataUploadedDesc": "Data uploaded and Workflow Invocations using that data",
+    "dialogTitle": "Galaxy WorkFlow Data",
+    "error": {
+      "notFound": "Unable to retrieve any relevant results. Error message was: {errorMessage}",
+      "seeError": "See Galaxy error",
+      "timeout": "Request timed out.",
+      "title": "Error",
+      "unauthorized": "Invalid Galaxy API Key Please re-enter your API Key on the Apps page.",
+      "unknown": "Unknown issue, please investigate whether your Galaxy Server(s) is/are running. Error message was: {errorMessage}"
+    },
+    "loadingAria": "Please wait, loading computational workflows associated with this field",
+    "noRows": "No Data is attached to this document",
+    "queryingAria": "Please wait, querying galaxy is in progress",
+    "queryingTitle": "Galaxy Query In Progress",
+    "showWorkflowsAria": "Show computational workflows associated with this field"
+  }
+}

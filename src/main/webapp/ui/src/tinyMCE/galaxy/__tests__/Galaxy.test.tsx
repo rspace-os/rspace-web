@@ -175,10 +175,8 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("Error")).toBeInTheDocument();
-      expect(
-        await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
+      expect(await screen.findByText("externalWorkflows.error.unauthorized")).toBeInTheDocument();
     });
 
     test("displays error message if 500 returned", async () => {
@@ -187,7 +185,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("Error")).toBeInTheDocument();
+      expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
       expect(await screen.findByRole("alert")).toBeInTheDocument();
     });
   });

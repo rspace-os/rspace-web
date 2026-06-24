@@ -55,7 +55,11 @@
     // once every module is migrated, noJsxLiterals moves to the top-level linter
     // config and these per-glob overrides are removed.
     {
-      "includes": ["src/eln/about/**", "src/components/AppBar/AboutRSpaceDialog.tsx"],
+      "includes": [
+        "src/eln/about/**",
+        "src/components/AppBar/AboutRSpaceDialog.tsx",
+        "src/eln/eln-external-workflows/**"
+      ],
       "linter": {
         "rules": {
           "style": {
