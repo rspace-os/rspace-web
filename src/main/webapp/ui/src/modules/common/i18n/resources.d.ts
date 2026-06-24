@@ -694,6 +694,37 @@ export default interface Resources {
       "samples": "Samples",
       "samplesBeingEdited": "Samples being edited"
     },
+    "igsnManagement": {
+      "actions": {
+        "ariaLabel": "Actions menu for selected IGSN IDs",
+        "button": "Actions",
+        "delete": {
+          "subheader": "Does not delete any linked item.",
+          "title": "Delete"
+        },
+        "print": {
+          "subheader": "Print barcode labels for selected IGSN IDs.",
+          "title": "Print"
+        }
+      },
+      "browserTitle": "Manage IGSN IDs | RSpace Inventory",
+      "bulkRegister": {
+        "button": "Bulk Register",
+        "createdMessage": "IGSN IDs in Draft state will be created.",
+        "dialogTitle": "Bulk Register IGSN IDs",
+        "numberLabel": "Number of new IGSN IDs",
+        "register": "Register",
+        "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
+      },
+      "cancel": "Cancel",
+      "landmark": "IGSN management main content",
+      "pageTitle": "IGSN Management Page",
+      "sections": {
+        "ids": "IGSN IDs",
+        "manage": "Manage IGSN IDs",
+        "register": "Register IGSN IDs"
+      }
+    },
     "igsnTable": {
       "columns": {
         "doi": "DOI",
