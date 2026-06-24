@@ -276,6 +276,49 @@
     "samples": "Samples",
     "samplesBeingEdited": "Samples being edited"
   },
+  "igsnTable": {
+    "columns": {
+      "doi": "DOI",
+      "linkedItem": "Linked Item",
+      "state": "State"
+    },
+    "exportToCsv": "Export to CSV",
+    "filters": {
+      "all": "All",
+      "hasLinkedItem": "Has Linked Item",
+      "linkedItem": "Linked Item",
+      "linkedItemStates": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "noLinkedItem": "No Linked Item",
+      "state": "State",
+      "stateOptions": {
+        "all": {
+          "subheader": "Show all IGSN IDs",
+          "title": "All"
+        },
+        "draft": {
+          "subheader": "A newly created IGSN ID without any public metadata.",
+          "title": "Draft"
+        },
+        "findable": {
+          "subheader": "A published, searchable IGSN ID with a public landing page.",
+          "title": "Findable"
+        },
+        "registered": {
+          "subheader": "An IGSN ID that has been retracted from public access.",
+          "title": "Registered"
+        }
+      }
+    },
+    "noLinkedItem": "None",
+    "noRows": "No IGSN IDs",
+    "scan": "Scan",
+    "searchButtonPrefix": "Search for IGSN",
+    "searchPlaceholder": "Search IGSN IDs...",
+    "selectIgsn": "Select IGSN"
+  },
   "layout": {
     "initialScreen": {
       "navigateTo": "Navigate to:"

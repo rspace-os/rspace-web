@@ -8,6 +8,25 @@ import axios from "@/common/axios";
 import identifiersJson from "../../__tests__/identifiers.json";
 import { IgsnTableWithControlDefaults, SimpleIgsnTable, SingularSelectionIgsnTable } from "./IgsnTable.story";
 
+const IGSN_TABLE = {
+  columns: {
+    doi: "igsnTable.columns.doi",
+    linkedItem: "igsnTable.columns.linkedItem",
+    state: "igsnTable.columns.state",
+  },
+  exportToCsv: "igsnTable.exportToCsv",
+  filters: {
+    linkedItem: "igsnTable.filters.linkedItem",
+    noLinkedItem: "igsnTable.filters.noLinkedItem",
+    state: "igsnTable.filters.state",
+    draft: "igsnTable.filters.stateOptions.draft.title",
+  },
+  noRows: "igsnTable.noRows",
+  scan: "igsnTable.scan",
+  searchButtonPrefix: "igsnTable.searchButtonPrefix",
+  searchPlaceholder: "igsnTable.searchPlaceholder",
+} as const;
+
 const mockAxios = new MockAdapter(axios);
 
 /**
@@ -55,7 +74,7 @@ function identifiersRequestParams(): Array<URLSearchParams> {
 async function waitForTableLoaded() {
   await waitFor(() => {
     const rows = screen.getAllByRole("row");
-    const hasEmptyState = screen.queryByText("No IGSN IDs") !== null;
+    const hasEmptyState = screen.queryByText(IGSN_TABLE.noRows) !== null;
     expect(rows.length > 1 || hasEmptyState).toBe(true);
   });
 }
@@ -79,7 +98,12 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     const headers = screen.getAllByRole("columnheader").map((header) => header.textContent);
     // the empty string at the beginning is the checkbox column
-    expect(headers).toEqual(["Select", "DOI", "State", "Linked Item"]);
+    expect(headers).toEqual([
+      "Select",
+      IGSN_TABLE.columns.doi,
+      IGSN_TABLE.columns.state,
+      IGSN_TABLE.columns.linkedItem,
+    ]);
   });
 
   test("The mocked data displays four rows", async () => {
@@ -100,7 +124,7 @@ describe("IGSN Table", () => {
      * International Generic Sample Number (IGSN), confusingly, refers to the
      * organization and the IDs themselves are referred to as IGSN IDs.
      */
-    expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", "Search IGSN IDs...");
+    expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", IGSN_TABLE.searchPlaceholder);
   });
 
   test("Searching makes API call with searchTerm parameter", async () => {
@@ -132,7 +156,7 @@ describe("IGSN Table", () => {
     await user.click(screen.getByRole("button", { name: "Export" }));
     // Scope to the export menu's distinctive item rather than role="menu", since
     // the toolbar renders more than one menu.
-    expect(screen.getByRole("menuitem", { name: /Export to CSV/i })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: IGSN_TABLE.exportToCsv })).toBeVisible();
   });
 
   test("Filtering by state makes API call with state parameter", async () => {
@@ -140,8 +164,8 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
-    await user.click(screen.getByRole("button", { name: /State:/ }));
-    await user.click(screen.getByRole("menuitem", { name: /Draft/ }));
+    await user.click(screen.getByRole("button", { name: new RegExp(IGSN_TABLE.filters.state) }));
+    await user.click(screen.getByRole("menuitem", { name: new RegExp(IGSN_TABLE.filters.draft) }));
 
     await waitFor(() => {
       expect(identifiersRequestParams().some((params) => params.get("state") === "draft")).toBe(true);
@@ -153,8 +177,8 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
-    await user.click(screen.getByRole("button", { name: /Linked Item:/ }));
-    await user.click(screen.getByRole("menuitem", { name: /No Linked Item/ }));
+    await user.click(screen.getByRole("button", { name: new RegExp(IGSN_TABLE.filters.linkedItem) }));
+    await user.click(screen.getByRole("menuitem", { name: IGSN_TABLE.filters.noLinkedItem }));
 
     await waitFor(() => {
       expect(identifiersRequestParams().some((params) => params.get("isAssociated") === "false")).toBe(true);
@@ -213,7 +237,9 @@ describe("IGSN Table", () => {
     const allRows = within(table).getAllByRole("row");
     const headerRow = allRows[0];
     const headers = within(headerRow).getAllByRole("columnheader");
-    const linkedItemColumnIndex = headers.findIndex((header) => header.textContent?.trim() === "Linked Item");
+    const linkedItemColumnIndex = headers.findIndex(
+      (header) => header.textContent?.trim() === IGSN_TABLE.columns.linkedItem,
+    );
     expect(linkedItemColumnIndex).not.toBe(-1);
 
     const dataRows = allRows.slice(1);
@@ -230,7 +256,7 @@ describe("IGSN Table", () => {
     await waitForTableLoaded();
 
     // Verify the overlay message is displayed
-    expect(within(screen.getByRole("grid")).getByText("No IGSN IDs")).toBeVisible();
+    expect(within(screen.getByRole("grid")).getByText(IGSN_TABLE.noRows)).toBeVisible();
     // Verify the grid has a header row but no data rows
     const headerRow = screen.getAllByRole("row").filter((row) => within(row).queryAllByRole("columnheader").length > 0);
     expect(headerRow).toHaveLength(1);
@@ -242,7 +268,7 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
-    await user.click(screen.getByRole("button", { name: "Scan" }));
+    await user.click(screen.getByRole("button", { name: IGSN_TABLE.scan }));
     /*
      * Since we can't easily mock the camera API in tests, we simulate manual
      * entry which is an alternative in the UI.
@@ -253,7 +279,7 @@ describe("IGSN Table", () => {
       }),
       "test",
     );
-    await user.click(screen.getByRole("button", { name: /Search for IGSN/ }));
+    await user.click(screen.getByRole("button", { name: new RegExp(IGSN_TABLE.searchButtonPrefix) }));
 
     await waitFor(() => {
       expect(identifiersRequestParams().some((params) => params.get("identifier") === "test")).toBe(true);
@@ -268,9 +294,9 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
 
     const search = screen.getByRole("searchbox");
-    const scan = screen.getByRole("button", { name: "Scan" });
-    const state = screen.getByRole("button", { name: /State:/ });
-    const linkedItem = screen.getByRole("button", { name: /Linked Item:/ });
+    const scan = screen.getByRole("button", { name: IGSN_TABLE.scan });
+    const state = screen.getByRole("button", { name: new RegExp(IGSN_TABLE.filters.state) });
+    const linkedItem = screen.getByRole("button", { name: new RegExp(IGSN_TABLE.filters.linkedItem) });
 
     expect(search).toBeVisible();
     expect(scan).toBeVisible();
