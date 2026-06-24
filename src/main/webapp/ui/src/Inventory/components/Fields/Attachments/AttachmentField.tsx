@@ -11,6 +11,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
 import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import type { Attachment } from "@/stores/definitions/Attachment";
@@ -75,6 +76,7 @@ function AttachmentField<
   value,
   fieldOwner,
 }: AttachmentFieldArgs<FieldOwner>): ReactNode {
+  const { t } = useTranslation("inventory");
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
@@ -96,7 +98,7 @@ function AttachmentField<
   return (
     <Stack>
       {!value && disabled ? (
-        <NoValue label={noValueLabel ?? "No description"} />
+        <NoValue label={noValueLabel ?? t("fields.attachments.noDescription")} />
       ) : (
         <TextField
           variant={disabled ? "standard" : "outlined"}
@@ -136,14 +138,14 @@ function AttachmentField<
           <Stack spacing={1}>
             <FileField
               accept="*"
-              buttonLabel="Upload"
+              buttonLabel={t("fields.attachments.actions.upload")}
               onChange={({ file }) => onFileSelection(file)}
               showSelectedFilename={false}
               icon={<UploadIcon />}
               loading={false}
               error={false}
               disabled={disabled}
-              explanatoryText="Upload a file from your device."
+              explanatoryText={t("fields.attachments.uploadFromDevice")}
               containerProps={{
                 wrap: "nowrap",
                 sx: { alignItems: "stretch", flexDirection: "column" },
@@ -156,8 +158,8 @@ function AttachmentField<
                         setGalleryDialogOpen(true);
                       }}
                       icon={<AttachFileIcon />}
-                      label="Browse Gallery"
-                      explanatoryText="Link to existing items in the Gallery."
+                      label={t("fields.attachments.actions.browseGallery")}
+                      explanatoryText={t("fields.attachments.linkGalleryItems")}
                     />
                   ),
                 },
@@ -180,7 +182,7 @@ function AttachmentField<
                   onlyAllowSingleSelection
                   validateSelection={(file) =>
                     file.isSnippet
-                      ? Result.Error([new Error("Snippets cannot be attached to Inventory records.")])
+                      ? Result.Error([new Error(t("fields.attachments.validation.noSnippets"))])
                       : Result.Ok(null)
                   }
                 />
@@ -188,7 +190,7 @@ function AttachmentField<
             )}
             {!attachment && (
               <Box sx={{ pl: 2 }}>
-                <NoValue label="No File Attached" />
+                <NoValue label={t("fields.attachments.noFileAttached")} />
               </Box>
             )}
           </Stack>

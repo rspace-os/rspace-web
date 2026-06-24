@@ -547,6 +547,31 @@ export default interface Resources {
       "thirdPartyImport": "Third-Party Import"
     },
     "fields": {
+      "attachments": {
+        "actions": {
+          "browseGallery": "Browse Gallery",
+          "upload": "Upload"
+        },
+        "columns": {
+          "actions": "Actions",
+          "name": "Name"
+        },
+        "linkGalleryItems": "Link to existing items in the Gallery.",
+        "noDescription": "No description",
+        "noFileAttached": "No File Attached",
+        "summary": "Attach files of any type, e.g. images, documents, or chemistry files.",
+        "toggle": {
+          "hide": "Hide attachment listing",
+          "none": "No current attachments",
+          "show": "Show attachment listing"
+        },
+        "uploadFromDevice": "Upload a file from your device.",
+        "validation": {
+          "missingGlobalId": "\"{name}\" does not have an RSpace Global Id",
+          "noFolders": "Folders cannot be attached to Inventory records.",
+          "noSnippets": "Snippets cannot be attached to Inventory records."
+        }
+      },
       "description": {
         "label": "Description",
         "maxLength": "Description must be no longer than {max} characters (including HTML tags)."

@@ -56,7 +56,7 @@ describe("AttachmentField", () => {
   describe("Description field", () => {
     test.each`
       disabled     | value    | noValueLabel | expectFn
-      ${true}      | ${""}    | ${undefined} | ${expectLabel("No description")}
+      ${true}      | ${""}    | ${undefined} | ${expectLabel("fields.attachments.noDescription")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
       ${true}      | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${true}      | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}
@@ -185,9 +185,9 @@ describe("AttachmentField", () => {
         test('Whether to show "No File Attached" label.', () => {
           renderAttachmentField();
           if (showNoAttachmentLabel) {
-            expect(textContent).toEqual(expect.stringContaining("No File Attached"));
+            expect(textContent).toEqual(expect.stringContaining("fields.attachments.noFileAttached"));
           } else {
-            expect(textContent).not.toEqual(expect.stringContaining("No File Attached"));
+            expect(textContent).not.toEqual(expect.stringContaining("fields.attachments.noFileAttached"));
           }
         });
       },
