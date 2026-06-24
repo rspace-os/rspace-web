@@ -17,6 +17,7 @@ import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
+import i18n from "../../modules/common/i18n";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import PrintButton from "../components/PrintButton";
@@ -55,7 +56,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
     return (
       <>
         <Box component="span" sx={{ display: "flex", width: "100%" }}>
-          <Tooltip title="Close" enterDelay={300}>
+          <Tooltip title={i18n.t("common:actions.close")} enterDelay={300}>
             <IconButton data-test-id="structured-document-back" href={this.state.closeHref} id="close">
               <FontAwesomeIcon icon={faTimes} />
             </IconButton>
@@ -71,7 +72,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
           ></Box>
           <SaveMenu canCopy={this.state.canCopy} />
           <Button id="cancel" className="editMode" data-test-id="notebooktoolbar-cancel" sx={{ color: "white" }}>
-            Cancel
+            {i18n.t("common:actions.cancel")}
           </Button>
           {!this.state.emptyDocrevision && (
             <span>
@@ -91,7 +92,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                   data-test-id="notebooktoolbar-createDocFromTemplate"
                   sx={{ color: "white" }}
                 >
-                  CREATE DOCUMENT
+                  {i18n.t("common:toolbar.createDocument")}
                 </Button>
               )}
               {!this.state.isTemplate && (
@@ -101,7 +102,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                   data-test-id="notebooktoolbar-saveAsTemplateBtn"
                   sx={{ color: "white" }}
                 >
-                  SAVE AS TEMPLATE
+                  {i18n.t("common:toolbar.saveAsTemplate")}
                 </Button>
               )}
               <Box
@@ -113,7 +114,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                 }}
               ></Box>
               {this.state.canDelete && (
-                <Tooltip title="Delete" enterDelay={300}>
+                <Tooltip title={i18n.t("common:actions.delete")} enterDelay={300}>
                   <IconButton
                     data-test-id="structured-delete"
                     color="inherit"
@@ -127,7 +128,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                 </Tooltip>
               )}
               {this.props.canSign && (
-                <Tooltip title="Sign" enterDelay={300}>
+                <Tooltip title={i18n.t("common:actions.sign")} enterDelay={300}>
                   <IconButton
                     data-test-id="structured-sign"
                     color="inherit"
@@ -142,7 +143,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                 </Tooltip>
               )}
               {this.state.canWitness && (
-                <Tooltip title="Witness" enterDelay={300}>
+                <Tooltip title={i18n.t("common:actions.witness")} enterDelay={300}>
                   <IconButton
                     data-test-id="structured-witness"
                     color="inherit"
@@ -156,7 +157,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                 </Tooltip>
               )}
               {this.state.canShare && (
-                <Tooltip title="Share" enterDelay={300}>
+                <Tooltip title={i18n.t("common:actions.share")} enterDelay={300}>
                   <IconButton
                     data-cloud={this.state.isCloud}
                     data-test-id="notebooktoolbar-share"
@@ -180,7 +181,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                   }}
                 ></Box>
               )}
-              <Tooltip title="Export" enterDelay={300}>
+              <Tooltip title={i18n.t("common:actions.export")} enterDelay={300}>
                 <IconButton
                   data-test-id="notebooktoolbar-export"
                   color="inherit"
@@ -221,7 +222,7 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
                 marginLeft: "10px",
               }}
             >
-              Displaying version {this.state.version} of the document - this is locked for editing.
+              {i18n.t("common:toolbar.displayingLockedVersion", { version: this.state.version })}
             </Box>
           )}
           <SocialActions

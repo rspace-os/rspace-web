@@ -81,7 +81,10 @@ export default interface Resources {
       "placeholder": "Search..."
     },
     "toolbar": {
-      "hideTreeBrowser": "Hide tree browser"
+      "createDocument": "CREATE DOCUMENT",
+      "displayingLockedVersion": "Displaying version {version} of the document - this is locked for editing.",
+      "hideTreeBrowser": "Hide tree browser",
+      "saveAsTemplate": "SAVE AS TEMPLATE"
     },
     "values": {
       "none": "None"
