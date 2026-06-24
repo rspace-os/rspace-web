@@ -11,6 +11,8 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { type FormEventHandler, type JSX, useId } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
 declare global {
@@ -46,6 +48,7 @@ export function ConfirmationDialog({
   handleCloseDialog: () => void;
   open?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const [input, setInput] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const formTitle = useId();
@@ -62,7 +65,7 @@ export function ConfirmationDialog({
     }
     if (confirmText) {
       if (input !== confirmText) {
-        setError("Input does not match confirmation text");
+        setError(t("confirmationDialog.inputMismatch"));
         return;
       }
     }
@@ -110,11 +113,11 @@ export function ConfirmationDialog({
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog} color="secondary">
-              Cancel
+              {t("actions.cancel")}
             </Button>
             {/* @ts-expect-error Fix types later */}
             <Button color="primary" onClick={handleSubmit}>
-              Confirm
+              {t("actions.confirm")}
             </Button>
           </DialogActions>
         </Dialog>
@@ -137,7 +140,9 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
   root.render(
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <ConfirmationDialog {...payload} handleCloseDialog={handleCloseDialog} />
+        <I18nRoot>
+          <ConfirmationDialog {...payload} handleCloseDialog={handleCloseDialog} />
+        </I18nRoot>
       </ThemeProvider>
     </StyledEngineProvider>,
   );

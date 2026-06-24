@@ -55,8 +55,13 @@ export default interface Resources {
   },
   "common": {
     "actions": {
+      "cancel": "Cancel",
       "close": "Close",
+      "confirm": "Confirm",
       "submit": "Submit"
+    },
+    "confirmationDialog": {
+      "inputMismatch": "Input does not match confirmation text"
     }
   },
   "dashboard": {

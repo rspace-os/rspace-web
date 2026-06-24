@@ -58,7 +58,8 @@
       "includes": [
         "src/eln/about/**",
         "src/components/AppBar/AboutRSpaceDialog.tsx",
-        "src/eln/eln-external-workflows/**"
+        "src/eln/eln-external-workflows/**",
+        "src/components/ConfirmationDialog.tsx"
       ],
       "linter": {
         "rules": {
