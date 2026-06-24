@@ -121,6 +121,8 @@ export default interface Resources {
       },
       "oauth": {
         "connectedApps": {
+          "confirmDisconnectTitle": "Confirm Disconnect",
+          "disconnect": "Disconnect",
           "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
           "disconnectErrorTitle": "Unable to disconnect app",
           "disconnectSuccessMessage": "App with client ID {clientId} was successfully disconnected.",
@@ -129,6 +131,7 @@ export default interface Resources {
           "title": "Connected Apps"
         },
         "createdApps": {
+          "confirmDeleteTitle": "Confirm Deletion",
           "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
           "deleteErrorTitle": "Unable to delete app",
           "deleteExceptionMessage": "There was a problem deleting app with client ID {clientId}: {error}.",
@@ -141,6 +144,7 @@ export default interface Resources {
           "addNewApp": "Add a new app",
           "appName": "App name",
           "clientSecret": "Client Secret",
+          "confirmAppName": "Type OAuth app name to confirm",
           "copy": "Copy",
           "copyError": "Couldn't copy to clipboard. Try again manually.",
           "copySuccess": "Copied to clipboard",
