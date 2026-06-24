@@ -350,6 +350,25 @@
       "register": "Register IGSN IDs"
     }
   },
+  "import": {
+    "actions": {
+      "import": "Import"
+    },
+    "customFieldName": "Custom Field Name",
+    "customDetails": "Custom details",
+    "helpTitle": "Info on importing.",
+    "importDocumentation": "Import Documentation",
+    "sections": {
+      "columnConversion": "CSV Column Conversion Settings",
+      "templateDetails": "Template Details"
+    },
+    "title": "IMPORT",
+    "types": {
+      "containers": "Containers",
+      "samples": "Samples",
+      "subsamples": "Subsamples"
+    }
+  },
   "layout": {
     "initialScreen": {
       "navigateTo": "Navigate to:"

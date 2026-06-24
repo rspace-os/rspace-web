@@ -780,6 +780,25 @@ export default interface Resources {
       "searchPlaceholder": "Search IGSN IDs...",
       "selectIgsn": "Select IGSN"
     },
+    "import": {
+      "actions": {
+        "import": "Import"
+      },
+      "customDetails": "Custom details",
+      "customFieldName": "Custom Field Name",
+      "helpTitle": "Info on importing.",
+      "importDocumentation": "Import Documentation",
+      "sections": {
+        "columnConversion": "CSV Column Conversion Settings",
+        "templateDetails": "Template Details"
+      },
+      "title": "IMPORT",
+      "types": {
+        "containers": "Containers",
+        "samples": "Samples",
+        "subsamples": "Subsamples"
+      }
+    },
     "layout": {
       "initialScreen": {
         "navigateTo": "Navigate to:"
