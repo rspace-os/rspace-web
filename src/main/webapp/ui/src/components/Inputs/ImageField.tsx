@@ -8,6 +8,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 import ImagePreview from "../ImagePreview";
 import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
@@ -45,6 +46,7 @@ function ImageField({
   noValueLabel,
   alt,
 }: ImageFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [editorFile, setEditorFile] = useState<Blob | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -151,7 +153,7 @@ function ImageField({
                         startIcon={<CropIcon />}
                         data-test-id="EditImageButton"
                       >
-                        Edit Image
+                        {t("imageEditing.title")}
                       </Button>
                     </Grid>
                     {endAdornment}

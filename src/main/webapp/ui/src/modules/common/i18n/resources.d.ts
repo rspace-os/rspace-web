@@ -118,6 +118,7 @@ export default interface Resources {
       "add": "Add",
       "back": "Back",
       "cancel": "Cancel",
+      "clear": "Clear",
       "close": "Close",
       "confirm": "Confirm",
       "create": "Create",
@@ -142,13 +143,40 @@ export default interface Resources {
       "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
       "warningTitle": "Could not authenticate via API"
     },
+    "appBar": {
+      "brandingAlt": "branding",
+      "maintenancePopup": "A scheduled maintenance window begins {{relativeTime}}.",
+      "operatingAs": "Operating as:",
+      "orcidAdd": "Add an ORCID iD to your <0>profile</0>."
+    },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
+    },
+    "errorBoundary": {
+      "message": "Something went wrong! Please refresh the page. If this error persists, please contact <0>support@researchspace.com</0> with details of when the issue happens."
     },
     "folderSelection": {
       "selectedFolder": "Selected folder",
       "selectedFolderWithColon": "Selected folder:",
       "title": "Select Folder"
+    },
+    "folderTree": {
+      "addSubfolder": "Add subfolder to {{folderName}}",
+      "createFolder": {
+        "folderName": "Folder Name",
+        "title": "Create New Folder",
+        "validation": "Folder name is required"
+      },
+      "failedFolders": "Failed to load folders",
+      "failedSubfolders": "Failed to load subfolders",
+      "loadMore": "Load More",
+      "loading": "Loading..."
+    },
+    "groupDetails": {
+      "members": "Members",
+      "principalInvestigators": "Principal Investigators",
+      "users": "Users",
+      "viewGroup": "View Group"
     },
     "imageEditing": {
       "rotateClockwise": "rotate clockwise",
@@ -188,6 +216,14 @@ export default interface Resources {
       "title": "Error",
       "tryAgainLater": "There is a problem, please try again later",
       "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
+    },
+    "ketcher": {
+      "discardChanges": {
+        "discard": "Discard",
+        "keepEditing": "Keep Editing",
+        "text": "You have unsaved changes. Are you sure you want to discard them?",
+        "title": "Discard changes?"
+      }
     },
     "profile": {
       "accountActivity": {
@@ -421,6 +457,19 @@ export default interface Resources {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
     },
+    "searchDialog": {
+      "advancedSearch": "advanced search",
+      "apachePage": "Apache page",
+      "expandField": "Expand field",
+      "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <0>l:</0>",
+      "moreInfo": "For more information, see <0>advanced search</0> and the related <1>Apache page</1>.",
+      "query": "Search query"
+    },
+    "shareDialog": {
+      "changeFolder": "Change Folder",
+      "changeLocation": "Change",
+      "snippetsSharedNote": "Shared snippets can be found in the <0>SNIPPETS_Shared</0> folder, inside the Snippets section of the Gallery."
+    },
     "stoichiometry": {
       "addReagent": {
         "addChemical": "Add Chemical",
@@ -495,6 +544,15 @@ export default interface Resources {
       "sendMessageOnMicrosoftTeams": "Send message on MicrosoftTeams",
       "sendMessageOnSlack": "Send message on Slack",
       "slack": "Slack"
+    },
+    "userDetails": {
+      "accountDisabled": "Disabled",
+      "accountEnabled": "Enabled",
+      "accountStatus": "Account Status",
+      "email": "Email",
+      "lastLogin": "Last login:",
+      "openProfile": "Open profile",
+      "sendMessage": "Send a message"
     },
     "values": {
       "none": "None"

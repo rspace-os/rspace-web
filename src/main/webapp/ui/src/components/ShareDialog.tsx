@@ -24,6 +24,7 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { Trans, useTranslation } from "react-i18next";
 import AlertsContext, { mkAlert } from "@/stores/contexts/Alert";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/workspace";
@@ -152,6 +153,7 @@ export function ShareDialog({
   pluralName = "documents",
   isSnippet = false,
 }: ShareDialogProps) {
+  const { t } = useTranslation("common");
   const [shareData, setShareData] = React.useState<
     Map<
       DocumentGlobalId,
@@ -750,8 +752,10 @@ export function ShareDialog({
 
         {isSnippet && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of
-            the Gallery.
+            <Trans ns="common" i18nKey="shareDialog.snippetsSharedNote" components={[<strong key="strong" />]}>
+              Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section
+              of the Gallery.
+            </Trans>
           </Alert>
         )}
 
@@ -875,7 +879,7 @@ export function ShareDialog({
                                                 }
                                               }}
                                             >
-                                              Change
+                                              {t("shareDialog.changeLocation")}
                                             </Button>
                                           </>
                                         )}
@@ -964,7 +968,7 @@ export function ShareDialog({
                                                 }
                                               }}
                                             >
-                                              Change
+                                              {t("shareDialog.changeLocation")}
                                             </Button>
                                           </>
                                         )}
@@ -1203,7 +1207,7 @@ export function ShareDialog({
                                   }
                                 }}
                               >
-                                Change Folder
+                                {t("shareDialog.changeFolder")}
                               </Button>
                             )}
                           </Stack>
@@ -1284,7 +1288,7 @@ export function ShareDialog({
         title="Select Shared Folder Location"
       />
       <DialogActions>
-        {hasChanges && <Button onClick={handleCancel}>Cancel</Button>}
+        {hasChanges && <Button onClick={handleCancel}>{t("actions.cancel")}</Button>}
         <ValidatingSubmitButton loading={saving} onClick={() => void handleSave()} validationResult={validationResult}>
           {hasChanges ? "Save" : "Done"}
         </ValidatingSubmitButton>

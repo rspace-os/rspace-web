@@ -12,6 +12,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import docLinks from "../assets/DocLinks";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
@@ -24,13 +25,14 @@ type TextAreaDialogArgs = {
 };
 
 export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: TextAreaDialogArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [dialogOpen, setDialogOpen] = useState(false);
   const onClose = () => setDialogOpen(false);
   return visible ? (
     <>
       <Grow in={visible}>
         <IconButtonWithTooltip
-          title="Expand field"
+          title={t("searchDialog.expandField")}
           icon={<SettingsOverscanIcon />}
           onClick={() => {
             setDialogOpen(true);
@@ -39,7 +41,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
         />
       </Grow>
       <Dialog open={dialogOpen} onClose={onClose}>
-        <DialogTitle>Search query</DialogTitle>
+        <DialogTitle>{t("searchDialog.query")}</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <TextField
@@ -59,32 +61,65 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
             />
             <Box>
               <DialogContentText>
-                Tip: Create powerful Lucene queries by prefixing your query with{" "}
-                <Typography
-                  variant="inherit"
-                  component="samp"
-                  sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
+                <Trans
+                  ns="common"
+                  i18nKey="searchDialog.luceneTip"
+                  components={[
+                    <Typography
+                      key="samp"
+                      variant="inherit"
+                      component="samp"
+                      sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
+                    />,
+                  ]}
                 >
-                  l:
-                </Typography>
+                  Tip: Create powerful Lucene queries by prefixing your query with{" "}
+                  <Typography
+                    variant="inherit"
+                    component="samp"
+                    sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
+                  >
+                    l:
+                  </Typography>
+                </Trans>
               </DialogContentText>
               <DialogContentText>
-                For more information, see{" "}
-                <a href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
-                  advanced search
-                </a>{" "}
-                and the related{" "}
-                <a href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html" rel="noreferrer" target="_blank">
-                  Apache page
-                </a>
-                .
+                <Trans
+                  ns="common"
+                  i18nKey="searchDialog.moreInfo"
+                  components={[
+                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+                    <a key="lucene" href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
+                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+                    <a
+                      key="apache"
+                      href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
+                      rel="noreferrer"
+                      target="_blank"
+                    />,
+                  ]}
+                >
+                  For more information, see{" "}
+                  <a href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
+                    advanced search
+                  </a>{" "}
+                  and the related{" "}
+                  <a
+                    href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Apache page
+                  </a>
+                  .
+                </Trans>
               </DialogContentText>
             </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setQuery({ target: { value: "" } })}>Clear</Button>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={() => setQuery({ target: { value: "" } })}>{t("actions.clear")}</Button>
+          <Button onClick={onClose}>{t("actions.close")}</Button>
           <SubmitSpinnerButton
             loading={false}
             disabled={false}

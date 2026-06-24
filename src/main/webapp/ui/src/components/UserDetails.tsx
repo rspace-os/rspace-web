@@ -12,6 +12,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import TimeAgo from "react-timeago";
 import axios from "@/common/axios";
 import type { PersonId } from "@/stores/definitions/Person";
@@ -70,6 +71,7 @@ function openCreateRequestDialog(recipient: string): void {
 }
 
 export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const variant = props.variant ?? "filled";
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
   const [user, setUser] = React.useState<Person | null>(null);
@@ -188,7 +190,13 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
             <CardHeader
               avatar={<Avatar src={user.profileImageLink ?? ""} />}
               title={`${user.fullname}`}
-              subheader={user.lastLogin && <span>Last login: {<TimeAgo date={user.lastLogin} />}</span>}
+              subheader={
+                user.lastLogin && (
+                  <span>
+                    {t("userDetails.lastLogin")} {<TimeAgo date={user.lastLogin} />}
+                  </span>
+                )
+              }
             />
             <CardContent
               sx={{
@@ -207,7 +215,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                 <TableBody>
                   <TableRow>
                     <TableCell component="th" scope="row">
-                      Email
+                      {t("userDetails.email")}
                     </TableCell>
                     <TableCell align="right">
                       <Link href={`mailto:${user.email}`} sx={linkSx}>
@@ -217,9 +225,11 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                   </TableRow>
                   <TableRow>
                     <TableCell component="th" scope="row">
-                      Account Status
+                      {t("userDetails.accountStatus")}
                     </TableCell>
-                    <TableCell align="right">{user.accountEnabled ? "Enabled" : "Disabled"}</TableCell>
+                    <TableCell align="right">
+                      {user.accountEnabled ? t("userDetails.accountEnabled") : t("userDetails.accountDisabled")}
+                    </TableCell>
                   </TableRow>
                   {listLabgroups}
                 </TableBody>
@@ -237,7 +247,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                   href="#"
                   sx={{ color: accentColor }}
                 >
-                  Send a message
+                  {t("userDetails.sendMessage")}
                 </Button>
               )}
               <Button
@@ -249,7 +259,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
                   color: accentColor,
                 }}
               >
-                Open profile
+                {t("userDetails.openProfile")}
               </Button>
             </CardActions>
           </Card>

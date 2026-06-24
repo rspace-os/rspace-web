@@ -34,6 +34,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { Trans, useTranslation } from "react-i18next";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { Person } from "@/stores/definitions/Person";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
@@ -331,6 +332,7 @@ function GalleryAppBar({
   accessibilityTips,
   helpPage,
 }: GalleryAppBarArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   const { isViewportSmall } = useViewportDimensions();
   const uiNavigationData = useUiNavigationData();
@@ -416,7 +418,7 @@ function GalleryAppBar({
                   <img
                     key="branding small"
                     src={href}
-                    alt="branding"
+                    alt={t("appBar.brandingAlt")}
                     style={{
                       height: "100%",
                     }}
@@ -732,7 +734,7 @@ function GalleryAppBar({
                                 .flatMap(Parsers.isTrue)
                                 .map(() => (
                                   <>
-                                    <strong>Operating as:</strong>
+                                    <strong>{t("appBar.operatingAs")}</strong>
                                     <br />
                                   </>
                                 ))
@@ -753,9 +755,13 @@ function GalleryAppBar({
                             }}
                             primary={
                               userDetails.orcidId === null ? (
-                                <>
+                                <Trans
+                                  ns="common"
+                                  i18nKey="appBar.orcidAdd"
+                                  components={[<Link key="link" href="/userform" />]}
+                                >
                                   Add an ORCID iD to your <Link href="/userform">profile</Link>.
-                                </>
+                                </Trans>
                               ) : (
                                 <Stack
                                   direction="row"
@@ -904,7 +910,7 @@ function GalleryAppBar({
                     >
                       <img
                         src={bannerImgSrc}
-                        alt="branding"
+                        alt={t("appBar.brandingAlt")}
                         style={{
                           maxWidth: "120px",
                           display: "block",

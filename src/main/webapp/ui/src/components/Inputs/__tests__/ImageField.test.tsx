@@ -83,7 +83,7 @@ describe("ImageField", () => {
     test("be a DynamicallyLoadedImageEditor that opens.", async () => {
       const user = userEvent.setup();
       render(<ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" alt="dummy alt text" />);
-      const editImageButton = screen.getByText("Edit Image");
+      const editImageButton = screen.getByText("imageEditing.title");
       await user.click(editImageButton);
       expect(DynamicallyLoadedImageEditor).toHaveBeenCalledWith(
         expect.objectContaining({

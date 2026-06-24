@@ -16,6 +16,7 @@ import type { Ketcher } from "ketcher-core";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import React, { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import ValidatingSubmitButton, { IsValid, type ValidationResult } from "../ValidatingSubmitButton";
 
@@ -79,6 +80,7 @@ const KetcherDialog = ({
   onChange,
   instructionText,
 }: KetcherDialogArgs): React.ReactNode => {
+  const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -187,7 +189,7 @@ const KetcherDialog = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancelClick}>Cancel</Button>
+        <Button onClick={handleCancelClick}>{t("actions.cancel")}</Button>
         {actionBtnText && (
           <ValidatingSubmitButton loading={false} validationResult={validationResult} onClick={onInsertClick}>
             {actionBtnText}
@@ -195,12 +197,12 @@ const KetcherDialog = ({
         )}
       </DialogActions>
       <Dialog open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)}>
-        <DialogTitle>Discard changes?</DialogTitle>
+        <DialogTitle>{t("ketcher.discardChanges.title")}</DialogTitle>
         <DialogContent>
-          <DialogContentText>You have unsaved changes. Are you sure you want to discard them?</DialogContentText>
+          <DialogContentText>{t("ketcher.discardChanges.text")}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDiscardConfirm(false)}>Keep Editing</Button>
+          <Button onClick={() => setShowDiscardConfirm(false)}>{t("ketcher.discardChanges.keepEditing")}</Button>
           <Button
             onClick={() => {
               setShowDiscardConfirm(false);
@@ -208,7 +210,7 @@ const KetcherDialog = ({
             }}
             color="error"
           >
-            Discard
+            {t("ketcher.discardChanges.discard")}
           </Button>
         </DialogActions>
       </Dialog>

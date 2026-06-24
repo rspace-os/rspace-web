@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import React from "react";
+import { Trans } from "react-i18next";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 
 /**
@@ -7,13 +8,20 @@ import AnalyticsContext from "@/stores/contexts/Analytics";
  * provide any more specific information.
  */
 export const ERROR_MSG: React.ReactNode = (
-  <>
+  <Trans
+    ns="common"
+    i18nKey="errorBoundary.message"
+    components={[
+      // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+      <a key="link" href="mailto:support@researchspace.com" rel="noreferrer" target="_blank" />,
+    ]}
+  >
     Something went wrong! Please refresh the page. If this error persists, please contact{" "}
     <a href="mailto:support@researchspace.com" rel="noreferrer" target="_blank">
       support@researchspace.com
     </a>{" "}
     with details of when the issue happens.
-  </>
+  </Trans>
 );
 
 function Container({
