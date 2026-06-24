@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import useStores from "../../../stores/use-stores";
 import type { Panel } from "../../../util/types";
@@ -11,22 +12,24 @@ import Stepper from "./Stepper";
 import TopLevelButton from "./TopLevelButton";
 
 const MoveSubmitButton = observer(({ handleSubmit, isInvalid }: { handleSubmit: () => void; isInvalid: boolean }) => {
+  const { t } = useTranslation("inventory");
   const { moveStore } = useStores();
   return (
     <SubmitSpinner
       onClick={handleSubmit}
       disabled={isInvalid || moveStore.submitting === "TO-OTHER"}
       loading={moveStore.submitting === "TO-OTHER"}
-      label="Move"
+      label={t("contextMenu.actions.move")}
     />
   );
 });
 
 const CancelButton = observer(({ onClick }: { onClick: () => void }) => {
+  const { t } = useTranslation("common");
   const { moveStore } = useStores();
   return (
     <Button onClick={onClick} disabled={moveStore.submitting !== "NO"}>
-      Cancel
+      {t("actions.cancel")}
     </Button>
   );
 });

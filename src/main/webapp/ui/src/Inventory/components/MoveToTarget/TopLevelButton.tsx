@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { hasLocation } from "../../../stores/models/HasLocation";
@@ -10,6 +11,7 @@ type TopLevelButtonArgs = {
 };
 
 function TopLevelButton({ onClose }: TopLevelButtonArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { moveStore, uiStore } = useStores();
   const allContainers = moveStore.selectedResults.every((r) => r instanceof ContainerModel);
   const allTopLevel = moveStore.selectedResults.every((r) =>
@@ -27,7 +29,7 @@ function TopLevelButton({ onClose }: TopLevelButtonArgs): React.ReactNode {
       fullWidth={uiStore.isSmall}
       disabled={!allContainers || allTopLevel || moveStore.submitting === "MAKE-TOP"}
       loading={moveStore.submitting === "MAKE-TOP"}
-      label="Make Top-level"
+      label={t("contextMenu.actions.makeTopLevel")}
     />
   );
 }

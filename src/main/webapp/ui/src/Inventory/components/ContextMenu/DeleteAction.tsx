@@ -2,6 +2,7 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { match } from "../../../util/Util";
@@ -16,6 +17,7 @@ type DeleteActionArgs = {
 
 const DeleteAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, DeleteActionArgs>(
   ({ as, closeMenu, disabled, selectedResults }, ref) => {
+    const { t } = useTranslation("inventory");
     const { search } = useContext(SearchContext);
 
     const disabledHelp = match<void, string>([
@@ -36,7 +38,7 @@ const DeleteAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Dele
               closeMenu();
             }}
             icon={<DeleteOutlineOutlinedIcon />}
-            label="Trash"
+            label={t("contextMenu.actions.trash")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

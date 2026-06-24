@@ -478,6 +478,19 @@ export default interface Resources {
       }
     },
     "contextMenu": {
+      "actions": {
+        "addToBasket": "Add to Basket",
+        "create": "Create",
+        "duplicate": "Duplicate",
+        "export": "Export",
+        "makeTopLevel": "Make Top-level",
+        "more": "More actions",
+        "move": "Move",
+        "printBarcode": "Print Barcode",
+        "removeFromThisBasket": "Remove from This Basket",
+        "restore": "Restore",
+        "trash": "Trash"
+      },
       "createDialog": {
         "change": "Change",
         "columns": {

@@ -2,6 +2,7 @@ import AddBoxIcon from "@mui/icons-material/AddBox";
 import type MenuItem from "@mui/material/MenuItem";
 import { Observer } from "mobx-react-lite";
 import React, { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { match } from "../../../util/Util";
@@ -17,6 +18,7 @@ type CreateActionArgs = {
 
 const CreateAction = forwardRef<React.ElementRef<typeof MenuItem>, CreateActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }, ref) => {
+    const { t } = useTranslation("inventory");
     const [openCreateDialog, setOpenCreateDialog] = React.useState(false);
 
     const isFullContainer = (): boolean =>
@@ -49,7 +51,7 @@ const CreateAction = forwardRef<React.ElementRef<typeof MenuItem>, CreateActionA
           <ContextMenuAction
             onClick={onClick}
             icon={<AddBoxIcon />}
-            label="Create"
+            label={t("contextMenu.actions.create")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

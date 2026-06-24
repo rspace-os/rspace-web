@@ -2,6 +2,7 @@ import RestoreFromTrashIcon from "@mui/icons-material/RestoreFromTrash";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { match } from "../../../util/Util";
@@ -16,6 +17,7 @@ type RestoreActionArgs = {
 
 const RestoreAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, RestoreActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: RestoreActionArgs, ref) => {
+    const { t } = useTranslation("inventory");
     const { search } = useContext(SearchContext);
 
     const disabledHelp = match<void, string>([
@@ -35,7 +37,7 @@ const RestoreAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Res
               closeMenu();
             }}
             icon={<RestoreFromTrashIcon />}
-            label="Restore"
+            label={t("contextMenu.actions.restore")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}
