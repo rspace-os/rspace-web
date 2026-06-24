@@ -257,6 +257,21 @@ export default interface Resources {
           "loginButton": "Login to remaining File Systems",
           "notAllLoggedIn": "You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems or some linked files may be omitted during the export.",
           "notLoggedIn": "Not logged in"
+        },
+        "scan": {
+          "columns": {
+            "path": "Full path on the File System",
+            "reason": "Reason",
+            "size": "Size",
+            "type": "Type"
+          },
+          "dialogTitle": "Availability scan results",
+          "heading": "Link availability scan",
+          "includedHeading": "Included files from {name}",
+          "runHint": "Before continuing please run the filestore links availability scan, which will report on any unaccessible or filtered links.",
+          "scanButton": "Scan filestore links",
+          "showLastButton": "Show last scan results",
+          "skippedHeading": "Skipped files from {name}"
         }
       }
     }
