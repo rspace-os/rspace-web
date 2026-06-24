@@ -13,9 +13,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.api.v1.controller.BaseApiInventoryController;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -112,6 +114,25 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
       this.setTemplateId(in.getParentTemplateId());
       this.setTemplate(false);
       this.setTemplateVersion(in.getTemplateLinkedVersion());
+      if (in.getParentLocation() != null) {
+        parentLocation = new ApiContainerLocation(in.getParentLocation());
+        Container parent = in.getParentContainer();
+        if (parent != null) {
+          parentContainers.add(new ApiContainerInfo(parent));
+          Container curr = parent.getParentContainer();
+          while (curr != null) {
+            parentContainers.add(new ApiContainerInfo(curr));
+            curr = curr.getParentContainer();
+          }
+        }
+      }
+      if (in.getLastNonWorkbenchParent() != null) {
+        lastNonWorkbenchParent = new ApiContainerInfo(in.getLastNonWorkbenchParent());
+      }
+      if (in.getLastMoveDate() != null) {
+        lastMoveDateMillis = Date.from(in.getLastMoveDate()).getTime();
+      }
+      storedInContainer = in.isStoredInContainer();
     } else { // then it is an InstrumentTemplate
       this.setTemplate(true);
     }

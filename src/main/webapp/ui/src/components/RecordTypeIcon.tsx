@@ -74,7 +74,7 @@ export default function RecordTypeIcon({
       icon = (
         <TemplateIcon
           sx={{
-            color: color ?? theme.palette.record.sampleTemplate.fg,
+            color: color ?? theme.palette.record.instrumentTemplate.fg,
             ...style,
           }}
         />

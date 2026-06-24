@@ -1404,11 +1404,15 @@ export default class Search implements SearchInterface {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SAMPLE");
       allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
     }
     if (this.fetcher.parentIsTemplate) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SUBSAMPLE");
       allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
     }
     if (!this.fetcher.allTypesAllowed) {
       allowedTypeFilters.delete("ALL");

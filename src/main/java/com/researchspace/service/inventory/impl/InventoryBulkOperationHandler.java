@@ -9,6 +9,7 @@ import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.controller.SubSamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
@@ -312,6 +313,9 @@ public class InventoryBulkOperationHandler {
         case CONTAINER:
           return containersApiController.changeContainerOwner(
               recInfo.getId(), (ApiContainer) recInfo, errors, user);
+        case INSTRUMENT:
+          return instrumentsApiController.changeInstrumentOwner(
+              recInfo.getId(), (ApiInstrument) recInfo, errors, user);
         case INSTRUMENT_TEMPLATE:
           return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
               recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);
