@@ -23,6 +23,7 @@ import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
 import TreeSort from "../../components/TreeSort";
+import i18n from "../../modules/common/i18n";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import CreateMenu from "../ToolbarCreateMenu";
@@ -293,12 +294,12 @@ class WorkspaceToolbar extends React.Component {
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />
-            <Tooltip title="Create a calendar entry" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.calendarEntry")} enterDelay={300}>
               <IconButton
                 id="createCalendarEntryDlgLink"
                 color="inherit"
                 data-test-id="toolbar-calendar"
-                aria-label="Create a calendar entry"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.calendarEntry")}
               >
                 <FontAwesomeIcon icon={faCalendarAlt} />
               </IconButton>
@@ -312,14 +313,14 @@ class WorkspaceToolbar extends React.Component {
             height: "100%",
           }}
         ></Box>
-        <Tooltip title="View mode" enterDelay={300}>
+        <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
           <IconButton
             data-test-id="toolbar-views"
             aria-controls="simple-menu2"
             aria-haspopup="true"
             onClick={(e) => this.handleOpen(0, e)}
             color="inherit"
-            aria-label="View mode"
+            aria-label={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")}
           >
             {this.state.treeView ? <FontAwesomeIcon icon={faStream} /> : <FontAwesomeIcon icon={faList} />}
           </IconButton>
@@ -335,31 +336,35 @@ class WorkspaceToolbar extends React.Component {
           open={this.state.open[0]}
           onClose={() => this.handleClose(0)}
         >
-          <MenuItem onClick={this.openTreeView} data-test-id="toolbar-view-tree" aria-label="Tree view">
+          <MenuItem
+            onClick={this.openTreeView}
+            data-test-id="toolbar-view-tree"
+            aria-label={i18n.t("workspace:toolbar.workspaceToolbar.treeView")}
+          >
             <FontAwesomeIcon icon={faStream} style={{ paddingRight: "10px" }} />
-            Tree view
+            {i18n.t("workspace:toolbar.workspaceToolbar.treeView")}
           </MenuItem>
           <MenuItem
             onClick={this.openListView}
             id="list_view_1"
             data-test-id="toolbar-view-list"
-            aria-label="List view"
+            aria-label={i18n.t("workspace:toolbar.workspaceToolbar.listView")}
           >
             <FontAwesomeIcon icon={faList} style={{ paddingRight: "10px" }} />
-            List view
+            {i18n.t("workspace:toolbar.workspaceToolbar.listView")}
           </MenuItem>
         </Menu>
         {this.state.treeView && <TreeSort />}
         {!this.state.treeView && (
           <Box component="span" sx={{ display: "flex", flexGrow: "1" }}>
-            <Tooltip title="View mode" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")} enterDelay={300}>
               <IconButton
                 data-test-id="toolbar-views-2"
                 aria-controls="simple-menu3"
                 aria-haspopup="true"
                 onClick={(e) => this.handleOpen(1, e)}
                 color="inherit"
-                aria-label="View mode"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.viewMode")}
               >
                 {this.state.viewableItemsFilter ? (
                   <FontAwesomeIcon icon={faThList} />
@@ -381,20 +386,20 @@ class WorkspaceToolbar extends React.Component {
             >
               <MenuItem onClick={this.openFolderView} id="folderView_1" data-test-id="toolbar-view-folders">
                 <FontAwesomeIcon icon={faFolderOpen} style={{ paddingRight: "10px" }} />
-                Folder view
+                {i18n.t("workspace:toolbar.workspaceToolbar.folderView")}
               </MenuItem>
               <MenuItem onClick={this.openViewAll} id="viewableItemsView_1" data-test-id="toolbar-view-all">
                 <FontAwesomeIcon icon={faThList} style={{ paddingRight: "10px" }} />
-                View all
+                {i18n.t("workspace:toolbar.workspaceToolbar.viewAll")}
               </MenuItem>
             </Menu>
-            <Tooltip title="Labgroup records" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.labgroupRecords")} enterDelay={300}>
               <IconButton
                 onClick={this.displayLabgroup}
                 id="labgroupFilter_1"
                 color="inherit"
                 data-test-id="toolbar-filter-labgroup"
-                aria-label="Labgroup records"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.labgroupRecords")}
               >
                 <FontAwesomeIcon icon={faUsers} />
               </IconButton>
@@ -406,7 +411,7 @@ class WorkspaceToolbar extends React.Component {
                 height: "100%",
               }}
             ></Box>
-            <Tooltip title="Favorites" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.favorites")} enterDelay={300}>
               <IconButton
                 onClick={() => {
                   this.toggleFilter("favoritesFilter");
@@ -416,12 +421,12 @@ class WorkspaceToolbar extends React.Component {
                 color={this.state.favoritesFilter ? "default" : "inherit"}
                 className={this.state.favoritesFilter ? "active" : ""}
                 data-test-id="toolbar-filter-favorites"
-                aria-label="Favorites"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.favorites")}
               >
                 <FontAwesomeIcon icon={faStar} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Shared with me" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.sharedWithMe")} enterDelay={300}>
               <IconButton
                 onClick={() => {
                   this.toggleFilter("sharedFilter");
@@ -431,12 +436,12 @@ class WorkspaceToolbar extends React.Component {
                 color={this.state.sharedFilter ? "default" : "inherit"}
                 className={this.state.sharedFilter ? "active" : ""}
                 data-test-id="toolbar-filter-shared"
-                aria-label="Shared with me"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.sharedWithMe")}
               >
                 <FontAwesomeIcon icon={faShareAlt} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Templates" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.templates")} enterDelay={300}>
               <IconButton
                 onClick={() => {
                   this.toggleFilter("templatesFilter");
@@ -446,7 +451,7 @@ class WorkspaceToolbar extends React.Component {
                 color={this.state.templatesFilter ? "default" : "inherit"}
                 className={this.state.templatesFilter ? "active" : ""}
                 data-test-id="toolbar-filter-templates"
-                aria-label="Templates"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.templates")}
               >
                 <FontAwesomeIcon icon={faFolder} />
                 <Box
@@ -463,7 +468,7 @@ class WorkspaceToolbar extends React.Component {
                 </Box>
               </IconButton>
             </Tooltip>
-            <Tooltip title="Ontology files" enterDelay={300}>
+            <Tooltip title={i18n.t("workspace:toolbar.workspaceToolbar.ontologyFiles")} enterDelay={300}>
               <IconButton
                 onClick={() => {
                   this.toggleFilter("ontologiesFilter");
@@ -473,7 +478,7 @@ class WorkspaceToolbar extends React.Component {
                 color={this.state.ontologiesFilter ? "default" : "inherit"}
                 className={this.state.ontologiesFilter ? "active" : ""}
                 data-test-id="toolbar-filter-ontology"
-                aria-label="Ontology files"
+                aria-label={i18n.t("workspace:toolbar.workspaceToolbar.ontologyFiles")}
               >
                 <FontAwesomeIcon icon={faFolder} />
                 <Box

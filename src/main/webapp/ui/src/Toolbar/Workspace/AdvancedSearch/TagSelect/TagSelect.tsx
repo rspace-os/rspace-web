@@ -8,6 +8,7 @@ import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Select, {
   type ControlProps,
   type GroupBase,
@@ -170,6 +171,7 @@ const parseDelimitedTags = (tag: string) =>
     : tag;
 
 export default function TagSelect(props: TagSelectProps) {
+  const { t } = useTranslation("workspace");
   const theme = useTheme();
   const [multi, setMulti] = React.useState<Array<TagOption> | null>(null);
   const [suggestions, setSuggestions] = React.useState<Array<TagOption>>([]);
@@ -250,7 +252,7 @@ export default function TagSelect(props: TagSelectProps) {
         value={multi}
         onChange={handleChangeMulti}
         isMulti
-        placeholder={props.error || "Select tag(s)"}
+        placeholder={props.error || t("toolbar.tagSelect.placeholder")}
         // @ts-expect-error pragmatic jsx->tsx conversion: testId is forwarded via selectProps, not a typed react-select prop
         testId={props.testId}
       />

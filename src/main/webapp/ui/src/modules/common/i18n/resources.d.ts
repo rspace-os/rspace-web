@@ -1663,6 +1663,80 @@ export default interface Resources {
       }
     },
     "toolbar": {
+      "advancedSearch": {
+        "addCondition": "Add new condition",
+        "cardSubheader": "Advanced search",
+        "dateFrom": "From",
+        "datePlaceholderFrom": "the beginning",
+        "datePlaceholderTo": "now",
+        "dateTo": "To",
+        "recordsConditionInfo": "At least one of the 'Within records' conditions will always be satisfied.",
+        "removeCondition": "Remove condition",
+        "reset": "Reset",
+        "satisfyAll": "Satisfy all conditions",
+        "satisfyOne": "Satisfy at least one condition",
+        "searchTypes": {
+          "attachment": "Attachment",
+          "created": "Creation date",
+          "form": "Form",
+          "fullText": "Text",
+          "lastModified": "Last modified",
+          "name": "Name",
+          "owner": "Owner(s)",
+          "records": "Within records",
+          "tag": "Tag(s)",
+          "template": "Template"
+        },
+        "validation": {
+          "includeAtLeastOne": "Include at least one {filter}",
+          "termTooShort": "The term should be at least 2 symbols"
+        }
+      },
+      "chemicalSearch": {
+        "back": "Back",
+        "chemicalPreviewAlt": "Chemical Preview",
+        "close": "Close",
+        "columnHeaders": {
+          "lastModified": "Last Modified",
+          "name": "Name",
+          "owner": "Owner",
+          "preview": "Preview"
+        },
+        "dialogTitle": "Chemical Search",
+        "drawInstruction": "Draw a single molecule below to search",
+        "errorFetching": "Error fetching search results: {message}",
+        "ketcherTitle": "Chemistry Search",
+        "loading": "Loading...",
+        "noResults": "No Search Results",
+        "searchType": "Search Type",
+        "searchTypeExact": "Exact",
+        "searchTypeSubstructure": "Substructure",
+        "validationMultipleMolecules": "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
+        "validationNoMolecule": "Please draw, paste, or open a molecule to start your search"
+      },
+      "compareDialog": {
+        "columnHeaders": {
+          "createdDate": "Created Date",
+          "globalId": "Global ID",
+          "modifiedDate": "Modified Date",
+          "name": "Name",
+          "owner": "Owner",
+          "signed": "Signed",
+          "tags": "Tags",
+          "unsigned": "Unsigned"
+        },
+        "description": "Select the documents you want to combine into a single CSV file. Documents with identical structures will be automatically aligned, including form data and content. If documents have different structures, additional columns will be created to accommodate all information.",
+        "exportRows": "Export {selection, select, selected {selected} other {all}} rows to CSV",
+        "loadingDocuments": "Reading documents…",
+        "readError": "Could not read all of the documents",
+        "title": "Export Documents to CSV",
+        "unknownError": "Unknown reason"
+      },
+      "filePicker": {
+        "clickToSelect": "Click on the folder icon to select records.",
+        "dialogTitle": "{count, plural, one {# record selected} other {# records selected}}",
+        "openPicker": "Pick files"
+      },
       "newFolder": {
         "creating": "Creating a new folder...",
         "nameAria": "Folder name",
@@ -1687,16 +1761,39 @@ export default interface Resources {
         "success": "Successfully renamed document.",
         "title": "Rename"
       },
+      "searchbox": {
+        "placeholder": "Search term"
+      },
       "simpleSearch": {
+        "advancedSearch": "Advanced search",
+        "filterTypes": {
+          "attachment": "Attachment",
+          "chemical": "Chemical",
+          "created": "Creation date",
+          "form": "Form",
+          "fullText": "Text",
+          "global": "All",
+          "lastModified": "Last modified",
+          "name": "Name",
+          "owner": "Owner(s)",
+          "tag": "Tag(s)",
+          "template": "Template"
+        },
+        "filters": "Filters",
         "scopeDialog": {
           "instructions": "Click \"Within selected\" if you wish to search within the specified records, or \"Search everywhere\" otherwise.",
           "searchEverywhere": "Search everywhere",
           "selectedRecords": "You have selected the records listed below.",
           "title": "Scope search within records",
           "withinSelected": "Within selected"
-        }
+        },
+        "searchPlaceholder": "Search"
+      },
+      "tagSelect": {
+        "placeholder": "Select tag(s)"
       },
       "tags": {
+        "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a>Read more about creating, importing, and using Tags here.</a>",
         "getTagsError": "Could not get tags.",
         "invalidTags": "Some tags are invalid",
         "multipleErrors": "There are multiple errors.",
@@ -1705,6 +1802,22 @@ export default interface Resources {
         "saveSuccess": "Successfully saved tags.",
         "title": "Tagging {count, plural, one {# item} other {# items}}",
         "unknownError": "An unknown error occurred."
+      },
+      "userSelect": {
+        "placeholder": "Select owner(s)"
+      },
+      "workspaceToolbar": {
+        "calendarEntry": "Create a calendar entry",
+        "favorites": "Favorites",
+        "folderView": "Folder view",
+        "labgroupRecords": "Labgroup records",
+        "listView": "List view",
+        "ontologyFiles": "Ontology files",
+        "sharedWithMe": "Shared with me",
+        "templates": "Templates",
+        "treeView": "Tree view",
+        "viewAll": "View all",
+        "viewMode": "View mode"
       }
     }
   }

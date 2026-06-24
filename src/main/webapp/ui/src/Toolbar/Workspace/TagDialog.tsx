@@ -17,6 +17,7 @@ import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import AddTag from "../../components/Tags/AddTag";
 import { encodeTags, parseEncodedTags } from "../../components/Tags/ParseEncodedTagStrings";
 import TagListing from "../../components/Tags/TagListing";
+import TransRichText from "../../modules/common/i18n/TransRichText";
 import AlertContext, { type AlertDetails, mkAlert } from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { areSameTag, type Tag } from "../../stores/definitions/Tag";
@@ -183,11 +184,12 @@ function TagDialog(): React.ReactNode {
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">
-            You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you&apos;ve
-            selected multiple items, only shared tags are shown.{" "}
-            <a href={docLinks.tags} rel="noreferrer" target="_blank">
-              Read more about creating, importing, and using Tags here.
-            </a>{" "}
+            <TransRichText
+              i18nKey="toolbar.tags.description"
+              ns="workspace"
+              // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
+              components={{ a: <a href={docLinks.tags} rel="noreferrer" target="_blank" /> }}
+            />
           </Typography>
           <TagListing
             tags={
