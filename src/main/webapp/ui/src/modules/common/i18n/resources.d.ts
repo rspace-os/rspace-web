@@ -321,6 +321,17 @@ export default interface Resources {
         "common": {
           "descriptionLabel": "Description *",
           "titleLabel": "Title *"
+        },
+        "dryad": {
+          "abstractHelper": "Please add a relevant abstract for your export",
+          "abstractLabel": "Add an abstract *",
+          "grantingOrgHelper": "Enter 3 of more characters to filter list",
+          "grantingOrgLabel": "Granting Organization *",
+          "licenseHelper": "Please select your license",
+          "licenseLabel": "License *",
+          "researchDomainHelper": "Please select your research domain",
+          "researchDomainLabel": "Research Domain *",
+          "titleHelper": "Please choose a title, >3 symbols"
         }
       }
     }

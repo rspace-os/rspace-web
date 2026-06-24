@@ -62,7 +62,7 @@ describe("DryadRepo", () => {
     const handleChange = vi.fn();
 
     await act(() => void renderDryadRepo({ handleChange }));
-    fireEvent.change(screen.getByRole("textbox", { name: /Title/ }), {
+    fireEvent.change(screen.getByRole("textbox", { name: /titleLabel/ }), {
       target: { value: "foo" },
     });
     expect(handleChange).toHaveBeenLastCalledWith(
@@ -78,7 +78,7 @@ describe("DryadRepo", () => {
     const handleChange = vi.fn();
 
     await act(() => void renderDryadRepo({ handleChange }));
-    fireEvent.change(screen.getByRole("textbox", { name: /Add an abstract/ }), {
+    fireEvent.change(screen.getByRole("textbox", { name: /abstractLabel/ }), {
       target: { value: "foo" },
     });
     expect(handleChange).toHaveBeenLastCalledWith(
