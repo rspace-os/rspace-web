@@ -321,8 +321,8 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     Class<?>[] resultClasses;
     InventorySearchType searchType = srchConfig.getSearchType();
     switch (searchType) {
-      case SAMPLE:
       case SAMPLE_TEMPLATE:
+      case SAMPLE:
         // Sample and SampleTemplate have separate Lucene indexes; targeting the abstract
         // SampleEntity searches both, and search-type post-filtering picks the right kind
         resultClasses = new Class[] {SampleEntity.class};
