@@ -7,11 +7,13 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import UserList from "./UserList";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function main(props: any) {
+  const { t } = useTranslation("common");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [usersLeft, setUsersLeft] = React.useState<any[]>([]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -162,7 +164,7 @@ export default function main(props: any) {
         }}
         message={<span id="message-id">{snackbarMessage}</span>}
         action={[
-          <IconButton key="close" aria-label="close" color="inherit" onClick={() => setSnackbar(false)}>
+          <IconButton key="close" aria-label={t("actions.close")} color="inherit" onClick={() => setSnackbar(false)}>
             <CloseIcon />
           </IconButton>,
         ]}

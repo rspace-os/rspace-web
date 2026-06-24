@@ -9,7 +9,9 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import UserSelect from "./UserBox";
 
@@ -19,6 +21,7 @@ const PROJECT_GROUP = "PROJECT_GROUP";
 const LAB_GROUP = "LAB_GROUP";
 
 export default function NewLabGroup() {
+  const { t } = useTranslation(["groups", "common"]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [values, setValues] = useState<any>({
     name: "",
@@ -76,11 +79,11 @@ export default function NewLabGroup() {
     setValues({ ...values, nameError: false });
 
     if (values.groupType === LAB_GROUP && values.pis.length !== 1) {
-      setValues({ ...values, pisError: "Please, select a PI" });
+      setValues({ ...values, pisError: t("errors.selectPi") });
     } else if (values.groupType === PROJECT_GROUP && values.groupOwners.length < 1) {
       setValues({
         ...values,
-        groupOwnerError: "Please select at least one group owner",
+        groupOwnerError: t("errors.selectGroupOwner"),
       });
     } else {
       submit();
@@ -151,7 +154,7 @@ export default function NewLabGroup() {
                   required
                   ref={groupName}
                   fullWidth
-                  label="Group's identifying name"
+                  label={t("fields.groupName")}
                   value={values.name}
                   onChange={handleChange("name")}
                   margin="normal"
@@ -163,7 +166,7 @@ export default function NewLabGroup() {
             <Grid size={12}>
               <Stack spacing={2}>
                 <Typography variant="subtitle1" gutterBottom color={"inherit"}>
-                  Select a group type*
+                  {t("fields.selectGroupType")}
                 </Typography>
                 <Select
                   value={values.groupType}
@@ -172,18 +175,13 @@ export default function NewLabGroup() {
                   size="small"
                 >
                   <MenuItem value={LAB_GROUP} data-test-id="groupType-labGroup">
-                    Lab Group
+                    {t("groupType.lab")}
                   </MenuItem>
                   <MenuItem value={PROJECT_GROUP} data-test-id="groupType-projectGroup">
-                    Project Group
+                    {t("groupType.project")}
                   </MenuItem>
                 </Select>
-                {values.groupType === PROJECT_GROUP && (
-                  <Typography variant="body2">
-                    If RAiD has been set up, you can associate a RAiD identifier with the project group after it has
-                    been created.
-                  </Typography>
-                )}
+                {values.groupType === PROJECT_GROUP && <Typography variant="body2">{t("raidHint")}</Typography>}
               </Stack>
             </Grid>
             <Grid size={12}>
@@ -195,13 +193,13 @@ export default function NewLabGroup() {
                     gutterBottom
                     color={values.pisError ? "error" : "inherit"}
                   >
-                    Select one LabGroup PI *
+                    {t("fields.selectPi")}
                   </Typography>
                   <UserSelect
                     maxSelected={1}
                     users={users.filter((u) => u.roles.includes("ROLE_PI"))}
-                    labelLeft="Available PIs"
-                    labelRight="Group PIs"
+                    labelLeft={t("userBox.availablePis")}
+                    labelRight={t("userBox.groupPis")}
                     updateSelected={updateSelected("pis")}
                   />
                 </Grid>
@@ -214,12 +212,12 @@ export default function NewLabGroup() {
                     gutterBottom
                     color={values.groupOwnerError ? "error" : "inherit"}
                   >
-                    Select group owners *
+                    {t("fields.selectGroupOwners")}
                   </Typography>
                   <UserSelect
                     users={users}
-                    labelLeft="Available users"
-                    labelRight="Group owners"
+                    labelLeft={t("userBox.availableUsers")}
+                    labelRight={t("userBox.groupOwners")}
                     updateSelected={updateSelected("groupOwners")}
                   />
                 </Grid>
@@ -229,15 +227,15 @@ export default function NewLabGroup() {
               {values.groupType && (
                 <Grid container>
                   <Typography sx={{ margin: "20px 0px 10px 0px" }} variant="subtitle1" gutterBottom color="inherit">
-                    Select group members{" "}
+                    {t("fields.selectMembers")}{" "}
                     <Typography variant="inherit" component="span" sx={{ color: "grey" }}>
-                      (optional)
+                      {t("fields.optional")}
                     </Typography>
                   </Typography>
                   <UserSelect
                     users={users}
-                    labelLeft="Available users"
-                    labelRight="Group members"
+                    labelLeft={t("userBox.availableUsers")}
+                    labelRight={t("userBox.groupMembers")}
                     updateSelected={updateSelected("members")}
                   />
                 </Grid>
@@ -246,7 +244,7 @@ export default function NewLabGroup() {
             <Grid size={12} sx={{ margin: "20px 0px 40px 0px" }}>
               <Grid container sx={{ justifyContent: "flex-end" }}>
                 <Button variant="contained" color="primary" onClick={validateForm} data-test-id="submitGroup">
-                  Submit
+                  {t("common:actions.submit")}
                 </Button>
               </Grid>
             </Grid>
@@ -259,4 +257,8 @@ export default function NewLabGroup() {
 
 const domContainer = document.getElementById("newLabGroup");
 const root = createRoot(domContainer as HTMLElement);
-root.render(<NewLabGroup />);
+root.render(
+  <I18nRoot namespaces={["groups"]}>
+    <NewLabGroup />
+  </I18nRoot>,
+);

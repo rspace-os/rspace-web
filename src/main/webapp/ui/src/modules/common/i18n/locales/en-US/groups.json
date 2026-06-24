@@ -1,1 +1,28 @@
-{}
+{
+  "errors": {
+    "selectGroupOwner": "Please select at least one group owner",
+    "selectPi": "Please, select a PI"
+  },
+  "fields": {
+    "groupName": "Group's identifying name",
+    "optional": "(optional)",
+    "selectGroupOwners": "Select group owners *",
+    "selectGroupType": "Select a group type*",
+    "selectMembers": "Select group members",
+    "selectPi": "Select one LabGroup PI *"
+  },
+  "groupType": {
+    "lab": "Lab Group",
+    "project": "Project Group"
+  },
+  "raidHint": "If RAiD has been set up, you can associate a RAiD identifier with the project group after it has been created.",
+  "userBox": {
+    "availablePis": "Available PIs",
+    "availableUsers": "Available users",
+    "groupMembers": "Group members",
+    "groupOwners": "Group owners",
+    "groupPis": "Group PIs",
+    "noUsersFound": "No users found",
+    "search": "Search..."
+  }
+}

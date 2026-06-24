@@ -1,5 +1,6 @@
 {
   "actions": {
-    "close": "Close"
+    "close": "Close",
+    "submit": "Submit"
   }
 }

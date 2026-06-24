@@ -48,6 +48,7 @@ after all modules are done. Defer when a string:
 | system | system-ror/RoRIntegration.tsx | "ROR ID found. Click `<strong>`Link`</strong>` …" | inline `<strong>` |
 | system | system-ror/RoRIntegration.tsx | "A ROR ID is linked … Click on `<strong>`UNLINK`</strong>` …" | inline `<strong>` |
 | system | system-ror/RoRIntegration.tsx | "Please ensure the ROR ID is one of the following formats: …" | inline styled `<RorErrorHelpText>` example spans |
+| groups | system-groups/UserBox.tsx | snackbar "Please, select only `<strong>`one`</strong>` PI" | inline `<strong>` |
 
 > When the `system-ror` markup above is completed in review, also add
 > `src/system-ror/**` to the `noJsxLiterals` override in `biome.jsonc` (the
