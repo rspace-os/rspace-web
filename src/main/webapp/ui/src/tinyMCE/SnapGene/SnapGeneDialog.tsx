@@ -8,6 +8,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import DnaPreview from "./DnaPreview";
 import EnzymeTable from "./EnzymeTable";
@@ -28,6 +29,7 @@ function a11yProps(index: number) {
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SnapGeneDialog(props: any) {
+  const { t } = useTranslation(["apps", "common"]);
   const [open, setOpen] = React.useState(true);
   const [tab, setTab] = React.useState(0);
   const [disabled, setDisabled] = React.useState(false);
@@ -61,10 +63,10 @@ export default function SnapGeneDialog(props: any) {
         <Grid container spacing={2}>
           <Grid size={2}>
             <Tabs orientation="vertical" variant="scrollable" value={tab} onChange={switchTab}>
-              <Tab label="DNA preview" {...a11yProps(0)} />
-              <Tab label="Enzyme sites" {...a11yProps(1)} />
-              <Tab label="View as FASTA" {...a11yProps(2)} />
-              <Tab label="ORF table" {...a11yProps(3)} />
+              <Tab label={t("tinyMce.snapGene.tabDnaPreview")} {...a11yProps(0)} />
+              <Tab label={t("tinyMce.snapGene.enzymeSites")} {...a11yProps(1)} />
+              <Tab label={t("tinyMce.snapGene.viewAsFasta")} {...a11yProps(2)} />
+              <Tab label={t("tinyMce.snapGene.orfTable")} {...a11yProps(3)} />
             </Tabs>
           </Grid>
           {tab === 0 && <DnaPreview id={props.id} clicked={clicked["0"]} setDisabled={(d) => setDisabled(d)} />}
@@ -77,10 +79,10 @@ export default function SnapGeneDialog(props: any) {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
-          Close
+          {t("common:actions.close")}
         </Button>
         <Button onClick={handleApply} color="primary" variant="outlined" disabled={disabled}>
-          Apply Settings
+          {t("tinyMce.snapGene.applySettings")}
         </Button>
       </DialogActions>
     </Dialog>

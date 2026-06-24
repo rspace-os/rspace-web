@@ -11,6 +11,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { DataGrid, type GridRowId, type GridRowSelectionModel } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import TitledBox from "@/components/TitledBox";
@@ -36,6 +37,7 @@ export type RSpaceErrorResponse = {
 export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
 function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
+  const { t } = useTranslation("apps");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   (parent as any).tinymce.activeEditor?.on("galaxy-used", () => {
     setDoUpload(true);
@@ -216,7 +218,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           {historyId && (
             <TitledBox title="View Workflow in Galaxy" border>
               <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-                <p>Your new history can be viewed here: </p>
+                <p>{t("tinyMce.galaxy.historyViewedHere")} </p>
                 <p>
                   <a
                     href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
@@ -225,22 +227,13 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   >
                     {historyName}
                   </a>{" "}
-                  (Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History'){" "}
+                  {t("tinyMce.galaxy.opensInNewTab")}{" "}
                 </p>
                 <p>
-                  <strong>
-                    {" "}
-                    The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.
-                  </strong>
+                  <strong> {t("tinyMce.galaxy.annotationMetadata")}</strong>
                 </p>
                 <p>
-                  <strong>
-                    {" "}
-                    Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear
-                    in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data
-                    being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon
-                    indicates how many Galaxy Invocations are using the uploaded data.
-                  </strong>
+                  <strong> {t("tinyMce.galaxy.workflowIconNote")}</strong>
                 </p>
               </Stack>
             </TitledBox>
@@ -251,12 +244,12 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                 <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
-                      <label htmlFor="serverChoice">Choose a Galaxy Server</label>
+                      <label htmlFor="serverChoice">{t("tinyMce.galaxy.chooseGalaxyServer")}</label>
                       <RadioGroup
                         id="serverChoice"
                         row
-                        aria-label="Choose Galaxy Server"
-                        name="Choose Galaxy Server"
+                        aria-label={t("tinyMce.galaxy.chooseGalaxyServer")}
+                        name={t("tinyMce.galaxy.chooseGalaxyServer")}
                         defaultValue={targetAlias}
                         value={targetAlias}
                         onChange={handleDataTypeChange}
@@ -273,23 +266,14 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                       </RadioGroup>
                     </>
                   )}
-                  <p>Choose attached files to be uploaded to Galaxy.</p>
-                  All selected files will be combined into a 'list dataset', which will be available for immediate use.
-                  The list dataset will be named after this RSpace document, using the format:
+                  <p>{t("tinyMce.galaxy.chooseAttachedFiles")}</p>
+                  {t("tinyMce.galaxy.allSelectedFilesCombined")}
                   <p>
-                    <strong>
-                      "RSPACE_" + document name + "_" + global ID of document + "_" + name of field data was attached to
-                      + "_" + global ID of that field.
-                    </strong>
+                    <strong>{t("tinyMce.galaxy.datasetNameFormat")}</strong>
                   </p>
-                  When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace
-                  document with the same name as the 'list dataset' described above. Your chosen data will be uploaded
-                  to this new history. You can make this history active in Galaxy by switching to it.
+                  {t("tinyMce.galaxy.uploadToGalaxyNote")}
                   <p>
-                    <strong>
-                      RSpace will store the details of the files you have uploaded and also any use of these files on
-                      Galaxy in Invocations will be tracked.
-                    </strong>
+                    <strong>{t("tinyMce.galaxy.rspaceWillStoreDetails")}</strong>
                   </p>
                   {errorMessage && (
                     <ErrorView errorReason={errorReason} errorMessage={errorMessage} WorkFlowIcon={WorkFlowIcon} />

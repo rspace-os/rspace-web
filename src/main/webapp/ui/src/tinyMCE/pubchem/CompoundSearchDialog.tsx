@@ -20,6 +20,7 @@ import { alpha } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { Dialog } from "@/components/DialogBoundary";
 import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
@@ -81,6 +82,7 @@ type CompoundCardProps = {
 
 function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): React.ReactNode {
   const nameId = React.useId();
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Card
       aria-labelledby={nameId}
@@ -136,15 +138,15 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
               {compound.name}
             </Typography>
             <Dl>
-              <Dt>PubChem ID</Dt>
+              <Dt>{t("tinyMce.pubchem.pubchemId")}</Dt>
               <Dd>{compound.pubchemId}</Dd>
               {compound.cas !== "" && (
                 <>
-                  <Dt>CAS Number</Dt>
+                  <Dt>{t("tinyMce.pubchem.casNumber")}</Dt>
                   <Dd>{compound.cas}</Dd>
                 </>
               )}
-              <Dt>Formula</Dt>
+              <Dt>{t("tinyMce.pubchem.formula")}</Dt>
               <Dd>{compound.formula}</Dd>
             </Dl>
           </CardContent>
@@ -161,7 +163,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
                 e.stopPropagation();
               }}
             >
-              View on PubChem
+              {t("tinyMce.pubchem.viewOnPubChem")}
             </Link>
           </CardActions>
         </Box>
@@ -207,6 +209,7 @@ export default function CompoundSearchDialog({
 }: CompoundSearchDialogProps): React.ReactNode {
   const titleId = React.useId();
   const resultsId = React.useId();
+  const { t } = useTranslation(["apps", "common"]);
   const { search } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
@@ -344,7 +347,7 @@ export default function CompoundSearchDialog({
                 />
               </Grid>
               <Grid>
-                <Button type="submit">Search</Button>
+                <Button type="submit">{t("common:actions.search")}</Button>
               </Grid>
             </Grid>
           </form>
@@ -381,7 +384,7 @@ export default function CompoundSearchDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
         <ValidatingSubmitButton validationResult={validationResult} loading={false} onClick={handleSubmit}>
           {submitButtonText}
         </ValidatingSubmitButton>

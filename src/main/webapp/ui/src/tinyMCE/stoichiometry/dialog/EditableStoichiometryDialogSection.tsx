@@ -6,6 +6,7 @@ import DialogContent from "@mui/material/DialogContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmProvider";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import ValidatingSubmitButton, { IsValid } from "../../../components/ValidatingSubmitButton";
@@ -40,6 +41,7 @@ export default function EditableStoichiometryDialogSection({
   setCurrentStoichiometry: SetCurrentStoichiometry;
   registerCloseHandler?: RegisterCloseHandler;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const [mutationError, setMutationError] = React.useState<string | null>(null);
@@ -164,7 +166,7 @@ export default function EditableStoichiometryDialogSection({
           disabled={isBusy}
           sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
         >
-          Delete
+          {t("actions.delete")}
         </Button>
         <Button
           disabled={isBusy}
@@ -173,7 +175,7 @@ export default function EditableStoichiometryDialogSection({
             void handleClose();
           }}
         >
-          Close
+          {t("actions.close")}
         </Button>
       </DialogActions>
     </StoichiometryTableControllerProvider>

@@ -295,7 +295,7 @@ describe("EditableStoichiometryDialogSection", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "actions.delete" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Delete mutation failed");
   });

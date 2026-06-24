@@ -17,6 +17,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog } from "@/components/DialogBoundary";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
@@ -60,6 +61,7 @@ export default function StoichiometryInventoryUpdateDialog({
   onClose,
 }: StoichiometryInventoryUpdateDialogProps): React.ReactNode {
   const titleId = React.useId();
+  const { t } = useTranslation("common");
   const wasOpenRef = React.useRef(false);
   const [selectedMoleculeIds, setSelectedMoleculeIds] = React.useState<number[]>([]);
   const saveMutation = useMutation({
@@ -171,7 +173,7 @@ export default function StoichiometryInventoryUpdateDialog({
           void handleSubmit();
         }}
       >
-        <DialogTitle id={titleId}>Update Inventory Stock</DialogTitle>
+        <DialogTitle id={titleId}>{t("stoichiometry.inventoryUpdate.dialogTitle")}</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
@@ -192,7 +194,7 @@ export default function StoichiometryInventoryUpdateDialog({
               <AlertTitle>WARNING: This action is irreversible</AlertTitle>
 
               <Typography variant="body2" gutterBottom>
-                <strong>This will permanently reduce inventory quantities.</strong>
+                <strong>{t("stoichiometry.inventoryUpdate.permanentlyReduceWarning")}</strong>
               </Typography>
               <Typography variant="body2" gutterBottom>
                 Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry
@@ -225,15 +227,15 @@ export default function StoichiometryInventoryUpdateDialog({
                         px: 0.5,
                       }}
                     />
-                    <TableCell width="55%">Molecule</TableCell>
+                    <TableCell width="55%">{t("stoichiometry.inventoryUpdate.molecule")}</TableCell>
                     <TableCell align="right" width="15%">
-                      In Stock
+                      {t("stoichiometry.inventoryUpdate.inStock")}
                     </TableCell>
                     <TableCell align="right" width="15%">
-                      Will Use
+                      {t("stoichiometry.inventoryUpdate.willUse")}
                     </TableCell>
                     <TableCell align="right" width="15%">
-                      Remaining
+                      {t("stoichiometry.inventoryUpdate.remaining")}
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -270,7 +272,7 @@ export default function StoichiometryInventoryUpdateDialog({
         </DialogContent>
         <DialogActions>
           <Button type="button" onClick={handleClose}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button
             type="submit"
@@ -278,7 +280,7 @@ export default function StoichiometryInventoryUpdateDialog({
             color="callToAction"
             disabled={selectedMoleculeIds.length === 0 || hasInvalidSelectedRows || saveMutation.isPending}
           >
-            {saveMutation.isPending ? "Saving..." : "Save"}
+            {saveMutation.isPending ? t("stoichiometry.inventoryUpdate.saving") : t("actions.save")}
           </Button>
         </DialogActions>
       </Box>

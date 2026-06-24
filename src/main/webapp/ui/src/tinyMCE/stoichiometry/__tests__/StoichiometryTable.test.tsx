@@ -418,15 +418,15 @@ describe("StoichiometryTable", () => {
     it("provides a menu for exporting the stoichiometry table to CSV", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Export" }));
+      await user.click(screen.getByRole("button", { name: "actions.export" }));
       expect(await screen.findByRole("tooltip")).toBeVisible();
-      expect(screen.getByRole("menuitem", { name: "Export to CSV" })).toBeVisible();
+      expect(screen.getByRole("menuitem", { name: "stoichiometry.tableToolbar.exportToCsv" })).toBeVisible();
     });
 
     it("opens the Add Chemical menu with PubChem, Gallery and manual options", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "stoichiometry.addReagent.addChemical" }));
 
       expect(
         await screen.findByRole("menuitem", {
@@ -448,7 +448,7 @@ describe("StoichiometryTable", () => {
     it("opens the PubChem dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /PubChem.*Import compound from PubChem/i,
@@ -461,7 +461,7 @@ describe("StoichiometryTable", () => {
     it("opens the manual SMILES dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /Manually.*Manually enter SMILES/i,
@@ -474,7 +474,7 @@ describe("StoichiometryTable", () => {
     it("opens the Gallery dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: /Gallery.*Import compound from Gallery/i,
@@ -490,10 +490,10 @@ describe("StoichiometryTable", () => {
     it("opens the inventory stock update dialog listing the current molecules", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Update Inventory Stock" }));
+      await user.click(screen.getByRole("button", { name: "stoichiometry.inventoryUpdate.updateInventoryStock" }));
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Update Inventory Stock/i,
+        name: /stoichiometry.inventoryUpdate.dialogTitle/i,
       });
       expect(dialog).toBeVisible();
       expect(within(dialog).getByText("Benzene")).toBeVisible();

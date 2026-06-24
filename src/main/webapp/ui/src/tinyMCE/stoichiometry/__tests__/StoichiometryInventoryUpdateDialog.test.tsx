@@ -151,7 +151,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "actions.save" }));
 
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith([1]);
@@ -241,7 +241,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeChecked();
 
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "actions.save" }));
 
     await screen.findByText(/Current stock amounts were refreshed\. Re-select any remaining molecules to retry\./i);
 
@@ -326,7 +326,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     renderWithProviders(<Wrapper />);
 
-    const saveButton = screen.getByRole("button", { name: "Save" });
+    const saveButton = screen.getByRole("button", { name: "actions.save" });
     expect(saveButton).toBeEnabled();
 
     await user.click(screen.getByText("Invalidate selection"));
@@ -358,7 +358,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "actions.save" }));
 
     await screen.findByText("Network down Current stock amounts were refreshed where possible.");
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();

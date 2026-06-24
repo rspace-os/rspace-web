@@ -136,6 +136,94 @@
       "hideOptions": "Hide filtering options",
       "label": "Filter",
       "showOptions": "Show filtering options"
+    },
+    "insertButton": "Insert"
+  },
+  "tinyMce": {
+    "chemCard": {
+      "atoms": "Atoms",
+      "bonds": "Bonds",
+      "charge": "Charge",
+      "formula": "Formula",
+      "mass": "Mass",
+      "monoisotopicMassSubscript": "mi",
+      "name": "Name",
+      "structureAlt": "Chemical structure"
+    },
+    "galaxy": {
+      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+      "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
+      "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
+      "chooseGalaxyServer": "Choose a Galaxy Server",
+      "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
+      "historyViewedHere": "Your new history can be viewed here:",
+      "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
+      "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
+      "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
+      "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
+    },
+    "internalLink": {
+      "alwaysLatest": "Always automatically update link to latest version",
+      "dialogTitle": "Internal link version options",
+      "headCells": {
+        "modified": "Modified",
+        "modifiedBy": "Modified by",
+        "name": "Name",
+        "version": "Version"
+      },
+      "updateRevisionLink": "Update revision link"
+    },
+    "omero": {
+      "filterResults": "Filter results",
+      "hideImageGrid": "hide image grid",
+      "noImage": "no image",
+      "seeInOmero": "see in omero",
+      "unavailableAlt": "Unavailable"
+    },
+    "pubchem": {
+      "casNumber": "CAS Number",
+      "formula": "Formula",
+      "pubchemId": "PubChem ID",
+      "viewOnPubChem": "View on PubChem"
+    },
+    "shortcuts": {
+      "instructions": {
+        "actions": {
+          "clickInput": "Click on the input field next to the command you would like to configure.",
+          "clickSave": "Click on 'Save'.",
+          "pressKey": "On your keyboard, press the key combination you would like to use for that command."
+        },
+        "symbols": {
+          "clickInput": "Click on the input field next to the symbol you would like to configure.",
+          "clickSave": "Click on 'Save'.",
+          "clickSymbol": "Click on the symbol to configure its shortcut.",
+          "pressKey": "On your keyboard, press the key combination you would like to use for that symbol.",
+          "sectionsHint": "All configurable symbols are divided into sections. Click on a section to find the desired symbol. For example, Greek characters are in the 'Extended Latin' section."
+        }
+      },
+      "instructionsTitle": "Instructions",
+      "reservedShortcutsNote": "Here's <0>a list</0> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+      "tabActions": "Actions",
+      "tabSymbols": "Symbols",
+      "toggleInstructions": "Toggle instructions"
+    },
+    "sidebarInfo": {
+      "closeAll": "Close All"
+    },
+    "snapGene": {
+      "applySettings": "Apply Settings",
+      "circular": "Circular",
+      "copyToClipboard": "Copy to Clipboard",
+      "dnaPreviewAlt": "DNA preview",
+      "enzymeSites": "Enzyme sites",
+      "imageType": "Image type",
+      "linear": "Linear",
+      "orfTable": "ORF table",
+      "reset": "Reset",
+      "showEnzymes": "Show enzymes",
+      "showORFs": "Show ORFs",
+      "tabDnaPreview": "DNA preview",
+      "viewAsFasta": "View as FASTA"
     }
   }
 }

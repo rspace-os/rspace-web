@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Radio from "@mui/material/Radio";
 import { DataGrid, type GridCellParams, type GridColDef } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import StoichiometryTableInventoryLinkCell from "@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell";
 import StoichiometryTableRoleChip from "@/tinyMCE/stoichiometry/StoichiometryTableRoleChip";
@@ -45,6 +46,7 @@ export default function StoichiometryTableGrid({
   onSelectLimitingReagent,
   onProcessRowUpdate,
 }: StoichiometryTableGridProps): React.ReactNode {
+  const { t } = useTranslation("common");
   const roleColumnEditable = editable && activeChemId === null;
   const limitingReagent = allMolecules.find(
     (molecule) => molecule.limitingReagent && molecule.role.toLowerCase() === "reactant",
@@ -87,7 +89,7 @@ export default function StoichiometryTableGrid({
                 onDeleteReagent?.(row.id);
               }}
             >
-              Delete
+              {t("actions.delete")}
             </Button>
           ) : (
             <>&mdash;</>

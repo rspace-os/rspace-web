@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import type { InternalLinkInsertParams, RevisionIdentifier, TinyMceEditor } from "@/tinyMCE/types";
@@ -72,33 +73,6 @@ declare global {
   }
 }
 const LATEST_REVISION_SELECTION = "__latest__" as const;
-const LATEST_REVISION_LABEL = "Always automatically update link to latest version";
-const headCells: Array<Cell<RevisionSortKey>> = [
-  {
-    id: "version",
-    numeric: true,
-    disablePadding: false,
-    label: "Version",
-  },
-  {
-    id: "name",
-    numeric: false,
-    disablePadding: false,
-    label: "Name",
-  },
-  {
-    id: "ownerFullName",
-    numeric: false,
-    disablePadding: false,
-    label: "Modified by",
-  },
-  {
-    id: "modificationDate",
-    numeric: false,
-    disablePadding: false,
-    label: "Modified",
-  },
-];
 function matchesVersion(left: RevisionVersion | null | undefined, right: RevisionVersion | null | undefined): boolean {
   return left != null && right != null && String(left) === String(right);
 }
@@ -133,6 +107,24 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
   const [selected, setSelected] = React.useState<RevisionSelection | null>(null);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const { t } = useTranslation(["apps", "common"]);
+  const LATEST_REVISION_LABEL = t("tinyMce.internalLink.alwaysLatest");
+  const headCells: Array<Cell<RevisionSortKey>> = [
+    { id: "version", numeric: true, disablePadding: false, label: t("tinyMce.internalLink.headCells.version") },
+    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.internalLink.headCells.name") },
+    {
+      id: "ownerFullName",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.internalLink.headCells.modifiedBy"),
+    },
+    {
+      id: "modificationDate",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.internalLink.headCells.modified"),
+    },
+  ];
   const handleClose = (): void => {
     setOpen(false);
   };
@@ -207,7 +199,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
   }, [props.id, props.version]);
   return (
     <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title" fullWidth={true} maxWidth="lg">
-      <DialogTitle id="form-dialog-title">Internal link version options</DialogTitle>
+      <DialogTitle id="form-dialog-title">{t("tinyMce.internalLink.dialogTitle")}</DialogTitle>
       <DialogContent>
         <Toolbar sx={{ pl: 2, pr: 1 }}>
           <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1">
@@ -353,7 +345,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
-          Cancel
+          {t("common:actions.cancel")}
         </Button>
         <Button
           onClick={handleInsert}
@@ -366,7 +358,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
             (props.version == null && isLatestSelection(selected))
           }
         >
-          Update revision link
+          {t("tinyMce.internalLink.updateRevisionLink")}
         </Button>
       </DialogActions>
     </Dialog>

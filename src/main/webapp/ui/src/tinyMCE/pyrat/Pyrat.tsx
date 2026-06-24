@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
 import docLinks from "@/assets/DocLinks";
@@ -503,6 +504,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [serverAlias, setServerAlias] = React.useState<any>(null);
   const servers = useAuthenticatedServers();
+  const { t } = useTranslation(["apps", "common"]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [selectedAnimals, setSelectedAnimals] = React.useState<any[]>([]);
 
@@ -568,7 +570,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
         })}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
         <Button
           disabled={selectedAnimals.length === 0}
           color="callToAction"
@@ -578,7 +580,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
             onClose();
           }}
         >
-          Insert
+          {t("pyrat.insertButton")}
         </Button>
       </DialogActions>
     </Dialog>

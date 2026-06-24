@@ -379,7 +379,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    expect(screen.getByRole("button", { name: "Delete" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "actions.delete" })).toBeVisible();
   });
 
   it("shows confirmation dialog when delete button is clicked", async () => {
@@ -389,7 +389,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "actions.delete" }));
 
     expect(
       await screen.findByRole("dialog", {
@@ -405,7 +405,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "actions.delete" }));
 
     const confirmDialog = await screen.findByRole("dialog", {
       name: /Delete Stoichiometry Table/,

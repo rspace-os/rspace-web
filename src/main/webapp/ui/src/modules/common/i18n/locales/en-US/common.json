@@ -360,6 +360,20 @@
         "nameRequired": "Name is required",
         "smilesRequired": "SMILES string is required"
       }
+    },
+    "inventoryUpdate": {
+      "dialogTitle": "Update Inventory Stock",
+      "inStock": "In Stock",
+      "molecule": "Molecule",
+      "permanentlyReduceWarning": "This will permanently reduce inventory quantities.",
+      "remaining": "Remaining",
+      "saving": "Saving...",
+      "updateInventoryStock": "Update Inventory Stock",
+      "willUse": "Will Use"
+    },
+    "tableToolbar": {
+      "columns": "Columns",
+      "exportToCsv": "Export to CSV"
     }
   },
   "pubchemImport": {

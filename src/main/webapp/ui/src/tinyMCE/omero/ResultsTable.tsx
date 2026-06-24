@@ -8,6 +8,7 @@ import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import React, { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
 import { getSorting } from "../../util/table";
 import { Order } from "./Enums";
@@ -141,6 +142,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     },
     ref,
   ) => {
+    const { t } = useTranslation("apps");
     const renderWells = (
       wells:
         | OmeroItem["imageGridDetails"][number][number][number]
@@ -338,7 +340,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       hideChildren(item, true);
                                     }}
                                   >
-                                    hide image grid{" "}
+                                    {t("tinyMce.omero.hideImageGrid")}{" "}
                                     {item.samplesUrls && item.samplesUrls.length > 1 ? " (there are other fields)" : ""}
                                   </a>
                                 ) : item.type === "plateAcquisition" ? (
@@ -424,7 +426,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   href={getLinkToOmero(item, omero_web_url)}
                                   rel="noreferrer"
                                 >
-                                  see in omero
+                                  {t("tinyMce.omero.seeInOmero")}
                                 </a>
                               </div>
                               <div id={`${item.type}_fetch_children_${item.id}`}>

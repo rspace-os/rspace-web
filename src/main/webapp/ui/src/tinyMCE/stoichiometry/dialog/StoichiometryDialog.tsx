@@ -7,6 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog } from "@/components/DialogBoundary";
 import { useIntegrationIsAllowedAndEnabled } from "@/hooks/api/integrationHelpers";
 import useOauthToken from "@/hooks/auth/useOauthToken";
@@ -48,6 +49,7 @@ export default function StoichiometryDialog({
   onDelete,
 }: StandaloneDialogInnerProps): React.ReactNode {
   const titleId = React.useId();
+  const { t } = useTranslation("common");
   const { getToken } = useOauthToken();
   const {
     mutate: mutateCalculateStoichiometry,
@@ -231,7 +233,7 @@ export default function StoichiometryDialog({
               sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
               onClick={handleCloseWithoutTable}
             >
-              Close
+              {t("actions.close")}
             </Button>
           </DialogActions>
         </>
@@ -260,10 +262,10 @@ export default function StoichiometryDialog({
               </DialogContent>
               <DialogActions>
                 <Button disabled={isRequestInFlight} sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}>
-                  Delete
+                  {t("actions.delete")}
                 </Button>
                 <Button disabled={isRequestInFlight} sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}>
-                  Close
+                  {t("actions.close")}
                 </Button>
               </DialogActions>
             </>

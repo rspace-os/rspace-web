@@ -9,6 +9,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Cell } from "../../components/EnhancedTableHead";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import materialTheme from "../../theme";
@@ -45,6 +46,7 @@ const DEFAULT_ORDERBY = "name";
 export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
 export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
   const [errorReason, setErrorReason] = useState<ErrorReasonType>(ErrorReason.None);
@@ -531,7 +533,14 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     return paths.map((path) => <dt key={path}>{path}</dt>);
   };
   const makeEmptyThumbNail = () => {
-    return <img alt="Unavailable" title={"no image"} style={{ padding: "4px" }} src={"/images/White_square.png"} />;
+    return (
+      <img
+        alt={t("tinyMce.omero.unavailableAlt")}
+        title={t("tinyMce.omero.noImage")}
+        style={{ padding: "4px" }}
+        src={"/images/White_square.png"}
+      />
+    );
   };
   const makeThumbNail = (
     data: OmeroItem,
@@ -647,7 +656,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           <FormControlLabel value="Projects" control={<Radio color="primary" />} label="Projects" />
           <FormControlLabel value="Screens" control={<Radio color="primary" />} label="Screens" />
         </RadioGroup>
-        <label htmlFor="omeroFilter">Filter results</label>
+        <label htmlFor="omeroFilter">{t("tinyMce.omero.filterResults")}</label>
         <input id="omeroFilterID" type="text" name="omeroFilter" onKeyPress={filterDataAndDeselectHidden} />
         <Grid container spacing={1}>
           <Grid size={12}>
