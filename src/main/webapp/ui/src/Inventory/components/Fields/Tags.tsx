@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import AddTag from "../../../components/Tags/AddTag";
 import TagListing from "../../../components/Tags/TagListing";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -17,20 +18,21 @@ function Tags<
   },
   FieldOwner extends HasEditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
 
   const errorMessage = () => {
     if (fieldOwner.fieldValues.tags.map((t) => t.value).join(",").length > MAX_TOTAL)
-      return `Tags must be no longer than ${MAX_TOTAL} characters.`;
+      return t("fields.tags.validation.maxLength", { max: MAX_TOTAL });
     if (fieldOwner.fieldValues.tags.some((t) => t.value.length < MIN_EACH))
-      return `Each tag cannot be less than ${MIN_EACH} characters.`;
+      return t("fields.tags.validation.minLength", { min: MIN_EACH });
     return null;
   };
 
   return (
     <BatchFormField
-      label="Tags"
+      label={t("fields.tags.label")}
       /*
        * One of the reasons for converting the list of tags into a string is
        * that if the list is empty then `!value` is true, and so `noValueLabel`
@@ -42,7 +44,7 @@ function Tags<
       disabled={!fieldOwner.isFieldEditable("tags")}
       maxLength={MAX_TOTAL}
       helperText={errorMessage()}
-      noValueLabel={fieldOwner.noValueLabel.tags ?? "None"}
+      noValueLabel={fieldOwner.noValueLabel.tags ?? t("fields.tags.none")}
       canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
       setDisabled={(d) => {
         fieldOwner.setFieldEditable("tags", d);

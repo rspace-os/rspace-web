@@ -634,6 +634,14 @@ export default interface Resources {
           "positiveOrZero": "Should be a positive number or zero."
         }
       },
+      "tags": {
+        "label": "Tags",
+        "none": "None",
+        "validation": {
+          "maxLength": "Tags must be no longer than {max} characters.",
+          "minLength": "Each tag cannot be less than {min} characters."
+        }
+      },
       "templateFields": {
         "addField": "Add field",
         "alias": {
@@ -980,6 +988,14 @@ export default interface Resources {
           "expiredWarning": "This sample has expired.",
           "label": "Expiry Date"
         },
+        "source": {
+          "label": "Source",
+          "options": {
+            "labCreated": "Lab Created",
+            "other": "Other",
+            "vendorSupplied": "Vendor Supplied"
+          }
+        },
         "storageTemperature": {
           "belowAbsoluteZero": "One or more values are below absolute zero.",
           "between": "Between {min} and {max}.",
@@ -1100,6 +1116,11 @@ export default interface Resources {
         "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
         "title": "Batch editing {count} subsamples"
+      },
+      "details": {
+        "ariaLabel": "Subsample details",
+        "imageAlt": "What the subsample, {name}, looks like",
+        "none": "No subsamples"
       }
     },
     "template": {
