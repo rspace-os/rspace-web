@@ -12,6 +12,7 @@ import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
@@ -59,6 +60,7 @@ export type Plan = {
 function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
+  const { t } = useTranslation("apps");
 
   const [DMPHost, setDMPHost] = React.useState<string | null>();
   const [DMPs, setDMPs] = useState<Array<Plan>>([]);
@@ -96,15 +98,14 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           if (/Unable to load your DMPs. For more information/.test(r.data.error?.errorMessages[0] ?? "")) {
             addAlert(
               mkAlert({
-                title: "Unable to load DMPs.",
+                title: t("dmpIntegrations.dialog.error.unableToLoad"),
                 message: (
-                  <>
-                    For more information{" "}
-                    <a href={docLinks.dmptoolImportingDmps} rel="noreferrer">
-                      visit our docs
-                    </a>
-                    .
-                  </>
+                  <Trans
+                    ns="apps"
+                    i18nKey="dmpIntegrations.dialog.forMoreInfo"
+                    // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
+                    components={{ a: <a href={docLinks.dmptoolImportingDmps} rel="noreferrer" /> }}
+                  />
                 ),
                 variant: "error",
               }),
@@ -113,8 +114,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           }
           addAlert(
             mkAlert({
-              title: "Fetch failed.",
-              message: r.data?.error?.errorMessages[0] ?? "Could not get DMPs",
+              title: t("dmpIntegrations.dialog.error.fetchFailed"),
+              message: r.data?.error?.errorMessages[0] ?? t("dmpIntegrations.dialog.error.couldNotImport"),
               variant: "error",
             }),
           );
@@ -129,8 +130,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
       if (e instanceof Error) {
         addAlert(
           mkAlert({
-            title: "Fetch failed.",
-            message: `Could not get DMPs: ${e.message}`,
+            title: t("dmpIntegrations.dialog.error.fetchFailed"),
+            message: t("dmpIntegrations.dialog.error.couldNotGet", { message: e.message }),
             variant: "error",
           }),
         );
@@ -162,13 +163,13 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               mkAlert(
                 r.data.success
                   ? {
-                      title: "Success.",
-                      message: `DMP ${selectedPlanId} was successfully imported.`,
+                      title: t("dmpIntegrations.dialog.importSuccess"),
+                      message: t("dmpIntegrations.dialog.importSuccessMessage", { planId: selectedPlanId }),
                       variant: "success",
                     }
                   : {
-                      title: "Import failed.",
-                      message: r.data.error?.errorMessages[0] || "Could not import DMP",
+                      title: t("dmpIntegrations.dialog.error.importFailed"),
+                      message: r.data.error?.errorMessages[0] || t("dmpIntegrations.dialog.error.couldNotImport"),
                       variant: "error",
                     },
               ),
@@ -187,16 +188,16 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
     <>
       <AppBar
         variant="dialog"
-        currentPage="DMPTool"
+        currentPage={t("dmpIntegrations.dmptool")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
         helpPage={{
           docLink: docLinks.dmptool,
-          title: "DMPTool help",
+          title: `${t("dmpIntegrations.dmptool")} help`,
         }}
       />
-      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>
       <DialogContent>
         <Stack
           sx={{
@@ -224,8 +225,11 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               will make it available to view and reference within RSpace.
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://dmptool.org">dmptool.org</Link> and our{" "}
-              <Link href={docLinks.dmptool}>DMPTool integration docs</Link> for more.
+              <Trans
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.dmptoolDocsLink"
+                components={[<Link key="0" href="https://dmptool.org" />, <Link key="1" href={docLinks.dmptool} />]}
+              />
             </Typography>
           </Box>
           <ScopeField
@@ -237,12 +241,12 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<"title", Plan>("title", {
-                  headerName: "Title",
+                  headerName: t("dmpIntegrations.dialog.columns.title"),
                   flex: 1,
                   sortable: false,
                 }),
                 DataGridColumn.newColumnWithFieldName<"id", Plan>("id", {
-                  headerName: "Id",
+                  headerName: t("dmpIntegrations.dialog.columns.id"),
                   flex: 1,
                   sortable: false,
                 }),
@@ -257,7 +261,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                       ></span>
                     );
                   },
-                  headerName: "Description",
+                  headerName: t("dmpIntegrations.dialog.columns.description"),
                   display: "flex",
                   flex: 1,
                   sortable: false,
@@ -266,7 +270,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                   "created",
                   (created) => new Date(created).toLocaleString(),
                   {
-                    headerName: "Created At",
+                    headerName: t("dmpIntegrations.dialog.columns.createdAt"),
                     flex: 1,
                     sortable: false,
                   },
@@ -275,7 +279,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                   "modified",
                   (modified) => new Date(modified).toLocaleString(),
                   {
-                    headerName: "Modified At",
+                    headerName: t("dmpIntegrations.dialog.columns.modifiedAt"),
                     flex: 1,
                     sortable: false,
                   },
@@ -304,7 +308,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                 pagination: null,
               }}
               localeText={{
-                noRowsLabel: "No DMPs",
+                noRowsLabel: t("dmpIntegrations.dialog.noDmps"),
               }}
               loading={fetching}
               getRowId={(row) => row.id}
@@ -322,16 +326,16 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
       <DialogActions>
         <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
           <Button onClick={() => setOpen(false)} disabled={importing}>
-            {selectedPlan ? "Cancel" : "Close"}
+            {selectedPlan ? t("dmpIntegrations.dialog.cancelButton") : t("dmpIntegrations.dialog.closeButton")}
           </Button>
           <ValidatingSubmitButton
             onClick={() => {
               void handleImport();
             }}
-            validationResult={!selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()}
+            validationResult={!selectedPlan?.id ? IsInvalid(t("dmpIntegrations.dialog.noDmpSelected")) : IsValid()}
             loading={importing}
           >
-            Import
+            {t("dmpIntegrations.dialog.importButton")}
           </ValidatingSubmitButton>
         </Stack>
       </DialogActions>

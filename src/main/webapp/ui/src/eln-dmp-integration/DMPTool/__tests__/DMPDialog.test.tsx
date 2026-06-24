@@ -56,7 +56,7 @@ describe("DMPDialog", () => {
       </ThemeProvider>,
     );
     await waitFor(() => {
-      expect(screen.getByText("No DMPs")).toBeVisible();
+      expect(screen.getByText("dmpIntegrations.dialog.noDmps")).toBeVisible();
     });
   });
   test("The latest request is always the one that's shown.", async () => {
@@ -89,10 +89,10 @@ describe("DMPDialog", () => {
     );
     // public will take a second to return a listing
 
-    fireEvent.click(screen.getByRole("radio", { name: "Public" }));
+    fireEvent.click(screen.getByRole("radio", { name: "dmpIntegrations.scope.public" }));
     // but mine will return immediately
 
-    fireEvent.click(screen.getByRole("radio", { name: "Mine" }));
+    fireEvent.click(screen.getByRole("radio", { name: "dmpIntegrations.scope.mine" }));
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();
     });

@@ -10,6 +10,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from "@mui/x-data-grid";
 import React from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
@@ -46,6 +47,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
 }
 
 const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
+  const { t } = useTranslation("apps");
   const [selection, setSelection] = React.useState<DmpSummary | null>(null);
   const [importing, setImporting] = React.useState(false);
 
@@ -69,25 +71,26 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
 
   const columns = [
     DataGridColumn.newColumnWithFieldName<"title", DmpSummary>("title", {
-      headerName: "Title",
+      headerName: t("dmpIntegrations.dialog.columns.title"),
       hideable: false,
     }),
     {
       field: "contact name",
-      headerName: "Contact Name",
-      renderCell: (params: { row: DmpSummary }) => params.row.contactName.orElse(<NoValue label="Not Specified" />),
+      headerName: t("dmpIntegrations.dialog.columns.contactName"),
+      renderCell: (params: { row: DmpSummary }) =>
+        params.row.contactName.orElse(<NoValue label={t("dmpIntegrations.dialog.notSpecified")} />),
     },
     {
       field: "contact affiliation",
-      headerName: "Contact Affiliation",
+      headerName: t("dmpIntegrations.dialog.columns.contactAffiliation"),
       renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactAffiliationName.orElse(<NoValue label="Not Specified" />),
+        params.row.contactAffiliationName.orElse(<NoValue label={t("dmpIntegrations.dialog.notSpecified")} />),
     },
     DataGridColumn.newColumnWithFieldName<"created", DmpSummary>("created", {
-      headerName: "Created",
+      headerName: t("dmpIntegrations.dialog.columns.created"),
     }),
     DataGridColumn.newColumnWithFieldName<"modified", DmpSummary>("modified", {
-      headerName: "Modified",
+      headerName: t("dmpIntegrations.dialog.columns.modified"),
     }),
   ].map((colDefinition) => ({
     sortable: false,
@@ -99,16 +102,16 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
     <>
       <AppBar
         variant="dialog"
-        currentPage="DMPonline"
+        currentPage={t("dmpIntegrations.dmponline")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
         helpPage={{
           docLink: docLinks.dmponline,
-          title: "DMPonline help",
+          title: `${t("dmpIntegrations.dmponline")} help`,
         }}
       />
-      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>
       <DialogContent>
         <Stack
           sx={{
@@ -124,20 +127,29 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         >
           <Box>
             <Typography variant="body2">
-              Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference
-              within RSpace.
+              <Trans
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.dmponlineImportDesc"
+                components={{ strong: <strong /> }}
+              />
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://dmponline.dcc.ac.uk">dmponline.dcc.ac.uk</Link> and our{" "}
-              <Link href={docLinks.dmponline}>DMPonline integration docs</Link> for more.
+              <Trans
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.dmponlineDocsLink"
+                components={[
+                  <Link key="0" href="https://dmponline.dcc.ac.uk" />,
+                  <Link key="1" href={docLinks.dmponline} />,
+                ]}
+              />
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
-              loading: () => <Typography variant="body2">Loading listing of DMPs.</Typography>,
+              loading: () => <Typography variant="body2">{t("dmpIntegrations.dialog.loadingDmps")}</Typography>,
               error: (error) => (
                 <>
-                  <Typography variant="body2">Failed to load listing of DMPs. Please try refreshing.</Typography>
+                  <Typography variant="body2">{t("dmpIntegrations.dialog.error.loadFailed")}</Typography>
                   <samp>{error}</samp>
                 </>
               ),
@@ -242,13 +254,13 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>Close</Button>
+        <Button onClick={() => setOpen(false)}>{t("dmpIntegrations.dialog.closeButton")}</Button>
         <ValidatingSubmitButton
-          validationResult={selection ? IsValid() : IsInvalid("No DMP is selected.")}
+          validationResult={selection ? IsValid() : IsInvalid(t("dmpIntegrations.dialog.noDmpIsSelected"))}
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          Import
+          {t("dmpIntegrations.dialog.importButton")}
         </ValidatingSubmitButton>
       </DialogActions>
     </>

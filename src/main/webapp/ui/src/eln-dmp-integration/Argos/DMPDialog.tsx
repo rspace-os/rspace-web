@@ -15,6 +15,7 @@ import type { GridRowId } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 import docLinks from "../../assets/DocLinks";
@@ -145,6 +146,7 @@ const SearchControls = ({
   setPage,
 }: SearchControlsArgs) => {
   const { addAlert } = useContext(AlertContext);
+  const { t } = useTranslation("apps");
   const [searchParameters, setSearchParameters]: UseState<Omit<SearchParameters, "page" | "pageSize">> = useState({
     like: null as string | null,
     grantsLike: null as string | null,
@@ -176,10 +178,10 @@ const SearchControls = ({
       setAppliedSearchParameters(newSearchParameters);
     } catch (e) {
       console.error(e);
-      const errorMsg = typeof e === "string" ? e : "Could not get DMPs";
+      const errorMsg = typeof e === "string" ? e : t("dmpIntegrations.dialog.error.couldNotImport");
       addAlert(
         mkAlert({
-          title: "Fetch failed.",
+          title: t("dmpIntegrations.dialog.error.fetchFailed"),
           message: errorMsg,
           variant: "error",
         }),
@@ -344,6 +346,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
 function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
+  const { t } = useTranslation("apps");
   const [DMPs, setDMPs] = useState<Array<PlanSummary>>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
@@ -359,8 +362,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
       await importPlan(selectedPlan);
       addAlert(
         mkAlert({
-          title: "Success.",
-          message: `DMP ${selectedPlanId} was successfully imported.`,
+          title: t("dmpIntegrations.dialog.importSuccess"),
+          message: t("dmpIntegrations.dialog.importSuccessMessage", { planId: selectedPlanId }),
           variant: "success",
         }),
       );
@@ -376,8 +379,8 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
       console.error(e);
       addAlert(
         mkAlert({
-          title: "Import failed.",
-          message: "Could not import DMP",
+          title: t("dmpIntegrations.dialog.error.importFailed"),
+          message: t("dmpIntegrations.dialog.error.couldNotImport"),
           variant: "error",
         }),
       );
@@ -389,16 +392,16 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
     <>
       <AppBar
         variant="dialog"
-        currentPage="Argos"
+        currentPage={t("dmpIntegrations.argos")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
         helpPage={{
           docLink: docLinks.argos,
-          title: "Argos help",
+          title: `${t("dmpIntegrations.argos")} help`,
         }}
       />
-      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>
       <DialogContent>
         <Stack
           sx={{
@@ -411,12 +414,14 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         >
           <Box>
             <Typography variant="body2">
-              Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference
-              within RSpace.
+              <Trans ns="apps" i18nKey="dmpIntegrations.dialog.argosImportDesc" components={{ strong: <strong /> }} />
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://argos.openaire.eu">argos.openaire.eu</Link> and our{" "}
-              <Link href={docLinks.argos}>Argos integration docs</Link> for more.
+              <Trans
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.argosDocsLink"
+                components={[<Link key="0" href="https://argos.openaire.eu" />, <Link key="1" href={docLinks.argos} />]}
+              />
             </Typography>
           </Box>
           <SearchControls
@@ -437,17 +442,17 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
             <DataGridWithRadioSelection
               columns={[
                 DataGridColumn.newColumnWithFieldName<"label", PlanSummary>("label", {
-                  headerName: "Label",
+                  headerName: t("dmpIntegrations.dialog.columns.label"),
                   flex: 1,
                   sortable: false,
                 }),
                 DataGridColumn.newColumnWithFieldName<"id", PlanSummary>("id", {
-                  headerName: "Id",
+                  headerName: t("dmpIntegrations.dialog.columns.id"),
                   flex: 1,
                   sortable: false,
                 }),
                 DataGridColumn.newColumnWithFieldName<"grant", PlanSummary>("grant", {
-                  headerName: "Grant",
+                  headerName: t("dmpIntegrations.dialog.columns.grant"),
                   flex: 1,
                   sortable: false,
                 }),
@@ -455,7 +460,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
-                    headerName: "Created At",
+                    headerName: t("dmpIntegrations.dialog.columns.createdAt"),
                     flex: 1,
                     sortable: false,
                   },
@@ -464,7 +469,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                   "modifiedAt",
                   (modifiedAt) => new Date(modifiedAt).toLocaleString(),
                   {
-                    headerName: "Modified At",
+                    headerName: t("dmpIntegrations.dialog.columns.modifiedAt"),
                     flex: 1,
                     sortable: false,
                   },
@@ -493,7 +498,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                 pagination: null,
               }}
               localeText={{
-                noRowsLabel: "No DMPs",
+                noRowsLabel: t("dmpIntegrations.dialog.noDmps"),
               }}
               loading={fetching}
               getRowId={(row) => row.id}
@@ -546,16 +551,16 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           </nav>
           <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
             <Button onClick={() => setOpen(false)} disabled={importing}>
-              {selectedPlan ? "Cancel" : "Close"}
+              {selectedPlan ? t("dmpIntegrations.dialog.cancelButton") : t("dmpIntegrations.dialog.closeButton")}
             </Button>
             <ValidatingSubmitButton
               onClick={() => {
                 void handleImport();
               }}
-              validationResult={!selectedPlan ? IsInvalid("No DMP selected.") : IsValid()}
+              validationResult={!selectedPlan ? IsInvalid(t("dmpIntegrations.dialog.noDmpSelected")) : IsValid()}
               loading={importing}
             >
-              Import
+              {t("dmpIntegrations.dialog.importButton")}
             </ValidatingSubmitButton>
           </Stack>
         </Stack>

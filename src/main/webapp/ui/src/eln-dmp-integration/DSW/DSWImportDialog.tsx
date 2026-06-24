@@ -12,6 +12,7 @@ import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import createAccentedTheme from "../../accentedTheme";
@@ -75,6 +76,7 @@ function DSWImportDialogContent({
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation("apps");
 
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
   const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
@@ -119,16 +121,17 @@ function DSWImportDialogContent({
         const errorMsg = r.data?.error?.errorMessages ? r.data.error.errorMessages[0] : null;
         addAlert(
           mkAlert({
-            title: "Unable to load projects.",
+            title: t("dmpIntegrations.dialog.error.unableToLoadProjects"),
             message: (
               <>
                 {errorMsg}
                 <br />
-                For more information{" "}
-                <a href={docLinks.dsw} rel="noreferrer">
-                  visit our docs
-                </a>
-                .
+                <Trans
+                  ns="apps"
+                  i18nKey="dmpIntegrations.dialog.forMoreInfo"
+                  // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
+                  components={{ a: <a href={docLinks.dsw} rel="noreferrer" /> }}
+                />
               </>
             ),
             variant: "error",
@@ -142,8 +145,8 @@ function DSWImportDialogContent({
       if (e instanceof Error) {
         addAlert(
           mkAlert({
-            title: "Unable to load projects.",
-            message: `Could not get DMPs: ${e.message}`,
+            title: t("dmpIntegrations.dialog.error.unableToLoadProjects"),
+            message: t("dmpIntegrations.dialog.error.couldNotGet", { message: e.message }),
             variant: "error",
           }),
         );
@@ -173,13 +176,13 @@ function DSWImportDialogContent({
               mkAlert(
                 r.data.success
                   ? {
-                      title: "Success.",
-                      message: `DMP ${selectedPlan.name} was successfully imported.`,
+                      title: t("dmpIntegrations.dialog.importSuccess"),
+                      message: t("dmpIntegrations.dialog.importSuccessMessage", { planId: selectedPlan.name }),
                       variant: "success",
                     }
                   : {
-                      title: "Import failed.",
-                      message: r.data.error?.errorMessages[0] || "Could not import DMP",
+                      title: t("dmpIntegrations.dialog.error.importFailed"),
+                      message: r.data.error?.errorMessages[0] || t("dmpIntegrations.dialog.error.couldNotImport"),
                       variant: "error",
                     },
               ),
@@ -198,16 +201,16 @@ function DSWImportDialogContent({
     <>
       <AppBar
         variant="dialog"
-        currentPage="DSW / FAIR Wizard"
+        currentPage={t("dmpIntegrations.dsw")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
         helpPage={{
           docLink: docLinks.dsw,
-          title: "DSW / FAIR Wizard help",
+          title: `${t("dmpIntegrations.dsw")} help`,
         }}
       />
-      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>
       <DialogContent>
         <Stack
           sx={{
@@ -223,12 +226,22 @@ function DSWImportDialogContent({
         >
           <Box>
             <Typography variant="body2">
-              Importing a project from <strong>{connection.DSW_ALIAS}</strong> will make it available to view and
-              reference as a DMP within RSpace.
+              <Trans
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.dswImportDesc"
+                values={{ serverAlias: connection.DSW_ALIAS }}
+                components={{ strong: <strong /> }}
+              />
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://guide.ds-wizard.org/en/latest/">https://guide.ds-wizard.org/en/latest</Link> and
-              our <Link href={docLinks.dsw}>DSW / FAIR Wizard integration docs</Link> for more.
+              <Trans
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.dswDocsLink"
+                components={[
+                  <Link key="0" href="https://guide.ds-wizard.org/en/latest/" />,
+                  <Link key="1" href={docLinks.dsw} />,
+                ]}
+              />
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
@@ -245,7 +258,7 @@ function DSWImportDialogContent({
                       ></span>
                     );
                   },
-                  headerName: "Name",
+                  headerName: t("dmpIntegrations.dialog.columns.name"),
                   flex: 1,
                   sortable: true,
                 }),
@@ -260,7 +273,7 @@ function DSWImportDialogContent({
                       ></span>
                     );
                   },
-                  headerName: "Description",
+                  headerName: t("dmpIntegrations.dialog.columns.description"),
                   flex: 1,
                   sortable: true,
                 }),
@@ -268,7 +281,7 @@ function DSWImportDialogContent({
                   "createdAt",
                   (createdAt) => new Date(createdAt).toLocaleString(),
                   {
-                    headerName: "Created At",
+                    headerName: t("dmpIntegrations.dialog.columns.createdAt"),
                     display: "flex",
                     flex: 1,
                     sortable: true,
@@ -278,7 +291,7 @@ function DSWImportDialogContent({
                   "updatedAt",
                   (updatedAt) => new Date(updatedAt).toLocaleString(),
                   {
-                    headerName: "Updated At",
+                    headerName: t("dmpIntegrations.dialog.columns.updatedAt"),
                     flex: 1,
                     sortable: true,
                   },
@@ -306,7 +319,7 @@ function DSWImportDialogContent({
                 pagination: null,
               }}
               localeText={{
-                noRowsLabel: "No projects found",
+                noRowsLabel: t("dmpIntegrations.dialog.noProjects"),
               }}
               loading={fetching}
               getRowId={(row) => row.id}
@@ -324,16 +337,16 @@ function DSWImportDialogContent({
       <DialogActions>
         <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
           <Button onClick={() => setOpen(false)} disabled={importing}>
-            {selectedPlan ? "Cancel" : "Close"}
+            {selectedPlan ? t("dmpIntegrations.dialog.cancelButton") : t("dmpIntegrations.dialog.closeButton")}
           </Button>
           <ValidatingSubmitButton
             onClick={() => {
               void handleImport();
             }}
-            validationResult={!selectedPlan?.id ? IsInvalid("No DMP selected.") : IsValid()}
+            validationResult={!selectedPlan?.id ? IsInvalid(t("dmpIntegrations.dialog.noDmpSelected")) : IsValid()}
             loading={importing}
           >
-            Import
+            {t("dmpIntegrations.dialog.importButton")}
           </ValidatingSubmitButton>
         </Stack>
       </DialogActions>

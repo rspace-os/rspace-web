@@ -88,7 +88,7 @@ describe("DMPDialog", () => {
           findTableCell: (options: { columnHeading: string; rowIndex: number }) => Promise<HTMLElement>;
         }
       )(screen.getByRole("grid")).findTableCell({
-        columnHeading: "Label",
+        columnHeading: "dmpIntegrations.dialog.columns.label",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
@@ -120,7 +120,7 @@ describe("DMPDialog", () => {
       { timeout: 2000 },
     );
     await user.click(screen.getByRole("radio", { name: "Select plan: Foo" }));
-    await user.click(screen.getByRole("button", { name: "Import" }));
+    await user.click(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton" }));
     await waitFor(() => {
       expect(
         mockAxios.history.post.some(({ url }) =>
