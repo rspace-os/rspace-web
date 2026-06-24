@@ -65,8 +65,8 @@ describe("SidebarBody", () => {
       </ThemeProvider>,
     );
     expect(screen.getByTestId("globalid")).toHaveAttribute("data-value", "SA42");
-    expect(screen.getByTestId("date-created")).toHaveAttribute("data-value", "2026-01-01T00:00:00Z");
-    expect(screen.getByTestId("date-last-modified")).toHaveAttribute("data-value", "2026-02-02T00:00:00Z");
+    expect(screen.getByTestId("date-moreinfo.created")).toHaveAttribute("data-value", "2026-01-01T00:00:00Z");
+    expect(screen.getByTestId("date-moreinfo.lastmodified")).toHaveAttribute("data-value", "2026-02-02T00:00:00Z");
   });
 
   it("includes LinkedDocuments when the record is usable in a List of Materials and has a Global ID", () => {

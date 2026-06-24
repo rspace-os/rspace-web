@@ -655,6 +655,40 @@ export default interface Resources {
         "subsamplesOnly": "For subsamples only"
       }
     },
+    "moreInfo": {
+      "closeSidebar": "Close more info sidebar",
+      "created": "Created",
+      "globalId": "Global ID",
+      "lastModified": "Last Modified",
+      "linkedDocuments": {
+        "columns": {
+          "linkedVersion": "Linked version",
+          "name": "Name",
+          "owner": "Owner",
+          "relation": "Relation"
+        },
+        "documentsTable": "Documents containing this item",
+        "inventoryLinksTable": "Inventory items linking to this item",
+        "latest": "Latest",
+        "noDocuments": "No documents",
+        "noInventoryLinks": "No inventory links",
+        "show": "Show Linked Documents",
+        "title": "Linked Documents"
+      },
+      "updateSamples": "Update Samples",
+      "versionHistory": {
+        "columns": {
+          "by": "By",
+          "modified": "Modified",
+          "version": "Version"
+        },
+        "current": " (current)",
+        "none": "No version history is available for this item yet.",
+        "title": "Version history",
+        "view": "View version history",
+        "viewing": " (viewing)"
+      }
+    },
     "permalinkNotFound": {
       "latestLink": "View the latest version",
       "typeLabels": {

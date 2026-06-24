@@ -17,6 +17,7 @@ import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ApiService from "../../../common/InvApiService";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -84,18 +85,18 @@ function DialogContents({
   versionUrl: (version: number) => string;
   onNavigate: (url: string) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   if (state.state === "loading") return <Skeleton variant="rectangular" width="100%" height={118} />;
   if (state.state === "fail") return <Alert severity="error">{state.error.message}</Alert>;
   if (state.state === "success") {
-    if (state.versions.length === 0)
-      return <Alert severity="info">No version history is available for this item yet.</Alert>;
+    if (state.versions.length === 0) return <Alert severity="info">{t("moreInfo.versionHistory.none")}</Alert>;
     return (
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Version</TableCell>
-            <TableCell>Modified</TableCell>
-            <TableCell>By</TableCell>
+            <TableCell>{t("moreInfo.versionHistory.columns.version")}</TableCell>
+            <TableCell>{t("moreInfo.versionHistory.columns.modified")}</TableCell>
+            <TableCell>{t("moreInfo.versionHistory.columns.by")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -109,10 +110,11 @@ function DialogContents({
                     onNavigate(versionUrl(row.version));
                   }}
                 >
-                  Version {row.version}
+                  {t("moreInfo.versionHistory.columns.version")} {row.version}
                 </Link>
                 {/* on a historical view, record.version is the pinned version, not the live one */}
-                {row.version === currentVersion && (historical ? " (viewing)" : " (current)")}
+                {row.version === currentVersion &&
+                  (historical ? t("moreInfo.versionHistory.viewing") : t("moreInfo.versionHistory.current"))}
               </TableCell>
               <TableCell>{row.lastModified ? isoToLocale(row.lastModified) : "—"}</TableCell>
               <TableCell>{row.modifiedByFullName ?? "—"}</TableCell>
@@ -134,6 +136,7 @@ type VersionHistoryArgs = {
  * listing all of its versions; each row opens the read-only versioned viewer.
  */
 function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -178,7 +181,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
 
   return (
     <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
-      <FormLabel component="legend">Version</FormLabel>
+      <FormLabel component="legend">{t("moreInfo.versionHistory.columns.version")}</FormLabel>
       <FormGroup>
         {record.version ?? "—"}
         <Button
@@ -188,10 +191,10 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
             setOpen(true);
           }}
         >
-          View version history
+          {t("moreInfo.versionHistory.view")}
         </Button>
         <Dialog open={open} onClose={close}>
-          <DialogTitle>Version history</DialogTitle>
+          <DialogTitle>{t("moreInfo.versionHistory.title")}</DialogTitle>
           <DialogContent>
             <DialogContents
               state={state}
@@ -205,7 +208,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={close}>Close</Button>
+            <Button onClick={close}>{t("actions.close", { ns: "common" })}</Button>
           </DialogActions>
         </Dialog>
       </FormGroup>

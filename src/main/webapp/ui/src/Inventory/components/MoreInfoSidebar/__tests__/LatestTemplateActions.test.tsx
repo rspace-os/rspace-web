@@ -30,16 +30,16 @@ describe("LatestTemplateActions", () => {
 
   test("hides the Update Samples button when no samples need updating", () => {
     renderFor(makeMockTemplate({ samplesToUpdateCount: 0 }));
-    expect(screen.queryByRole("button", { name: /update samples/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "moreInfo.updateSamples" })).not.toBeInTheDocument();
   });
 
   test("shows the Update Samples button when samples need updating", () => {
     renderFor(makeMockTemplate({ samplesToUpdateCount: 2 }));
-    expect(screen.getByRole("button", { name: /update samples/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "moreInfo.updateSamples" })).toBeInTheDocument();
   });
 
   test("stays hidden for a historical version even when samples need updating", () => {
     renderFor(makeMockTemplate({ samplesToUpdateCount: 2, historicalVersion: true }));
-    expect(screen.queryByRole("button", { name: /update samples/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "moreInfo.updateSamples" })).not.toBeInTheDocument();
   });
 });

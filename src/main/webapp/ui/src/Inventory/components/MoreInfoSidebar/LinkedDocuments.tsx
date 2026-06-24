@@ -19,6 +19,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
@@ -61,16 +62,17 @@ function referencingItemsEndpoint(globalId: string): string | null {
 }
 
 function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.ReactElement {
+  const { t } = useTranslation("inventory");
   return (
-    <Table size="small" aria-label="Inventory items linking to this item">
+    <Table size="small" aria-label={t("moreInfo.linkedDocuments.inventoryLinksTable")}>
       <TableHead>
         <TableRow>
-          <TableCell>Name</TableCell>
-          <TableCell>Global ID</TableCell>
-          <TableCell>Relation</TableCell>
+          <TableCell>{t("moreInfo.linkedDocuments.columns.name")}</TableCell>
+          <TableCell>{t("moreInfo.globalId")}</TableCell>
+          <TableCell>{t("moreInfo.linkedDocuments.columns.relation")}</TableCell>
           {/* Which version of THIS item the linking item points at (not a version
               of the linking item itself). */}
-          <TableCell>Linked version</TableCell>
+          <TableCell>{t("moreInfo.linkedDocuments.columns.linkedVersion")}</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -85,7 +87,9 @@ function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.R
               </a>
             </TableCell>
             <TableCell>{item.relationType}</TableCell>
-            <TableCell>{item.versionPin != null ? `v${item.versionPin}` : "Latest"}</TableCell>
+            <TableCell>
+              {item.versionPin != null ? `v${item.versionPin}` : t("moreInfo.linkedDocuments.latest")}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -94,13 +98,14 @@ function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.R
 }
 
 function DocumentsTable({ documents }: { documents: RsSet<Document> }): React.ReactElement {
+  const { t } = useTranslation("inventory");
   return (
-    <Table aria-label="Documents containing this item">
+    <Table aria-label={t("moreInfo.linkedDocuments.documentsTable")}>
       <TableHead>
         <TableRow>
-          <TableCell>Name</TableCell>
-          <TableCell>Global ID</TableCell>
-          <TableCell>Owner</TableCell>
+          <TableCell>{t("moreInfo.linkedDocuments.columns.name")}</TableCell>
+          <TableCell>{t("moreInfo.globalId")}</TableCell>
+          <TableCell>{t("moreInfo.linkedDocuments.columns.owner")}</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -129,6 +134,7 @@ function DocumentsTable({ documents }: { documents: RsSet<Document> }): React.Re
 }
 
 function DialogContents({ state }: { state: State }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   if (state.state === "loading") return <Skeleton variant="rectangular" width={210} height={118} />;
   if (state.state === "fail") return <Alert severity="error">{state.error.message}</Alert>;
   if (state.state === "success") {
@@ -138,18 +144,22 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
       <>
         <Box>
           <Typography variant="subtitle1" gutterBottom>
-            Documents containing this item
+            {t("moreInfo.linkedDocuments.documentsTable")}
           </Typography>
-          {documents.size > 0 ? <DocumentsTable documents={documents} /> : <NoValue label="No documents" />}
+          {documents.size > 0 ? (
+            <DocumentsTable documents={documents} />
+          ) : (
+            <NoValue label={t("moreInfo.linkedDocuments.noDocuments")} />
+          )}
         </Box>
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
-            Inventory items linking to this item
+            {t("moreInfo.linkedDocuments.inventoryLinksTable")}
           </Typography>
           {referencingItems.length > 0 ? (
             <ReferencingItemsTable items={referencingItems} />
           ) : (
-            <NoValue label="No inventory links" />
+            <NoValue label={t("moreInfo.linkedDocuments.noInventoryLinks")} />
           )}
         </Box>
         {bothEmpty && (
@@ -182,6 +192,7 @@ type LinkedDocumentsArgs = {
 };
 
 function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>({ state: "init" });
 
@@ -235,7 +246,7 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
   return (
     <Grid>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
-        <FormLabel component="legend">Linked Documents</FormLabel>
+        <FormLabel component="legend">{t("moreInfo.linkedDocuments.title")}</FormLabel>
         <FormGroup>
           <Button
             variant="outlined"
@@ -245,15 +256,15 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
             }}
             disabled={!factory}
           >
-            Show Linked Documents
+            {t("moreInfo.linkedDocuments.show")}
           </Button>
           <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-            <DialogTitle>Linked Documents</DialogTitle>
+            <DialogTitle>{t("moreInfo.linkedDocuments.title")}</DialogTitle>
             <DialogContent>
               <DialogContents state={state} />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setOpen(false)}>Close</Button>
+              <Button onClick={() => setOpen(false)}>{t("actions.close", { ns: "common" })}</Button>
             </DialogActions>
           </Dialog>
         </FormGroup>

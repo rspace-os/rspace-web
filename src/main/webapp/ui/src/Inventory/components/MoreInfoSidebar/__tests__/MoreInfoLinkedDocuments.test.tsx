@@ -44,7 +44,7 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId="IT5" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
 
     expect(await screen.findByText("A sample")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IT5");
@@ -54,14 +54,14 @@ describe("LinkedDocuments", () => {
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     expect(await screen.findByText("An error")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/IC1");
   });
   test("When there is an error loading the data, an alert should be shown.", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
   });
   test("Two different documents should render as two table rows", async () => {
@@ -87,13 +87,13 @@ describe("LinkedDocuments", () => {
         />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     expect(within(await screen.findByRole("table")).getAllByRole("row")).toHaveLength(3);
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
-        columnHeading: "Name",
+        columnHeading: "moreInfo.linkedDocuments.columns.name",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
@@ -101,7 +101,7 @@ describe("LinkedDocuments", () => {
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
-        columnHeading: "Name",
+        columnHeading: "moreInfo.linkedDocuments.columns.name",
         rowIndex: 1,
       }),
     ).toHaveTextContent("Bar");
@@ -129,7 +129,7 @@ describe("LinkedDocuments", () => {
         />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     const rows = within(await screen.findByRole("table")).getAllByRole("row");
 
     expect(rows).toHaveLength(2);
@@ -137,7 +137,7 @@ describe("LinkedDocuments", () => {
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await within(screen.getByRole("table")).findTableCell({
-        columnHeading: "Name",
+        columnHeading: "moreInfo.linkedDocuments.columns.name",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
@@ -170,8 +170,8 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId={globalId} />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
-    await screen.findByRole("button", { name: "Close" });
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
+    await screen.findByRole("button", { name: "actions.close" });
     expect(spy).toHaveBeenCalledWith(expectedUrl);
   });
 
@@ -190,8 +190,8 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId="ZZ1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
-    await screen.findByRole("button", { name: "Close" });
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
+    await screen.findByRole("button", { name: "actions.close" });
     const calls = spy.mock.calls.map(([url]) => url);
     expect(calls.some((url) => typeof url === "string" && url.endsWith("/referencingItems"))).toBe(false);
   });
@@ -211,7 +211,7 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId="IC1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     expect(await screen.findByText(/List of Materials/i)).toBeVisible();
     expect(await screen.findByText(/other inventory items? that link/i)).toBeVisible();
   });
@@ -220,11 +220,11 @@ describe("LinkedDocuments", () => {
       return Promise.reject(new Error("An error"));
     });
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
-    expect(await screen.findByRole("button", { name: "Close" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    await screen.findByRole("button", { name: "Show Linked Documents" });
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
+    expect(await screen.findByRole("button", { name: "actions.close" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "actions.close" }));
+    await screen.findByRole("button", { name: "moreInfo.linkedDocuments.show" });
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     expect(await screen.findByText("An error")).toBeVisible();
     // 2 opens, each open triggers 2 calls (documents + referencing items)
     expect(spy).toHaveBeenCalledTimes(4);
@@ -254,9 +254,9 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId="SA42" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     // wait for the dialog to settle
-    await screen.findByRole("button", { name: "Close" });
+    await screen.findByRole("button", { name: "actions.close" });
     expect(spy).toHaveBeenCalledWith("samples/42/referencingItems");
   });
 
@@ -303,7 +303,7 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId="IC1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     expect(await screen.findByText("Calibrator A")).toBeVisible();
     expect(screen.getByText("Box 5")).toBeVisible();
     expect(screen.getByText("IsCalibratedBy")).toBeVisible();
@@ -351,12 +351,12 @@ describe("LinkedDocuments", () => {
         <LinkedDocuments factory={mockFactory()} globalId="IC1" />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
     // The source's Global ID is shown bare: the version pin is NOT a version of the source.
     expect(await screen.findByText("IC5")).toBeVisible();
     expect(screen.queryByText("IC5v3")).not.toBeInTheDocument();
     // Each row shows, separately, which version of THIS item the source links to.
     expect(screen.getByText("v3")).toBeVisible();
-    expect(screen.getByText("Latest")).toBeVisible();
+    expect(screen.getByText("moreInfo.linkedDocuments.latest")).toBeVisible();
   });
 });
