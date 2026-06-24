@@ -73,6 +73,7 @@ export default interface Resources {
       "inputMismatch": "Input does not match confirmation text"
     },
     "search": {
+      "clearTooltip": "Clear search",
       "placeholder": "Search..."
     },
     "values": {
