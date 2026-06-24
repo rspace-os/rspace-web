@@ -79,11 +79,11 @@ describe("ExportFileStore", () => {
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
-          name: "Show found filestore links",
+          name: "export.fileStore.foundLinks.showButton",
         }),
       ).toBeVisible();
     }));
-    await user.click(screen.getByRole("button", { name: "Show found filestore links" }));
+    await user.click(screen.getByRole("button", { name: "export.fileStore.foundLinks.showButton" }));
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "/test.txt" }),
     ).toBeVisible();

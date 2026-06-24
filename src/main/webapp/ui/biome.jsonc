@@ -59,7 +59,8 @@
         "src/eln/about/**",
         "src/components/AppBar/AboutRSpaceDialog.tsx",
         "src/eln/eln-external-workflows/**",
-        "src/components/ConfirmationDialog.tsx"
+        "src/components/ConfirmationDialog.tsx",
+        "src/Export/fileStoreComponents/FoundLinksListing.tsx"
       ],
       "linter": {
         "rules": {

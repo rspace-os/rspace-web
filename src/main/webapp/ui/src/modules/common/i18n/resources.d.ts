@@ -234,6 +234,16 @@ export default interface Resources {
           "excludeLabel": "File types to exclude (comma-separated list)",
           "heading": "File filters",
           "sizeLimitLabel": "Individual file size limit (MB)"
+        },
+        "foundLinks": {
+          "columns": {
+            "linkType": "Link type",
+            "notes": "Notes",
+            "path": "Full path on the File System"
+          },
+          "heading": "Filestore links found in exported content",
+          "showButton": "Show found filestore links",
+          "summary": "Exported content contains {filesCount} filestore link from {fileSystemsCount} File System."
         }
       }
     }

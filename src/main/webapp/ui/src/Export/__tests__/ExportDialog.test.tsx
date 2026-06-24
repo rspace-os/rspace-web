@@ -156,7 +156,7 @@ describe("ExportDialog", () => {
 
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("Exported content contains 1 filestore link from 1 File System.")).toBeVisible();
+          expect(screen.getByText("export.fileStore.foundLinks.summary")).toBeVisible();
         });
 
         await user.click(screen.getByRole("button", { name: "Export" }));
@@ -210,7 +210,7 @@ describe("ExportDialog", () => {
 
         await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("Exported content contains 1 filestore link from 1 File System.")).toBeVisible();
+          expect(screen.getByText("export.fileStore.foundLinks.summary")).toBeVisible();
         });
         await waitFor(() => {
           expect(screen.getByText("You are logged into all File Systems referenced by filestore links.")).toBeVisible();
