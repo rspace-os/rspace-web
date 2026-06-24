@@ -8,6 +8,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type FoundLinksListingArgs = {
   maxFileSizeInMB: number | string;
@@ -29,11 +30,12 @@ export default function FileFilters({
   excludedFileExtensions,
   setExcludedFileExtensions,
 }: FoundLinksListingArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = useState(false);
 
   return (
     <Card sx={{ p: 1 }}>
-      <h2>File filters</h2>
+      <h2>{t("export.fileStore.filters.heading")}</h2>
       <p>
         Filestore files larger than <strong>{maxFileSizeInMB} MB</strong> will not be included in the export. All types
         of filestore files will be included
@@ -54,16 +56,16 @@ export default function FileFilters({
         data-test-id="button-change-filters"
         fullWidth
       >
-        Change file filtering options
+        {t("export.fileStore.filters.changeButton")}
       </Button>
       <Dialog onClose={() => setOpen(false)} open={open}>
-        <DialogTitle>Filtering options for filestore files</DialogTitle>
+        <DialogTitle>{t("export.fileStore.filters.dialogTitle")}</DialogTitle>
         <DialogContent>
           <Grid container>
             <Grid size={12}>
               <TextField
                 variant="standard"
-                label="Individual file size limit (MB)"
+                label={t("export.fileStore.filters.sizeLimitLabel")}
                 value={maxFileSizeInMB}
                 onChange={({ target: { value } }) => setMaxFileSizeInMB(value)}
                 type="number"
@@ -79,7 +81,7 @@ export default function FileFilters({
             <Grid size={12}>
               <TextField
                 variant="standard"
-                label="File types to exclude (comma-separated list)"
+                label={t("export.fileStore.filters.excludeLabel")}
                 value={excludedFileExtensions}
                 onChange={({ target: { value } }) => setExcludedFileExtensions(value)}
                 margin="normal"
@@ -95,7 +97,7 @@ export default function FileFilters({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)} color="primary" data-test-id="button-ok-links">
-            OK
+            {t("common:actions.ok")}
           </Button>
         </DialogActions>
       </Dialog>

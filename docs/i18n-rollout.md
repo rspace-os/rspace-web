@@ -60,6 +60,7 @@ after all modules are done. Defer when a string:
 | system | system-ror/RoRIntegration.tsx | "Please ensure the ROR ID is one of the following formats: …" | inline styled `<RorErrorHelpText>` example spans |
 | groups | system-groups/UserBox.tsx | snackbar "Please, select only `<strong>`one`</strong>` PI" | inline `<strong>` |
 | groups | CreateGroup/CreateGroupStep2.tsx | "Nominate a PI … `<br/>` `<em>`Note: group wont be created until PI accepts invitation`</em>`" radio label | inline `<br/>` + `<em>` |
+| workspace | Export/fileStoreComponents/FileFilters.tsx | "Filestore files larger than `<strong>`{n} MB`</strong>` … apart from the following `<strong>`{exts}`</strong>`" summary `<p>` | inline `<strong>` + conditional `<span>` with interpolated values |
 
 > When the `system-ror` markup above is completed in review, also add
 > `src/system-ror/**` to the `noJsxLiterals` override in `biome.jsonc` (the

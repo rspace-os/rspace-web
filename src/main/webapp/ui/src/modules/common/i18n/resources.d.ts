@@ -58,6 +58,7 @@ export default interface Resources {
       "cancel": "Cancel",
       "close": "Close",
       "confirm": "Confirm",
+      "ok": "OK",
       "submit": "Submit"
     },
     "confirmationDialog": {
@@ -225,6 +226,16 @@ export default interface Resources {
     }
   },
   "workspace": {
-
+    "export": {
+      "fileStore": {
+        "filters": {
+          "changeButton": "Change file filtering options",
+          "dialogTitle": "Filtering options for filestore files",
+          "excludeLabel": "File types to exclude (comma-separated list)",
+          "heading": "File filters",
+          "sizeLimitLabel": "Individual file size limit (MB)"
+        }
+      }
+    }
   }
 }
