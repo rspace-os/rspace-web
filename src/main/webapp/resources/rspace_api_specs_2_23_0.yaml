@@ -2146,10 +2146,13 @@ paths:
           description: Logout success.
   /gallery/irods:
     get:
-      summary: Get the IRODS server info and the end points to calls for each
-        filestore already defined by the user
-      description: List the IRODS server address plus all the filestorePathIds that
-        can be used by the user to store the file into IRODS
+      deprecated: true
+      summary: "[DEPRECATED] Get the IRODS server info and the end points to calls for each
+        filestore already defined by the user"
+      description: "[DEPRECATED] By design this endpoint only returns filestores on a single
+        iRODS filesystem, so filestores on any other connected iRODS filesystem are not listed.
+        Use GET /gallery/filestores instead, which lists filestores across all filesystems;
+        filter the result by fileSystem.clientType == \"IRODS\"."
       tags:
         - Gallery Filestores
       parameters:

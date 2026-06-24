@@ -36,7 +36,13 @@ public interface GalleryIrodsApi {
    * @param recordIds the array of the record IDs you want to perform an operation
    * @param user
    * @return link and infos regarding the operations and the relative end points
+   * @deprecated By design this endpoint only returns filestores on a single iRODS filesystem, so
+   *     filestores on any other connected iRODS filesystem are invisible to it (RSDEV-1185). Use
+   *     {@code GET /api/v1/gallery/filestores} (see {@link GalleryFilestoresApi}) instead, which
+   *     lists filestores across all filesystems; filter by {@code fileSystem.clientType == "IRODS"}.
+   *     This endpoint will be removed in a future release.
    */
+  @Deprecated
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
   ApiExternalStorageInfo getExternalLocationsInfo(List<Long> recordIds, User user);

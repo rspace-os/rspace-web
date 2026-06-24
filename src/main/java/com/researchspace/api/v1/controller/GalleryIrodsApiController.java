@@ -75,6 +75,7 @@ public class GalleryIrodsApiController extends GalleryFilestoresBaseApiControlle
   }
 
   @Override
+  @Deprecated
   public ApiExternalStorageInfo getExternalLocationsInfo(
       @RequestParam(value = PARAM_RECORD_IDS, required = false) List<Long> recordIds,
       @RequestAttribute(name = "user") User user) {
