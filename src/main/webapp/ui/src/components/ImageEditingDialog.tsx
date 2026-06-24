@@ -14,6 +14,7 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import { useTranslation } from "react-i18next";
 
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 const readAsBinaryString = (file: Blob): Promise<string> =>
@@ -41,8 +42,9 @@ function ImageEditingDialog({
   close,
   submitHandler,
   alt,
-  submitButtonLabel = "Done",
+  submitButtonLabel,
 }: ImageEditingDialogArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [imageHeight, setImageHeight] = React.useState(0);
   const [editorData, setEditorData] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({
@@ -178,7 +180,7 @@ function ImageEditingDialog({
         },
       }}
     >
-      <DialogTitle id={titleId}>Edit Image</DialogTitle>
+      <DialogTitle id={titleId}>{t("imageEditing.title")}</DialogTitle>
       <DialogContent
         sx={{
           display: "flex",
@@ -243,7 +245,7 @@ function ImageEditingDialog({
             onClick={() => {
               onRotate("counter clockwise");
             }}
-            aria-label="rotate counter clockwise"
+            aria-label={t("imageEditing.rotateCounterClockwise")}
             size="small"
           >
             <RotateLeftIcon />
@@ -260,7 +262,7 @@ function ImageEditingDialog({
             onClick={() => {
               onRotate("clockwise");
             }}
-            aria-label="rotate clockwise"
+            aria-label={t("imageEditing.rotateClockwise")}
             size="small"
           >
             <RotateRightIcon />
@@ -271,9 +273,9 @@ function ImageEditingDialog({
             flexGrow: 1,
           }}
         ></Box>
-        <Button onClick={close}>Cancel</Button>
+        <Button onClick={close}>{t("actions.cancel")}</Button>
         <Button onClick={mainDialogSubmit} color="primary">
-          {submitButtonLabel}
+          {submitButtonLabel ?? t("actions.done")}
         </Button>
       </DialogActions>
     </Dialog>

@@ -92,7 +92,7 @@ describe("ImageEditingDialog", () => {
             expect(image.naturalHeight).toBeGreaterThan(0);
           });
           const rotateButton = screen.getByRole("button", {
-            name: `rotate ${direction}`,
+            name: direction === "clockwise" ? "imageEditing.rotateClockwise" : "imageEditing.rotateCounterClockwise",
           });
           for (let i = 0; i < number; i++) {
             await user.click(rotateButton);
@@ -102,7 +102,7 @@ describe("ImageEditingDialog", () => {
               expect(image.complete).toBe(true);
             });
           }
-          await user.click(screen.getByRole("button", { name: /done/i }));
+          await user.click(screen.getByRole("button", { name: "actions.done" }));
           await waitFor(() => {
             expect(submitHandler).toHaveBeenCalled();
           });
@@ -152,7 +152,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "rotate clockwise",
+      name: "imageEditing.rotateClockwise",
     });
 
     await user.click(rotateButton);
@@ -207,7 +207,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "rotate counter clockwise",
+      name: "imageEditing.rotateCounterClockwise",
     });
 
     await user.click(rotateButton);
@@ -305,7 +305,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "rotate clockwise",
+      name: "imageEditing.rotateClockwise",
     });
 
     await user.click(rotateButton);

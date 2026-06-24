@@ -15,10 +15,12 @@
     "retry": "Retry",
     "save": "Save",
     "search": "Search",
+    "select": "Select",
     "share": "Share",
     "sign": "Sign",
     "submit": "Submit",
-    "witness": "Witness"
+    "witness": "Witness",
+    "done": "Done"
   },
   "apiAuthentication": {
     "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
@@ -26,6 +28,16 @@
   },
   "confirmationDialog": {
     "inputMismatch": "Input does not match confirmation text"
+  },
+  "folderSelection": {
+    "selectedFolder": "Selected folder",
+    "selectedFolderWithColon": "Selected folder:",
+    "title": "Select Folder"
+  },
+  "imageEditing": {
+    "rotateClockwise": "rotate clockwise",
+    "rotateCounterClockwise": "rotate counter clockwise",
+    "title": "Edit Image"
   },
   "inputs": {
     "dateField": {
@@ -198,5 +210,8 @@
   },
   "values": {
     "none": "None"
+  },
+  "warningBar": {
+    "unsavedChanges": "Unsaved changes"
   }
 }

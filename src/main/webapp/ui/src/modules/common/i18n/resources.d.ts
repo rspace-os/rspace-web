@@ -123,6 +123,7 @@ export default interface Resources {
       "create": "Create",
       "delete": "Delete",
       "dismiss": "Dismiss",
+      "done": "Done",
       "edit": "Edit",
       "export": "Export",
       "next": "Next",
@@ -130,6 +131,7 @@ export default interface Resources {
       "retry": "Retry",
       "save": "Save",
       "search": "Search",
+      "select": "Select",
       "share": "Share",
       "sign": "Sign",
       "submit": "Submit",
@@ -141,6 +143,16 @@ export default interface Resources {
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
+    },
+    "folderSelection": {
+      "selectedFolder": "Selected folder",
+      "selectedFolderWithColon": "Selected folder:",
+      "title": "Select Folder"
+    },
+    "imageEditing": {
+      "rotateClockwise": "rotate clockwise",
+      "rotateCounterClockwise": "rotate counter clockwise",
+      "title": "Edit Image"
     },
     "inputs": {
       "dateField": {
@@ -313,6 +325,9 @@ export default interface Resources {
     },
     "values": {
       "none": "None"
+    },
+    "warningBar": {
+      "unsavedChanges": "Unsaved changes"
     }
   },
   "dashboard": {
