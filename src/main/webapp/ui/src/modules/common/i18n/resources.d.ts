@@ -572,6 +572,41 @@ export default interface Resources {
           "noSnippets": "Snippets cannot be attached to Inventory records."
         }
       },
+      "barcodes": {
+        "actions": {
+          "cannotDeleteGenerated": "Cannot delete generated barcodes",
+          "deleteAfterClicked": "Barcode will be deleted once this item is saved.",
+          "previewQrCode": "Preview as QR code",
+          "previewUnsupported": "QR code preview is not supported.",
+          "printAll": "Print All",
+          "printAllBarcodes": "Print all barcodes",
+          "printQrCode": "Print QR code",
+          "printUnsupported": "Barcode print is not supported or you do not have permission.",
+          "remove": "Remove",
+          "removeNeedsEdit": "First press Edit to remove this barcode.",
+          "save": "Save",
+          "scan": "Scan a barcode to associate.",
+          "scanNeedsEdit": "Press Edit to scan a barcode."
+        },
+        "alerts": {
+          "dataTooLong": "Data is too long.",
+          "unableToRetrieveBarcodeImage": "Unable to retrieve barcode image.",
+          "unableToRetrieveBarcodeImages": "Unable to retrieve barcode images.",
+          "unsupportedBarcode": "Unsupported barcode"
+        },
+        "columns": {
+          "actions": "Actions",
+          "description": "Description"
+        },
+        "noDescription": "No description",
+        "scannedDescription": "Scanned {format}: {value}",
+        "summary": "Scan an existing barcode and associate it with this item.",
+        "toggle": {
+          "hide": "Hide barcodes listing",
+          "none": "No current barcodes",
+          "show": "Show barcodes listing"
+        }
+      },
       "description": {
         "label": "Description",
         "maxLength": "Description must be no longer than {max} characters (including HTML tags)."
