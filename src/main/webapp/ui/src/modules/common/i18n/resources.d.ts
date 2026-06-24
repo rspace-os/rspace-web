@@ -1300,6 +1300,12 @@ export default interface Resources {
         "loading": "Loading",
         "noTemplate": "No Template"
       }
+    },
+    "tinyMceIdentifiers": {
+      "dialogTitle": "Insert Barcodes Table",
+      "insertBarcodeTable": "Insert Barcode Table",
+      "instructions": "Select from newly registered IGSN IDs or those already with linked items, and insert a table into your document, each with a QR code.",
+      "pageTitle": "Inventory Identifiers"
     }
   },
   "public": {
