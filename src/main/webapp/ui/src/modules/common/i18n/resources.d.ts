@@ -55,6 +55,28 @@ export default interface Resources {
       "queryingAria": "Please wait, querying galaxy is in progress",
       "queryingTitle": "Galaxy Query In Progress",
       "showWorkflowsAria": "Show computational workflows associated with this field"
+    },
+    "pyrat": {
+      "columnVisibility": {
+        "hideSettings": "Hide column visibility settings",
+        "label": "Column Visibility",
+        "selectVisibleColumns": "Select visible columns",
+        "showSettings": "Show column visibility settings"
+      },
+      "error": {
+        "apiVersion": "Only version 2 of the PyRAT API is supported.",
+        "badRequest": "Bad Request.",
+        "network": "Network Error. Please check your connections.",
+        "timeout": "Request timed out.",
+        "title": "Error",
+        "unauthorized": "Invalid PyRAT user or client token.",
+        "unknown": "Unknown error"
+      },
+      "filter": {
+        "hideOptions": "Hide filtering options",
+        "label": "Filter",
+        "showOptions": "Show filtering options"
+      }
     }
   },
   "common": {

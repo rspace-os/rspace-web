@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import CustomToggleButton from "../../components/CustomToggleButton";
 import CustomToggleButtonGroup from "../../components/CustomToggleButtonGroup";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
@@ -16,6 +17,7 @@ function ColumnVisibilitySettings({
   allTableHeaderCells: any;
 }) {
   const { width } = useViewportDimensions();
+  const { t } = useTranslation("apps");
 
   return (
     <CustomToggleButtonGroup
@@ -23,7 +25,7 @@ function ColumnVisibilitySettings({
       value={visibleColumnIds}
       size="small"
       onChange={(_, columns) => setVisibleColumnIds(columns)}
-      aria-label="Select visible columns"
+      aria-label={t("pyrat.columnVisibility.selectVisibleColumns")}
     >
       {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
       {allTableHeaderCells.map((cell: any) => (
