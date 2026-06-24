@@ -82,6 +82,14 @@ export default interface Resources {
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
     },
+    "inputs": {
+      "dateField": {
+        "invalidDate": "Invalid date."
+      },
+      "unitSelect": {
+        "quantityUnits": "Quantity units"
+      }
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."

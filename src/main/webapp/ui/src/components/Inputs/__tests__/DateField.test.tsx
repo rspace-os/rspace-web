@@ -13,7 +13,7 @@ describe("DateField", () => {
     render(<DateField value={null} disabled onChange={() => {}} />);
     expect(NoValue).toHaveBeenCalledWith(
       {
-        label: "None",
+        label: "values.none",
       },
       undefined,
     );
@@ -21,27 +21,27 @@ describe("DateField", () => {
 
   test("When passed an invalid date string, there is an error message shown.", () => {
     const { container } = render(<DateField value="2021-13-01" onChange={() => {}} />);
-    expect(container).toHaveTextContent("Invalid date");
+    expect(container).toHaveTextContent("inputs.dateField.invalidDate");
   });
 
   test("When passed a Date object, there is no error message shown.", () => {
     const { container } = render(<DateField value={new Date(2021, 0, 1)} onChange={() => {}} />);
-    expect(container).not.toHaveTextContent("Invalid date");
+    expect(container).not.toHaveTextContent("inputs.dateField.invalidDate");
   });
 
   test("When passed a yyyy-MM-dd date string, there is no error message shown.", () => {
     const { container } = render(<DateField value="2021-01-01" onChange={() => {}} />);
-    expect(container).not.toHaveTextContent("Invalid date");
+    expect(container).not.toHaveTextContent("inputs.dateField.invalidDate");
   });
 
   test("When passed an ISO date-time string, there is no error message shown.", () => {
     const { container } = render(<DateField value="2021-01-01T00:00:00Z" onChange={() => {}} />);
-    expect(container).not.toHaveTextContent("Invalid date");
+    expect(container).not.toHaveTextContent("inputs.dateField.invalidDate");
   });
 
   test("When passed a non-ISO date string, there is an error message shown even if the string is parseable by the Date constructor.", () => {
     const { container } = render(<DateField value={new Date(2021, 0, 1).toString()} onChange={() => {}} />);
-    expect(container).toHaveTextContent("Invalid date");
+    expect(container).toHaveTextContent("inputs.dateField.invalidDate");
   });
 
   test("When passed a placeholder and test id, they are forwarded to the rendered field.", () => {
