@@ -9,6 +9,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import TextField from "@mui/material/TextField";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
@@ -26,6 +27,7 @@ declare const getAndDisplayWorkspaceResults: any;
 declare const getValidationErrorString: any;
 
 export default function NewNotebook() {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [navigateAfterCreate, setNavigateAfterCreate] = React.useState(false);
@@ -43,7 +45,7 @@ export default function NewNotebook() {
     e.preventDefault();
 
     if (name.trim().length === 0) {
-      setError("Please enter a name");
+      setError(t("toolbar.newFolder.validation.nameRequired"));
     } else {
       setError(null);
       handleSubmit();
@@ -52,7 +54,7 @@ export default function NewNotebook() {
 
   function handleSubmit() {
     setOpen(false);
-    RS.blockPage("Creating a new folder...");
+    RS.blockPage(t("toolbar.newFolder.creating"));
 
     const bodyFormData = new FormData();
     bodyFormData.set("folderNameField", name);
@@ -95,7 +97,7 @@ export default function NewNotebook() {
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
-      <DialogTitle id="form-dialog-title">Create a folder</DialogTitle>
+      <DialogTitle id="form-dialog-title">{t("toolbar.newFolder.title")}</DialogTitle>
       <DialogContent>
         <form onSubmit={validateForm}>
           <FormControl error={error != null} fullWidth>
@@ -103,13 +105,13 @@ export default function NewNotebook() {
               variant="standard"
               inputRef={focusUsernameInputField}
               margin="dense"
-              placeholder="Enter a name, /or/a/path to create multiple folders"
+              placeholder={t("toolbar.newFolder.placeholder")}
               fullWidth
               value={name}
               onChange={(e) => setName(e.target.value)}
               data-test-id="new-folder-name"
               slotProps={{
-                htmlInput: { "aria-label": "Folder name" },
+                htmlInput: { "aria-label": t("toolbar.newFolder.nameAria") },
               }}
             />
             <FormHelperText id="component-error-text">{error}</FormHelperText>
@@ -123,20 +125,20 @@ export default function NewNotebook() {
                 color="primary"
                 data-test-id="new-folder-navigate"
                 slotProps={{
-                  input: { "aria-label": "Navgate to the created folder" },
+                  input: { "aria-label": t("toolbar.newFolder.navigateAfterCreate") },
                 }}
               />
             }
-            label="Navigate to the created folder"
+            label={t("toolbar.newFolder.navigateAfterCreate")}
           />
         </form>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)} sx={{ color: "grey" }} data-test-id="new-folder-cancel">
-          Cancel
+          {t("common:actions.cancel")}
         </Button>
         <Button onClick={validateForm} color="primary" data-test-id="new-folder-submit">
-          Create
+          {t("common:actions.create")}
         </Button>
       </DialogActions>
     </Dialog>

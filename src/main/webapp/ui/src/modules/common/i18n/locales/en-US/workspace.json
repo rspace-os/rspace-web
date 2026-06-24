@@ -169,5 +169,33 @@
         "typeLabel": "Type *"
       }
     }
+  },
+  "toolbar": {
+    "newFolder": {
+      "creating": "Creating a new folder...",
+      "nameAria": "Folder name",
+      "navigateAfterCreate": "Navigate to the created folder",
+      "placeholder": "Enter a name, /or/a/path to create multiple folders",
+      "title": "Create a folder",
+      "validation": {
+        "nameRequired": "Please enter a name"
+      }
+    },
+    "rename": {
+      "emptyName": "Empty name is not permitted.",
+      "error": "An error occurred while renaming the document.",
+      "name": "Name",
+      "success": "Successfully renamed document.",
+      "title": "Rename"
+    },
+    "simpleSearch": {
+      "scopeDialog": {
+        "instructions": "Click \"Within selected\" if you wish to search within the specified records, or \"Search everywhere\" otherwise.",
+        "searchEverywhere": "Search everywhere",
+        "selectedRecords": "You have selected the records listed below.",
+        "title": "Scope search within records",
+        "withinSelected": "Within selected"
+      }
+    }
   }
 }
