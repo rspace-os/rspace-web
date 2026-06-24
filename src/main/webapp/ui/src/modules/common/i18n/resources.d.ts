@@ -517,6 +517,64 @@ export default interface Resources {
         "templates": "Templates"
       }
     },
+    "materialsListing": {
+      "actions": {
+        "addItems": "Add items",
+        "closeQuantityEditor": "Close Quantity Editor",
+        "deleteList": "Delete List",
+        "editQuantities": "Edit Quantities",
+        "editTip": "Tip: to edit an item click its Global ID, then the Edit button in the new browser tab.",
+        "export": "Export",
+        "move": {
+          "alreadyOnBench": "All items are already on your bench.",
+          "none": "Nothing to move.",
+          "unsavedChanges": "Cannot move whilst there are unsaved changes."
+        },
+        "moveAllToBench": "Move all to my bench",
+        "viewInNewTab": "View in new tab"
+      },
+      "dialog": {
+        "creatingList": "Creating list...",
+        "emptyList": "Use \"Add items\" to add materials to this list.",
+        "exportOptions": "Export Options",
+        "helpTitle": "Info on using Lists of Materials.",
+        "newTitle": "New List of Materials (Inventory)",
+        "pickInventoryItems": "Pick Inventory Items",
+        "savingChanges": "Saving changes...",
+        "title": "List of Materials (Inventory)",
+        "updatingList": "Updating list..."
+      },
+      "launcher": {
+        "newList": "New List of Materials",
+        "showAssociatedLists": "Show list of materials associated with this field"
+      },
+      "metadata": {
+        "description": "Description",
+        "id": "ID",
+        "name": "List Name"
+      },
+      "table": {
+        "batchSelect": {
+          "all": "All",
+          "invert": "Invert",
+          "none": "None"
+        },
+        "columns": {
+          "additionalConsumedQuantity": "Additional Consumed Quantity",
+          "batchEdit": "Batch Edit",
+          "consumedQuantity": "Consumed Quantity",
+          "globalId": "Global ID",
+          "inventoryQuantity": "Inventory Quantity",
+          "location": "Location",
+          "name": "Name",
+          "owner": "Owner",
+          "updateInventoryQuantity": "Update Inventory Quantity"
+        },
+        "linkedQuantities": "Linked quantities",
+        "removeFromList": "Remove from list",
+        "subsamplesOnly": "For subsamples only"
+      }
+    },
     "permalinkNotFound": {
       "latestLink": "View the latest version",
       "typeLabels": {

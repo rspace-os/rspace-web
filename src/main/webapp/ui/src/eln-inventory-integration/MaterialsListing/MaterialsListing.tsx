@@ -15,6 +15,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
@@ -50,6 +51,7 @@ const itemTextSx = {
 const MaterialsLauncher = observer(
   ({ elnFieldId, fabRightPadding }: { elnFieldId: ElnFieldId; fabRightPadding: number }) => {
     const { materialsStore } = useStores();
+    const { t } = useTranslation("inventory");
     const { trackEvent } = React.useContext(AnalyticsContext);
 
     const [showMenu, setShowMenu] = useState(false);
@@ -99,7 +101,7 @@ const MaterialsLauncher = observer(
                   }}
                   size="medium"
                   sx={{ zIndex: "initial" }}
-                  aria-label="Show list of materials associated with this field"
+                  aria-label={t("materialsListing.launcher.showAssociatedLists")}
                   aria-haspopup="menu"
                 >
                   <FontAwesomeIcon icon={faVial} size="sm" />
@@ -208,6 +210,7 @@ type NewMaterialsListingArgs = {
 
 const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListingArgs) => {
   const { materialsStore } = useStores();
+  const { t } = useTranslation("inventory");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [showDialog, _setShowDialog] = useState(false);
   const setShowDialog = (value: boolean) => {
@@ -234,7 +237,7 @@ const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListingArgs) =
                   materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));
                 }}
               >
-                New List of Materials
+                {t("materialsListing.launcher.newList")}
               </button>
               <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
                 <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
