@@ -1042,6 +1042,15 @@ export default interface Resources {
         "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
       }
     },
+    "recordTree": {
+      "navigateToContainer": "Navigate to container"
+    },
+    "recordsTable": {
+      "columns": {
+        "globalId": "Global ID",
+        "name": "Name"
+      }
+    },
     "sample": {
       "fields": {
         "expiryDate": {
@@ -1167,6 +1176,15 @@ export default interface Resources {
           "none": "None",
           "notMine": "Not Mine"
         }
+      },
+      "savedList": {
+        "deleteAria": "delete saved item",
+        "deleteBasket": "Delete Basket",
+        "deleteSavedSearch": "Delete Saved Search",
+        "editAria": "edit saved item",
+        "editName": "Edit name",
+        "noBaskets": "There are no Baskets yet. To create one: select some results and then 'Add to Basket'.",
+        "noSavedSearches": "There are no Saved Searches yet."
       }
     },
     "subsample": {
