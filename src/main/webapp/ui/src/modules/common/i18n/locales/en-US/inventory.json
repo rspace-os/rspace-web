@@ -31,6 +31,22 @@
     "noResults": {
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
+    },
+    "resultsTable": {
+      "actionInProgress": "Action In Progress",
+      "allRows": "{count} (All)",
+      "ariaLabel": "Search results",
+      "select": "Select",
+      "selectAll": "Select all",
+      "selection": {
+        "all": "All",
+        "current": "Current",
+        "inTrash": "In Trash",
+        "invert": "Invert",
+        "mine": "Mine",
+        "none": "None",
+        "notMine": "Not Mine"
+      }
     }
   }
 }

@@ -181,7 +181,7 @@ describe("Results Table", () => {
       setSearchResults(search, allowedContainer, disallowedContainer);
       renderResultsTable(search);
 
-      await user.click(screen.getByRole("button", { name: /select all/i }));
+      await user.click(screen.getByRole("button", { name: "search.resultsTable.selectAll" }));
 
       expect(allowedContainer.selected).toBe(true);
       expect(disallowedContainer.selected).toBe(false);
@@ -215,7 +215,7 @@ describe("Results Table", () => {
       renderResultsTable(search);
 
       await user.click(screen.getByLabelText(/more selection options/i));
-      await user.click(await screen.findByText("Invert"));
+      await user.click(await screen.findByText("search.resultsTable.selection.invert"));
 
       expect(allowedContainer.selected).toBe(false);
       expect(disallowedContainer.selected).toBe(false);
