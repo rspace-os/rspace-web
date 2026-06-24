@@ -62,6 +62,7 @@ after all modules are done. Defer when a string:
 | groups | CreateGroup/CreateGroupStep2.tsx | "Nominate a PI … `<br/>` `<em>`Note: group wont be created until PI accepts invitation`</em>`" radio label | inline `<br/>` + `<em>` |
 | workspace | Export/fileStoreComponents/FileFilters.tsx | "Filestore files larger than `<strong>`{n} MB`</strong>` … apart from the following `<strong>`{exts}`</strong>`" summary `<p>` | inline `<strong>` + conditional `<span>` with interpolated values |
 | workspace | Export/fileStoreComponents/LinkAvailabilityScan.tsx | scan-results summary `<p>` ("Export will include `<strong>`{n} filestore file(s)`</strong>` …", skipped-count, "Please check the scan results…") | nested conditional `<span>`/`<strong>` with interpolation + pluralization |
+| workspace | Export/repositories/Tags.tsx | "Add tags from controlled vocabularies … see `<a>`Tagging Documents and using Controlled Vocabularies`</a>`." help text | inline `<a>` link mid-sentence + apostrophes |
 
 > When the `system-ror` markup above is completed in review, also add
 > `src/system-ror/**` to the `noJsxLiterals` override in `biome.jsonc` (the

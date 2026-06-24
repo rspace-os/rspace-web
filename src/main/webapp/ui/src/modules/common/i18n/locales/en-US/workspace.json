@@ -126,6 +126,10 @@
         "subjectHelper": "Please select your subject",
         "subjectLabel": "Subject *",
         "titleHelper": "Please choose a title, >3 symbols"
+      },
+      "tags": {
+        "clearButton": "Clear Tags",
+        "label": "Tags and Controlled Vocabulary Terms"
       }
     }
   }

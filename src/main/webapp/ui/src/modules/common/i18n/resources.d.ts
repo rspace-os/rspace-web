@@ -63,6 +63,9 @@ export default interface Resources {
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
+    },
+    "values": {
+      "none": "None"
     }
   },
   "dashboard": {
@@ -353,6 +356,10 @@ export default interface Resources {
           "subjectHelper": "Please select your subject",
           "subjectLabel": "Subject *",
           "titleHelper": "Please choose a title, >3 symbols"
+        },
+        "tags": {
+          "clearButton": "Clear Tags",
+          "label": "Tags and Controlled Vocabulary Terms"
         }
       }
     }

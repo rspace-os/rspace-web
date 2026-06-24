@@ -8,5 +8,8 @@
   },
   "confirmationDialog": {
     "inputMismatch": "Input does not match confirmation text"
+  },
+  "values": {
+    "none": "None"
   }
 }

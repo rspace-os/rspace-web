@@ -5,6 +5,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import { color, currentPage } from "@/util/pageBranding";
@@ -33,6 +34,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
   fieldOwner: FieldOwner;
   loading: boolean;
 }): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   /*
    * InputWrapper assumes that it is being used on a page with an accented theme,
    * but the export dialog isn't always on such a page, so we need to provide
@@ -49,7 +51,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
           error={false}
           disabled={!fieldOwner.isFieldEditable("tags")}
           value={fieldOwner.fieldValues.tags.map((t) => t.value).join(",")}
-          label="Tags and Controlled Vocabulary Terms"
+          label={t("export.repositories.tags.label")}
           helperText={null}
           actions={
             <Button
@@ -59,7 +61,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
               sx={{ py: 0 }}
               disabled={fieldOwner.fieldValues.tags.length === 0}
             >
-              Clear Tags
+              {t("export.repositories.tags.clearButton")}
             </Button>
           }
         >
@@ -72,7 +74,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
             .
           </FormHelperText>
           {fieldOwner.fieldValues.tags.length === 0 && !fieldOwner.isFieldEditable("tags") && (
-            <NoValue label={fieldOwner.noValueLabel.tags ?? "None"} />
+            <NoValue label={fieldOwner.noValueLabel.tags ?? t("common:values.none")} />
           )}
           <TagListing
             tags={fieldOwner.fieldValues.tags.map((tag) => ({
