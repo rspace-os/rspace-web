@@ -24,6 +24,7 @@ import Tooltip from "@mui/material/Tooltip";
 import EmailValidator from "email-validator";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { Person } from "./repositories/common";
 
@@ -32,6 +33,9 @@ const VALIDATIONS = {
   emailCheck: false,
   typeCheck: false,
 };
+
+const personTypeTranslationKey = (type: Person["type"]) =>
+  type === "Author" ? "export.repositories.user.author" : "export.repositories.user.contact";
 
 function AdditionalUserDialog({
   onAddUser,
@@ -42,6 +46,7 @@ function AdditionalUserDialog({
   onClose: () => void;
   open: boolean;
 }) {
+  const { t } = useTranslation(["workspace", "common"]);
   const [contactsName, setContactsName] = useState("");
   const [contactsType, setContactsType] = useState<"" | "Author" | "Contact">("");
   const [contactsEmail, setContactsEmail] = useState("");
@@ -91,14 +96,14 @@ function AdditionalUserDialog({
 
   return (
     <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open} maxWidth={"md"}>
-      <DialogTitle>Add new person</DialogTitle>
+      <DialogTitle>{t("export.repositories.user.addDialogTitle")}</DialogTitle>
       <DialogContent>
         <FormControl error aria-describedby="name-error-text" fullWidth>
           <TextField
             variant="standard"
             error={addPersonDialogSubmitAttempt && !validations.nameCheck}
             name="contactsName"
-            label="Name *"
+            label={t("export.repositories.user.nameLabel")}
             value={contactsName}
             onChange={({ target: { value } }) => setContactsName(value)}
             margin="normal"
@@ -110,7 +115,7 @@ function AdditionalUserDialog({
             variant="standard"
             error={addPersonDialogSubmitAttempt && !validations.emailCheck}
             name="contactsEmail"
-            label="Email *"
+            label={t("export.repositories.user.emailLabel")}
             value={contactsEmail}
             onChange={({ target: { value } }) => setContactsEmail(value)}
             margin="normal"
@@ -123,7 +128,7 @@ function AdditionalUserDialog({
             error={addPersonDialogSubmitAttempt && !validations.typeCheck}
             name="contactsType"
             select
-            label="Type *"
+            label={t("export.repositories.user.typeLabel")}
             value={contactsType}
             onChange={({ target: { value } }) => {
               if (value === "" || value === "Author" || value === "Contact") {
@@ -136,20 +141,20 @@ function AdditionalUserDialog({
             data-test-id="user-type"
           >
             <MenuItem value="Author" data-test-id="user-type-author">
-              Author
+              {t("export.repositories.user.author")}
             </MenuItem>
             <MenuItem value="Contact" data-test-id="user-type-contact">
-              Contact
+              {t("export.repositories.user.contact")}
             </MenuItem>
           </TextField>
         </FormControl>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary" data-test-id="button-cancel">
-          Cancel
+          {t("common:actions.cancel")}
         </Button>
         <Button onClick={handleAddPerson} color="primary" data-test-id="button-add">
-          Add
+          {t("common:actions.add")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -181,6 +186,7 @@ export default function ExportRepoUser({
   initialPeople,
   updatePeople,
 }: ExportRepoUserArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState(initialPeople);
 
@@ -215,15 +221,15 @@ export default function ExportRepoUser({
               error={exportDialogSubmitAttempt && (!inputValidations.author || !inputValidations.contact)}
               component="legend"
             >
-              People
+              {t("export.repositories.user.peopleLabel")}
             </FormLabel>
             <FormHelperText
               error={exportDialogSubmitAttempt && (!inputValidations.author || !inputValidations.contact)}
             >
-              Add author(s) AND contact(s) to your repository export.
+              {t("export.repositories.user.peopleHelper")}
             </FormHelperText>
           </Grid>
-          <Tooltip title="Add author/contact" sx={{ flexGrow: 0, width: "auto" }}>
+          <Tooltip title={t("export.repositories.user.addTooltip")} sx={{ flexGrow: 0, width: "auto" }}>
             <IconButton onClick={() => setOpen(true)} data-test-id="add-user">
               <FontAwesomeIcon icon={faUserPlus} />
             </IconButton>
@@ -247,10 +253,13 @@ export default function ExportRepoUser({
                   <Account />
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary={`${option.uniqueName} - ${option.type}`} secondary={option.email} />
+              <ListItemText
+                primary={`${option.uniqueName} - ${t(personTypeTranslationKey(option.type))}`}
+                secondary={option.email}
+              />
               <ListItemSecondaryAction>
                 <IconButton
-                  aria-label="Delete"
+                  aria-label={t("common:actions.delete")}
                   onClick={() => handleDeletePerson(index)}
                   data-test-id="button-delete-user"
                 >

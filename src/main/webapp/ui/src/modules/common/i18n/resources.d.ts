@@ -55,9 +55,11 @@ export default interface Resources {
   },
   "common": {
     "actions": {
+      "add": "Add",
       "cancel": "Cancel",
       "close": "Close",
       "confirm": "Confirm",
+      "delete": "Delete",
       "ok": "OK",
       "submit": "Submit"
     },
@@ -367,6 +369,17 @@ export default interface Resources {
         "tags": {
           "clearButton": "Clear Tags",
           "label": "Tags and Controlled Vocabulary Terms"
+        },
+        "user": {
+          "addDialogTitle": "Add new person",
+          "addTooltip": "Add author/contact",
+          "author": "Author",
+          "contact": "Contact",
+          "emailLabel": "Email *",
+          "nameLabel": "Name *",
+          "peopleHelper": "Add author(s) AND contact(s) to your repository export.",
+          "peopleLabel": "People",
+          "typeLabel": "Type *"
         }
       }
     }
