@@ -346,6 +346,8 @@ export default interface Resources {
         }
       },
       "repositories": {
+        "choiceAriaLabel": "Repository choice",
+        "choiceLabel": "Please choose one of your configured repositories to submit your export to:",
         "common": {
           "descriptionLabel": "Description *",
           "titleLabel": "Title *"
@@ -359,6 +361,10 @@ export default interface Resources {
           "subjectHelper": "Please select your subject",
           "subjectLabel": "Subject *",
           "titleHelper": "Please choose a title, >3 symbols"
+        },
+        "dmp": {
+          "associateLabel": "Associate export with a Data Management Plans (DMPs)",
+          "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
         },
         "dryad": {
           "abstractHelper": "Please add a relevant abstract for your export",
