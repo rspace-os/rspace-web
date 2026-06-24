@@ -11,6 +11,7 @@ import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 
 import NewFolder from "./Workspace/Misc/NewFolder";
@@ -35,6 +36,7 @@ type CreateMenuProps = {
 };
 
 export default function CreateMenu(props: CreateMenuProps) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [dynamicItems, setDynamicItems] = React.useState<Array<DynamicMenuItem>>([]);
@@ -71,9 +73,9 @@ export default function CreateMenu(props: CreateMenuProps) {
           fontWeight: "normal",
           borderColor: "white",
         }}
-        aria-label="Create a record"
+        aria-label={t("toolbar.createRecord")}
       >
-        Create
+        {t("actions.create")}
       </Button>
       <Menu
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
@@ -85,25 +87,25 @@ export default function CreateMenu(props: CreateMenuProps) {
       >
         <MenuItem id="createEntry" data-test-id="create-btn-new-entry">
           <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} aria-hidden="true" />
-          New entry
+          {t("toolbar.newEntry")}
         </MenuItem>
         <MenuItem id="createFolder" data-test-id="create-btn-folder">
           <Box
             component="img"
             src="/images/icons/folder.png"
-            alt="Folder icon"
+            alt={t("toolbar.folderIcon")}
             sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
-          Folder
+          {t("toolbar.folder")}
         </MenuItem>
         <MenuItem data-test-id="create-btn-notebook" id="createNotebook">
           <Box
             component="img"
             src="/images/icons/notebook.png"
-            alt="Notebook Icon"
+            alt={t("toolbar.notebookIcon")}
             sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
-          Notebook
+          {t("toolbar.notebook")}
         </MenuItem>
         <Divider className="createMenuItemDivider" />
         {dynamicItems.map((entry) => (
@@ -115,7 +117,7 @@ export default function CreateMenu(props: CreateMenuProps) {
             <Box
               component="img"
               src={entry.iconURL}
-              alt="Folder icon"
+              alt={t("toolbar.folderIcon")}
               sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
             />
             {entry.name}
@@ -125,7 +127,7 @@ export default function CreateMenu(props: CreateMenuProps) {
         {dynamicItems.length > 0 && (
           <MenuItem id="templateMenuLnk" data-test-id="create-btn-from-form">
             <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} aria-hidden="true" />
-            From Form
+            {t("toolbar.fromForm")}
           </MenuItem>
         )}
         <MenuItem id="createFromTemplate" data-test-id="create-btn-template">
@@ -146,18 +148,18 @@ export default function CreateMenu(props: CreateMenuProps) {
               T
             </Box>
           </Box>
-          From Template
+          {t("toolbar.fromTemplate")}
         </MenuItem>
         {props.asposeEnabled && (
           <MenuItem id="createFromWord" data-test-id="create-btn-word">
             <FontAwesomeIcon icon={faFileWord} style={{ paddingRight: "10px" }} aria-hidden="true" />
-            From Word
+            {t("toolbar.fromWord")}
           </MenuItem>
         )}
         {props.evernoteEnabled && (
           <MenuItem id="createFromEvernote" data-test-id="create-btn-evernote">
             <FontAwesomeIcon icon={faEvernote} style={{ paddingRight: "10px" }} aria-hidden="true" />
-            From Evernote
+            {t("toolbar.fromEvernote")}
           </MenuItem>
         )}
         {props.pioEnabled && (
@@ -165,16 +167,16 @@ export default function CreateMenu(props: CreateMenuProps) {
             <Box
               component="img"
               src="/images/integrations/protocolsio.png"
-              alt="Protocols.io Icon"
+              alt={t("toolbar.protocolsIoIcon")}
               sx={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
-            From Protocols.io
+            {t("toolbar.fromProtocolsIo")}
           </MenuItem>
         )}
         <Divider className="createMenuItemDivider" />
         <MenuItem id="createNewForm" data-test-id="create-btn-new-form">
           <FontAwesomeIcon icon={faFileAlt} style={{ paddingRight: "10px" }} aria-hidden="true" />
-          New Form
+          {t("toolbar.newForm")}
         </MenuItem>
       </Menu>
       <NewFolder />
