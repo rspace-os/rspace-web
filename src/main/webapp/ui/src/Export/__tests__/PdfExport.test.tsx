@@ -31,7 +31,7 @@ describe("PdfExport", () => {
         }}
       />,
     );
-    fireEvent.click(screen.getByRole("checkbox", { name: "Include provenance information" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "export.format.pdf.checkboxes.provenance" }));
     expect(updateExportDetails).toHaveBeenCalledWith("provenance", true);
   });
 });

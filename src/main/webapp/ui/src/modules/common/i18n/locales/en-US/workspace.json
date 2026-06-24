@@ -56,6 +56,30 @@
         "foldersNote": "Linked folders and notebooks are never included",
         "includeLinksLabel": "Should linked RSpace documents be included in export?"
       },
+      "pdf": {
+        "checkboxes": {
+          "annotations": "Include image annotations",
+          "comments": "Include comments",
+          "footerEndOnly": "Insert date footer at file end only",
+          "lastModified": "Include last modified dates for fields",
+          "provenance": "Include provenance information",
+          "restartPageNumbers": "Restart page numbering for each document"
+        },
+        "dateFooterLabel": "Date on page footer",
+        "dateType": {
+          "created": "Created",
+          "exported": "Exported",
+          "lastModified": "Last modified date"
+        },
+        "nameHelper": "Name your file",
+        "nameLabel": "File name *",
+        "pageFormatLabel": "Page format: ",
+        "pageSize": {
+          "a4": "A4",
+          "letter": "Letter"
+        },
+        "setDefault": "Set {pageSize} as default"
+      },
       "word": {
         "nameLabel": "Name your file",
         "pageFormatLabel": "Page format: ",

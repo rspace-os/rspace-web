@@ -281,7 +281,7 @@ describe("ExportDialog", () => {
       await user.click(screen.getByRole("checkbox", { name: /Export to a repository/ }));
 
       await user.click(screen.getByRole("button", { name: /Next/ }));
-      await screen.findByRole("textbox", { name: /File name/ });
+      await screen.findByRole("textbox", { name: "export.format.pdf.nameLabel" });
       await user.click(screen.getByRole("button", { name: /Next/ }));
       await screen.findByRole("radio", { name: /Zenodo/ });
       expect(await screen.findByRole("button", { name: /BT-20/ })).toBeVisible();
