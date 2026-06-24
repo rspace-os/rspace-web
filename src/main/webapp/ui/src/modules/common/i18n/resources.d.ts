@@ -108,7 +108,9 @@ export default interface Resources {
         "autosharing": {
           "disabled": "Disabled",
           "enabled": "Enabled",
-          "notApplicable": "n/a"
+          "inProgress": "Autosharing is in progress",
+          "notApplicable": "n/a",
+          "onlyLabGroups": "Autosharing is only possible for LabGroups"
         },
         "table": {
           "actions": "Actions",
