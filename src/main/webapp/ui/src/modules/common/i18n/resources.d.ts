@@ -28,6 +28,10 @@ export default interface Resources {
 
   },
   "apps": {
+    "disconnect": {
+      "error": "Could not disconnect from {appName}.",
+      "success": "Successfully disconnected from {appName}."
+    },
     "externalWorkflows": {
       "columns": {
         "container": "Container/Galaxy History",

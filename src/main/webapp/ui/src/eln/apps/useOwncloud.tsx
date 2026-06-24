@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -7,7 +8,9 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 export function useOwncloudEndpoint(): {
   disconnect: () => Promise<void>;
 } {
+  const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
+  const appName = "OwnCloud";
   const api = axios.create({
     baseURL: "/apps/owncloud",
     timeout: ONE_MINUTE_IN_MS,
@@ -19,7 +22,7 @@ export function useOwncloudEndpoint(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully disconnected from OwnCloud.",
+          message: t("disconnect.success", { appName }),
         }),
       );
     } catch (e) {
@@ -27,7 +30,7 @@ export function useOwncloudEndpoint(): {
       addAlert(
         mkAlert({
           variant: "error",
-          message: "Could not disconnect from OwnCloud.",
+          message: t("disconnect.error", { appName }),
         }),
       );
     }

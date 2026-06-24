@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -7,7 +8,9 @@ const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 export function useFigshareEndpoint(): {
   disconnect: () => Promise<void>;
 } {
+  const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
+  const appName = "Figshare";
   const api = axios.create({
     baseURL: "/apps/figshare",
     timeout: ONE_MINUTE_IN_MS,
@@ -19,7 +22,7 @@ export function useFigshareEndpoint(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully disconnected from Figshare.",
+          message: t("disconnect.success", { appName }),
         }),
       );
     } catch (e) {
@@ -27,7 +30,7 @@ export function useFigshareEndpoint(): {
       addAlert(
         mkAlert({
           variant: "error",
-          message: "Could not disconnect from Figshare.",
+          message: t("disconnect.error", { appName }),
         }),
       );
     }
