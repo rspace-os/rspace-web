@@ -1,10 +1,13 @@
 {
   "actions": {
     "add": "Add",
+    "back": "Back",
     "cancel": "Cancel",
     "close": "Close",
     "confirm": "Confirm",
     "delete": "Delete",
+    "export": "Export",
+    "next": "Next",
     "ok": "OK",
     "submit": "Submit"
   },

@@ -1,5 +1,18 @@
 {
   "export": {
+    "dialog": {
+      "defaultExportName": {
+        "exportData": "Export Data",
+        "groupAllWork": "{groupName} - all work",
+        "userAllWork": "{username} - all work"
+      },
+      "panes": {
+        "export": "Export",
+        "filestoreExportConfiguration": "Filestore Links Export Configuration",
+        "raid": "RAiD",
+        "setupRepository": "Setup Repository"
+      }
+    },
     "fileStore": {
       "filters": {
         "changeButton": "Change file filtering options",

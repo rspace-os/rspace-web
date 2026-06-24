@@ -56,10 +56,13 @@ export default interface Resources {
   "common": {
     "actions": {
       "add": "Add",
+      "back": "Back",
       "cancel": "Cancel",
       "close": "Close",
       "confirm": "Confirm",
       "delete": "Delete",
+      "export": "Export",
+      "next": "Next",
       "ok": "OK",
       "submit": "Submit"
     },
@@ -232,6 +235,19 @@ export default interface Resources {
   },
   "workspace": {
     "export": {
+      "dialog": {
+        "defaultExportName": {
+          "exportData": "Export Data",
+          "groupAllWork": "{groupName} - all work",
+          "userAllWork": "{username} - all work"
+        },
+        "panes": {
+          "export": "Export",
+          "filestoreExportConfiguration": "Filestore Links Export Configuration",
+          "raid": "RAiD",
+          "setupRepository": "Setup Repository"
+        }
+      },
       "fileStore": {
         "filters": {
           "changeButton": "Change file filtering options",
