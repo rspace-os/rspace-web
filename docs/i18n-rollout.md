@@ -29,6 +29,12 @@ For each module (namespace), in order:
 5. Gate green: `pnpm run tsc`, `pnpm run lint`, `pnpm run i18n:check`,
    relevant tests. Commit the module.
 
+> **Shared components ripple.** If a converted component is imported by other
+> modules (e.g. a shared `ErrorView`), every consumer's tests that asserted on
+> its English now see keys. `rg` the importers and update their assertions in
+> the same commit, and run the full suite (not just the module's test) before
+> committing.
+
 ## Deferred for human review (non-trivial / markup)
 
 Anything that is NOT a standalone string is **deferred** — do not convert it
