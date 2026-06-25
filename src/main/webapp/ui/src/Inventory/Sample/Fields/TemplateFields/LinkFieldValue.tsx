@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import type { Field, FieldLink } from "../../../../stores/definitions/Field";
 import { DATACITE_RELATION_TYPES } from "../../../components/Fields/Link/dataciteRelationTypes";
@@ -34,6 +35,7 @@ type LinkFieldValueArgs = {
  * {@link LinkEditor}.
  */
 function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkFieldValueArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const committedRelationType = field.link?.relationType ?? "";
   const committedTargetGlobalId = field.link?.targetGlobalId ?? "";
   const committedVersionPin = field.link?.versionPin ?? null;
@@ -209,23 +211,23 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
           color="callToAction"
           disableElevation
           variant="contained"
-          aria-label="Apply link"
+          aria-label={t("sample.fields.linkFieldValue.applyAriaLabel")}
           onClick={() => {
             void apply();
           }}
           disabled={!canApply}
           data-test-id="ApplyLinkButton"
         >
-          Apply
+          {t("sample.fields.linkFieldValue.apply")}
         </Button>
         <Button
           variant="text"
-          aria-label="Discard link changes"
+          aria-label={t("sample.fields.linkFieldValue.discardAriaLabel")}
           onClick={discard}
           disabled={!changed && !hasLink}
           data-test-id="DiscardLinkButton"
         >
-          Discard
+          {t("sample.fields.linkFieldValue.discard")}
         </Button>
       </Stack>
     </Box>

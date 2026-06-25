@@ -126,12 +126,14 @@ describe("LinkFieldValue", () => {
 
     // a committed link renders via the shared LinkField card, not the inline editor
     expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /apply link/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
 
     // the editor is now shown
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
   });
 
   it("commits the staged link to the field model on Apply", async () => {
@@ -155,7 +157,7 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByRole("button", { name: /edit link/i }));
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
-    await user.click(screen.getByRole("button", { name: /apply link/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
 
     expect(setAttributesDirty).toHaveBeenCalledWith({
       link: {
@@ -180,7 +182,7 @@ describe("LinkFieldValue", () => {
     await user.type(screen.getByRole("textbox", { name: /target global id/i }), "SS33");
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "References" }));
-    await user.click(screen.getByRole("button", { name: /apply link/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
 
     expect(setAttributesDirty).toHaveBeenCalledWith({
       link: {
@@ -209,7 +211,7 @@ describe("LinkFieldValue", () => {
     expect(
       screen.getByText(/target must be an inventory item or an eln document, notebook or gallery file/i),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeDisabled();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 
@@ -238,7 +240,7 @@ describe("LinkFieldValue", () => {
     expect(setLinkEditInProgress).toHaveBeenLastCalledWith(true);
 
     // discarding restores the committed link and clears the flag
-    await user.click(screen.getByRole("button", { name: /discard link/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.discardAriaLabel/i }));
     expect(setLinkEditInProgress).toHaveBeenLastCalledWith(false);
   });
 
@@ -289,7 +291,7 @@ describe("LinkFieldValue", () => {
     });
 
     // the editor is shown without any user interaction
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
     expect(setLinkEditInProgress).not.toHaveBeenCalledWith(true);
   });
 
@@ -313,7 +315,7 @@ describe("LinkFieldValue", () => {
     });
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
 
     // record switches to view mode while the editor is still open
     rerender(
@@ -374,7 +376,7 @@ describe("LinkFieldValue", () => {
       onChange: () => {},
     });
 
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
     expect(screen.getByText("Parent sample")).toBeInTheDocument();
   });
 
@@ -400,7 +402,7 @@ describe("LinkFieldValue", () => {
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
 
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
     expect(screen.getByText("Parent sample")).toBeInTheDocument();
   });
 
@@ -461,7 +463,7 @@ describe("LinkFieldValue", () => {
     await user.type(screen.getByRole("textbox", { name: /target global id/i }), "SS9999");
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "References" }));
-    await user.click(screen.getByRole("button", { name: /apply link/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
 
     expect(
       await screen.findByText(/SS9999 does not exist, or you do not have permission to view it/i),
@@ -493,7 +495,7 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
 
     expect(screen.getByText("An item cannot link to itself.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeDisabled();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 });
@@ -531,7 +533,7 @@ describe("LinkFieldValue version pin is edited in the editor and committed on Ap
     const setAttributesDirty = field.setAttributesDirty;
     expect(vi.mocked(setAttributesDirty)).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: /apply link/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
 
     expect(vi.mocked(setAttributesDirty)).toHaveBeenCalledWith({
       link: {

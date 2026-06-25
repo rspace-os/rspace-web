@@ -2617,6 +2617,26 @@ export default interface Resources {
           "expiredWarning": "This sample has expired.",
           "label": "Expiry Date"
         },
+        "linkFieldValue": {
+          "apply": "Apply",
+          "applyAriaLabel": "Apply link",
+          "discard": "Discard",
+          "discardAriaLabel": "Discard link changes"
+        },
+        "numberOfSubsamples": {
+          "count": "Number of {plural}",
+          "errorMessage": "Must be an integer value of at least {min} and no more than {max}.",
+          "fixedExplanation": "You can create and move additional subsamples into the container once the sample is created.",
+          "many": {
+            "explanation": "The sample is made up of <strong>multiple subsamples</strong>, which represent related physical items originating from the same source. Sample actions affect the entire group of subsamples.",
+            "heading": "Sample with subsamples"
+          },
+          "singular": {
+            "explanation": "The sample is made up of <strong>one subsample</strong>, representing the physical location of the sample. Sample actions are equivalent to subsample actions.",
+            "heading": "Individual Sample"
+          },
+          "type": "Type"
+        },
         "source": {
           "label": "Source",
           "options": {
@@ -2643,6 +2663,15 @@ export default interface Resources {
           },
           "specify": "Specify",
           "unit": "Unit"
+        },
+        "template": {
+          "alertExpand": "Expand to select a template.",
+          "alertSelect": "Select a template from the list below.",
+          "couldNotFetchError": "Could not fetch template details.",
+          "explanationCreate": "See the documentation for information on <a>how to create custom templates</a>.",
+          "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a>(Learn more about sample templates)</a>",
+          "label": "Sample Template",
+          "noTemplate": "No template"
         }
       }
     },

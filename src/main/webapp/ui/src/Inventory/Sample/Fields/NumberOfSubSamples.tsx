@@ -3,6 +3,7 @@ import { textFieldClasses } from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import NumberField from "../../../components/Inputs/NumberField";
 import RadioField, { OptionExplanation, OptionHeading } from "../../../components/Inputs/RadioField";
 import type SampleModel from "../../../stores/models/SampleModel";
@@ -18,6 +19,7 @@ type NumberOfSubSamplesArgs = {
 };
 
 function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   /*
    * When tapping the "Create" context button for a container, the user has the
    * option to create a sample with respect to the container. The user can
@@ -52,12 +54,12 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
     }
   };
 
-  const errorMessage = valid ? "" : `Must be an integer value of at least ${MIN} and no more than ${MAX}.`;
+  const errorMessage = valid ? "" : t("sample.fields.numberOfSubsamples.errorMessage", { min: MIN, max: MAX });
 
   return (
     <>
       <FormField
-        label="Type"
+        label={t("sample.fields.numberOfSubsamples.type")}
         value={type}
         doNotAttachIdToLabel
         asFieldset
@@ -82,10 +84,13 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
                 value: "SINGULAR",
                 label: (
                   <>
-                    <OptionHeading>Individual Sample</OptionHeading>
+                    <OptionHeading>{t("sample.fields.numberOfSubsamples.singular.heading")}</OptionHeading>
                     <OptionExplanation>
-                      The sample is made up of <strong>one subsample</strong>, representing the physical location of the
-                      sample. Sample actions are equivalent to subsample actions.
+                      <Trans
+                        ns="inventory"
+                        i18nKey="sample.fields.numberOfSubsamples.singular.explanation"
+                        components={{ strong: <strong /> }}
+                      />
                     </OptionExplanation>
                   </>
                 ),
@@ -94,10 +99,13 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
                 value: "MANY",
                 label: (
                   <>
-                    <OptionHeading>Sample with subsamples</OptionHeading>
+                    <OptionHeading>{t("sample.fields.numberOfSubsamples.many.heading")}</OptionHeading>
                     <OptionExplanation>
-                      The sample is made up of <strong>multiple subsamples</strong>, which represent related physical
-                      items originating from the same source. Sample actions affect the entire group of subsamples.
+                      <Trans
+                        ns="inventory"
+                        i18nKey="sample.fields.numberOfSubsamples.many.explanation"
+                        components={{ strong: <strong /> }}
+                      />
                     </OptionExplanation>
                   </>
                 ),
@@ -119,12 +127,8 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
         >
           <FormField
             helperText={errorMessage}
-            explanation={
-              fixedNumberOfSubSamples
-                ? "You can create and move additional subsamples into the container once the sample is created."
-                : ""
-            }
-            label={`Number of ${sample.subSampleAlias.plural}`}
+            explanation={fixedNumberOfSubSamples ? t("sample.fields.numberOfSubsamples.fixedExplanation") : ""}
+            label={t("sample.fields.numberOfSubsamples.count", { plural: sample.subSampleAlias.plural })}
             error={!valid}
             value={count}
             disabled={fixedNumberOfSubSamples}
