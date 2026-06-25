@@ -23,8 +23,8 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={sample1} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("Required Identifier Properties");
-      expect(container).toHaveTextContent("Recommended Identifier Properties");
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
     });
   });
   describe("When an identifier exists for container", () => {

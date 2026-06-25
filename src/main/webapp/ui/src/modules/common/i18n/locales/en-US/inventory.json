@@ -235,6 +235,24 @@
       }
     },
     "identifiers": {
+      "assignDialog": {
+        "alreadyAssigned": "The selected IGSN ID is already assigned to another item.",
+        "cancel": "Cancel",
+        "link": "Link",
+        "noIgsnSelected": "No IGSN ID selected.",
+        "selectExisting": "Select an existing IGSN ID to link to this item.",
+        "title": "Link existing IGSN ID",
+        "undoWarning": "Once an IGSN ID has been associated with an item, it cannot be later re-associated with a different Inventory item; a new IGSN ID will have to be created instead.",
+        "undoWarningFormatted": "<strong>This action cannot be undone!</strong> Once an IGSN ID has been associated with an item, it cannot be later re-associated with a different Inventory item; a new IGSN ID will have to be created instead."
+      },
+      "card": {
+        "createNew": "Create new IGSN ID",
+        "linkExisting": "Link existing IGSN ID",
+        "notCreatedYet": "This item has not been created yet. Please save the item first."
+      },
+      "formField": {
+        "explanation": "See the Documentation for information on <a>adding and publishing identifiers</a>."
+      },
       "geoLocationField": {
         "addValueToPublish": "Add value to enable publishing.",
         "alert": "At least one of four elements must be completed (Point, Place, Box, Polygon). Point, Box and Polygon cannot be completed partially.",
@@ -269,6 +287,41 @@
           "view": "View Polygon"
         }
       },
+      "list": {
+        "deleteOrRetract": {
+          "delete": "Delete",
+          "retract": "Retract"
+        },
+        "editFirst": "To update any details, press Edit first.",
+        "headers": {
+          "identifier": "Identifier",
+          "state": "State",
+          "type": "Type"
+        },
+        "hide": "Hide",
+        "igsnDocLink": "See IGSN Documentation for details",
+        "preview": "Preview",
+        "rorError": "Could not get RoR data.",
+        "show": "Show",
+        "stateInfo": {
+          "draft": "This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.",
+          "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <a>RSpace landing page</a>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+          "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <a>RSpace landing page</a>, DataCite Commons or the Public API, but is available through the Members API."
+        },
+        "toggleId": {
+          "ariaLabel": "Toggle identifier details",
+          "hide": "Hide identifier's details",
+          "show": "Show identifier's details"
+        },
+        "tooltips": {
+          "deleteDraft": "Delete Draft",
+          "missingData": "Some missing data",
+          "notPublished": "Not published yet",
+          "previewPage": "Preview Landing Page",
+          "retract": "Retract"
+        }
+      },
+      "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
       "polygonDialog": {
         "close": "Close",
         "title": "Geolocation Polygon"
@@ -278,6 +331,30 @@
         "helpTitle": "Info on handling Identifiers.",
         "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
         "title": "Review your page before publishing"
+      },
+      "wrapper": {
+        "enterValue": "Enter value for {key}",
+        "fieldInvalid": "In order to publish the identifier, a valid value is required.",
+        "inventoryFields": {
+          "alert": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the IGSN schema. <strong>Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.</strong>",
+          "customFields": "Custom Fields",
+          "description": "Description",
+          "extraFields": "Extra Fields",
+          "followingFields": "The following fields will be included:",
+          "includeOnPage": "Include Inventory fields on landing page",
+          "tags": "Tags",
+          "title": "Inventory Fields"
+        },
+        "none": "None",
+        "recommended": {
+          "ariaLabel": "Toggle recommended fields section",
+          "hide": "Hide recommended fields section",
+          "show": "Show recommended fields section",
+          "title": "Recommended Identifier Properties"
+        },
+        "required": {
+          "title": "Required Identifier Properties"
+        }
       }
     },
     "location": {
