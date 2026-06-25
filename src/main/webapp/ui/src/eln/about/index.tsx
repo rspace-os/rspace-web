@@ -24,6 +24,12 @@ window.addEventListener("load", () => {
     return;
   }
 
+  // Already mounted (the load handler can run more than once in dev). Bail to
+  // avoid re-attaching a shadow root (and a duplicate React root).
+  if (domContainer.shadowRoot) {
+    return;
+  }
+
   /*
    * We use a shadow DOM so that the MUI styles do not leak
    */
