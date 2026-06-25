@@ -14,9 +14,10 @@ import { darken, lighten, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { useLandmark } from "../../../components/LandmarksContext";
@@ -64,13 +65,13 @@ export default function IgsnManagementPage({
         <Stack spacing={2}>
           <TitledBox title={t("igsnManagement.sections.ids")} border>
             <Typography>
-              The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all
-              within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through
-              the DataCite DOI infrastructure. To learn more,{" "}
-              <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers}>
-                see the IGSN ID documentation
-              </Link>
-              .
+              <TransRichText
+                ns="inventory"
+                i18nKey="igsnManagement.idsDescription"
+                components={{
+                  a: <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers} />,
+                }}
+              />
             </Typography>
           </TitledBox>
           <TitledBox title={t("igsnManagement.sections.register")} border>
@@ -81,11 +82,14 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                You can register and associate an IGSN ID with an existing item in Inventory by selecting{" "}
-                <Typography variant="button" component="kbd">
-                  Create new IGSN ID
-                </Typography>{" "}
-                under its <cite>Identifiers</cite> heading.
+                <Trans
+                  ns="inventory"
+                  i18nKey="igsnManagement.registerDescription"
+                  components={{
+                    kbd: <Typography variant="button" component="kbd" />,
+                    cite: <cite />,
+                  }}
+                />
               </Typography>
               <Typography>{t("igsnManagement.bulkRegister.summary")}</Typography>
               <Button
@@ -153,8 +157,14 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite>{" "}
-                section of the <strong>Linked Item</strong>.
+                <Trans
+                  ns="inventory"
+                  i18nKey="igsnManagement.manageDescription"
+                  components={{
+                    cite: <cite />,
+                    strong: <strong />,
+                  }}
+                />
               </Typography>
               <Box
                 sx={{

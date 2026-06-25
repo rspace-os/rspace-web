@@ -865,9 +865,12 @@
       "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
     },
     "cancel": "Cancel",
+    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <a>see the IGSN ID documentation</a>.",
     "landmark": "IGSN management main content",
+    "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
     "pageTitle": "IGSN Management Page",
     "browserTitle": "Manage IGSN IDs | RSpace Inventory",
+    "registerDescription": "You can register and associate an IGSN ID with an existing item in Inventory by selecting <kbd>Create new IGSN ID</kbd> under its <cite>Identifiers</cite> heading.",
     "sections": {
       "ids": "IGSN IDs",
       "manage": "Manage IGSN IDs",
