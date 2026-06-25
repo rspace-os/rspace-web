@@ -175,7 +175,9 @@ jobs:
           echo "::error::RSpace did not become ready in time"; tail -100 /tmp/jetty.log; exit 1
 
       - name: Run e2e (${{ inputs.mode }} / ${{ matrix.browser }})
-        run: pnpm run test-e2e -- --project=${{ matrix.browser }}
+        env:
+          E2E_BROWSER: ${{ matrix.browser }}
+        run: pnpm run test-e2e
 
       - name: Dump server log on failure
         if: failure()
@@ -188,5 +190,6 @@ jobs:
           name: e2e-report-${{ inputs.mode }}-${{ matrix.browser }}
           path: |
             src/main/webapp/ui/playwright-report
+            src/main/webapp/ui/test-results
             src/main/webapp/ui/e2e-junit.xml
           retention-days: 14

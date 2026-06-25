@@ -10,6 +10,14 @@ const BASE_URL = process.env.RSPACE_BASE_URL ?? "http://localhost:8080";
 const PUBCHEM_MOCK_URL =
   "http://localhost:9099/rest/pug/compound/name/aspirin/property/Title,SMILES,MolecularFormula/json";
 
+// Restrict to a single engine when set (CI shards by browser). Empty = all.
+const ONLY_BROWSER = process.env.E2E_BROWSER;
+const ALL_PROJECTS = [
+  { name: "chromium", use: { ...devices["Desktop Chrome"], appUser: USERS.user1a } },
+  { name: "firefox", use: { ...devices["Desktop Firefox"], appUser: USERS.user2b } },
+  { name: "webkit", use: { ...devices["Desktop Safari"], appUser: USERS.user3c } },
+];
+
 export default defineConfig<E2EOptions>({
   testDir: "./src",
   testMatch: "**/*.e2e.ts",
@@ -41,9 +49,8 @@ export default defineConfig<E2EOptions>({
       : undefined,
   // Distinct user per browser: with workers: 2 two projects run at once, and
   // integration state is per-user, so they must not share a login.
-  projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"], appUser: USERS.user1a } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"], appUser: USERS.user2b } },
-    { name: "webkit", use: { ...devices["Desktop Safari"], appUser: USERS.user3c } },
-  ],
+  // CI shards by browser via E2E_BROWSER so each job runs (and installs) only
+  // its engine — passing --project through pnpm is unreliable (the `--` leaks
+  // to Playwright as a file filter).
+  projects: ALL_PROJECTS.filter((p) => !ONLY_BROWSER || p.name === ONLY_BROWSER),
 });
