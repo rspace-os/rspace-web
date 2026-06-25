@@ -9,14 +9,10 @@ import TableBody from "@mui/material/TableBody";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { getLinkedByRecords } from "@/modules/workspace/linkedRecords";
 import { getPublicLink } from "@/modules/workspace/publicLink";
-import type {
-  LinkedRecords,
-  WorkspaceRecordEditStatus,
-  WorkspaceRecordInformation,
-  WorkspaceRecordSignatureStatus,
-} from "@/modules/workspace/schema";
+import type { LinkedRecords, WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import { GlobalIdLink, MetaRow } from "./MetaTable";
 import RelatedInventoryItems from "./RelatedInventoryItems";
 
@@ -30,32 +26,6 @@ export interface DocumentSectionsProps {
    * record-info panel.
    */
   pinnedVersion?: number | null;
-}
-
-// ELN status/signature labels (mirrors recordInfoPanel.js).
-const STATUS_LABELS: Record<WorkspaceRecordEditStatus, string> = {
-  VIEW_MODE: "viewable & editable",
-  EDIT_MODE: "currently edited by you",
-  CANNOT_EDIT_OTHER_EDITING: "edit in progress",
-  CANNOT_EDIT_NO_PERMISSION: "viewable",
-  CAN_NEVER_EDIT: "read-only",
-};
-
-const SIGNATURE_LABELS: Record<WorkspaceRecordSignatureStatus, string> = {
-  UNSIGNED: "unsigned",
-  SIGNED_AND_LOCKED: "signed",
-  AWAITING_WITNESS: "signed, awaiting witness",
-  WITNESSED: "signed and witnessed",
-  UNSIGNABLE: "unsignable",
-  SIGNED_AND_LOCKED_WITNESSES_DECLINED: "signed, all witnesses declined",
-};
-
-/** Status label, mirroring recordInfoPanel.js (appends the editor for in-progress edits). */
-function statusLabel(status: WorkspaceRecordEditStatus, currentEditor: string | null | undefined): string {
-  if (status === "CANNOT_EDIT_OTHER_EDITING" && currentEditor) {
-    return `edit in progress by ${currentEditor}`;
-  }
-  return STATUS_LABELS[status];
 }
 
 /** Undo the server's tag encoding the way recordInfoPanel.js does. */
@@ -72,15 +42,16 @@ function LinkedByDocs({
   info: WorkspaceRecordInformation;
   recordTypeName: string;
 }): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const [linked, setLinked] = useState<LinkedRecords | null>(null);
   const [loading, setLoading] = useState(false);
   const count = info.linkedByCount ?? 0;
 
   if (!count) {
-    return <Typography variant="body2">There are no links to this {recordTypeName}.</Typography>;
+    return (
+      <Typography variant="body2">{t("fields.link.documentSections.linkedBy.noLinks", { recordTypeName })}</Typography>
+    );
   }
-
-  const docOrDocs = count === 1 ? "doc" : "docs";
 
   const showLinked = async (): Promise<void> => {
     setLoading(true);
@@ -98,10 +69,10 @@ function LinkedByDocs({
     return (
       <Box>
         <Typography variant="body2">
-          This {recordTypeName} is linked by {count} {docOrDocs}.
+          {t("fields.link.documentSections.linkedBy.linkedByCount", { recordTypeName, count })}
         </Typography>
         <Button size="small" disabled={loading} onClick={() => void showLinked()}>
-          Show linked {docOrDocs}
+          {t("fields.link.documentSections.linkedBy.showLinked", { count })}
         </Button>
       </Box>
     );
@@ -109,7 +80,9 @@ function LinkedByDocs({
 
   return (
     <Box>
-      <Typography variant="body2">This {recordTypeName} is linked by:</Typography>
+      <Typography variant="body2">
+        {t("fields.link.documentSections.linkedBy.isLinkedBy", { recordTypeName })}
+      </Typography>
       <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
         {linked.readable.map((r) => (
           <ListItem key={r.globalId} disableGutters sx={{ display: "list-item", py: 0 }}>
@@ -118,7 +91,7 @@ function LinkedByDocs({
         ))}
         {linked.privateByOwner.map((p) => (
           <ListItem key={p.ownerFullName} disableGutters sx={{ display: "list-item", py: 0 }}>
-            {p.count} private {p.count === 1 ? "doc" : "docs"} belonging to {p.ownerFullName}
+            {t("fields.link.documentSections.linkedBy.privateDocs", { count: p.count, ownerFullName: p.ownerFullName })}
           </ListItem>
         ))}
       </List>
@@ -134,6 +107,7 @@ function SharingAndPublication({
   info: WorkspaceRecordInformation;
   isNotebook: boolean;
 }): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const recordTypeName = isNotebook ? "notebook" : "document";
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [publicChecked, setPublicChecked] = useState(false);
@@ -159,31 +133,45 @@ function SharingAndPublication({
 
   return (
     <Box>
-      <Typography variant="subtitle2">Sharing</Typography>
+      <Typography variant="subtitle2">{t("fields.link.documentSections.sharing.title")}</Typography>
       {!isShared ? (
-        <Typography variant="body2">This {recordTypeName} is not shared.</Typography>
+        <Typography variant="body2">
+          {t("fields.link.documentSections.sharing.notShared", { recordTypeName })}
+        </Typography>
       ) : (
         <>
-          <Typography variant="body2">This {recordTypeName} is shared:</Typography>
+          <Typography variant="body2">
+            {t("fields.link.documentSections.sharing.isShared", { recordTypeName })}
+          </Typography>
           <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
             {Object.entries(info.sharedGroupsAndAccess ?? {}).map(([group, access]) => (
               <ListItem key={`g-${group}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                with {group} (group) for {access.toLowerCase()}
+                {t("fields.link.documentSections.sharing.withGroup", { group, access: access.toLowerCase() })}
               </ListItem>
             ))}
             {Object.entries(info.sharedUsersAndAccess ?? {}).map(([user, access]) => (
               <ListItem key={`u-${user}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                with {user} (user) for {access.toLowerCase()}
+                {t("fields.link.documentSections.sharing.withUser", { user, access: access.toLowerCase() })}
               </ListItem>
             ))}
             {Object.entries(info.sharedNotebooksAndOwners ?? {}).map(([nb, owner]) => (
               <ListItem key={`nb-${nb}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                into Notebook <GlobalIdLink globalId={nb} /> (owner: {owner})
+                <Trans
+                  ns="inventory"
+                  i18nKey="fields.link.documentSections.sharing.intoNotebook"
+                  values={{ nb, owner }}
+                  components={{ a: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" /> }}
+                />
               </ListItem>
             ))}
             {Object.entries(info.implicitShares ?? {}).map(([nb, owner]) => (
               <ListItem key={`im-${nb}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                implicitly - is in shared Notebook <GlobalIdLink globalId={nb} /> (shared with: {owner})
+                <Trans
+                  ns="inventory"
+                  i18nKey="fields.link.documentSections.sharing.implicitlyInNotebook"
+                  values={{ nb, owner }}
+                  components={{ a: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" /> }}
+                />
               </ListItem>
             ))}
           </List>
@@ -191,12 +179,14 @@ function SharingAndPublication({
       )}
       {publicChecked &&
         (publicLink === null ? (
-          <Typography variant="body2">This {recordTypeName} is not published.</Typography>
+          <Typography variant="body2">
+            {t("fields.link.documentSections.sharing.notPublished", { recordTypeName })}
+          </Typography>
         ) : (
           <Typography variant="body2">
             {publicLink.includes("initialRecordToDisplay")
-              ? "This document is in a published notebook:"
-              : `This ${recordTypeName} is published:`}{" "}
+              ? t("fields.link.documentSections.sharing.inPublishedNotebook")
+              : t("fields.link.documentSections.sharing.isPublished", { recordTypeName })}{" "}
             <Link
               href={`${window.location.origin}/public/publishedView/${
                 publicLink.includes("initialRecordToDisplay") || isNotebook ? "notebook" : "document"
@@ -204,7 +194,7 @@ function SharingAndPublication({
               target="_blank"
               rel="noopener noreferrer"
             >
-              public link
+              {t("fields.link.documentSections.sharing.publicLink")}
             </Link>
           </Typography>
         ))}
@@ -223,6 +213,7 @@ export default function DocumentSections({
   isNotebook,
   pinnedVersion,
 }: DocumentSectionsProps): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const recordTypeName = isNotebook ? "notebook" : "document";
   const isStructuredDocument = !isNotebook;
   const isVersionView = pinnedVersion != null;
@@ -243,8 +234,12 @@ export default function DocumentSections({
           }}
         >
           <Typography variant="body2">
-            The information below describes <strong>version {pinnedVersion}</strong> of a document {unversionedGlobalId}
-            , which may not be the latest version.
+            <Trans
+              ns="inventory"
+              i18nKey="fields.link.documentSections.versionNote"
+              values={{ pinnedVersion, globalId: unversionedGlobalId }}
+              components={{ strong: <strong /> }}
+            />
           </Typography>
         </Box>
       ) : null}
@@ -254,35 +249,66 @@ export default function DocumentSections({
         </Typography>
         <Table size="small">
           <TableBody>
-            <MetaRow label="Unique Id">
+            <MetaRow label={t("fields.link.documentSections.meta.uniqueId")}>
               <GlobalIdLink globalId={isVersionView ? `${unversionedGlobalId}v${pinnedVersion}` : info.oid.idString} />
             </MetaRow>
-            <MetaRow label="Type">{info.type}</MetaRow>
-            {info.path ? <MetaRow label="Path">{info.path}</MetaRow> : null}
-            {isStructuredDocument && info.version != null ? <MetaRow label="Version">{info.version}</MetaRow> : null}
-            <MetaRow label="Owner">{info.ownerFullName}</MetaRow>
-            <MetaRow label="Creation Date">{info.creationDateWithClientTimezoneOffset}</MetaRow>
-            <MetaRow label="Last Modified">{info.modificationDateWithClientTimezoneOffset}</MetaRow>
+            <MetaRow label={t("fields.link.documentSections.meta.type")}>{info.type}</MetaRow>
+            {info.path ? <MetaRow label={t("fields.link.documentSections.meta.path")}>{info.path}</MetaRow> : null}
+            {isStructuredDocument && info.version != null ? (
+              <MetaRow label={t("fields.link.documentSections.meta.version")}>{info.version}</MetaRow>
+            ) : null}
+            <MetaRow label={t("fields.link.documentSections.meta.owner")}>{info.ownerFullName}</MetaRow>
+            <MetaRow label={t("fields.link.documentSections.meta.creationDate")}>
+              {info.creationDateWithClientTimezoneOffset}
+            </MetaRow>
+            <MetaRow label={t("fields.link.documentSections.meta.lastModified")}>
+              {info.modificationDateWithClientTimezoneOffset}
+            </MetaRow>
             {isStructuredDocument && info.status ? (
-              <MetaRow label="Status">{statusLabel(info.status, info.currentEditor)}</MetaRow>
+              <MetaRow label={t("fields.link.documentSections.meta.status")}>
+                {info.status === "CANNOT_EDIT_OTHER_EDITING" && info.currentEditor
+                  ? t("fields.link.documentSections.statusLabels.cannotEditOtherEditingBy", {
+                      currentEditor: info.currentEditor,
+                    })
+                  : {
+                      VIEW_MODE: t("fields.link.documentSections.statusLabels.viewMode"),
+                      EDIT_MODE: t("fields.link.documentSections.statusLabels.editMode"),
+                      CANNOT_EDIT_OTHER_EDITING: t("fields.link.documentSections.statusLabels.cannotEditOtherEditing"),
+                      CANNOT_EDIT_NO_PERMISSION: t("fields.link.documentSections.statusLabels.cannotEditNoPermission"),
+                      CAN_NEVER_EDIT: t("fields.link.documentSections.statusLabels.canNeverEdit"),
+                    }[info.status]}
+              </MetaRow>
             ) : null}
             {isStructuredDocument && info.signatureStatus ? (
-              <MetaRow label="Signature Status">{SIGNATURE_LABELS[info.signatureStatus]}</MetaRow>
+              <MetaRow label={t("fields.link.documentSections.meta.signatureStatus")}>
+                {
+                  {
+                    UNSIGNED: t("fields.link.documentSections.signatureLabels.unsigned"),
+                    SIGNED_AND_LOCKED: t("fields.link.documentSections.signatureLabels.signed"),
+                    AWAITING_WITNESS: t("fields.link.documentSections.signatureLabels.awaitingWitness"),
+                    WITNESSED: t("fields.link.documentSections.signatureLabels.witnessed"),
+                    UNSIGNABLE: t("fields.link.documentSections.signatureLabels.unsignable"),
+                    SIGNED_AND_LOCKED_WITNESSES_DECLINED: t(
+                      "fields.link.documentSections.signatureLabels.signedWitnessesDeclined",
+                    ),
+                  }[info.signatureStatus]
+                }
+              </MetaRow>
             ) : null}
             {isStructuredDocument && info.templateFormName ? (
-              <MetaRow label="Created from">{info.templateFormName}</MetaRow>
+              <MetaRow label={t("fields.link.documentSections.meta.createdFrom")}>{info.templateFormName}</MetaRow>
             ) : null}
             {isStructuredDocument && info.templateFormId ? (
-              <MetaRow label="Form ID">
+              <MetaRow label={t("fields.link.documentSections.meta.formId")}>
                 <GlobalIdLink globalId={info.templateFormId.idString} />
               </MetaRow>
             ) : null}
             {isStructuredDocument && info.templateOid ? (
-              <MetaRow label="Template Name">
+              <MetaRow label={t("fields.link.documentSections.meta.templateName")}>
                 <GlobalIdLink globalId={info.templateOid}>{info.templateName ?? info.templateOid}</GlobalIdLink>
               </MetaRow>
             ) : null}
-            {tags ? <MetaRow label="Tags">{tags}</MetaRow> : null}
+            {tags ? <MetaRow label={t("fields.link.documentSections.meta.tags")}>{tags}</MetaRow> : null}
           </TableBody>
         </Table>
       </Box>

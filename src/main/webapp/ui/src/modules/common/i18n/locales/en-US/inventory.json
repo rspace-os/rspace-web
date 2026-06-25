@@ -228,6 +228,63 @@
       "label": "Location"
     },
     "link": {
+      "documentSections": {
+        "linkedBy": {
+          "isLinkedBy": "This {recordTypeName} is linked by:",
+          "linkedByCount_one": "This {recordTypeName} is linked by {count} doc.",
+          "linkedByCount_other": "This {recordTypeName} is linked by {count} docs.",
+          "noLinks": "There are no links to this {recordTypeName}.",
+          "privateDocs_one": "{count} private doc belonging to {ownerFullName}",
+          "privateDocs_other": "{count} private docs belonging to {ownerFullName}",
+          "showLinked_one": "Show linked doc",
+          "showLinked_other": "Show linked docs"
+        },
+        "meta": {
+          "creationDate": "Creation Date",
+          "createdFrom": "Created from",
+          "formId": "Form ID",
+          "lastModified": "Last Modified",
+          "owner": "Owner",
+          "path": "Path",
+          "signatureStatus": "Signature Status",
+          "status": "Status",
+          "tags": "Tags",
+          "templateName": "Template Name",
+          "type": "Type",
+          "uniqueId": "Unique Id",
+          "version": "Version"
+        },
+        "sharing": {
+          "implicitlyInNotebook": "implicitly - is in shared Notebook <a>{{nb}}</a> (shared with: {owner})",
+          "inPublishedNotebook": "This document is in a published notebook:",
+          "intoNotebook": "into Notebook <a>{{nb}}</a> (owner: {owner})",
+          "isPublished": "This {recordTypeName} is published:",
+          "isShared": "This {recordTypeName} is shared:",
+          "notPublished": "This {recordTypeName} is not published.",
+          "notShared": "This {recordTypeName} is not shared.",
+          "publicLink": "public link",
+          "title": "Sharing",
+          "withGroup": "with {group} (group) for {access}",
+          "withUser": "with {user} (user) for {access}"
+        },
+        "signatureLabels": {
+          "awaitingWitness": "signed, awaiting witness",
+          "signed": "signed",
+          "signedWitnessesDeclined": "signed, all witnesses declined",
+          "unsigned": "unsigned",
+          "unsignable": "unsignable",
+          "witnessed": "signed and witnessed"
+        },
+        "statusLabels": {
+          "canNeverEdit": "read-only",
+          "cannotEditNoPermission": "viewable",
+          "cannotEditOtherEditing": "edit in progress",
+          "cannotEditOtherEditingBy": "edit in progress by {currentEditor}",
+          "editMode": "currently edited by you",
+          "viewMode": "viewable & editable"
+        },
+        "versionNote": "The information below describes <strong>version {{pinnedVersion}}</strong> of a document {globalId}, which may not be the latest version."
+      },
       "download": "Download",
       "editor": {
         "browseEln": "Browse ELN",
