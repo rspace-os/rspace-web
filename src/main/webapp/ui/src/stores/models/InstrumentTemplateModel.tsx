@@ -54,7 +54,7 @@ export type InstrumentTemplateAttrs = {
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
-const FIELDS = new Set([...RESULT_FIELDS].filter((f) => f !== "extraFields").concat(["fields"]));
+const FIELDS = new Set([...RESULT_FIELDS].concat(["fields"]));
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
 const defaultEditableFields = new Set<string>();
 
@@ -183,12 +183,14 @@ export default class InstrumentTemplateModel
     switch (this.state) {
       case "edit":
         this.setEditable(FIELDS, true);
+        this.setEditableExtraFields(this.extraFields, true);
         break;
       case "preview":
         this.setEditable(FIELDS, false);
         break;
       case "create":
         this.setEditable(FIELDS, true);
+        this.setEditableExtraFields(this.extraFields, true);
         break;
     }
   }

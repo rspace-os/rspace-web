@@ -2,10 +2,12 @@ import { action, computed, makeObservable, observable, runInAction } from "mobx"
 import type { Instrument } from "@/stores/definitions/Instrument";
 import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
+import { encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { handleDetailedErrors, handleDetailedSuccesses, showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage, InvalidState, UserCancelledAction } from "../../util/error";
+import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import { noProgress } from "../../util/progress";
 import Result from "../../util/result";
@@ -975,11 +977,32 @@ export default class Search implements SearchInterface {
   ): Promise<void> {
     const { uiStore, trackingStore } = getRootStore();
     try {
+      const newBase64Image = instrument.image
+        ? await fetch(instrument.image)
+            .then((x) => x.blob())
+            .then(blobToBase64)
+        : null;
       const args = {
         name,
+        description: instrument.description,
+        tags: instrument.tags.map((tag) => ({
+          value: encodeTagString(tag.value),
+          uri: tag.uri.map(encodeTagString).orElse(null),
+          ontologyName: tag.vocabulary.map(encodeTagString).orElse(null),
+          ontologyVersion: tag.version.map(encodeTagString).orElse(null),
+        })),
+        newBase64Image,
+        fields: instrument.fields.map((f) => {
+          const params = { ...(f.paramsForBackend as Record<string, unknown>) };
+          if (!includeContentForFields.has(params.id as Id)) {
+            params.content = "";
+            params.selectedOptions = null;
+          }
+          return params;
+        }),
         extraFields: instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
           name: fieldName,
-          type,
+          type: type.toLowerCase(),
           content: includeContentForFields.has(id) ? content : "",
           definition: null,
         })),

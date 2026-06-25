@@ -440,7 +440,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   private boolean isMatchingSearchType(InventoryRecord foundRec, InventorySearchType searchType) {
     // a template's type is SAMPLE_TEMPLATE, so the type-name arm no longer matches templates for
     // SAMPLE searches (isMatchingTemplateOption used to drop them later; same outcome), and the
-    // explicit last arm matches them for TEMPLATE searches
+    // explicit last arm matches them for SAMPLE_TEMPLATE searches
     return searchType == null
         || searchType.equals(InventorySearchType.ALL)
         || searchType.toString().equals(foundRec.getType().toString())

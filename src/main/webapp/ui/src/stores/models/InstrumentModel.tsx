@@ -22,6 +22,7 @@ import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
 import type { ContainerAttrs } from "./ContainerModel";
+import ExtraFieldModel from "./ExtraFieldModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { HasLocationMixin } from "./HasLocation";
 import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "./InstrumentTemplateModel";
@@ -130,28 +131,6 @@ export default class InstrumentModel
       this.populateFromJson(factory, params, {});
       this.templateId = params.templateId ?? null;
       this.templateVersion = params.templateVersion ?? null;
-      this.createOptionsParametersState = {
-        name: observable({ key: "name" as const, value: "" }),
-        fields: observable({
-          key: "fields" as const,
-          copyFieldContent: [
-            ...this.fields.map((f) => ({
-              id: (f as FieldModel).id,
-              name: f.name,
-              content: f.renderContentAsString,
-              hasContent: f.hasContent,
-              selected: false,
-            })),
-            ...this.extraFields.map((ef) => ({
-              id: ef.id,
-              name: ef.name,
-              content: ef.content,
-              hasContent: ef.hasContent,
-              selected: false,
-            })),
-          ],
-        }),
-      };
     }
   }
 
@@ -203,6 +182,28 @@ export default class InstrumentModel
     if (typeof params.templateVersion !== "undefined") {
       this.templateVersion = params.templateVersion ?? null;
     }
+    this.createOptionsParametersState = {
+      name: observable({ key: "name" as const, value: "" }),
+      fields: observable({
+        key: "fields" as const,
+        copyFieldContent: [
+          ...this.fields.map((f) => ({
+            id: (f as FieldModel).id,
+            name: f.name,
+            content: f.renderContentAsString,
+            hasContent: f.hasContent,
+            selected: false,
+          })),
+          ...this.extraFields.map((ef) => ({
+            id: ef.id,
+            name: ef.name,
+            content: ef.content,
+            hasContent: ef.hasContent,
+            selected: false,
+          })),
+        ],
+      }),
+    };
   }
 
   get paramsForBackend(): Record<string, unknown> {
@@ -303,6 +304,26 @@ export default class InstrumentModel
 
     if (!this.id) {
       this.overrideFields(template.fields);
+      this.setAttributes({
+        extraFields: template.extraFields
+          .filter((ef) => !ef.deleteFieldRequest)
+          .map(
+            (ef) =>
+              new ExtraFieldModel(
+                {
+                  id: null,
+                  globalId: null,
+                  parentGlobalId: null,
+                  name: ef.name,
+                  type: ef.type.toLowerCase() as "text" | "number" | "link",
+                  content: ef.content ?? "",
+                  lastModified: null,
+                  newFieldRequest: true,
+                },
+                this,
+              ),
+          ),
+      });
       if (!this.name) this.setAttributes({ name: template.name });
       if (!this.description) this.setAttributes({ description: template.description });
       this.setAttributes({

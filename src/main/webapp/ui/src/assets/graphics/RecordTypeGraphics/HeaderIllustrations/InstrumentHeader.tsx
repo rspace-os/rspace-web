@@ -19,8 +19,8 @@ function InstrumentHeader(): React.ReactNode {
             d="M91.6562,69.7777c17.5062,17.5062,17.5062,45.8894,0,63.3957-6.745,6.745-15.1046,10.8912-23.8347,12.4386l3.9683,18.0375c12.0306-2.2823,23.5259-8.0793,32.8375-17.3909,24.67-24.67,24.67-64.668,0-89.3379l-12.9711,12.857Z"
             fill="#f2d1c2"
             stroke="#d38d6e"
-            stroke-miterlimit="10"
-            stroke-width="4"
+            strokeMiterlimit="10"
+            strokeWidth="4"
           />
           <rect
             x="-.5479"
@@ -32,8 +32,8 @@ function InstrumentHeader(): React.ReactNode {
             transform="translate(94.2036 18.1856) rotate(45)"
             fill="#fcf2ed"
             stroke="#d38d6e"
-            stroke-miterlimit="10"
-            stroke-width="4"
+            strokeMiterlimit="10"
+            strokeWidth="4"
           />
           <rect
             x="17.4361"
@@ -44,8 +44,8 @@ function InstrumentHeader(): React.ReactNode {
             ry="4.5036"
             fill="#f2d1c2"
             stroke="#d38d6e"
-            stroke-miterlimit="10"
-            stroke-width="4"
+            strokeMiterlimit="10"
+            strokeWidth="4"
           />
           <rect
             x="38.9357"
@@ -56,8 +56,8 @@ function InstrumentHeader(): React.ReactNode {
             ry="4.5036"
             fill="#f2d1c2"
             stroke="#d38d6e"
-            stroke-miterlimit="10"
-            stroke-width="4"
+            strokeMiterlimit="10"
+            strokeWidth="4"
           />
           <circle
             cx="57.4357"
@@ -65,8 +65,8 @@ function InstrumentHeader(): React.ReactNode {
             r="7"
             fill="#fcf2ed"
             stroke="#d38d6e"
-            stroke-miterlimit="10"
-            stroke-width="4"
+            strokeMiterlimit="10"
+            strokeWidth="4"
           />
           <g>
             <rect
@@ -79,8 +79,8 @@ function InstrumentHeader(): React.ReactNode {
               transform="translate(69.2624 -41.7514) rotate(45)"
               fill="#fcf2ed"
               stroke="#d38d6e"
-              stroke-miterlimit="10"
-              stroke-width="4"
+              strokeMiterlimit="10"
+              strokeWidth="4"
             />
             <rect
               x="23.6637"
@@ -92,8 +92,8 @@ function InstrumentHeader(): React.ReactNode {
               transform="translate(83.0471 -8.4723) rotate(45)"
               fill="#fcf2ed"
               stroke="#d38d6e"
-              stroke-miterlimit="10"
-              stroke-width="4"
+              strokeMiterlimit="10"
+              strokeWidth="4"
             />
             <rect
               x="32.9098"
@@ -105,8 +105,8 @@ function InstrumentHeader(): React.ReactNode {
               transform="translate(87.0755 1.2533) rotate(45)"
               fill="#f2d1c2"
               stroke="#d38d6e"
-              stroke-miterlimit="10"
-              stroke-width="4"
+              strokeMiterlimit="10"
+              strokeWidth="4"
             />
             <rect
               x="111.2712"
@@ -116,8 +116,8 @@ function InstrumentHeader(): React.ReactNode {
               transform="translate(55.5117 -74.9485) rotate(45)"
               fill="#f2d1c2"
               stroke="#d38d6e"
-              stroke-miterlimit="10"
-              stroke-width="4"
+              strokeMiterlimit="10"
+              strokeWidth="4"
             />
             <rect
               x="109.3988"
@@ -129,8 +129,8 @@ function InstrumentHeader(): React.ReactNode {
               transform="translate(51.2435 -85.2528) rotate(45)"
               fill="#fcf2ed"
               stroke="#d38d6e"
-              stroke-miterlimit="10"
-              stroke-width="4"
+              strokeMiterlimit="10"
+              strokeWidth="4"
             />
           </g>
           <g>
@@ -141,16 +141,16 @@ function InstrumentHeader(): React.ReactNode {
               y2="158.6253"
               fill="none"
               stroke="#d38d6e"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="4"
             />
             <path
               d="M20.7311,145.0461L2.9017,127.2167c-1.1945-1.1945-1.2033-3.1222-.0197-4.3058h0c1.1836-1.1836,3.1113-1.1747,4.3058.0197l17.8294,17.8294c1.1945,1.1945,1.2033,3.1222.0197,4.3058h0c-1.1836,1.1836-3.1113,1.1747-4.3058-.0197Z"
               fill="#f2d1c2"
               stroke="#d38d6e"
-              stroke-miterlimit="10"
-              stroke-width="4"
+              strokeMiterlimit="10"
+              strokeWidth="4"
             />
           </g>
           <rect
