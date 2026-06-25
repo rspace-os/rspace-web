@@ -235,6 +235,40 @@
       }
     },
     "identifiers": {
+      "geoLocationField": {
+        "addValueToPublish": "Add value to enable publishing.",
+        "alert": "At least one of four elements must be completed (Point, Place, Box, Polygon). Point, Box and Polygon cannot be completed partially.",
+        "box": {
+          "eastLongitude": "East Longitude",
+          "northLatitude": "North Latitude",
+          "southLatitude": "South Latitude",
+          "title": "Box",
+          "westLongitude": "West Longitude"
+        },
+        "createEditPolygon": "Create or Edit a Geolocation Polygon",
+        "description": "Description",
+        "latitudeRange": "Between −90.0˚ and 90.0˚.",
+        "longitudeRange": "Between −180.0˚ and 180.0˚.",
+        "none": "None",
+        "openPolygonDialog": "Open Polygon Dialog",
+        "place": {
+          "title": "Place"
+        },
+        "point": {
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "title": "Point"
+        },
+        "polygon": {
+          "complete": "A complete Polygon is currently set.",
+          "createFirst": "To create a Polygon, press Edit first.",
+          "incomplete": "An incomplete Polygon is currently set.",
+          "modifyFirst": "To modify it, press Edit first.",
+          "noneYet": "No Polygon set yet.",
+          "title": "Polygon",
+          "view": "View Polygon"
+        }
+      },
       "polygonDialog": {
         "close": "Close",
         "title": "Geolocation Polygon"
