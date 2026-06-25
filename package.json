@@ -19,7 +19,11 @@
     "lint:fix": "cd src/main/webapp/ui && biome check --write .",
     "format": "cd src/main/webapp/ui && biome format --write .",
     "lint:ci": "cd src/main/webapp/ui && biome ci --error-on-warnings --diagnostic-level=info .",
-    "biome": "cd src/main/webapp/ui && biome"
+    "biome": "cd src/main/webapp/ui && biome",
+    "test-e2e": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts",
+    "test-e2e:ui": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --ui --project=chromium",
+    "test-e2e:api": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --project=api",
+    "test-e2e:debug": "cd src/main/webapp/ui && cross-env PW_LOG=trace playwright test --config playwright-e2e.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.0",
