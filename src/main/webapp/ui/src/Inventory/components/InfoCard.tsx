@@ -8,6 +8,7 @@ import CardHeader from "@mui/material/CardHeader";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import NavigateContext from "../../stores/contexts/Navigate";
 import type { Record } from "../../stores/definitions/Record";
 import ContainerModel from "../../stores/models/ContainerModel";
@@ -21,10 +22,11 @@ function OpenButton({
 }: React.ComponentProps<typeof Button> & {
   icon?: React.ReactNode;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <Button color="primary" variant="text" disableElevation sx={{ cursor: "default" }} {...rest}>
       {icon}
-      Open
+      {t("actions.open", { ns: "common" })}
     </Button>
   );
 }
@@ -37,6 +39,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
   const { moveStore, uiStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
+  const { t } = useTranslation("inventory");
 
   const moveActions = (r: InventoryBaseRecord) => (
     <>
@@ -61,7 +64,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
           }}
           disableElevation
         >
-          Set as Target
+          {t("infoCard.setAsTarget")}
         </Button>
       )}
     </>

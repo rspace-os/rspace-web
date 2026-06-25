@@ -1620,6 +1620,45 @@ export default interface Resources {
       "subsamples": "Subsamples",
       "thirdPartyImport": "Third-Party Import"
     },
+    "fieldmarkImport": {
+      "appBarTitle": "Fieldmark",
+      "closeConfirm": {
+        "cancel": "No, keep open",
+        "confirm": "Yes, close",
+        "message": "Are you sure you want to close this dialog? The import will continue in the background and there will be an alert when it completes.",
+        "title": "Importing in progress"
+      },
+      "columns": {
+        "description": "Description",
+        "id": "Id",
+        "isPublic": "Is Public",
+        "name": "Name",
+        "projectLead": "Project Lead",
+        "status": "Status"
+      },
+      "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
+      "descriptionLinks": "See <a1>docs.fieldmark.au</a1> and our <a2>Fieldmark integration docs</a2> for more.",
+      "fetchError": "Could not get notebooks from Fieldmark",
+      "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
+      "helpTitle": "Fieldmark help",
+      "igsnField": {
+        "helperText": "Select a field to use as the IGSN ID for imported samples, or select 'Do not use IGSN IDs' to import without one",
+        "label": "IGSN ID Field",
+        "loading": "Loading available IGSN ID fields...",
+        "noIgsn": "Do not use IGSN IDs"
+      },
+      "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <a>DataCite IGSN ID integration</a> to be enabled.",
+      "importError": "Could not import notebook.",
+      "importNotebook": {
+        "message": "Importing notebook \"{name}\" from Fieldmark.",
+        "title": "Importing notebook"
+      },
+      "importSuccess": "Successfully imported notebook.",
+      "noNotebookSelected": "No Notebook selected.",
+      "noNotebooks": "No Notebooks",
+      "selectRadioAriaLabel": "Select notebook: {name}",
+      "title": "Import from Fieldmark"
+    },
     "fields": {
       "accessPermissions": {
         "ariaLabel": "Access Permission Setting",
@@ -2129,6 +2168,11 @@ export default interface Resources {
       "samples": "Samples",
       "samplesBeingEdited": "Samples being edited"
     },
+    "historicalVersion": {
+      "contentsNotShown": "Contents are not part of the historical snapshot, so they are not shown.",
+      "readOnlyWithLink": "It is read-only. <a>View the latest version</a>",
+      "title": "This is version {version} of the {type}."
+    },
     "identifierConfirm": {
       "cancelButton": "CANCEL",
       "create": {
@@ -2261,6 +2305,9 @@ export default interface Resources {
         "samples": "Samples",
         "subsamples": "Subsamples"
       }
+    },
+    "infoCard": {
+      "setAsTarget": "Set as Target"
     },
     "layout": {
       "initialScreen": {

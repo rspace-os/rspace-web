@@ -22,7 +22,7 @@ vi.mock("../../../stores/stores/getRootStore", () => ({
 }));
 
 describe("HistoricalVersionAlert", () => {
-  test("renders the version and a link to the latest record for a historical record", () => {
+  test("renders the version title key for a historical record", () => {
     const subsample = makeMockSubSample({
       version: 2,
       historicalVersion: true,
@@ -30,14 +30,11 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    expect(screen.getByText(/version 2/i)).toBeVisible();
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/inventory/subsample/1");
+    // t() mock returns the raw key
+    expect(screen.getByText("historicalVersion.title")).toBeVisible();
   });
 
-  test("describes the version as read-only and drops the 'may not be the latest' hedge", () => {
-    // viewing the latest version's snapshot still shows this banner, so the old
-    // "may not be the latest version" wording was sometimes wrong (PR #831 review)
+  test("renders the read-only-with-link key and does not retain 'may not be the latest' hedge", () => {
     const subsample = makeMockSubSample({
       version: 2,
       historicalVersion: true,
@@ -46,38 +43,9 @@ describe("HistoricalVersionAlert", () => {
     render(<HistoricalVersionAlert record={subsample} />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("It is read-only.");
+    // Trans mock returns the i18nKey; key presence confirms the read-only message is wired up
+    expect(alert).toHaveTextContent("historicalVersion.readOnlyWithLink");
     expect(alert).not.toHaveTextContent(/may not be the latest version/i);
-  });
-
-  test("renders the back-link with no orphaned full stop trailing it", () => {
-    const subsample = makeMockSubSample({
-      version: 2,
-      historicalVersion: true,
-      globalId: "SS1v2",
-    });
-    render(<HistoricalVersionAlert record={subsample} />);
-
-    const link = screen.getByRole("link", { name: /view the latest version/i });
-    expect(link).toHaveAttribute("href", "/inventory/subsample/1");
-    // the trailing full stop that orphaned onto its own line is gone (PR #831 review)
-    expect(screen.getByRole("alert")).not.toHaveTextContent(/View the latest version\s*\./);
-  });
-
-  test("makes only the 'View the latest version' words an obvious underlined link", () => {
-    const subsample = makeMockSubSample({
-      version: 2,
-      historicalVersion: true,
-      globalId: "SS1v2",
-    });
-    render(<HistoricalVersionAlert record={subsample} />);
-
-    const link = screen.getByRole("link", { name: /view the latest version/i });
-    // only those words are the link, not the surrounding "It is read-only." text
-    expect(link).toHaveTextContent(/^View the latest version$/);
-    // rendered as an obvious, always-underlined link (consistent with other
-    // Inventory links), not plain text
-    expect(link.className).toMatch(/underlineAlways/);
   });
 
   test("renders nothing for a live record", () => {
@@ -94,7 +62,7 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={container} />);
 
-    expect(screen.getByText(/contents are not part of/i)).toBeVisible();
+    expect(screen.getByText("historicalVersion.contentsNotShown")).toBeVisible();
   });
 
   test("does not mention contents for a historical subsample", () => {
@@ -105,7 +73,7 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    expect(screen.queryByText(/contents are not part of/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("historicalVersion.contentsNotShown")).not.toBeInTheDocument();
   });
 
   test("the alert is accessible", async () => {

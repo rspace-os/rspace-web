@@ -10,7 +10,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible, render } from "@/__tests__/customQueries";
@@ -147,6 +147,19 @@ async function renderAndWaitForNotebooks() {
   return result;
 }
 
+/**
+ * Finds the radio button for a specific notebook by locating its row in the
+ * DataGrid (the name cell uses data, not i18n, so it is always the real name).
+ * The selectRadioAriaLabelFunc is mocked to return its i18n key (same for all
+ * rows), so we cannot rely on aria-label to disambiguate rows.
+ */
+function getRadioForNotebook(notebookName: string): HTMLElement {
+  const nameCell = screen.getByRole("gridcell", { name: new RegExp(`^${notebookName}$`) });
+  // Walk up to the row element
+  const row = nameCell.closest('[role="row"]') as HTMLElement;
+  return within(row).getByRole("radio");
+}
+
 describe("FieldmarkImportDialog", () => {
   beforeEach(() => {
     mockAxios.reset();
@@ -178,18 +191,12 @@ describe("FieldmarkImportDialog", () => {
       // is what is painted), so we assert the selection control is present
       // rather than `toBeVisible` (which jsdom evaluates against the hidden
       // input element and would fail without real layout).
-      expect(screen.getByRole("radio", { name: "Select notebook: Test Notebook 1" })).toBeInTheDocument();
-      expect(screen.getByRole("radio", { name: "Select notebook: Test Notebook 2" })).toBeInTheDocument();
-      expect(
-        screen.getByRole("radio", {
-          name: "Select notebook: Notebook No Identifiers",
-        }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("radio", {
-          name: "Select notebook: Notebook With Identifiers",
-        }),
-      ).toBeInTheDocument();
+      // The selectRadioAriaLabelFunc t() mock returns the key for all rows;
+      // verify each row has a radio by looking within the data-named row
+      expect(getRadioForNotebook("Test Notebook 1")).toBeInTheDocument();
+      expect(getRadioForNotebook("Test Notebook 2")).toBeInTheDocument();
+      expect(getRadioForNotebook("Notebook No Identifiers")).toBeInTheDocument();
+      expect(getRadioForNotebook("Notebook With Identifiers")).toBeInTheDocument();
     });
   });
 
@@ -198,8 +205,8 @@ describe("FieldmarkImportDialog", () => {
       const user = userEvent.setup();
       await renderAndWaitForNotebooks();
 
-      await user.click(screen.getByRole("radio", { name: "Select notebook: Test Notebook 1" }));
-      await user.click(screen.getByRole("button", { name: "Import" }));
+      await user.click(getRadioForNotebook("Test Notebook 1"));
+      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -215,12 +222,8 @@ describe("FieldmarkImportDialog", () => {
       const user = userEvent.setup();
       await renderAndWaitForNotebooks();
 
-      await user.click(
-        screen.getByRole("radio", {
-          name: "Select notebook: Notebook No Identifiers",
-        }),
-      );
-      await user.click(screen.getByRole("button", { name: "Import" }));
+      await user.click(getRadioForNotebook("Notebook No Identifiers"));
+      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -237,18 +240,14 @@ describe("FieldmarkImportDialog", () => {
       const user = userEvent.setup();
       await renderAndWaitForNotebooks();
 
-      await user.click(
-        screen.getByRole("radio", {
-          name: "Select notebook: Notebook With Identifiers",
-        }),
-      );
+      await user.click(getRadioForNotebook("Notebook With Identifiers"));
       // The IGSN ID field select appears once the candidate fields are fetched
       const identifierSelect = await screen.findByRole("combobox", {
-        name: /IGSN ID Field/i,
+        name: "fieldmarkImport.igsnField.label",
       });
       fireEvent.mouseDown(identifierSelect);
       fireEvent.click(await screen.findByRole("option", { name: "sample_id" }));
-      await user.click(screen.getByRole("button", { name: "Import" }));
+      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -283,14 +282,16 @@ describe("FieldmarkImportDialog", () => {
       const user = userEvent.setup();
       await renderAndWaitForNotebooks();
 
-      await user.click(screen.getByRole("radio", { name: "Select notebook: Test Notebook 1" }));
-      await user.click(screen.getByRole("button", { name: "Import" }));
+      await user.click(getRadioForNotebook("Test Notebook 1"));
+      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
 
-      const alert = await screen.findByText("Importing notebook");
+      const alert = await screen.findByText("fieldmarkImport.importNotebook.title");
       const alertContainer = alert.closest('[role="group"]') as HTMLElement;
       expect(alertContainer).toBeVisible();
-      expect(alertContainer).toHaveTextContent("Importing notebook");
-      expect(alertContainer).toHaveTextContent("Test Notebook 1");
+      expect(alertContainer).toHaveTextContent("fieldmarkImport.importNotebook.title");
+      // The t() mock returns the key without interpolation; the message key being
+      // present is sufficient to confirm the alert was triggered
+      expect(alertContainer).toHaveTextContent("fieldmarkImport.importNotebook.message");
 
       // Release the pending import so the test can clean up without dangling
       // promises.
@@ -317,11 +318,11 @@ describe("FieldmarkImportDialog", () => {
       const user = userEvent.setup();
       await renderAndWaitForNotebooks();
 
-      await user.click(screen.getByRole("radio", { name: "Select notebook: Test Notebook 1" }));
-      await user.click(screen.getByRole("button", { name: "Import" }));
+      await user.click(getRadioForNotebook("Test Notebook 1"));
+      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Import" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "import.actions.import" })).toBeDisabled();
       });
 
       (resolveImport as (() => void) | null)?.();
@@ -334,17 +335,10 @@ describe("FieldmarkImportDialog", () => {
         const user = userEvent.setup();
         await renderAndWaitForNotebooks();
 
-        await user.click(
-          screen.getByRole("radio", {
-            name: "Select notebook: Notebook IGSN Error",
-          }),
-        );
+        await user.click(getRadioForNotebook("Notebook IGSN Error"));
 
-        expect(
-          await screen.findByText("RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark.", {
-            exact: false,
-          }),
-        ).toBeVisible();
+        // TransRichText mock returns the i18nKey; real content rendered at runtime
+        expect(await screen.findByText("fieldmarkImport.igsnMessage")).toBeVisible();
       } finally {
         restoreConsole();
       }
@@ -370,21 +364,17 @@ describe("FieldmarkImportDialog", () => {
       const user = userEvent.setup();
       await renderAndWaitForNotebooks();
 
-      await user.click(
-        screen.getByRole("radio", {
-          name: "Select notebook: Notebook With Identifiers",
-        }),
-      );
+      await user.click(getRadioForNotebook("Notebook With Identifiers"));
       // Wait for the identifier select to appear, then import WITHOUT selecting
       // an identifier field (selection stays "unselected").
-      await screen.findByRole("combobox", { name: /IGSN ID Field/i });
-      await user.click(screen.getByRole("button", { name: "Import" }));
+      await screen.findByRole("combobox", { name: "fieldmarkImport.igsnField.label" });
+      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
 
       // The importing alert should appear...
-      expect(await screen.findByText("Importing notebook")).toBeVisible();
+      expect(await screen.findByText("fieldmarkImport.importNotebook.title")).toBeVisible();
       // ...and the identifier parsing UI should be hidden during import.
-      expect(screen.queryByRole("combobox", { name: /IGSN ID Field/i })).not.toBeInTheDocument();
-      expect(screen.queryByText("Loading available IGSN ID fields...")).not.toBeInTheDocument();
+      expect(screen.queryByRole("combobox", { name: "fieldmarkImport.igsnField.label" })).not.toBeInTheDocument();
+      expect(screen.queryByText("fieldmarkImport.igsnField.loading")).not.toBeInTheDocument();
 
       (resolveImport as (() => void) | null)?.();
     });
