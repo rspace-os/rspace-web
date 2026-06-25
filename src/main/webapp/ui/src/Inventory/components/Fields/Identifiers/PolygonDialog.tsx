@@ -6,6 +6,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { GeoLocation } from "../../../../stores/definitions/GeoLocation";
 import PolygonCard from "./PolygonCard";
 
@@ -18,13 +19,14 @@ type PolygonDialogArgs = {
 };
 
 function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifiers }: PolygonDialogArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const handleClose = () => {
     setOpen(false);
   };
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Geolocation Polygon</DialogTitle>
+      <DialogTitle>{t("fields.identifiers.polygonDialog.title")}</DialogTitle>
       <DialogContent>
         <FormControl component="fieldset" fullWidth>
           <PolygonCard editable={editable} geoLocation={geoLocation} doUpdateIdentifiers={doUpdateIdentifiers} />
@@ -32,7 +34,7 @@ function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifie
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
-          Close
+          {t("fields.identifiers.polygonDialog.close")}
         </Button>
       </DialogActions>
     </Dialog>

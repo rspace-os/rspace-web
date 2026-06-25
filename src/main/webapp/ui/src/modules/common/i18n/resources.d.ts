@@ -1716,6 +1716,18 @@ export default interface Resources {
           "nameTooLong": "Name must be no longer than 255 characters."
         }
       },
+      "identifiers": {
+        "polygonDialog": {
+          "close": "Close",
+          "title": "Geolocation Polygon"
+        },
+        "publicPreviewDialog": {
+          "close": "Close",
+          "helpTitle": "Info on handling Identifiers.",
+          "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
+          "title": "Review your page before publishing"
+        }
+      },
       "link": {
         "documentSections": {
           "linkedBy": {
@@ -1744,9 +1756,9 @@ export default interface Resources {
             "version": "Version"
           },
           "sharing": {
-            "implicitlyInNotebook": "implicitly - is in shared Notebook <a>{{nb}}</a> (shared with: {owner})",
+            "implicitlyInNotebook": "implicitly - is in shared Notebook <a>{nb}</a> (shared with: {owner})",
             "inPublishedNotebook": "This document is in a published notebook:",
-            "intoNotebook": "into Notebook <a>{{nb}}</a> (owner: {owner})",
+            "intoNotebook": "into Notebook <a>{nb}</a> (owner: {owner})",
             "isPublished": "This {recordTypeName} is published:",
             "isShared": "This {recordTypeName} is shared:",
             "notPublished": "This {recordTypeName} is not published.",
@@ -1772,7 +1784,7 @@ export default interface Resources {
             "editMode": "currently edited by you",
             "viewMode": "viewable & editable"
           },
-          "versionNote": "The information below describes <strong>version {{pinnedVersion}}</strong> of a document {globalId}, which may not be the latest version."
+          "versionNote": "The information below describes <strong>version {pinnedVersion}</strong> of a document {globalId}, which may not be the latest version."
         },
         "download": "Download",
         "editor": {
@@ -1802,7 +1814,7 @@ export default interface Resources {
         },
         "infoDialog": {
           "ariaLabel": "Info for {globalId}",
-          "versionNote": "The information below describes <strong>version {{versionPin}}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
+          "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
         },
         "relatedInventoryItems": {
           "loading": "Loading...",
