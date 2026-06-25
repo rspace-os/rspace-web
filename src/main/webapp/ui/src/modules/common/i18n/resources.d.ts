@@ -1599,6 +1599,24 @@ export default interface Resources {
       "thirdPartyImport": "Third-Party Import"
     },
     "fields": {
+      "accessPermissions": {
+        "ariaLabel": "Access Permission Setting",
+        "editFirst": "You need to be in Edit mode to edit permissions.",
+        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a>access permissions</a>, including under what circumstances some infomation may be more widely shared.",
+        "explicitAccess": {
+          "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
+          "title": "Explicit access list"
+        },
+        "ownerGroups": {
+          "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
+          "tableNote": "This table lists the groups that the owner is a member of.",
+          "title": "Owner's groups"
+        },
+        "ownerOnly": {
+          "description": "Accessible to the item's owner, and the PI.",
+          "title": "Only the Owner"
+        }
+      },
       "attachments": {
         "actions": {
           "browseGallery": "Browse Gallery",
@@ -1607,6 +1625,9 @@ export default interface Resources {
         "columns": {
           "actions": "Actions",
           "name": "Name"
+        },
+        "formField": {
+          "explanation": "See the documentation for information on <a>adding attachments</a>."
         },
         "linkGalleryItems": "Link to existing items in the Gallery.",
         "noDescription": "No description",
@@ -1926,6 +1947,13 @@ export default interface Resources {
         "infoDialog": {
           "ariaLabel": "Info for {globalId}",
           "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
+        },
+        "linkField": {
+          "editLink": "Edit link",
+          "editToChangePinned": "Edit the link to change the pinned version",
+          "noAccess": "No access",
+          "noPermission": "You do not have permission to view this item",
+          "targetDeleted": "Target deleted"
         },
         "relatedInventoryItems": {
           "loading": "Loading...",

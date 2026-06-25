@@ -15,7 +15,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import docLinks from "../../../../assets/DocLinks";
 import BigIconButton from "../../../../components/BigIconButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
@@ -260,13 +260,14 @@ function Attachments<
       error={false}
       explanation={
         activeResult.isFieldEditable("attachments") ? (
-          <>
-            See the documentation for information on{" "}
-            <a href={docLinks.attachments} target="_blank" rel="noreferrer">
-              adding attachments
-            </a>
-            .
-          </>
+          <Trans
+            ns="inventory"
+            i18nKey="fields.attachments.formField.explanation"
+            components={{
+              // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+              a: <a href={docLinks.attachments} target="_blank" rel="noreferrer" />,
+            }}
+          />
         ) : null
       }
     >
