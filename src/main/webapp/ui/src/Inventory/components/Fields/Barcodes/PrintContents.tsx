@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { BarcodeRecord } from "@/stores/definitions/Barcode";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { toTitleCase } from "@/util/Util";
@@ -55,6 +56,7 @@ export const PreviewPrintItem = ({
   imageLinks,
   target,
 }: PreviewPrintItemArgs) => {
+  const { t } = useTranslation("inventory");
   const { printerType, printLayout, printSize } = printOptions;
 
   const recordString = `${toTitleCase(itemOwner.type)} - ${itemOwner.name}`;
@@ -94,8 +96,8 @@ export const PreviewPrintItem = ({
                 component="img"
                 sx={{ alignSelf: "center", mt: 0.25 }}
                 src={imageLinks[index]}
-                title="Barcode Image"
-                alt="Barcode"
+                title={t("fields.barcodes.printContents.barcodeTitle")}
+                alt={t("fields.barcodes.printContents.barcodeAlt")}
                 width="75%"
               />
               <Grid sx={[centeredTextSx, { mb: 0 }]}>
@@ -112,18 +114,18 @@ export const PreviewPrintItem = ({
               <Grid container sx={[centeredTextSx, { fontSize: "11px" }, { flexDirection: "column" }]} spacing={1}>
                 <Grid>{item.description.split("//")[1]}</Grid>
                 <Grid>
-                  <strong>Item:</strong>
+                  <strong>{t("fields.barcodes.printContents.item")}</strong>
                   <br />
                   {recordString}
                 </Grid>
                 <Grid>
-                  <strong>Location:</strong>{" "}
+                  <strong>{t("fields.barcodes.printContents.location")}</strong>{" "}
                   {itemOwner instanceof ContainerModel || itemOwner instanceof SubSampleModel
                     ? (itemOwner.immediateParentContainer?.globalId ?? "-")
                     : "-"}
                 </Grid>
                 <Grid>
-                  <strong>Printed:</strong>
+                  <strong>{t("fields.barcodes.printContents.printed")}</strong>
                   <br />
                   {now.toLocaleString()}
                 </Grid>

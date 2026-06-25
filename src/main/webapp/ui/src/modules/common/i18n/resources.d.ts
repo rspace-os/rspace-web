@@ -1650,7 +1650,17 @@ export default interface Resources {
           "actions": "Actions",
           "description": "Description"
         },
+        "formField": {
+          "addingBarcodes": "See the documentation for information on <a>adding barcodes</a>."
+        },
         "noDescription": "No description",
+        "printContents": {
+          "barcodeAlt": "Barcode",
+          "barcodeTitle": "Barcode Image",
+          "item": "Item:",
+          "location": "Location:",
+          "printed": "Printed:"
+        },
         "scannedDescription": "Scanned {format}: {value}",
         "summary": "Scan an existing barcode and associate it with this item.",
         "toggle": {
@@ -2229,6 +2239,7 @@ export default interface Resources {
         "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
         "labelPrinterCopies": "For label printers, the number of copies is set to 1 per item.",
         "labelPrinterHint": "Print one label per sticker (Zebra printer).",
+        "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a>documentation</a>.",
         "large": "Large",
         "printCopies": "Print Copies",
         "printLayout": "Print Layout",

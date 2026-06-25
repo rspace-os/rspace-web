@@ -13,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { useCallback, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useReactToPrint } from "react-to-print";
 import docLinks from "../../../../assets/DocLinks";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -103,12 +103,14 @@ export const PrintOptionsWrapper = ({ printOptions, setPrintOptions }: OptionsWr
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              The label shape should match the selected layout. Also, you might have problems when using Safari. Please
-              check barcodes{" "}
-              <a href={docLinks.barcodesPrinting} target="_blank" rel="noreferrer">
-                documentation
-              </a>
-              .
+              <Trans
+                ns="inventory"
+                i18nKey="print.options.labelShapeHint"
+                components={{
+                  // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+                  a: <a href={docLinks.barcodesPrinting} target="_blank" rel="noreferrer" />,
+                }}
+              />
             </Alert>
           )}
         </FormControl>
