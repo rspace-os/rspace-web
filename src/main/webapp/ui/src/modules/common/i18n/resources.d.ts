@@ -2386,6 +2386,15 @@ export default interface Resources {
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
     },
     "print": {
+      "contents": {
+        "barcodeAlt": "Barcode",
+        "barcodeTitle": "Barcode Image",
+        "globalIdLabel": "RSPACE GLOBAL ID",
+        "igsnLabel": "IGSN ID",
+        "item": "Item:",
+        "location": "Location:",
+        "printed": "Printed:"
+      },
       "dialog": {
         "loading": "Loading...",
         "nothingToPreview": "Nothing to preview",
