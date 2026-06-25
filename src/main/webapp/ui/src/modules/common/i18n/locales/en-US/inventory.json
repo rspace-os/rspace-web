@@ -919,7 +919,9 @@
       "containers": "Containers",
       "samples": "Samples",
       "subsamples": "Subsamples"
-    }
+    },
+    "landmark": "Import main content",
+    "browserTitle": "Import CSV | RSpace Inventory"
   },
   "infoCard": {
     "setAsTarget": "Set as Target"
@@ -1041,6 +1043,10 @@
       "view": "View version history",
       "viewing": " (viewing)"
     }
+  },
+  "permalink": {
+    "invalidId": "\"{id}\" is not a valid {recordType} id.",
+    "invalidVersion": "Invalid version parameter"
   },
   "permalinkNotFound": {
     "latestLink": "View the latest version",

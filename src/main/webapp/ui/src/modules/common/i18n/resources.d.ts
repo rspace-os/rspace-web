@@ -2378,6 +2378,7 @@ export default interface Resources {
       "actions": {
         "import": "Import"
       },
+      "browserTitle": "Import CSV | RSpace Inventory",
       "columnMapping": {
         "columns": {
           "convertTo": "Convert To",
@@ -2402,6 +2403,7 @@ export default interface Resources {
       },
       "helpTitle": "Info on importing.",
       "importDocumentation": "Import Documentation",
+      "landmark": "Import main content",
       "sections": {
         "columnConversion": "CSV Column Conversion Settings",
         "templateDetails": "Template Details"
@@ -2538,6 +2540,10 @@ export default interface Resources {
         "view": "View version history",
         "viewing": " (viewing)"
       }
+    },
+    "permalink": {
+      "invalidId": "\"{id}\" is not a valid {recordType} id.",
+      "invalidVersion": "Invalid version parameter"
     },
     "permalinkNotFound": {
       "latestLink": "View the latest version",

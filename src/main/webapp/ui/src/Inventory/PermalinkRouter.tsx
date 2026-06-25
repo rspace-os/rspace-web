@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import NavigateContext from "../stores/contexts/Navigate";
@@ -14,6 +15,7 @@ type PermalinkRouterArgs = {
 };
 
 function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { id } = useParams();
   const { useLocation } = useContext(NavigateContext);
   const urlSearchParams = new URLSearchParams(useLocation().search);
@@ -25,7 +27,7 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
   if (urlSearchParams.has("version")) {
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     version = parseInt(urlSearchParams.get("version")!, 10);
-    if (Number.isNaN(version)) return <h1>Invalid version parameter</h1>;
+    if (Number.isNaN(version)) return <h1>{t("permalink.invalidVersion")}</h1>;
   }
 
   if (Number.isNaN(parseInt(id, 10))) {
@@ -57,7 +59,7 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
      */
     addAlert(
       mkAlert({
-        message: `"${id}" is not a valid ${inventoryRecordTypeLabels[recordType]} id.`,
+        message: t("permalink.invalidId", { id, recordType: inventoryRecordTypeLabels[recordType] }),
         variant: "error",
       }),
     );
