@@ -9,10 +9,10 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import { isNotNil } from "es-toolkit";
 import type React from "react";
 import { useState } from "react";
 import LoadingFade from "../../components/LoadingFade";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { formatFileSize } from "../../util/files";
 import type { FileSystem } from "../common";
 
@@ -97,7 +97,7 @@ export default function LinkAvailabilityScan({
             <DialogContent>
               {checkedFileSystems.map((fileSystem) => {
                 const issues = Object.entries(fileSystem.checkedNfsLinkMessages);
-                const checkedFiles = ArrayUtils.filterNull(fileSystem.checkedNfsLinks);
+                const checkedFiles = fileSystem.checkedNfsLinks.filter(isNotNil);
                 return (
                   <div key={`skippedLinks${fileSystem.id}`}>
                     {issues.length > 0 ? (

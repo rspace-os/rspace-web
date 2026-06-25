@@ -8,7 +8,7 @@ import Grid from "@mui/material/Grid";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useId, useState } from "react";
+import React, { type ReactNode, useState } from "react";
 import ChemistryIcon from "../../../../assets/graphics/ChemistryIcon";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -115,12 +115,11 @@ const SetAsPreviewImage = <
   fieldOwner?: FieldOwner;
 }): ReactNode => {
   const { uiStore } = useStores();
-  const canvasId = useId();
 
   const storeImage = async (dataURL: string | null, file: Blob | null) => {
     if (!fieldOwner) throw new Error("The preview image cannot be set as the item is not available.");
     if (!dataURL || !file) throw new Error("Unable to set attachment as preview image.");
-    const scaledImage = await capImageAt1MB(file, dataURL, canvasId);
+    const scaledImage = await capImageAt1MB(file, dataURL);
     fieldOwner.setFieldsDirty({
       image: scaledImage,
       newBase64Image: scaledImage,
@@ -149,23 +148,20 @@ const SetAsPreviewImage = <
     }
   };
   return (
-    <>
-      <IconButtonWithTooltip
-        title={
-          disabled && !attachment.previewSupported
-            ? "Save first to enable setting this file as the item's Preview Image."
-            : disabled
-              ? "First press Edit to set as Preview Image."
-              : "Set as Preview Image"
-        }
-        size="small"
-        color="primary"
-        onClick={() => void setAsPreviewImage()}
-        icon={<InsertPhotoIcon />}
-        disabled={disabled}
-      />
-      <canvas id={canvasId} style={{ display: "none" }}></canvas>
-    </>
+    <IconButtonWithTooltip
+      title={
+        disabled && !attachment.previewSupported
+          ? "Save first to enable setting this file as the item's Preview Image."
+          : disabled
+            ? "First press Edit to set as Preview Image."
+            : "Set as Preview Image"
+      }
+      size="small"
+      color="primary"
+      onClick={() => void setAsPreviewImage()}
+      icon={<InsertPhotoIcon />}
+      disabled={disabled}
+    />
   );
 };
 

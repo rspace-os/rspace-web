@@ -7,7 +7,6 @@ import type React from "react";
 import { useContext } from "react";
 import AdjustableHeadCell from "@/Inventory/components/Tables/AdjustableHeadCell";
 import { isSortable, sortProperties } from "@/stores/models/InventoryBaseRecord";
-import * as ArrayUtils from "@/util/ArrayUtils";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import SearchContext from "../../../stores/contexts/Search";
@@ -16,7 +15,7 @@ import type { menuIDs } from "../../../util/menuIDs";
 import ContextMenu from "../../components/ContextMenu/ContextMenu";
 import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
-import SortableProperty, { type SortProperty } from "../../components/Tables/SortableProperty";
+import SortableProperty from "../../components/Tables/SortableProperty";
 
 type TableHeadArgs = {
   selectedCount: number;
@@ -38,12 +37,10 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
   if (isViewportLarge && isSingleColumnLayout) cols++;
 
   /* this could be made adjustable too (e.g. name or global ID) */
-  const mainProperty: SortProperty = ArrayUtils.find(
-    (p) => p.label === search.uiConfig.mainColumn,
-    sortProperties,
-  ).orElseGet(() => {
+  const mainProperty = sortProperties.find((p) => p.label === search.uiConfig.mainColumn);
+  if (!mainProperty) {
     throw new Error("mainColumn is not a sortable property");
-  });
+  }
 
   const handleAdjustableColumnChange = (index: number) => (newColumn: AdjustableTableRowLabel) => {
     search.setAdjustableColumn(newColumn, index);

@@ -1,3 +1,4 @@
+import { delay } from "es-toolkit";
 import { when } from "mobx";
 import axios, {
   type AxiosError,
@@ -7,7 +8,6 @@ import axios, {
 } from "@/common/axios";
 import { mkAlert } from "../stores/contexts/Alert";
 import getRootStore from "../stores/stores/getRootStore";
-import { sleep } from "../util/Util";
 import JwtService from "./JwtService";
 
 type JSON = unknown;
@@ -59,7 +59,7 @@ class ApiServiceBase {
          */
         getRootStore().uiStore.removeAlert(toast);
         getRootStore().uiStore.addAlert(toast);
-        await sleep(10 * 1000);
+        await delay(10 * 1000);
       }
       await getRootStore().authStore.authenticate();
       getRootStore().uiStore.removeAlert(toast);

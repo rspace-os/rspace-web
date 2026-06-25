@@ -15,7 +15,6 @@ import DSWIcon from "../../../assets/branding/dsw/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
-import RsSet from "../../../util/set";
 import IntegrationCard from "../IntegrationCard";
 import { useDSWTestEndpoint } from "../useDSWTestEndpoint";
 import {
@@ -135,12 +134,14 @@ const DialogContent = observer(
         });
         runInAction(() => {
           integrationState.credentials = newState.credentials;
-          const optionIdsOfExistingConfigs = new RsSet(copyOfState.credentials.map(({ optionsId }) => optionsId));
+          const optionIdsOfExistingConfigs = new Set(copyOfState.credentials.map(({ optionsId }) => optionsId));
           try {
-            const newlySavedConfig = new RsSet(newState.credentials)
-              .mapOptional((x) => x)
-              .subtractMap(({ optionsId }) => optionsId, optionIdsOfExistingConfigs).first;
-            copyOfState.credentials.push(observable({ ...newlySavedConfig, dirty: false }));
+            const newlySavedConfig = ArrayUtils.mapOptional((credential) => credential, newState.credentials).find(
+              ({ optionsId }) => !optionIdsOfExistingConfigs.has(optionsId),
+            );
+            copyOfState.credentials.push(
+              observable({ ...(newlySavedConfig ?? { ...config, optionsId: "" }), dirty: false }),
+            );
           } catch {
             throw new Error("Save completed but cannot show results.");
           }

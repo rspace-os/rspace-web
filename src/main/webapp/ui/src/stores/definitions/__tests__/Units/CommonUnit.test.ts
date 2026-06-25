@@ -1,6 +1,5 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
-import { values } from "../../../../util/Util";
 import { fromCommonUnit, massIds, quantityIds, toCommonUnit } from "../../Units";
 
 // number of decimal places for floating point comparison
@@ -12,7 +11,7 @@ describe("toCommonUnit", () => {
   });
   test("Multiplication distributes over toCommonUnit", () => {
     fc.assert(
-      fc.property(fc.tuple(fc.integer(), fc.constantFrom(...values(quantityIds))), ([x, unit]) => {
+      fc.property(fc.tuple(fc.integer(), fc.constantFrom(...Object.values(quantityIds))), ([x, unit]) => {
         expect(toCommonUnit(x, unit) * 2).toEqual(toCommonUnit(x * 2, unit));
       }),
     );
@@ -26,7 +25,7 @@ describe("fromCommonUnit", () => {
 describe("CommonUnit mutual test", () => {
   test("forall x, unit . fromCommonUnit(toCommonUnit(x, unit), unit) = x", () => {
     fc.assert(
-      fc.property(fc.tuple(fc.integer(), fc.constantFrom(...values(quantityIds))), ([x, unit]) => {
+      fc.property(fc.tuple(fc.integer(), fc.constantFrom(...Object.values(quantityIds))), ([x, unit]) => {
         expect(fromCommonUnit(toCommonUnit(x, unit), unit)).toBeCloseTo(x, PRECISION);
       }),
     );

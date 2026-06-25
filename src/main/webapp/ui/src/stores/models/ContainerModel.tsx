@@ -1,3 +1,4 @@
+import { clamp, isNotNil, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
@@ -7,13 +8,11 @@ import ListContainerIllustration from "../../assets/graphics/RecordTypeGraphics/
 import VisualContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/VisualContainer";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import ContentsChips from "../../Inventory/Container/Content/ContentsChips";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { selectColor } from "../../util/colors";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
 import type { _LINK, BlobUrl, Point, URL } from "../../util/types";
-import { clamp, match } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
+import { match } from "../../util/Util";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import { type Container, cTypeToDefaultSearchView, type Location } from "../definitions/Container";
@@ -295,26 +294,26 @@ export default class ContainerModel
         parentContainer: this,
       });
     });
-    this.contentSearch.cacheFetcher.setResults(ArrayUtils.filterNull(locations.map((l) => l.content)));
+    this.contentSearch.cacheFetcher.setResults(locations.map((l) => l.content).filter(isNotNil));
     this.initializedLocations = false;
     if (this.cType === "LIST") this.locations = locations;
     if (this.cType === "IMAGE") this.locations = locations;
     if (this.cType === "GRID")
-      this.locations = ArrayUtils.outerProduct<number, number, Location>(
-        this.rows.map((r) => r.value),
-        this.columns.map((c) => c.value),
-        (coordY: number, coordX: number): Location =>
-          locations.find((l) => l.coordX === coordX && l.coordY === coordY) ??
-          new LocationModel({
-            id: null,
-            coordX,
-            coordY,
-            content: null,
-            parentContainer: this,
-          }),
-      ).flat();
+      this.locations = this.rows.flatMap((row) =>
+        this.columns.map(
+          (column): Location =>
+            locations.find((l) => l.coordX === column.value && l.coordY === row.value) ??
+            new LocationModel({
+              id: null,
+              coordX: column.value,
+              coordY: row.value,
+              content: null,
+              parentContainer: this,
+            }),
+        ),
+      );
     if (this.locations) {
-      this.unchangedLocationsIds = Object.freeze(ArrayUtils.filterNull(this.locations.map((l) => l.id)));
+      this.unchangedLocationsIds = Object.freeze(this.locations.map((l) => l.id).filter(isNotNil));
       this.initializedLocations = true;
     }
   }
@@ -470,7 +469,7 @@ export default class ContainerModel
         deleteLocationRequest: boolean;
       }
   > {
-    const locationModelToObject = pick("id", "coordX", "coordY");
+    const locationModelToObject = (l: Location) => pick(l, ["id", "coordX", "coordY"]);
 
     const locations = this.locations;
     if (!locations) throw new Error("Locations of container must be known.");

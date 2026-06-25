@@ -11,7 +11,9 @@ export const arraysEqual = <T extends string | number>(_arr1: Array<T>, _arr2: A
 };
 
 export const isMac = (): boolean => {
-  return navigator.platform.indexOf("Mac") > -1;
+  const platform =
+    (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform;
+  return /mac/i.test(platform);
 };
 
 export const humanize = (combination: string): string => {

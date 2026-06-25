@@ -1,5 +1,4 @@
 import axios from "@/common/axios";
-import * as ArrayUtils from "../../util/ArrayUtils";
 
 export type Repository = {
   description: string;
@@ -45,7 +44,7 @@ export function useGitHubEndpoint(): {
         if (typeof errorMsg === "string") {
           throw new Error(errorMsg);
         } else {
-          throw new Error(ArrayUtils.getAt(0, errorMsg.errorMessages).orElse("Unknown reason"));
+          throw new Error(errorMsg.errorMessages.at(0) ?? "Unknown reason");
         }
       }
     } else {

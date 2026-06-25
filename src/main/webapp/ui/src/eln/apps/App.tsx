@@ -7,6 +7,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import { mapValues } from "es-toolkit";
 import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -20,7 +21,6 @@ import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import * as FetchingData from "../../util/fetchingData";
 import { getByKey } from "../../util/optional";
-import { mapObject } from "../../util/Util";
 import CardListing from "./CardListing";
 import { type IntegrationStates, useIntegrationsEndpoint } from "./useIntegrationsEndpoint";
 
@@ -140,7 +140,7 @@ function App(): React.ReactNode {
         setAllStates(
           observable({
             tag: "success",
-            value: mapObject((_k, v) => observable(v), await allIntegrations()),
+            value: mapValues(await allIntegrations(), (v) => observable(v)),
           }) as FetchingData.Fetched<IntegrationStates>,
         );
       } catch (e) {

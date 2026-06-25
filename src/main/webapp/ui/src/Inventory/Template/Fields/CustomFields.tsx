@@ -6,7 +6,6 @@ import NoValue from "../../../components/NoValue";
 import FieldModel from "../../../stores/models/FieldModel";
 import TemplateModel from "../../../stores/models/TemplateModel";
 import useStores from "../../../stores/use-stores";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import CustomField from "./CustomField";
 import NewField from "./NewField";
 
@@ -30,18 +29,20 @@ function Fields({ onErrorStateChange }: FieldsArgs): ReactNode {
 
     return (
       <Stack spacing={2}>
-        {ArrayUtils.filterClass(FieldModel, activeResult.fields).map((field: FieldModel, i: number) => (
-          <CustomField
-            field={field}
-            i={i}
-            key={i}
-            editable={editable}
-            onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
-            onRemove={(b) => removeCustomField(field)(b)}
-            forceColumnLayout={!uiStore.isLarge}
-            onMove={(index) => activeResult.moveField(field, index)}
-          />
-        ))}
+        {activeResult.fields
+          .filter((field): field is FieldModel => field instanceof FieldModel)
+          .map((field: FieldModel, i: number) => (
+            <CustomField
+              field={field}
+              i={i}
+              key={i}
+              editable={editable}
+              onErrorStateChange={(value) => onErrorStateChange(field.globalId ?? "NEW", value)}
+              onRemove={(b) => removeCustomField(field)(b)}
+              forceColumnLayout={!uiStore.isLarge}
+              onMove={(index) => activeResult.moveField(field, index)}
+            />
+          ))}
       </Stack>
     );
   });

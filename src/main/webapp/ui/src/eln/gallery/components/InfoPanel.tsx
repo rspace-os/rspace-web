@@ -19,7 +19,6 @@ import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import DescriptionList from "../../../components/DescriptionList";
 import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import { filenameExceptExtension, formatFileSize } from "../../../util/files";
 import { Optional } from "../../../util/optional";
 import Result from "../../../util/result";
@@ -617,7 +616,10 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
               </>
             ),
           },
-        ])(ArrayUtils.head(sortedByCreated), ArrayUtils.last(sortedByCreated)).orElse([]),
+        ])(
+          Result.fromNullable(sortedByCreated.at(0), new Error("No creation dates available.")),
+          Result.fromNullable(sortedByCreated.at(-1), new Error("No creation dates available.")),
+        ).orElse([]),
         ...Result.lift2<
           Date,
           Date,
@@ -634,7 +636,10 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
               </>
             ),
           },
-        ])(ArrayUtils.head(sortedByModified), ArrayUtils.last(sortedByModified)).orElse([]),
+        ])(
+          Result.fromNullable(sortedByModified.at(0), new Error("No modification dates available.")),
+          Result.fromNullable(sortedByModified.at(-1), new Error("No modification dates available.")),
+        ).orElse([]),
       ]}
     />
   );

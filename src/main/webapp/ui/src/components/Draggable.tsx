@@ -1,7 +1,7 @@
+import { clamp } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import type { Point } from "@/util/types";
-import { clamp } from "@/util/Util";
 
 const getParentDiv = (node: Element): HTMLElement => {
   const div = node.closest("div");

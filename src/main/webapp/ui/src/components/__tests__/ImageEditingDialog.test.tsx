@@ -2,9 +2,9 @@
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { delay } from "es-toolkit";
 import fc from "fast-check";
 import { describe, expect, test, vi } from "vitest";
-import { sleep } from "../../util/Util";
 import ImageEditingDialog from "../ImageEditingDialog";
 
 // Import image and canvas __mocks__ for this test
@@ -40,7 +40,7 @@ describe("ImageEditingDialog", () => {
 
     (await screen.findByRole("img")) as HTMLImageElement;
     // wait for rotated image to load
-    await sleep(1000);
+    await delay(1000);
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();

@@ -2,9 +2,9 @@ import { act, render, screen } from "@testing-library/react";
 import "@/__tests__/__mocks__/barcode-detection-api";
 import { ThemeProvider } from "@mui/material/styles";
 import userEvent from "@testing-library/user-event";
+import { delay } from "es-toolkit";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
-import { sleep } from "../../../../util/Util";
 import AllBarcodeScanner from "../AllBarcodeScanner";
 import type { BarcodeInput } from "../BarcodeScannerSkeleton";
 
@@ -25,7 +25,7 @@ describe("AllBarcodeScanner", () => {
      * before the onScan call.
      */
     await act(async () => {
-      await sleep(1100);
+      await delay(1100);
     });
 
     await user.click(screen.getByText("Scan"));

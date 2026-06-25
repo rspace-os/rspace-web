@@ -27,7 +27,6 @@ import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import NavigateContext from "../../stores/contexts/Navigate";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
@@ -310,11 +309,7 @@ function LandingPage() {
           listingOf={listingOf}
           setSelectedSection={setSelectedSection}
           setPath={setPath}
-          title={({ path, section }) =>
-            ArrayUtils.last(path)
-              .map(({ name }) => name)
-              .orElse(gallerySectionLabel[section])
-          }
+          title={({ path, section }) => path.at(-1)?.name ?? gallerySectionLabel[section]}
         />
       );
     },
@@ -341,7 +336,11 @@ function GalleryFolder() {
             navigate(`/gallery?mediaType=${mediaType}`);
           }}
           setPath={() => {}}
-          title={({ path }) => ArrayUtils.last(path).elseThrow().name}
+          title={({ path }) => {
+            const file = path.at(-1);
+            if (!file) throw new Error("Gallery folder path should never be empty.");
+            return file.name;
+          }}
         />
       );
     })

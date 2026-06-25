@@ -18,7 +18,6 @@ import GitHubIcon from "../../../assets/branding/github/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
-import RsSet from "../../../util/set";
 import IntegrationCard from "../IntegrationCard";
 import { type Repository, useGitHubEndpoint } from "../useGitHubEndpoint";
 import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
@@ -218,15 +217,20 @@ const DialogContent = observer(
                                   GITHUB_ACCESS_TOKEN: accessToken,
                                   GITHUB_REPOSITORY_FULL_NAME: repo.full_name,
                                 });
-                                const optionIdsOfExistingRepos = new RsSet(
-                                  copyOfRepos.map(({ optionsId }) => optionsId),
-                                );
+                                const optionIdsOfExistingRepos = new Set(copyOfRepos.map(({ optionsId }) => optionsId));
                                 runInAction(() => {
                                   integrationState.credentials = newState.credentials;
                                   try {
-                                    const newlySavedRepo = new RsSet(newState.credentials)
-                                      .mapOptional((x) => x)
-                                      .subtractMap(({ optionsId }) => optionsId, optionIdsOfExistingRepos).first;
+                                    const newlySavedRepo = newState.credentials
+                                      .find((credential) =>
+                                        credential
+                                          .map(({ optionsId }) => !optionIdsOfExistingRepos.has(optionsId))
+                                          .orElse(false),
+                                      )
+                                      ?.orElseGet(() => {
+                                        throw new Error("Save completed but cannot show results.");
+                                      });
+                                    if (!newlySavedRepo) throw new Error("Save completed but cannot show results.");
                                     copyOfRepos.push(observable(newlySavedRepo));
                                   } catch {
                                     throw new Error("Save completed but cannot show results.");
