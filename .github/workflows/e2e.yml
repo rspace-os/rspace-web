@@ -15,6 +15,10 @@ on:
         description: "mock | real"
         required: true
         type: string
+      java_vendor:
+        description: "Java vendor Maven toolchain"
+        type: string
+        default: "temurin"
 
 permissions:
   contents: read
@@ -30,6 +34,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      matrix:
+        java-version: [17]
     steps:
       - uses: actions/checkout@v6.0.2
         with:
@@ -37,8 +44,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5.2.0
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: ${{ inputs.java_vendor }}
+          java-version: ${{ matrix.java-version }}
           cache: maven
       - name: Set up Node + pnpm
         uses: actions/setup-node@v4
@@ -48,7 +55,7 @@ jobs:
       # SPIKE: not yet validated in CI. -DgenerateReactDist runs the
       # frontend prod build and bundles dist/ into the WAR.
       - name: Package WAR (frontend + backend)
-        run: ./mvnw clean package -DgenerateReactDist -DskipTests
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }}
       - name: Upload WAR
         uses: actions/upload-artifact@v4
         with:
@@ -65,6 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
+        java-version: [17]
     services:
       db:
         image: mariadb:lts-jammy
@@ -97,8 +105,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5.2.0
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: ${{ inputs.java_vendor }}
+          java-version: ${{ matrix.java-version }}
           cache: maven
 
       - name: Set up Node + pnpm
@@ -147,6 +155,7 @@ jobs:
             PUBCHEM_BASE_ARG="-Dpubchem.base.url=http://localhost:9099"
           fi
           nohup ./mvnw jetty:run-war \
+            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
             -Denvironment=drop-recreate-db \
             -Dspring.profiles.active=run \
             -DreactDevMode=false \
