@@ -5,6 +5,7 @@ import CardActions from "@mui/material/CardActions";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { type Barcode, barcodeFormatAsString } from "@/util/barcode";
 import docLinks from "../../../assets/DocLinks";
@@ -41,14 +42,15 @@ export default function BarcodeScannerSkeleton({
   error,
 }: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
+  const { t } = useTranslation("inventory");
 
   function handleOnSubmit() {
     try {
       if (!barcode || typeof barcode.rawValue !== "string") {
         uiStore.addAlert(
           mkAlert({
-            title: "An error occurred.",
-            message: "Unable to search. Scan has not completed.",
+            title: t("barcodeScanner.scanError.title"),
+            message: t("barcodeScanner.scanError.message"),
             variant: "error",
             isInfinite: true,
           }),
@@ -60,7 +62,7 @@ export default function BarcodeScannerSkeleton({
       if (e instanceof Error)
         uiStore.addAlert(
           mkAlert({
-            title: "An error occurred.",
+            title: t("barcodeScanner.scanError.title"),
             message: e.message,
             variant: "error",
             isInfinite: true,
@@ -83,19 +85,18 @@ export default function BarcodeScannerSkeleton({
       >
         <Alert severity="info">
           {loading ? (
-            `Loading Barcode Scanner...`
+            t("barcodeScanner.loading")
           ) : barcode?.rawValue ? (
             <>
-              {`Barcode detected: ${barcodeFormatAsString(barcode.format)}
-              format.`}
+              {t("barcodeScanner.barcodeDetected", { format: barcodeFormatAsString(barcode.format) })}
               <br />
               {`${barcode.rawValue}`}
             </>
           ) : (
-            `Barcode Scanner: ${beforeScanHelpText}.`
+            t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
           )}
         </Alert>
-        <HelpLinkIcon link={docLinks.barcodes} title="Info on using barcodes." />
+        <HelpLinkIcon link={docLinks.barcodes} title={t("barcodeScanner.helpTitle")} />
       </Stack>
       <CardActions>
         <Button
@@ -103,7 +104,7 @@ export default function BarcodeScannerSkeleton({
             onClose();
           }}
         >
-          Cancel
+          {t("actions.cancel", { ns: "common" })}
         </Button>
         <Button
           disabled={!barcode?.rawValue}
@@ -120,7 +121,7 @@ export default function BarcodeScannerSkeleton({
               setBarcode(null);
             }}
           >
-            Clear
+            {t("actions.clear", { ns: "common" })}
           </Button>
         )}
       </CardActions>
@@ -151,7 +152,7 @@ export default function BarcodeScannerSkeleton({
           <Box sx={{ alignSelf: "flex-start" }}>
             <Box sx={{ m: 1 }}>
               <FormField
-                label="Alternatively, enter the data encoded in the barcode"
+                label={t("barcodeScanner.altEntry")}
                 renderInput={(props) => (
                   <StringField
                     {...props}

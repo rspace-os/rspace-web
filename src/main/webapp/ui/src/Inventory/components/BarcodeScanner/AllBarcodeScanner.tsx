@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import useStores from "../../../stores/use-stores";
 import type { Barcode, BarcodeFormat } from "../../../util/barcode";
@@ -47,6 +48,7 @@ type AllBarcodeScannerArgs = {
 
 export default function AllBarcodeScanner({ onClose, onScan, buttonPrefix }: AllBarcodeScannerArgs): React.ReactNode {
   const { uiStore } = useStores();
+  const { t } = useTranslation("inventory");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [barcode, setBarcode] = useState<BarcodeInput | null>(null);
@@ -100,11 +102,8 @@ export default function AllBarcodeScanner({ onClose, onScan, buttonPrefix }: All
       if (e instanceof Error)
         uiStore.addAlert(
           mkAlert({
-            title: "Unable to start camera with Barcode Detector.",
-            message:
-              e instanceof DOMException
-                ? "Permission to use camera was denied. Please reset camera permission and try again."
-                : e.message,
+            title: t("barcodeScanner.startError.title"),
+            message: e instanceof DOMException ? t("barcodeScanner.startError.cameraPermission") : e.message,
             variant: "error",
             isInfinite: true,
           }),
@@ -135,16 +134,12 @@ export default function AllBarcodeScanner({ onClose, onScan, buttonPrefix }: All
       onClose={onClose}
       onScan={onScan}
       buttonPrefix={buttonPrefix}
-      beforeScanHelpText="all formats supported"
+      beforeScanHelpText={t("barcodeScanner.supportedFormats.all")}
       videoElem={videoElem}
       barcode={barcode}
       setBarcode={setBarcode}
       loading={loading}
-      warning={
-        error
-          ? !loading && <Alert severity="warning">{"Could not access camera, please enter code below."}</Alert>
-          : null
-      }
+      warning={error ? !loading && <Alert severity="warning">{t("barcodeScanner.cameraError")}</Alert> : null}
       error={error}
     />
   );

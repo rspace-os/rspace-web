@@ -4,6 +4,28 @@
     "empty": "The document has no connected Inventory items.",
     "loading": "Loading"
   },
+  "barcodeScanner": {
+    "altEntry": "Alternatively, enter the data encoded in the barcode",
+    "barcodeDetected": "Barcode detected: {format} format.",
+    "cameraError": "Could not access camera, please enter code below.",
+    "helpTitle": "Info on using barcodes.",
+    "loading": "Loading Barcode Scanner...",
+    "otherFormats": "To scan other formats, please try an Android device, or Chrome on a Mac (with a webcam).",
+    "prompt": "Barcode Scanner: {helpText}.",
+    "scanError": {
+      "message": "Unable to search. Scan has not completed.",
+      "title": "An error occurred."
+    },
+    "startError": {
+      "cameraPermission": "Permission to use camera was denied. Please reset camera permission and try again.",
+      "cameraReset": "If your device has a camera, please reset camera permission, and try again.",
+      "title": "Unable to start camera with Barcode Detector."
+    },
+    "supportedFormats": {
+      "all": "all formats supported",
+      "qr": "QR format supported"
+    }
+  },
   "container": {
     "content": {
       "placeMarkers": {
