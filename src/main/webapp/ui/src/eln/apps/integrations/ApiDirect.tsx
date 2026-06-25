@@ -46,7 +46,7 @@ function ApiDirect(): React.ReactNode {
      -H "Accept: application/json" \\
      https://your-rspace-instance.com/api/v1/userDetails/whoami`}
             </Box>
-            <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+            <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
               <strong>Python SDK:</strong>
               <Box
                 component="pre"

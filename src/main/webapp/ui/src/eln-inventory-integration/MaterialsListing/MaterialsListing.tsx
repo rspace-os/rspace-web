@@ -14,7 +14,7 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
@@ -27,6 +27,18 @@ import MaterialsDialog from "./MaterialsDialog";
 import PrintedMaterialsListing from "./PrintedMaterialsListing";
 
 const FAB_SIZE = 48;
+const materialsListingRoots = new WeakMap<Element, Root>();
+
+function getMaterialsListingRoot(container: Element): Root {
+  const existingRoot = materialsListingRoots.get(container);
+  if (existingRoot) {
+    return existingRoot;
+  }
+
+  const root = createRoot(container);
+  materialsListingRoots.set(container, root);
+  return root;
+}
 
 const itemTextSx = {
   whiteSpace: "nowrap",
@@ -260,7 +272,7 @@ function initListOfMaterials({
 
     if (!fieldId) return;
 
-    const root = createRoot(listingWrapper);
+    const root = getMaterialsListingRoot(listingWrapper);
     root.render(
       <Analytics>
         <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
@@ -274,7 +286,7 @@ function initListOfMaterials({
       `.invMaterialsListing_new[data-field-id="${fieldId}"][data-document-id="${documentId}"]`,
     );
     if (newButtonWrapper) {
-      createRoot(newButtonWrapper).render(
+      getMaterialsListingRoot(newButtonWrapper).render(
         <Analytics>
           <NewMaterialsListing elnFieldId={fieldId} />
         </Analytics>,

@@ -115,7 +115,7 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
         // version). Collapse to one row per version, keeping the newest revision of each,
         // so the final version is not listed twice (mirrors the inventory path below).
         const byVersion = new Map<number, VersionRecord>();
-        for (const entry of [...data.data].sort((a, b) => a.revision - b.revision)) {
+        for (const entry of data.data.toSorted((a, b) => a.revision - b.revision)) {
           byVersion.set(entry.version, {
             version: entry.version,
             revisionId: entry.revision,
@@ -130,7 +130,7 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
         // several revisions sharing one version. Collapse to one row per version, keeping the
         // newest revision of each, and pin the user-facing version (mirrors VersionHistory).
         const byVersion = new Map<number, VersionRecord>();
-        for (const entry of [...data.revisions].sort((a, b) => a.revisionId - b.revisionId)) {
+        for (const entry of data.revisions.toSorted((a, b) => a.revisionId - b.revisionId)) {
           const version = entry.record.version;
           if (version == null) continue;
           byVersion.set(version, {

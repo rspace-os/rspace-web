@@ -87,40 +87,10 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <executions>
-          <execution> <!-- default execution skips 'prod'/'prod-test' profile tests -->
+          <execution> <!-- honour -DskipUnitTests so the integration-test CI shard skips the test phase -->
             <id>default-test</id>
             <configuration>
               <skip>${skipUnitTests}</skip>
-              <excludes>
-                <exclude>**/EgnyteFileSetupConfigTest.java</exclude>
-                <exclude>**/ProdConfigWiringTest.java</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-          <execution> <!-- separte execution for egnyte wiring -->
-            <id>unit-tests-egnyte-wiring</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <skip>${skipUnitTests}</skip>
-              <includes>
-                <include>**/EgnyteFileSetupConfigTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution> <!-- separate execution for 'prod' profile tests -->
-            <id>unit-tests-production</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <skip>${skipUnitTests}</skip>
-              <includes>
-                <include>**/ProdConfigWiringTest.java</include>
-              </includes>
             </configuration>
           </execution>
           <execution> <!-- for 'dev' profile IT tests -->
@@ -1484,7 +1454,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>2.28.0</version>
+      <version>2.29.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1956,7 +1926,7 @@
             <version>2.0.0</version>
             <configuration>
               <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.3.0</pnpmVersion>
+              <pnpmVersion>11.8.0</pnpmVersion>
               <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>

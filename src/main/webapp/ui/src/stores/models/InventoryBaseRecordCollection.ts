@@ -1,5 +1,5 @@
 import { action, computed, makeObservable, observable, override } from "mobx";
-import * as ArrayUtils from "../../util/ArrayUtils";
+import { firstValue } from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
 import { match } from "../../util/Util";
 import type { HasEditableFields } from "../definitions/Editable";
@@ -55,9 +55,11 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
       canChooseWhichToEdit: computed,
     });
     this.records = records;
-    const currentNames = new RsSet(this.records.map((r) => r.name));
+    const currentNames = new Set(Array.from(this.records, (r) => r.name));
     this.name =
-      currentNames.size === 1 ? { common: currentNames.first, suffix: "NONE" } : { common: "", suffix: "NONE" };
+      currentNames.size === 1
+        ? { common: firstValue(currentNames) ?? "", suffix: "NONE" }
+        : { common: "", suffix: "NONE" };
     this.sharedWith = [];
   }
 
@@ -66,7 +68,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
   }
 
   get fieldValues(): InventoryBaseRecordCollectionEditableFields {
-    const currentDescriptions = new RsSet(this.records.map((r) => r.description));
+    const currentDescriptions = new Set(Array.from(this.records, (r) => r.description));
 
     /*
      * Image preview can only be shown after the user has modified the image,
@@ -80,7 +82,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
      * which is because the API returns the same URL for the images of each
      * subsample.
      */
-    const currentImages = new RsSet(this.records.map((r) => r.image));
+    const currentImages = new Set(Array.from(this.records, (r) => r.image));
 
     /*
      * Only new barcodes are shown as editing/deleting existing barcodes across
@@ -91,15 +93,18 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
      * adding of new barcodes.
      */
     const newBarcodes = new RsSet(
-      ArrayUtils.filterClass(PersistedBarcode, this.records.first.barcodes).filter((b) => b.id === null),
+      this.records.first.barcodes
+        .filter((barcode): barcode is PersistedBarcode => barcode instanceof PersistedBarcode)
+        .filter((b) => b.id === null),
     );
 
-    const currentSharingMode = new RsSet(this.records.map((r) => r.sharingMode));
+    const currentSharingMode = new Set(Array.from(this.records, (r) => r.sharingMode));
+    const currentImage = firstValue(currentImages);
 
     return {
-      image: currentImages.first ?? null,
-      newBase64Image: currentImages.first ?? null,
-      description: currentDescriptions.first ?? "",
+      image: currentImage ?? null,
+      newBase64Image: currentImage ?? null,
+      description: firstValue(currentDescriptions) ?? "",
       name: this.name,
 
       // all the tags that the records have in common
@@ -109,7 +114,7 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
       ).toArray(),
 
       barcodes: [...newBarcodes],
-      sharingMode: currentSharingMode.size === 1 ? currentSharingMode.first : "OWNER_GROUPS", // owner's groups acts as default
+      sharingMode: currentSharingMode.size === 1 ? (firstValue(currentSharingMode) ?? "OWNER_GROUPS") : "OWNER_GROUPS", // owner's groups acts as default
       sharedWith: this.sharedWith,
     };
   }
@@ -129,10 +134,10 @@ export default class InventoryBaseRecordCollection<ResultSubtype extends Invento
   get noValueLabel(): {
     [key in keyof InventoryBaseRecordCollectionEditableFields]: string | null;
   } {
-    const currentNames = new RsSet(this.records.map((r) => r.name));
-    const currentDescriptions = new RsSet(this.records.map((r) => r.description));
-    const currentTags = new RsSet(this.records.map((r) => r.tags));
-    const currentImages = new RsSet(this.records.map((r) => r.image));
+    const currentNames = new Set(Array.from(this.records, (r) => r.name));
+    const currentDescriptions = new Set(Array.from(this.records, (r) => r.description));
+    const currentTags = new Set(Array.from(this.records, (r) => r.tags));
+    const currentImages = new Set(Array.from(this.records, (r) => r.image));
     return {
       image: currentImages.size === 1 ? null : "Enable to set image for all items",
       newBase64Image: null,

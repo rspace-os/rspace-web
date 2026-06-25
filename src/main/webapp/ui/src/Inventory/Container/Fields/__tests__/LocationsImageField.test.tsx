@@ -142,7 +142,7 @@ describe("LocationImageField", () => {
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
       });
-      expect(setImageSpy).toHaveBeenCalledWith("locationsImage", expect.any(String));
+      expect(setImageSpy).toHaveBeenCalledWith("locationsImage");
     });
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
@@ -173,7 +173,7 @@ describe("LocationImageField", () => {
       act(() => {
         setPreviewImageFunction();
       });
-      expect(setImageSpy).toHaveBeenCalledWith("image", expect.any(String));
+      expect(setImageSpy).toHaveBeenCalledWith("image");
     });
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();

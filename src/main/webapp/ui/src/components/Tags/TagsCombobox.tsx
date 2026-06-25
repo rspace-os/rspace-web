@@ -18,10 +18,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
 import { useInfiniteLoader } from "react-window-infinite-loader";
 import type { Tag } from "../../stores/definitions/Tag";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { lift3, Optional } from "../../util/optional";
 import type RsSet from "../../util/set";
-import { stableSort } from "../../util/table";
 import { FINAL_DATA_SIGNAL, parseEncodedTags, SMALL_DATASET_SIGNAL } from "./ParseEncodedTagStrings";
 import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./TagValidation";
 
@@ -262,11 +260,12 @@ function OptionsListing({
        * `listRef.current.resetAfterIndex(0)` calls are no longer needed.
        *
        * `i` may exceed `sortedOptions.length` while the "Loading..." placeholder
-       * shows, so `getAt`/`orElse` guard against undefined.
+       * shows, so `Optional.fromNullable(sortedOptions.at(i))`/`orElse` guard
+       * against undefined.
        */
       rowHeight={(i) =>
         OPTION_HEIGHT +
-        ArrayUtils.getAt(i, sortedOptions)
+        Optional.fromNullable(sortedOptions.at(i))
           .map((tag) => {
             const tagHasHelpText = helpText(checkInternalTag(tag, { enforceOntologies })) === null;
             return tagHasHelpText ? 0 : 20;
@@ -454,7 +453,7 @@ function TagsComboboxContent<
      * response, which at time of writing is 1000 tags, so applying client-side
      * sorting is a safe operation.
      */
-    return stableSort(tags, (tagA, tagB) => {
+    return tags.toSorted((tagA, tagB) => {
       // sort all complete matches above all other suggestions
       if (tagA.value === filter) return -1;
       if (tagB.value === filter) return 1;

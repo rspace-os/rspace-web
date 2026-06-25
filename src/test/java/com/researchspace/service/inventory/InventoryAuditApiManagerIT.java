@@ -13,7 +13,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
@@ -57,7 +57,7 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
     subSample.setName("updated subSample");
     subSampleApiMgr.updateApiSubSample(subSample, anyUser);
 
-    Sample dbSample = sampleApiMgr.assertUserCanEditSample(sample.getId(), anyUser);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanEditSample(sample.getId(), anyUser);
     SubSample dbSubSample = subSampleApiMgr.assertUserCanEditSubSample(subSample.getId(), anyUser);
 
     // get all subsample revisions

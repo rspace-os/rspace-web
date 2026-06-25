@@ -61,6 +61,7 @@ import {
   useGridApiContext,
 } from "@mui/x-data-grid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { delay } from "es-toolkit";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import createAccentedTheme from "../../../accentedTheme";
@@ -79,7 +80,6 @@ import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty"
 import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/useUiPreference";
 import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
 import type { Optional } from "../../../util/optional";
@@ -87,7 +87,6 @@ import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import RsSet, { flattenWithIntersection } from "../../../util/set";
 import { DataGridColumn, paginationOptions } from "../../../util/table";
-import { sleep } from "../../../util/Util";
 import TagsCombobox from "./TagsCombobox";
 
 /*
@@ -196,7 +195,14 @@ const TagDialog = ({
   const [deletedTags, setDeletedTags] = React.useState<Array<string>>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const visibleTags = React.useMemo(() => {
-    return [...new RsSet(addedTags).union(commonTags).subtract(new RsSet(deletedTags))];
+    const tags = new Set(commonTags);
+    addedTags.forEach((tag) => {
+      tags.add(tag);
+    });
+    deletedTags.forEach((tag) => {
+      tags.delete(tag);
+    });
+    return Array.from(tags);
   }, [commonTags, addedTags, deletedTags]);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   React.useEffect(() => {
@@ -664,6 +670,7 @@ const SetUsernamAliasAction = ({
               <DialogTitle>Set Username Alias</DialogTitle>
               <DialogContent>
                 <DialogContentText
+                  component="div"
                   variant="body2"
                   sx={{
                     mb: 2,
@@ -785,6 +792,7 @@ const DeleteAction = ({
               <DialogTitle>Deletion Confirmation</DialogTitle>
               <DialogContent>
                 <DialogContentText
+                  component="div"
                   variant="body2"
                   sx={{
                     mb: 2,
@@ -905,8 +913,7 @@ const SelectionActions = ({
             FetchingData.getSuccessValue(fetchedListing).flatMap((listing) => listing.getById(id)),
           ),
         );
-  const selectedUser: Result<User> = ArrayUtils.getAt(0, selectedIds)
-    .toResult(() => new Error("selectedIds is empty"))
+  const selectedUser: Result<User> = Result.fromNullable(selectedIds.at(0), new Error("selectedIds is empty"))
     .flatMap((id) =>
       selectedIds.length > 1 ? Result.Error<UserId>([new Error("More than one user is selected")]) : Result.Ok(id),
     )
@@ -1212,12 +1219,12 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         return listing.allUsers();
       },
     });
-    await sleep(2000); // wait for the table to be re-rendered
+    await delay(2000); // wait for the table to be re-rendered
     apiRef.current?.exportDataAsCsv({
       getRowsToExport: () => newListing.users.map((u) => u.id),
       allColumns: true,
     });
-    await sleep(2000); // wait for download to be done
+    await delay(2000); // wait for download to be done
     if (priorSearchParameters) {
       await newListing.setSearchParameters(priorSearchParameters);
     }
@@ -1338,7 +1345,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
                       allowNewTags={false}
                       onSelection={(newTag) => {
                         if (!tags.includes(newTag)) {
-                          const newTags = [...tags, newTag];
+                          const newTags = tags.concat(newTag);
                           setTags(newTags);
                           FetchingData.getSuccessValue(userListing).do((listing) => {
                             void listing.applyTagsFilter(newTags);

@@ -10,7 +10,6 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React, { useEffect } from "react";
 import axios from "@/common/axios";
-import { isUrl } from "@/util/Util";
 
 type MetadataMap = Record<string, string>;
 
@@ -117,7 +116,7 @@ function MetadataRows({ metadata, keyPrefix }: { metadata: MetadataMap; keyPrefi
       key={`${keyPrefix}-${key}`}
       label={key}
       value={
-        isUrl(value) ? (
+        URL.canParse(value) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
             {value}
           </a>

@@ -27,8 +27,9 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import java.time.LocalDate;
@@ -449,7 +450,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(1, sampleRev3Full.getExtraFields().size());
   }
 
-  private Optional<Sample> getComplexSampleTemplate(User user) {
+  private Optional<SampleTemplate> getComplexSampleTemplate(User user) {
     return sampleApiMgr.getAllTemplates(user).stream()
         .filter(
             t ->
@@ -521,7 +522,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiSampleWithFullSubSamples complexSample = createComplexSampleForUser(anyUser);
-    Sample complexTemplateInfo =
+    SampleTemplate complexTemplateInfo =
         sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(
             complexSample.getTemplateId(), anyUser);
 
@@ -961,7 +962,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSampleWithFullSubSamples sample =
         mvcUtils.getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
-    Sample dbSample = sampleApiMgr.assertUserCanReadSample(sample.getId(), anyUser);
+    SampleEntity dbSample = sampleApiMgr.assertUserCanReadSample(sample.getId(), anyUser);
     assertNotNull(dbSample.getImageFileProperty());
     assertNotNull(dbSample.getThumbnailFileProperty());
     // 2 x image, self and icon

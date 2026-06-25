@@ -20,7 +20,6 @@ import { Dialog } from "../../../components/DialogBoundary";
 import EventBoundary from "../../../components/EventBoundary";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
@@ -124,7 +123,7 @@ function FilesystemSelectionStep(props: {
           onChange={({ target: { value } }) => {
             const chosenId = parseInt(value, 10);
             Optional.fromNullable(filesystems)
-              .flatMap((fss) => ArrayUtils.find(({ id }) => id === chosenId, fss))
+              .flatMap((fss) => Optional.fromNullable(fss.find(({ id }) => id === chosenId)))
               .do((fs) => {
                 setChosenFilesysem(fs);
               });

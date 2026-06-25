@@ -1,7 +1,6 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { showToastWhilstPending } from "../../util/alerts";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -360,8 +359,8 @@ export class ListOfMaterials {
   }
 
   updatePickerSearch() {
-    this.pickerSearch.alwaysFilterOut = (result) =>
-      new RsSet(this.materials).map((mat) => mat.invRec.globalId).has(result.globalId) || !result.usableInLoM;
+    const materialGlobalIds = new Set(this.materials.map((mat) => mat.invRec.globalId));
+    this.pickerSearch.alwaysFilterOut = (result) => materialGlobalIds.has(result.globalId) || !result.usableInLoM;
   }
 
   /*
@@ -384,7 +383,7 @@ export class ListOfMaterials {
       this.description === other.description,
       this.elnFieldId === other.elnFieldId,
       this.materials.length === other.materials.length &&
-        ArrayUtils.zipWith(this.materials, other.materials, (x, y) => x.isEqual(y)).every((x) => x),
+        this.materials.every((material, index) => material.isEqual(other.materials[index])),
     ].every((x) => x);
   }
 
@@ -466,8 +465,8 @@ export class ListOfMaterials {
   }
 
   get selectedCategories(): Set<UnitCategory> {
-    return new RsSet(filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec))).map(
-      (r) => r.quantityCategory,
+    return new Set(
+      Array.from(filterForThoseWithQuantities(this.selectedMaterials.map((m) => m.invRec)), (r) => r.quantityCategory),
     );
   }
 

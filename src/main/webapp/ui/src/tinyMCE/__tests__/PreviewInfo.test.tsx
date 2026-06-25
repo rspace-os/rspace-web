@@ -121,6 +121,25 @@ describe("PreviewInfo event handlers", () => {
     });
   });
 
+  it("reuses the same React root when table-only stoichiometry nodes are rendered again", () => {
+    document.body.innerHTML = `
+      <div id="div_7">
+        <div
+          id="table-only-preview"
+          data-stoichiometry-table-only="true"
+          data-stoichiometry-table='{"id":3,"revision":4}'
+        ></div>
+      </div>
+    `;
+
+    document.dispatchEvent(new CustomEvent("document-placed", { detail: 7 }));
+    document.dispatchEvent(new CustomEvent("document-placed", { detail: 7 }));
+
+    expect(mockCreateRoot).toHaveBeenCalledTimes(1);
+    expect(rootRenderCalls).toHaveLength(2);
+    expect(rootRenderCalls[0]?.container).toBe(rootRenderCalls[1]?.container);
+  });
+
   it("renders preview info into the closest span for chem-updated images", () => {
     document.body.innerHTML = `
       <div id="div_9">

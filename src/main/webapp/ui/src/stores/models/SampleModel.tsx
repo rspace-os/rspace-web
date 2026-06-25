@@ -4,7 +4,7 @@ import { getErrorMessage } from "@/util/error";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import ApiService from "../../common/InvApiService";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
-import * as ArrayUtils from "../../util/ArrayUtils";
+import { firstValue } from "../../util/ArrayUtils";
 import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -449,12 +449,11 @@ export default class SampleModel
       return newFields?.find((f) => f.name === field.name)?.globalId;
     };
 
-    const fieldAttachments: Array<Attachment> = ArrayUtils.filterNull(
-      this.fields
-        .filter((f) => Boolean(f.attachment))
-        // handle removal of correct field attachment
-        .map((f) => (f.attachment?.removed ? f.originalAttachment : f.attachment)),
-    );
+    const fieldAttachments: Array<Attachment> = this.fields
+      .filter((f) => Boolean(f.attachment))
+      // handle removal of correct field attachment
+      .map((f) => (f.attachment?.removed ? f.originalAttachment : f.attachment))
+      .filter((attachment): attachment is Attachment => attachment !== null && typeof attachment !== "undefined");
 
     await Promise.all(
       fieldAttachments.map((attachment) => {
@@ -981,39 +980,33 @@ export class SampleCollection
   get allSameTemperatures(): boolean {
     const allTemperaturesUnspecified =
       this.records.every((s) => !s.storageTempMin) && this.records.every((s) => !s.storageTempMax);
-    const setOfTemperatures = new RsSet(
-      this.records.map((s) => ({
-        min: s.storageTempMin,
-        max: s.storageTempMax,
-      })),
-    );
     return (
       !allTemperaturesUnspecified &&
-      setOfTemperatures.map(({ min }) => min?.numericValue).size === 1 &&
-      setOfTemperatures.map(({ min }) => min?.unitId).size === 1 &&
-      setOfTemperatures.map(({ max }) => max?.numericValue).size === 1 &&
-      setOfTemperatures.map(({ max }) => max?.unitId).size === 1
+      new Set(Array.from(this.records, (s) => s.storageTempMin?.numericValue)).size === 1 &&
+      new Set(Array.from(this.records, (s) => s.storageTempMin?.unitId)).size === 1 &&
+      new Set(Array.from(this.records, (s) => s.storageTempMax?.numericValue)).size === 1 &&
+      new Set(Array.from(this.records, (s) => s.storageTempMax?.unitId)).size === 1
     );
   }
 
   get fieldValues(): BatchSampleEditableFields {
-    const currentSources = new RsSet(this.records.map((r) => r.sampleSource));
-    const currentExpiryDates = new RsSet(this.records.map((r) => r.expiryDate));
+    const currentSources = new Set(Array.from(this.records, (r) => r.sampleSource));
+    const currentExpiryDates = new Set(Array.from(this.records, (r) => r.expiryDate));
     const allSameTemperatures = this.allSameTemperatures;
 
     /*
      * Note that these two sets may contain multiple objects modelling the same
      * temperature range as sets define quality using `===`.
      */
-    const currentStorageTemperatureMin = new RsSet(this.records.map((r) => r.storageTempMin));
-    const currentStorageTemperatureMax = new RsSet(this.records.map((r) => r.storageTempMax));
+    const currentStorageTemperatureMin = new Set(Array.from(this.records, (r) => r.storageTempMin));
+    const currentStorageTemperatureMax = new Set(Array.from(this.records, (r) => r.storageTempMax));
 
     return {
       ...super.fieldValues,
-      sampleSource: currentSources.first ?? "",
-      expiryDate: currentExpiryDates.first ?? null,
-      storageTempMin: allSameTemperatures ? currentStorageTemperatureMin.first : null,
-      storageTempMax: allSameTemperatures ? currentStorageTemperatureMax.first : null,
+      sampleSource: firstValue(currentSources) ?? DEFAULT_SAMPLE.sampleSource,
+      expiryDate: firstValue(currentExpiryDates) ?? null,
+      storageTempMin: allSameTemperatures ? (firstValue(currentStorageTemperatureMin) ?? null) : null,
+      storageTempMax: allSameTemperatures ? (firstValue(currentStorageTemperatureMax) ?? null) : null,
 
       // Not supported when batch editing
       quantity: null,
@@ -1024,8 +1017,8 @@ export class SampleCollection
   get noValueLabel(): {
     [key in keyof BatchSampleEditableFields]: string | null;
   } {
-    const currentSources = new RsSet(this.records.map((r) => r.sampleSource));
-    const currentExpiryDates = new RsSet(this.records.map((r) => r.expiryDate));
+    const currentSources = new Set(Array.from(this.records, (r) => r.sampleSource));
+    const currentExpiryDates = new Set(Array.from(this.records, (r) => r.expiryDate));
     const allTemperaturesUnspecified =
       this.records.every((s) => !s.storageTempMin) && this.records.every((s) => !s.storageTempMax);
     const allSameTemperatures = this.allSameTemperatures;

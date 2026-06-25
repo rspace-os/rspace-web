@@ -17,7 +17,6 @@ import { render, within } from "@/__tests__/customQueries";
 import { makeMockSubSample, subSampleAttrsArbitrary } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import type SubSampleModel from "../../../../stores/models/SubSampleModel";
 import type { StoreContainer } from "../../../../stores/stores/RootStore";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
 
 vi.mock("../../../Search/SearchView", () => ({
   default: vi.fn(() => <></>),
@@ -84,7 +83,8 @@ describe("MoveDialog", () => {
         fc.array<SubSampleModel>(subSampleAttrsArbitrary.map((attrs) => makeMockSubSample(attrs))),
         (selectedResults) => {
           // this check prevents the non-unique react key warning
-          fc.pre(ArrayUtils.allAreUnique(selectedResults.map((r) => r.globalId)));
+          const globalIds = selectedResults.map((r) => r.globalId);
+          fc.pre(new Set(globalIds).size === globalIds.length);
           const rootStore: StoreContainer = makeMockRootStore(
             observable({
               moveStore: {

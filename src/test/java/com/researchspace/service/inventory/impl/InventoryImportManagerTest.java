@@ -33,8 +33,8 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -629,7 +629,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     nameDescriptionMapping.put("MyQuantity", "quantity");
 
     // use complex template
-    Sample complexTemplate = findComplexSampleTemplate(testUser);
+    SampleTemplate complexTemplate = findComplexSampleTemplate(testUser);
     ApiInventoryImportSampleImportResult sampleResult = new ApiInventoryImportSampleImportResult();
     sampleResult.addExistingTemplateResult(new ApiSampleTemplate(complexTemplate));
     ApiInventoryImportResult processingResult = new ApiInventoryImportResult(testUser);
@@ -691,7 +691,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     HashMap<String, String> nameMapping = new HashMap<>();
     nameMapping.put("Name", "name");
 
-    Sample complexTemplate = findComplexSampleTemplate(testUser);
+    SampleTemplate complexTemplate = findComplexSampleTemplate(testUser);
     ApiSampleTemplate complexApiTemplate = new ApiSampleTemplate(complexTemplate);
 
     // find complex template

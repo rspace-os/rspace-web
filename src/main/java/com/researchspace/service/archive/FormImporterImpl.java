@@ -7,25 +7,21 @@ import static org.apache.commons.io.FilenameUtils.getExtension;
 import com.researchspace.archive.ArchivalDocumentParserRef;
 import com.researchspace.archive.ArchivalFieldForm;
 import com.researchspace.archive.ArchivalForm;
+import com.researchspace.dao.FieldFormDao;
 import com.researchspace.dao.IconImgDao;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.DateFieldDTO;
+import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.dtos.NumberFieldDTO;
 import com.researchspace.model.dtos.RadioFieldDTO;
 import com.researchspace.model.dtos.StringFieldDTO;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.dtos.TimeFieldDTO;
-import com.researchspace.model.field.ChoiceFieldForm;
-import com.researchspace.model.field.DateFieldForm;
 import com.researchspace.model.field.FieldForm;
 import com.researchspace.model.field.FieldType;
-import com.researchspace.model.field.NumberFieldForm;
-import com.researchspace.model.field.RadioFieldForm;
-import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
-import com.researchspace.model.field.TimeFieldForm;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormType;
 import com.researchspace.model.record.IconEntity;
@@ -48,6 +44,7 @@ public class FormImporterImpl implements FormImporter {
 
   private @Autowired FormManager formManager;
   private @Autowired IconImgDao iconDao;
+  private @Autowired FieldFormDao fieldFormDao;
 
   @Override
   public RSForm makeRSForm(ArchivalDocumentParserRef parserRef, User user) {
@@ -79,71 +76,87 @@ public class FormImporterImpl implements FormImporter {
     for (ArchivalFieldForm aff : flds1) {
       switch (FieldType.getFieldTypeForString(aff.getType())) {
         case NUMBER:
-          NumberFieldDTO<NumberFieldForm> ndto =
+          persistFieldForm(
+              form,
               new NumberFieldDTO<>(
                   aff.getMin(),
                   aff.getMax(),
                   aff.getDecimalPlace(),
                   aff.getDefaultValue(),
                   FieldType.NUMBER,
-                  aff.getName());
-          NumberFieldForm nfm = formManager.createFieldForm(ndto, form.getId(), user);
-          form.addFieldForm(nfm);
+                  aff.getName()));
           break;
         case STRING:
           String tr = aff.isPassword() ? "true" : "false";
-          StringFieldDTO<StringFieldForm> sdto =
-              new StringFieldDTO<>(aff.getName(), tr, aff.getDefaultValue());
-          StringFieldForm sfm = formManager.createFieldForm(sdto, form.getId(), user);
-          form.addFieldForm(sfm);
+          persistFieldForm(form, new StringFieldDTO<>(aff.getName(), tr, aff.getDefaultValue()));
           break;
         case RADIO:
-          RadioFieldDTO<RadioFieldForm> rdto =
+          persistFieldForm(
+              form,
               new RadioFieldDTO<>(
                   aff.getOptions(),
                   aff.getSelection(),
                   aff.getName(),
                   aff.isDisplayAsPickList(),
-                  aff.isSortAlphabetic());
-          RadioFieldForm radfm = formManager.createFieldForm(rdto, form.getId(), user);
-          form.addFieldForm(radfm);
+                  aff.isSortAlphabetic()));
           break;
         case CHOICE:
-          ChoiceFieldDTO<ChoiceFieldForm> cdto =
+          persistFieldForm(
+              form,
               new ChoiceFieldDTO<>(
-                  aff.getOptions(), aff.getMultipleChoice(), aff.getSelection(), aff.getName());
-          ChoiceFieldForm cfm = formManager.createFieldForm(cdto, form.getId(), user);
-          form.addFieldForm(cfm);
+                  aff.getOptions(), aff.getMultipleChoice(), aff.getSelection(), aff.getName()));
           break;
         case DATE:
-          DateFieldDTO<DateFieldForm> ddto =
-              new DateFieldDTO<DateFieldForm>(
+          persistFieldForm(
+              form,
+              new DateFieldDTO<>(
                   aff.getDefaultValue(),
                   aff.getMin(),
                   aff.getMax(),
                   aff.getDateFormat(),
-                  aff.getName());
-          DateFieldForm dfm = formManager.createFieldForm(ddto, form.getId(), user);
+                  aff.getName()));
           break;
         case TIME:
-          TimeFieldDTO<TimeFieldForm> mdto =
-              new TimeFieldDTO<TimeFieldForm>(
+          persistFieldForm(
+              form,
+              new TimeFieldDTO<>(
                   aff.getDefaultValue(),
                   aff.getMin(),
                   aff.getMax(),
                   aff.getDateFormat(),
-                  aff.getName());
-          TimeFieldForm mfm = formManager.createFieldForm(mdto, form.getId(), user);
+                  aff.getName()));
           break;
 
         default: // Text
-          TextFieldDTO<TextFieldForm> tdto =
-              new TextFieldDTO<>(aff.getName(), aff.getDefaultValue());
-          TextFieldForm tfm = formManager.createFieldForm(tdto, form.getId(), user);
+          TextFieldForm tfm =
+              persistFieldForm(form, new TextFieldDTO<>(aff.getName(), aff.getDefaultValue()));
           setFieldForm(tfm, aff);
       }
     }
     return form;
+  }
+
+  /**
+   * Builds a field form from {@code dto} and persists it against {@code form}, keeping the
+   * <em>managed</em> field form in the form's collection.
+   *
+   * <p>RSDEV-1140: the previous code went through {@code FormManager.createFieldForm}, whose
+   * Hibernate {@code merge} leaves the passed field form transient on the form's {@code
+   * cascade=ALL, orphanRemoval=true} collection. Because archive import rebuilds a whole form's
+   * fields in one transaction and then merges the form again, those transients were re-cascaded and
+   * intermittently orphan-removed - silently dropping field content from imported documents.
+   * Persisting the field form directly and storing the managed copy keeps the form's collection
+   * consistent with the database, so later merges are no-ops. (The form is owned by the importing
+   * user, so no permission check is needed here.)
+   */
+  @SuppressWarnings("unchecked")
+  private <F extends FieldForm> F persistFieldForm(RSForm form, FormFieldSource<F> dto) {
+    F fieldForm = dto.createFieldForm();
+    fieldForm.setColumnIndex(form.getNumActiveFields());
+    fieldForm.setForm(form);
+    F managed = (F) fieldFormDao.save(fieldForm);
+    form.addFieldForm(managed);
+    return managed;
   }
 
   Optional<IconEntity> createFormIcon(ArchivalDocumentParserRef parserRef, Long newFormId)

@@ -69,7 +69,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   public void setUp() throws Exception {
     super.setUp();
 
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());

@@ -7,7 +7,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
@@ -23,6 +23,18 @@ type PreviewInfoItem = Record<string, string | undefined>;
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const PREVIEW_INFO_BORDER_COLOR = `hsl(${ACCENT_COLOR.background.hue} ${ACCENT_COLOR.background.saturation}% ${ACCENT_COLOR.background.lightness}%)`;
 const queryClient = new QueryClient();
+const previewInfoRoots = new WeakMap<Element, Root>();
+
+function getPreviewInfoRoot(container: Element): Root {
+  const existingRoot = previewInfoRoots.get(container);
+  if (existingRoot) {
+    return existingRoot;
+  }
+
+  const root = createRoot(container);
+  previewInfoRoots.set(container, root);
+  return root;
+}
 
 function getStoichiometryReference(raw: string | undefined) {
   if (typeof raw !== "string") {
@@ -206,7 +218,7 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
 }
 
 function render(attributes: PreviewInfoItem, element: Element) {
-  const root = createRoot(element);
+  const root = getPreviewInfoRoot(element);
   root.render(<PreviewInfo item={{ ...attributes }} />);
 }
 
@@ -222,7 +234,7 @@ function renderChemPreview(domContainer: HTMLImageElement) {
   });
   const contents = parent.innerHTML;
 
-  const root = createRoot(parent);
+  const root = getPreviewInfoRoot(parent);
   root.render(<PreviewInfo item={{ ...attributes }} />);
   parent.insertAdjacentHTML("beforeend", contents);
 }

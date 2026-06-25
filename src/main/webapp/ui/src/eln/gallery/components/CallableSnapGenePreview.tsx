@@ -36,7 +36,7 @@ import { Dialog } from "../../../components/DialogBoundary";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import LoadingCircular from "../../../components/LoadingCircular";
 import * as Parsers from "../../../util/parsers";
-import { getSorting, paginationOptions, stableSort } from "../../../util/table";
+import { getSorting, paginationOptions } from "../../../util/table";
 import type { Order } from "../../../util/types";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import ResetZoomIcon from "./ResetZoomIcon";
@@ -324,7 +324,8 @@ function RestrictionSites({
                   rowCount={enzymeList.length}
                 />
                 <TableBody>
-                  {stableSort(enzymeList, getSorting(order, orderBy))
+                  {enzymeList
+                    .toSorted(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((enzyme) => (
                       <TableRow
@@ -561,7 +562,8 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
                   rowCount={filteredResults.length}
                 />
                 <TableBody>
-                  {stableSort(filteredResults, getSorting(order, orderBy))
+                  {filteredResults
+                    .toSorted(getSorting(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((result) => (
                       <TableRow hover tabIndex={-1} key={result.id}>

@@ -1,6 +1,5 @@
 //booking centric view
 
-import * as ArrayUtils from "../../util/ArrayUtils";
 import type { BookingType } from "./Enums";
 
 export type BOOKING_TYPE = typeof BookingType;
@@ -101,9 +100,9 @@ const formatDate = (date: string) => {
 };
 
 const getBookingSummary = (id: string, bookingsList: BookingsList) => {
-  return ArrayUtils.find((item) => item.id === id, bookingsList).orElseGet(() => {
-    throw new Error(`There is no booking with the id ${id}.`);
-  });
+  const booking = bookingsList.find((item) => item.id === id);
+  if (!booking) throw new Error(`There is no booking with the id ${id}.`);
+  return booking;
 };
 
 const getStartTime = (id: string, bookingsList: BookingsList): string => {

@@ -36,7 +36,7 @@ public class InventorySearchApiControllerTest extends SpringTransactionalTest {
 
   @Before
   public void setUp() {
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
 
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());
