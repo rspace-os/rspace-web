@@ -3,6 +3,8 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { type Alert, mkAlert } from "@/stores/contexts/Alert";
 import docLinks from "../../../assets/DocLinks";
 import ImageField, { type ImageData } from "../../../components/Inputs/ImageField";
@@ -13,6 +15,7 @@ import ContentImage from "../Content/ImageView/PlaceMarkers/ContentImage";
 import LocationsImageMarkersDialog from "./LocationsImageMarkersDialog";
 
 function LocationsImageField(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore, trackingStore, uiStore } = useStores();
   const activeResult = searchStore.activeResult;
   if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
@@ -27,7 +30,7 @@ function LocationsImageField(): React.ReactNode {
       uiStore.removeAlert(toast);
     }
     const newToast = mkAlert({
-      message: "Set preview image too?",
+      message: t("container.fields.locationsImage.setPreviewImage"),
       variant: "notice",
       isInfinite: true,
       actionLabel: "yes",
@@ -42,16 +45,17 @@ function LocationsImageField(): React.ReactNode {
     <>
       <ContentImage />
       <FormField
-        label="Locations Image"
+        label={t("container.fields.locationsImage.label")}
         value={activeResult.locationsImage}
         explanation={
-          <>
-            See the documentation for information on{" "}
-            <a href={docLinks.editLocationsInVisualContainers} target="_blank" rel="noreferrer">
-              choosing an image and marking locations
-            </a>
-            .
-          </>
+          <TransRichText
+            ns="inventory"
+            i18nKey="container.fields.locationsImage.explanation"
+            components={{
+              // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
+              a: <a href={docLinks.editLocationsInVisualContainers} target="_blank" rel="noreferrer" />,
+            }}
+          />
         }
         renderInput={({ id, value: locationsImage }) => (
           <>
@@ -73,7 +77,7 @@ function LocationsImageField(): React.ReactNode {
                       setEditMarkers(true);
                     }}
                   >
-                    Edit Locations
+                    {t("container.fields.locationsImage.editLocations")}
                   </Button>
                 </Grid>
               }
@@ -82,12 +86,12 @@ function LocationsImageField(): React.ReactNode {
                 activeResult.loading
                   ? ""
                   : !locationsImage
-                    ? "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one."
+                    ? t("container.fields.locationsImage.warningNoImage")
                     : !activeResult.locationsCount
-                      ? "Click on 'Edit Locations' to add locations and start using the visual container."
+                      ? t("container.fields.locationsImage.warningNoMarkers")
                       : ""
               }
-              alt={`The marked locations of ${activeResult.name}`}
+              alt={t("container.fields.locationsImage.alt", { name: activeResult.name })}
             />
           </>
         )}

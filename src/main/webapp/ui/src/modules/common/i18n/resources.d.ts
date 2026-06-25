@@ -1526,6 +1526,7 @@ export default interface Resources {
     },
     "container": {
       "content": {
+        "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
         "placeMarkers": {
           "actions": {
             "open": "Open",
@@ -1538,6 +1539,11 @@ export default interface Resources {
           },
           "emptyLocation": "Empty Location",
           "emptyLocationHelper": "This location can be chosen as the destination in a move operation."
+        },
+        "zoom": {
+          "ctrlTip": "Tip: Use Ctrl and the - key to zoom the page out to view more of the image.",
+          "macTip": "Tip: Use Command and the - key to zoom the page out to view more of the image.",
+          "panelAdjuster": "The <a>Panel Adjuster</a> can also be used to provide more room to fully display the image."
         }
       },
       "fields": {
@@ -1574,6 +1580,25 @@ export default interface Resources {
         "gridLayout": {
           "columnLabels": "Column Labels",
           "rowLabels": "Row Labels"
+        },
+        "locationsImage": {
+          "alt": "The marked locations of {name}",
+          "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
+          "editLocations": "Edit Locations",
+          "explanation": "See the documentation for information on <a>choosing an image and marking locations</a>.",
+          "label": "Locations Image",
+          "noMarkers": "No marked locations yet; click on the image to add a location marker.",
+          "setPreviewImage": "Set preview image too?",
+          "tapInstruction": "Tap on the image to add a location marker.",
+          "warningNoImage": "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
+          "warningNoMarkers": "Click on 'Edit Locations' to add locations and start using the visual container."
+        },
+        "locationsMarkersDialog": {
+          "compact": "Compact",
+          "detailed": "Detailed",
+          "dialogTitle": "Edit Locations",
+          "done": "Done",
+          "image": "Image"
         },
         "organization": {
           "options": {
