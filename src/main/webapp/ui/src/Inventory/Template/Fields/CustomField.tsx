@@ -97,13 +97,14 @@ function CustomField({
           {field.deleteFieldRequest ? (
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle1">
-                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will be deleted from this template.
+                <strong>{field.name}</strong>{" "}
+                {t("template.fields.customField.deleteField", { fieldType: FIELD_LABEL[field.fieldType] })}
               </Typography>
               <p>
-                New samples will not include this field.{" "}
+                {t("template.fields.customField.newSamplesExclusion")}{" "}
                 {field.deleteFieldOnSampleUpdate
-                  ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
-                  : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
+                  ? t("template.fields.customField.deleteFieldOnUpdate")
+                  : t("template.fields.customField.deleteFieldOnUpdateNot")}
               </p>
             </Box>
           ) : (

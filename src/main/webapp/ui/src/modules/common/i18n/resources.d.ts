@@ -2841,6 +2841,19 @@ export default interface Resources {
       }
     },
     "template": {
+      "fields": {
+        "customField": {
+          "deleteField": "{fieldType} field will be deleted from this template.",
+          "deleteFieldOnUpdate": "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version.",
+          "deleteFieldOnUpdateNot": "The field will not be deleted from existing samples even if the samples are updated to the latest template version.",
+          "newSamplesExclusion": "New samples will not include this field."
+        },
+        "versionInfo": {
+          "latestVersion": "Latest version:",
+          "update": "Update",
+          "version": "This is version {version} of the template."
+        }
+      },
       "summary": {
         "loading": "Loading",
         "noTemplate": "No Template"
