@@ -7,6 +7,7 @@ import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import type { ExportOptions } from "../../../stores/definitions/Search";
 import { ExportOptionsWrapper } from "./ExportDialog";
@@ -38,6 +39,7 @@ function Exporter({
   exportOptions,
   setExportOptions,
 }: ExporterArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <Card
       elevation={elevation}
@@ -81,14 +83,14 @@ function Exporter({
             }}
             disabled={selectedResults.length === 0}
           >
-            DOWNLOAD {exportOptions.resultFileType === "ZIP" ? "ZIP" : "CSV"}
+            {exportOptions.resultFileType === "ZIP" ? t("export.dialog.downloadZip") : t("export.dialog.downloadCsv")}
           </Button>
           <Button
             onClick={() => {
               setOpenExporter(false);
             }}
           >
-            Cancel
+            {t("actions.cancel", { ns: "common" })}
           </Button>
         </CardActions>
       )}

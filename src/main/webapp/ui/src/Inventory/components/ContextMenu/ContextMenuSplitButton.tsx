@@ -9,6 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import StyledMenu from "../../../components/StyledMenu";
 export type SplitButtonOption = {
   text: string;
@@ -30,6 +31,7 @@ export default function ContextMenuSplitButton({
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [helpOpen, setHelpOpen] = useState(false);
+  const { t } = useTranslation("inventory");
   const handleTooltipClose = () => {
     setHelpOpen(false);
   };
@@ -106,7 +108,7 @@ export default function ContextMenuSplitButton({
                       }
                     : {})}
                   aria-haspopup="menu"
-                  aria-label="More selection options"
+                  aria-label={t("contextMenu.splitButton.moreOptions")}
                   onClick={() => setOpen(!open)}
                   disabled={disabledHelp !== ""}
                   variant="text"

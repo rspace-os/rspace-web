@@ -24,12 +24,12 @@ describe("TransferAction", () => {
       expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), undefined);
     });
 
-    await user.click(screen.getAllByText("Transfer")[0]);
+    await user.click(screen.getAllByText("contextMenu.transfer.action")[0]);
     await waitFor(() => {
       expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), undefined);
     });
 
-    await user.click(screen.getByText("Cancel"));
+    await user.click(screen.getByText("actions.cancel"));
     await waitFor(() => {
       expect(Dialog).toHaveBeenLastCalledWith(expect.objectContaining({ open: false }), undefined);
     });

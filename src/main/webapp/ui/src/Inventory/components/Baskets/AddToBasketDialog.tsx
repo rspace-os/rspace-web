@@ -11,6 +11,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
 import type { Basket } from "../../../stores/definitions/Basket";
@@ -34,6 +35,7 @@ function AddToBasketDialog({
   closeMenu,
 }: AddToBasketDialogArgs): React.ReactNode {
   const { searchStore } = useStores();
+  const { t } = useTranslation("inventory");
 
   const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([NEW_BASKET]);
   const [targetBasket, setTargetBasket] = useState<Basket>(NEW_BASKET);
@@ -56,7 +58,7 @@ function AddToBasketDialog({
 
   const itemIds: Array<GlobalId> = selectedResults.map((r) => getSavedGlobalId(r));
   const selectedCount = selectedResults.length;
-  const itemString = selectedCount > 1 ? "Items" : "Item";
+  const itemString = t("baskets.addDialog.item", { count: selectedCount });
 
   const onAdd = () =>
     targetBasket.id
@@ -78,11 +80,11 @@ function AddToBasketDialog({
 
   return (
     <ContextDialog open={openAddToBasketDialog} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{`Adding ${itemString} to Basket`}</DialogTitle>
+      <DialogTitle>{t("baskets.addDialog.title", { count: selectedCount })}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
           <FormControl component="fieldset" fullWidth sx={{ mt: 1 }}>
-            <InputLabel id={basketSelectorLabel}>Choose a Basket</InputLabel>
+            <InputLabel id={basketSelectorLabel}>{t("baskets.addDialog.chooseBasket")}</InputLabel>
             <Select
               labelId={basketSelectorLabel}
               value={`${targetBasket.id ?? undefined}`}
@@ -92,7 +94,7 @@ function AddToBasketDialog({
                   setTargetBasket(selectedBasket);
                 }
               }}
-              label="Choose a Basket"
+              label={t("baskets.addDialog.chooseBasket")}
               size="small"
             >
               {targetBaskets.map((basket) => (
@@ -106,20 +108,20 @@ function AddToBasketDialog({
             <FormControl component="fieldset" fullWidth>
               <TextField
                 size="small"
-                label="Custom Name (optional)"
+                label={t("baskets.addDialog.customName")}
                 fullWidth
                 disabled={Boolean(targetBasket.id)}
                 error={error}
                 // for a11y
                 id="basketNameField"
                 value={newBasketName}
-                placeholder="Enter custom name for new Basket"
+                placeholder={t("baskets.addDialog.customNamePlaceholder")}
                 helperText={
                   error && !noDuplicates()
-                    ? "This name is already used for another Basket."
+                    ? t("baskets.addDialog.duplicateName")
                     : error && !validLength()
-                      ? "The name should be no longer than 32 characters."
-                      : "You can assign a unique name to the new Basket."
+                      ? t("baskets.addDialog.nameTooLong")
+                      : t("baskets.addDialog.customNameHelper")
                 }
                 onChange={({ target }) => setNewBasketName(target.value)}
                 variant="standard"
@@ -131,18 +133,18 @@ function AddToBasketDialog({
               />
             </FormControl>
           )}
-          <Alert severity="info">{`This action will not change the location of the ${itemString}.`}</Alert>
+          <Alert severity="info">{t("baskets.addDialog.locationUnchanged", { itemString })}</Alert>
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>
-          Cancel
+          {t("actions.cancel", { ns: "common" })}
         </Button>
         <SubmitSpinner
           onClick={onSubmitHandler}
           disabled={error}
           loading={targetBasket.loading}
-          label="Add to Basket"
+          label={t("baskets.addDialog.addButton")}
         />
       </DialogActions>
     </ContextDialog>

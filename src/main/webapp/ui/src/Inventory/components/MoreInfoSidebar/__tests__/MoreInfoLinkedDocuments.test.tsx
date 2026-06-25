@@ -212,8 +212,8 @@ describe("LinkedDocuments", () => {
       </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "moreInfo.linkedDocuments.show" }));
-    expect(await screen.findByText(/List of Materials/i)).toBeVisible();
-    expect(await screen.findByText(/other inventory items? that link/i)).toBeVisible();
+    expect(await screen.findByText("moreInfo.linkedDocumentsHelp.listOfMaterials")).toBeVisible();
+    expect(await screen.findByText("moreInfo.linkedDocumentsHelp.linkField")).toBeVisible();
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {

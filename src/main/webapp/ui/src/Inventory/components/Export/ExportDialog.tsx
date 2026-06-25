@@ -11,6 +11,7 @@ import type { Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ApiRecordType, InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import type { ExportFileType, ExportMode, ExportOptions, OptionalContent } from "@/stores/definitions/Search";
 import { toTitleCase } from "@/util/Util";
@@ -66,24 +67,25 @@ export const ExportOptionsWrapper = ({
   selectedResults,
   exportType,
 }: OptionsWrapperArgs): React.ReactNode => {
+  const { t } = useTranslation("inventory");
   const exportModeOptions: Array<RadioOption<ExportMode>> = [
-    { value: "FULL", label: "Full" },
-    { value: "COMPACT", label: "Compact" },
+    { value: "FULL", label: t("export.dialog.options.full") },
+    { value: "COMPACT", label: t("export.dialog.options.compact") },
   ];
 
   const samplesContentOptions: Array<RadioOption<OptionalContent>> = [
-    { value: "INCLUDE", label: "Include Subsamples" },
-    { value: "EXCLUDE", label: "Exclude Subsamples" },
+    { value: "INCLUDE", label: t("export.dialog.options.subsamplesInclude") },
+    { value: "EXCLUDE", label: t("export.dialog.options.subsamplesExclude") },
   ];
 
   const containersContentOptions: Array<RadioOption<OptionalContent>> = [
-    { value: "INCLUDE", label: "Include Content" },
-    { value: "EXCLUDE", label: "Exclude Content" },
+    { value: "INCLUDE", label: t("export.dialog.options.containerContentInclude") },
+    { value: "EXCLUDE", label: t("export.dialog.options.containerContentExclude") },
   ];
 
   const resultFileTypeOptions: Array<RadioOption<ExportFileType>> = [
-    { value: "ZIP", label: "ZIP Bundle" },
-    { value: "SINGLE_CSV", label: "Single CSV" },
+    { value: "ZIP", label: t("export.dialog.options.zipFile") },
+    { value: "SINGLE_CSV", label: t("export.dialog.options.singleCsv") },
   ];
 
   const exportedRecordTypes: Array<ApiRecordType> = [...new Set(selectedResults?.map(({ type }) => type))];
@@ -96,15 +98,15 @@ export const ExportOptionsWrapper = ({
       <DialogContentText component="span">
         <Typography component="p" variant="body1" sx={{ mb: 2 }}>
           {exportType === "userData"
-            ? "Exporting all items owned by the user."
-            : `Exporting ${exportType === "contextMenu" ? "selected" : "all list items"}: ${exportedRecordTypes
-                .map((t) => `${toTitleCase(t)}s`)
-                .join(", ")}.`}
+            ? t("export.dialog.exportingAll")
+            : t(exportType === "contextMenu" ? "export.dialog.exportingContextMenu" : "export.dialog.exportingList", {
+                types: exportedRecordTypes.map((type) => `${toTitleCase(type)}s`).join(", "),
+              })}
         </Typography>
       </DialogContentText>
       <FormControl component="fieldset" fullWidth>
         <Box sx={optionModuleWrapperSx}>
-          <FormLabel id="export-mode-radiogroup-label">Export Mode</FormLabel>
+          <FormLabel id="export-mode-radiogroup-label">{t("export.dialog.mode")}</FormLabel>
           <RadioField
             name={"Export Mode Options"}
             value={exportOptions.exportMode}
@@ -122,12 +124,17 @@ export const ExportOptionsWrapper = ({
             smallText={true}
           />
           <Alert severity="info">
-            {`All data, ${exportOptions.exportMode === "FULL" ? "including" : "excluding"} custom and template fields.`}
+            {t("export.dialog.modeAllData", {
+              include:
+                exportOptions.exportMode === "FULL"
+                  ? t("export.dialog.modeIncluding")
+                  : t("export.dialog.modeExcluding"),
+            })}
           </Alert>
         </Box>
         {showSamplesModule && (
           <Box sx={optionModuleWrapperSx}>
-            <FormLabel id="samples-options-label">Samples</FormLabel>
+            <FormLabel id="samples-options-label">{t("export.dialog.samples")}</FormLabel>
             <RadioField
               name={"Export Samples Options"}
               value={exportOptions.includeSubsamplesInSample ?? null}
@@ -148,7 +155,7 @@ export const ExportOptionsWrapper = ({
         )}
         {showContainersModule && (
           <Box sx={optionModuleWrapperSx}>
-            <FormLabel id="containers-options-label">Containers</FormLabel>
+            <FormLabel id="containers-options-label">{t("export.dialog.containers")}</FormLabel>
             <RadioField
               name={"Export Containers Options"}
               value={exportOptions.includeContainerContent ?? null}
@@ -167,14 +174,13 @@ export const ExportOptionsWrapper = ({
             />
             <Alert severity="info">
               {exportOptions.includeContainerContent === "INCLUDE"
-                ? `All content visible to the user, including items belonging to
-                  other users.`
-                : `Containers only, without their content.`}
+                ? t("export.exporter.containerContent.include")
+                : t("export.exporter.containerContent.exclude")}
             </Alert>
           </Box>
         )}
         <Box sx={optionModuleWrapperSx}>
-          <FormLabel id="export-mode-radiogroup-label">File Type</FormLabel>
+          <FormLabel id="export-mode-radiogroup-label">{t("export.dialog.fileType")}</FormLabel>
           <RadioField
             name={"Export File Type Options"}
             value={exportOptions.resultFileType ?? null}
@@ -193,8 +199,8 @@ export const ExportOptionsWrapper = ({
           />
           <Alert severity="info">
             {exportOptions.resultFileType === "ZIP"
-              ? "A .ZIP bundle containing .CSV files for each item type."
-              : "A single .CSV file combining all exported items."}
+              ? t("export.dialog.options.zipBundle")
+              : t("export.dialog.options.csvFile")}
           </Alert>
         </Box>
       </FormControl>
@@ -210,6 +216,7 @@ export default function ExportDialog({
   closeMenu,
   selectedResults,
 }: ExportDialogArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [exportOptions, setExportOptions] = useState<ExportOptions>(
     defaultExportOptions(selectedResults ?? null, exportType),
   );
@@ -226,7 +233,7 @@ export default function ExportDialog({
 
   return (
     <ContextDialog open={openExportDialog} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Export Options</DialogTitle>
+      <DialogTitle>{t("export.dialog.title")}</DialogTitle>
       <DialogContent>
         <ExportOptionsWrapper
           exportOptions={exportOptions}
@@ -237,7 +244,7 @@ export default function ExportDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>
-          Cancel
+          {t("actions.cancel", { ns: "common" })}
         </Button>
         <SubmitSpinner onClick={onSubmitHandler} disabled={false} loading={false} label="Export" />
       </DialogActions>

@@ -12,33 +12,17 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
+import TransRichText from "../../../modules/common/i18n/TransRichText";
 import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
-
-const SETTINGS_LABELS: Record<keyof SystemSettings["datacite"], string> = {
-  enabled: "Enabled",
-  serverUrl: "Server URL",
-  username: "Repository Account ID",
-  password: "Password",
-  repositoryPrefix: "Repository Prefix",
-};
-
-const dataciteIntegrationOptions: Array<RadioOption<IntegrationState>> = [
-  { value: "true", label: "Enabled" },
-  { value: "false", label: "Disabled" },
-];
-
-const dataciteServerUrlOptions: Array<RadioOption<DataCiteServerUrl>> = [
-  { value: "https://api.datacite.org", label: "Production" },
-  { value: "https://api.test.datacite.org", label: "Test" },
-];
 
 type DataciteCardArgs = {
   currentSettings: SystemSettings["datacite"];
@@ -53,6 +37,22 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
 
   const [savingInFlight, setSavingInFlight] = useState(false);
   const { authStore } = useStores();
+  const { t } = useTranslation("inventory");
+  const settingsLabels: Record<keyof SystemSettings["datacite"], string> = {
+    enabled: t("settings.datacite.labels.enabled"),
+    serverUrl: t("settings.datacite.labels.serverUrl"),
+    username: t("settings.datacite.labels.username"),
+    password: t("settings.datacite.labels.password"),
+    repositoryPrefix: t("settings.datacite.labels.repositoryPrefix"),
+  };
+  const dataciteIntegrationOptions: Array<RadioOption<IntegrationState>> = [
+    { value: "true", label: t("settings.datacite.statusOptions.enabled") },
+    { value: "false", label: t("settings.datacite.statusOptions.disabled") },
+  ];
+  const dataciteServerUrlOptions: Array<RadioOption<DataCiteServerUrl>> = [
+    { value: "https://api.datacite.org", label: t("settings.datacite.serverOptions.production") },
+    { value: "https://api.test.datacite.org", label: t("settings.datacite.serverOptions.test") },
+  ];
 
   const onSubmitHandler = async () => {
     if (updatedSettings) {
@@ -74,15 +74,18 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
       <CardContent sx={{ pt: 0.5 }}>
         <FormControl>
           <FormLabel>
-            DataCite IGSN Integration
+            {t("settings.datacite.formLabel")}
             <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add IGSN Identifiers to your Inventory Items" />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
-            You can associate IGSN IDs with Inventory items by connecting to{" "}
-            <a href="https://datacite.org/" target="_blank" rel="noreferrer">
-              DataCite
-            </a>{" "}
-            using your Repository account credentials.
+            <TransRichText
+              ns="inventory"
+              i18nKey="settings.datacite.formHelperText"
+              components={{
+                // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+                a: <a href="https://datacite.org/" target="_blank" rel="noreferrer" />,
+              }}
+            />
           </FormHelperText>
           <RadioField
             name={"DataCite Integration Settings"}
@@ -101,7 +104,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
         </FormControl>
         <Box sx={{ mt: 1.5 }}>
           <FormControl component="fieldset" fullWidth>
-            <FormLabel id="igsn-details-label">Details</FormLabel>
+            <FormLabel id="igsn-details-label">{t("settings.datacite.detailsLabel")}</FormLabel>
             {(Object.entries(updatedSettings) as ReadonlyArray<[keyof typeof updatedSettings, string]>)
               .filter((entry) => entry[0] !== "enabled")
               .map((entry) => (
@@ -120,7 +123,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
                       sx={{ p: 0.5, m: 1 }}
                       size="small"
                       fullWidth
-                      label={SETTINGS_LABELS[entry[0]]}
+                      label={settingsLabels[entry[0]]}
                       onChange={({ target }) => {
                         setUpdatedSettings({
                           ...updatedSettings,
@@ -129,8 +132,8 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
                       }}
                       error={entry[1] === ""}
                       value={entry[1]}
-                      placeholder={`Please enter a value for ${SETTINGS_LABELS[entry[0]]}`}
-                      helperText={entry[1] === "" ? "A valid value is required" : null}
+                      placeholder={t("settings.datacite.placeholder", { label: settingsLabels[entry[0]] })}
+                      helperText={entry[1] === "" ? t("settings.datacite.fieldRequiredError") : null}
                       variant="outlined"
                       disabled={!updatedSettings.enabled || entry[0] === "serverUrl"}
                       slotProps={{
@@ -170,12 +173,12 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
           <Box sx={{ mr: 1 }} role="status" id={connectionStatusId}>
             {lastTestResult?.response === "success" && (
               <Typography variant="caption" sx={{ color: "success.main" }}>
-                Connection succeeded
+                {t("settings.datacite.connectionSucceeded")}
               </Typography>
             )}
             {lastTestResult?.response === "failed" && (
               <Typography variant="caption" sx={{ color: "warningRed" }}>
-                Connection failed. {lastTestResult.message}
+                {t("settings.datacite.connectionFailed", { message: lastTestResult.message })}
               </Typography>
             )}
           </Box>
@@ -205,10 +208,10 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
           }}
           aria-controls={showConnectionStatus ? connectionStatusId : undefined}
         >
-          Test Connection
+          {t("settings.datacite.testConnection")}
         </Button>
         <SubmitSpinnerButton
-          label="Save"
+          label={t("actions.save", { ns: "common" })}
           disabled={!unsavedChanges || savingInFlight}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}

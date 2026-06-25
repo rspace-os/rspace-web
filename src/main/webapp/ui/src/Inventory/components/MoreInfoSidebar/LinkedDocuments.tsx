@@ -25,6 +25,7 @@ import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
 import NoValue from "../../../components/NoValue";
 import UserDetails from "../../../components/UserDetails";
+import TransRichText from "../../../modules/common/i18n/TransRichText";
 import type { GlobalId } from "../../../stores/definitions/BaseRecord";
 import type { Document, DocumentAttrs } from "../../../stores/definitions/Document";
 import type { Factory } from "../../../stores/definitions/Factory";
@@ -166,17 +167,18 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
           <>
             <Box sx={{ mt: 1 }}>
               <Typography variant="body1">
-                Adding this item to a document&apos;s{" "}
-                <a href={docLinks.listOfMaterials} rel="noreferrer" target="_blank">
-                  List of Materials
-                </a>{" "}
-                will add an entry for the document in this panel.
+                <TransRichText
+                  ns="inventory"
+                  i18nKey="moreInfo.linkedDocumentsHelp.listOfMaterials"
+                  components={{
+                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+                    a: <a href={docLinks.listOfMaterials} rel="noreferrer" target="_blank" />,
+                  }}
+                />
               </Typography>
             </Box>
             <Box sx={{ mt: 1 }}>
-              <Typography variant="body1">
-                Other Inventory items that link to this item through a Link custom field will also be listed here.
-              </Typography>
+              <Typography variant="body1">{t("moreInfo.linkedDocumentsHelp.linkField")}</Typography>
             </Box>
           </>
         )}

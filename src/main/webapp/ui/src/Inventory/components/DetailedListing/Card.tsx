@@ -8,6 +8,7 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import CustomTooltip from "../../../components/CustomTooltip";
 import DescriptionList from "../../../components/DescriptionList";
@@ -31,8 +32,6 @@ import contextActions from "../ContextMenu/ContextActions";
 import { RecordLink } from "../RecordLink";
 import CardStructure from "./CardStructure";
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
-
 type CardArgs = {
   record: InventoryRecord;
 };
@@ -45,6 +44,8 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation("inventory");
+  const REQUIRED_PERMISSIONS_TOOLTIP = t("detailedListing.card.requiredPermissions");
 
   const activateResult = (r: InventoryRecord) => {
     differentSearchForSettingActiveResult
@@ -112,26 +113,26 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const contentItems: Array<ContentItem> = [];
   if (fullAccess && record instanceof ContainerModel) {
     contentItems.push({
-      label: "Contents",
+      label: t("detailedListing.card.contentLabels.contents"),
       value: <ContentsChips record={record} />,
     });
   }
   if (fullAccess && record instanceof SampleModel) {
-    contentItems.push({ label: "Total Quantity", value: record.quantityLabel });
+    contentItems.push({ label: t("detailedListing.card.contentLabels.totalQuantity"), value: record.quantityLabel });
   }
   if (fullAccess && record instanceof SubSampleModel) {
-    contentItems.push({ label: "Quantity", value: record.quantityLabel });
+    contentItems.push({ label: t("detailedListing.card.contentLabels.quantity"), value: record.quantityLabel });
   }
   if (notPublic && record instanceof SubSampleModel) {
     contentItems.push({
-      label: "Sample",
+      label: t("detailedListing.card.contentLabels.sample"),
       value: <RecordLink record={record.sample} overflow />,
       reducedPadding: true,
     });
   }
   if (record.owner) {
     contentItems.push({
-      label: "Owner",
+      label: t("detailedListing.card.contentLabels.owner"),
       value: <UserDetails userId={record.owner.id} fullName={record.owner.fullName} position={["bottom", "right"]} />,
       reducedPadding: true,
     });
@@ -142,7 +143,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     record.immediateParentContainer
   ) {
     contentItems.push({
-      label: "Location",
+      label: t("detailedListing.card.contentLabels.location"),
       value: (
         <Box sx={{ mt: 0.5 }}>
           <RecordLink record={record.immediateParentContainer} overflow />
@@ -223,12 +224,12 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
               fontSize: "0.8em",
             }}
           >
-            <span>Modified </span>
+            <span>{t("detailedListing.card.modified")} </span>
             <TimeAgoCustom
               time={record.lastModified}
               formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
             />
-            <span> by </span>
+            <span> {t("detailedListing.card.by")} </span>
             {record.modifiedByFullName}
           </Box>
         ) : null

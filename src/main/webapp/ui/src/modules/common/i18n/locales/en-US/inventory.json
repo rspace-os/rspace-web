@@ -26,6 +26,22 @@
       "qr": "QR format supported"
     }
   },
+  "baskets": {
+    "addDialog": {
+      "addButton": "Add to Basket",
+      "chooseBasket": "Choose a Basket",
+      "customName": "Custom Name (optional)",
+      "customNameHelper": "You can assign a unique name to the new Basket.",
+      "customNamePlaceholder": "Enter custom name for new Basket",
+      "duplicateName": "This name is already used for another Basket.",
+      "item_one": "Item",
+      "item_other": "Items",
+      "locationUnchanged": "This action will not change the location of the {itemString}.",
+      "nameTooLong": "The name should be no longer than 32 characters.",
+      "title_one": "Adding Item to Basket",
+      "title_other": "Adding Items to Basket"
+    }
+  },
   "container": {
     "content": {
       "placeMarkers": {
@@ -136,6 +152,74 @@
       "loading": "Loading...",
       "noFields": "No fields.",
       "noOptions": "No options available."
+    },
+    "splitButton": {
+      "moreOptions": "More selection options"
+    },
+    "transfer": {
+      "action": "Transfer",
+      "dialog": {
+        "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item.",
+        "irrevocable": "This action can only be undone by the recipient or their PI.",
+        "recipientLabel": "Recipient",
+        "recipientNotFound": "If the desired recipient cannot be found in this list, try searching for their name or username.",
+        "title": "Transfer Ownership"
+      },
+      "disabled": {
+        "noPermission_one": "You do not have permission to transfer this item.",
+        "noPermission_other": "You do not have permission to transfer these items.",
+        "subSamples": "Only whole samples can be transferred, not individual subsamples."
+      }
+    }
+  },
+  "detailedListing": {
+    "card": {
+      "by": "by",
+      "contentLabels": {
+        "contents": "Contents",
+        "location": "Location",
+        "owner": "Owner",
+        "quantity": "Quantity",
+        "sample": "Sample",
+        "totalQuantity": "Total Quantity"
+      },
+      "modified": "Modified",
+      "requiredPermissions": "You do not have permission to select this item."
+    }
+  },
+  "export": {
+    "dialog": {
+      "containers": "Containers",
+      "downloadCsv": "DOWNLOAD CSV",
+      "downloadZip": "DOWNLOAD ZIP",
+      "exportingAll": "Exporting all items owned by the user.",
+      "exportingContextMenu": "Exporting selected: {types}.",
+      "exportingList": "Exporting all list items: {types}.",
+      "fileType": "File Type",
+      "mode": "Export Mode",
+      "modeAllData": "All data, {include} custom and template fields.",
+      "modeExcluding": "excluding",
+      "modeIncluding": "including",
+      "options": {
+        "compact": "Compact",
+        "containerContentExclude": "Exclude Content",
+        "containerContentInclude": "Include Content",
+        "csvFile": "A single .CSV file combining all exported items.",
+        "full": "Full",
+        "singleCsv": "Single CSV",
+        "subsamplesExclude": "Exclude Subsamples",
+        "subsamplesInclude": "Include Subsamples",
+        "zipBundle": "A .ZIP bundle containing .CSV files for each item type.",
+        "zipFile": "ZIP Bundle"
+      },
+      "samples": "Samples",
+      "title": "Export Options"
+    },
+    "exporter": {
+      "containerContent": {
+        "exclude": "Containers only, without their content.",
+        "include": "All content visible to the user, including items belonging to other users."
+      }
     }
   },
   "fields": {
@@ -816,6 +900,10 @@
     "initialScreen": {
       "navigateTo": "Navigate to:"
     },
+    "pageNotFound": {
+      "heading": "Page not found.",
+      "message": "The page was not found. You can try again, or use your 'back' button to return to your previous location and navigate from there, or use the sidebar to navigate to your samples and containers. If you can't resolve the problem, please contact an administrator."
+    },
     "sidebar": {
       "containers": "Containers",
       "exportData": "Export Data",
@@ -908,6 +996,10 @@
       "show": "Show Linked Documents",
       "title": "Linked Documents"
     },
+    "linkedDocumentsHelp": {
+      "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
+      "listOfMaterials": "Adding this item to a document's <a>List of Materials</a> will add an entry for the document in this panel."
+    },
     "updateSamples": "Update Samples",
     "versionHistory": {
       "columns": {
@@ -934,6 +1026,9 @@
     "unversionedTitle": "This {typeLabel} could not be found.",
     "versionedBody": "The version may never have existed.",
     "versionedTitle": "Version {version} of this {typeLabel} could not be found."
+  },
+  "picker": {
+    "choose": "Choose"
   },
   "print": {
     "contents": {
@@ -1142,6 +1237,39 @@
       "editName": "Edit name",
       "noBaskets": "There are no Baskets yet. To create one: select some results and then 'Add to Basket'.",
       "noSavedSearches": "There are no Saved Searches yet."
+    }
+  },
+  "settings": {
+    "datacite": {
+      "connectionFailed": "Connection failed. {message}",
+      "connectionSucceeded": "Connection succeeded",
+      "detailsLabel": "Details",
+      "fieldRequiredError": "A valid value is required",
+      "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a>DataCite</a> using your Repository account credentials.",
+      "formLabel": "DataCite IGSN Integration",
+      "labels": {
+        "enabled": "Enabled",
+        "password": "Password",
+        "repositoryPrefix": "Repository Prefix",
+        "serverUrl": "Server URL",
+        "username": "Repository Account ID"
+      },
+      "placeholder": "Please enter a value for {label}",
+      "serverOptions": {
+        "production": "Production",
+        "test": "Test"
+      },
+      "statusOptions": {
+        "disabled": "Disabled",
+        "enabled": "Enabled"
+      },
+      "testConnection": "Test Connection"
+    },
+    "dialog": {
+      "close": "Close",
+      "error": "Error",
+      "loading": "Loading",
+      "title": "Configure Inventory (for System Administrators)"
     }
   },
   "subsample": {
