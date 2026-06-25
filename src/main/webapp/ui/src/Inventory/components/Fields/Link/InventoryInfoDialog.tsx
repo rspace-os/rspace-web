@@ -9,6 +9,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import ApiService from "../../../../common/InvApiService";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -50,6 +51,7 @@ type State =
  * drawer so both surfaces display identical info.
  */
 export default function InventoryInfoDialog(props: InventoryInfoDialogProps): React.ReactElement | null {
+  const { t } = useTranslation(["inventory", "common"]);
   const [state, setState] = useState<State>({ state: "init" });
   const [factory] = useState(() => new AlwaysNewFactory());
 
@@ -86,7 +88,13 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
 
   if (!props.open) return null;
   return (
-    <Dialog open={props.open} onClose={props.onClose} aria-label={`Info for ${props.globalId}`} fullWidth maxWidth="sm">
+    <Dialog
+      open={props.open}
+      onClose={props.onClose}
+      aria-label={t("fields.link.infoDialog.ariaLabel", { globalId: props.globalId })}
+      fullWidth
+      maxWidth="sm"
+    >
       <DialogTitle>{props.globalId}</DialogTitle>
       <DialogContent>
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={240} />}
@@ -105,9 +113,17 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
                 }}
               >
                 <Typography variant="body2">
-                  The information below describes <strong>version {props.versionPin}</strong> of a{" "}
-                  {iconForInventoryGlobalId(props.globalId)?.recordTypeLabel.toLowerCase() ?? "record"}{" "}
-                  {props.globalId.replace(/v\d+$/, "")}, which may not be the latest version.
+                  <Trans
+                    ns="inventory"
+                    i18nKey="fields.link.infoDialog.versionNote"
+                    values={{
+                      versionPin: props.versionPin,
+                      recordTypeLabel:
+                        iconForInventoryGlobalId(props.globalId)?.recordTypeLabel.toLowerCase() ?? "record",
+                      globalId: props.globalId.replace(/v\d+$/, ""),
+                    }}
+                    components={{ strong: <strong /> }}
+                  />
                 </Typography>
               </Box>
             )}
@@ -116,7 +132,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onClose}>Close</Button>
+        <Button onClick={props.onClose}>{t("actions.close", { ns: "common" })}</Button>
       </DialogActions>
     </Dialog>
   );

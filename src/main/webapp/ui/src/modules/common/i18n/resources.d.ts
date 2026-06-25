@@ -870,6 +870,7 @@ export default interface Resources {
       "invite": "Invite",
       "next": "Next",
       "ok": "OK",
+      "open": "Open",
       "retry": "Retry",
       "save": "Save",
       "search": "Search",
@@ -1706,6 +1707,7 @@ export default interface Resources {
         }
       },
       "link": {
+        "download": "Download",
         "editor": {
           "browseEln": "Browse ELN",
           "browseInventory": "Browse Inventory",
@@ -1715,11 +1717,25 @@ export default interface Resources {
           "pinnedVersion": "Pinned to v{version}",
           "targetGlobalId": "Target Global ID"
         },
+        "elnFolderBrowser": {
+          "loadMore": "Load more"
+        },
+        "elnInfoDialog": {
+          "unavailable": "This item is not available, or you do not have permission to view it.",
+          "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
+        },
         "elnPicker": {
           "ariaLabel": "Browse the ELN for a link target",
           "cancel": "Cancel",
           "choose": "Choose",
           "title": "Browse ELN"
+        },
+        "gallerySections": {
+          "showLinkedDocs": "Show linked docs"
+        },
+        "infoDialog": {
+          "ariaLabel": "Info for {globalId}",
+          "versionNote": "The information below describes <strong>version {{versionPin}}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
         },
         "relatedInventoryItems": {
           "loading": "Loading...",
@@ -1729,6 +1745,13 @@ export default interface Resources {
         "targetBrowser": {
           "ariaLabel": "Browse Inventory for link target",
           "title": "Browse Inventory"
+        },
+        "versionLock": {
+          "ariaLabel": "Version history for {globalId}",
+          "cannotResolve": "Cannot resolve version history for {globalId}.",
+          "lockToSelectedVersion": "Lock to selected version",
+          "title": "Version history",
+          "titleFor": "Version history for {globalId}"
         }
       },
       "location": {

@@ -9,6 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import type React from "react";
+import { Trans, useTranslation } from "react-i18next";
 import RecordTypeIcon from "@/components/RecordTypeIcon";
 import { useGetWorkspaceRecordInformationAjaxQuery } from "@/modules/workspace/queries";
 import DocumentSections from "./DocumentSections";
@@ -41,8 +42,6 @@ export interface ElnRecordInfoDialogProps {
   onClose: () => void;
 }
 
-const UNAVAILABLE_MESSAGE = "This item is not available, or you do not have permission to view it.";
-
 /**
  * Extract the numeric DB id from a global id (e.g. `SD123` -> 123, `SD123v2` -> 123).
  * `getRecordInformation` takes the numeric id, not the global-id string.
@@ -69,6 +68,7 @@ function DialogBody({
   recordId: number;
   versionPin?: number | null;
 }): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const {
     data: info,
     isPending,
@@ -89,15 +89,16 @@ function DialogBody({
     if (versionPin != null) {
       return (
         <Alert severity="error">
-          Version {versionPin} of {globalId} is no longer available.{" "}
-          <Link href={`/globalId/${globalId}`} target="_blank" rel="noopener noreferrer">
-            View the latest version
-          </Link>
-          .
+          <Trans
+            ns="inventory"
+            i18nKey="fields.link.elnInfoDialog.versionUnavailable"
+            values={{ versionPin, globalId }}
+            components={{ a: <Link href={`/globalId/${globalId}`} target="_blank" rel="noopener noreferrer" /> }}
+          />
         </Alert>
       );
     }
-    return <Alert severity="error">{UNAVAILABLE_MESSAGE}</Alert>;
+    return <Alert severity="error">{t("fields.link.elnInfoDialog.unavailable")}</Alert>;
   }
 
   const prefix = prefixOf(globalId);
@@ -124,6 +125,7 @@ function DialogBody({
  * QueryClientProvider), so it does not provide its own.
  */
 export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): React.ReactElement | null {
+  const { t } = useTranslation(["inventory", "common"]);
   if (!props.open) return null;
 
   const iconData = iconForGlobalId(props.globalId);
@@ -132,7 +134,13 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
   const effectiveVersionPin = prefixOf(props.globalId) === "SD" ? (props.versionPin ?? null) : null;
 
   return (
-    <Dialog open={props.open} onClose={props.onClose} aria-label={`Info for ${props.globalId}`} fullWidth maxWidth="md">
+    <Dialog
+      open={props.open}
+      onClose={props.onClose}
+      aria-label={t("fields.link.infoDialog.ariaLabel", { globalId: props.globalId })}
+      fullWidth
+      maxWidth="md"
+    >
       <DialogTitle>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {iconData && <RecordTypeIcon record={iconData} aria-hidden />}
@@ -141,7 +149,7 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
       </DialogTitle>
       <DialogContent dividers>
         {recordId === null ? (
-          <Alert severity="error">{UNAVAILABLE_MESSAGE}</Alert>
+          <Alert severity="error">{t("fields.link.elnInfoDialog.unavailable")}</Alert>
         ) : (
           <DialogBody globalId={props.globalId} recordId={recordId} versionPin={effectiveVersionPin} />
         )}
@@ -154,12 +162,11 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
             href={openUrlForTarget(props.globalId, effectiveVersionPin)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Open"
           >
-            Open
+            {t("actions.open", { ns: "common" })}
           </Button>
         )}
-        <Button onClick={props.onClose}>Close</Button>
+        <Button onClick={props.onClose}>{t("actions.close", { ns: "common" })}</Button>
       </DialogActions>
     </Dialog>
   );

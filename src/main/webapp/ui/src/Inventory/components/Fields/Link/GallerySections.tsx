@@ -7,6 +7,7 @@ import TableBody from "@mui/material/TableBody";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { uploadNewGalleryVersion } from "@/modules/workspace/galleryUpload";
 import { getLinkedDocuments } from "@/modules/workspace/linkedRecords";
 import type { LinkedRecords, WorkspaceRecordInformation } from "@/modules/workspace/schema";
@@ -26,6 +27,7 @@ export interface GallerySectionsProps {
  * preview, and the Download / Show-linked-docs / Upload-new-version actions.
  */
 export default function GallerySections({ info, onRecordChanged }: GallerySectionsProps): React.ReactElement {
+  const { t } = useTranslation(["inventory", "common"]);
   const isRevisionView = info.revision != null;
   const isImage = info.type === "Image";
   // The ELN gates upload on `!isRevisionView && (owner || VIEW_MODE)`. `VIEW_MODE` is
@@ -124,11 +126,11 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
 
       <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
         <Button size="small" href={downloadHref} target="_blank" rel="noopener noreferrer">
-          Download
+          {t("fields.link.download")}
         </Button>
         {!isRevisionView ? (
           <Button size="small" disabled={linkedLoading} onClick={handleShowLinkedDocs}>
-            Show linked docs
+            {t("fields.link.gallerySections.showLinkedDocs")}
           </Button>
         ) : null}
         {canUpload ? (

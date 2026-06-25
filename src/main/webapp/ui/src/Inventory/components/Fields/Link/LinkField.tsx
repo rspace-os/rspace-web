@@ -12,6 +12,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import type { ExtraInventoryLink } from "../../../../stores/definitions/ExtraField";
 import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
@@ -63,6 +64,7 @@ export interface LinkFieldProps {
 }
 
 export default function LinkField(props: LinkFieldProps): React.ReactElement {
+  const { t } = useTranslation(["inventory", "common"]);
   const versionLabel = props.link.versionPin != null ? `Pinned to v${props.link.versionPin}` : "Latest";
   const iconData = iconForGlobalId(props.link.targetGlobalId);
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
@@ -152,12 +154,12 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               rel="noopener noreferrer"
               aria-label={`Open ${props.link.targetGlobalId}`}
             >
-              Open
+              {t("actions.open", { ns: "common" })}
             </Button>
           )}
           {props.editable && props.onEdit && (
             <Button size="small" startIcon={<EditIcon />} onClick={props.onEdit} aria-label="Edit link">
-              Edit
+              {t("actions.edit", { ns: "common" })}
             </Button>
           )}
         </Box>

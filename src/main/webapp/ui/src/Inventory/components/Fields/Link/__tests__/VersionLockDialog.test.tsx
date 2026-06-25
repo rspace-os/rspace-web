@@ -179,7 +179,7 @@ describe("VersionLockDialog", () => {
 
     const row = await screen.findByText("Version 2");
     await user.click(row);
-    await user.click(screen.getByRole("button", { name: /lock to selected/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.versionLock\.lockToSelectedVersion/i }));
 
     expect(onConfirm).toHaveBeenCalledWith(2);
   });
@@ -232,7 +232,7 @@ describe("VersionLockDialog", () => {
 
     const latestRow = await screen.findByText(/^latest$/i);
     await user.click(latestRow);
-    await user.click(screen.getByRole("button", { name: /lock to selected/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.versionLock\.lockToSelectedVersion/i }));
 
     expect(onConfirm).toHaveBeenCalledWith(null);
   });
@@ -264,7 +264,7 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     renderDialog({ globalId: "SD55", onConfirm });
 
     await user.click(await screen.findByText("Version 2"));
-    await user.click(screen.getByRole("button", { name: /lock to selected/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.versionLock\.lockToSelectedVersion/i }));
 
     // version 2 maps to audit revision 202; the pin must be the version number (2).
     expect(onConfirm).toHaveBeenCalledWith(2);
@@ -288,7 +288,7 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     const axiosGet = axios.get;
     renderDialog({ globalId: "NB9" });
 
-    expect(screen.getByText(/cannot resolve version history for NB9/i)).toBeInTheDocument();
+    expect(screen.getByText(/fields\.link\.versionLock\.cannotResolve/i)).toBeInTheDocument();
     expect(vi.mocked(axiosGet)).not.toHaveBeenCalled();
   });
 
@@ -299,7 +299,7 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     renderDialog({ globalId: "SD55" });
 
     // SD is a supported target, so this is NOT the cannot-resolve fallback...
-    expect(screen.queryByText(/cannot resolve version history/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/fields\.link\.versionLock\.cannotResolve/i)).not.toBeInTheDocument();
     // ...the picker still renders with the Latest option and no version rows.
     expect(await screen.findByText(/^latest$/i)).toBeInTheDocument();
     expect(screen.queryByText("Version 1")).not.toBeInTheDocument();

@@ -5,6 +5,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import React from "react";
+import { useTranslation } from "react-i18next";
 // Reuse the Gallery's own extension groupings so MEDIA files get the Gallery's per-type icons.
 import EXT_BY_TYPE from "@/eln/gallery/fileExtensionsByType.json";
 import { justFilenameExtension } from "@/util/files";
@@ -136,6 +137,7 @@ function CollapseArrow(): React.ReactElement {
  * own contents (mirroring FolderTree's load strategy); documents render as leaves.
  */
 function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const { getFolderTree } = useFolders();
   const [children, setChildren] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [totalHits, setTotalHits] = React.useState(0);
@@ -193,7 +195,7 @@ function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
       {hasMorePages && !loading && (
         <Box sx={{ p: 1 }}>
           <Button size="small" onClick={() => void loadChildren(currentPage + 1, true)}>
-            Load more
+            {t("fields.link.elnFolderBrowser.loadMore")}
           </Button>
         </Box>
       )}
@@ -217,6 +219,7 @@ export default function ElnFolderBrowser({
 }: {
   onSelectionChange: (selection: ElnTreeSelection | null) => void;
 }): React.ReactElement {
+  const { t } = useTranslation(["inventory", "common"]);
   const { getFolderTree } = useFolders();
   const [roots, setRoots] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [expanded, setExpanded] = React.useState<Array<FolderTreeNode>>([]);
@@ -249,7 +252,7 @@ export default function ElnFolderBrowser({
           sx={{ mb: 1 }}
           action={
             <Button size="small" onClick={() => void loadRoots()}>
-              Retry
+              {t("actions.retry", { ns: "common" })}
             </Button>
           }
         >

@@ -81,7 +81,7 @@ describe("GallerySections", () => {
 
   it("links Download to the Streamfile endpoint for the media id", () => {
     renderGallery();
-    const download = screen.getByRole("link", { name: /download/i });
+    const download = screen.getByRole("link", { name: /fields\.link\.download/i });
     expect(download).toHaveAttribute("href", "/Streamfile/21");
   });
 
@@ -93,7 +93,7 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
     expect(getLinkedDocuments).toHaveBeenCalledWith(21);
     expect(await screen.findByRole("link", { name: /SD7/ })).toHaveAttribute("href", "/globalId/SD7");
@@ -124,7 +124,7 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
     expect(useReferencingInventoryItems).toHaveBeenCalledWith("GL21");
     expect(await screen.findByText("fields.link.relatedInventoryItems.title")).toBeInTheDocument();
@@ -136,7 +136,7 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
     expect(await screen.findByText("fields.link.relatedInventoryItems.none")).toBeInTheDocument();
   });

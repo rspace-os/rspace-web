@@ -228,6 +228,7 @@
       "label": "Location"
     },
     "link": {
+      "download": "Download",
       "editor": {
         "browseEln": "Browse ELN",
         "browseInventory": "Browse Inventory",
@@ -237,11 +238,25 @@
         "pinVersionFor": "Pin version for {globalId}",
         "targetGlobalId": "Target Global ID"
       },
+      "elnFolderBrowser": {
+        "loadMore": "Load more"
+      },
       "elnPicker": {
         "ariaLabel": "Browse the ELN for a link target",
         "cancel": "Cancel",
         "choose": "Choose",
         "title": "Browse ELN"
+      },
+      "gallerySections": {
+        "showLinkedDocs": "Show linked docs"
+      },
+      "elnInfoDialog": {
+        "unavailable": "This item is not available, or you do not have permission to view it.",
+        "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
+      },
+      "infoDialog": {
+        "ariaLabel": "Info for {globalId}",
+        "versionNote": "The information below describes <strong>version {{versionPin}}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
       },
       "relatedInventoryItems": {
         "loading": "Loading...",
@@ -251,6 +266,13 @@
       "targetBrowser": {
         "ariaLabel": "Browse Inventory for link target",
         "title": "Browse Inventory"
+      },
+      "versionLock": {
+        "ariaLabel": "Version history for {globalId}",
+        "cannotResolve": "Cannot resolve version history for {globalId}.",
+        "lockToSelectedVersion": "Lock to selected version",
+        "title": "Version history",
+        "titleFor": "Version history for {globalId}"
       }
     },
     "name": {
