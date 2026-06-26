@@ -9,6 +9,7 @@
     "create": "Create",
     "delete": "Delete",
     "dismiss": "Dismiss",
+    "done": "Done",
     "edit": "Edit",
     "export": "Export",
     "invite": "Invite",
@@ -22,8 +23,11 @@
     "share": "Share",
     "sign": "Sign",
     "submit": "Submit",
-    "witness": "Witness",
-    "done": "Done"
+    "witness": "Witness"
+  },
+  "apiAuthentication": {
+    "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
+    "warningTitle": "Could not authenticate via API"
   },
   "appBar": {
     "brandingAlt": "branding",
@@ -31,15 +35,16 @@
     "operatingAs": "Operating as:",
     "orcidAdd": "Add an ORCID iD to your <0>profile</0>."
   },
-  "apiAuthentication": {
-    "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
-    "warningTitle": "Could not authenticate via API"
-  },
   "confirmationDialog": {
     "inputMismatch": "Input does not match confirmation text"
   },
   "errorBoundary": {
     "message": "Something went wrong! Please refresh the page. If this error persists, please contact <0>support@researchspace.com</0> with details of when the issue happens."
+  },
+  "folderSelection": {
+    "selectedFolder": "Selected folder",
+    "selectedFolderWithColon": "Selected folder:",
+    "title": "Select Folder"
   },
   "folderTree": {
     "addSubfolder": "Add subfolder to {{folderName}}",
@@ -50,19 +55,14 @@
     },
     "failedFolders": "Failed to load folders",
     "failedSubfolders": "Failed to load subfolders",
-    "loadMore": "Load More",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "loadMore": "Load More"
   },
   "groupDetails": {
     "members": "Members",
     "principalInvestigators": "Principal Investigators",
     "users": "Users",
     "viewGroup": "View Group"
-  },
-  "folderSelection": {
-    "selectedFolder": "Selected folder",
-    "selectedFolderWithColon": "Selected folder:",
-    "title": "Select Folder"
   },
   "imageEditing": {
     "rotateClockwise": "rotate clockwise",
@@ -89,6 +89,28 @@
       "quantityUnits": "Quantity units"
     }
   },
+  "integrationErrors": {
+    "calira": {
+      "invalidToken": "Invalid Calira user or client token. Please re-connect to Calira.",
+      "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
+    },
+    "omero": {
+      "notFound": "The requested data was not found on this instance of Omero",
+      "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
+    },
+    "timeout": "Request timed out.",
+    "title": "Error",
+    "tryAgainLater": "There is a problem, please try again later",
+    "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
+  },
+  "ketcher": {
+    "discardChanges": {
+      "discard": "Discard",
+      "keepEditing": "Keep Editing",
+      "text": "You have unsaved changes. Are you sure you want to discard them?",
+      "title": "Discard changes?"
+    }
+  },
   "profile": {
     "accountActivity": {
       "action": "Action",
@@ -112,6 +134,7 @@
           "toggle": "Toggle additional information"
         },
         "disable": "Disable autosharing",
+        "disabled": "Disabled",
         "disableGroup": {
           "button": "disable autosharing",
           "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
@@ -119,10 +142,10 @@
         },
         "disableStarted": "Reverting autoshare for {group} started successfully. You will receive a notification once it is complete.",
         "disableSuccess": "Autoshare for {group} was disabled successfully.",
-        "disabled": "Disabled",
         "disableUserText": "Disabling autosharing will unshare all work for user <strong>{{username}}</strong> from group <strong>{{group}}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
         "enable": "Enable autosharing",
         "enableAsyncSuccess": "Autoshare for {group} was enabled successfully. You will receive a notification once it is complete.",
+        "enabled": "Enabled",
         "enableGroup": {
           "button": "enable autosharing",
           "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
@@ -130,7 +153,6 @@
         },
         "enableSuccess": "Autoshare for {group} was enabled successfully.",
         "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{{username}}</strong> will be shared with group<strong> {{group}}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
-        "enabled": "Enabled",
         "folderName": "Folder name",
         "genericError": "Something went wrong. Please, contact support if the issue persists.",
         "inProgress": "Autosharing is in progress",
@@ -144,12 +166,12 @@
           "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
           "title": "Allow BioPortal Ontologies to be used for tag suggestions"
         },
+        "disabledButton": "disallow Ontologies",
         "disallow": {
           "button": "disallow BioPortal Ontologies",
           "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
           "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
         },
-        "disabledButton": "disallow Ontologies",
         "onlyEnterprise": "Only available on Enterprise"
       },
       "dialog": {
@@ -183,12 +205,12 @@
       },
       "members": "Members",
       "ontologies": {
+        "disabledButton": "disable Ontologies",
         "enforce": {
           "button": "enforce Ontologies",
           "text": "Enforcing ontologies for tags will result in all new tags coming from autopopulated values read from ontology files. These ontology files must be shared with a Group and any user creating new tags must be a member of that Group. Collaboration Groups can be used for this purpose. Tags can not be created from free text and will not autopopulate from existing tags.",
           "title": "Enforce ontologies for tags"
         },
-        "disabledButton": "disable Ontologies",
         "onlyEnterprise": "Only available on Enterprise",
         "unenforce": {
           "button": "un-enforce Ontologies",
@@ -267,9 +289,9 @@
         "copy": "Copy",
         "copyError": "Couldn't copy to clipboard. Try again manually.",
         "copySuccess": "Copied to clipboard",
+        "createdTitle": "App Successfully Created",
         "createError": "There was a problem while creating your application. Please, try again later or contact support.",
         "createTitle": "Create an OAuth application",
-        "createdTitle": "App Successfully Created",
         "secretWarning": "Please write down the client secret. <strong>It will not be available once you close this window.</strong>",
         "validation": {
           "alphanumeric": "The application name should only contain alphanumeric symbols.",
@@ -291,8 +313,8 @@
       "confirmDisassociateTitle": "Confirm Disassociation",
       "connectedTo": "connected to:",
       "currently": "Currently",
-      "disassociate": "Disassociate",
       "disabledForProjectType": "RAiD is disabled for this project - only project groups can have RAiD connections.",
+      "disassociate": "Disassociate",
       "errorLoadingGroupInfo": "Error loading group info: {error}",
       "errorLoadingIntegrationInfo": "Error loading RAiD integration info: {error}",
       "errorPrefix": "Error: {error}",
@@ -312,27 +334,10 @@
       }
     }
   },
-  "integrationErrors": {
-    "calira": {
-      "invalidToken": "Invalid Calira user or client token. Please re-connect to Calira.",
-      "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
-    },
-    "omero": {
-      "notFound": "The requested data was not found on this instance of Omero",
-      "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
-    },
-    "timeout": "Request timed out.",
-    "title": "Error",
-    "tryAgainLater": "There is a problem, please try again later",
-    "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
-  },
-  "ketcher": {
-    "discardChanges": {
-      "discard": "Discard",
-      "keepEditing": "Keep Editing",
-      "text": "You have unsaved changes. Are you sure you want to discard them?",
-      "title": "Discard changes?"
-    }
+  "pubchemImport": {
+    "importing": "Importing...",
+    "importSelected": "Import Selected",
+    "title": "Import from PubChem"
   },
   "search": {
     "clearTooltip": "Clear search",
@@ -377,21 +382,12 @@
       "exportToCsv": "Export to CSV"
     }
   },
-  "pubchemImport": {
-    "importSelected": "Import Selected",
-    "importing": "Importing...",
-    "title": "Import from PubChem"
-  },
   "tags": {
     "addTag": "Add Tag",
     "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
     "errorFetchingTags": "Error fetching tags",
     "filterSuggestedTags": "Filter suggested tags",
     "loading": "Loading...",
-    "noMatchingSuggestions": "No matching tag suggestions.",
-    "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
-    "noName": "no name",
-    "noTagsAvailable": "No tags available",
     "metadata": {
       "controlledVocabularyName": "Controlled Vocabulary Name",
       "controlledVocabularyVersion": "Controlled Vocabulary Version",
@@ -399,6 +395,10 @@
       "termUri": "Term's URI",
       "view": "View metadata"
     },
+    "noMatchingSuggestions": "No matching tag suggestions.",
+    "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
+    "noName": "no name",
+    "noTagsAvailable": "No tags available",
     "typeTagInstead": "Simply type in the tag and press enter instead.",
     "useNewTagHint": "To use a new tag, press Enter.",
     "validation": {

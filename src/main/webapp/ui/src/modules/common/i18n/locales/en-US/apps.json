@@ -62,8 +62,8 @@
       "importSuccessMessage": "DMP {planId} was successfully imported.",
       "loadingDmps": "Loading listing of DMPs.",
       "noDmpIsSelected": "No DMP is selected.",
-      "noDmpSelected": "No DMP selected.",
       "noDmps": "No DMPs",
+      "noDmpSelected": "No DMP selected.",
       "noProjects": "No projects found",
       "notSpecified": "Not Specified",
       "selectAllAriaLabel": "Select all DMPs on this page",
@@ -109,30 +109,6 @@
     "disable": "DISABLE",
     "enable": "ENABLE",
     "setup": "Setup"
-  },
-  "page": {
-    "introLink": "See Apps Introduction to learn more.",
-    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
-    "nothingHere": "Nothing here!",
-    "sections": {
-      "disabled": {
-        "description": "The following Apps are not currently enabled on this account. Click on an App card for setup instructions on how to enable the integration.",
-        "title": "Disabled"
-      },
-      "enabled": {
-        "description": "The following Apps are enabled on this account. Click on an App card to modify or disable the integration.",
-        "title": "Enabled"
-      },
-      "external": {
-        "description": "These RSpace applications have been built by partners or other external software developers. Note, ResearchSpace does not provide direct support for these integrations.",
-        "title": "Third-party RSpace Integrations"
-      },
-      "unavailable": {
-        "description": "The following Apps need to be enabled by your System Administrator before they can be used; please get in touch with them directly to set this up.",
-        "title": "Unavailable"
-      }
-    },
-    "title": "Apps"
   },
   "integrations": {
     "apiDirect": {
@@ -473,50 +449,50 @@
       },
       "usage": "You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."
     },
-    "jupyter": {
-      "description": "Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace.",
-      "helpLink": "RSpace Jupyter Notebook documentation",
-      "name": "Jupyter Notebook Synchronisation",
-      "setup": {
-        "enableApi": "Enable API access:",
-        "enableApiDesc": "Generate your API key in My RSpace → My Profile.",
-        "configureJupyter": "Configure Jupyter instance for all notebooks:",
-        "configureJupyterDesc": "Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:",
-        "installStep": "One time install step:",
-        "runCellFirst": "Run the cell then",
-        "restartKernel": "restart the kernel and",
-        "refreshTab": "refresh the browser",
-        "tab": "tab running Jupyter.",
-        "configureNotebook": "Configure notebook:",
-        "configureNotebookDesc": "Follow the instructions in RSpace help docs to import the sync_notebook script.",
-        "doOncePerNotebook": "Do this step once per notebook:",
-        "runCellSecond": "Run the cell,",
-        "thenRunAgain": "and then run the cell one more time",
-        "runCellAgain": "without a kernel restart. Save the Notebook.",
-        "runCode": "Run the code:",
-        "pasteCode": "Paste this code into",
-        "lastCell": "the last cell in the notebook:"
-      },
-      "usage": "Use RSpace python client >=v2.6.2 to send data from Jupyter Notebooks to RSpace. This allows you to use Jupyter Notebooks to create and share data-driven documents."
-    },
     "jove": {
       "description": "Embed JoVE and other video players (e.g., YouTube, TIB AV-Portal).",
       "helpLink": "Video integration docs",
       "name": "JoVE",
       "setup": {
-        "openVideo": "Open a document in the Documents Editor and click the",
-        "toolbarButton": "Video",
-        "toolbarSuffix": "button in the editor toolbar, the insert menu, or the slash menu.",
-        "pasteUrl": "Paste a full JoVE URL from a supported",
-        "pasteUrlSuffix": "page, for example",
-        "selectInsert": "Select",
         "insertButton": "Insert",
-        "toPlace": "to place the JoVE video embed at the current cursor position.",
         "note": "Note:",
         "noteText": "Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
-        "pasteUrlOr": "or"
+        "openVideo": "Open a document in the Documents Editor and click the",
+        "pasteUrl": "Paste a full JoVE URL from a supported",
+        "pasteUrlOr": "or",
+        "pasteUrlSuffix": "page, for example",
+        "selectInsert": "Select",
+        "toolbarButton": "Video",
+        "toolbarSuffix": "button in the editor toolbar, the insert menu, or the slash menu.",
+        "toPlace": "to place the JoVE video embed at the current cursor position."
       },
       "usage": "Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
+    },
+    "jupyter": {
+      "description": "Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace.",
+      "helpLink": "RSpace Jupyter Notebook documentation",
+      "name": "Jupyter Notebook Synchronisation",
+      "setup": {
+        "configureJupyter": "Configure Jupyter instance for all notebooks:",
+        "configureJupyterDesc": "Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:",
+        "configureNotebook": "Configure notebook:",
+        "configureNotebookDesc": "Follow the instructions in RSpace help docs to import the sync_notebook script.",
+        "doOncePerNotebook": "Do this step once per notebook:",
+        "enableApi": "Enable API access:",
+        "enableApiDesc": "Generate your API key in My RSpace → My Profile.",
+        "installStep": "One time install step:",
+        "lastCell": "the last cell in the notebook:",
+        "pasteCode": "Paste this code into",
+        "refreshTab": "refresh the browser",
+        "restartKernel": "restart the kernel and",
+        "runCellAgain": "without a kernel restart. Save the Notebook.",
+        "runCellFirst": "Run the cell then",
+        "runCellSecond": "Run the cell,",
+        "runCode": "Run the code:",
+        "tab": "tab running Jupyter.",
+        "thenRunAgain": "and then run the cell one more time"
+      },
+      "usage": "Use RSpace python client >=v2.6.2 to send data from Jupyter Notebooks to RSpace. This allows you to use Jupyter Notebooks to create and share data-driven documents."
     },
     "msteams": {
       "alerts": {
@@ -712,6 +688,30 @@
       },
       "usage": "You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
     }
+  },
+  "page": {
+    "introLink": "See Apps Introduction to learn more.",
+    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
+    "nothingHere": "Nothing here!",
+    "sections": {
+      "disabled": {
+        "description": "The following Apps are not currently enabled on this account. Click on an App card for setup instructions on how to enable the integration.",
+        "title": "Disabled"
+      },
+      "enabled": {
+        "description": "The following Apps are enabled on this account. Click on an App card to modify or disable the integration.",
+        "title": "Enabled"
+      },
+      "external": {
+        "description": "These RSpace applications have been built by partners or other external software developers. Note, ResearchSpace does not provide direct support for these integrations.",
+        "title": "Third-party RSpace Integrations"
+      },
+      "unavailable": {
+        "description": "The following Apps need to be enabled by your System Administrator before they can be used; please get in touch with them directly to set this up.",
+        "title": "Unavailable"
+      }
+    },
+    "title": "Apps"
   },
   "pyrat": {
     "columnVisibility": {

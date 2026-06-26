@@ -1516,12 +1516,10 @@ export default interface Resources {
         "customNameHelper": "You can assign a unique name to the new Basket.",
         "customNamePlaceholder": "Enter custom name for new Basket",
         "duplicateName": "This name is already used for another Basket.",
-        "item_one": "Item",
-        "item_other": "Items",
+        "item": "{count, plural, one {Item} other {Items}}",
         "locationUnchanged": "This action will not change the location of the {itemString}.",
         "nameTooLong": "The name should be no longer than 32 characters.",
-        "title_one": "Adding Item to Basket",
-        "title_other": "Adding Items to Basket"
+        "title": "{count, plural, one {Adding Item to Basket} other {Adding Items to Basket}}"
       }
     },
     "container": {
@@ -1662,8 +1660,7 @@ export default interface Resources {
           "title": "Transfer Ownership"
         },
         "disabled": {
-          "noPermission_one": "You do not have permission to transfer this item.",
-          "noPermission_other": "You do not have permission to transfer these items.",
+          "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
           "subSamples": "Only whole samples can be transferred, not individual subsamples."
         }
       }
@@ -2034,13 +2031,10 @@ export default interface Resources {
         "documentSections": {
           "linkedBy": {
             "isLinkedBy": "This {recordTypeName} is linked by:",
-            "linkedByCount_one": "This {recordTypeName} is linked by {count} doc.",
-            "linkedByCount_other": "This {recordTypeName} is linked by {count} docs.",
+            "linkedByCount": "{count, plural, one {This {recordTypeName} is linked by # doc.} other {This {recordTypeName} is linked by # docs.}}",
             "noLinks": "There are no links to this {recordTypeName}.",
-            "privateDocs_one": "{count} private doc belonging to {ownerFullName}",
-            "privateDocs_other": "{count} private docs belonging to {ownerFullName}",
-            "showLinked_one": "Show linked doc",
-            "showLinked_other": "Show linked docs"
+            "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}",
+            "showLinked": "{count, plural, one {Show linked doc} other {Show linked docs}}"
           },
           "meta": {
             "createdFrom": "Created from",

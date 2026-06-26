@@ -26,6 +26,7 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import NavigateContext from "../../stores/contexts/Navigate";
 import * as FetchingData from "../../util/fetchingData";
@@ -482,9 +483,11 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <BrowserRouter>
-          <Gallery />
-        </BrowserRouter>
+        <I18nRoot namespaces={["gallery", "common"]}>
+          <BrowserRouter>
+            <Gallery />
+          </BrowserRouter>
+        </I18nRoot>
       </React.StrictMode>,
     );
 

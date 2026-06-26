@@ -10,6 +10,7 @@ import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 import materialTheme from "../../theme";
@@ -155,10 +156,12 @@ const domContainer = document.getElementById("labgroups-table");
 if (domContainer) {
   const root = createRoot(domContainer);
   root.render(
-    <GroupsTable
-      username={domContainer.dataset.username}
-      userId={domContainer.dataset.userid}
-      canEdit={domContainer.dataset.canedit === "true"}
-    />,
+    <I18nRoot namespaces={["common"]}>
+      <GroupsTable
+        username={domContainer.dataset.username}
+        userId={domContainer.dataset.userid}
+        canEdit={domContainer.dataset.canedit === "true"}
+      />
+    </I18nRoot>,
   );
 }

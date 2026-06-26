@@ -1,34 +1,28 @@
 import { TextDecoder, TextEncoder } from "node:util";
-import type { ReactNode } from "react";
 import { afterAll, afterEach, expect, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
 import createFetchMock from "vitest-fetch-mock";
 import { silenceConsole, silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import i18n from "@/modules/common/i18n";
 
-/*
- * react-i18next is mocked so `t`/`<Trans>` render the raw key (English lives
- * only in the catalogs). Component tests therefore assert on keys; real ICU
- * behaviour is covered by tests that drive a real i18next instance.
- */
-vi.mock("react-i18next", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-i18next")>();
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (key: string) => key,
-      i18n: {
-        language: "en-US",
-        changeLanguage: () => Promise.resolve(),
-        exists: () => true,
-      },
-      ready: true,
-    }),
-    Trans: ({ children, i18nKey }: { children?: ReactNode; i18nKey?: string }): ReactNode =>
-      children ?? i18nKey ?? null,
-  };
-});
+await i18n.loadNamespaces([
+  "about",
+  "admin",
+  "apps",
+  "common",
+  "dashboard",
+  "gallery",
+  "groups",
+  "inventory",
+  "public",
+  "system",
+  "workspace",
+]);
+// Component tests assert the translation identifier, not the English copy.
+i18n.options.appendNamespaceToCIMode = true;
+await i18n.changeLanguage("cimode");
 
 function createStorageMock() {
   const storage = new Map<string, string>();

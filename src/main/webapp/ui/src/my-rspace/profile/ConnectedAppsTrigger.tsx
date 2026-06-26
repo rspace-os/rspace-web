@@ -5,6 +5,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../../theme";
 import ConnectedAppsTable from "./ConnectedAppsTable";
 
@@ -37,5 +38,9 @@ const domContainer = document.getElementById("connected-apps");
 
 if (domContainer) {
   const root = createRoot(domContainer);
-  root.render(<ConnectedAppsTrigger />);
+  root.render(
+    <I18nRoot namespaces={["common"]}>
+      <ConnectedAppsTrigger />
+    </I18nRoot>,
+  );
 }

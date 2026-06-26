@@ -26,6 +26,12 @@
       "qr": "QR format supported"
     }
   },
+  "baseRecord": {
+    "editSessionExpired": {
+      "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
+      "title": "Your editing session has expired"
+    }
+  },
   "baskets": {
     "addDialog": {
       "addButton": "Add to Basket",
@@ -34,12 +40,10 @@
       "customNameHelper": "You can assign a unique name to the new Basket.",
       "customNamePlaceholder": "Enter custom name for new Basket",
       "duplicateName": "This name is already used for another Basket.",
-      "item_one": "Item",
-      "item_other": "Items",
+      "item": "{count, plural, one {Item} other {Items}}",
       "locationUnchanged": "This action will not change the location of the {itemString}.",
       "nameTooLong": "The name should be no longer than 32 characters.",
-      "title_one": "Adding Item to Basket",
-      "title_other": "Adding Items to Basket"
+      "title": "{count, plural, one {Adding Item to Basket} other {Adding Items to Basket}}"
     }
   },
   "container": {
@@ -76,14 +80,14 @@
         "columns": "Columns",
         "commonSizes": {
           "custom": "Custom",
-          "freezerBox64": "64 place freezer box",
-          "freezerBox81": "81 place freezer box",
           "freezerBox100": "100 place freezer box",
           "freezerBox169": "169 place freezer box",
           "freezerBox196": "196 place freezer box",
-          "wellPlate6": "6 well plate",
+          "freezerBox64": "64 place freezer box",
+          "freezerBox81": "81 place freezer box",
           "wellPlate12": "12 well plate",
           "wellPlate24": "24 well plate",
+          "wellPlate6": "6 well plate",
           "wellPlate96": "96 well plate"
         },
         "error": "Must be at least {min}, and not more than {max}.",
@@ -137,17 +141,6 @@
       }
     }
   },
-  "createNew": {
-    "button": "Create",
-    "containers": "Containers",
-    "csvImport": "CSV Import",
-    "newContainer": "New Container",
-    "newSample": "New Sample",
-    "newTemplate": "New Template",
-    "samples": "Samples",
-    "subsamples": "Subsamples",
-    "thirdPartyImport": "Third-Party Import"
-  },
   "contextMenu": {
     "actions": {
       "addToBasket": "Add to Basket",
@@ -191,11 +184,21 @@
         "title": "Transfer Ownership"
       },
       "disabled": {
-        "noPermission_one": "You do not have permission to transfer this item.",
-        "noPermission_other": "You do not have permission to transfer these items.",
+        "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
         "subSamples": "Only whole samples can be transferred, not individual subsamples."
       }
     }
+  },
+  "createNew": {
+    "button": "Create",
+    "containers": "Containers",
+    "csvImport": "CSV Import",
+    "newContainer": "New Container",
+    "newSample": "New Sample",
+    "newTemplate": "New Template",
+    "samples": "Samples",
+    "subsamples": "Subsamples",
+    "thirdPartyImport": "Third-Party Import"
   },
   "detailedListing": {
     "card": {
@@ -247,54 +250,46 @@
       }
     }
   },
+  "fieldmarkImport": {
+    "appBarTitle": "Fieldmark",
+    "closeConfirm": {
+      "cancel": "No, keep open",
+      "confirm": "Yes, close",
+      "message": "Are you sure you want to close this dialog? The import will continue in the background and there will be an alert when it completes.",
+      "title": "Importing in progress"
+    },
+    "columns": {
+      "description": "Description",
+      "id": "Id",
+      "isPublic": "Is Public",
+      "name": "Name",
+      "projectLead": "Project Lead",
+      "status": "Status"
+    },
+    "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
+    "descriptionLinks": "See <a1>docs.fieldmark.au</a1> and our <a2>Fieldmark integration docs</a2> for more.",
+    "fetchError": "Could not get notebooks from Fieldmark",
+    "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
+    "helpTitle": "Fieldmark help",
+    "igsnField": {
+      "helperText": "Select a field to use as the IGSN ID for imported samples, or select 'Do not use IGSN IDs' to import without one",
+      "label": "IGSN ID Field",
+      "loading": "Loading available IGSN ID fields...",
+      "noIgsn": "Do not use IGSN IDs"
+    },
+    "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <a>DataCite IGSN ID integration</a> to be enabled.",
+    "importError": "Could not import notebook.",
+    "importNotebook": {
+      "message": "Importing notebook \"{name}\" from Fieldmark.",
+      "title": "Importing notebook"
+    },
+    "importSuccess": "Successfully imported notebook.",
+    "noNotebooks": "No Notebooks",
+    "noNotebookSelected": "No Notebook selected.",
+    "selectRadioAriaLabel": "Select notebook: {name}",
+    "title": "Import from Fieldmark"
+  },
   "fields": {
-    "description": {
-      "label": "Description",
-      "maxLength": "Description must be no longer than {max} characters (including HTML tags)."
-    },
-    "extraFields": {
-      "addCustomField": "Add custom field.",
-      "addNewField": "Add new field",
-      "addOneFieldAtATime": "You can only create one field at a time.",
-      "deleteField": "Delete field",
-      "fieldSettings": "Field settings",
-      "fields": {
-        "fieldName": "Field name",
-        "fieldType": "Field type",
-        "relationType": "Relation type"
-      },
-      "fieldTypes": {
-        "link": "Link",
-        "number": "Number",
-        "text": "Text"
-      },
-      "groups": {
-        "editing": "Editing extra field with name {name}",
-        "new": "New extra field"
-      },
-      "link": {
-        "relationHelper": "Pick a DataCite relation type",
-        "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
-        "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
-      },
-      "maxCharacters": "Must be no more than {max} characters.",
-      "noLinkSet": "No link set",
-      "noMoreFields": "No more fields",
-      "updateField": {
-        "apply": "Apply",
-        "ariaCancel": "Cancel update",
-        "ariaUpdate": "Update field",
-        "cancel": "Cancel",
-        "discard": "Discard",
-        "update": "Update"
-      },
-      "validNumber": "Must be a valid number.",
-      "validation": {
-        "duplicateName": "You either already have a field with that name or that name is not permitted.",
-        "emptyName": "Name should not be empty.",
-        "nameTooLong": "Name must be no longer than 255 characters."
-      }
-    },
     "accessPermissions": {
       "ariaLabel": "Access Permission Setting",
       "editFirst": "You need to be in Edit mode to edit permissions.",
@@ -385,6 +380,53 @@
         "none": "No current barcodes",
         "show": "Show barcodes listing"
       }
+    },
+    "description": {
+      "label": "Description",
+      "maxLength": "Description must be no longer than {max} characters (including HTML tags)."
+    },
+    "extraFields": {
+      "addCustomField": "Add custom field.",
+      "addNewField": "Add new field",
+      "addOneFieldAtATime": "You can only create one field at a time.",
+      "deleteField": "Delete field",
+      "fields": {
+        "fieldName": "Field name",
+        "fieldType": "Field type",
+        "relationType": "Relation type"
+      },
+      "fieldSettings": "Field settings",
+      "fieldTypes": {
+        "link": "Link",
+        "number": "Number",
+        "text": "Text"
+      },
+      "groups": {
+        "editing": "Editing extra field with name {name}",
+        "new": "New extra field"
+      },
+      "link": {
+        "relationHelper": "Pick a DataCite relation type",
+        "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+        "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
+      },
+      "maxCharacters": "Must be no more than {max} characters.",
+      "noLinkSet": "No link set",
+      "noMoreFields": "No more fields",
+      "updateField": {
+        "apply": "Apply",
+        "ariaCancel": "Cancel update",
+        "ariaUpdate": "Update field",
+        "cancel": "Cancel",
+        "discard": "Discard",
+        "update": "Update"
+      },
+      "validation": {
+        "duplicateName": "You either already have a field with that name or that name is not permitted.",
+        "emptyName": "Name should not be empty.",
+        "nameTooLong": "Name must be no longer than 255 characters."
+      },
+      "validNumber": "Must be a valid number."
     },
     "identifiers": {
       "assignDialog": {
@@ -509,24 +551,18 @@
         }
       }
     },
-    "location": {
-      "label": "Location"
-    },
     "link": {
       "documentSections": {
         "linkedBy": {
           "isLinkedBy": "This {recordTypeName} is linked by:",
-          "linkedByCount_one": "This {recordTypeName} is linked by {count} doc.",
-          "linkedByCount_other": "This {recordTypeName} is linked by {count} docs.",
+          "linkedByCount": "{count, plural, one {This {recordTypeName} is linked by # doc.} other {This {recordTypeName} is linked by # docs.}}",
           "noLinks": "There are no links to this {recordTypeName}.",
-          "privateDocs_one": "{count} private doc belonging to {ownerFullName}",
-          "privateDocs_other": "{count} private docs belonging to {ownerFullName}",
-          "showLinked_one": "Show linked doc",
-          "showLinked_other": "Show linked docs"
+          "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}",
+          "showLinked": "{count, plural, one {Show linked doc} other {Show linked docs}}"
         },
         "meta": {
-          "creationDate": "Creation Date",
           "createdFrom": "Created from",
+          "creationDate": "Creation Date",
           "formId": "Form ID",
           "lastModified": "Last Modified",
           "owner": "Owner",
@@ -556,8 +592,8 @@
           "awaitingWitness": "signed, awaiting witness",
           "signed": "signed",
           "signedWitnessesDeclined": "signed, all witnesses declined",
-          "unsigned": "unsigned",
           "unsignable": "unsignable",
+          "unsigned": "unsigned",
           "witnessed": "signed and witnessed"
         },
         "statusLabels": {
@@ -583,6 +619,10 @@
       "elnFolderBrowser": {
         "loadMore": "Load more"
       },
+      "elnInfoDialog": {
+        "unavailable": "This item is not available, or you do not have permission to view it.",
+        "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
+      },
       "elnPicker": {
         "ariaLabel": "Browse the ELN for a link target",
         "cancel": "Cancel",
@@ -592,20 +632,16 @@
       "gallerySections": {
         "showLinkedDocs": "Show linked docs"
       },
+      "infoDialog": {
+        "ariaLabel": "Info for {globalId}",
+        "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
+      },
       "linkField": {
         "editLink": "Edit link",
         "editToChangePinned": "Edit the link to change the pinned version",
         "noAccess": "No access",
         "noPermission": "You do not have permission to view this item",
         "targetDeleted": "Target deleted"
-      },
-      "elnInfoDialog": {
-        "unavailable": "This item is not available, or you do not have permission to view it.",
-        "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
-      },
-      "infoDialog": {
-        "ariaLabel": "Info for {globalId}",
-        "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
       },
       "relatedInventoryItems": {
         "loading": "Loading...",
@@ -623,6 +659,9 @@
         "title": "Version history",
         "titleFor": "Version history for {globalId}"
       }
+    },
+    "location": {
+      "label": "Location"
     },
     "name": {
       "label": "Name",
@@ -716,9 +755,9 @@
       },
       "defaultValue": {
         "addValue": "Add Value",
-        "allRelationshipTypes": "All relationship types",
         "allowedRelationshipTypes": "Allowed relationship types",
         "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
+        "allRelationshipTypes": "All relationship types",
         "none": "None"
       },
       "move": {
@@ -732,50 +771,11 @@
         "defaultScale": "Default Scale",
         "label": "Quantity Units",
         "mass": "Mass",
-        "unitType": "Unit Type",
         "unitless": "Unitless",
+        "unitType": "Unit Type",
         "volume": "Volume"
       }
     }
-  },
-  "fieldmarkImport": {
-    "appBarTitle": "Fieldmark",
-    "closeConfirm": {
-      "cancel": "No, keep open",
-      "confirm": "Yes, close",
-      "message": "Are you sure you want to close this dialog? The import will continue in the background and there will be an alert when it completes.",
-      "title": "Importing in progress"
-    },
-    "columns": {
-      "description": "Description",
-      "id": "Id",
-      "isPublic": "Is Public",
-      "name": "Name",
-      "projectLead": "Project Lead",
-      "status": "Status"
-    },
-    "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
-    "descriptionLinks": "See <a1>docs.fieldmark.au</a1> and our <a2>Fieldmark integration docs</a2> for more.",
-    "fetchError": "Could not get notebooks from Fieldmark",
-    "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
-    "helpTitle": "Fieldmark help",
-    "igsnField": {
-      "helperText": "Select a field to use as the IGSN ID for imported samples, or select 'Do not use IGSN IDs' to import without one",
-      "label": "IGSN ID Field",
-      "loading": "Loading available IGSN ID fields...",
-      "noIgsn": "Do not use IGSN IDs"
-    },
-    "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <a>DataCite IGSN ID integration</a> to be enabled.",
-    "importError": "Could not import notebook.",
-    "importNotebook": {
-      "message": "Importing notebook \"{name}\" from Fieldmark.",
-      "title": "Importing notebook"
-    },
-    "importSuccess": "Successfully imported notebook.",
-    "noNotebookSelected": "No Notebook selected.",
-    "noNotebooks": "No Notebooks",
-    "selectRadioAriaLabel": "Select notebook: {name}",
-    "title": "Import from Fieldmark"
   },
   "formSections": {
     "accessPermissions": "Access Permissions",
@@ -799,6 +799,55 @@
     "contentsNotShown": "Contents are not part of the historical snapshot, so they are not shown.",
     "readOnlyWithLink": "It is read-only. <a>View the latest version</a>",
     "title": "This is version {version} of the {type}."
+  },
+  "identifierConfirm": {
+    "cancelButton": "CANCEL",
+    "create": {
+      "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
+      "title": "You are about to create an Identifier"
+    },
+    "publish": {
+      "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
+      "title": "You are about to publish this Identifier"
+    },
+    "retract": {
+      "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the Public API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
+      "title": "You are about to retract this Identifier"
+    }
+  },
+  "igsnManagement": {
+    "actions": {
+      "ariaLabel": "Actions menu for selected IGSN IDs",
+      "button": "Actions",
+      "delete": {
+        "subheader": "Does not delete any linked item.",
+        "title": "Delete"
+      },
+      "print": {
+        "subheader": "Print barcode labels for selected IGSN IDs.",
+        "title": "Print"
+      }
+    },
+    "browserTitle": "Manage IGSN IDs | RSpace Inventory",
+    "bulkRegister": {
+      "button": "Bulk Register",
+      "createdMessage": "IGSN IDs in Draft state will be created.",
+      "dialogTitle": "Bulk Register IGSN IDs",
+      "numberLabel": "Number of new IGSN IDs",
+      "register": "Register",
+      "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
+    },
+    "cancel": "Cancel",
+    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <a>see the IGSN ID documentation</a>.",
+    "landmark": "IGSN management main content",
+    "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
+    "pageTitle": "IGSN Management Page",
+    "registerDescription": "You can register and associate an IGSN ID with an existing item in Inventory by selecting <kbd>Create new IGSN ID</kbd> under its <cite>Identifiers</cite> heading.",
+    "sections": {
+      "ids": "IGSN IDs",
+      "manage": "Manage IGSN IDs",
+      "register": "Register IGSN IDs"
+    }
   },
   "igsnTable": {
     "columns": {
@@ -843,44 +892,11 @@
     "searchPlaceholder": "Search IGSN IDs...",
     "selectIgsn": "Select IGSN"
   },
-  "igsnManagement": {
-    "actions": {
-      "ariaLabel": "Actions menu for selected IGSN IDs",
-      "button": "Actions",
-      "delete": {
-        "subheader": "Does not delete any linked item.",
-        "title": "Delete"
-      },
-      "print": {
-        "subheader": "Print barcode labels for selected IGSN IDs.",
-        "title": "Print"
-      }
-    },
-    "bulkRegister": {
-      "button": "Bulk Register",
-      "createdMessage": "IGSN IDs in Draft state will be created.",
-      "dialogTitle": "Bulk Register IGSN IDs",
-      "numberLabel": "Number of new IGSN IDs",
-      "register": "Register",
-      "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
-    },
-    "cancel": "Cancel",
-    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <a>see the IGSN ID documentation</a>.",
-    "landmark": "IGSN management main content",
-    "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
-    "pageTitle": "IGSN Management Page",
-    "browserTitle": "Manage IGSN IDs | RSpace Inventory",
-    "registerDescription": "You can register and associate an IGSN ID with an existing item in Inventory by selecting <kbd>Create new IGSN ID</kbd> under its <cite>Identifiers</cite> heading.",
-    "sections": {
-      "ids": "IGSN IDs",
-      "manage": "Manage IGSN IDs",
-      "register": "Register IGSN IDs"
-    }
-  },
   "import": {
     "actions": {
       "import": "Import"
     },
+    "browserTitle": "Import CSV | RSpace Inventory",
     "columnMapping": {
       "columns": {
         "convertTo": "Convert To",
@@ -894,8 +910,8 @@
       "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
       "unconverted": "You have one or more columns selected without conversion. The columns' data will not be used."
     },
-    "customFieldName": "Custom Field Name",
     "customDetails": "Custom details",
+    "customFieldName": "Custom Field Name",
     "file": {
       "clearFileAndMappings": "Clear File and Mappings",
       "errorDetails": "Error details:",
@@ -905,23 +921,22 @@
     },
     "helpTitle": "Info on importing.",
     "importDocumentation": "Import Documentation",
+    "landmark": "Import main content",
     "sections": {
       "columnConversion": "CSV Column Conversion Settings",
       "templateDetails": "Template Details"
     },
-    "title": "IMPORT",
     "templateDetails": {
       "chooseExistingTemplate": "Choose existing template.",
       "createNewTemplate": "Create new template.",
       "selectTemplate": "Select a template from which these imported samples will be created."
     },
+    "title": "IMPORT",
     "types": {
       "containers": "Containers",
       "samples": "Samples",
       "subsamples": "Subsamples"
-    },
-    "landmark": "Import main content",
-    "browserTitle": "Import CSV | RSpace Inventory"
+    }
   },
   "infoCard": {
     "setAsTarget": "Set as Target"
@@ -1103,13 +1118,22 @@
       "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a>documentation</a>.",
       "large": "Large",
       "printCopies": "Print Copies",
+      "printerType": "Printer Type",
       "printLayout": "Print Layout",
       "printSize": "Print Size",
-      "printerType": "Printer Type",
       "small": "Small",
       "standardPrinter": "Standard Printer",
       "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
     }
+  },
+  "recordsTable": {
+    "columns": {
+      "globalId": "Global ID",
+      "name": "Name"
+    }
+  },
+  "recordTree": {
+    "navigateToContainer": "Navigate to container"
   },
   "sample": {
     "fields": {
@@ -1137,15 +1161,6 @@
         },
         "type": "Type"
       },
-      "template": {
-        "alertExpand": "Expand to select a template.",
-        "alertSelect": "Select a template from the list below.",
-        "couldNotFetchError": "Could not fetch template details.",
-        "explanationCreate": "See the documentation for information on <a>how to create custom templates</a>.",
-        "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a>(Learn more about sample templates)</a>",
-        "label": "Sample Template",
-        "noTemplate": "No template"
-      },
       "source": {
         "label": "Source",
         "options": {
@@ -1172,16 +1187,16 @@
         },
         "specify": "Specify",
         "unit": "Unit"
+      },
+      "template": {
+        "alertExpand": "Expand to select a template.",
+        "alertSelect": "Select a template from the list below.",
+        "couldNotFetchError": "Could not fetch template details.",
+        "explanationCreate": "See the documentation for information on <a>how to create custom templates</a>.",
+        "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a>(Learn more about sample templates)</a>",
+        "label": "Sample Template",
+        "noTemplate": "No template"
       }
-    }
-  },
-  "recordTree": {
-    "navigateToContainer": "Navigate to container"
-  },
-  "recordsTable": {
-    "columns": {
-      "globalId": "Global ID",
-      "name": "Name"
     }
   },
   "search": {
@@ -1263,6 +1278,10 @@
       "topLevelContainers": "{count} top-level containers found.",
       "undetermined": "Results cannot be fully determined."
     },
+    "helpTitle": "Info on searching Inventory.",
+    "navigation": {
+      "ariaLabel": "Search and Navigation"
+    },
     "noActiveResult": {
       "body": "Let's get you started with the system.",
       "guideLink": "Get Started Guide",
@@ -1271,10 +1290,6 @@
     "noResults": {
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
-    },
-    "helpTitle": "Info on searching Inventory.",
-    "navigation": {
-      "ariaLabel": "Search and Navigation"
     },
     "resultsTable": {
       "actionInProgress": "Action In Progress",
@@ -1379,26 +1394,5 @@
     "insertBarcodeTable": "Insert Barcode Table",
     "instructions": "Select from newly registered IGSN IDs or those already with linked items, and insert a table into your document, each with a QR code.",
     "pageTitle": "Inventory Identifiers"
-  },
-  "baseRecord": {
-    "editSessionExpired": {
-      "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
-      "title": "Your editing session has expired"
-    }
-  },
-  "identifierConfirm": {
-    "cancelButton": "CANCEL",
-    "create": {
-      "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
-      "title": "You are about to create an Identifier"
-    },
-    "publish": {
-      "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
-      "title": "You are about to publish this Identifier"
-    },
-    "retract": {
-      "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the Public API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
-      "title": "You are about to retract this Identifier"
-    }
   }
 }

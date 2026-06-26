@@ -353,13 +353,13 @@
         "chemical": "Chemical",
         "created": "Creation date",
         "form": "Form",
+        "fullText": "Text",
         "global": "All",
         "lastModified": "Last modified",
         "name": "Name",
         "owner": "Owner(s)",
         "tag": "Tag(s)",
-        "template": "Template",
-        "fullText": "Text"
+        "template": "Template"
       },
       "scopeDialog": {
         "instructions": "Click \"Within selected\" if you wish to search within the specified records, or \"Search everywhere\" otherwise.",

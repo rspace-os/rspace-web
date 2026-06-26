@@ -13,6 +13,19 @@ import * as ArrayUtils from "../../../../../util/ArrayUtils";
 import { parseInteger } from "../../../../../util/parsers";
 import GridDimensions from "../GridDimensions";
 
+const customSizeKey = "inventory:container.fields.gridDimensions.commonSizes.custom";
+const expectedCellCounts = new Map([
+  ["inventory:container.fields.gridDimensions.commonSizes.wellPlate96", 96],
+  ["inventory:container.fields.gridDimensions.commonSizes.wellPlate24", 24],
+  ["inventory:container.fields.gridDimensions.commonSizes.wellPlate12", 12],
+  ["inventory:container.fields.gridDimensions.commonSizes.wellPlate6", 6],
+  ["inventory:container.fields.gridDimensions.commonSizes.freezerBox196", 196],
+  ["inventory:container.fields.gridDimensions.commonSizes.freezerBox169", 169],
+  ["inventory:container.fields.gridDimensions.commonSizes.freezerBox100", 100],
+  ["inventory:container.fields.gridDimensions.commonSizes.freezerBox81", 81],
+  ["inventory:container.fields.gridDimensions.commonSizes.freezerBox64", 64],
+]);
+
 function makeRootStoreWithGridContainer(): {
   rootStore: StoreContainer;
   gridContainer: ContainerModel;
@@ -52,7 +65,7 @@ describe("GridDimensions", () => {
       .map((o) => o.textContent || "");
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
-        name: "Custom",
+        name: customSizeKey,
       }),
     );
     // for each menu option, assert it sets the rows and cols to valid values
@@ -65,7 +78,7 @@ describe("GridDimensions", () => {
       );
 
       const rowsEl: HTMLInputElement = screen.getByRole("spinbutton", {
-        name: "rows",
+        name: "inventory:container.fields.gridDimensions.rows",
       });
       const rows = parseInteger(rowsEl.value).orElse(null);
       expect(rows).not.toBeNull();
@@ -73,7 +86,7 @@ describe("GridDimensions", () => {
       expect(rows).toBeLessThanOrEqual(24);
 
       const columnsEl: HTMLInputElement = screen.getByRole("spinbutton", {
-        name: "rows",
+        name: "inventory:container.fields.gridDimensions.columns",
       });
       const columns = parseInteger(columnsEl.value).orElse(null);
       expect(columns).not.toBeNull();
@@ -98,7 +111,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
         .map((o) => o.textContent || "")
-        .filter((o) => o !== "Custom"),
+        .filter((o) => o !== customSizeKey),
     ).orElse(null);
     expect(menuOptionValue).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
@@ -110,13 +123,13 @@ describe("GridDimensions", () => {
       }),
     );
     const rowsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
-      name: "rows",
+      name: "inventory:container.fields.gridDimensions.rows",
     });
     const rowsBefore = parseInteger(rowsBeforeEl.value).orElse(null);
     expect(rowsBefore).not.toBeNull();
 
     const columnsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
-      name: "columns",
+      name: "inventory:container.fields.gridDimensions.columns",
     });
     const columnsBefore = parseInteger(columnsBeforeEl.value).orElse(null);
 
@@ -125,18 +138,18 @@ describe("GridDimensions", () => {
     fireEvent.mouseDown(screen.getByRole("combobox"));
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
-        name: "Custom",
+        name: customSizeKey,
       }),
     );
     // assert that the values have not changed
     const rowsAfterEl: HTMLInputElement = screen.getByRole("spinbutton", {
-      name: "rows",
+      name: "inventory:container.fields.gridDimensions.rows",
     });
     const rowsAfter = parseInteger(rowsAfterEl.value).orElse(null);
     expect(rowsAfter).not.toBeNull();
 
     const columnsAfterEl: HTMLInputElement = screen.getByRole("spinbutton", {
-      name: "columns",
+      name: "inventory:container.fields.gridDimensions.columns",
     });
     const columnsAfter = parseInteger(columnsAfterEl.value).orElse(null);
     expect(columnsAfter).not.toBeNull();
@@ -159,7 +172,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
         .map((o) => o.textContent || "")
-        .filter((o) => o !== "Custom"),
+        .filter((o) => o !== customSizeKey),
     ).orElse(null);
     expect(menuOptionValue).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
@@ -172,14 +185,14 @@ describe("GridDimensions", () => {
     );
 
     const rowsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
-      name: "rows",
+      name: "inventory:container.fields.gridDimensions.rows",
     });
     // change the rows
     const rowsBefore = parseInteger(rowsBeforeEl.value).orElse(null);
     expect(rowsBefore).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const newRows = (rowsBefore! + 1) % 24;
-    fireEvent.input(screen.getByRole("spinbutton", { name: "rows" }), {
+    fireEvent.input(screen.getByRole("spinbutton", { name: "inventory:container.fields.gridDimensions.rows" }), {
       target: { value: newRows },
     });
     // assert that the menu is custom
@@ -201,7 +214,7 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
         .map((o) => o.textContent || "")
-        .filter((o) => o !== "Custom"),
+        .filter((o) => o !== customSizeKey),
     ).orElse(null);
     expect(menuOptionValue).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
@@ -214,13 +227,13 @@ describe("GridDimensions", () => {
     );
     // change the columns
     const columnsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
-      name: "columns",
+      name: "inventory:container.fields.gridDimensions.columns",
     });
     const columnsBefore = parseInteger(columnsBeforeEl.value).orElse(null);
     expect(columnsBefore).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const newColumns = (columnsBefore! + 1) % 24;
-    fireEvent.input(screen.getByRole("spinbutton", { name: "columns" }), {
+    fireEvent.input(screen.getByRole("spinbutton", { name: "inventory:container.fields.gridDimensions.columns" }), {
       target: { value: newColumns },
     });
     // assert that the menu is custom
@@ -241,10 +254,10 @@ describe("GridDimensions", () => {
     const menuOptions = within(screen.getByRole("listbox"))
       .getAllByRole("option")
       .map((o) => o.textContent || "")
-      .filter((o) => o !== "Custom");
+      .filter((o) => o !== customSizeKey);
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
-        name: "Custom",
+        name: customSizeKey,
       }),
     );
     // for each menu option, assert that the rows and colunmns, when multiplied, are the number quoted by the option
@@ -257,25 +270,19 @@ describe("GridDimensions", () => {
       );
 
       const rowsEl: HTMLInputElement = screen.getByRole("spinbutton", {
-        name: "rows",
+        name: "inventory:container.fields.gridDimensions.rows",
       });
       const rows = parseInteger(rowsEl.value).orElse(null);
 
       const columnsEl: HTMLInputElement = screen.getByRole("spinbutton", {
-        name: "columns",
+        name: "inventory:container.fields.gridDimensions.columns",
       });
       const columns = parseInteger(columnsEl.value).orElse(null);
 
       expect(rows).not.toBeNull();
       expect(columns).not.toBeNull();
-      expect(option).toMatch(
-        new RegExp(
-          `${
-            // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-            rows! * columns!
-          }`,
-        ),
-      );
+      if (rows === null || columns === null) throw new Error("Expected selected grid dimensions to be numeric.");
+      expect(rows * columns).toBe(expectedCellCounts.get(option));
     }
   });
   test("The first option, the most popular, should be 96-well plate.", () => {
@@ -295,7 +302,7 @@ describe("GridDimensions", () => {
     ).orElse(null);
     expect(menuOption).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-    expect(menuOption!).toMatch(/96 well plate/);
+    expect(menuOption!).toMatch(/inventory:container.fields.gridDimensions.commonSizes.wellPlate96/);
   });
   test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
     const user = userEvent.setup();
@@ -312,7 +319,7 @@ describe("GridDimensions", () => {
     fireEvent.mouseDown(screen.getByRole("combobox"));
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
-        name: "96 well plate",
+        name: "inventory:container.fields.gridDimensions.commonSizes.wellPlate96",
       }),
     );
     expect(spy).toHaveBeenCalledWith({
@@ -338,7 +345,7 @@ describe("GridDimensions", () => {
           .getAllByRole("option")
           .map((o) => o.textContent || "")
 
-          .filter((o) => o !== "Custom");
+          .filter((o) => o !== customSizeKey);
 
         const option = menuOptions[unboundedIndex % menuOptions.length];
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -354,13 +361,13 @@ describe("GridDimensions", () => {
         );
 
         const rowsEl: HTMLInputElement = screen.getByRole("spinbutton", {
-          name: "rows",
+          name: "inventory:container.fields.gridDimensions.rows",
         });
         const rows = parseInteger(rowsEl.value).orElse(null);
         expect(rows).not.toBeNull();
 
         const columnsEl: HTMLInputElement = screen.getByRole("spinbutton", {
-          name: "columns",
+          name: "inventory:container.fields.gridDimensions.columns",
         });
         const columns = parseInteger(columnsEl.value).orElse(null);
 

@@ -12,6 +12,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import materialTheme from "../../theme";
 import { getSorting } from "../../util/table";
@@ -112,5 +113,9 @@ const domContainer = document.getElementById("account-activity");
 
 if (domContainer) {
   const root = createRoot(domContainer);
-  root.render(<AccountActivity userId={domContainer.dataset.userid} />);
+  root.render(
+    <I18nRoot namespaces={["common"]}>
+      <AccountActivity userId={domContainer.dataset.userid} />
+    </I18nRoot>,
+  );
 }
