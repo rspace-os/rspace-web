@@ -361,8 +361,12 @@ public class S3NfsClient extends NfsAbstractClient implements WritableNfsClient 
     }
     S3NfsClient destS3 = (S3NfsClient) destClient;
     S3FolderContentItem destDetails = destS3.getObjectDetails(destKey);
-    if (destDetails != null && !destDetails.isFolder()) {
-      throw new IOException("File already exists at destination: " + destKey);
+    if (destDetails != null) {
+      throw new IOException(
+          (destDetails.isFolder()
+                  ? "A folder already exists at destination: "
+                  : "File already exists at destination: ")
+              + destKey);
     }
     destS3.copyObjectFromBucket(s3Utilities.getBucketName(), sourceKey, destKey, metadata);
     return destKey;

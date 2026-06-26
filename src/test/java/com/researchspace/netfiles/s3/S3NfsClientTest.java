@@ -409,6 +409,23 @@ public class S3NfsClientTest {
   }
 
   @Test
+  public void copyObject_destinationIsExistingFolder_throwsIOExceptionAndDoesNotCopy() {
+    // A folder at the dest key must also block the copy, else file dest/x sits beside folder
+    // dest/x/.
+    DestClientFixture dest = newDestClient("source-bucket");
+    when(dest.mockS3Utilities.getObjectDetails("dest/photos"))
+        .thenReturn(new S3FolderContentItem("photos", true, null, null));
+
+    IOException ex =
+        assertThrows(
+            IOException.class,
+            () -> client.copyObject("source/photos", dest.client, "dest/photos"));
+    assertTrue(ex.getMessage().contains("already exists"));
+    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
+        .copyObjectFromBucket(any(), any(), any(), any());
+  }
+
+  @Test
   public void testNfsFileTreeNodeConversion() {
 
     NfsFileStore testFileStore = new NfsFileStore();
