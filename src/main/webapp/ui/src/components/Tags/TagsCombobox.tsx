@@ -467,8 +467,7 @@ function TagsComboboxContent<
    * useAutocomplete, a hook exposed by MUI, rather than the standard MUI
    * Autocomplete component is necessary because there is a scrolling bug when
    * virtualising the listbox (with react-window) inside the standard
-   * Autocomplete. See this StackOverflow post for more info
-   * https://stackoverflow.com/questions/59013367/react-window-infinite-loader-material-ui-autocomplete
+   * Autocomplete.
    */
   const { getRootProps, getInputProps, getListboxProps, getOptionProps, groupedOptions } = useAutocomplete({
     open: Boolean(anchorEl),
