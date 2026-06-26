@@ -91,10 +91,9 @@ export class PubchemDialogComponent {
   }
 
   async importCompound(compoundName: string): Promise<void> {
-    // The card sits inside a MUI DialogContent with overflow:scroll, which blocks
-    // Playwright's pointer-event hit-test. Scope to the CardActionArea button and
-    // bypass the containment check with force:true.
-    await this.resultCard(compoundName).getByRole("button").click({ force: true });
+    await this.resultCard(compoundName)
+      .getByRole("button")
+      .evaluate((el) => (el as HTMLElement).click());
     await this.importSelectedButton.click();
     await this.root.waitFor({ state: "detached" });
   }

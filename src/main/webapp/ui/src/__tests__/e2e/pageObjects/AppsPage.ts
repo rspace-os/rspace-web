@@ -21,5 +21,6 @@ export class AppsPage {
     } else {
       await dialog.getByRole("button", { name: "Close" }).click();
     }
+    await dialog.waitFor({ state: "detached" });
   }
 }

@@ -2,6 +2,8 @@ import type { APIRequestContext } from "@playwright/test";
 import { test as base, expect, mergeTests, request } from "@playwright/test";
 import { DocumentsClient } from "./api/clients/DocumentsClient";
 import { env } from "./env";
+import { DocumentEditorPage } from "./pageObjects/DocumentEditorPage";
+import { DocumentPage } from "./pageObjects/DocumentPage";
 import { LoginPage } from "./pageObjects/LoginPage";
 import { SystemConfigPage } from "./pageObjects/SystemConfigPage";
 import { WorkspacePage } from "./pageObjects/WorkspacePage";
@@ -33,6 +35,8 @@ const uiTest = base.extend<
   E2EOptions & {
     pageLogin: LoginPage;
     pageWorkspace: WorkspacePage;
+    pageDocument: DocumentPage;
+    pageDocumentEditor: DocumentEditorPage;
     flowLogin: WorkspacePage;
   }
 >({
@@ -42,6 +46,12 @@ const uiTest = base.extend<
   },
   pageWorkspace: async ({ page }, use) => {
     await use(new WorkspacePage(page));
+  },
+  pageDocument: async ({ page }, use) => {
+    await use(new DocumentPage(page));
+  },
+  pageDocumentEditor: async ({ page }, use) => {
+    await use(new DocumentEditorPage(page));
   },
   /**
    * Logs in via the UI form. Uses `appUser` (set per project in config) so

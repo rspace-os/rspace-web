@@ -88,10 +88,33 @@ Filter runs: `--grep @smoke` / `--grep-invert @smoke`.
 3. `getByText('Some visible text')` — stable visible copy
 4. `getByTestId('create-btn')` — `data-test-id` attribute (RSpace's convention;
    configured via `testIdAttribute` in the playwright config)
-5. `locator('#id')` / `.css-class` — **banned**
+5. `locator('#id')` — allowed only for verified legacy JSP-rendered IDs
+   (e.g. `#recordNameInHeader`, `#editTags`). Never for React components.
+6. `locator('.css-class')` — last resort for legacy jQuery/Mustache pages
+   with no stable ID and no ARIA role. Document why at the call site.
 
 Semantic locators fail when markup loses its role or label — exactly the
 feedback that pushes accessible markup.
+
+## Pitfall: no XPath
+
+**Never use `locator("xpath=...")`** in page objects or specs.
+
+When you need a sibling or parent relationship, derive the stable DOM id from
+an attribute instead:
+
+```ts
+// Bad — XPath breaks silently under markup refactors
+.locator("xpath=following-sibling::tr[1]")
+
+// Good — async getAttribute to get the id, then target it directly
+const tdId = await fieldTd.getAttribute("id");
+const fieldId = (tdId ?? "").replace("field-name-", "");
+return this.page.locator(`#div_rtf_${fieldId}`);
+```
+
+XPath expressions are opaque to Playwright's retry mechanism and fail silently
+when the surrounding markup is refactored.
 
 ## Pitfall: don't grow god-class page objects
 
