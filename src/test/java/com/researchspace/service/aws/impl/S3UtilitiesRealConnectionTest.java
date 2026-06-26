@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemOption;
+import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
 import com.researchspace.service.impl.ConditionalTestRunner;
@@ -13,9 +14,11 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -118,6 +121,20 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Test
   @RunIfSystemPropertyDefined(value = "nightly")
+  public void testTopLevelRootFilestoreAWS() throws IOException {
+    initializeS3UtilitiesWithAWS();
+    topLevelRootScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testTopLevelRootFilestoreCloudflare() throws IOException {
+    initializeS3UtilitiesWithCloudflare();
+    topLevelRootScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
   public void testCopyObjectFromBucketAWS() throws IOException {
     initializeS3UtilitiesWithAWS();
     copyObjectFromBucketScenario();
@@ -128,6 +145,34 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   public void testCopyObjectFromBucketCloudflare() throws IOException {
     initializeS3UtilitiesWithCloudflare();
     copyObjectFromBucketScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testCreateFolderAndMetadataAWS() {
+    initializeS3UtilitiesWithAWS();
+    createFolderScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testCreateFolderAndMetadataCloudflare() {
+    initializeS3UtilitiesWithCloudflare();
+    createFolderScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testDeleteEmptyFolderAWS() throws IOException {
+    initializeS3UtilitiesWithAWS();
+    deleteEmptyFolderScenario();
+  }
+
+  @Test
+  @RunIfSystemPropertyDefined(value = "nightly")
+  public void testDeleteEmptyFolderCloudflare() throws IOException {
+    initializeS3UtilitiesWithCloudflare();
+    deleteEmptyFolderScenario();
   }
 
   @Test
@@ -260,9 +305,15 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     String fileName = "upload-test-" + System.currentTimeMillis() + ".txt";
     File source = createTempFileWithName(fileName, testContent);
     String s3Key = S3_WRITE_TESTS_FOLDER_PATH + "/" + fileName;
+    Map<String, String> metadata =
+        Map.of(
+            WriteAttribution.META_CREATED_BY,
+            "realConnTestUser",
+            WriteAttribution.META_CREATED_AT,
+            Instant.now().toString());
 
     try {
-      s3Utilities.uploadToS3(S3_WRITE_TESTS_FOLDER_PATH, source);
+      s3Utilities.uploadToS3(S3_WRITE_TESTS_FOLDER_PATH, source, metadata);
 
       // verify object is present with correct size
       S3FolderContentItem uploaded = s3Utilities.getObjectDetails(s3Key);
@@ -271,6 +322,16 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
           "uploaded object size mismatch",
           Long.valueOf(testContent.getBytes().length),
           uploaded.getSizeInBytes());
+
+      // verify the user metadata round-trips (the path uploadFromGallery uses for audit metadata)
+      assertEquals(
+          "uploaded object should carry creator metadata",
+          "realConnTestUser",
+          uploaded.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
+      assertEquals(
+          "uploaded object should carry creation-time metadata",
+          metadata.get(WriteAttribution.META_CREATED_AT),
+          uploaded.getUserMetadata().get(WriteAttribution.META_CREATED_AT));
 
       // round-trip: download and verify content
       File roundTrip = File.createTempFile("upload-roundtrip", ".txt");
@@ -299,9 +360,15 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     File source = createTempFileWithName(sourceFileName, testContent);
     String sourceKey = S3_WRITE_TESTS_FOLDER_PATH + "/" + sourceFileName;
     String destKey = S3_WRITE_TESTS_FOLDER_PATH + "/" + destFileName;
+    Map<String, String> sourceMetadata =
+        Map.of(
+            WriteAttribution.META_CREATED_BY,
+            "realConnTestUser",
+            WriteAttribution.META_CREATED_AT,
+            Instant.now().toString());
 
     try {
-      s3Utilities.uploadToS3(S3_WRITE_TESTS_FOLDER_PATH, source);
+      s3Utilities.uploadToS3(S3_WRITE_TESTS_FOLDER_PATH, source, sourceMetadata);
 
       s3Utilities.copyObjectFromBucket(s3Utilities.getBucketName(), sourceKey, destKey);
 
@@ -315,10 +382,127 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
       assertTrue(
           "copy source should still exist (CopyObject does not delete source)",
           s3Utilities.getObjectDetails(sourceKey) != null);
+
+      // a no-metadata copy uses S3's COPY directive, which PRESERVES source metadata. The
+      // within-filestore move relies on this so a moved item keeps its original created-by/-at.
+      assertEquals(
+          "server-side copy with no metadata should preserve source creator metadata",
+          "realConnTestUser",
+          destDetails.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
+      assertEquals(
+          "server-side copy with no metadata should preserve source creation-time metadata",
+          sourceMetadata.get(WriteAttribution.META_CREATED_AT),
+          destDetails.getUserMetadata().get(WriteAttribution.META_CREATED_AT));
     } finally {
       safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, sourceFileName);
       safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, destFileName);
       source.delete();
+    }
+  }
+
+  /**
+   * Creates a folder placeholder carrying audit metadata, verifies it is discoverable as a folder
+   * and that the placeholder object round-trips the {@code rspace-created-by}/{@code
+   * rspace-created-at} metadata, then deletes it via batch delete.
+   */
+  private void createFolderScenario() {
+    String folderPath = S3_WRITE_TESTS_FOLDER_PATH + "/createFolder-" + System.currentTimeMillis();
+    String placeholderKey = folderPath + "/";
+    Map<String, String> metadata =
+        Map.of(
+            WriteAttribution.META_CREATED_BY,
+            "realConnTestUser",
+            WriteAttribution.META_CREATED_AT,
+            Instant.now().toString());
+    try {
+      s3Utilities.createFolder(folderPath, metadata);
+
+      // discoverable as a (virtual) folder
+      S3FolderContentItem folder = s3Utilities.getObjectDetails(folderPath);
+      assertTrue("created folder should be detected", folder != null && folder.isFolder());
+
+      // the placeholder object itself carries the audit metadata
+      S3FolderContentItem placeholder = s3Utilities.getObjectDetails(placeholderKey);
+      assertTrue("folder placeholder object should exist", placeholder != null);
+      assertEquals(
+          "realConnTestUser", placeholder.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
+      assertTrue(
+          "created-at metadata should be present",
+          placeholder.getUserMetadata().containsKey(WriteAttribution.META_CREATED_AT));
+    } finally {
+      safeDeleteObject(placeholderKey);
+    }
+    assertTrue(
+        "folder placeholder should be gone after delete",
+        s3Utilities.getObjectDetails(placeholderKey) == null);
+  }
+
+  /**
+   * Creates an (empty) folder, confirms it lists as empty (the basis for allowing its deletion),
+   * then removes its single placeholder object with {@link S3Utilities#deleteObject(String)}.
+   */
+  private void deleteEmptyFolderScenario() throws IOException {
+    long ts = System.currentTimeMillis();
+    String base = S3_WRITE_TESTS_FOLDER_PATH + "/emptydel-" + ts;
+    String placeholderKey = base + "/";
+    Map<String, String> metadata =
+        Map.of(
+            WriteAttribution.META_CREATED_BY,
+            "realConnTestUser",
+            WriteAttribution.META_CREATED_AT,
+            Instant.now().toString());
+    try {
+      s3Utilities.createFolder(base, metadata);
+      assertTrue(
+          "a newly created folder should be empty", s3Utilities.listFolderContents(base).isEmpty());
+
+      // an empty folder is a single placeholder object; delete it by its exact key
+      s3Utilities.deleteObject(placeholderKey);
+
+      assertTrue("folder should be gone after delete", s3Utilities.getObjectDetails(base) == null);
+    } finally {
+      safeDeleteObject(placeholderKey);
+    }
+  }
+
+  /**
+   * Exercises a filestore rooted at the bucket top level (empty base path): a folder created with
+   * no parent prefix lands at the bucket root, is discoverable when listing "", and can be deleted.
+   */
+  private void topLevelRootScenario() throws IOException {
+    String folderName = "rootleveltest-" + System.currentTimeMillis();
+    String placeholderKey = folderName + "/";
+    Map<String, String> metadata =
+        Map.of(
+            WriteAttribution.META_CREATED_BY,
+            "realConnTestUser",
+            WriteAttribution.META_CREATED_AT,
+            Instant.now().toString());
+    try {
+      // no parent prefix -> created at the bucket root
+      s3Utilities.createFolder(folderName, metadata);
+
+      S3FolderContentItem folder = s3Utilities.getObjectDetails(folderName);
+      assertTrue("top-level folder should be detected", folder != null && folder.isFolder());
+
+      boolean inRoot =
+          s3Utilities.listFolderContents("").stream()
+              .anyMatch(item -> item.getName().equals(folderName) && item.isFolder());
+      assertTrue("created folder should appear in the bucket-root listing", inRoot);
+    } finally {
+      safeDeleteObject(placeholderKey);
+    }
+    assertTrue(
+        "top-level folder should be gone after delete",
+        s3Utilities.getObjectDetails(folderName) == null);
+  }
+
+  /** Best-effort delete by exact key used in test cleanup; never throws (safe in a finally). */
+  private void safeDeleteObject(String key) {
+    try {
+      s3Utilities.deleteObject(key);
+    } catch (Exception e) {
+      log.warn("cleanup delete failed for {}", key, e);
     }
   }
 

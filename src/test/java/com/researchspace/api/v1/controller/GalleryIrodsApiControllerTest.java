@@ -25,11 +25,14 @@ import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
+import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,6 +86,12 @@ class GalleryIrodsApiControllerTest {
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
     filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
+    filestoreWriteManager.setMessages(
+        new MessageSourceUtils(
+            RSpaceTestUtils.messageSource(
+                Map.of(
+                    "netfilestores.write.filestore.notFound",
+                    "Could not find file store with id: {0}"))));
     galleryIrodsApiController.setFilestoreWriteManager(filestoreWriteManager);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);

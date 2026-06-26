@@ -4,11 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.maintenance.service.MaintenanceManager;
-import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.archive.IExportUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
-import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,7 +30,6 @@ public class PublicControllerTest {
 
   private static final String DEFAULT_LOGO_NAME = "mainLogo3.png";
   @Rule public MockitoRule mockery = MockitoJUnit.rule();
-  @Mock IExportUtils exportUtils;
   @Mock Principal principal;
   @Mock ResourceLoader resourceLoader;
   @Mock MaintenanceManager maintenanceMgr;
@@ -60,7 +56,6 @@ public class PublicControllerTest {
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     publicController = new PublicControllerTSS();
-    publicController.setExportUtils(exportUtils);
     publicController.setProperties(properties);
     publicController.setResourceLoader(resourceLoader);
     publicController.setMaintenanceManager(maintenanceMgr);
@@ -68,20 +63,6 @@ public class PublicControllerTest {
 
   @After
   public void tearDown() throws Exception {}
-
-  @Test
-  public void publishPDF() throws Exception {
-    final User user = TestFactory.createAnyUser("any");
-    publicController.getExportedPublishedFile("fileStoreName.pdf", response);
-    Mockito.verify(exportUtils, Mockito.times(1)).display("fileStoreName.pdf", null, response);
-  }
-
-  @Test
-  public void publishWORD() throws Exception {
-    final User user = TestFactory.createAnyUser("any");
-    publicController.getExportedPublishedFile("fileStoreName.doc", response);
-    Mockito.verify(exportUtils, Mockito.times(1)).display("fileStoreName.doc", null, response);
-  }
 
   @Test
   public void testBannerWithWrongFileTypeReturnsDefault() throws Exception {

@@ -16,12 +16,29 @@ import {
   type Id,
   idToString,
   LocalGalleryFile,
+  RemoteFile,
 } from "./useGalleryListing";
 
-const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+const ONE_MINUTE_IN_MS = 60 * 1000;
+// Uploads need longer than the gallery clients' 1-minute default.
+const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 
 const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
+
+/**
+ * Best error message from a failed filestore API call: the first non-blank entry of the
+ * BindException `errors` array, else `data.message`/`exceptionMessage` via getErrorMessage. A 403
+ * gate denial returns its reason in `message` with a blank `errors: [""]`, so blanks must not win.
+ */
+function firstErrorMessage(e: unknown): string {
+  return Parsers.objectPath(["response", "data", "errors"], e)
+    .flatMap(Parsers.isArray)
+    .flatMap(firstResult)
+    .flatMap(Parsers.isString)
+    .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
+    .orElse(getErrorMessage(e, "Unknown error"));
+}
 
 /**
  * The destination of a move operation.
@@ -73,6 +90,12 @@ export function useGalleryActions(): {
    * @arg name     The name of the new folder.
    */
   createFolder: (parentId: Id, name: string) => Promise<void>;
+
+  /** Create a folder inside an S3 filestore, under `path` ("" for the filestore root). */
+  createRemoteFolder: (filestoreId: number, path: string, name: string) => Promise<void>;
+
+  /** Move items to another folder within the same S3 filestore (destPath "" for the root). */
+  moveRemoteFiles: (sources: ReadonlyArray<RemoteFile>, destPath: string) => Promise<void>;
 
   /**
    * Move files to a different folder.
@@ -148,6 +171,13 @@ export function useGalleryActions(): {
     baseURL: "/workspace/editor/structuredDocument/ajax",
     timeout: ONE_MINUTE_IN_MS,
   });
+
+  /** Authenticated client for the REST gallery API (/api/v1/gallery). */
+  const remoteGalleryApi = async () =>
+    axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: { Authorization: `Bearer ${await getToken()}` },
+    });
 
   async function uploadFiles(parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) {
     const uploadingAlert = mkAlert({
@@ -257,6 +287,28 @@ export function useGalleryActions(): {
           variant: "error",
           title: `Failed to create new folder.`,
           message: e.message,
+        }),
+      );
+      throw e;
+    }
+  }
+
+  async function createRemoteFolder(filestoreId: number, path: string, name: string) {
+    const api = await remoteGalleryApi();
+    try {
+      await api.post<unknown>(`filestores/${filestoreId}/folder`, { path, name });
+      addAlert(
+        mkAlert({
+          message: "Successfully created new folder.",
+          variant: "success",
+        }),
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to create new folder.",
+          message: firstErrorMessage(e),
         }),
       );
       throw e;
@@ -380,13 +432,90 @@ export function useGalleryActions(): {
     }
   }
 
-  async function deleteFilestore(filestore: Filestore) {
-    const api = axios.create({
-      baseURL: "/api/v1/gallery",
-      headers: {
-        Authorization: `Bearer ${await getToken()}`,
-      },
+  /**
+   * Run a per-item S3 filestore write op. Each item is a separate API call gated server-side, so
+   * failures are collected and reported together rather than aborting the batch. Callers supply
+   * complete user-facing phrases (not assembled from fragments) so each is translatable as a unit.
+   */
+  async function runPerItemFilestoreOp(
+    items: ReadonlyArray<RemoteFile>,
+    messages: {
+      inProgress: string;
+      success: (count: number) => string;
+      failure: (count: number) => string;
+    },
+    request: (api: ReturnType<typeof axios.create>, file: RemoteFile) => Promise<unknown>,
+  ) {
+    const progressAlert = mkAlert({
+      message: messages.inProgress,
+      variant: "notice",
+      isInfinite: true,
     });
+    try {
+      addAlert(progressAlert);
+      const api = await remoteGalleryApi();
+      const failures: Array<string> = [];
+      for (const file of items) {
+        try {
+          await request(api, file);
+        } catch (e) {
+          failures.push(`${file.name}: ${firstErrorMessage(e)}`);
+        }
+      }
+      if (failures.length === 0) {
+        addAlert(
+          mkAlert({
+            message: messages.success(items.length),
+            variant: "success",
+          }),
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: messages.failure(failures.length),
+            message: failures.join("; "),
+          }),
+        );
+      }
+    } finally {
+      removeAlert(progressAlert);
+    }
+  }
+
+  /** Delete files/folders inside an S3 filestore (POST /filestores/{id}/delete per item). */
+  async function deleteRemoteFiles(files: RsSet<RemoteFile>) {
+    await runPerItemFilestoreOp(
+      files.toArray(),
+      {
+        inProgress: "Deleting...",
+        success: (count) => (count === 1 ? "Successfully deleted 1 item." : `Successfully deleted ${count} items.`),
+        failure: (count) => (count === 1 ? "Failed to delete 1 item." : `Failed to delete ${count} items.`),
+      },
+      (api, file) =>
+        api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, { path: file.remotePath }),
+    );
+  }
+
+  /** Move items to another folder within the same S3 filestore (POST /filestores/{id}/move per item). */
+  async function moveRemoteFiles(sources: ReadonlyArray<RemoteFile>, destPath: string) {
+    await runPerItemFilestoreOp(
+      sources,
+      {
+        inProgress: "Moving...",
+        success: (count) => (count === 1 ? "Successfully moved 1 item." : `Successfully moved ${count} items.`),
+        failure: (count) => (count === 1 ? "Failed to move 1 item." : `Failed to move ${count} items.`),
+      },
+      (api, file) =>
+        api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/move`, {
+          sourcePath: file.remotePath,
+          destPath,
+        }),
+    );
+  }
+
+  async function deleteFilestore(filestore: Filestore) {
+    const api = await remoteGalleryApi();
     try {
       await api.delete<unknown>(`filestores/${idToString(filestore.id).elseThrow()}`);
       addAlert(
@@ -421,6 +550,10 @@ export function useGalleryActions(): {
     }
     if (files.every((f) => f instanceof Filestore)) {
       await Promise.all(files.filterClass(Filestore).map(deleteFilestore));
+      return;
+    }
+    if (files.every((f) => f instanceof RemoteFile)) {
+      await deleteRemoteFiles(files.filterClass(RemoteFile));
       return;
     }
     try {
@@ -592,6 +725,7 @@ export function useGalleryActions(): {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
@@ -765,6 +899,8 @@ export function useGalleryActions(): {
   return {
     uploadFiles,
     createFolder,
+    createRemoteFolder,
+    moveRemoteFiles,
     moveFiles,
     deleteFiles,
     duplicateFiles,

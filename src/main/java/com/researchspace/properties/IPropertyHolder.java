@@ -111,6 +111,12 @@ public interface IPropertyHolder extends Versionable {
 
   boolean isNetFileStoresEnabled();
 
+  /**
+   * Number of minutes after creation during which a user may delete their own S3 filestore
+   * items/folders. Older items (or items created by another user) cannot be deleted.
+   */
+  int getS3DeleteWindowMinutes();
+
   String getNetFileStoresExportEnabled();
 
   String getUserSignup();
