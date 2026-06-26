@@ -52,10 +52,16 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
   return {
     sources: [
       {
+        title: "RSpace Instrument Inventory",
+        slug: "rspace-instrument",
+        url: `${baseUrl}/resources/rspace_api_inventory_specs_beta_instruments_3_0.yaml`,
+        default: true,
+        agent: DISABLED_AGENT,
+      },
+      {
         title: "RSpace ELN",
         slug: "rspace-eln",
         url: `${baseUrl}/resources/rspace_api_specs_2_23_0.yaml`,
-        default: true,
         agent: DISABLED_AGENT,
       },
       {

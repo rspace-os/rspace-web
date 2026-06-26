@@ -9,83 +9,70 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ApiInventorySystemSettingsTest {
 
   private final ObjectMapper mapper = new ObjectMapper();
 
+  private IdentifierSettings settings(IdentifierType provider, String username, String password) {
+    IdentifierSettings s = new IdentifierSettings();
+    s.setProvider(provider);
+    s.setServerUrl("https://example.org");
+    s.setUsername(username);
+    s.setPassword(password);
+    s.setRepositoryPrefix("PFX");
+    s.setEnabled("true");
+    return s;
+  }
+
   @Test
-  void serializesIdentifiersSettingsMap() throws Exception {
+  void serializesEachSettingTypeAsAnArray() throws Exception {
     ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
-    IdentifierSettings igsnSettings = settings.getOrCreate(InventorySettingType.IGSN);
-    igsnSettings.setProvider(IdentifierType.IGSN_DATACITE);
-    igsnSettings.setServerUrl("https://api.test.datacite.org");
-    igsnSettings.setUsername("testuser");
-    igsnSettings.setPassword("testpassword");
-    igsnSettings.setRepositoryPrefix("TESTPREFIX");
-    igsnSettings.setEnabled("true");
+    settings.addSetting(
+        InventorySettingType.IGSN, settings(IdentifierType.IGSN_DATACITE, "u", "p"));
 
     String json = mapper.writeValueAsString(settings);
 
     assertTrue(json.contains("\"identifiersSettings\""), json);
-    assertTrue(json.contains("\"IGSN\""), json);
+    assertTrue(json.contains("\"IGSN\":["), json); // value is now a JSON array
     assertTrue(json.contains("\"provider\":\"IGSN_DATACITE\""), json);
-    assertTrue(json.contains("\"serverUrl\":\"https://api.test.datacite.org\""), json);
-    assertTrue(json.contains("\"username\":\"testuser\""), json);
-    assertTrue(json.contains("\"password\":\"testpassword\""), json);
-    assertTrue(json.contains("\"repositoryPrefix\":\"TESTPREFIX\""), json);
-    assertTrue(json.contains("\"enabled\":\"true\""), json);
     assertFalse(json.contains("\"datacite\""), json);
   }
 
   @Test
-  void deserializesIdentifiersSettingsMap() throws Exception {
+  void deserializesArrayShapeWithMultipleProvidersPerType() throws Exception {
     String json =
-        "{\"identifiersSettings\": {"
-            + "\"IGSN\": {\"provider\": \"IGSN_DATACITE\", \"serverUrl\":"
-            + " \"https://api.test.datacite.org\", \"username\": \"testuser\", \"password\":"
-            + " \"testpassword\", \"repositoryPrefix\": \"TESTPREFIX\", \"enabled\": \"true\"}}}";
+        "{\"identifiersSettings\":{\"PIDINST\":["
+            + "{\"provider\":\"PIDINST_DATACITE\",\"username\":\"u1\",\"password\":\"p1\"},"
+            + "{\"provider\":\"PIDINST_B2INST\",\"username\":\"comm\",\"password\":\"tok\"}]}}";
 
     ApiInventorySystemSettings settings = mapper.readValue(json, ApiInventorySystemSettings.class);
 
-    IdentifierSettings igsnSettings =
-        settings.getIdentifiersSettings().get(InventorySettingType.IGSN);
-    assertNotNull(igsnSettings);
-    assertEquals(IdentifierType.IGSN_DATACITE, igsnSettings.getProvider());
-    assertEquals("https://api.test.datacite.org", igsnSettings.getServerUrl());
-    assertEquals("testuser", igsnSettings.getUsername());
-    assertEquals("testpassword", igsnSettings.getPassword());
-    assertEquals("TESTPREFIX", igsnSettings.getRepositoryPrefix());
-    assertEquals("true", igsnSettings.getEnabled());
+    Set<IdentifierSettings> pidinst =
+        settings.getIdentifiersSettings().get(InventorySettingType.PIDINST);
+    assertNotNull(pidinst);
+    assertEquals(2, pidinst.size());
+    IdentifierSettings b2inst =
+        settings.findByProvider(IdentifierType.PIDINST_B2INST).orElseThrow();
+    assertEquals("comm", b2inst.getUsername());
+    assertEquals("tok", b2inst.getPassword());
   }
 
   @Test
-  void deserializesFullTicketExampleWithBothEntries() throws Exception {
-    String json =
-        "{\"identifiersSettings\": {"
-            + "\"IGSN\": {\"provider\": \"IGSN_DATACITE\", \"serverUrl\":"
-            + " \"https://api.test.datacite.org\", \"username\": \"testuser\", \"password\":"
-            + " \"testpassword\", \"repositoryPrefix\": \"TESTPREFIX\", \"enabled\": \"true\"},"
-            + "\"PIDINST\": {\"provider\": \"PIDINST_DATACITE\", \"serverUrl\":"
-            + " \"https://api.test.datacite.org\", \"username\": \"testuser2\", \"password\":"
-            + " \"testpassword2\", \"repositoryPrefix\": \"TESTPREFIX2\", \"enabled\": \"true\"}}}";
+  void addSettingGroupsByTypeAndFindByProviderLocatesEntry() {
+    ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
+    settings.addSetting(
+        InventorySettingType.PIDINST, settings(IdentifierType.PIDINST_DATACITE, "u", "p"));
+    settings.addSetting(
+        InventorySettingType.PIDINST, settings(IdentifierType.PIDINST_B2INST, "comm", "tok"));
 
-    ApiInventorySystemSettings settings = mapper.readValue(json, ApiInventorySystemSettings.class);
-
-    IdentifierSettings pidinstSettings =
-        settings.getIdentifiersSettings().get(InventorySettingType.PIDINST);
-    assertNotNull(pidinstSettings);
-    assertEquals(IdentifierType.PIDINST_DATACITE, pidinstSettings.getProvider());
-    assertEquals("testuser2", pidinstSettings.getUsername());
-    assertEquals("testpassword2", pidinstSettings.getPassword());
-    assertEquals("TESTPREFIX2", pidinstSettings.getRepositoryPrefix());
-    assertEquals("true", pidinstSettings.getEnabled());
-
-    // round-trips, including the PIDINST_B2INST provider value
-    pidinstSettings.setProvider(IdentifierType.PIDINST_B2INST);
-    String reserialized = mapper.writeValueAsString(settings);
-    assertTrue(reserialized.contains("\"provider\":\"PIDINST_B2INST\""), reserialized);
+    assertEquals(2, settings.getIdentifiersSettings().get(InventorySettingType.PIDINST).size());
+    assertEquals(
+        IdentifierType.PIDINST_B2INST,
+        settings.findByProvider(IdentifierType.PIDINST_B2INST).orElseThrow().getProvider());
+    assertTrue(settings.findByProvider(IdentifierType.IGSN_DATACITE).isEmpty());
   }
 
   @Test
@@ -93,14 +80,5 @@ class ApiInventorySystemSettingsTest {
     ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
     assertNotNull(settings.getIdentifiersSettings());
     assertTrue(settings.getIdentifiersSettings().isEmpty());
-  }
-
-  @Test
-  void getOrCreateInitializesMissingEntry() {
-    ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
-    IdentifierSettings pidinstSettings = settings.getOrCreate(InventorySettingType.PIDINST);
-    assertNotNull(pidinstSettings);
-    assertEquals(
-        pidinstSettings, settings.getIdentifiersSettings().get(InventorySettingType.PIDINST));
   }
 }

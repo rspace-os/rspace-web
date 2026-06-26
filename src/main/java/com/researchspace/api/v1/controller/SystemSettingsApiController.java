@@ -12,6 +12,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.Map;
 import javax.servlet.ServletRequest;
@@ -35,6 +36,47 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
 
   @Autowired private WhiteListIPChecker ipWhiteListChecker;
   @Autowired private DataCiteConnector dataCiteConnector;
+  @Autowired private B2instConnector b2instConnector;
+
+  /**
+   * The system-property names backing the five {@link IdentifierSettings} slots of one provider.
+   * For {@code PIDINST_B2INST} the generic {@code username}/{@code password} slots map to {@code
+   * community.id}/{@code token} and {@code repositoryPrefix} is unused ({@code null}).
+   */
+  private record SettingsProps(
+      SystemPropertyName enabled,
+      SystemPropertyName serverUrl,
+      SystemPropertyName username,
+      SystemPropertyName password,
+      SystemPropertyName repositoryPrefix) {}
+
+  private SettingsProps propsFor(IdentifierType provider) {
+    switch (provider) {
+      case IGSN_DATACITE:
+        return new SettingsProps(
+            SystemPropertyName.IGSN_DATACITE_ENABLED,
+            SystemPropertyName.IGSN_DATACITE_SERVER_URL,
+            SystemPropertyName.IGSN_DATACITE_USERNAME,
+            SystemPropertyName.IGSN_DATACITE_PASSWORD,
+            SystemPropertyName.IGSN_DATACITE_REPOSITORY_PREFIX);
+      case PIDINST_DATACITE:
+        return new SettingsProps(
+            SystemPropertyName.PIDINST_DATACITE_ENABLED,
+            SystemPropertyName.PIDINST_DATACITE_SERVER_URL,
+            SystemPropertyName.PIDINST_DATACITE_USERNAME,
+            SystemPropertyName.PIDINST_DATACITE_PASSWORD,
+            SystemPropertyName.PIDINST_DATACITE_REPOSITORY_PREFIX);
+      case PIDINST_B2INST:
+        return new SettingsProps(
+            SystemPropertyName.PIDINST_B2INST_ENABLED,
+            SystemPropertyName.PIDINST_B2INST_SERVER_URL,
+            SystemPropertyName.PIDINST_B2INST_COMMUNITY_ID,
+            SystemPropertyName.PIDINST_B2INST_TOKEN,
+            null);
+      default:
+        throw new IllegalArgumentException("Unsupported identifier provider: " + provider);
+    }
+  }
 
   void assertIsSysadmin(User subject, ServletRequest request) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)
@@ -57,34 +99,29 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
     log.info("loaded system properties, size: " + propertiesMap.size());
 
     ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
+    settings.addSetting(
+        InventorySettingType.IGSN, buildSettings(IdentifierType.IGSN_DATACITE, propertiesMap));
+    settings.addSetting(
+        InventorySettingType.PIDINST,
+        buildSettings(IdentifierType.PIDINST_DATACITE, propertiesMap));
+    settings.addSetting(
+        InventorySettingType.PIDINST, buildSettings(IdentifierType.PIDINST_B2INST, propertiesMap));
+    return settings;
+  }
 
-    IdentifierSettings igsnSettings = settings.getOrCreate(InventorySettingType.IGSN);
-    igsnSettings.setProvider(IdentifierType.IGSN_DATACITE);
-    igsnSettings.setServerUrl(
-        getPropertyValue(propertiesMap, SystemPropertyName.IGSN_DATACITE_SERVER_URL));
-    igsnSettings.setUsername(
-        getPropertyValue(propertiesMap, SystemPropertyName.IGSN_DATACITE_USERNAME));
-    igsnSettings.setPassword(
-        getPropertyValue(propertiesMap, SystemPropertyName.IGSN_DATACITE_PASSWORD));
-    igsnSettings.setRepositoryPrefix(
-        getPropertyValue(propertiesMap, SystemPropertyName.IGSN_DATACITE_REPOSITORY_PREFIX));
-    igsnSettings.setEnabled(
-        getPropertyValue(propertiesMap, SystemPropertyName.IGSN_DATACITE_ENABLED));
-
-    IdentifierSettings pidinstSettings = settings.getOrCreate(InventorySettingType.PIDINST);
-    // the PIDINST provider is implicit (always PIDINST_DATACITE) and has no persisted property
-    pidinstSettings.setProvider(IdentifierType.PIDINST_DATACITE);
-    pidinstSettings.setServerUrl(
-        getPropertyValue(propertiesMap, SystemPropertyName.PIDINST_DATACITE_SERVER_URL));
-    pidinstSettings.setUsername(
-        getPropertyValue(propertiesMap, SystemPropertyName.PIDINST_DATACITE_USERNAME));
-    pidinstSettings.setPassword(
-        getPropertyValue(propertiesMap, SystemPropertyName.PIDINST_DATACITE_PASSWORD));
-    pidinstSettings.setRepositoryPrefix(
-        getPropertyValue(propertiesMap, SystemPropertyName.PIDINST_DATACITE_REPOSITORY_PREFIX));
-    pidinstSettings.setEnabled(
-        getPropertyValue(propertiesMap, SystemPropertyName.PIDINST_DATACITE_ENABLED));
-
+  private IdentifierSettings buildSettings(
+      IdentifierType provider, Map<String, SystemPropertyValue> propertiesMap) {
+    SettingsProps p = propsFor(provider);
+    IdentifierSettings settings = new IdentifierSettings();
+    settings.setProvider(provider);
+    settings.setEnabled(getPropertyValue(propertiesMap, p.enabled()));
+    settings.setServerUrl(getPropertyValue(propertiesMap, p.serverUrl()));
+    settings.setUsername(getPropertyValue(propertiesMap, p.username()));
+    settings.setPassword(getPropertyValue(propertiesMap, p.password()));
+    settings.setRepositoryPrefix(
+        p.repositoryPrefix() == null
+            ? null
+            : getPropertyValue(propertiesMap, p.repositoryPrefix()));
     return settings;
   }
 
@@ -110,62 +147,55 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
     }
     throwBindExceptionIfErrors(errors);
 
-    InventorySettingType settingType = settingTypeForProvider(incomingSettings.getProvider());
-    boolean igsn = InventorySettingType.IGSN.equals(settingType);
-    IdentifierSettings current = getCurrentSettings().getOrCreate(settingType);
-    boolean settingsUpdated = false;
+    IdentifierType provider = incomingSettings.getProvider();
+    InventorySettingType settingType = settingTypeForProvider(provider);
+    ApiInventorySystemSettings before = getCurrentSettings();
+    IdentifierSettings current = before.findByProvider(provider).orElseGet(IdentifierSettings::new);
 
-    // both IGSN and PIDINST providers are implicit (IGSN_DATACITE / PIDINST_DATACITE) and have no
-    // persisted property; only the credentials below are stored
-    settingsUpdated |=
-        saveIfChanged(
-            igsn
-                ? SystemPropertyName.IGSN_DATACITE_ENABLED
-                : SystemPropertyName.PIDINST_DATACITE_ENABLED,
-            incomingSettings.getEnabled(),
-            current.getEnabled(),
-            subject);
-    settingsUpdated |=
-        saveIfChanged(
-            igsn
-                ? SystemPropertyName.IGSN_DATACITE_SERVER_URL
-                : SystemPropertyName.PIDINST_DATACITE_SERVER_URL,
-            incomingSettings.getServerUrl(),
-            current.getServerUrl(),
-            subject);
-    settingsUpdated |=
-        saveIfChanged(
-            igsn
-                ? SystemPropertyName.IGSN_DATACITE_USERNAME
-                : SystemPropertyName.PIDINST_DATACITE_USERNAME,
-            incomingSettings.getUsername(),
-            current.getUsername(),
-            subject);
-    settingsUpdated |=
-        saveIfChanged(
-            igsn
-                ? SystemPropertyName.IGSN_DATACITE_PASSWORD
-                : SystemPropertyName.PIDINST_DATACITE_PASSWORD,
-            incomingSettings.getPassword(),
-            current.getPassword(),
-            subject);
-    settingsUpdated |=
-        saveIfChanged(
-            igsn
-                ? SystemPropertyName.IGSN_DATACITE_REPOSITORY_PREFIX
-                : SystemPropertyName.PIDINST_DATACITE_REPOSITORY_PREFIX,
-            incomingSettings.getRepositoryPrefix(),
-            current.getRepositoryPrefix(),
-            subject);
+    boolean settingsUpdated = saveProviderSettings(provider, incomingSettings, current, subject);
+
+    // mutual exclusivity: enabling one PIDINST provider disables the other PIDINST provider
+    if (InventorySettingType.PIDINST.equals(settingType)
+        && isEnabled(incomingSettings.getEnabled())) {
+      IdentifierType sibling = siblingPidinstProvider(provider);
+      IdentifierSettings siblingCurrent =
+          before.findByProvider(sibling).orElseGet(IdentifierSettings::new);
+      settingsUpdated |=
+          saveIfChanged(propsFor(sibling).enabled(), "false", siblingCurrent.getEnabled(), subject);
+    }
 
     if (settingsUpdated) {
       dataCiteConnector.reloadDataCiteClient();
+      b2instConnector.reloadClient();
     }
     return getCurrentSettings();
   }
 
+  private boolean saveProviderSettings(
+      IdentifierType provider,
+      IdentifierSettings incoming,
+      IdentifierSettings current,
+      User subject) {
+    SettingsProps p = propsFor(provider);
+    boolean updated = false;
+    updated |= saveIfChanged(p.enabled(), incoming.getEnabled(), current.getEnabled(), subject);
+    updated |=
+        saveIfChanged(p.serverUrl(), incoming.getServerUrl(), current.getServerUrl(), subject);
+    updated |= saveIfChanged(p.username(), incoming.getUsername(), current.getUsername(), subject);
+    updated |= saveIfChanged(p.password(), incoming.getPassword(), current.getPassword(), subject);
+    if (p.repositoryPrefix() != null) {
+      updated |=
+          saveIfChanged(
+              p.repositoryPrefix(),
+              incoming.getRepositoryPrefix(),
+              current.getRepositoryPrefix(),
+              subject);
+    }
+    return updated;
+  }
+
   /**
-   * The provider selects which configuration is updated: a {@code IGSN_DATACITE} provider targets
+   * The provider selects which configuration is updated: an {@code IGSN_DATACITE} provider targets
    * the IGSN configuration, any PIDINST provider ({@code PIDINST_DATACITE} / {@code
    * PIDINST_B2INST}) targets the PIDINST configuration.
    */
@@ -173,6 +203,16 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
     return IdentifierType.IGSN_DATACITE.equals(provider)
         ? InventorySettingType.IGSN
         : InventorySettingType.PIDINST;
+  }
+
+  private IdentifierType siblingPidinstProvider(IdentifierType provider) {
+    return IdentifierType.PIDINST_B2INST.equals(provider)
+        ? IdentifierType.PIDINST_DATACITE
+        : IdentifierType.PIDINST_B2INST;
+  }
+
+  private boolean isEnabled(String enabled) {
+    return "true".equalsIgnoreCase(enabled);
   }
 
   private boolean saveIfChanged(
