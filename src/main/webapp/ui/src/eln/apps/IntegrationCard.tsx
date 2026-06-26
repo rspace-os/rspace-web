@@ -18,7 +18,7 @@ import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/ma
 import Typography, { typographyClasses } from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { forwardRef, useContext, useState } from "react";
+import { useContext, useState } from "react";
 import type { Hsl } from "../../accentedTheme";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
@@ -94,17 +94,18 @@ type IntegrationCardArgs<Credentials> = {
   // it is enabled or disable.
   update: (newState: IntegrationState<Credentials>["mode"]) => void;
 };
-const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>((props, ref) => (
-  <Grow
-    {...props}
-    ref={ref}
-    timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
-    style={{
-      transformOrigin: "center 70%",
-    }}
-  />
-));
-CustomGrow.displayName = "CustomGrow";
+function CustomGrow({ ref, ...props }: React.ComponentProps<typeof Grow>): React.ReactNode {
+  return (
+    <Grow
+      {...props}
+      ref={ref}
+      timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+      style={{
+        transformOrigin: "center 70%",
+      }}
+    />
+  );
+}
 const isTestEnv = import.meta.env.MODE === "test";
 function IntegrationCard<Credentials>({
   name,

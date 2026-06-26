@@ -5,6 +5,8 @@ type NoopTransitionProps = {
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  // React 19: ref is a regular prop (no forwardRef needed).
+  ref?: React.Ref<HTMLElement>;
 };
 
 /**
@@ -13,25 +15,18 @@ type NoopTransitionProps = {
  * so focus management still works. Used as the `transition` slot in tests (and
  * anywhere an instant, animation-free transition is wanted) so dialogs/menus
  * appear synchronously rather than waiting on a timed animation.
- *
- * NOTE: still uses forwardRef. forwardRef is soft-deprecated in React 19 but
- * remains functional; migrating MUI transition slots to ref-as-prop is a
- * behaviour-sensitive change deferred until the React Compiler is enabled.
  */
-const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
-  ({ in: inProp, children, className, style }, ref) => {
-    if (!inProp) return null;
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-        ref,
-        className,
-        style,
-        tabIndex: -1,
-      });
-    }
-    return children ?? null;
-  },
-);
-NoopTransition.displayName = "NoopTransition";
+function NoopTransition({ in: inProp, children, className, style, ref }: NoopTransitionProps): React.ReactNode {
+  if (!inProp) return null;
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+      ref,
+      className,
+      style,
+      tabIndex: -1,
+    });
+  }
+  return children ?? null;
+}
 
 export default NoopTransition;
