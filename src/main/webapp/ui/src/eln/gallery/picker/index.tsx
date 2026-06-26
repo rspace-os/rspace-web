@@ -8,6 +8,7 @@ import { paperClasses } from "@mui/material/Paper";
 import { ThemeProvider } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
@@ -47,6 +48,7 @@ const Picker = observer(
     const sidebarId = React.useId();
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
+    const { t: tCommon } = useTranslation("common");
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(PREFERENCES.GALLERY_SORT_BY, {
       defaultValue: "modificationDate",
@@ -202,7 +204,7 @@ const Picker = observer(
                         setAppliedSearchTerm={setAppliedSearchTerm}
                       />
                       <DialogActions>
-                        <Button onClick={() => onClose()}>Cancel</Button>
+                        <Button onClick={() => onClose()}>{tCommon("actions.cancel")}</Button>
                         <ValidatingSubmitButton
                           validationResult={
                             selection.size > 0

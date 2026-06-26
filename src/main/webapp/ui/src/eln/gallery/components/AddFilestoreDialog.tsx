@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { Dialog } from "../../../components/DialogBoundary";
 import EventBoundary from "../../../components/EventBoundary";
@@ -46,6 +47,7 @@ function FilesystemSelectionStep(props: {
   }>;
 }) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
+  const { t } = useTranslation("gallery");
   const [chosenFilesystem, setChosenFilesysem] = React.useState<{
     id: number;
     name: string;
@@ -160,7 +162,7 @@ function FilesystemSelectionStep(props: {
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Choose Filesystem
+            {t("addFilestoreDialog.chooseFilesystem")}
           </Button>
         </Box>
       </StepContent>
@@ -270,6 +272,8 @@ function FolderSelectionStep(props: {
   onCancel: () => void;
 }) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
   const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
 
@@ -322,10 +326,10 @@ function FolderSelectionStep(props: {
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Choose Folder
+            {t("addFilestoreDialog.chooseFolder")}
           </Button>
           <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
-            Back
+            {tCommon("actions.back")}
           </Button>
         </Box>
       </StepContent>
@@ -335,6 +339,8 @@ function FolderSelectionStep(props: {
 
 function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => void }) {
   const { onConfirm, onCancel, ...rest } = props;
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [name, setName] = React.useState("");
   return (
     <Step key="name" component="div" {...rest}>
@@ -367,10 +373,10 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Add Filestore
+            {t("addFilestoreDialog.addFilestore")}
           </Button>
           <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
-            Back
+            {tCommon("actions.back")}
           </Button>
         </Box>
       </StepContent>
@@ -386,6 +392,7 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
  * appears in the filesystems section.
  */
 export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialogArgs): React.ReactNode {
+  const { t: tCommon } = useTranslation("common");
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
     if (open) {
@@ -496,7 +503,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
               onClose(false);
             }}
           >
-            Cancel
+            {tCommon("actions.cancel")}
           </Button>
         </DialogActions>
       </Dialog>

@@ -28,6 +28,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
@@ -662,6 +663,7 @@ export function useSnapGenePreview(): {
 export function CallableSnapGenePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
+  const { t: tCommon } = useTranslation("common");
   const idOfDnaPreviewTab = React.useId();
   const idOfRestrictionSitesTab = React.useId();
   const idOfViewAsFastaTab = React.useId();
@@ -770,7 +772,7 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                   <OrfTable show={tab === "ORF table"} file={file} idOfOrfTableTab={idOfOrfTableTab} />
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setFile(null)}>Close</Button>
+                  <Button onClick={() => setFile(null)}>{tCommon("actions.close")}</Button>
                 </DialogActions>
               </Stack>
             </Stack>

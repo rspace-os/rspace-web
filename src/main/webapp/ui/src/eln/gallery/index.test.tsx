@@ -497,7 +497,7 @@ describe("Gallery", () => {
       await user.click(await screen.findByRole("gridcell", { name: "My Snippet" }));
 
       // open the actions menu and choose Share
-      await user.click(screen.getByRole("button", { name: /actions/i }));
+      await user.click(screen.getByRole("button", { name: /actionsMenu\.actions/i }));
       await user.click(await screen.findByRole("menuitem", { name: /share/i }));
 
       // the share dialog for the selected snippet is shown

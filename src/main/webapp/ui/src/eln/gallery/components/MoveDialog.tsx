@@ -8,6 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
@@ -40,6 +41,7 @@ const MoveDialog = observer(
   ({ open, onClose, section, selectedFiles, refreshListing }: MoveDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
+    const { t: tCommon } = useTranslation("common");
 
     const listingOf = React.useMemo(
       () => ({
@@ -146,7 +148,7 @@ const MoveDialog = observer(
                 onClose();
               }}
             >
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               loading={submitLoading}

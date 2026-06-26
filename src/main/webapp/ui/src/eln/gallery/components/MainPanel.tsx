@@ -45,6 +45,7 @@ import Typography from "@mui/material/Typography";
 import { chunk } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Link as ReactRouterLink } from "react-router";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import AccentMenuItem from "../../../components/AccentMenuItem";
@@ -1282,6 +1283,7 @@ function GalleryMainPanel({
   const mainContentRef = useLandmark("Files Listing");
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
+  const { t } = useTranslation("gallery");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } = useFileImportDropZone({
@@ -1437,7 +1439,7 @@ function GalleryMainPanel({
                 aria-haspopup="menu"
                 aria-expanded={viewMenuAnchorEl ? "true" : "false"}
               >
-                Views
+                {t("mainPanel.views")}
               </Button>
               <StyledMenu
                 open={Boolean(viewMenuAnchorEl)}
@@ -1451,8 +1453,8 @@ function GalleryMainPanel({
                 }}
               >
                 <AccentMenuItem
-                  title="Grid"
-                  subheader="Browse by thumbnail previews."
+                  title={t("mainPanel.gridView")}
+                  subheader={t("mainPanel.gridViewDesc")}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<GridIcon />}
@@ -1463,8 +1465,8 @@ function GalleryMainPanel({
                   current={viewMode === "grid"}
                 />
                 <AccentMenuItem
-                  title="Tree"
-                  subheader="View and manage folder hierarchy."
+                  title={t("mainPanel.treeView")}
+                  subheader={t("mainPanel.treeViewDesc")}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<TreeIcon />}
@@ -1475,8 +1477,8 @@ function GalleryMainPanel({
                   current={viewMode === "tree"}
                 />
                 <AccentMenuItem
-                  title="Carousel"
-                  subheader="Flick through all files to find one."
+                  title={t("mainPanel.carouselView")}
+                  subheader={t("mainPanel.carouselViewDesc")}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<ViewCarouselIcon />}
@@ -1502,7 +1504,7 @@ function GalleryMainPanel({
                 aria-expanded={sortMenuAnchorEl ? "true" : "false"}
                 disabled={selectedSection === "NetworkFiles"}
               >
-                Sort
+                {t("mainPanel.sort")}
               </Button>
               <StyledMenu
                 open={Boolean(sortMenuAnchorEl)}

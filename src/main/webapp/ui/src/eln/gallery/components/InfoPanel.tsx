@@ -15,6 +15,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import DescriptionList from "../../../components/DescriptionList";
 import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
@@ -110,6 +111,8 @@ const ActionButton = ({
 const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [name, setName] = React.useState(file.name);
   const textField = React.useRef<HTMLInputElement | null>(null);
   function handleSubmit() {
@@ -134,7 +137,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
       >
         <TextField
           value={name}
-          placeholder="No Name"
+          placeholder={t("infoPanel.noNamePlaceholder")}
           /*
            * We use multiline so that long names wrap, but prevent the user
            * from typing in a return character by using string replacement.
@@ -201,7 +204,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
           }}
           slotProps={{
             htmlInput: {
-              "aria-label": "Name",
+              "aria-label": t("infoPanel.nameAriaLabel"),
               ref: textField,
             },
           }}
@@ -226,7 +229,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
                 px: 0.75,
               }}
             >
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               size="small"
@@ -237,7 +240,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
                 px: 0.75,
               }}
             >
-              Save
+              {tCommon("actions.save")}
             </Button>
           </Stack>
         </Collapse>
@@ -285,13 +288,15 @@ const DescriptionField = observer(
     minimalStyling?: boolean;
   }) => {
     const { changeDescription } = useGalleryActions();
+    const { t } = useTranslation("gallery");
+    const { t: tCommon } = useTranslation("common");
     const [description, setDescription] = React.useState<string>(initialDescription);
     const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
     return (
       <Stack>
         <TextField
           value={description}
-          placeholder="No description"
+          placeholder={t("infoPanel.noDescriptionPlaceholder")}
           fullWidth
           size="small"
           sx={(theme) => ({
@@ -373,7 +378,7 @@ const DescriptionField = observer(
                 setDescription(initialDescription);
               }}
             >
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               size="small"
@@ -383,7 +388,7 @@ const DescriptionField = observer(
                 void changeDescription(file, Description.Present(description));
               }}
             >
-              Save
+              {tCommon("actions.save")}
             </Button>
           </Stack>
         </Collapse>

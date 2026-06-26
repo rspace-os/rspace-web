@@ -16,6 +16,7 @@ import TextField from "@mui/material/TextField";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
@@ -61,6 +62,7 @@ const UploadMenuItem = ({
   tabIndex?: number;
 }) => {
   const { uploadFiles } = useGalleryActions();
+  const { t } = useTranslation("gallery");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
@@ -77,7 +79,7 @@ const UploadMenuItem = ({
   return (
     <>
       <AccentMenuItem
-        title="Upload Files"
+        title={t("sidebar.uploadFiles")}
         avatar={<UploadFileIcon />}
         onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
           if (e.key === " ") inputRef.current?.click();
@@ -132,6 +134,8 @@ const NewFolderMenuItem = ({
   const { createFolder } = useGalleryActions();
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   React.useEffect(() => {
     setTimeout(() => {
@@ -149,7 +153,7 @@ const NewFolderMenuItem = ({
           }}
         >
           <form /* onSubmit is handled by ValidatingSubmitButton */>
-            <DialogTitle>New Folder</DialogTitle>
+            <DialogTitle>{t("sidebar.createFolder")}</DialogTitle>
             <DialogContent>
               <DialogContentText
                 variant="body2"
@@ -157,11 +161,11 @@ const NewFolderMenuItem = ({
                   mb: 2,
                 }}
               >
-                Please give the new folder a name.
+                {t("sidebar.createFolderPrompt")}
               </DialogContentText>
               <TextField
                 size="small"
-                label="Name"
+                label={t("sidebar.createFolderLabel")}
                 onChange={({ target: { value } }) => setName(value)}
                 slotProps={{
                   htmlInput: {
@@ -178,11 +182,11 @@ const NewFolderMenuItem = ({
                   onDialogClose(false);
                 }}
               >
-                Cancel
+                {tCommon("actions.cancel")}
               </Button>
               <ValidatingSubmitButton
                 loading={submitting}
-                validationResult={name.length > 0 ? IsValid() : IsInvalid("A name is required.")}
+                validationResult={name.length > 0 ? IsValid() : IsInvalid(t("sidebar.createFolderNameRequired"))}
                 onClick={() => {
                   setSubmitting(true);
                   const fId = folderId.elseThrow();
@@ -196,14 +200,14 @@ const NewFolderMenuItem = ({
                     });
                 }}
               >
-                Create
+                {tCommon("actions.create")}
               </ValidatingSubmitButton>
             </DialogActions>
           </form>
         </Dialog>
       </EventBoundary>
       <AccentMenuItem
-        title="New Folder"
+        title={t("sidebar.createFolder")}
         avatar={<CreateNewFolderIcon />}
         onClick={() => {
           setOpen(true);
@@ -230,6 +234,7 @@ const AddFilestoreMenuItem = ({
   tabIndex?: number;
 }) => {
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const { t } = useTranslation("gallery");
   const [open, setOpen] = React.useState(false);
   const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
     id: number;
@@ -295,10 +300,8 @@ const AddFilestoreMenuItem = ({
         .map(() => (
           <AccentMenuItem
             key={null}
-            title="Add a Filestore"
-            subheader={
-              (filesystems ?? []).length === 0 ? "System Admin has not configured any external filestores." : null
-            }
+            title={t("sidebar.addFilestore")}
+            subheader={(filesystems ?? []).length === 0 ? t("sidebar.noFilestoresConfigured") : null}
             avatar={<DnsIcon />}
             onClick={() => {
               setOpen(true);
@@ -371,11 +374,12 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
     })();
   }, []);
 
+  const { t } = useTranslation("gallery");
   if (!showArgos && !showDmpAssistant && !showDmponline && !showDmptool && !showDsw) return null;
   return (
     <>
       <Divider textAlign="left" aria-label="DMPs">
-        DMP Import
+        {t("sidebar.dmpImport")}
       </Divider>
       {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
       {showDmpAssistant && <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />}
@@ -410,6 +414,7 @@ const Sidebar = ({
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const { t: tCommon } = useTranslation("common");
   React.useEffect(() => {
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
@@ -463,7 +468,7 @@ const Sidebar = ({
           }
           sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
         >
-          {drawerOpen && <div>Create</div>}
+          {drawerOpen && <div>{tCommon("actions.create")}</div>}
         </Button>
         <Menu
           open={Boolean(newMenuAnchorEl)}

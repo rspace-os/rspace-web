@@ -1319,6 +1319,34 @@ export default interface Resources {
 
   },
   "gallery": {
+    "actionsMenu": {
+      "actions": "Actions",
+      "cannotView": "Cannot view this file because",
+      "nameRequired": "Empty name is not permitted.",
+      "open": "Open",
+      "rename": "Rename",
+      "renameLabel": "Name",
+      "renamePrompt": "Please give a new name for {{name}}.",
+      "view": "View"
+    },
+    "addFilestoreDialog": {
+      "addFilestore": "Add Filestore",
+      "chooseFilesystem": "Choose Filesystem",
+      "chooseFolder": "Choose Folder",
+      "filesystemStep": "Choose Filesystem",
+      "folderStep": "Select the top-level Folder for the Filestore",
+      "nameLabel": "Filestore name",
+      "nameStep": "Name the Filestore"
+    },
+    "callablePdfPreview": {
+      "title": "PDF Preview"
+    },
+    "carousel": {
+      "ariaLabel": "Carousel view of files",
+      "currentFileIndex": "Current file index",
+      "next": "Next",
+      "previous": "Previous"
+    },
     "filestoreLogin": {
       "couldNotAuthenticate": "Could not authenticate",
       "login": "Login",
@@ -1327,11 +1355,36 @@ export default interface Resources {
       "username": "Username",
       "wrongCredentials": "Wrong credentials?"
     },
+    "infoPanel": {
+      "nameAriaLabel": "Name",
+      "noDescriptionPlaceholder": "No description",
+      "noNamePlaceholder": "No Name"
+    },
     "landingPage": {
       "filestoreEnabledError": "Error checking if filestores are enabled.",
       "invalidSection": "Not a valid Gallery section."
     },
     "loadMore": "Load More",
+    "mainPanel": {
+      "carouselView": "Carousel",
+      "carouselViewDesc": "Flick through all files to find one.",
+      "gridView": "Grid",
+      "gridViewDesc": "Browse by thumbnail previews.",
+      "sort": "Sort",
+      "treeView": "Tree",
+      "treeViewDesc": "View and manage folder hierarchy.",
+      "views": "Views"
+    },
+    "sidebar": {
+      "addFilestore": "Add a Filestore",
+      "createFolder": "New Folder",
+      "createFolderLabel": "Name",
+      "createFolderNameRequired": "A name is required.",
+      "createFolderPrompt": "Please give the new folder a name.",
+      "dmpImport": "DMP Import",
+      "noFilestoresConfigured": "System Admin has not configured any external filestores.",
+      "uploadFiles": "Upload Files"
+    },
     "snippetPreview": {
       "error": "Error: {error}",
       "loadError": "Failed to load snippet content",

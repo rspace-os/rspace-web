@@ -18,6 +18,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import docLinks from "../../../assets/DocLinks";
@@ -38,6 +39,7 @@ type MoveCopyDialogArgs = {
 
 function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDialogArgs) {
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t: tCommon } = useTranslation("common");
   const irods = useIrods(selectedIds);
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedDestination, setSelectedDestination] = React.useState<IrodsLocation | null>(null);
@@ -313,7 +315,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               validationResult={validateState()}

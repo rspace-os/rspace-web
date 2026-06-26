@@ -7,6 +7,7 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Document, Page } from "react-pdf";
 import { incrementForever, take } from "../../../util/iterators";
 import type { Optional } from "../../../util/optional";
@@ -383,6 +384,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
   const [zoom, setZoom] = React.useState(1);
+  const { t } = useTranslation("gallery");
 
   React.useEffect(() => {
     if (listing.tag !== "list") return;
@@ -459,7 +461,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       }}
       spacing={1}
       role="region"
-      aria-label="Carousel view of files"
+      aria-label={t("carousel.ariaLabel")}
     >
       <Stack direction="row" spacing={1}>
         <Button
@@ -469,11 +471,11 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
           disabled={visibleIndex === 0}
           startIcon={<ArrowBackIcon />}
         >
-          Previous
+          {t("carousel.previous")}
         </Button>
         <Typography
           role="status"
-          aria-label="Current file index"
+          aria-label={t("carousel.currentFileIndex")}
           variant="body2"
           sx={{
             alignSelf: "center",
@@ -545,7 +547,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
           disabled={visibleIndex === listing.list.length - 1}
           endIcon={<ArrowForwardIcon />}
         >
-          Next
+          {t("carousel.next")}
         </Button>
       </Stack>
       <Box

@@ -17,6 +17,7 @@ import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/s3";
 import AppBar from "../../../components/AppBar";
@@ -43,6 +44,7 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
     [transferSources],
   );
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t: tCommon } = useTranslation("common");
   const s3Filestores = useS3Filestores();
   const [destinationAnchorEl, setDestinationAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedFilestore, setSelectedFilestore] = React.useState<S3Filestore | null>(null);
@@ -234,7 +236,7 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               validationResult={validateState()}
