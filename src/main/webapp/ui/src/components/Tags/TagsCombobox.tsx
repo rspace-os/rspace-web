@@ -16,7 +16,6 @@ import useAutocomplete, {
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
-import { useInfiniteLoader } from "react-window-infinite-loader";
 import type { Tag } from "../../stores/definitions/Tag";
 import { lift3, Optional } from "../../util/optional";
 import type RsSet from "../../util/set";
@@ -38,8 +37,8 @@ import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./T
  * perform layout and paint, JS must be executed and DOM nodes must be created
  * before the browser can perform layout and paint.
  *
- * Moreover, this combobox also uses infinite loading (using
- * react-window-infinite-loader) to load the list of suggested tags in pages,
+ * Moreover, this combobox also uses infinite loading (via react-window v2's
+ * List `onRowsRendered` callback) to load the list of suggested tags in pages,
  * loading the next page as the user approaches the end of the list. This,
  * again, reduces performance issues by reducing the size of the network calls.
  *
@@ -48,7 +47,6 @@ import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./T
  * https://github.com/mui/material-ui/blob/5046cc18373a169edbd75ef471245c23d8363fc9/docs/data/base/components/autocomplete/UseAutocomplete.js
  * https://github.com/mui/material-ui/blob/b0e10a1805ad7abd6f3c368bfbf63f4d85d29b47/packages/material-ui-lab/src/useAutocomplete/useAutocomplete.d.ts
  * https://react-window.vercel.app/#/examples/list/variable-size
- * https://www.npmjs.com/package/react-window-infinite-loader
  *
  * IMPORTANT: MUI's useAutocomplete validates on mount that its <input> element
  * is present in the DOM, and immediately operates on the input's ref. Because
@@ -76,6 +74,14 @@ const POPOVER_WIDTH = 300;
  * react-window library. Measured in pixels.
  */
 const OPTION_HEIGHT = 36;
+
+/*
+ * Prefetch the next page when the user scrolls within this many rows of the end
+ * of the loaded options. Matches the default threshold of the
+ * react-window-infinite-loader hook this replaced, so scroll-to-load timing is
+ * unchanged.
+ */
+const LOAD_MORE_THRESHOLD = 15;
 
 type InternalTag = Tag & {
   selected: boolean;
@@ -215,19 +221,16 @@ function OptionsListing({
   enforceOntologies: boolean;
 }) {
   const itemCount = hasNextPage ? sortedOptions.length + 1 : sortedOptions.length;
-  const isItemLoaded = (index: number) => !hasNextPage || index < sortedOptions.length;
-  // react-window-infinite-loader v2 exposes a hook that returns the
-  // onRowsRendered callback to wire into the List (loadMoreRows returns a
-  // Promise resolved once loading completes).
-  const loadMoreRows = (): Promise<void> => {
-    if (!isNextPageLoading) loadNextPage();
-    return Promise.resolve();
+  // Load the next page when the user scrolls within LOAD_MORE_THRESHOLD rows of
+  // the end of the loaded options. react-window v2's List.onRowsRendered replaces
+  // react-window-infinite-loader: the component already tracks the paging state
+  // (hasNextPage/isNextPageLoading) and loads pages sequentially, so a single
+  // threshold check is all the hook was doing for us here.
+  const onRowsRendered = ({ stopIndex }: { startIndex: number; stopIndex: number }) => {
+    if (hasNextPage && !isNextPageLoading && stopIndex >= sortedOptions.length - LOAD_MORE_THRESHOLD) {
+      loadNextPage();
+    }
   };
-  const onRowsRendered = useInfiniteLoader({
-    isRowLoaded: isItemLoaded,
-    loadMoreRows,
-    rowCount: itemCount,
-  });
 
   return (
     <List
@@ -464,10 +467,10 @@ function TagsComboboxContent<
   }, [tags]);
 
   /*
-   * useAutocomplete, a hook exposes my MUI, rather than the standard MUI
-   * Autocomplete component is necessary because there is a scrolling bug with
-   * using react-window-infinite-loader with Autocomplete. See this
-   * StackOverflow post for more info
+   * useAutocomplete, a hook exposed by MUI, rather than the standard MUI
+   * Autocomplete component is necessary because there is a scrolling bug when
+   * virtualising the listbox (with react-window) inside the standard
+   * Autocomplete. See this StackOverflow post for more info
    * https://stackoverflow.com/questions/59013367/react-window-infinite-loader-material-ui-autocomplete
    */
   const { getRootProps, getInputProps, getListboxProps, getOptionProps, groupedOptions } = useAutocomplete({

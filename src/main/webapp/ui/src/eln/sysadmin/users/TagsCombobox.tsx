@@ -35,15 +35,13 @@ import type RsSet from "../../../util/set";
  * perform layout and paint, JS must be executed and DOM nodes must be created
  * before the browser can perform layout and paint.
  *
- * Whilst the code is setup for infinite loading, currently the endpoint
- * returns a list of all of the tags.
+ * The endpoint returns all of the tags at once, so the list is not paginated.
  *
  * This component was implemented using sample code and documentation from the following sites
  * https://mui.com/material-ui/react-autocomplete/#useautocomplete
  * https://github.com/mui/material-ui/blob/5046cc18373a169edbd75ef471245c23d8363fc9/docs/data/base/components/autocomplete/UseAutocomplete.js
  * https://github.com/mui/material-ui/blob/b0e10a1805ad7abd6f3c368bfbf63f4d85d29b47/packages/material-ui-lab/src/useAutocomplete/useAutocomplete.d.ts
  * https://react-window.vercel.app/#/examples/list/variable-size
- * https://www.npmjs.com/package/react-window-infinite-loader
  *
  * `useAutocomplete` validates, once on mount, that the ref returned by
  * `getInputProps` resolves to an <input> element (see
@@ -289,10 +287,10 @@ function TagsComboboxContent({
   }, [tags]);
 
   /*
-   * useAutocomplete, a hook exposes my MUI, rather than the standard MUI
-   * Autocomplete component is necessary because there is a scrolling bug with
-   * using react-window-infinite-loader with Autocomplete. See this
-   * StackOverflow post for more info
+   * useAutocomplete, a hook exposed by MUI, rather than the standard MUI
+   * Autocomplete component is necessary because there is a scrolling bug when
+   * virtualising the listbox (with react-window) inside the standard
+   * Autocomplete. See this StackOverflow post for more info
    * https://stackoverflow.com/questions/59013367/react-window-infinite-loader-material-ui-autocomplete
    */
   const { getRootProps, getInputProps, getListboxProps, getOptionProps, groupedOptions } = useAutocomplete({
