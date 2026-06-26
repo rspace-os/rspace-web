@@ -238,7 +238,6 @@ function OptionsListing({
       style={{ height: 300, width: POPOVER_WIDTH }}
       rowCount={itemCount}
       onRowsRendered={onRowsRendered}
-      // The List owns its imperative handle via listRef.
       listRef={listRef}
       rowComponent={TagRow}
       rowProps={{

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 
-// muiTransitions vi.mock()s MUI Grow/Fade so the dialog renders instantly.
 import "@/__tests__/__mocks__/muiTransitions";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

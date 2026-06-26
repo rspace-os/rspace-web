@@ -6,7 +6,6 @@ type TransitionChild = React.ReactNode | ((state: string, childProps: Record<str
 type TransitionProps = {
   in?: boolean;
   children?: TransitionChild;
-  // React 19: ref is a regular prop (no forwardRef needed).
   ref?: React.Ref<unknown>;
 };
 

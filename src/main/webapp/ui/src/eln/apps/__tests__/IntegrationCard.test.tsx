@@ -1,5 +1,4 @@
-// Mocks (side-effect imports) must precede the component import: muiTransitions
-// vi.mock()s MUI Grow/Fade so the dialog renders instantly instead of animating.
+// Side-effect mock imports must precede the component import so vi.mock registers first.
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 import { ThemeProvider } from "@mui/material/styles";
