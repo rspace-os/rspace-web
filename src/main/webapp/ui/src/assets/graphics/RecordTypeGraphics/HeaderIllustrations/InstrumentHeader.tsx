@@ -182,7 +182,7 @@ function InstrumentHeader(): React.ReactNode {
             ry="2.4477"
             transform="translate(-58.7199 79.1912) rotate(-45)"
             fill="#f4e4dc"
-          />{" "}
+          />
         </g>
       </g>
     </svg>

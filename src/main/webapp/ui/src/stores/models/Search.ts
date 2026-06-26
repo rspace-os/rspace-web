@@ -977,6 +977,7 @@ export default class Search implements SearchInterface {
   ): Promise<void> {
     const { uiStore, trackingStore } = getRootStore();
     try {
+      if (!instrument.infoLoaded) await instrument.fetchAdditionalInfo();
       const newBase64Image = instrument.image
         ? await fetch(instrument.image)
             .then((x) => x.blob())
