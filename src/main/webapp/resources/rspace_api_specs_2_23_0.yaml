@@ -1934,6 +1934,21 @@ paths:
       responses:
         "200":
           description: A list of FileStoreNode objects
+  "/gallery/filestores/{filestoreId}/metadata":
+    get:
+      summary: Get filestore item write-provenance
+      description: >-
+        Returns the RSpace write-provenance (created-by / created-at) of a single filestore item,
+        fetched on demand for the Gallery info panel. Both fields are null when the object carries
+        no such metadata (e.g. non-S3 backends, or objects written outside RSpace).
+      tags:
+        - Gallery Filestores
+      parameters:
+        - $ref: "#/components/parameters/filestoreIdParam"
+        - $ref: "#/components/parameters/filestoreRemotePathParam"
+      responses:
+        "200":
+          description: The item's created-by username and creation time (either may be null)
   "/gallery/filestores/{filestoreId}/download":
     get:
       summary: Download from remote filestore
@@ -1964,67 +1979,22 @@ paths:
       responses:
         "204":
           description: No content
-  "/gallery/filestores/{filestoreId}/move":
+  "/gallery/filestores/{filestoreId}/uploadFromGallery":
     post:
-      summary: Move Gallery items to a writable filestore
-      description: >
-        Uploads Gallery items to the destination filestore identified by
-        `filestoreId`, then deletes the RSpace records and creates an
-        `ExternalStorageLocation` link for each success. Backends without write
-        support return **501**.
-
-
-        **S3 filestore** (no credentials needed):
-
-        ```json
-
-        {"recordIds": [123, 456]}
-
-        ```
-
-        **iRODS filestore** (credentials required):
-
-        ```json
-
-        {"recordIds": [123, 456], "credentials": {"username": "irods-user", "password": "irods-password"}}
-
-        ```
-      tags:
-        - Gallery Filestores
-      parameters:
-        - name: filestoreId
-          description: Destination filestore id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        $ref: "#/components/requestBodies/GalleryFilestoreOperationRequest"
-      responses:
-        "200":
-          description: Per-file outcomes
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExternalStorageOperationResult"
-        "501":
-          description: Destination filestore does not support write operations.
-  "/gallery/filestores/{filestoreId}/copy":
-    post:
-      summary: Copy Gallery items to a writable filestore
+      summary: Upload (import) Gallery items into a writable filestore
       description: >
         Uploads Gallery items to the destination filestore identified by
         `filestoreId` and creates an `ExternalStorageLocation` link for each
-        success. RSpace records are kept. Backends without write support return
-        **501**.
+        success. When `removeOriginalFromRspace` is true the RSpace records are
+        deleted after a successful upload (a "move"); when false (default) they
+        are kept (a "copy"). Backends without write support return **404**.
 
 
         **S3 filestore** (no credentials needed):
 
         ```json
 
-        {"recordIds": [123, 456]}
+        {"recordIds": [123, 456], "removeOriginalFromRspace": true}
 
         ```
 
@@ -2054,8 +2024,134 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExternalStorageOperationResult"
-        "501":
+        "404":
           description: Destination filestore does not support write operations.
+  "/gallery/filestores/{filestoreId}/move":
+    post:
+      summary: Move a file or folder within an S3 filestore
+      description: >
+        Moves a file or folder to another folder **within the same filestore**
+        (server-side; S3 only). `sourcePath` and `destPath` are relative to the
+        filestore root; the moved item keeps its leaf name under `destPath`
+        (use `""` for the filestore root). Only files and **empty** folders can be
+        moved; a non-empty folder is rejected with **400**. Non-S3 backends return
+        **404**.
+
+
+        ```json
+
+        {"sourcePath": "data/report.csv", "destPath": "archive/2026"}
+
+        ```
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Filestore id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryFilestoreMoveRequest"
+        required: true
+      responses:
+        "200":
+          description: Move outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalStorageOperationResult"
+        "404":
+          description: Filestore does not support within-filestore moves.
+  "/gallery/filestores/{filestoreId}/folder":
+    post:
+      summary: Create a folder in an S3 filestore
+      description: >
+        Creates a new subfolder named `name` under `path` (relative to the
+        filestore root; `""` for the root) in the filestore identified by
+        `filestoreId`. S3 only (a zero-byte placeholder object carrying the
+        creator and creation-time metadata is written). Non-S3 backends return
+        **404**.
+
+
+        ```json
+
+        {"path": "data", "name": "results"}
+
+        ```
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Filestore id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryFilestoreFolderRequest"
+        required: true
+      responses:
+        "201":
+          description: The created folder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalStorageOperationResult"
+        "404":
+          description: Filestore does not support folder creation.
+  "/gallery/filestores/{filestoreId}/delete":
+    post:
+      summary: Delete a file or folder in an S3 filestore
+      description: >
+        Deletes the file or folder at `path` (relative to the filestore root) in
+        the filestore identified by `filestoreId`. S3 only. Subject to the
+        creator/age gate: only the user who created an item may delete it, and
+        only within the configured window after creation
+        (`netfilestores.s3.delete.window.minutes`, default 15). Only files and
+        **empty** folders can be deleted; a non-empty folder is rejected with
+        **400**. Returns **403** when the gate denies the deletion and **404** for
+        non-S3 backends.
+
+
+        ```json
+
+        {"path": "data/report.csv"}
+
+        ```
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Filestore id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryFilestoreDeleteRequest"
+        required: true
+      responses:
+        "204":
+          description: Deleted successfully.
+        "403":
+          description: The item was not created by this user, or is older than the
+            configured deletion window.
+        "404":
+          description: Filestore does not support delete.
   "/gallery/filestores/{filestoreId}/transfer":
     post:
       summary: Server-side transfer a single object between two filestores
@@ -2065,7 +2161,7 @@ paths:
         `destFilestoreId` in the body (no data flows through RSpace). When
         `deleteSource` is true the source is deleted after a successful copy.
         Currently S3↔S3 only; other combinations and same source/destination
-        filestore id return **501**.
+        filestore id return **404**.
       tags:
         - Gallery Filestores
       parameters:
@@ -2185,9 +2281,9 @@ paths:
       deprecated: true
       summary: "[DEPRECATED] Copy Gallery items to an iRODS filestore"
       description: >
-        Deprecated — use `POST /gallery/filestores/{filestoreId}/copy`. This
-        endpoint now delegates to the unified handler and will be removed in a
-        future release.
+        Deprecated — use `POST /gallery/filestores/{filestoreId}/uploadFromGallery`
+        (with `removeOriginalFromRspace: false`). This endpoint now delegates to
+        the unified handler and will be removed in a future release.
       tags:
         - Gallery Filestores
       parameters:
@@ -2245,9 +2341,9 @@ paths:
       deprecated: true
       summary: "[DEPRECATED] Move Gallery items to an iRODS filestore"
       description: >
-        Deprecated — use `POST /gallery/filestores/{filestoreId}/move`. This
-        endpoint now delegates to the unified handler and will be removed in a
-        future release.
+        Deprecated — use `POST /gallery/filestores/{filestoreId}/uploadFromGallery`
+        (with `removeOriginalFromRspace: true`). This endpoint now delegates to
+        the unified handler and will be removed in a future release.
       tags:
         - Gallery Filestores
       parameters:
@@ -4802,22 +4898,71 @@ components:
           description: the password to login on IRODS
           example: passwordIrods
     GalleryFilestoreOperationRequest:
-      description: Body for `POST /gallery/filestores/{filestoreId}/move` and `/copy`.
+      description: Body for `POST /gallery/filestores/{filestoreId}/uploadFromGallery`.
       required:
         - recordIds
       properties:
         recordIds:
           type: array
-          description: RSpace IDs of Gallery items to move/copy
+          description: RSpace IDs of Gallery items to upload
           items:
             type: integer
             format: int64
         credentials:
           $ref: "#/components/schemas/IrodsCredentials"
+        removeOriginalFromRspace:
+          type: boolean
+          default: false
+          description: If true, delete the RSpace originals after upload (move); if
+            false, keep them (copy).
       example:
         recordIds:
           - 123
           - 456
+        removeOriginalFromRspace: false
+    GalleryFilestoreMoveRequest:
+      description: Body for `POST /gallery/filestores/{filestoreId}/move`
+        (within-filestore move; S3 only).
+      required:
+        - sourcePath
+        - destPath
+      properties:
+        sourcePath:
+          type: string
+          description: Path of the file/folder to move, relative to the filestore root.
+        destPath:
+          type: string
+          description: Destination folder, relative to the filestore root ("" for the root).
+      example:
+        sourcePath: data/report.csv
+        destPath: archive/2026
+    GalleryFilestoreFolderRequest:
+      description: Body for `POST /gallery/filestores/{filestoreId}/folder`
+        (create folder; S3 only).
+      required:
+        - path
+        - name
+      properties:
+        path:
+          type: string
+          description: Parent folder, relative to the filestore root ("" for the root).
+        name:
+          type: string
+          description: Name of the new folder.
+      example:
+        path: data
+        name: results
+    GalleryFilestoreDeleteRequest:
+      description: Body for `POST /gallery/filestores/{filestoreId}/delete`
+        (gated delete; S3 only).
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: Path of the file/folder to delete, relative to the filestore root.
+      example:
+        path: data/report.csv
     GalleryFilestoreTransferRequest:
       description: Body for `POST /gallery/filestores/{filestoreId}/transfer`.
       required:

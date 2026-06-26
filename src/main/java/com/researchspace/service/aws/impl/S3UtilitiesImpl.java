@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -24,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -41,6 +44,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -133,21 +137,20 @@ public class S3UtilitiesImpl implements S3Utilities {
 
   @Override
   public SdkHttpResponse uploadToS3(String folderPath, File file) {
-    return uploadToS3(folderPath, file, java.util.Collections.emptyMap());
+    return uploadToS3(folderPath, file, Collections.emptyMap());
   }
 
   @Override
-  public SdkHttpResponse uploadToS3(
-      String folderPath, File file, java.util.Map<String, String> metadata) {
+  public SdkHttpResponse uploadToS3(String folderPath, File file, Map<String, String> metadata) {
     return getS3Uploader(folderPath, file, metadata).apply(file);
   }
 
   protected Function<File, SdkHttpResponse> getS3Uploader(String folderPath, File file) {
-    return getS3Uploader(folderPath, file, java.util.Collections.emptyMap());
+    return getS3Uploader(folderPath, file, Collections.emptyMap());
   }
 
   protected Function<File, SdkHttpResponse> getS3Uploader(
-      String folderPath, File file, java.util.Map<String, String> metadata) {
+      String folderPath, File file, Map<String, String> metadata) {
     if ((file.length() <= AWS_PUT_FILE_LIMIT)
         && (chunkedUploadMbThreshold * FileUtils.ONE_MB > file.length())) {
       return new S3PutUploader(s3Client, bucketName, folderPath, metadata);
@@ -235,8 +238,11 @@ public class S3UtilitiesImpl implements S3Utilities {
       HeadObjectRequest headObjectRequest =
           HeadObjectRequest.builder().bucket(bucketName).key(path).build();
       HeadObjectResponse response = s3Client.headObject(headObjectRequest);
-      return new S3FolderContentItem(
-          getLeafName(path), false, response.contentLength(), response.lastModified());
+      S3FolderContentItem item =
+          new S3FolderContentItem(
+              getLeafName(path), false, response.contentLength(), response.lastModified());
+      item.setUserMetadata(response.metadata());
+      return item;
     } catch (S3Exception e) {
       if (e.statusCode() != 404) {
         log.error("Error while getting object details for bucket {} and path {}", bucketName, path);
@@ -298,33 +304,59 @@ public class S3UtilitiesImpl implements S3Utilities {
     private final boolean isFolder;
     private final Long sizeInBytes;
     private final Instant lastModified;
+
+    /**
+     * User-defined object metadata ({@code x-amz-meta-*} headers with the prefix stripped), e.g.
+     * {@code rspace-created-by} / {@code rspace-created-at}. Populated for files via HeadObject;
+     * empty for virtual folders that have no placeholder object. Drives the creator/age delete
+     * gate.
+     */
+    private Map<String, String> userMetadata = Collections.emptyMap();
   }
 
   @Override
   public DeleteObjectResponse deleteFromS3(String folderPath, String fileName) {
-    String s3Key = StringUtils.isNotBlank(folderPath) ? folderPath + "/" + fileName : fileName;
-    try {
-      DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder().bucket(bucketName).key(s3Key).build();
+    return deleteObject(
+        StringUtils.isNotBlank(folderPath) ? folderPath + "/" + fileName : fileName);
+  }
 
-      return s3Client.deleteObject(deleteObjectRequest);
+  @Override
+  public void createFolder(String folderPath, Map<String, String> metadata) {
+    String key = folderPath.endsWith("/") ? folderPath : folderPath + "/";
+    try {
+      PutObjectRequest.Builder builder = PutObjectRequest.builder().bucket(bucketName).key(key);
+      if (metadata != null && !metadata.isEmpty()) {
+        builder.metadata(metadata);
+      }
+      s3Client.putObject(builder.build(), RequestBody.empty());
+      log.info("Created folder placeholder {} in bucket {}", key, bucketName);
     } catch (Exception e) {
-      log.error("Failed to delete object {} from S3", s3Key, e);
+      log.error("Failed to create folder {} in bucket {}", key, bucketName, e);
+      throw e;
+    }
+  }
+
+  @Override
+  public DeleteObjectResponse deleteObject(String key) {
+    try {
+      DeleteObjectResponse response =
+          s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(key).build());
+      log.info("Deleted object {} from bucket {}", key, bucketName);
+      return response;
+    } catch (Exception e) {
+      log.error("Failed to delete object {} from bucket {}", key, bucketName, e);
       throw e;
     }
   }
 
   @Override
   public void copyObjectFromBucket(String sourceBucket, String sourceKey, String destKey) {
-    copyObjectFromBucket(sourceBucket, sourceKey, destKey, java.util.Collections.emptyMap());
+    copyObjectFromBucket(sourceBucket, sourceKey, destKey, Collections.emptyMap());
   }
 
   @Override
   public void copyObjectFromBucket(
-      String sourceBucket,
-      String sourceKey,
-      String destKey,
-      java.util.Map<String, String> metadata) {
+      String sourceBucket, String sourceKey, String destKey, Map<String, String> metadata) {
     try {
       CopyObjectRequest.Builder builder =
           CopyObjectRequest.builder()

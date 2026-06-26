@@ -515,6 +515,9 @@ export class Filestore implements GalleryFile {
   readonly size: number;
   readonly path: ReadonlyArray<GalleryFile>;
   readonly metadata: Record<string, string>;
+  // Per-user write permission from the filestore's userPermissions snapshot.
+  // Defaults to true when the backend supplies no snapshot (see Filestore parsing).
+  readonly canWrite: boolean;
 
   constructor({
     id,
@@ -522,12 +525,14 @@ export class Filestore implements GalleryFile {
     filesystemId,
     filesystemName,
     filesystemType,
+    canWrite,
   }: {
     id: Id;
     name: string;
     filesystemId: number;
     filesystemName: string;
     filesystemType: string;
+    canWrite: boolean;
   }) {
     this.id = id;
     this.name = name;
@@ -537,6 +542,7 @@ export class Filestore implements GalleryFile {
     this.filesystemId = filesystemId;
     this.filesystemName = filesystemName;
     this.filesystemType = filesystemType;
+    this.canWrite = canWrite;
     this.path = [];
     this.metadata = {};
   }
@@ -801,8 +807,29 @@ export class RemoteFile implements GalleryFile {
     return Result.Error([new Error(`Cannot duplicate ${this.isFolder ? "folders" : "files"} stored in filestores.`)]);
   }
 
+  /**
+   * Gate for write operations (delete, move-within) on this item. Ok only when the parent filestore
+   * is a writable S3 filestore; those are the only filestores whose contents RSpace can mutate. The
+   * backend additionally enforces a per-object creator/age gate on delete, so a permitted action here
+   * may still be rejected server-side and surfaced as an alert.
+   */
+  private get s3WriteGate(): Result<null> {
+    const parentFilestore = this.path[0];
+    if (
+      !(parentFilestore instanceof Filestore) ||
+      parentFilestore.filesystemType !== "S3" ||
+      parentFilestore.id === null
+    ) {
+      return Result.Error([new Error("Only items stored in an S3 filestore can be changed from RSpace.")]);
+    }
+    if (!parentFilestore.canWrite) {
+      return Result.Error([new Error("You do not have write access to this filestore.")]);
+    }
+    return Result.Ok(null);
+  }
+
   get canDelete(): Result<null> {
-    return Result.Error([new Error(`Cannot delete ${this.isFolder ? "folders" : "files"} stored in filestores.`)]);
+    return this.s3WriteGate;
   }
 
   get canRename(): Result<null> {
@@ -835,7 +862,7 @@ export class RemoteFile implements GalleryFile {
   }
 
   get canBeMoved(): Result<null> {
-    return Result.Error([new Error("Contents of filestores cannot be moved from within RSpace.")]);
+    return this.s3WriteGate;
   }
 
   get canUploadNewVersion(): Result<null> {
@@ -850,6 +877,20 @@ export class RemoteFile implements GalleryFile {
     const filestoreId = this.path[0].id;
     return `REMOTE_FILE_${idToString(filestoreId).elseThrow()}_${this.logicPath}`;
   }
+}
+
+/**
+ * Returns `candidate` as a {@link Filestore} when it is a writable S3 filestore -- the only
+ * filestores whose contents RSpace can create/move/delete -- otherwise null. Used to gate the
+ * S3-only write actions.
+ */
+export function asWritableS3Filestore(candidate: GalleryFile | undefined): Filestore | null {
+  return candidate instanceof Filestore &&
+    candidate.filesystemType === "S3" &&
+    candidate.id !== null &&
+    candidate.canWrite
+    ? candidate
+    : null;
 }
 
 function parseGalleryFileFromFolderApiResponse(
@@ -1307,6 +1348,15 @@ export function useGalleryListing({
                       .flatMap(Parsers.isString)
                       .elseThrow();
 
+                    // userPermissions may be absent (older backend, or non-NONE auth) —
+                    // default canWrite to true so the UI stays permissive, matching useS3Filestores.
+                    const canWrite = Parsers.getValueWithKey("userPermissions")(obj)
+                      .flatMap(Parsers.isObject)
+                      .flatMap(Parsers.isNotNull)
+                      .flatMap(Parsers.getValueWithKey("canWrite"))
+                      .flatMap(Parsers.isBoolean)
+                      .orElse(true);
+
                     return Result.Ok<GalleryFile>(
                       new Filestore({
                         id,
@@ -1314,6 +1364,7 @@ export function useGalleryListing({
                         filesystemId,
                         filesystemName,
                         filesystemType,
+                        canWrite,
                       }),
                     );
                   } catch (e) {
@@ -1347,10 +1398,19 @@ export function useGalleryListing({
     }
   }
 
-  async function getRemoteFiles(pa: ReadonlyArray<GalleryFile>): Promise<void> {
-    selection.clear();
-    clearAndSetGalleryListing([]);
-    setLoading(true);
+  async function getRemoteFiles(
+    pa: ReadonlyArray<GalleryFile>,
+    { isRefresh = false }: { isRefresh?: boolean } = {},
+  ): Promise<void> {
+    // On a refresh we keep the current listing and selection visible and use the soft `refreshing`
+    // flag, matching the local-files refresh. A fresh navigation blanks the grid and shows loading.
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      selection.clear();
+      clearAndSetGalleryListing([]);
+      setLoading(true);
+    }
     const filestore = Result.fromNullable(
       pa.at(0),
       new Error("Remote files path should never be empty. Where is the filestore?"),
@@ -1363,9 +1423,11 @@ export function useGalleryListing({
     try {
       const token = await getToken();
       const { data } = await (await api).get<unknown>(
-        `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${Optional.fromNullable(pa.at(-1))
-          .map((file) => file.pathAsString())
-          .orElse("/")}`,
+        `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${encodeURIComponent(
+          Optional.fromNullable(pa.at(-1))
+            .map((file) => file.pathAsString())
+            .orElse("/"),
+        )}`,
       );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
@@ -1447,7 +1509,7 @@ export function useGalleryListing({
             filesystemId: filestore.filesystemId,
           })
         ) {
-          await getRemoteFiles(pa);
+          await getRemoteFiles(pa, { isRefresh });
         } else {
           setErrorState(true);
         }
@@ -1460,13 +1522,23 @@ export function useGalleryListing({
               message: e.message,
             }),
           );
-          setErrorState(true);
-          throw e;
+          // On a refresh, keep the current listing visible (the user already saw it) rather than
+          // replacing it with an error view, and don't reject — the alert is enough, and the caller
+          // fires this as `void refreshListing()` so a throw would surface as an unhandled rejection.
+          if (!isRefresh) {
+            setErrorState(true);
+            throw e;
+          }
+        } else if (!isRefresh) {
+          throw new Error("Unexpected error");
         }
-        throw new Error("Unexpected error");
       }
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }
 
@@ -1602,7 +1674,9 @@ export function useGalleryListing({
         if (pa.length === 0) {
           return getFilestores();
         }
-        throw new Error("refreshListing is not implemented for filestore contents");
+        // Browsing inside a filestore: re-fetch the current folder's contents so newly created
+        // (or moved/deleted) items appear without the user navigating away and back.
+        return getRemoteFiles(pa, { isRefresh: true });
       }
       try {
         const token = await getToken();
