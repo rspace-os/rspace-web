@@ -5,7 +5,7 @@ import DialogActions from "@mui/material/DialogActions";
 import { dialogContentClasses } from "@mui/material/DialogContent";
 import Grow from "@mui/material/Grow";
 import { paperClasses } from "@mui/material/Paper";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
@@ -47,6 +47,16 @@ const Picker = observer(
     const sidebarId = React.useId();
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
+    const theme = useTheme();
+    // Float the info panel above this dialog, but keep its menus/dialogs above
+    // the panel: drawer just over the dialog, modal just over the drawer.
+    const raisedZIndexTheme = React.useMemo(
+      () => ({
+        ...theme,
+        zIndex: { ...theme.zIndex, drawer: theme.zIndex.modal + 1, modal: theme.zIndex.modal + 2 },
+      }),
+      [theme],
+    );
     const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
     const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(PREFERENCES.GALLERY_SORT_BY, {
       defaultValue: "modificationDate",
@@ -183,24 +193,26 @@ const Picker = observer(
                         width: "calc(100% - 200px)",
                       }}
                     >
-                      <MainPanel
-                        selectedSection={selectedSection}
-                        path={path}
-                        setSelectedSection={(mediaType) => {
-                          setSelectedSection(mediaType);
-                          setPath([]);
-                          setAppliedSearchTerm("");
-                        }}
-                        galleryListing={galleryListing}
-                        folderId={folderId}
-                        refreshListing={refreshListing}
-                        sortOrder={sortOrder}
-                        orderBy={orderBy}
-                        setSortOrder={setSortOrder}
-                        setOrderBy={setOrderBy}
-                        appliedSearchTerm={appliedSearchTerm}
-                        setAppliedSearchTerm={setAppliedSearchTerm}
-                      />
+                      <ThemeProvider theme={raisedZIndexTheme}>
+                        <MainPanel
+                          selectedSection={selectedSection}
+                          path={path}
+                          setSelectedSection={(mediaType) => {
+                            setSelectedSection(mediaType);
+                            setPath([]);
+                            setAppliedSearchTerm("");
+                          }}
+                          galleryListing={galleryListing}
+                          folderId={folderId}
+                          refreshListing={refreshListing}
+                          sortOrder={sortOrder}
+                          orderBy={orderBy}
+                          setSortOrder={setSortOrder}
+                          setOrderBy={setOrderBy}
+                          appliedSearchTerm={appliedSearchTerm}
+                          setAppliedSearchTerm={setAppliedSearchTerm}
+                        />
+                      </ThemeProvider>
                       <DialogActions>
                         <Button onClick={() => onClose()}>Cancel</Button>
                         <ValidatingSubmitButton
