@@ -64,6 +64,7 @@ const uiTest = base.extend<
   flowLogin: async ({ pageLogin, pageWorkspace, appUser }, use) => {
     await pageLogin.open();
     await pageLogin.login(appUser.username, appUser.password);
+    await pageWorkspace.isLoaded();
     await use(pageWorkspace);
   },
 });
@@ -80,12 +81,14 @@ const uiTest = base.extend<
 const sysadminFixtures = base.extend<{
   flowSysadminConfig: SystemConfigPage;
 }>({
-  flowSysadminConfig: async ({ browser }, use) => {
-    const ctx = await browser.newContext();
+  flowSysadminConfig: async ({ browser, browserName }, use) => {
+    // Manually created contexts don't inherit the project-level ignoreHTTPSErrors.
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: browserName === "webkit" });
     const page = await ctx.newPage();
     const loginPage = new LoginPage(page);
     await loginPage.open();
     await loginPage.login(SYSADMIN.username, SYSADMIN.password);
+    await page.waitForURL((url) => !url.pathname.includes("/login"));
     const configPage = new SystemConfigPage(page);
     await configPage.open();
     await use(configPage);

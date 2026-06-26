@@ -23,7 +23,7 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 | `HEADLESS` | `true` | No | Set `false` to watch browsers |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | No | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | — | **Yes** | Sysadmin password |
-| `RSPACE_TEST_API_KEY` | — | **Yes** | API key for API tests |
+| `RSPACE_SYSADMIN_API_KEY` | — | **Yes** | API key for API tests |
 | `RSPACE_TEST_USERNAME` | `user1a` | No | Override test user (UI tests use `appUser`) |
 | `RSPACE_TEST_PASSWORD` | `user1234` | No | Override test user password |
 
@@ -40,10 +40,10 @@ pnpm run test-e2e
 pnpm run test-e2e -- --project=chromium
 
 # API tests only
-ppnpm run test-e2e:api
+pnpm run test-e2e:api
 
 # Watch mode (headed)
-ppnpm run test-e2e:ui
+pnpm run test-e2e:ui
 
 # Specific file
 pnpm run test-e2e -- src/__tests__/e2e/specs/auth/login.e2e.ts

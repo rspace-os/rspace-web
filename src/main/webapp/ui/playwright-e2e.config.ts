@@ -41,6 +41,11 @@ export default defineConfig<E2EOptions>({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 4 : undefined,
   reporter: getReporterConfig(),
+  // Raise timeouts for the remote server (pangolin8086 can be slow).
+  // Default 30s is too short for page.goto + login round-trips on a cold server.
+  timeout: 60_000,
+  // Playwright default expect.timeout is 5s — not enough for server round-trips.
+  expect: { timeout: 15_000 },
   use: {
     baseURL: BASE_URL,
     // PW_LOG=trace -> capture every action; PW_LOG=info -> on first retry; off -> on first retry

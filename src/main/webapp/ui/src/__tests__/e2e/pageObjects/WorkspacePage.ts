@@ -8,12 +8,12 @@ export class WorkspacePage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.createButton = page.locator('[data-test-id="create-btn"]');
+    this.createButton = page.getByTestId("create-btn");
   }
 
   async isLoaded(): Promise<boolean> {
     try {
-      await this.createButton.waitFor({ state: "visible", timeout: 10_000 });
+      await this.createButton.waitFor({ state: "visible" });
       return true;
     } catch {
       return false;
