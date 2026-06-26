@@ -3,8 +3,9 @@ import { test as base, expect, mergeTests, request } from "@playwright/test";
 import { DocumentsClient } from "./api/clients/DocumentsClient";
 import { env } from "./env";
 import { LoginPage } from "./pageObjects/LoginPage";
+import { SystemConfigPage } from "./pageObjects/SystemConfigPage";
 import { WorkspacePage } from "./pageObjects/WorkspacePage";
-import { type AppUser, USERS } from "./users";
+import { type AppUser, SYSADMIN, USERS } from "./users";
 
 export type { AppUser };
 
@@ -57,6 +58,31 @@ const uiTest = base.extend<
   },
 });
 
+/**
+ * `flowSysadminConfig` — multi-step setup fixture following the `flow*` naming
+ * convention. Creates an isolated browser context, logs in as sysadmin, opens
+ * SystemConfigPage, and delivers a ready-to-use instance. Context is torn down
+ * after the consumer (test or beforeAll) returns.
+ *
+ * Use when sysadmin system-level state is a precondition (e.g. enabling
+ * chemistry.available before an Apps integration test).
+ */
+const sysadminFixtures = base.extend<{
+  flowSysadminConfig: SystemConfigPage;
+}>({
+  flowSysadminConfig: async ({ browser }, use) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    const loginPage = new LoginPage(page);
+    await loginPage.open();
+    await loginPage.login(SYSADMIN.username, SYSADMIN.password);
+    const configPage = new SystemConfigPage(page);
+    await configPage.open();
+    await use(configPage);
+    await ctx.close();
+  },
+});
+
 const apiTest = base.extend<{
   apiContext: APIRequestContext;
   clientDocuments: DocumentsClient;
@@ -72,6 +98,6 @@ const apiTest = base.extend<{
   },
 });
 
-export const test = mergeTests(uiTest, apiTest);
+export const test = mergeTests(uiTest, apiTest, sysadminFixtures);
 export { tags } from "./tags";
 export { expect };
