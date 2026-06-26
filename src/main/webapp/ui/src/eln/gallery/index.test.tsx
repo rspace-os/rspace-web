@@ -1,22 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-/*
- * Under vitest's `--conditions=require` resolution, `react-router` and
- * `react-router-dom` resolve to two separate module copies (the dom package's
- * CJS `main` entry is broken, so it falls back to its ESM build which bundles a
- * second copy of `react-router`). That gives two distinct router-context
- * objects: a `<MemoryRouter>` from one package cannot satisfy hooks from the
- * other (`useRoutes`/`useLocation` throw "may be used only in the context of a
- * <Router>"). React Router 7 merged the DOM bindings into the core package, so
- * everything the Gallery imports from `react-router-dom` is also exported by
- * `react-router`. Redirecting the dom package to the core package collapses the
- * two copies into one shared context. This only affects this test file.
- */
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router");
-  return actual;
-});
-
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
@@ -31,12 +14,10 @@ import { Gallery } from ".";
 import type { GallerySection } from "./common";
 
 /**
- * Equivalent to `GalleryStory` from `./index.story`, but pulling `MemoryRouter`
- * from `react-router` (the same package that the Gallery's `Routes`/`useParams`
- * come from). Under vitest's `--conditions=require` resolution, importing
- * `MemoryRouter` from `react-router-dom` (as the Playwright story does) yields a
- * separate router-context instance, so `useRoutes` cannot see it. Sourcing the
- * router from `react-router` keeps a single shared context.
+ * Equivalent to `GalleryStory` from `./index.story`: wraps the Gallery in a
+ * `MemoryRouter` so its `Routes`/`useParams` resolve. MemoryRouter is sourced
+ * from `react-router` (the same package the Gallery imports its routing from)
+ * so they share a single router context.
  */
 function GalleryStory({
   urlSuffix,

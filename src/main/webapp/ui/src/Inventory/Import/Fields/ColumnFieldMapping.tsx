@@ -10,7 +10,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import type { ImportRecordType } from "../../../stores/stores/ImportStore";
 import useStores from "../../../stores/use-stores";

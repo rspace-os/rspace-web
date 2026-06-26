@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
 import Header from "../Header";

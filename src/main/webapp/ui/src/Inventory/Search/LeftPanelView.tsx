@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router";
 import { useLandmark } from "../../components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
 import { getSavedGlobalId, globalIdPatterns } from "../../stores/definitions/BaseRecord";

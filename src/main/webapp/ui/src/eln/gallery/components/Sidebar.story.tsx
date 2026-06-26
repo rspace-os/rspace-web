@@ -1,7 +1,7 @@
 // biome-ignore lint/style/noRestrictedImports: initial biome migration
 import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";

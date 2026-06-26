@@ -1,5 +1,5 @@
 import type React from "react";
-import type { Location } from "react-router-dom";
+import type { Location } from "react-router";
 import NavigateContext from "../stores/contexts/Navigate";
 
 type AlwaysNewWindowNavigationContextArgs = {

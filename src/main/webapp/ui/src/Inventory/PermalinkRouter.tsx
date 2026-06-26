@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import NavigateContext from "../stores/contexts/Navigate";
 import { globalIdPatterns, inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
