@@ -14,9 +14,7 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import NoopTransition from "./NoopTransition";
 
-const isTestEnv = import.meta.env.MODE === "test";
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 const readAsBinaryString = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -169,25 +167,6 @@ function ImageEditingDialog({
       open={open}
       onClose={close}
       aria-labelledby={titleId}
-      transitionDuration={isTestEnv ? 0 : undefined}
-      disableAutoFocus={isTestEnv}
-      disableEnforceFocus={isTestEnv}
-      disableRestoreFocus={isTestEnv}
-      slotProps={
-        isTestEnv
-          ? {
-              backdrop: {
-                transitionDuration: 0,
-                slots: {
-                  transition: NoopTransition,
-                },
-              },
-            }
-          : undefined
-      }
-      slots={{
-        transition: isTestEnv ? NoopTransition : undefined,
-      }}
       sx={{
         [`& > .${dialogClasses.container} > .${paperClasses.root}`]: {
           /*

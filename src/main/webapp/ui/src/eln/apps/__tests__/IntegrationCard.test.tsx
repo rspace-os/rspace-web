@@ -1,10 +1,12 @@
+// Mocks (side-effect imports) must precede the component import: muiTransitions
+// vi.mock()s MUI Grow/Fade so the dialog renders instantly instead of animating.
+import "@/__tests__/__mocks__/matchMedia";
+import "@/__tests__/__mocks__/muiTransitions";
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../theme";
 import IntegrationCard from "../IntegrationCard";
-
-import "@/__tests__/__mocks__/matchMedia";
 
 describe("IntegrationCard", () => {
   test("Name should be shown.", () => {

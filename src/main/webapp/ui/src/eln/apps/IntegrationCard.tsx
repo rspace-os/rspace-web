@@ -22,7 +22,6 @@ import { useContext, useState } from "react";
 import type { Hsl } from "../../accentedTheme";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
-import NoopTransition from "../../components/NoopTransition";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { IntegrationState } from "./useIntegrationsEndpoint";
 
@@ -106,7 +105,6 @@ function CustomGrow({ ref, ...props }: React.ComponentProps<typeof Grow>): React
     />
   );
 }
-const isTestEnv = import.meta.env.MODE === "test";
 function IntegrationCard<Credentials>({
   name,
   explanatoryText,
@@ -381,7 +379,6 @@ function IntegrationCard<Credentials>({
         open={open}
         maxWidth="sm"
         fullWidth
-        transitionDuration={isTestEnv ? 0 : undefined}
         sx={{
           // these styles allow callers of this component to use regular HTML tags to
           // markup the `setupSection`
@@ -419,16 +416,13 @@ function IntegrationCard<Credentials>({
             },
           },
         }}
-        disableAutoFocus={isTestEnv}
-        disableEnforceFocus={isTestEnv}
-        disableRestoreFocus={isTestEnv}
         slotProps={{
           paper: {
             tabIndex: -1,
           },
         }}
         slots={{
-          transition: isTestEnv ? NoopTransition : CustomGrow,
+          transition: CustomGrow,
         }}
       >
         <DialogTitle>
