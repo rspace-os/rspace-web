@@ -289,6 +289,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       errors.addError(
           new ObjectError(
               "folderName", messages.getMessage("netfilestores.write.folderName.mandatory")));
+    } else if (folderName.contains("/") || !folderName.equals(folderName.strip())) {
+      errors.addError(
+          new ObjectError(
+              "folderName", messages.getMessage("netfilestores.write.folderName.invalid")));
     }
     throwBindExceptionIfErrors(errors);
     NfsFileStore filestore = getFilestoreOrThrow(filestoreId, errors);

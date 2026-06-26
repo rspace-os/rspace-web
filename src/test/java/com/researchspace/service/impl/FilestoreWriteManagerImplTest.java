@@ -153,6 +153,18 @@ class FilestoreWriteManagerImplTest {
   }
 
   @Test
+  void createFolderInFilestore_invalidName_rejectedWithoutCreating() throws Exception {
+    // path separator or leading/trailing whitespace is rejected before any S3 call
+    assertThrows(
+        BindException.class,
+        () -> manager.createFolderInFilestore(FS_ID, "parent", "a/b", errors(), user));
+    assertThrows(
+        BindException.class,
+        () -> manager.createFolderInFilestore(FS_ID, "parent", " spaced ", errors(), user));
+    verify(client, never()).createFolder(any(), any());
+  }
+
+  @Test
   void moveWithinFilestore_delegatesAndReturnsDestKey() throws Exception {
     when(client.moveWithin("src/a.txt", "destFolder")).thenReturn("destFolder/a.txt");
 
