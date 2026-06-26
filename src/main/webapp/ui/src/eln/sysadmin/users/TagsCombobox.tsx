@@ -79,7 +79,10 @@ type UserTagRowProps = {
   groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
   filter: string;
   keyboardFocusIndex: number | null;
-  getOptionProps: (optionAndIndex: { option: InternalTag; index: number }) => object;
+  getOptionProps: (optionAndIndex: {
+    option: InternalTag;
+    index: number;
+  }) => React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
 };
 
 /*
@@ -115,10 +118,18 @@ function UserTagRow({
       name
     );
 
+  /*
+   * In MUI v9 getOptionProps returns a `key`. React requires keys to be passed
+   * to JSX directly rather than spread in with the other props, so we pull it
+   * out here and apply it explicitly.
+   */
+  const { key, ...optionProps } = getOptionProps({ option, index });
+
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
     <li
-      {...getOptionProps({ option, index })}
+      key={key}
+      {...optionProps}
       style={{
         padding: "8px",
         cursor: "default",
@@ -153,7 +164,10 @@ function OptionsListing({
   filter,
 }: {
   sortedOptions: Array<InternalTag>;
-  getOptionProps: (optionAndIndex: { option: InternalTag; index: number }) => object;
+  getOptionProps: (optionAndIndex: {
+    option: InternalTag;
+    index: number;
+  }) => React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
   groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
   listboxProps: object;
   listRef: React.MutableRefObject<ListImperativeAPI | null>;
