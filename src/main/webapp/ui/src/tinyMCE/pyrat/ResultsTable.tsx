@@ -9,7 +9,7 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
-import { getSorting, stableSort } from "../../util/table";
+import { getSorting } from "../../util/table";
 import { Order } from "./Enums";
 
 export default function ResultsTable({
@@ -85,7 +85,7 @@ export default function ResultsTable({
           />
           <TableBody>
             {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-            {stableSort(animals, getSorting(order, orderBy)).map((animal: any, index: number) => {
+            {animals.toSorted(getSorting(order, orderBy)).map((animal: any, index: number) => {
               const isItemSelected = selectedAnimalIds.indexOf(animal.eartag_or_id) !== -1;
               const labelId = `animal-search-results-checkbox-${index}`;
 

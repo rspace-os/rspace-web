@@ -58,7 +58,7 @@ type State =
  */
 function groupByVersion(response: RevisionsListResponse): Array<VersionRow> {
   const byVersion = new Map<number, VersionRow>();
-  const oldestFirst = [...response.revisions].sort((a, b) => a.revisionId - b.revisionId);
+  const oldestFirst = response.revisions.toSorted((a, b) => a.revisionId - b.revisionId);
   for (const revision of oldestFirst) {
     const version = revision.record.version;
     if (version === null || typeof version === "undefined") continue;

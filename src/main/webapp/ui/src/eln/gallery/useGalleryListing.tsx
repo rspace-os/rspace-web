@@ -3,7 +3,6 @@ import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import * as FetchingData from "../../util/fetchingData";
 import { filenameExceptExtension, justFilenameExtension } from "../../util/files";
 import { incrementForever, take } from "../../util/iterators";
@@ -763,7 +762,10 @@ export class RemoteFile implements GalleryFile {
   }
 
   pathAsString(): string {
-    const parent = ArrayUtils.last(this.path).elseThrow();
+    const parent = Result.fromNullable(
+      this.path.at(-1),
+      new Error("Remote file path should never be empty."),
+    ).elseThrow();
     return `${parent.pathAsString()}${this.name}/`;
   }
 
@@ -1409,8 +1411,10 @@ export function useGalleryListing({
       clearAndSetGalleryListing([]);
       setLoading(true);
     }
-    const filestore = ArrayUtils.getAt(0, pa)
-      .toResult(() => new Error("Remote files path should never be empty. Where is the filestore?"))
+    const filestore = Result.fromNullable(
+      pa.at(0),
+      new Error("Remote files path should never be empty. Where is the filestore?"),
+    )
       .flatMap<Filestore>((p) =>
         p instanceof Filestore ? Result.Ok(p) : Result.Error([new Error("First part of path isn't a filestore")]),
       )
@@ -1420,7 +1424,7 @@ export function useGalleryListing({
       const token = await getToken();
       const { data } = await (await api).get<unknown>(
         `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${encodeURIComponent(
-          ArrayUtils.last(pa)
+          Optional.fromNullable(pa.at(-1))
             .map((file) => file.pathAsString())
             .orElse("/"),
         )}`,

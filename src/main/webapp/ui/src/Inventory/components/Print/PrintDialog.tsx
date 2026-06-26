@@ -23,7 +23,6 @@ import ApiService from "../../../common/InvApiService";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
 import useStores from "../../../stores/use-stores";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import ContextDialog from "../ContextMenu/ContextDialog";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import PrintContents, { PreviewPrintItem } from "./PrintContents";
@@ -338,7 +337,7 @@ function PrintDialog({
                 {printOptions.printIdentifierType === "IGSN" &&
                 itemsToPrint.some((record) => record.identifiers.length === 0)
                   ? "Please resolve error."
-                  : ArrayUtils.head(itemsToPrint)
+                  : Optional.fromNullable(itemsToPrint.at(0))
                       .map((inventoryRecord) => (
                         <PreviewPrintItem
                           key={inventoryRecord.globalId}
@@ -350,7 +349,7 @@ function PrintDialog({
                               inventoryRecord instanceof ContainerModel || inventoryRecord instanceof SubSampleModel
                                 ? (inventoryRecord.immediateParentContainer?.globalId ?? "-")
                                 : "-",
-                            identifier: ArrayUtils.getAt(0, inventoryRecord.identifiers).map((identifier) => ({
+                            identifier: Optional.fromNullable(inventoryRecord.identifiers.at(0)).map((identifier) => ({
                               doi: identifier.doi,
                             })),
                             globalId: Optional.fromNullable(inventoryRecord.globalId),
@@ -360,23 +359,25 @@ function PrintDialog({
                           target="screen"
                         />
                       ))
-                      .elseThrow()}
+                      .orElseGet(() => {
+                        throw new Error("Array is empty");
+                      })}
                 {/* we need the whole component for ReactToPrint, but not visible here */}
                 <Box sx={{ display: "none" }}>
                   <PrintContents
                     ref={componentToPrint}
                     printOptions={printOptions}
-                    itemsToPrint={ArrayUtils.zipWith(itemsToPrint, imageLinks, (record, barcodeUrl) => ({
+                    itemsToPrint={itemsToPrint.map((record, index) => ({
                       itemLabel: `${toTitleCase(record.type)} - ${record.name}`,
                       locationLabel:
                         record instanceof ContainerModel || record instanceof SubSampleModel
                           ? (record.immediateParentContainer?.globalId ?? "-")
                           : "-",
-                      identifier: ArrayUtils.getAt(0, record.identifiers).map((identifier) => ({
+                      identifier: Optional.fromNullable(record.identifiers.at(0)).map((identifier) => ({
                         doi: identifier.doi,
                       })),
                       globalId: Optional.fromNullable(record.globalId),
-                      barcodeUrl,
+                      barcodeUrl: imageLinks[index],
                     }))}
                     imageLinks={imageLinks}
                     target={printOptions.printerType === "GENERIC" ? "multiplePrint" : "singlePrint"}

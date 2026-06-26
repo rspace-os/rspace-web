@@ -12,7 +12,7 @@ import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import materialTheme from "../../theme";
-import { getSorting, stableSort } from "../../util/table";
+import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 
 const headCells = [
@@ -77,7 +77,7 @@ export default function AccountActivity(props: any) {
                 />
                 <TableBody>
                   {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-                  {stableSort(activities ?? [], getSorting(order, orderBy)).map((row: any, index) => {
+                  {(activities ?? []).toSorted(getSorting(order, orderBy)).map((row: any, index) => {
                     return (
                       <TableRow data-test-id="row" hover tabIndex={-1} key={`${row.timestamp}-${index}`}>
                         <TableCell scope="row">

@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { mkAlert } from "../stores/contexts/Alert";
 import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import getRootStore from "../stores/stores/getRootStore";
-import { traverseObjectTree } from "../util/unsafeUtils";
 import * as ArrayUtils from "./ArrayUtils";
 import { Optional } from "./optional";
 import { toTitleCase } from "./Util";
@@ -46,48 +45,22 @@ export const handleDetailedSuccesses = (
   );
 };
 
-// see ../../../../resources/bundles/inventory/inventory.properties
-const messages = {
-  container: {
-    deletion: {
-      failure: {
-        not: {
-          empty: ({ name }: { name: string }) => ({
-            title: `The container '${name}' is not empty.`,
-            help: "Delete the contents first.",
-          }),
-        },
-      },
-    },
-  },
-  sample: {
-    deletion: {
-      failure: {
-        subsamples: {
-          in: {
-            containers: ({ name }: { name: string }) => ({
-              title: `The sample '${name}' includes subsamples that are in containers.`,
-              help: "Delete these subsamples first or remove them from their container.",
-            }),
-          },
-        },
-      },
-    },
-  },
-  move: {
-    failure: {
-      cannot: {
-        locate: {
-          target: {
-            container: () => ({
-              title: "Could not locate target container.",
-              help: "Please try again. If this error persists then contact support.",
-            }),
-          },
-        },
-      },
-    },
-  },
+// Keyed by the literal error code the API returns (a message-bundle key from
+// ../../../../resources/bundles/inventory/inventory.properties). These are
+// flat dot-delimited strings, so a direct lookup beats any tree traversal.
+const messages: Record<string, (record: { name?: string }) => { title: string; help: string }> = {
+  "container.deletion.failure.not.empty": ({ name }) => ({
+    title: `The container '${name}' is not empty.`,
+    help: "Delete the contents first.",
+  }),
+  "sample.deletion.failure.subsamples.in.containers": ({ name }) => ({
+    title: `The sample '${name}' includes subsamples that are in containers.`,
+    help: "Delete these subsamples first or remove them from their container.",
+  }),
+  "move.failure.cannot.locate.target.container": () => ({
+    title: "Could not locate target container.",
+    help: "Please try again. If this error persists then contact support.",
+  }),
 };
 
 /**
@@ -117,14 +90,19 @@ export const handleDetailedErrors = (
         message: "Expand to see details.",
         variant,
         details: errorData.flatMap(({ record, response }) =>
-          response.error.errors.map((error) => ({
-            ...traverseObjectTree(messages, error, () => ({
-              title: error,
-              help: defaultHelp ?? "Please refresh and try again.",
-            }))(record ?? {}),
-            variant,
-            record,
-          })),
+          response.error.errors.map((error) => {
+            const resolve =
+              messages[error] ??
+              (() => ({
+                title: error,
+                help: defaultHelp ?? "Please refresh and try again.",
+              }));
+            return {
+              ...resolve(record ?? {}),
+              variant,
+              record,
+            };
+          }),
         ),
         ...(retryFunction
           ? Object.freeze({

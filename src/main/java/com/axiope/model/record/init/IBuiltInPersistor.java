@@ -1,7 +1,7 @@
 package com.axiope.model.record.init;
 
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
@@ -27,5 +27,5 @@ public interface IBuiltInPersistor {
 
   void saveForm(RSForm form);
 
-  void saveSampleTemplate(Sample template);
+  void saveSampleTemplate(SampleTemplate template);
 }

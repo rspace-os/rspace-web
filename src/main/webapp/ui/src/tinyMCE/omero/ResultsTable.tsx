@@ -9,7 +9,7 @@ import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import React, { forwardRef } from "react";
 import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
-import { getSorting, stableSort } from "../../util/table";
+import { getSorting } from "../../util/table";
 import { Order } from "./Enums";
 import type { OmeroDataTypes, OmeroItem } from "./OmeroTypes";
 
@@ -51,7 +51,7 @@ const CHECKBOX_CELL_INDENT: Partial<Record<OmeroDataTypes, number>> = {
  * whereas Screens -> Plates ->PlateAcquisitions -> images
  */
 export const omeroSort = (results: Array<OmeroItem>, order: "asc" | "desc", orderBy: string): Array<OmeroItem> => {
-  const sorted = stableSort(results, getSorting(order, orderBy));
+  const sorted = results.toSorted(getSorting(order, orderBy));
   const notTopParent: Array<OmeroItem> = [];
   const sortedByParentThenChild: Array<OmeroItem> = [];
   sorted.forEach((item) => {

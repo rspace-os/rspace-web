@@ -18,7 +18,6 @@ import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import useStores from "../../../stores/use-stores";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
 import ContextDialog from "../../components/ContextMenu/ContextDialog";
 import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
@@ -299,7 +298,7 @@ function PrintDialog({
             {imageLinks.length === itemsToPrint.length ? (
               <>
                 {/* we preview only one item, resulting from choice of print options */}
-                {ArrayUtils.head(itemsToPrint)
+                {Optional.fromNullable(itemsToPrint.at(0))
                   .map((identifier) => (
                     <PreviewPrintItem
                       key={identifier.doi}
@@ -328,12 +327,12 @@ function PrintDialog({
                       ...printOptions,
                       printIdentifierType: "IGSN",
                     }}
-                    itemsToPrint={ArrayUtils.zipWith(itemsToPrint, imageLinks, (identifier, barcodeUrl) => ({
+                    itemsToPrint={itemsToPrint.map((identifier, index) => ({
                       itemLabel: "-",
                       locationLabel: "-",
                       identifier: Optional.present(identifier),
                       globalId: Optional.empty(),
-                      barcodeUrl,
+                      barcodeUrl: imageLinks[index],
                     }))}
                     imageLinks={imageLinks}
                     target={printOptions.printerType === "GENERIC" ? "multiplePrint" : "singlePrint"}

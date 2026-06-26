@@ -7,7 +7,7 @@ import Grid from "@mui/material/Grid";
 import InputBase from "@mui/material/InputBase";
 import { observer } from "mobx-react-lite";
 import React, { forwardRef, useEffect, useState } from "react";
-import { readFileAsBinaryString } from "../../util/Util";
+
 import BigIconButton from "../BigIconButton";
 import SelectedFileInfo from "./SelectedFileInfo";
 
@@ -78,7 +78,7 @@ ButtonThatTriggersInvisibleInput.displayName = "ButtonThatTriggersInvisibleInput
 export type FileFieldArgs = {
   // required
   accept: string;
-  onChange: (event: { binaryString: string; file: File }) => void;
+  onChange: (event: { dataURL: string; file: File }) => void;
 
   // optional
   id?: string;
@@ -144,20 +144,20 @@ function FileField({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    readFileAsBinaryString(file)
-      .then((binaryString) => {
-        setFailedToLoad(false);
-        setSelectedFilename(file.name);
-        onChange({ binaryString, file });
-      })
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFailedToLoad(false);
+      setSelectedFilename(file.name);
+      onChange({ dataURL: reader.result as string, file });
       // reset value allows re-selection of last selected file
-      .then(() => {
-        event.target.value = "";
-      })
-      .catch((readError) => {
-        setFailedToLoad(true);
-        console.error("Failed to load file.", readError);
-      });
+      event.target.value = "";
+    };
+    reader.onerror = () => {
+      setFailedToLoad(true);
+      console.error("Failed to load file.", reader.error);
+    };
+    // base64 data URL ("data:<mime>;base64,...") that consumers can use directly
+    reader.readAsDataURL(file);
   };
 
   const helperText = failedToLoad ? "Failed to load file. Please try again." : "";

@@ -43,7 +43,7 @@ import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
 import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -72,7 +72,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
   public void setUp() throws Exception {
     super.setUp();
 
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
@@ -942,7 +942,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("5 g", retrievedSample.getQuantity().toQuantityInfo().toPlainString());
 
     // assert naming rsinv-148
-    Sample reloadedSample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
+    SampleEntity reloadedSample = sampleApiMgr.getSampleById(createdSample.getId(), testUser);
     IntStream.range(0, reloadedSample.getActiveSubSamplesCount())
         .forEach(
             i -> {

@@ -16,7 +16,8 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.UserManager;
@@ -73,7 +74,8 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
   @Override
   public ApiSample getApiSampleRevision(Long sampleId, Long revisionId) {
     ApiSample result = null;
-    Sample sample = getInventoryRecordRevision(Sample.class, sampleId, revisionId);
+    // must target SampleEntity so the Envers read resolves either discriminator value
+    SampleEntity sample = getInventoryRecordRevision(SampleEntity.class, sampleId, revisionId);
     if (sample != null) {
       initialiseInventoryRecordRelationships(sample);
       result = (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(sample);
@@ -115,7 +117,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
   }
 
   @Override
-  public ApiSampleTemplate getApiTemplateVersion(Sample currTemplate, Long version) {
+  public ApiSampleTemplate getApiTemplateVersion(SampleTemplate currTemplate, Long version) {
     if (version.equals(currTemplate.getVersion())) {
       return new ApiSampleTemplate(currTemplate);
     }
@@ -131,7 +133,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
   }
 
   @Override
-  public ApiSample getApiSampleVersion(Sample currentSample, Long version) {
+  public ApiSample getApiSampleVersion(SampleEntity currentSample, Long version) {
     if (version.equals(currentSample.getVersion())) {
       return (ApiSample) ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(currentSample);
     }
@@ -293,7 +295,7 @@ public class InventoryAuditApiManagerImpl implements InventoryAuditApiManager {
       Hibernate.initialize(((Container) record).getLocationsImageFileProperty());
     }
     if (record.isSubSample()) {
-      Sample connectedSample = ((SubSample) record).getSample();
+      SampleEntity connectedSample = ((SubSample) record).getSample();
       if (connectedSample != null) {
         initialiseInventoryRecordRelationships(connectedSample);
       }

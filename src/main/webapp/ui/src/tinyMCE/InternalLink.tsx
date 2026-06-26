@@ -22,7 +22,7 @@ import type { InternalLinkInsertParams, RevisionIdentifier, TinyMceEditor } from
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import UserDetails from "../components/UserDetails";
 import materialTheme from "../theme";
-import { getSorting, paginationOptions, stableSort } from "../util/table";
+import { getSorting, paginationOptions } from "../util/table";
 import type { Order } from "../util/types";
 
 type RevisionVersion = RevisionIdentifier;
@@ -278,7 +278,8 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
               emptyCol={true}
             />
             <TableBody>
-              {stableSort(revisions, getSorting(order, orderBy))
+              {revisions
+                .toSorted(getSorting(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((revision, index) => {
                   const isItemSelected = matchesVersion(revision.version, selected);

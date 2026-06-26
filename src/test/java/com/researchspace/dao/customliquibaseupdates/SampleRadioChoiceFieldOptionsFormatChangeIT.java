@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.ContainerDao;
-import com.researchspace.dao.SampleDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -30,8 +29,6 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
 
   private @Autowired ContainerDao containerDao;
 
-  private @Autowired SampleDao sampleDao;
-
   @After
   public void tearDown() throws Exception {
     super.tearDown();
@@ -45,8 +42,8 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
 
     // save sample in old format
     openTransaction();
-    Sample newSample = createSampleWithOldFormatRadioChoiceFields(user);
-    Sample persistedSample = sampleDao.persistSampleTemplate(newSample);
+    SampleTemplate newSample = createSampleWithOldFormatRadioChoiceFields(user);
+    SampleTemplate persistedSample = sampleTemplateDao.persistSampleTemplate(newSample);
     assertNotNull(persistedSample);
     List<InventoryEntityField> persistedFields = persistedSample.getActiveFields();
     commitTransaction();
@@ -111,7 +108,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
 
     // retrieve the sample
     openTransaction();
-    Sample retrievedSample = sampleDao.get(persistedSample.getId());
+    SampleTemplate retrievedSample = sampleTemplateDao.get(persistedSample.getId());
     assertNotNull(retrievedSample);
     List<InventoryEntityField> updatedFields = retrievedSample.getActiveFields();
     commitTransaction();
@@ -137,12 +134,12 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
    * Creates a simplified sample template with choice/radio fields that use old format
    * for storing defined options and selected options.
    */
-  private Sample createSampleWithOldFormatRadioChoiceFields(User user)
+  private SampleTemplate createSampleWithOldFormatRadioChoiceFields(User user)
       throws IllegalAccessException {
 
     // create sample template
-    Sample newSample = recordFactory.createSample("old-format options sample", user);
-    newSample.setTemplate(true);
+    SampleTemplate newSample =
+        recordFactory.createSampleTemplate("old-format options sample", user);
     // put subsample in workbench
     Container workbench = containerDao.getWorkbenchForUser(user);
     newSample.getSubSamples().get(0).moveToNewParent(workbench);

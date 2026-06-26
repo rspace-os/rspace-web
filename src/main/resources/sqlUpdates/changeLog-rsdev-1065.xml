@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+
+  <changeSet id="2026-06-11a-a" context="run" author="nico">
+    <comment>RSDEV-1065 add DTYPE discriminator column to the Sample table</comment>
+    <addColumn tableName="Sample">
+      <column name="DTYPE" type="varchar(20)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="2026-06-11a-b" context="run" author="nico">
+    <comment>RSDEV-1065 add DTYPE discriminator column to the Sample_AUD table</comment>
+    <addColumn tableName="Sample_AUD">
+      <column name="DTYPE" type="varchar(20)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="2026-06-11b-a" context="run" author="nico">
+    <comment>RSDEV-1065 backfill Sample.DTYPE from the legacy template flag</comment>
+    <update tableName="Sample">
+      <column name="DTYPE" value="SampleTemplate"/>
+      <where>template = 1</where>
+    </update>
+    <update tableName="Sample">
+      <column name="DTYPE" value="Sample"/>
+      <where>DTYPE IS NULL</where>
+    </update>
+  </changeSet>
+
+  <changeSet id="2026-06-11b-b" context="run" author="nico">
+    <comment>RSDEV-1065 backfill Sample_AUD.DTYPE from the legacy template flag so Envers can
+      resolve historical Sample/SampleTemplate revisions</comment>
+    <update tableName="Sample_AUD">
+      <column name="DTYPE" value="SampleTemplate"/>
+      <where>template = 1</where>
+    </update>
+    <update tableName="Sample_AUD">
+      <column name="DTYPE" value="Sample"/>
+      <where>DTYPE IS NULL</where>
+    </update>
+  </changeSet>
+
+  <changeSet id="2026-06-11c-a" context="run" author="nico">
+    <comment>RSDEV-1065 make Sample.DTYPE NOT NULL once backfilled (audit table stays nullable,
+      matching Envers conventions)</comment>
+    <addNotNullConstraint tableName="Sample" columnName="DTYPE" columnDataType="varchar(20)"/>
+  </changeSet>
+
+  <changeSet id="2026-06-11d-a" context="run" author="nico">
+    <comment>RSDEV-1065 drop the legacy boolean template column now that DTYPE has fully replaced it.
+      It was retained only as a vestigial backfill source for DTYPE and is no longer mapped by
+      Hibernate or read anywhere, so it is now removed from the live and audit tables.</comment>
+    <dropColumn tableName="Sample" columnName="template"/>
+    <dropColumn tableName="Sample_AUD" columnName="template"/>
+  </changeSet>
+
+</databaseChangeLog>

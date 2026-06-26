@@ -39,7 +39,6 @@ import ExportDialog from "../../../Export/ExportDialog";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
 import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
@@ -176,7 +175,10 @@ const UploadNewVersionMenuItem = ({
                * be available is whilst the listing is still loading or
                * there has been an error so we can just also error here.
                */
-              const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+              const idOfFolderThatFileIsIn = Result.fromNullable(
+                file.path.at(-1),
+                new Error("Current folder is not known"),
+              )
                 .map(({ id }) => id)
                 .orElseTry(() => FetchingData.getSuccessValue(folderId))
                 .mapError(() => new Error("Current folder is not known"))
@@ -188,9 +190,7 @@ const UploadNewVersionMenuItem = ({
                * it.
                */
               if (!files || files.length === 0) return;
-              const newFile = ArrayUtils.head([...files])
-                .mapError(() => new Error("No files selected"))
-                .elseThrow();
+              const newFile = Result.fromNullable(files.item(0), new Error("No files selected")).elseThrow();
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
                 .then(() => {
                   onSuccess();
@@ -1094,7 +1094,10 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                   type: newBlob.type,
                 },
               );
-              const idOfFolderThatFileIsIn = ArrayUtils.last(file.path)
+              const idOfFolderThatFileIsIn = Result.fromNullable(
+                file.path.at(-1),
+                new Error("Current folder is not known"),
+              )
                 .map(({ id }) => id)
                 .orElseTry(() => FetchingData.getSuccessValue(folderId))
                 .mapError(() => new Error("Current folder is not known"))

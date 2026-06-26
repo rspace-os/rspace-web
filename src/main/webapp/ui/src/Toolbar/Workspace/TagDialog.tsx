@@ -273,10 +273,12 @@ function TagDialog(): React.ReactNode {
                 }
                 let message = error.message;
                 if (error instanceof AggregateError) {
-                  details = ArrayUtils.filterClass(Error, [...error.errors]).map((e: Error) => ({
-                    title: e.message,
-                    variant: "error",
-                  }));
+                  details = error.errors
+                    .filter((e): e is Error => e instanceof Error)
+                    .map((e: Error) => ({
+                      title: e.message,
+                      variant: "error",
+                    }));
                   message = "There are multiple errors.";
                 }
                 console.error(error);

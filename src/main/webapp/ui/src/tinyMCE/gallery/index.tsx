@@ -4,7 +4,6 @@ import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
-import * as ArrayUtils from "@/util/ArrayUtils";
 import type RsSet from "@/util/set";
 
 declare global {
@@ -36,7 +35,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
       };
       newProps = yield newProps;
       const handleSubmit = (files: RsSet<GalleryFile>) => {
-        const localFiles = ArrayUtils.filterClass(LocalGalleryFile, files.toArray());
+        const localFiles = files.toArray().filter((file): file is LocalGalleryFile => file instanceof LocalGalleryFile);
         localFiles.forEach((file) => {
           const recordId = file.id;
 
@@ -57,7 +56,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
             }
           })();
         });
-        const remoteFiles = ArrayUtils.filterClass(RemoteFile, files.toArray());
+        const remoteFiles = files.toArray().filter((file): file is RemoteFile => file instanceof RemoteFile);
         remoteFiles.forEach((file) => {
           const json = {
             name: file.name,

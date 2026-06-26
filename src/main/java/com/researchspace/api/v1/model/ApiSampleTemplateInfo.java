@@ -3,10 +3,9 @@ package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.lang3.Validate;
 
 /** The SampleTemplate on which a Sample is based. Does not include fields. */
 @Data
@@ -58,11 +57,9 @@ public class ApiSampleTemplateInfo extends ApiSampleInfo {
     setType(ApiInventoryRecordType.SAMPLE_TEMPLATE);
   }
 
-  public ApiSampleTemplateInfo(Sample template) {
+  public ApiSampleTemplateInfo(SampleTemplate template) {
     super(template);
     setType(ApiInventoryRecordType.SAMPLE_TEMPLATE);
-    Validate.isTrue(
-        template.isTemplate(), String.format("Sample '%d' is not a template", template.getId()));
     setDefaultUnitId(template.getDefaultUnitId());
   }
 }

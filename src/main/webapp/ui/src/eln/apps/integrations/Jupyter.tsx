@@ -33,7 +33,7 @@ function Jupyter(): React.ReactNode {
             <li>
               <strong>Configure Jupyter instance for all notebooks:</strong> Follow the instructions in RSpace help docs
               to use pip to install RSpace client. Run a python cell with the following code:
-              <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
                 <strong>One time install step:</strong>
                 <Box
                   component="pre"
@@ -52,7 +52,7 @@ function Jupyter(): React.ReactNode {
             <li>
               <strong>Configure notebook:</strong> Follow the instructions in RSpace help docs to import the
               sync_notebook script.
-              <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
                 <strong>Do this step once per notebook:</strong>
                 <Box
                   component="pre"
@@ -70,7 +70,7 @@ function Jupyter(): React.ReactNode {
             </li>
             <li>
               <strong>Run the code:</strong>
-              <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
                 Paste this code into <strong>the last cell in the notebook:</strong>
                 <Box
                   component="pre"

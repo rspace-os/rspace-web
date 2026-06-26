@@ -1,48 +1,29 @@
 import type { GridColDef } from "@mui/x-data-grid";
+import { mapValues } from "es-toolkit";
 import type { Order } from "./types";
-import { mapObject } from "./Util";
 
-export function desc<T extends string, U>(a: { [K in T]: U }, b: { [K in T]: U }, orderBy: T): -1 | 0 | 1 {
-  if (b[orderBy] < a[orderBy]) {
+export function desc<Row>(a: Row, b: Row, orderBy: string): -1 | 0 | 1 {
+  // `orderBy` is a runtime string key, so reading it off a generic row is an
+  // inherently dynamic access. Sort values are strings or numbers, both of
+  // which order correctly under `<`/`>` at runtime; the numeric view here only
+  // satisfies the type checker and keeps the public signature row-generic.
+  const av = (a as Record<string, number>)[orderBy];
+  const bv = (b as Record<string, number>)[orderBy];
+  if (bv < av) {
     return -1;
   }
-  if (b[orderBy] > a[orderBy]) {
+  if (bv > av) {
     return 1;
   }
   return 0;
 }
 
-/*
- * Returns a copy of the given array, sorted according to the given compare
- * function, keeping the original order of elements where the compare function
- * returns 0.
- *
- * In all modern browsers, (since 2019) this behaviour is guaranteed
- * but not so for older browsers. For more information, see
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#sort_stability
- */
-export function stableSort<T>(array: ReadonlyArray<T>, cmp: (t1: T, t2: T) => -1 | 0 | 1): Array<T> {
-  const stabilizedThis: Array<[T, number]> = array.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
-    const order = cmp(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
-}
-
-export function getSorting<T extends string, U>(
-  order: Order,
-  orderBy: T,
-): (a: { [K in T]: U }, b: { [K in T]: U }) => -1 | 0 | 1 {
-  return (order === "desc" ? (a, b) => desc(a, b, orderBy) : (a, b) => -desc(a, b, orderBy)) as (
-    a: { [K in T]: U },
-    b: { [K in T]: U },
-  ) => -1 | 0 | 1;
+export function getSorting<Row>(order: Order, orderBy: string): (a: Row, b: Row) => -1 | 0 | 1 {
+  return order === "desc" ? (a, b) => desc(a, b, orderBy) : (a, b) => desc(b, a, orderBy);
 }
 
 const _transformObject = <T, U extends keyof T, V>(obj: T, map: { [K in U]: (t: T) => V }): { [K in U]: V } =>
-  mapObject((_k, v) => v(obj), map);
+  mapValues(map, (v) => v(obj));
 
 /**
  * Returns a value for the `pageSizeOptions` prop of pagination controls; the

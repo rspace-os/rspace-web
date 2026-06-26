@@ -8,7 +8,7 @@ import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
-import { getSorting, stableSort } from "../../util/table";
+import { getSorting } from "../../util/table";
 import type { BookingAndEquipmentDetails } from "./ClustermarketData";
 import { BookingType, Order } from "./Enums";
 
@@ -85,7 +85,7 @@ export default function ResultsTable({
             rowCount={results.length}
           />
           <TableBody>
-            {stableSort(results, getSorting(order, orderBy)).map((booking, index) => {
+            {results.toSorted(getSorting(order, orderBy)).map((booking, index) => {
               const isItemSelected =
                 selectedBookingIds.indexOf(
                   // @ts-expect-error looks like a mix up of id types

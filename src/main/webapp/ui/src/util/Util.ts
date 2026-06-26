@@ -1,14 +1,4 @@
-import * as ArrayUtils from "./ArrayUtils";
 import type { AllSettled } from "./types";
-
-/**
- * Bound a number between a minimum and maximum value.
- */
-export const clamp = (num: number, min: number, max: number): number => {
-  if (num > max) return max;
-  if (num < min) return min;
-  return num;
-};
 
 /**
  * Wrap an event handler function to prevent the event from bubbling up the
@@ -23,18 +13,6 @@ export const preventEventBubbling =
   };
 
 /**
- * Remove all null, undefined, and empty string values from an object.
- * @deprecated
- */
-export const omitNull = <T extends object>(obj: T): Partial<T> => {
-  (Object.keys(obj) as Array<keyof T>)
-    .filter((k) => obj[k] === null || obj[k] === "" || typeof obj[k] === "undefined")
-    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-    .forEach((k) => delete obj[k]);
-  return obj;
-};
-
-/**
  * Convert a string to title case, uppercasing the first letter of each word
  * and lowercasing the rest.
  */
@@ -46,97 +24,6 @@ export const toTitleCase = (str: string): string =>
  * string.
  */
 export const capitaliseJustFirstChar = (str: string): string => str.replace(/^\w/, (char) => char.toUpperCase());
-
-/**
- * Apply a function to each value in an object and return a new object with
- * the same keys.
- *
- * @arg f The function to apply to each value. The function will be called with
- *        the key and value.
- * @arg obj The object to map over.
- */
-export const mapObject = <K extends string | number | symbol, V, W>(
-  f: (k: K, v: V) => W,
-  obj: Record<K, V>,
-): Record<K, W> =>
-  // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
-  (Object.keys(obj) as Array<K>).reduce((acc, k) => ({ [k]: f(k, obj[k]), ...acc }), {} as Record<K, W>);
-
-/**
- * Apply a function to each key and value in an object and return a new object
- * with the new keys and values.
- *
- * @arg keyFunc   The function to apply to each key. The function will be
- *                called with the key and value.
- * @arg valueFunc The function to apply to each value. The function will be
- *                called with the key and value.
- * @arg obj       The object to map over.
- */
-export const mapObjectKeyAndValue = <K1 extends string | number | symbol, V1, K2 extends string | number | symbol, V2>(
-  keyFunc: (k1: K1, v1: V1) => K2,
-  valueFunc: (k1: K1, v1: V1) => V2,
-  obj: Record<K1, V1>,
-): Record<K2, V2> =>
-  (Object.keys(obj) as Array<K1>).reduce(
-    (acc, k) => {
-      acc[keyFunc(k, obj[k])] = valueFunc(k, obj[k]);
-      return acc;
-    },
-    {} as Record<K2, V2>,
-  );
-
-/**
- * Flow doesn't support Object.values so this function provides a wrapper
- * around the handy method that has the correct type.
- */
-export const values = <K extends string | number | symbol, V>(obj: Record<K, V>): Array<V> => Object.values(obj);
-
-/**
- * Filters an object in much the same way that Array.prototype.filter filters
- * arrays.
- *
- * @example
- *  filterObject(
- *    (key, value) => key !== "foo" && value > 3,
- *    { foo: 4, bar: 2, baz: 5 }
- *  )    // { baz: 5 }
- */
-export const filterObject = <K extends string | number | symbol, V>(
-  f: (key: K, value: V) => boolean,
-  obj: Record<K, V>,
-): Record<K, V> =>
-  Object.fromEntries((Object.entries(obj) as Array<[K, V]>).filter(([key, value]) => f(key, value))) as Record<K, V>;
-
-/**
- * Swaps the key for values and the values for keys.
- */
-export const invertObject = <K extends string | number | symbol, V extends string | number | symbol>(
-  obj: Record<K, V>,
-): { [k: string]: K } => {
-  return Object.fromEntries((Object.entries(obj) as Array<[K, V]>).map(([k, v]) => [v, k]));
-};
-
-/**
- * Checks the equality of two objects, where we define equality to be the
- * same keys and the same (primitive) values
- */
-export const sameKeysAndValues = (obj1: object, obj2: object): boolean =>
-  ArrayUtils.zipWith(Object.entries(obj1), Object.entries(obj2), ([k1, v1], [k2, v2]) => k1 === k2 && v1 === v2).every(
-    Boolean,
-  );
-
-/**
- * Basically the same as the `delete` keyword, but in an immutable way, that is
- * easier for flow to type check.
- */
-export const dropProperty = <Key extends string, Rest extends Record<Key, unknown>>(
-  obj: { [K in Key]: unknown } & Rest,
-  key: Key,
-): Rest => {
-  const copy = { ...obj };
-  delete copy[key];
-  return copy;
-};
 
 /**
  * Basic pattern matching
@@ -193,21 +80,6 @@ export const isoToLocale = (isoString: string, { locale, dateOnly }: IsoToLocalO
 };
 
 /**
- * Creates an object by applying a function to each element of a list and using
- * the result as the value of the object.
- */
-export const listToObject = <T extends string | number | symbol, V>(
-  list: Array<T>,
-  f: (t: T) => V,
-): { [k: string]: V } => Object.fromEntries(list.map((x) => [x, f(x)]));
-
-/**
- * Returns a promise the resolves after a given number of milliseconds.
- */
-export const sleep = (milliseconds: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, milliseconds));
-
-/**
  * Returns a new map with only the key-value pairs that satisfy the predicate.
  */
 export const filterMap = <A, B>(map: Map<A, B>, f: (a: A, b: B) => boolean): Map<A, B> =>
@@ -241,18 +113,6 @@ export const partitionAllSettled = <A>(
 };
 
 /**
- * A promise wrapper around FileReader.readAsBinaryString
- */
-export const readFileAsBinaryString = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsBinaryString(file);
-  });
-};
-
-/**
  * Checks if a date is valid. Note that `parseDate` in ./parsers is probably
  * what you want instead as the type checker will refine the type of the passed
  * string.
@@ -260,23 +120,11 @@ export const readFileAsBinaryString = (file: File): Promise<string> => {
 export const isValidDate = (str: string): boolean => new Date(str).toString() !== "Invalid Date";
 
 /**
- * Checks if a string is a valid URL.
- */
-export const isUrl = (str: string): boolean => {
-  try {
-    new URL(str);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
  * Checks if a string is a valid Inventory URL to a container, sample,
  * template, or subsample.
  */
 export const isInventoryPermalink = (str: string): boolean => {
-  return isUrl(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str);
+  return URL.canParse(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str);
 };
 
 /**

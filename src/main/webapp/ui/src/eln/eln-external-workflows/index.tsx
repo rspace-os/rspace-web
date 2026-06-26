@@ -1,5 +1,18 @@
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import ExternalWorkflowInvocations from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
+
+const externalWorkflowRoots = new WeakMap<Element, Root>();
+
+function getExternalWorkflowRoot(container: Element): Root {
+  const existingRoot = externalWorkflowRoots.get(container);
+  if (existingRoot) {
+    return existingRoot;
+  }
+
+  const root = createRoot(container);
+  externalWorkflowRoots.set(container, root);
+  return root;
+}
 
 /**
  * ExternalWorkflows (eg Galaxy) represents remote computation. RSpace will display a data table
@@ -25,7 +38,7 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
       // @ts-expect-error style does exist on HTMLDivElement
       wrapperDiv.style.position = "relative";
     }
-    const root = createRoot(wrapperDiv);
+    const root = getExternalWorkflowRoot(wrapperDiv);
     root.render(<ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId} />);
   });
 };

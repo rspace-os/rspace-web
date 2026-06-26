@@ -2,10 +2,12 @@ import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import type * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
+
+const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 function handleErrors(
   response: unknown,
@@ -141,7 +143,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         console.error(e);
         const errorMsg = Parsers.objectPath(["response", "data", "errors"], e)
           .flatMap(Parsers.isArray)
-          .flatMap(ArrayUtils.head)
+          .flatMap(firstResult)
           .flatMap(Parsers.isString)
           .orElse("Unknown error");
         addAlert(
@@ -186,7 +188,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         console.error(e);
         const errorMsg = Parsers.objectPath(["response", "data", "errors"], e)
           .flatMap(Parsers.isArray)
-          .flatMap(ArrayUtils.head)
+          .flatMap(firstResult)
           .flatMap(Parsers.isString)
           .orElse("Unknown error");
         addAlert(
@@ -274,7 +276,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isNotNull)
           .flatMap(Parsers.getValueWithKey("errors"))
           .flatMap(Parsers.isArray)
-          .flatMap(ArrayUtils.head)
+          .flatMap(firstResult)
           .flatMap(Parsers.isString)
           .orElse("Error loading S3 filestores"),
       );

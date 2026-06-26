@@ -4,7 +4,6 @@ import { getErrorMessage } from "@/util/error";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import type RsSet from "../../util/set";
@@ -24,6 +23,9 @@ const ONE_MINUTE_IN_MS = 60 * 1000;
 // Uploads need longer than the gallery clients' 1-minute default.
 const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 
+const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
+
 /**
  * Best error message from a failed filestore API call: the first non-blank entry of the
  * BindException `errors` array, else `data.message`/`exceptionMessage` via getErrorMessage. A 403
@@ -32,7 +34,7 @@ const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 function firstErrorMessage(e: unknown): string {
   return Parsers.objectPath(["response", "data", "errors"], e)
     .flatMap(Parsers.isArray)
-    .flatMap(ArrayUtils.head)
+    .flatMap(firstResult)
     .flatMap(Parsers.isString)
     .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
     .orElse(getErrorMessage(e, "Unknown error"));
@@ -358,9 +360,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -410,9 +410,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -608,9 +606,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
