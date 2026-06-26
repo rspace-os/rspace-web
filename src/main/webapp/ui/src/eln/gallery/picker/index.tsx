@@ -165,35 +165,35 @@ const Picker = observer(
                       supports2xZoom: true,
                     }}
                   />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      height: "calc(100% - 48px)",
-                    }}
-                  >
-                    <Sidebar
-                      selectedSection={selectedSection}
-                      setSelectedSection={(mediaType) => {
-                        setSelectedSection(mediaType);
-                        setPath([]);
-                        setAppliedSearchTerm("");
-                      }}
-                      drawerOpen={drawerOpen}
-                      setDrawerOpen={setDrawerOpen}
-                      folderId={folderId}
-                      refreshListing={refreshListing}
-                      id={sidebarId}
-                    />
+                  <ThemeProvider theme={raisedZIndexTheme}>
                     <Box
                       sx={{
-                        height: "100%",
                         display: "flex",
-                        flexDirection: "column",
-                        flexGrow: 1,
-                        width: "calc(100% - 200px)",
+                        height: "calc(100% - 48px)",
                       }}
                     >
-                      <ThemeProvider theme={raisedZIndexTheme}>
+                      <Sidebar
+                        selectedSection={selectedSection}
+                        setSelectedSection={(mediaType) => {
+                          setSelectedSection(mediaType);
+                          setPath([]);
+                          setAppliedSearchTerm("");
+                        }}
+                        drawerOpen={drawerOpen}
+                        setDrawerOpen={setDrawerOpen}
+                        folderId={folderId}
+                        refreshListing={refreshListing}
+                        id={sidebarId}
+                      />
+                      <Box
+                        sx={{
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          flexGrow: 1,
+                          width: "calc(100% - 200px)",
+                        }}
+                      >
                         <MainPanel
                           selectedSection={selectedSection}
                           path={path}
@@ -212,25 +212,25 @@ const Picker = observer(
                           appliedSearchTerm={appliedSearchTerm}
                           setAppliedSearchTerm={setAppliedSearchTerm}
                         />
-                      </ThemeProvider>
-                      <DialogActions>
-                        <Button onClick={() => onClose()}>Cancel</Button>
-                        <ValidatingSubmitButton
-                          validationResult={
-                            selection.size > 0
-                              ? Result.all(...selection.asSet().map(validateSelection)).map(() => null)
-                              : Result.Error([new Error("Select at least one file to proceed.")])
-                          }
-                          loading={false}
-                          onClick={() => {
-                            onSubmit(selection.asSet());
-                          }}
-                        >
-                          Add
-                        </ValidatingSubmitButton>
-                      </DialogActions>
+                        <DialogActions>
+                          <Button onClick={() => onClose()}>Cancel</Button>
+                          <ValidatingSubmitButton
+                            validationResult={
+                              selection.size > 0
+                                ? Result.all(...selection.asSet().map(validateSelection)).map(() => null)
+                                : Result.Error([new Error("Select at least one file to proceed.")])
+                            }
+                            loading={false}
+                            onClick={() => {
+                              onSubmit(selection.asSet());
+                            }}
+                          >
+                            Add
+                          </ValidatingSubmitButton>
+                        </DialogActions>
+                      </Box>
                     </Box>
-                  </Box>
+                  </ThemeProvider>
                 </Dialog>
               </OpenFolderProvider>
             </CallableSnippetPreview>
