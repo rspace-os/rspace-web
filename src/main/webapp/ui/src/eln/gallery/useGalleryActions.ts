@@ -4,7 +4,6 @@ import { getErrorMessage } from "@/util/error";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import type RsSet from "../../util/set";
@@ -20,6 +19,9 @@ import {
 } from "./useGalleryListing";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+
+const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 /**
  * The destination of a move operation.
@@ -306,9 +308,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -358,9 +358,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -475,9 +473,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>

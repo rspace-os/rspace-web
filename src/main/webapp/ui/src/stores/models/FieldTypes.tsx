@@ -8,7 +8,6 @@ import ShortTextOutlinedIcon from "@mui/icons-material/ShortTextOutlined";
 import SubjectOutlinedIcon from "@mui/icons-material/SubjectOutlined";
 import type React from "react";
 import NumberIcon from "../../components/NumberIcon";
-import { listToObject } from "../../util/Util";
 
 export const FieldTypes: { [fieldName: string]: symbol } = {
   choice: Symbol.for("choice"),
@@ -137,8 +136,6 @@ export const FIELD_DATA: {
     help: string;
     label: string;
   };
-} = listToObject(Object.values(FieldTypes), (f) => ({
-  icon: FIELD_ICON[f],
-  help: FIELD_HELP_TEXT[f],
-  label: FIELD_LABEL[f],
-}));
+} = Object.fromEntries(
+  Object.values(FieldTypes).map((f) => [f, { icon: FIELD_ICON[f], help: FIELD_HELP_TEXT[f], label: FIELD_LABEL[f] }]),
+);

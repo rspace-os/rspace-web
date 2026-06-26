@@ -29,9 +29,12 @@ import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/Val
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
-import * as ArrayUtils from "../../util/ArrayUtils";
+import { Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
 import { DataGridColumn } from "../../util/table";
+
+const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -176,7 +179,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
         if (e instanceof Error) {
           const message = Parsers.objectPath(["response", "data", "data", "validationErrors"], e)
             .flatMap(Parsers.isArray)
-            .flatMap(ArrayUtils.head)
+            .flatMap(firstResult)
             .flatMap(Parsers.isObject)
             .flatMap(Parsers.isNotNull)
             .flatMap(Parsers.getValueWithKey("message"))
@@ -436,7 +439,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                 rows={notebooks ?? []}
                 selectedRowId={selectedNotebook?.metadata.project_id}
                 onSelectionChange={(newSelectionId) => {
-                  ArrayUtils.find((n) => n.metadata.project_id === newSelectionId, notebooks ?? []).do(
+                  Optional.fromNullable((notebooks ?? []).find((n) => n.metadata.project_id === newSelectionId)).do(
                     (newlySelectedNotebook) => {
                       setSelectedNotebook(newlySelectedNotebook);
                       void fetchIdentifierColumn(newlySelectedNotebook.metadata.project_id);

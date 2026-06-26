@@ -11,7 +11,6 @@ import TextField from "@mui/material/TextField";
 import React, { useEffect } from "react";
 import DateField2 from "../../components/Inputs/DateField";
 import { truncateIsoTimestamp } from "../../stores/definitions/Units";
-import { stableSort } from "../../util/table";
 
 export default function Filter({
   filter,
@@ -262,7 +261,7 @@ export default function Filter({
             <FormControl fullWidth>
               <Autocomplete
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                options={stableSort(Object.values(config.enumObj), (a: any, b: any) => a.label.localeCompare(b.label))}
+                options={Object.values(config.enumObj).toSorted((a: any, b: any) => a.label.localeCompare(b.label))}
                 renderInput={(props) => <TextField variant="outlined" {...props} label={config.label} />}
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 getOptionLabel={(option: any) => {

@@ -1,3 +1,4 @@
+import { isEqual, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
 import type { AxiosProgressEvent } from "@/common/axios";
@@ -5,7 +6,6 @@ import ApiService from "../../common/InvApiService";
 import { decodeTagString, encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { SortProperty } from "../../Inventory/components/Tables/SortableProperty";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { getErrorMessage } from "../../util/error";
 import { capImageAt1MB } from "../../util/images";
 import { Optional } from "../../util/optional";
@@ -13,8 +13,7 @@ import * as Parsers from "../../util/parsers";
 import { noProgress, type Progress } from "../../util/progress";
 import Result from "../../util/result";
 import type { _LINK, BlobUrl, URL as URLType } from "../../util/types";
-import { isoToLocale, match, sameKeysAndValues } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
+import { isoToLocale, match } from "../../util/Util";
 import { type Alert, mkAlert } from "../contexts/Alert";
 import type { Attachment } from "../definitions/Attachment";
 import type { BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcode";
@@ -590,7 +589,9 @@ export default class InventoryBaseRecord
 
     if (this.currentlyEditableFields.has("image")) params.newBase64Image = this.newBase64Image;
     if (this.currentlyEditableFields.has("barcodes"))
-      params.barcodes = ArrayUtils.filterClass(PersistedBarcode, this.barcodes).map((b) => b.paramsForBackend);
+      params.barcodes = this.barcodes
+        .filter((barcode): barcode is PersistedBarcode => barcode instanceof PersistedBarcode)
+        .map((b) => b.paramsForBackend);
     if (this.currentlyEditableFields.has("identifiers")) params.identifiers = this.identifiers.map((i) => i.toJson());
     if (this.currentlyEditableFields.has("sharingMode")) params.sharingMode = this.sharingMode;
     if (this.currentlyEditableFields.has("sharedWith")) params.sharedWith = this.sharedWith;
@@ -622,7 +623,8 @@ export default class InventoryBaseRecord
     };
 
     const validateExtraFields = () => {
-      if (!ArrayUtils.allAreUnique(this.fieldNamesInUse)) return IsInvalid("All field names must be distinct.");
+      if (new Set(this.fieldNamesInUse).size !== this.fieldNamesInUse.length)
+        return IsInvalid("All field names must be distinct.");
       return allAreValid(this.extraFields.map((e) => e.isValid));
     };
 
@@ -1348,7 +1350,6 @@ export default class InventoryBaseRecord
       } else if (typeChanged) {
         attrs.link = null;
       }
-      const justNameAndType = pick("name", "type");
       const existingLink = field.link;
       const incomingLink = updatedField.link;
       const linkUnchanged =
@@ -1358,8 +1359,7 @@ export default class InventoryBaseRecord
           existingLink.relationType === incomingLink.relationType &&
           existingLink.targetGlobalId === incomingLink.targetGlobalId &&
           (existingLink.versionPin ?? null) === (incomingLink.versionPin ?? null));
-      const areEqual =
-        sameKeysAndValues(justNameAndType(field) as object, justNameAndType(updatedField) as object) && linkUnchanged;
+      const areEqual = isEqual(pick(field, ["name", "type"]), pick(updatedField, ["name", "type"])) && linkUnchanged;
       if (areEqual) {
         field.setAttributes(attrs);
       } else {
@@ -1473,10 +1473,9 @@ export default class InventoryBaseRecord
 
   setImage(
     imageName: "image" | "locationsImage",
-    canvasId: string,
   ): ({ dataURL, file }: { dataURL: string; file: Blob }) => Promise<void> {
     return async ({ dataURL, file }: { dataURL: string; file: Blob }) => {
-      const scaledImage = await capImageAt1MB(file, dataURL, canvasId);
+      const scaledImage = await capImageAt1MB(file, dataURL);
       this.setAttributesDirty({
         ...(imageName === "image"
           ? {

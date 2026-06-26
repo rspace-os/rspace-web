@@ -1,8 +1,8 @@
 import { type GridLayout, NUMERICAL_AXES } from "@/stores/definitions/container/types";
 import { layoutToLabel } from "@/util/labels";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { lift2, Optional } from "../../util/optional";
 import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 import type { GlobalId } from "../definitions/BaseRecord";
 import type { Container, Location } from "../definitions/Container";
 import type { Factory } from "../definitions/Factory";
@@ -16,6 +16,9 @@ import type { Person } from "../definitions/Person";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type InventoryBaseRecord from "./InventoryBaseRecord";
 import type { InventoryBaseRecordEditableFields, InventoryBaseRecordUneditableFields } from "./InventoryBaseRecord";
+
+const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 /**
  * Inventory records that model items that physically exist and thus have a
@@ -69,7 +72,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
       const [factory, params] = args as [factory: Factory, params: object];
       this.immediateParentContainer = Parsers.getValueWithKey("parentContainers")(params)
         .flatMap(Parsers.isArray)
-        .flatMap(ArrayUtils.head)
+        .flatMap(firstResult)
         .map(
           (immediateParentContainerParams) =>
             factory.newRecord(

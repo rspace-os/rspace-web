@@ -30,7 +30,6 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Typography from "@mui/material/Typography";
 import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
 import type { URL as Url } from "../../../util/types";
 import { useFolderOpen } from "./OpenFolderProvider";
@@ -281,7 +280,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
                   });
                 Parsers.objectPath(["error", "errorMessages"], data)
                   .flatMap(Parsers.isArray)
-                  .flatMap(ArrayUtils.head)
+                  .flatMap((array) => Parsers.isNotBottom(array.at(0)))
                   .flatMap(Parsers.isString)
                   .do((msg) => {
                     throw new Error(msg);

@@ -11,7 +11,6 @@ import type { Option } from "../../../stores/definitions/Field";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import type FieldModel from "../../../stores/models/FieldModel";
 import { hasOptions } from "../../../stores/models/FieldTypes";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import { match } from "../../../util/Util";
 import { DATACITE_RELATION_TYPES } from "../../components/Fields/Link/dataciteRelationTypes";
 import CustomField from "../../components/Inputs/CustomField";
@@ -104,7 +103,7 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
     | "Uri";
 
   const fieldValue = match<void, () => unknown>([
-    [() => field.type === "radio", () => ArrayUtils.head(field.selectedOptions ?? []).orElse(null)],
+    [() => field.type === "radio", () => field.selectedOptions?.at(0) ?? null],
     [() => field.type === "choice", () => field.selectedOptions ?? []],
     [() => true, () => field.content],
   ])()();
@@ -179,12 +178,12 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
     props.hideWhenDisabled = false;
     props.onOptionChange = (index: number, changedOption: Option) => {
       field.setAttributesDirty({
-        options: ArrayUtils.splice(field.options, index, 1, changedOption),
+        options: field.options.toSpliced(index, 1, changedOption),
       });
     };
     props.onOptionRemove = (index: number) => {
       field.setAttributesDirty({
-        options: ArrayUtils.splice(field.options, index, 1),
+        options: field.options.toSpliced(index, 1),
       });
     };
   }

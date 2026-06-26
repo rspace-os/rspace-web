@@ -1,12 +1,12 @@
+import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import ApiService from "../../common/InvApiService";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
-import RsSet from "../../util/set";
+import type RsSet from "../../util/set";
 import type { _LINK } from "../../util/types";
-import { pick } from "../../util/unsafeUtils";
 import { mkAlert } from "../contexts/Alert";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
@@ -215,7 +215,8 @@ export default class SubSampleModel
     if (this.state === "edit") {
       const newNote: Note = {
         ...params,
-        createdBy: pick("firstName", "lastName", "id")(getRootStore().peopleStore.currentUser),
+        // biome-ignore lint/style/noNonNullAssertion: currentUser is non-null for any authenticated session
+        createdBy: pick(getRootStore().peopleStore.currentUser!, ["firstName", "lastName", "id"]),
         created: new Date().toISOString(),
       };
       this.setAttributesDirty({
@@ -431,11 +432,11 @@ export class SubSampleCollection
   }
 
   get sameQuantityUnits(): boolean {
-    return new RsSet(this.records.map((r) => getUnitId(r.quantity))).size === 1;
+    return new Set(Array.from(this.records, (r) => getUnitId(r.quantity))).size === 1;
   }
 
   get fieldValues(): BatchSubSampleEditableFields {
-    const currentQuanities = new RsSet(this.records.map((r) => getValue(r.quantity)));
+    const currentQuanities = new Set(Array.from(this.records, (r) => getValue(r.quantity)));
 
     return {
       ...super.fieldValues,
@@ -454,7 +455,7 @@ export class SubSampleCollection
   get noValueLabel(): {
     [key in keyof BatchSubSampleEditableFields]: string | null;
   } {
-    const currentQuanities = new RsSet(this.records.map((r) => getValue(r.quantity)));
+    const currentQuanities = new Set(Array.from(this.records, (r) => getValue(r.quantity)));
     return {
       ...super.noValueLabel,
       quantity: currentQuanities.size === 1 ? null : "Varies",

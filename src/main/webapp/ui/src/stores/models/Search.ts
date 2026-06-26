@@ -1,3 +1,4 @@
+import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type { Instrument } from "@/stores/definitions/Instrument";
 import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
@@ -12,14 +13,14 @@ import * as Parsers from "../../util/parsers";
 import { noProgress } from "../../util/progress";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
-import { mapObject, match, omitNull, sameKeysAndValues } from "../../util/Util";
+import { match } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import { type GlobalId, getSavedGlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
 import type { Basket } from "../definitions/Basket";
 import type { Editable } from "../definitions/Editable";
 import type { Factory } from "../definitions/Factory";
 import type { Quantity } from "../definitions/HasQuantity";
-import type { ApiRecordType, InventoryRecord } from "../definitions/InventoryRecord";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
 import type { Person, Username } from "../definitions/Person";
 import type { Sample } from "../definitions/Sample";
 import type {
@@ -426,16 +427,21 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
-        ({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted,
-      );
-      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
-        (r) => r.type === "SAMPLE" && r.canBeDeleted,
-      );
+      const samplesThatCouldNotBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(isNotNil)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(isNotNil)
+        .filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
-        ...ArrayUtils.filterNull(data.results.filter(({ error }) => !error).map(({ record }) => record))
+        ...data.results
+          .filter(({ error }) => !error)
+          .map(({ record }) => record)
+          .filter(isNotNil)
           .filter((record) => record.type !== "SAMPLE")
           /*
            * The list is reversed because the server processes each record in
@@ -466,17 +472,20 @@ export default class Search implements SearchInterface {
             variant: "error",
             title: "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
-            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${ArrayUtils.head(ss.parentContainers)
-                .map(({ name, globalId }) => `(in ${name} ${globalId ?? ""})`)
-                .orElse("")}`,
-              variant: "error",
-              record: factory.newRecord({
-                ...ss,
-                sample: s,
-                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-              } as any as Record<string, unknown> & { globalId: GlobalId }),
-            })),
+            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => {
+              const parentContainer = ss.parentContainers.at(0);
+              return {
+                title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
+                  parentContainer ? `(in ${parentContainer.name} ${parentContainer.globalId ?? ""})` : ""
+                }`,
+                variant: "error",
+                record: factory.newRecord({
+                  ...ss,
+                  sample: s,
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                } as any as Record<string, unknown> & { globalId: GlobalId }),
+              };
+            }),
             actionLabel: "Move all to trash",
             onActionClick: () => {
               void this.deleteRecords(records, { forceDelete: true });
@@ -560,9 +569,8 @@ export default class Search implements SearchInterface {
 
   offerToDeleteNowEmptySamples(deletedRecords: Array<InventoryRecord>) {
     const { uiStore, searchStore } = getRootStore();
-    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = ArrayUtils.filterClass(
-      SubSampleModel,
-      deletedRecords,
+    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = deletedRecords.filter(
+      (record): record is SubSampleModel => record instanceof SubSampleModel,
     );
     const samplesOfDeletedSubSamples: Array<SampleModel> = justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
     /*
@@ -1154,9 +1162,9 @@ export default class Search implements SearchInterface {
       trackingStore.trackEvent("user:export:selection:Inventory", {
         ...exportOptions,
         count: {
-          ...mapObject(
-            (_type: ApiRecordType, list) => list.length,
-            ArrayUtils.groupBy(({ type }) => type, records),
+          ...mapValues(
+            groupBy(records, ({ type }) => type),
+            (list) => list.length,
           ),
           total: records.length,
         },
@@ -1356,7 +1364,7 @@ export default class Search implements SearchInterface {
     const searchParameterBefore = this.fetcher.serialize;
     const resolved = await promise;
     const searchParameterAfter = this.fetcher.serialize;
-    if (!sameKeysAndValues(searchParameterBefore, searchParameterAfter))
+    if (!isEqual(searchParameterBefore, searchParameterAfter))
       throw new InvalidState("Search parameters have changed, cancelling search.");
     return resolved;
   }
@@ -1408,7 +1416,7 @@ export default class Search implements SearchInterface {
       }
     }
 
-    return this.fetcher.performInitialSearch(omitNull(params));
+    return this.fetcher.performInitialSearch(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined"));
   }
 
   get allowedStatusFilters(): RsSet<DeletedItems> {

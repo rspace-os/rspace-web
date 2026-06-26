@@ -10,7 +10,6 @@ import { capImageAt1MB } from "../../../util/images";
 import type { BlobUrl } from "../../../util/types";
 import BatchFormField from "../Inputs/BatchFormField";
 
-const CANVAS_ID = "previewCanvas";
 const MAX = 25;
 
 function Image<
@@ -43,7 +42,7 @@ function Image<
           <ImageField
             storeImage={({ dataURL, file }) => {
               void (async () => {
-                const scaledImage = await capImageAt1MB(file, dataURL, CANVAS_ID);
+                const scaledImage = await capImageAt1MB(file, dataURL);
                 fieldOwner.setFieldsDirty({
                   image: scaledImage,
                   newBase64Image: scaledImage,
@@ -58,7 +57,6 @@ function Image<
             noValueLabel={fieldOwner.noValueLabel.image}
             alt={alt}
           />
-          <canvas id={CANVAS_ID} style={{ display: "none" }} />
           {tooManytoBatchThis && (
             <Alert severity="info">The image can only be edited when no more than 25 items are selected.</Alert>
           )}

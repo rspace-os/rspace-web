@@ -208,7 +208,7 @@ const IdentifierWrapper = observer(
             label="Include Inventory fields on landing page"
           />
           {editable && (
-            <Typography variant="body2">
+            <Typography variant="body2" component="div">
               The following fields will be included:
               <ul>
                 <li>Description</li>

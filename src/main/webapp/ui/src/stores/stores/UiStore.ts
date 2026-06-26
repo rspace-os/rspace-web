@@ -1,10 +1,10 @@
+import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
 import type React from "react";
 import { isMobile } from "react-device-detect";
 import theme from "../../theme";
 import type { Panel } from "../../util/types";
 import { match } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
 import type { Alert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
 
@@ -119,7 +119,7 @@ export default class UiStore {
     });
     this.updateViewportSize();
     this.sidebarOpen = Object.values(
-      pick("md", "lg", "xl")(breakpoints) as Pick<typeof breakpoints, "md" | "lg" | "xl">,
+      pick(breakpoints, ["md", "lg", "xl"]),
       // @ts-expect-error this.viewportSize is initialised by the updateViewportSize call above
     ).includes(this.viewportSize);
   }

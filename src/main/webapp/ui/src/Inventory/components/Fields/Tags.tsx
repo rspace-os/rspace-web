@@ -6,7 +6,6 @@ import TagListing from "../../../components/Tags/TagListing";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import type { Tag } from "../../../stores/definitions/Tag";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MAX_TOTAL = 8000;
@@ -59,7 +58,7 @@ function Tags<
             ? {
                 onDelete: (index) => {
                   fieldOwner.setFieldsDirty({
-                    tags: ArrayUtils.splice(fieldOwner.fieldValues.tags, index, 1),
+                    tags: fieldOwner.fieldValues.tags.toSpliced(index, 1),
                   });
                 },
               }

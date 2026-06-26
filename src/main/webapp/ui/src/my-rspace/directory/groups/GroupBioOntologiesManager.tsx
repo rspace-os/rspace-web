@@ -129,7 +129,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
               Allow BioPortal Ontologies to be used for tag suggestions
             </DialogTitle>
             <DialogContent>
-              <DialogContentText>
+              <DialogContentText component="div">
                 Allowing BioPortal Ontologies for tags will query data from the
                 <a href={"https://bioportal.bioontology.org/ontologies"} target={"_blank"} rel="noreferrer">
                   {" "}

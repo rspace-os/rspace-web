@@ -32,7 +32,6 @@ import type { HasEditableFields } from "../../../../stores/definitions/Editable"
 import type { Factory } from "../../../../stores/definitions/Factory";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { barcodeFormatAsString } from "../../../../util/barcode";
 import { match } from "../../../../util/Util";
 import BarcodeScanner from "../../BarcodeScanner/BarcodeScanner";
@@ -74,12 +73,12 @@ const CollapseContents = observer(
       const index = barcodes.indexOf(b);
       const deleted = b.deletedCopy();
       if (!deleted) {
-        const newBarcodes = ArrayUtils.splice(barcodes, index, 1);
+        const newBarcodes = barcodes.toSpliced(index, 1);
         fieldOwner.setFieldsDirty({
           barcodes: newBarcodes,
         });
       } else {
-        const newBarcodes = ArrayUtils.splice(barcodes, index, 1, deleted);
+        const newBarcodes = barcodes.toSpliced(index, 1, deleted);
         fieldOwner.setFieldsDirty({
           barcodes: newBarcodes,
         });
