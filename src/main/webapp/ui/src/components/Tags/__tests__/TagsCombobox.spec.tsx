@@ -53,8 +53,8 @@ describe("TagsCombobox (ontologies, paginated)", () => {
 
     await pageObj.scrollListToBottom();
 
-    // Scrolling near the end triggers a fetch for pos=1 (the migration-critical
-    // behaviour), and a page-1 tag near the scrolled position becomes visible.
+    // Scrolling near the end triggers a fetch for pos=1, and a page-1 tag near
+    // the scrolled position becomes visible.
     await expect.poll(() => requestedPositions, { timeout: 10000 }).toContain(1);
     await expect.element(pageObj.option("tag-040")).toBeVisible();
   });
