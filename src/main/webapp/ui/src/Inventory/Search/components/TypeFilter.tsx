@@ -156,7 +156,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             primary="Sample Templates"
             secondary={match<void, string>([
               [() => search.benchSearch, "Sample Templates cannot be found on benches."],
-              [() => search.fetcher.parentIsContainer, "Templates cannot be found in containers."],
+              [() => search.fetcher.parentIsContainer, "Sample Templates cannot be found in containers."],
               [() => true, ""],
             ])()}
           />

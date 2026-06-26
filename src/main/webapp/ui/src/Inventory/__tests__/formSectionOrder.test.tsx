@@ -64,6 +64,9 @@ vi.mock("../Sample/Fields/Template/Template", () => ({
 vi.mock("../Instrument/Fields/InstrumentTemplateField", () => ({
   default: vi.fn(() => <div></div>),
 }));
+vi.mock("../InstrumentTemplate/Fields/InstrumentsList", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 vi.mock("../Sample/Fields/Quantity", () => ({
   default: vi.fn(() => <div></div>),
 }));

@@ -110,7 +110,7 @@ describe("InstrumentModel constructor", () => {
     expect(instrument.cardTypeLabel).toBe("Instrument");
   });
 
-  test("is not usable in Lists of Materials", () => {
+  test("is usable in Lists of Materials", () => {
     const instrument = makeMockInstrument();
     expect(instrument.usableInLoM).toBe(true);
   });

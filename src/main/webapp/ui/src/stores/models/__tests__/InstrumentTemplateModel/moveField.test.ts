@@ -149,9 +149,7 @@ describe("action: moveField", () => {
       const lastField = template.fields[template.fields.length - 1];
       template.moveField(lastField, 0);
       template.fields.forEach((f, i) => {
-        import("../../FieldModel").then(({ default: FieldModel }) => {
-          expect((f as InstanceType<typeof FieldModel>).columnIndex).toBe(i + 1);
-        });
+        expect(f.columnIndex).toBe(i + 1);
       });
     });
 

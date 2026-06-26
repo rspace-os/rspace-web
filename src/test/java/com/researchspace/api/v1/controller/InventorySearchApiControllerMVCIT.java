@@ -103,7 +103,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
             .perform(
                 createBuilderForGet(API_VERSION.ONE, apiKey, "/search", anyUser)
                     .param("query", "sa*")
-                    .param("resultType", "TEMPLATE"))
+                    .param("resultType", "SAMPLE_TEMPLATE"))
             .andExpect(status().isOk())
             .andReturn();
     assertNull(result.getResolvedException());
@@ -249,7 +249,8 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     String exceptionMessage = result.getResolvedException().getMessage();
     assertTrue(
         exceptionMessage.contains(
-            "Requested result type must be SAMPLE, SUBSAMPLE, CONTAINER or TEMPLATE"),
+            "Requested result type must be one of: SAMPLE, SUBSAMPLE, CONTAINER, SAMPLE_TEMPLATE,"
+                + " INSTRUMENT or INSTRUMENT_TEMPLATE"),
         exceptionMessage);
 
     // invalid parent global id
