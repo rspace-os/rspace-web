@@ -17,10 +17,12 @@ import { svgIconClasses } from "@mui/material/SvgIcon";
 import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography, { typographyClasses } from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import React, { forwardRef, useContext, useState } from "react";
+import type React from "react";
+import { forwardRef, useContext, useState } from "react";
 import type { Hsl } from "../../accentedTheme";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
+import NoopTransition from "../../components/NoopTransition";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { IntegrationState } from "./useIntegrationsEndpoint";
 
@@ -104,27 +106,6 @@ const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>((p
 ));
 CustomGrow.displayName = "CustomGrow";
 const isTestEnv = import.meta.env.MODE === "test";
-type NoopTransitionProps = {
-  in?: boolean;
-  children?: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-};
-const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
-  ({ in: inProp, children, className, style }, ref) => {
-    if (!inProp) return null;
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-        ref,
-        className,
-        style,
-        tabIndex: -1,
-      });
-    }
-    return children ?? null;
-  },
-);
-NoopTransition.displayName = "NoopTransition";
 function IntegrationCard<Credentials>({
   name,
   explanatoryText,

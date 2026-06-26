@@ -30,8 +30,12 @@ const ExportMenuItem = ({
     {...rest}
     onClick={() => {
       void (async () => {
-        await onClick();
-        hideMenu?.();
+        // `finally` so the menu always closes, even if onClick rejects/throws.
+        try {
+          await onClick();
+        } finally {
+          hideMenu?.();
+        }
       })();
     }}
   >

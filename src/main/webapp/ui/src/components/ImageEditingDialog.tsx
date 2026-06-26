@@ -14,29 +14,9 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import NoopTransition from "./NoopTransition";
 
 const isTestEnv = import.meta.env.MODE === "test";
-type NoopTransitionProps = {
-  in?: boolean;
-  children?: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-};
-const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
-  ({ in: inProp, children, className, style }, ref) => {
-    if (!inProp) return null;
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-        ref,
-        className,
-        style,
-        tabIndex: -1,
-      });
-    }
-    return children ?? null;
-  },
-);
-NoopTransition.displayName = "NoopTransition";
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 const readAsBinaryString = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
