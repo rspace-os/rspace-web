@@ -77,9 +77,7 @@ const OPTION_HEIGHT = 36;
 
 /*
  * Prefetch the next page when the user scrolls within this many rows of the end
- * of the loaded options. Matches the default threshold of the
- * react-window-infinite-loader hook this replaced, so scroll-to-load timing is
- * unchanged.
+ * of the loaded options.
  */
 const LOAD_MORE_THRESHOLD = 15;
 
@@ -222,10 +220,9 @@ function OptionsListing({
 }) {
   const itemCount = hasNextPage ? sortedOptions.length + 1 : sortedOptions.length;
   // Load the next page when the user scrolls within LOAD_MORE_THRESHOLD rows of
-  // the end of the loaded options. react-window v2's List.onRowsRendered replaces
-  // react-window-infinite-loader: the component already tracks the paging state
+  // the end of the loaded options. The component already tracks the paging state
   // (hasNextPage/isNextPageLoading) and loads pages sequentially, so a single
-  // threshold check is all the hook was doing for us here.
+  // threshold check on the List's onRowsRendered suffices.
   const onRowsRendered = ({ stopIndex }: { startIndex: number; stopIndex: number }) => {
     if (hasNextPage && !isNextPageLoading && stopIndex >= sortedOptions.length - LOAD_MORE_THRESHOLD) {
       loadNextPage();
