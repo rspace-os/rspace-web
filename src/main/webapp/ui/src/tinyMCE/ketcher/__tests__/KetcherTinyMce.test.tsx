@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type React from "react";
+import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockAxiosGet, mockAxiosPost, mockCreateRoot, rootRenderCalls } = vi.hoisted(() => {
@@ -161,22 +162,19 @@ describe("KetcherTinyMce accessibility", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls).toHaveLength(1);
 
-    // Extract the onUnmount callback passed to KetcherTinyMce.
-    // Tree: ThemeProvider > Analytics > Alerts > KetcherTinyMce
-    type ElementWithChildren<C> = React.ReactElement<{ children: C }>;
-    type KetcherTree = ElementWithChildren<
-      ElementWithChildren<ElementWithChildren<React.ReactElement<{ onUnmount: () => void }>>>
-    >;
-    const themeProvider = rootRenderCalls[0].node as KetcherTree;
-    const analytics = themeProvider.props.children;
-    const alerts = analytics.props.children;
-    const ketcherEl = alerts.props.children;
-    const onUnmount = ketcherEl.props.onUnmount;
+    // Find KetcherTinyMce's onUnmount by walking the rendered tree's `children`
+    // chain, so the test doesn't depend on how many wrapper providers sit above it.
+    const findOnUnmount = (node: React.ReactNode): (() => void) | undefined => {
+      if (!isValidElement(node)) return undefined;
+      const props = node.props as { onUnmount?: () => void; children?: React.ReactNode };
+      return props.onUnmount ?? findOnUnmount(props.children);
+    };
+    const onUnmount = findOnUnmount(rootRenderCalls[0].node);
 
     expect(onUnmount).toBeTypeOf("function");
 
     // Simulates the user closing the dialog.
-    onUnmount();
+    onUnmount?.();
 
     // The mock root's unmount should have been called.
     const firstRoot = mockCreateRoot.mock.results[0].value as {
