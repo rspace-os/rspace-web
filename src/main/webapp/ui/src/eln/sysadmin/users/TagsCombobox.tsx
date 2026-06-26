@@ -84,8 +84,8 @@ type UserTagRowProps = {
 };
 
 /*
- * Row renderer for the virtualised options list. react-window v2 takes the row
- * as a `rowComponent` (receiving `index`/`style` plus the List's `rowProps`);
+ * Row renderer for the virtualised options list: a component passed as the
+ * List's `rowComponent` (receiving `index`/`style` plus the List's `rowProps`);
  * defined at module scope so its identity stays stable across renders.
  */
 function UserTagRow({
@@ -177,8 +177,7 @@ function OptionsListing({
   return (
     <List
       {...listboxProps}
-      // tagName makes the scroll container a <ul> so the <li> rows are valid
-      // (react-window v2 dropped innerElementType in favour of tagName).
+      // tagName makes the scroll container a <ul> so the <li> rows are valid.
       tagName="ul"
       style={{ height: 300, width: POPOVER_WIDTH }}
       rowCount={sortedOptions.length}

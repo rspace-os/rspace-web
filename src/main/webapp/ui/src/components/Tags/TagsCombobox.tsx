@@ -37,8 +37,8 @@ import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./T
  * perform layout and paint, JS must be executed and DOM nodes must be created
  * before the browser can perform layout and paint.
  *
- * Moreover, this combobox also uses infinite loading (via react-window v2's
- * List `onRowsRendered` callback) to load the list of suggested tags in pages,
+ * Moreover, this combobox also uses infinite loading (via the List's
+ * `onRowsRendered` callback) to load the list of suggested tags in pages,
  * loading the next page as the user approaches the end of the list. This,
  * again, reduces performance issues by reducing the size of the network calls.
  *
@@ -100,10 +100,10 @@ type TagRowProps = {
 };
 
 /*
- * Row renderer for the virtualised options list. In react-window v2 the row is
- * a component passed as `rowComponent`, receiving `index`/`style` plus the
- * values supplied via the List's `rowProps`. Defined at module scope so its
- * identity is stable across renders (otherwise the list remounts every row).
+ * Row renderer for the virtualised options list: a component passed as the
+ * List's `rowComponent`, receiving `index`/`style` plus the values supplied via
+ * `rowProps`. Defined at module scope so its identity is stable across renders
+ * (otherwise the list remounts every row).
  */
 function TagRow({
   index,
@@ -232,8 +232,7 @@ function OptionsListing({
   return (
     <List
       {...listboxProps}
-      // tagName makes the scroll container a <ul> so the <li> rows are valid
-      // (react-window v2 dropped innerElementType in favour of tagName).
+      // tagName makes the scroll container a <ul> so the <li> rows are valid.
       tagName="ul"
       style={{ height: 300, width: POPOVER_WIDTH }}
       rowCount={itemCount}
@@ -253,10 +252,9 @@ function OptionsListing({
       /*
        * Allocates the height for each tag by index. Most tags get OPTION_HEIGHT;
        * those showing helper text need more. The virtualised list needs explicit
-       * heights to compute vertical offsets (CSS flexbox can't be used).
-       * react-window v2 re-reads this function when `rowProps` change, so heights
-       * recalculate when the tag list changes — the v1
-       * `listRef.current.resetAfterIndex(0)` calls are no longer needed.
+       * heights to compute vertical offsets (CSS flexbox can't be used). The list
+       * re-reads this function when `rowProps` change, so heights recalculate when
+       * the tag list changes.
        *
        * `i` may exceed `sortedOptions.length` while the "Loading..." placeholder
        * shows, so `Optional.fromNullable(sortedOptions.at(i))`/`orElse` guard
