@@ -267,7 +267,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertTrue(
         exceptionMessage.contains(
             "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench,"
-                + " Sample, Sample Template, or Basket"),
+                + " Sample, Sample Template, Instrument Template or Basket"),
         exceptionMessage);
 
     // correct search for sanity check
